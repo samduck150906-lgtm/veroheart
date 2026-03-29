@@ -9,7 +9,7 @@ export default function Footer() {
           <a href="/terms.html" style={{ color: '#374151', textDecoration: 'none' }}>이용약관</a>
           <a href="/privacy.html" style={{ color: '#374151', textDecoration: 'none' }}>개인정보처리방침</a>
           <a href="/refund.html" style={{ color: '#374151', textDecoration: 'none' }}>취소 및 환불 안내</a>
-          <a href="/checkout.html" style={{ color: "#4f46e5", textDecoration: "none", marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "6px", backgroundColor: "#e0e7ff", padding: "4px 12px", borderRadius: "12px" }}>🛒 <strong>비회원 장바구니/결제 (테스트)</strong></a>
+          <a href="/checkout.html" style={{ color: "#4f46e5", textDecoration: "none", marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "6px", backgroundColor: "#e0e7ff", padding: "4px 12px", borderRadius: "12px" }}>🛒 <strong>비회원 장바구니/결제 </strong></a>
         </div>
         <div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', color: '#6b7280' }}>
