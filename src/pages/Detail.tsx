@@ -1,10 +1,21 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, GitCompare, ShoppingBag, Loader2 } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  GitCompare, 
+  Loader2, 
+  AlertCircle, 
+  CheckCircle2, 
+  ShieldCheck, 
+  Dog, 
+  Cat, 
+  Calendar,
+  Layers
+} from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
-import { AlertCircle, CheckCircle2, ShieldCheck } from 'lucide-react';
+import Analyzer from '../components/Analyzer';
 
 export default function Detail() {
   const { id } = useParams();
@@ -45,15 +56,8 @@ export default function Detail() {
 
   const getRiskColor = (level: string) => {
     if (level === 'danger') return '#EF4444';
-    if (level === 'warning') return '#F59E0B';
+    if (level === 'caution') return '#F59E0B';
     return '#10B981';
-  };
-
-  const handleBuy = () => {
-    if (product) {
-      addToCart(product.id, 1);
-      alert('장바구니에 담겼습니다! 🛒');
-    }
   };
 
   return (
@@ -94,10 +98,32 @@ export default function Detail() {
       </div>
 
       <div style={{ marginBottom: '8px', fontSize: '14px', color: 'var(--text-light)', fontWeight: 600 }}>{product.brand}</div>
-      <h1 style={{ fontSize: '24px', lineHeight: 1.3, marginBottom: '16px' }}>{product.name}</h1>
+      <h1 style={{ fontSize: '24px', lineHeight: 1.3, marginBottom: '16px', fontWeight: 900 }}>{product.name}</h1>
       
+      {/* V2 Metadata Badges */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '24px' }}>
+        {product.targetPetType && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: '#F3F4F6', padding: '6px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 700, color: '#4B5563' }}>
+            {product.targetPetType === 'dog' ? <Dog size={14} /> : (product.targetPetType === 'cat' ? <Cat size={14} /> : <Layers size={14} />)}
+            {product.targetPetType === 'dog' ? '강아지용' : (product.targetPetType === 'cat' ? '고양이용' : '공용')}
+          </div>
+        )}
+        {product.targetLifeStage && product.targetLifeStage.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: '#F3F4F6', padding: '6px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 700, color: '#4B5563' }}>
+            <Calendar size={14} />
+            {product.targetLifeStage.join(', ')}
+          </div>
+        )}
+        {product.formulation && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: '#F3F4F6', padding: '6px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 700, color: '#4B5563' }}>
+            <Layers size={14} />
+            {product.formulation}
+          </div>
+        )}
+      </div>
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-        <div style={{ fontSize: '20px', fontWeight: 800 }}>{product.price.toLocaleString()}원</div>
+        <div style={{ fontSize: '24px', fontWeight: 900, color: 'var(--primary-dark)' }}>{product.price.toLocaleString()}원</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <span style={{ fontSize: '16px', color: '#FCD34D' }}>★</span>
           <span style={{ fontWeight: 700 }}>{product.averageRating}</span> 
@@ -105,52 +131,50 @@ export default function Detail() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '32px' }}>
-        <button className="btn btn-outline" style={{ flex: 1, padding: '12px 0' }} onClick={() => {
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '40px' }}>
+        <button className="btn btn-outline" style={{ flex: 1, height: '56px', borderRadius: '16px' }} onClick={() => {
           isComparing ? removeFromComparison(product.id) : addToComparison(product.id);
         }}>
-          <GitCompare size={18} /> 비교
+          <GitCompare size={20} />
+          <span style={{ marginLeft: '8px' }}>비교</span>
         </button>
-        <button className="btn btn-primary" style={{ flex: 1, backgroundColor: '#FF5A5F', padding: '12px 0' }} onClick={handleBuy}>
-          <ShoppingBag size={18} color="#fff" /> 장바구니
-        </button>
-        <button className="btn btn-primary" style={{ flex: 1, backgroundColor: '#1F2937', color: '#fff', padding: '12px 0' }} onClick={() => {
+        <button className="btn btn-primary" style={{ flex: 2, backgroundColor: '#111827', color: '#fff', borderRadius: '16px', fontWeight: 800, fontSize: '16px', gap: '8px' }} onClick={() => {
           addToCart(product.id, 1);
           navigate('/checkout');
         }}>
-          💰 바로 구매
+          바로 구매하기
         </button>
       </div>
 
       {/* 정밀 분석 리포트 */}
-      <section style={{ marginBottom: '40px', background: '#F8FAFC', padding: '24px', borderRadius: '20px', border: '1px solid #E2E8F0' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <ShieldCheck size={20} className="text-blue-600" /> {profile.name} 맞춤 분석 리포트
+      <section style={{ marginBottom: '40px', background: '#F8FAFC', padding: '24px', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
+        <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <ShieldCheck size={22} className="text-blue-600" /> {profile.name} 맞춤 분석 리포트
         </h2>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {report?.highlights.map((h, i) => (
             <div key={i} style={{ 
-              display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px 16px', borderRadius: '12px',
+              display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '16px', borderRadius: '16px',
               backgroundColor: h.type === 'positive' ? '#ECFDF5' : (h.type === 'negative' ? '#FEF2F2' : '#FFFBEB'),
               color: h.type === 'positive' ? '#065F46' : (h.type === 'negative' ? '#991B1B' : '#92400E'),
-              fontSize: '14px', fontWeight: 500
+              fontSize: '14px', fontWeight: 600, lineHeight: 1.5
             }}>
-              {h.type === 'positive' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+              {h.type === 'positive' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
               {h.text}
             </div>
           ))}
         </div>
         
-        <p style={{ marginTop: '16px', fontSize: '14px', color: '#4B5563', lineHeight: 1.6 }}>
+        <p style={{ marginTop: '20px', fontSize: '15px', color: '#4B5563', lineHeight: 1.7, padding: '0 8px' }}>
           {report?.detailedAnalysis}
         </p>
       </section>
 
       {/* 전성분 분석 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '16px' }}>
-        <h2 style={{ fontSize: '20px', fontWeight: 800 }}>전성분 분석</h2>
-        <div style={{ fontSize: '13px', color: '#6B7280' }}>성분 개수: {product.ingredients?.length}개</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '20px' }}>
+        <h2 style={{ fontSize: '20px', fontWeight: 900 }}>전성분 분석</h2>
+        <div style={{ fontSize: '13px', color: '#6B7280', fontWeight: 500 }}>성분 개수: {product.ingredients?.length}개</div>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -161,33 +185,35 @@ export default function Detail() {
           return (
             <div key={ing.id} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '16px', borderRadius: '16px', background: isAllergy ? '#FEF2F2' : '#fff',
+              padding: '16px', borderRadius: '20px', background: isAllergy ? '#FEF2F2' : '#fff',
               border: isAllergy ? '1px solid #FECACA' : '1px solid #F1F5F9',
-              boxShadow: isAllergy ? 'none' : '0 2px 4px rgba(0,0,0,0.02)'
+              boxShadow: isAllergy ? 'none' : '0 4px 6px -1px rgba(0,0,0,0.02)'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                 <div style={{ 
-                  width: '40px', height: '40px', borderRadius: '12px', background: `${getRiskColor(ing.riskLevel)}15`,
+                  width: '44px', height: '44px', borderRadius: '14px', background: `${getRiskColor(ing.riskLevel)}15`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center'
                 }}>
-                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: getRiskColor(ing.riskLevel) }} />
+                  <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: getRiskColor(ing.riskLevel) }} />
                 </div>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: '15px', color: '#1F2937' }}>
-                    {ing.nameKo} <span style={{ fontSize: '12px', color: '#9CA3AF', fontWeight: 400 }}>{ing.nameEn}</span>
+                  <div style={{ fontWeight: 700, fontSize: '16px', color: '#1F2937' }}>
+                    {ing.nameKo} <span style={{ fontSize: '13px', color: '#9CA3AF', fontWeight: 400 }}>{ing.nameEn}</span>
                   </div>
-                  <div style={{ fontSize: '13px', color: '#6B7280', marginTop: '2px' }}>{ing.purpose}</div>
+                  <div style={{ fontSize: '13px', color: '#6B7280', marginTop: '2px', fontWeight: 500 }}>{ing.purpose}</div>
                 </div>
               </div>
               {isAllergy && (
-                <div style={{ background: '#EF4444', color: '#fff', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 800 }}>
-                  알러지 경보
+                <div style={{ background: '#EF4444', color: '#fff', padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 900 }}>
+                  경보
                 </div>
               )}
             </div>
           );
         })}
       </div>
+
+      <Analyzer />
     </div>
   );
 }

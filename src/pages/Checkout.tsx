@@ -8,10 +8,13 @@ import { Loader2, CreditCard } from 'lucide-react';
 
 const clientKey = import.meta.env.VITE_TOSS_WIDGET_CLIENT_KEY || "test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm";
 
+import { notify } from '../store/useNotification';
+import type { User } from '@supabase/supabase-js';
+
 export default function Checkout() {
   const navigate = useNavigate();
   const { cart, products } = useStore();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   
   // 주문 정보 입력 상태
@@ -95,7 +98,7 @@ export default function Checkout() {
       });
     } catch (error) {
       console.error(error);
-      alert('결제 준비 중 문제가 발생했습니다: ' + (error instanceof Error ? error.message : '알 수 없는 오류'));
+      notify.error('결제 준비 중 문제가 발생했습니다: ' + (error instanceof Error ? error.message : '알 수 없는 오류'));
     } finally {
       setIsProcessing(false);
     }

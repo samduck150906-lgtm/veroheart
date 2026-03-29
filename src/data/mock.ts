@@ -12,14 +12,21 @@ export interface Ingredient {
   nameKo: string;
   nameEn: string;
   purpose: string;
-  riskLevel: 'safe' | 'warning' | 'danger'; // 3색 신호등
+  riskLevel: 'safe' | 'caution' | 'danger';
 }
 
 export interface Product {
   id: string;
   brand: string;
   name: string;
-  category: string;
+  category: string; // compatibility mapping for old code (product_type)
+  mainCategory?: string;
+  subCategory?: string;
+  targetPetType?: 'dog' | 'cat' | 'all';
+  targetLifeStage?: string[];
+  formulation?: string;
+  healthConcerns?: string[];
+  hasRiskFactors?: string[];
   price: number;
   imageUrl: string;
   ingredients: Ingredient[];
@@ -39,7 +46,7 @@ export const mockPetProfile: UserPetProfile = {
 export const mockIngredients: Record<string, Ingredient> = {
   ing_1: { id: 'ing_1', nameKo: '가수분해 연어', nameEn: 'Hydrolyzed Salmon', purpose: '주단백질원', riskLevel: 'safe' },
   ing_2: { id: 'ing_2', nameKo: '고구마', nameEn: 'Sweet Potato', purpose: '탄수화물원', riskLevel: 'safe' },
-  ing_3: { id: 'ing_3', nameKo: '닭고기 분말', nameEn: 'Chicken Meal', purpose: '단백질원', riskLevel: 'warning' },
+  ing_3: { id: 'ing_3', nameKo: '닭고기 분말', nameEn: 'Chicken Meal', purpose: '단백질원', riskLevel: 'caution' },
   ing_4: { id: 'ing_4', nameKo: 'BHA', nameEn: 'BHA', purpose: '합성 보존료', riskLevel: 'danger' },
   ing_5: { id: 'ing_5', nameKo: '글루코사민', nameEn: 'Glucosamine', purpose: '관절 건강', riskLevel: 'safe' },
   ing_6: { id: 'ing_6', nameKo: '인공색소 적색40호', nameEn: 'Red 40', purpose: '색소', riskLevel: 'danger' },
@@ -75,7 +82,7 @@ export const mockProducts: Product[] = [
     category: '간식',
     price: 12000,
     imageUrl: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&q=80',
-    ingredients: [mockIngredients.ing_2, mockIngredients.ing_5, mockIngredients.ing_6], // 알레르기/위험 섞여있음
+    ingredients: [mockIngredients.ing_2, mockIngredients.ing_5, mockIngredients.ing_6],
     reviewsCount: 320,
     averageRating: 3.5,
   }

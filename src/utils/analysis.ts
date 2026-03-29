@@ -31,7 +31,7 @@ export function generateAnalysisReport(product: Product, profile: UserPetProfile
     if (ing.riskLevel === 'danger') {
       dangerIngredients.push(ing.nameKo);
       sScore -= 10;
-    } else if (ing.riskLevel === 'warning') {
+    } else if (ing.riskLevel === 'caution') {
       sScore -= 5;
     }
   });

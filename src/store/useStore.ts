@@ -18,11 +18,13 @@ interface StoreState {
   updateProfile: (updates: Partial<UserPetProfile>) => void;
   products: Product[];
   selectedProduct: (Product & { ingredients: any[] }) | null;
+  orders: any[];
   isLoadingProducts: boolean;
   isInitializing: boolean;
   initApp: () => Promise<void>;
   fetchProducts: () => Promise<void>;
   fetchProductDetail: (productId: string) => Promise<void>;
+  fetchOrders: () => Promise<void>;
   favorites: string[];
   toggleFavorite: (productId: string) => void;
   comparisonList: string[];
@@ -32,6 +34,8 @@ interface StoreState {
   addToCart: (productId: string, quantity?: number) => void;
   removeFromCart: (productId: string) => void;
   clearCart: () => void;
+  reports: any[];
+  fetchReports: () => Promise<void>;
 }
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -39,6 +43,8 @@ export const useStore = create<StoreState>((set, get) => ({
   profile: mockPetProfile,
   products: [],
   selectedProduct: null,
+  orders: [],
+  reports: [],
   isLoadingProducts: false,
   isInitializing: true,
   
@@ -75,9 +81,8 @@ export const useStore = create<StoreState>((set, get) => ({
       const cartData = await fetchCartItems(user.id);
       set({ cart: cartData.map(c => ({ productId: c.productId, quantity: c.quantity })) });
 
-      // Ensure products are fetched
-      await get().fetchProducts();
-      
+      const { fetchProducts, fetchOrders, fetchReports } = get();
+      await Promise.all([fetchProducts(), fetchOrders(), fetchReports()]);
       set({ isInitializing: false });
     } catch (err) {
       console.error('initApp err:', err);
@@ -122,23 +127,41 @@ export const useStore = create<StoreState>((set, get) => ({
       const data = await getProductDetail(id);
       if (data) {
         set({ 
-          selectedProduct: {
-            id: data.id,
-            brand: data.brand_name,
-            name: data.name,
-            category: data.product_type,
-            price: data.min_price || 0,
-            imageUrl: data.image_url || '',
-            ingredients: data.ingredients || [],
-            reviewsCount: data.review_count || 0,
-            averageRating: data.avg_rating || 0
-          }, 
+          selectedProduct: data, 
           isLoadingProducts: false 
         });
+      } else {
+        set({ isLoadingProducts: false });
       }
     } catch (err) {
+      const { notify } = await import('./useNotification');
+      notify.error('상품 정보를 가져오지 못했습니다.');
       console.error(err);
       set({ isLoadingProducts: false });
+    }
+  },
+
+  fetchOrders: async () => {
+    const { userId } = get();
+    if (!userId) return;
+    try {
+      const { getOrders } = await import('../lib/supabase');
+      const data = await getOrders(userId);
+      set({ orders: data });
+    } catch (err) {
+      console.error(err);
+    }
+  },
+
+  fetchReports: async () => {
+    const { userId } = get();
+    if (!userId) return;
+    try {
+      const { getAnalysisReports } = await import('../lib/supabase');
+      const data = await getAnalysisReports(userId);
+      set({ reports: data });
+    } catch (err) {
+      console.error(err);
     }
   },
   

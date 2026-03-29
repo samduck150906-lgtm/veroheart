@@ -151,3 +151,53 @@ h1, h2, h3, h4, h5, h6 {
   transform: translateY(-4px);
   box-shadow: var(--shadow-md);
 }
+
+/* Notification Animations */
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.animate-in {
+  animation-duration: 300ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-fill-mode: forwards;
+}
+
+.slide-in-from-right-full {
+  animation-name: slideInRight;
+}
+
+.fade-in {
+  animation-name: fadeIn;
+}
+
+.fixed { position: fixed; }
+.top-4 { top: 1rem; }
+.right-4 { right: 1rem; }
+.left-4 { left: 1rem; }
+.z-\[9999\] { z-index: 9999; }
+.flex-col { display: flex; flex-direction: column; }
+.gap-3 { gap: 0.75rem; }
+.pointer-events-none { pointer-events: none; }
+.pointer-events-auto { pointer-events: auto; }
+.items-start { align-items: flex-start; }
+.p-4 { padding: 1rem; }
+.rounded-xl { border-radius: 0.75rem; }
+.border { border: 1px solid rgba(0,0,0,0.1); }
+.shadow-lg { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); }
+.bg-green-50 { background-color: #f0fdf4; }
+.bg-red-50 { background-color: #fef2f2; }
+.bg-blue-50 { background-color: #eff6ff; }
+.bg-amber-50 { background-color: #fffbeb; }
+.border-green-100 { border-color: #dcfce7; }
+.border-red-100 { border-color: #fee2e2; }
+.border-blue-100 { border-color: #dbeafe; }
+.border-amber-100 { border-color: #fef3c7; }
+.text-sm { font-size: 0.875rem; }
+.leading-tight { line-height: 1.25; }
+
+@media (min-width: 640px) {
+  .sm\:left-auto { left: auto; }
+  .sm\:w-80 { width: 20rem; }
+}
