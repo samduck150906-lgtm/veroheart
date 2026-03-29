@@ -13,11 +13,13 @@ import Success from './pages/Success';
 import Fail from './pages/Fail';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
+import Refund from './pages/Refund';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminIngredients from './pages/admin/AdminIngredients';
 import Notification from './components/Notification';
+import AdminAuthGuard from './pages/admin/AdminAuthGuard';
 
 function App() {
   const { initApp, isInitializing } = useStore();
@@ -51,10 +53,11 @@ function App() {
             <Route path="product/:id" element={<Detail />} />
             <Route path="terms" element={<Terms />} />
             <Route path="privacy" element={<Privacy />} />
+            <Route path="refund" element={<Refund />} />
           </Route>
         
-        {/* Admin CMS Routes */}
-        <Route path="/admin" element={<AdminLayout />}>
+        {/* Admin CMS Routes — Protected */}
+        <Route path="/admin" element={<AdminAuthGuard><AdminLayout /></AdminAuthGuard>}>
           <Route index element={<AdminDashboard />} />
           <Route path="products" element={<AdminProducts />} />
           <Route path="ingredients" element={<AdminIngredients />} />

@@ -1,15 +1,15 @@
 
-
+import { Link } from 'react-router-dom';
 
 function Footer() {
   return (
     <footer style={{ padding: '24px 20px', backgroundColor: '#f9fafb', borderTop: '1px solid #f3f4f6', color: '#6b7280', fontSize: '12px', lineHeight: '1.6', marginTop: 'auto' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        <div style={{ marginBottom: '16px', display: 'flex', gap: '16px', fontWeight: 'bold' }}>
-          <a href="/terms.html" style={{ color: '#374151', textDecoration: 'none' }}>이용약관</a>
-          <a href="/privacy.html" style={{ color: '#374151', textDecoration: 'none' }}>개인정보처리방침</a>
-          <a href="/refund.html" style={{ color: '#374151', textDecoration: 'none' }}>취소 및 환불 안내</a>
-          <a href="/checkout.html" style={{ color: "#4f46e5", textDecoration: "none", marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "6px", backgroundColor: "#e0e7ff", padding: "4px 12px", borderRadius: "12px" }}>🛒 <strong>비회원 장바구니/결제 </strong></a>
+        <div style={{ marginBottom: '16px', display: 'flex', gap: '16px', fontWeight: 'bold', flexWrap: 'wrap' }}>
+          <Link to="/terms" style={{ color: '#374151', textDecoration: 'none' }}>이용약관</Link>
+          <Link to="/privacy" style={{ color: '#374151', textDecoration: 'none' }}>개인정보처리방침</Link>
+          <Link to="/refund" style={{ color: '#374151', textDecoration: 'none' }}>취소 및 환불 안내</Link>
+          <Link to="/checkout" style={{ color: "#4f46e5", textDecoration: "none", marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "6px", backgroundColor: "#e0e7ff", padding: "4px 12px", borderRadius: "12px" }}>🛒 <strong>장바구니/결제</strong></Link>
         </div>
         <div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', color: '#6b7280' }}>

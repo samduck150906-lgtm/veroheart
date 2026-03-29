@@ -6,7 +6,7 @@ import { Helmet } from 'react-helmet-async';
 import { getCurrentUser, createOrder } from '../lib/supabase';
 import { Loader2, CreditCard } from 'lucide-react';
 
-const clientKey = import.meta.env.VITE_TOSS_WIDGET_CLIENT_KEY || "test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm";
+const clientKey = import.meta.env.VITE_TOSS_WIDGET_CLIENT_KEY || "live_gck_ZLKGPx4M3MpG0OOEvlW78BaWypv1";
 
 import { notify } from '../store/useNotification';
 import type { User } from '@supabase/supabase-js';
@@ -19,10 +19,10 @@ export default function Checkout() {
   
   // 주문 정보 입력 상태
   const [customerInfo, setCustomerInfo] = useState({
-    name: '김베로',
-    email: 'customer@veroheart.com',
-    phone: '01012345678',
-    address: '서울시 강남구 테헤란로 123'
+    name: '',
+    email: '',
+    phone: '',
+    address: ''
   });
   
   const paymentWidgetRef = useRef<PaymentWidgetInstance | null>(null);
@@ -69,6 +69,20 @@ export default function Checkout() {
   const handlePayment = async () => {
     const paymentWidget = paymentWidgetRef.current;
     if (!paymentWidget || !user) return;
+
+    // 입력 검증
+    if (!customerInfo.name.trim()) {
+      notify.error('받는 분 이름을 입력해주세요.');
+      return;
+    }
+    if (!customerInfo.phone.trim() || customerInfo.phone.trim().length < 10) {
+      notify.error('올바른 연락처를 입력해주세요.');
+      return;
+    }
+    if (!customerInfo.address.trim()) {
+      notify.error('배송지 주소를 입력해주세요.');
+      return;
+    }
 
     setIsProcessing(true);
     try {

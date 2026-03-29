@@ -18,7 +18,51 @@ serve(async (req) => {
 
   try {
     const { paymentKey, orderId, amount } = await req.json()
-    
+
+    if (!paymentKey || !orderId || !amount) {
+      return new Response(JSON.stringify({ success: false, message: '필수 결제 정보가 누락되었습니다.' }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      })
+    }
+
+    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+
+    // ★ 핵심 보안: DB에 저장된 주문 금액과 클라이언트에서 전달한 금액 대조
+    const { data: order, error: orderFetchError } = await supabaseAdmin
+      .from('orders')
+      .select('id, total_amount, status')
+      .eq('order_id_ext', orderId)
+      .single()
+
+    if (orderFetchError || !order) {
+      console.error("Order lookup failed:", orderFetchError)
+      return new Response(JSON.stringify({ success: false, message: '주문 정보를 찾을 수 없습니다.' }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      })
+    }
+
+    // 금액 변조 감지
+    if (order.total_amount !== Number(amount)) {
+      console.error(`Amount mismatch! DB: ${order.total_amount}, Client: ${amount}, orderId: ${orderId}`)
+      return new Response(JSON.stringify({ 
+        success: false, 
+        message: '결제 금액이 주문 금액과 일치하지 않습니다. 결제 변조가 감지되었습니다.' 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      })
+    }
+
+    // 이미 결제된 주문 방어
+    if (order.status === 'paid' || order.status === 'completed') {
+      return new Response(JSON.stringify({ success: false, message: '이미 결제가 완료된 주문입니다.' }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      })
+    }
+
     // 1. Toss Payments 승인 요청
     const encodedKey = btoa(`${TOSS_SECRET_KEY}:`)
     const tossResponse = await fetch("https://api.tosspayments.com/v1/payments/confirm", {
@@ -30,32 +74,27 @@ serve(async (req) => {
       body: JSON.stringify({
         paymentKey,
         orderId,
-        amount,
+        amount: Number(amount),
       }),
     })
 
     const result = await tossResponse.json()
 
     if (!tossResponse.ok) {
+      // 토스 승인 실패 시 주문 상태를 failed로 변경
+      await supabaseAdmin
+        .from('orders')
+        .update({ status: 'failed' })
+        .eq('order_id_ext', orderId)
+
       return new Response(JSON.stringify({ success: false, message: result.message }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400,
       })
     }
 
-    // 2. Supabase DB 업데이트 (구매 데이터 기록)
-    // 인증 헤더에서 유저 ID를 가져올 수도 있고, Toss result에서 고객 정보를 받을 수도 있음.
-    const authHeader = req.headers.get('Authorization')!
-    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-    
-    const { data: { user }, error: userError } = await createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!).auth.getUser(authHeader.replace('Bearer ', ''))
-    
-    if (userError || !user) {
-       console.error("User Auth Error:", userError)
-    }
-
-    // Orders 테이블에 기록 (결제 성공 상태로)
-    const { data: order, error: orderError } = await supabaseClient
+    // 2. 결제 성공 → Orders 테이블 업데이트
+    const { error: orderError } = await supabaseAdmin
       .from('orders')
       .update({ 
         status: 'paid', 
@@ -63,8 +102,6 @@ serve(async (req) => {
         paid_at: new Date().toISOString()
       })
       .eq('order_id_ext', orderId)
-      .select()
-      .single()
 
     if (orderError) {
       console.error("Order Update Error:", orderError)
@@ -83,3 +120,4 @@ serve(async (req) => {
     })
   }
 })
+
