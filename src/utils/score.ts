@@ -23,7 +23,7 @@ export function calculateCompatibilityScore(product: Product, profile: UserPetPr
     }
     // 위험도 기반
     if (ing.riskLevel === 'danger') sScore -= 10;
-    if (ing.riskLevel === 'warning') sScore -= 5;
+    if (ing.riskLevel === 'caution') sScore -= 5;
   });
   if (allergyHit) sScore = Math.max(0, sScore - 10);
   score += Math.max(0, sScore);

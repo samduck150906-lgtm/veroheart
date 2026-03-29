@@ -4,7 +4,6 @@ import {
   Users, 
   Package, 
   FlaskConical, 
-  TrendingUp, 
   Activity,
   ArrowUpRight,
   PieChart,
@@ -26,14 +25,12 @@ const AdminDashboard: React.FC = () => {
   });
 
   const [categoryStats, setCategoryStats] = useState<Record<string, number>>({});
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchStats();
   }, []);
 
   const fetchStats = async () => {
-    setLoading(true);
     const [u, p, i, o, c] = await Promise.all([
       supabase.from('users').select('*', { count: 'exact', head: true }),
       supabase.from('products').select('*', { count: 'exact', head: true }),
@@ -56,7 +53,6 @@ const AdminDashboard: React.FC = () => {
       counts[cat] = (counts[cat] || 0) + 1;
     });
     setCategoryStats(counts);
-    setLoading(false);
   };
 
   const cards = [

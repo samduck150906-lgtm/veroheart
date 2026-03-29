@@ -1,5 +1,3 @@
-import React from 'react';
-
 export default function Terms() {
   return (
     <div style={{ padding: '20px', paddingTop: '80px', paddingBottom: '100px', lineHeight: '1.6' }}>

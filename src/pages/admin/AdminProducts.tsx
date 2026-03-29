@@ -6,9 +6,7 @@ import {
   Edit2, 
   Trash2, 
   X,
-  Check,
-  ChevronRight,
-  Filter
+  Check
 } from 'lucide-react';
 import { notify } from '../../store/useNotification';
 

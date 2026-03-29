@@ -16,7 +16,7 @@ import {
   LayoutGrid 
 } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
-import { searchProducts, getAllIngredients } from '../lib/supabase';
+import { searchProducts } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 
 const MAIN_CATEGORIES = [
@@ -31,16 +31,7 @@ const MAIN_CATEGORIES = [
   { name: '생활용품·환경안전', icon: Home }
 ];
 
-const CATEGORY_MAP: Record<string, string[]> = {
-  '사료': ['주식 사료', '건식사료', '습식사료', '세미모이스트', '생식', '동결건조 사료', '처방식/기능성 사료'],
-  '간식': ['저키', '트릿', '동결건조 간식', '껌', '비스킷', '캔/파우치 간식', '츄르/액상 간식', '퓨어미트/토퍼'],
-  '영양제': ['종합영양제', '유산균/장 건강', '관절 건강', '피부/피모', '눈 건강', '신장 건강', '요로 건강', '심장 건강', '면역', '진정/스트레스 케어', '구강 건강', '오메가3/오일'],
-  '구강관리': ['치약', '치약젤', '구강스프레이', '덴탈껌', '덴탈파우더'],
-  '피부·목욕·위생': ['샴푸', '린스', '미스트', '보습제', '밤/크림', '탈취제'],
-  '눈·귀·민감부위 케어': ['귀 세정제', '눈 세정제', '코밤/코보습제'],
-  '배변/모래/패드': ['고양이 모래', '배변패드', '매너벨트/기저귀'],
-  '생활용품·환경안전': ['장난감', '식기/급수기', '세탁세제', '소독제']
-};
+
 
 export default function Search() {
   const { profile } = useStore();
@@ -58,12 +49,7 @@ export default function Search() {
     healthConcerns: [] as string[]
   });
 
-  const [allIngredients, setAllIngredients] = useState<any[]>([]);
   const [excludedIngredients, setExcludedIngredients] = useState<string[]>([]);
-
-  useEffect(() => {
-    getAllIngredients().then(setAllIngredients);
-  }, []);
 
   useEffect(() => {
     const timer = setTimeout(async () => {

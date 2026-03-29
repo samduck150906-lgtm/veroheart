@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
-import { Package, User, ChevronRight, Calendar, ShoppingBag, FileText, Activity } from 'lucide-react';
+import { User, ChevronRight, Calendar, ShoppingBag, FileText, Activity } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Profile() {
