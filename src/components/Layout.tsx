@@ -1,5 +1,6 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import BottomNav from './BottomNav';
+import Footer from './Footer';
 
 export default function Layout() {
   const location = useLocation();
@@ -33,6 +34,7 @@ export default function Layout() {
       </main>
 
       {/* Bottom Nav */}
+      <Footer />
       <BottomNav />
     </div>
   );

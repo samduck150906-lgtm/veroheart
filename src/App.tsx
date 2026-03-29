@@ -7,6 +7,8 @@ import Detail from './pages/Detail';
 import Comparison from './pages/Comparison';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
 
 function App() {
   return (
@@ -20,6 +22,8 @@ function App() {
           <Route path="cart" element={<Cart />} />
           <Route path="checkout" element={<Checkout />} />
           <Route path="product/:id" element={<Detail />} />
+          <Route path="terms" element={<Terms />} />
+          <Route path="privacy" element={<Privacy />} />
         </Route>
       </Routes>
     </BrowserRouter>

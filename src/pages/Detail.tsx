@@ -64,14 +64,20 @@ export default function Detail() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '32px' }}>
-        <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => {
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '32px' }}>
+        <button className="btn btn-outline" style={{ flex: 1, padding: '12px 0' }} onClick={() => {
           isComparing ? removeFromComparison(product.id) : addToComparison(product.id);
         }}>
-          <GitCompare size={18} /> {isComparing ? '비교 해제' : '비교함 담기'}
+          <GitCompare size={18} /> 비교
         </button>
-        <button className="btn btn-primary" style={{ flex: 1, backgroundColor: '#FF5A5F' }} onClick={handleBuy}>
-          <ShoppingBag size={18} color="#fff" /> 장바구니 담기
+        <button className="btn btn-primary" style={{ flex: 1, backgroundColor: '#FF5A5F', padding: '12px 0' }} onClick={handleBuy}>
+          <ShoppingBag size={18} color="#fff" /> 장바구니
+        </button>
+        <button className="btn btn-primary" style={{ flex: 1, backgroundColor: '#1F2937', color: '#fff', padding: '12px 0' }} onClick={() => {
+          addToCart(product.id, 1);
+          navigate('/checkout');
+        }}>
+          💰 바로 구매
         </button>
       </div>
 

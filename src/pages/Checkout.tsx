@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { mockProducts } from '../data/mock';
-import { loadPaymentWidget, PaymentWidgetInstance } from '@tosspayments/payment-widget-sdk';
+import { loadPaymentWidget, type PaymentWidgetInstance } from '@tosspayments/payment-widget-sdk';
 import { Helmet } from 'react-helmet-async';
 
-const clientKey = "test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm"; // 토스페이먼츠 테스트 클라이언트 키
+const clientKey = import.meta.env.VITE_TOSS_WIDGET_CLIENT_KEY || "test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm"; // 토스페이먼츠 테스트 클라이언트 키 (.env.local 적용)
 const customerKey = "mock_customer_01"; // 구매를 진행하는 가상 사용자 키
 
 export default function Checkout() {
