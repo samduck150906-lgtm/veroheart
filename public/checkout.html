@@ -1,0 +1,61 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>결제하기 | 이터널식스</title>
+    <script src="https://js.tosspayments.com/v1/payment-widget"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: #f3f4f6; margin: 0; padding: 20px; color: #111827; }
+        .container { max-width: 600px; margin: 40px auto; background: white; padding: 40px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        h1 { font-size: 24px; font-weight: bold; margin-bottom: 24px; text-align: center; }
+        .product-info { padding: 20px; background: #f9fafb; border-radius: 12px; margin-bottom: 30px; border: 1px solid #e5e7eb; }
+        .price { font-size: 20px; font-weight: bold; color: #3182ce; margin-top: 10px; }
+        .pay-btn { display: block; width: 100%; background: #3182ce; color: white; border: none; padding: 16px; font-size: 18px; font-weight: bold; border-radius: 12px; cursor: pointer; margin-top: 20px; transition: background 0.2s; }
+        .pay-btn:hover { background: #2b6cb0; }
+        .footer { margin-top: 40px; font-size: 12px; color: #6b7280; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>비회원 간편 결제 (토스페이먼츠)</h1>
+        <div class="product-info">
+            <div style="color: #4b5563; font-size: 14px; margin-bottom: 8px;">주문 상품</div>
+            <div style="font-size: 18px; font-weight: bold;">VeroHeart 맞춤형 펫 컨설팅 리포트</div>
+            <div class="price">25,000 원</div>
+        </div>
+        
+        <div id="payment-method"></div>
+        <div id="agreement"></div>
+        
+        <button id="payment-button" class="pay-btn">결제하기</button>
+        
+        <div class="footer">
+            본 결제는 테스트 환경으로 실제 요금이 청구되지 않습니다. (심사용)<br><br>
+            상호명: 이터널식스 | 연락처: 010-8111-9370<br>
+            취소 및 환불: 결제 후 7일 이내 전액 환불 가능 (단 사용/다운로드 기기 인증 완료 시 환불 불가)
+        </div>
+    </div>
+
+    <script>
+        const clientKey = "live_gck_ZLKGPx4M3MpG0OOEvlW78BaWypv1";
+        const customerKey = "test_customer_" + Math.random().toString(36).substring(2, 10);
+        const paymentWidget = PaymentWidget(clientKey, customerKey);
+
+        paymentWidget.renderPaymentMethods('#payment-method', { value: 25000 });
+        paymentWidget.renderAgreement('#agreement');
+
+        document.getElementById('payment-button').addEventListener('click', () => {
+            paymentWidget.requestPayment({
+                orderId: "ORDER_" + new Date().getTime(),
+                orderName: "VeroHeart 맞춤형 펫 컨설팅 리포트",
+                successUrl: window.location.origin + "/success.html",
+                failUrl: window.location.origin + "/fail.html",
+                customerEmail: "customer@example.com",
+                customerName: "비회원 테스트"
+            });
+        });
+    </script>
+</body>
+</html>
