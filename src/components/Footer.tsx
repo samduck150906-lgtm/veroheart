@@ -1,7 +1,7 @@
 
 
 
-export default function Footer() {
+function Footer() {
   return (
     <footer style={{ padding: '24px 20px', backgroundColor: '#f9fafb', borderTop: '1px solid #f3f4f6', color: '#6b7280', fontSize: '12px', lineHeight: '1.6', marginTop: 'auto' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
@@ -28,3 +28,6 @@ export default function Footer() {
     </footer>
   );
 }
+
+export { Footer };
+export default Footer;
