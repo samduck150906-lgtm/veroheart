@@ -1,17 +1,16 @@
 import { Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import { mockProducts } from '../data/mock';
 import { calculateCompatibilityScore } from '../utils/score';
 
 export default function TargetedAd() {
-  const { profile } = useStore();
+  const { profile, products } = useStore();
   
   // 간단한 타겟팅 로직: 유저의 첫 번째 고민과 일치하는 제품 하나 추천, 없으면 첫번째 상품.
   const targetConcern = profile.healthConcerns[0] || '';
-  let adProduct = mockProducts.find(p => p.ingredients.some(i => i.purpose.includes(targetConcern)));
+  let adProduct = products.find(p => p.ingredients?.some(i => i.purpose.includes(targetConcern)));
   
   // 없다면 아무거나
-  if (!adProduct) adProduct = mockProducts[0];
+  if (!adProduct) adProduct = products[0];
   
   if (!adProduct) return null;
 

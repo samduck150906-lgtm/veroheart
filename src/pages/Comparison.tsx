@@ -1,14 +1,13 @@
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import { mockProducts } from '../data/mock';
 import { calculateCompatibilityScore } from '../utils/score';
 import { X } from 'lucide-react';
 
 export default function Comparison() {
   const navigate = useNavigate();
-  const { profile, comparisonList, removeFromComparison } = useStore();
+  const { profile, products: storeProducts, comparisonList, removeFromComparison } = useStore();
   
-  const products = comparisonList.map(id => mockProducts.find(p => p.id === id)).filter(Boolean) as typeof mockProducts;
+  const products = comparisonList.map(id => storeProducts.find(p => p.id === id)).filter(Boolean) as typeof storeProducts;
 
   if (products.length === 0) {
     return (
@@ -61,7 +60,7 @@ export default function Comparison() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                   <span style={{ color: 'var(--text-muted)' }}>주의 성분</span>
                   <span style={{ fontWeight: 600, color: 'var(--danger)' }}>
-                    {p.ingredients.filter(i => i.riskLevel === 'danger').length}개
+                    {p.ingredients?.filter(i => i.riskLevel === 'danger').length || 0}개
                   </span>
                 </div>
               </div>

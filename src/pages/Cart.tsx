@@ -1,16 +1,15 @@
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import { mockProducts } from '../data/mock';
 import { Trash2 } from 'lucide-react';
 
 export default function Cart() {
   const navigate = useNavigate();
-  const { cart, removeFromCart } = useStore();
+  const { cart, removeFromCart, products } = useStore();
   
   const cartItems = cart.map(c => {
-    const p = mockProducts.find(prod => prod.id === c.productId);
+    const p = products.find(prod => prod.id === c.productId);
     return { ...p, quantity: c.quantity };
-  }).filter(c => c.id) as (typeof mockProducts[number] & { quantity: number })[];
+  }).filter(c => c.id) as (typeof products[number] & { quantity: number })[];
 
   const totalPrice = cartItems.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
 
