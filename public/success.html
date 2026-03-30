@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>결제 완료 | 이터널식스</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f3f4f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .card { background: white; border-radius: 20px; padding: 48px 40px; max-width: 500px; width: 100%; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.08); }
+        .icon { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; font-size: 40px; }
+        .icon.success { background: #dcfce7; }
+        .icon.loading { background: #e0e7ff; animation: pulse 1.5s infinite; }
+        .icon.error { background: #fee2e2; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+        h1 { font-size: 24px; color: #111827; margin-bottom: 12px; }
+        .desc { color: #6b7280; font-size: 14px; line-height: 1.6; margin-bottom: 24px; }
+        .info-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; text-align: left; margin-bottom: 24px; }
+        .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-size: 14px; }
+        .info-row:last-child { border: none; }
+        .info-label { color: #6b7280; }
+        .info-value { color: #111827; font-weight: 600; }
+        .btn { display: inline-block; padding: 14px 32px; border-radius: 12px; font-size: 16px; font-weight: 600; text-decoration: none; cursor: pointer; border: none; transition: all 0.2s; }
+        .btn-primary { background: #4f46e5; color: white; }
+        .btn-primary:hover { background: #4338ca; }
+        .footer { margin-top: 32px; font-size: 11px; color: #9ca3af; line-height: 1.5; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div id="status-icon" class="icon loading">⏳</div>
+        <h1 id="status-title">결제 승인 처리 중...</h1>
+        <p id="status-desc" class="desc">토스페이먼츠 결제 승인을 진행하고 있습니다. 잠시만 기다려 주세요.</p>
+        <div id="info-box" class="info-box" style="display:none;"></div>
+        <div id="action-area"></div>
+        <div class="footer">
+            상호명: 이터널식스 | 사업자등록번호: 303-28-65658<br>
+            문의: ceo@eternalsix.kr | 010-8111-9370
+        </div>
+    </div>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const paymentKey = params.get('paymentKey');
+        const orderId = params.get('orderId');
+        const amount = params.get('amount');
+
+        async function confirmPayment() {
+            if (!paymentKey || !orderId || !amount) {
+                showError('결제 정보가 누락되었습니다.');
+                return;
+            }
+            try {
+                const res = await fetch('/.netlify/functions/confirm-payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ paymentKey, orderId, amount: Number(amount) }),
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'DONE') {
+                    showSuccess(data);
+                } else {
+                    showError(data.message || '결제 승인에 실패했습니다.');
+                }
+            } catch (e) {
+                showError('서버 연결에 실패했습니다. 고객센터로 문의해 주세요.');
+            }
+        }
+
+        function showSuccess(data) {
+            document.getElementById('status-icon').className = 'icon success';
+            document.getElementById('status-icon').textContent = '✅';
+            document.getElementById('status-title').textContent = '결제가 완료되었습니다!';
+            document.getElementById('status-desc').textContent = '결제가 정상적으로 처리되었습니다. 감사합니다.';
+            const box = document.getElementById('info-box');
+            box.style.display = 'block';
+            box.innerHTML = '<div class="info-row"><span class="info-label">주문번호</span><span class="info-value">' + (data.orderId||orderId) + '</span></div>'
+                + '<div class="info-row"><span class="info-label">결제금액</span><span class="info-value">' + Number(amount).toLocaleString() + '원</span></div>'
+                + '<div class="info-row"><span class="info-label">결제수단</span><span class="info-value">' + (data.method||'-') + '</span></div>'
+                + '<div class="info-row"><span class="info-label">승인일시</span><span class="info-value">' + new Date().toLocaleString('ko-KR') + '</span></div>';
+            document.getElementById('action-area').innerHTML = '<a href="/" class="btn btn-primary">홈으로 돌아가기</a>';
+        }
+
+        function showError(msg) {
+            document.getElementById('status-icon').className = 'icon error';
+            document.getElementById('status-icon').textContent = '❌';
+            document.getElementById('status-title').textContent = '결제 승인 실패';
+            document.getElementById('status-desc').textContent = msg;
+            document.getElementById('action-area').innerHTML = '<a href="/checkout.html" class="btn btn-primary">다시 시도하기</a>';
+        }
+
+        confirmPayment();
+    </script>
+</body>
+</html>
