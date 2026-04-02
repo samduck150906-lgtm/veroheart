@@ -24,9 +24,18 @@ export default function Analyzer() {
     setResult(null);
 
     try {
-      const response = await fetch('/api/analyze', {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+      const functionUrl = supabaseUrl
+        ? `${supabaseUrl}/functions/v1/analyze-ingredients`
+        : '/api/analyze';
+
+      const response = await fetch(functionUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(supabaseKey ? { 'Authorization': `Bearer ${supabaseKey}` } : {})
+        },
         body: JSON.stringify({
           animal,
           product_type: productType,

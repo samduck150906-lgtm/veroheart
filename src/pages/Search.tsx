@@ -1,22 +1,24 @@
 import { useEffect, useState } from 'react';
-import { 
-  Search as SearchIcon, 
-  Filter, 
-  X, 
-  Check, 
-  Trash2, 
-  Utensils, 
-  Cookie, 
-  Pill, 
-  Sparkles, 
-  Droplets, 
-  Eye, 
-  Trash, 
-  Home, 
-  LayoutGrid 
+import {
+  Search as SearchIcon,
+  Filter,
+  X,
+  Check,
+  Trash2,
+  Utensils,
+  Cookie,
+  Pill,
+  Sparkles,
+  Droplets,
+  Eye,
+  Trash,
+  Home,
+  LayoutGrid,
+  Plus,
+  FlaskConical
 } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
-import { searchProducts } from '../lib/supabase';
+import { searchProducts, getAllIngredients } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 
 const MAIN_CATEGORIES = [
@@ -50,6 +52,16 @@ export default function Search() {
   });
 
   const [excludedIngredients, setExcludedIngredients] = useState<string[]>([]);
+  const [allIngredients, setAllIngredients] = useState<{ id: string; name_ko: string; risk_level: string }[]>([]);
+  const [ingredientSearch, setIngredientSearch] = useState('');
+
+  useEffect(() => {
+    getAllIngredients().then(setAllIngredients);
+  }, []);
+
+  const filteredIngList = allIngredients.filter(i =>
+    i.name_ko.includes(ingredientSearch) && !excludedIngredients.includes(i.name_ko)
+  ).slice(0, 20);
 
   useEffect(() => {
     const timer = setTimeout(async () => {
@@ -193,6 +205,49 @@ export default function Search() {
                   <FilterChip key={concern} label={concern} selected={filters.healthConcerns.includes(concern)} onClick={() => toggleHealthConcern(concern)} />
                 ))}
               </div>
+            </Section>
+
+            <Section title="성분 제외 필터">
+              {excludedIngredients.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
+                  {excludedIngredients.map(name => (
+                    <div key={name} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#FEF2F2', borderRadius: '20px', border: '1px solid #FECACA' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#991B1B' }}>{name}</span>
+                      <button onClick={() => setExcludedIngredients(prev => prev.filter(i => i !== name))} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#EF4444', display: 'flex' }}>
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div style={{ position: 'relative', marginBottom: '8px' }}>
+                <FlaskConical size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+                <input
+                  type="text"
+                  placeholder="제외할 성분 검색..."
+                  value={ingredientSearch}
+                  onChange={e => setIngredientSearch(e.target.value)}
+                  style={{ width: '100%', padding: '12px 12px 12px 36px', borderRadius: '12px', border: '1px solid #E5E7EB', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
+              {ingredientSearch && (
+                <div style={{ maxHeight: '160px', overflowY: 'auto', border: '1px solid #E5E7EB', borderRadius: '12px', background: '#fff' }}>
+                  {filteredIngList.length === 0 ? (
+                    <div style={{ padding: '12px', fontSize: '13px', color: '#9CA3AF', textAlign: 'center' }}>검색 결과 없음</div>
+                  ) : filteredIngList.map(ing => (
+                    <button
+                      key={ing.id}
+                      onClick={() => { setExcludedIngredients(prev => [...prev, ing.name_ko]); setIngredientSearch(''); }}
+                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', borderBottom: '1px solid #F3F4F6' }}
+                    >
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: ing.risk_level === 'danger' ? '#EF4444' : ing.risk_level === 'caution' ? '#F59E0B' : '#10B981', flexShrink: 0 }} />
+                      {ing.name_ko}
+                      <Plus size={14} style={{ marginLeft: 'auto', color: '#9CA3AF' }} />
+                    </button>
+                  ))}
+                </div>
+              )}
+              <p style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '6px' }}>선택한 성분이 포함된 제품은 검색에서 제외됩니다.</p>
             </Section>
 
             {/* Bottom Buttons */}

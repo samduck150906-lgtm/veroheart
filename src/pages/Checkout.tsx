@@ -25,8 +25,23 @@ export default function Checkout() {
     address: ''
   });
   
+  const [detailAddress, setDetailAddress] = useState('');
   const paymentWidgetRef = useRef<PaymentWidgetInstance | null>(null);
   const [isWidgetLoaded, setIsWidgetLoaded] = useState(false);
+
+  const openPostcode = () => {
+    const script = document.createElement('script');
+    script.src = 'https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+    script.onload = () => {
+      new (window as any).daum.Postcode({
+        oncomplete: (data: any) => {
+          const addr = data.roadAddress || data.jibunAddress;
+          setCustomerInfo(prev => ({ ...prev, address: addr }));
+        }
+      }).open();
+    };
+    document.head.appendChild(script);
+  };
 
   useEffect(() => {
     getCurrentUser().then(setUser);
@@ -158,12 +173,29 @@ export default function Checkout() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">배송지 주소</label>
-                <input 
-                  type="text" 
-                  value={customerInfo.address} 
-                  onChange={e => setCustomerInfo({...customerInfo, address: e.target.value})}
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    value={customerInfo.address}
+                    onChange={e => setCustomerInfo({...customerInfo, address: e.target.value})}
+                    className="flex-1 p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="도로명 주소"
+                    readOnly={!!customerInfo.address}
+                  />
+                  <button
+                    type="button"
+                    onClick={openPostcode}
+                    className="px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl border border-gray-200 whitespace-nowrap text-sm"
+                  >
+                    우편번호
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={detailAddress}
+                  onChange={e => setDetailAddress(e.target.value)}
                   className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                  placeholder="도로명 주소 입력"
+                  placeholder="상세 주소 (동/호수)"
                 />
               </div>
             </div>

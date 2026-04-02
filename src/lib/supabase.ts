@@ -59,6 +59,10 @@ export async function saveUserPet(petData: Partial<SupabasePet>) {
 }
 
 // Products
+export function mapProductFromRaw(p: any): Product {
+  return mapProduct(p);
+}
+
 function mapProduct(p: any): Product {
   return {
     id: p.id,
@@ -266,10 +270,119 @@ export async function getAnalysisReports(userId: string) {
     `)
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
-    
+
   if (error) {
     console.error('Failed to fetch analysis reports:', error);
     return [];
   }
   return data || [];
 }
+
+// ─── Auth ───────────────────────────────────────────────────────────────────
+
+export async function signOut() {
+  await supabase.auth.signOut();
+}
+
+// ─── Reviews ────────────────────────────────────────────────────────────────
+
+export async function getReviews(productId: string) {
+  const { data, error } = await supabase
+    .from('reviews')
+    .select('*, users(email)')
+    .eq('product_id', productId)
+    .order('created_at', { ascending: false });
+  if (error) console.error('getReviews error:', error);
+  return data || [];
+}
+
+export async function createReview(userId: string, productId: string, rating: number, content: string) {
+  const { data, error } = await supabase
+    .from('reviews')
+    .insert({ user_id: userId, product_id: productId, rating, content })
+    .select()
+    .single();
+  if (error) {
+    notify.error('리뷰 등록에 실패했습니다.');
+    return null;
+  }
+  notify.success('리뷰가 등록되었습니다!');
+  return data;
+}
+
+export async function deleteReview(reviewId: string, userId: string) {
+  const { error } = await supabase
+    .from('reviews')
+    .delete()
+    .match({ id: reviewId, user_id: userId });
+  if (error) notify.error('리뷰 삭제에 실패했습니다.');
+  else notify.success('리뷰가 삭제되었습니다.');
+}
+
+// ─── Favorites ──────────────────────────────────────────────────────────────
+
+export async function getFavorites(userId: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('favorites')
+    .select('product_id')
+    .eq('user_id', userId);
+  if (error) return [];
+  return (data || []).map((r: any) => r.product_id);
+}
+
+export async function addFavorite(userId: string, productId: string) {
+  await supabase.from('favorites').upsert({ user_id: userId, product_id: productId });
+}
+
+export async function removeFavorite(userId: string, productId: string) {
+  await supabase.from('favorites').delete().match({ user_id: userId, product_id: productId });
+}
+
+// ─── Recent Views ────────────────────────────────────────────────────────────
+
+export async function addRecentView(userId: string, productId: string) {
+  await supabase.from('recent_views').upsert(
+    { user_id: userId, product_id: productId, viewed_at: new Date().toISOString() },
+    { onConflict: 'user_id,product_id' }
+  );
+}
+
+export async function getRecentViews(userId: string) {
+  const { data, error } = await supabase
+    .from('recent_views')
+    .select(`product_id, viewed_at, products(*)`)
+    .eq('user_id', userId)
+    .order('viewed_at', { ascending: false })
+    .limit(10);
+  if (error) return [];
+  return (data || []).map((r: any) => r.products).filter(Boolean);
+}
+
+// ─── Brands ──────────────────────────────────────────────────────────────────
+
+export async function getBrands(): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('products')
+    .select('brand_name')
+    .order('brand_name');
+  if (error) return [];
+  const brands = [...new Set((data || []).map((r: any) => r.brand_name).filter(Boolean))];
+  return brands;
+}
+
+export async function getProductsByBrand(brandName: string): Promise<Product[]> {
+  const { data, error } = await supabase
+    .from('products')
+    .select(`*, product_ingredients(ingredients(*))`)
+    .eq('brand_name', brandName);
+  if (error) return [];
+  return (data as any[]).map(mapProduct);
+}
+
+// ─── Coupons ─────────────────────────────────────────────────────────────────
+
+export const MOCK_EVENTS = [
+  { id: 'ev1', title: '신규 회원 첫 구매 10% 할인', code: 'WELCOME10', discount: 10, type: 'percent', desc: '첫 주문 한정 쿠폰', expires: '2026-12-31', color: '#FEF3C7', badge: '신규' },
+  { id: 'ev2', title: '사료 전품목 5,000원 할인', code: 'FOOD5000', discount: 5000, type: 'fixed', desc: '30,000원 이상 주문 시', expires: '2026-06-30', color: '#EFF6FF', badge: '기간한정' },
+  { id: 'ev3', title: '여름 펫 케어 기획전', code: null, discount: 0, type: 'event', desc: '7월 특선 케어 제품 모음', expires: '2026-07-31', color: '#F0FDF4', badge: '이벤트' },
+];

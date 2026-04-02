@@ -1,19 +1,28 @@
 import { create } from 'zustand';
 import { mockPetProfile, mockProducts as staticMockProducts } from '../data/mock';
 import type { UserPetProfile, Product } from '../data/mock';
-import { 
-  getProducts, 
-  initializeAnonymousSession, 
-  getUserPets, 
-  saveUserPet, 
-  fetchCartItems, 
-  saveCartItem, 
-  removeCartItemFromDB, 
-  clearUserCart 
+import {
+  getProducts,
+  initializeAnonymousSession,
+  getUserPets,
+  saveUserPet,
+  fetchCartItems,
+  saveCartItem,
+  removeCartItemFromDB,
+  clearUserCart,
+  getFavorites,
+  addFavorite,
+  removeFavorite,
+  addRecentView,
+  getRecentViews,
+  mapProductFromRaw,
+  signOut as supabaseSignOut
 } from '../lib/supabase';
 
 interface StoreState {
   userId: string | null;
+  isLoggedIn: boolean;
+  signOut: () => Promise<void>;
   profile: UserPetProfile;
   updateProfile: (updates: Partial<UserPetProfile>) => void;
   products: Product[];
@@ -27,6 +36,8 @@ interface StoreState {
   fetchOrders: () => Promise<void>;
   favorites: string[];
   toggleFavorite: (productId: string) => void;
+  recentViews: Product[];
+  trackRecentView: (productId: string) => void;
   comparisonList: string[];
   addToComparison: (productId: string) => void;
   removeFromComparison: (productId: string) => void;
@@ -40,46 +51,66 @@ interface StoreState {
 
 export const useStore = create<StoreState>((set, get) => ({
   userId: null,
+  isLoggedIn: false,
   profile: mockPetProfile,
   products: [],
   selectedProduct: null,
   orders: [],
   reports: [],
+  recentViews: [],
   isLoadingProducts: false,
   isInitializing: true,
-  
+
+  signOut: async () => {
+    await supabaseSignOut();
+    set({ userId: null, isLoggedIn: false, orders: [], reports: [], favorites: [], recentViews: [], cart: [] });
+    get().fetchProducts();
+  },
+
   initApp: async () => {
     try {
       const user = await initializeAnonymousSession();
       if (!user) {
         set({ isInitializing: false });
-        // Fallback to static data
         get().fetchProducts();
         return;
       }
 
-      set({ userId: user.id });
+      const isReal = user.app_metadata?.provider !== 'anonymous' && !user.is_anonymous;
+      set({ userId: user.id, isLoggedIn: isReal });
 
       // Fetch Pet Profile
       const pets = await getUserPets(user.id);
       if (pets && pets.length > 0) {
-        // Map first pet back to local state
         const p = pets[0];
         set({
           profile: {
             id: p.id,
             name: p.name,
             species: p.pet_type === 'cat' ? 'Cat' : 'Dog',
-            age: p.age_group === 'baby' ? 1 : p.age_group === 'senior' ? 10 : 4, // Rough mapping
+            age: p.age_group === 'baby' ? 1 : p.age_group === 'senior' ? 10 : 4,
             healthConcerns: p.conditions || [],
             allergies: p.allergies || []
           }
         });
       }
 
-      // Fetch Cart
-      const cartData = await fetchCartItems(user.id);
-      set({ cart: cartData.map(c => ({ productId: c.productId, quantity: c.quantity })) });
+      // Fetch Cart & Favorites
+      const [cartData, favData] = await Promise.all([
+        fetchCartItems(user.id),
+        getFavorites(user.id)
+      ]);
+      set({
+        cart: cartData.map(c => ({ productId: c.productId, quantity: c.quantity })),
+        favorites: favData
+      });
+
+      // Fetch Recent Views
+      const recentData = await getRecentViews(user.id);
+      if (recentData.length > 0) {
+        const mapped = recentData.map(mapProductFromRaw).filter(Boolean) as Product[];
+        set({ recentViews: mapped });
+      }
 
       const { fetchProducts, fetchOrders, fetchReports } = get();
       await Promise.all([fetchProducts(), fetchOrders(), fetchReports()]);
@@ -166,11 +197,25 @@ export const useStore = create<StoreState>((set, get) => ({
   },
   
   favorites: [],
-  toggleFavorite: (id) => set((state) => ({
-    favorites: state.favorites.includes(id)
-      ? state.favorites.filter(fid => fid !== id)
-      : [...state.favorites, id]
-  })),
+  toggleFavorite: async (id) => {
+    const { userId, favorites } = get();
+    const isFav = favorites.includes(id);
+    set({ favorites: isFav ? favorites.filter(fid => fid !== id) : [...favorites, id] });
+    if (userId) {
+      if (isFav) await removeFavorite(userId, id);
+      else await addFavorite(userId, id);
+    }
+  },
+
+  trackRecentView: async (productId) => {
+    const { userId, products, recentViews } = get();
+    const product = products.find(p => p.id === productId);
+    if (product) {
+      const filtered = recentViews.filter(p => p.id !== productId);
+      set({ recentViews: [product, ...filtered].slice(0, 10) });
+    }
+    if (userId) await addRecentView(userId, productId);
+  },
   comparisonList: [],
   addToComparison: (id) => set((state) => ({
     comparisonList: state.comparisonList.includes(id) 

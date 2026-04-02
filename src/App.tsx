@@ -14,6 +14,9 @@ import Fail from './pages/Fail';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Refund from './pages/Refund';
+import Login from './pages/Login';
+import Ranking from './pages/Ranking';
+import Brand from './pages/Brand';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
@@ -54,8 +57,13 @@ function App() {
             <Route path="terms" element={<Terms />} />
             <Route path="privacy" element={<Privacy />} />
             <Route path="refund" element={<Refund />} />
+            <Route path="ranking" element={<Ranking />} />
+            <Route path="brand/:brandName" element={<Brand />} />
           </Route>
         
+        {/* Login (no Layout wrapper) */}
+        <Route path="/login" element={<Login />} />
+
         {/* Admin CMS Routes — Protected */}
         <Route path="/admin" element={<AdminAuthGuard><AdminLayout /></AdminAuthGuard>}>
           <Route index element={<AdminDashboard />} />

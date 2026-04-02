@@ -1,17 +1,25 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
-import { User, ChevronRight, Calendar, ShoppingBag, FileText, Activity } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { User, ChevronRight, Calendar, ShoppingBag, FileText, Activity, Heart, LogOut, LogIn } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import ProductCard from '../components/ProductCard';
 
 export default function Profile() {
-  const { profile, updateProfile, orders, fetchOrders, reports, fetchReports } = useStore();
-  const [activeTab, setActiveTab] = useState<'info' | 'orders' | 'reports'>('info');
+  const { profile, updateProfile, orders, fetchOrders, reports, fetchReports, isLoggedIn, signOut, favorites, products } = useStore();
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<'info' | 'orders' | 'reports' | 'favorites'>('info');
+  const favoriteProducts = products.filter(p => favorites.includes(p.id));
   const [formData, setFormData] = useState(profile);
   
   useEffect(() => {
     if (activeTab === 'orders') fetchOrders();
     if (activeTab === 'reports') fetchReports();
   }, [activeTab, fetchOrders, fetchReports]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   const handleSave = () => {
     updateProfile(formData);
@@ -32,38 +40,55 @@ export default function Profile() {
 
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '40px' }}>
-      {/* 탭 네비게이션 */}
-      <div style={{ display: 'flex', gap: '24px', marginBottom: '32px', borderBottom: '1px solid #eee', padding: '0 4px', overflowX: 'auto' }}>
-        <button 
-          onClick={() => setActiveTab('info')}
-          style={{
-            background: 'none', border: 'none', padding: '12px 4px', fontSize: '16px', fontWeight: 800,
-            color: activeTab === 'info' ? 'var(--primary-dark)' : '#BBC2CC',
-            borderBottom: activeTab === 'info' ? '3px solid var(--primary)' : '3px solid transparent',
-            cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap'
-          }}
-        >프로필 설정</button>
-        <button 
-          onClick={() => setActiveTab('orders')}
-          style={{
-            background: 'none', border: 'none', padding: '12px 4px', fontSize: '16px', fontWeight: 800,
-            color: activeTab === 'orders' ? 'var(--primary-dark)' : '#BBC2CC',
-            borderBottom: activeTab === 'orders' ? '3px solid var(--primary)' : '3px solid transparent',
-            cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap'
-          }}
-        >주문 내역</button>
-        <button 
-          onClick={() => setActiveTab('reports')}
-          style={{
-            background: 'none', border: 'none', padding: '12px 4px', fontSize: '16px', fontWeight: 800,
-            color: activeTab === 'reports' ? 'var(--primary-dark)' : '#BBC2CC',
-            borderBottom: activeTab === 'reports' ? '3px solid var(--primary)' : '3px solid transparent',
-            cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap'
-          }}
-        >분석 리포트</button>
+      {/* 로그인/로그아웃 버튼 */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
+        {isLoggedIn ? (
+          <button onClick={handleSignOut} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: '1px solid #E5E7EB', borderRadius: '10px', padding: '8px 14px', fontSize: '13px', fontWeight: 600, color: '#6B7280', cursor: 'pointer' }}>
+            <LogOut size={15} /> 로그아웃
+          </button>
+        ) : (
+          <Link to="/login" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#111827', borderRadius: '10px', padding: '8px 14px', fontSize: '13px', fontWeight: 700, color: '#fff', textDecoration: 'none' }}>
+            <LogIn size={15} /> 로그인 / 회원가입
+          </Link>
+        )}
       </div>
 
-      {activeTab === 'info' ? (
+      {/* 탭 네비게이션 */}
+      <div style={{ display: 'flex', gap: '20px', marginBottom: '32px', borderBottom: '1px solid #eee', padding: '0 4px', overflowX: 'auto' }}>
+        {([
+          { key: 'info', label: '프로필 설정' },
+          { key: 'favorites', label: `찜 목록 ${favorites.length > 0 ? `(${favorites.length})` : ''}` },
+          { key: 'orders', label: '주문 내역' },
+          { key: 'reports', label: '분석 리포트' },
+        ] as const).map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            style={{
+              background: 'none', border: 'none', padding: '12px 4px', fontSize: '15px', fontWeight: 800,
+              color: activeTab === tab.key ? 'var(--primary-dark)' : '#BBC2CC',
+              borderBottom: activeTab === tab.key ? '3px solid var(--primary)' : '3px solid transparent',
+              cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap'
+            }}
+          >{tab.label}</button>
+        ))}
+      </div>
+
+      {activeTab === 'favorites' ? (
+        <div>
+          {favoriteProducts.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {favoriteProducts.map(p => <ProductCard key={p.id} product={p} />)}
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '100px 20px', backgroundColor: '#F9FAFB', borderRadius: '24px' }}>
+              <Heart color="#D1D5DB" size={40} style={{ margin: '0 auto 16px' }} />
+              <p style={{ color: '#9CA3AF', fontSize: '15px' }}>찜한 제품이 없습니다.</p>
+              <Link to="/search" style={{ color: 'var(--primary)', fontWeight: 700, marginTop: '12px', display: 'inline-block', textDecoration: 'none' }}>제품 탐색하기</Link>
+            </div>
+          )}
+        </div>
+      ) : activeTab === 'info' ? (
         <div className="card" style={{ padding: '24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
             <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -140,7 +165,7 @@ export default function Profile() {
                     <Calendar size={16} color="var(--text-muted)" />
                     <span style={{ fontSize: '14px', color: 'var(--text-dark)', fontWeight: 600 }}>{new Date(order.created_at).toLocaleDateString()}</span>
                   </div>
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#3B82F6', backgroundColor: '#EFF6FF', padding: '4px 12px', borderRadius: '12px' }}>{order.status === 'completed' ? '배송 완료' : '준비 중'}</span>
+                  <DeliveryStatus status={order.status} />
                 </div>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -156,6 +181,9 @@ export default function Profile() {
                     </Link>
                   ))}
                 </div>
+
+                {/* 배송 타임라인 */}
+                <DeliveryTimeline status={order.status} />
 
                 <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #F3F4F6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>총 결제 금액</span>
@@ -236,6 +264,57 @@ export default function Profile() {
           )}
         </div>
       ) : null}
+    </div>
+  );
+}
+
+const DELIVERY_STEPS = [
+  { key: 'pending', label: '주문 확인' },
+  { key: 'paid', label: '결제 완료' },
+  { key: 'shipped', label: '배송 중' },
+  { key: 'completed', label: '배송 완료' },
+];
+
+function DeliveryStatus({ status }: { status: string }) {
+  const colors: Record<string, { bg: string; text: string; label: string }> = {
+    pending: { bg: '#FEF3C7', text: '#92400E', label: '주문 확인 중' },
+    paid: { bg: '#DBEAFE', text: '#1E40AF', label: '결제 완료' },
+    shipped: { bg: '#D1FAE5', text: '#065F46', label: '배송 중' },
+    completed: { bg: '#E0E7FF', text: '#3730A3', label: '배송 완료' },
+    cancelled: { bg: '#FEE2E2', text: '#991B1B', label: '취소됨' },
+  };
+  const c = colors[status] || colors.pending;
+  return (
+    <span style={{ fontSize: '13px', fontWeight: 700, color: c.text, backgroundColor: c.bg, padding: '4px 12px', borderRadius: '12px' }}>
+      {c.label}
+    </span>
+  );
+}
+
+function DeliveryTimeline({ status }: { status: string }) {
+  const currentIdx = DELIVERY_STEPS.findIndex(s => s.key === status);
+  const activeIdx = currentIdx === -1 ? 0 : currentIdx;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0', marginTop: '20px', padding: '16px', background: '#F9FAFB', borderRadius: '14px' }}>
+      {DELIVERY_STEPS.map((step, idx) => (
+        <div key={step.key} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 'none' }}>
+            <div style={{
+              width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              backgroundColor: idx <= activeIdx ? 'var(--primary-dark)' : '#E5E7EB',
+              color: idx <= activeIdx ? '#fff' : '#9CA3AF', fontSize: '12px', fontWeight: 800
+            }}>
+              {idx < activeIdx ? '✓' : idx + 1}
+            </div>
+            <span style={{ fontSize: '10px', fontWeight: 600, marginTop: '4px', color: idx <= activeIdx ? 'var(--primary-dark)' : '#9CA3AF', whiteSpace: 'nowrap' }}>
+              {step.label}
+            </span>
+          </div>
+          {idx < DELIVERY_STEPS.length - 1 && (
+            <div style={{ flex: 1, height: '2px', backgroundColor: idx < activeIdx ? 'var(--primary-dark)' : '#E5E7EB', margin: '0 2px', marginBottom: '14px' }} />
+          )}
+        </div>
+      ))}
     </div>
   );
 }

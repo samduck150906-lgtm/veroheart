@@ -1,39 +1,77 @@
-import { useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  GitCompare, 
-  Loader2, 
-  AlertCircle, 
-  CheckCircle2, 
-  ShieldCheck, 
-  Dog, 
-  Cat, 
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import {
+  ArrowLeft,
+  GitCompare,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+  ShieldCheck,
+  Dog,
+  Cat,
   Calendar,
-  Layers
+  Layers,
+  Star,
+  Heart,
+  MessageSquare,
+  Trash2
 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
 import Analyzer from '../components/Analyzer';
+import { getReviews, createReview, deleteReview } from '../lib/supabase';
 
 export default function Detail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { 
-    profile, 
-    selectedProduct: product, 
-    isLoadingProducts, 
-    fetchProductDetail, 
-    comparisonList, 
-    addToComparison, 
-    removeFromComparison, 
-    addToCart 
+  const {
+    profile,
+    selectedProduct: product,
+    isLoadingProducts,
+    fetchProductDetail,
+    comparisonList,
+    addToComparison,
+    removeFromComparison,
+    addToCart,
+    favorites,
+    toggleFavorite,
+    userId,
+    trackRecentView
   } = useStore();
-  
+
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewContent, setReviewContent] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isFav = favorites.includes(id || '');
+
   useEffect(() => {
-    if (id) fetchProductDetail(id);
-  }, [id, fetchProductDetail]);
+    if (id) {
+      fetchProductDetail(id);
+      trackRecentView(id);
+      getReviews(id).then(setReviews);
+    }
+  }, [id, fetchProductDetail, trackRecentView]);
+
+  const handleSubmitReview = async () => {
+    if (!userId) { navigate('/login'); return; }
+    if (!reviewContent.trim()) return;
+    setIsSubmitting(true);
+    const review = await createReview(userId, id!, reviewRating, reviewContent);
+    if (review) {
+      setReviews(prev => [{ ...review, users: { email: 'me' } }, ...prev]);
+      setReviewContent('');
+      setReviewRating(5);
+    }
+    setIsSubmitting(false);
+  };
+
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!userId) return;
+    await deleteReview(reviewId, userId);
+    setReviews(prev => prev.filter(r => r.id !== reviewId));
+  };
 
   if (isLoadingProducts) {
     return (
@@ -132,6 +170,12 @@ export default function Detail() {
       </div>
 
       <div style={{ display: 'flex', gap: '12px', marginBottom: '40px' }}>
+        <button
+          onClick={() => toggleFavorite(product.id)}
+          style={{ height: '56px', width: '56px', borderRadius: '16px', border: '1.5px solid #E5E7EB', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
+        >
+          <Heart size={22} fill={isFav ? '#EF4444' : 'none'} color={isFav ? '#EF4444' : '#9CA3AF'} />
+        </button>
         <button className="btn btn-outline" style={{ flex: 1, height: '56px', borderRadius: '16px' }} onClick={() => {
           isComparing ? removeFromComparison(product.id) : addToComparison(product.id);
         }}>
@@ -144,6 +188,17 @@ export default function Detail() {
         }}>
           바로 구매하기
         </button>
+      </div>
+
+      {/* 수의사 한마디 */}
+      <div style={{ marginBottom: '32px', padding: '20px', background: '#F0FDF4', borderRadius: '20px', border: '1px solid #BBF7D0', display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+        <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#10B981', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '20px' }}>🩺</div>
+        <div>
+          <div style={{ fontSize: '13px', fontWeight: 700, color: '#065F46', marginBottom: '4px' }}>수의사 전문가 코멘트</div>
+          <p style={{ fontSize: '14px', color: '#047857', lineHeight: 1.6, margin: 0 }}>
+            {getVetComment(product.ingredients || [])}
+          </p>
+        </div>
       </div>
 
       {/* 정밀 분석 리포트 */}
@@ -203,17 +258,119 @@ export default function Detail() {
                   <div style={{ fontSize: '13px', color: '#6B7280', marginTop: '2px', fontWeight: 500 }}>{ing.purpose}</div>
                 </div>
               </div>
-              {isAllergy && (
-                <div style={{ background: '#EF4444', color: '#fff', padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 900 }}>
-                  경보
-                </div>
-              )}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                {isAllergy && (
+                  <div style={{ background: '#EF4444', color: '#fff', padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 900 }}>
+                    경보
+                  </div>
+                )}
+                <VetBadge riskLevel={ing.riskLevel} />
+              </div>
             </div>
           );
         })}
       </div>
 
+      {/* 브랜드 바로가기 */}
+      <div style={{ marginBottom: '32px' }}>
+        <Link to={`/brand/${encodeURIComponent(product.brand)}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: '#F9FAFB', borderRadius: '16px', textDecoration: 'none', color: '#111827', border: '1px solid #F3F4F6' }}>
+          <div>
+            <div style={{ fontSize: '12px', color: '#6B7280', fontWeight: 600, marginBottom: '2px' }}>브랜드</div>
+            <div style={{ fontSize: '16px', fontWeight: 800 }}>{product.brand}의 다른 제품 보기</div>
+          </div>
+          <ArrowLeft size={18} style={{ transform: 'rotate(180deg)', color: '#9CA3AF' }} />
+        </Link>
+      </div>
+
+      {/* 리뷰 섹션 */}
+      <section style={{ marginBottom: '40px' }}>
+        <h2 style={{ fontSize: '20px', fontWeight: 900, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <MessageSquare size={20} /> 사용 후기 ({reviews.length})
+        </h2>
+
+        {/* 리뷰 작성 */}
+        <div style={{ background: '#F9FAFB', borderRadius: '20px', padding: '20px', marginBottom: '24px', border: '1px solid #F3F4F6' }}>
+          <div style={{ display: 'flex', gap: '4px', marginBottom: '12px' }}>
+            {[1, 2, 3, 4, 5].map(star => (
+              <button key={star} onClick={() => setReviewRating(star)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}>
+                <Star size={24} fill={star <= reviewRating ? '#FCD34D' : 'none'} color={star <= reviewRating ? '#FCD34D' : '#D1D5DB'} />
+              </button>
+            ))}
+          </div>
+          <textarea
+            value={reviewContent}
+            onChange={e => setReviewContent(e.target.value)}
+            placeholder={userId ? '이 제품에 대한 솔직한 후기를 남겨주세요...' : '로그인 후 리뷰를 작성할 수 있어요.'}
+            disabled={!userId}
+            style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid #E5E7EB', fontSize: '14px', outline: 'none', resize: 'none', height: '80px', boxSizing: 'border-box', background: userId ? '#fff' : '#F3F4F6' }}
+          />
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
+            {userId ? (
+              <button onClick={handleSubmitReview} disabled={isSubmitting || !reviewContent.trim()} style={{ padding: '12px 24px', background: '#111827', color: '#fff', borderRadius: '12px', fontWeight: 700, fontSize: '14px', border: 'none', cursor: 'pointer', opacity: isSubmitting || !reviewContent.trim() ? 0.5 : 1 }}>
+                {isSubmitting ? '등록 중...' : '리뷰 등록'}
+              </button>
+            ) : (
+              <Link to="/login" style={{ padding: '12px 24px', background: '#111827', color: '#fff', borderRadius: '12px', fontWeight: 700, fontSize: '14px', textDecoration: 'none' }}>
+                로그인하고 리뷰 쓰기
+              </Link>
+            )}
+          </div>
+        </div>
+
+        {/* 리뷰 목록 */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {reviews.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '48px 20px', color: '#9CA3AF', background: '#F9FAFB', borderRadius: '16px' }}>
+              아직 리뷰가 없습니다. 첫 리뷰를 작성해보세요!
+            </div>
+          ) : reviews.map(review => (
+            <div key={review.id} style={{ padding: '16px 20px', background: '#fff', border: '1px solid #F3F4F6', borderRadius: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                <div>
+                  <div style={{ display: 'flex', gap: '2px', marginBottom: '4px' }}>
+                    {[1, 2, 3, 4, 5].map(s => (
+                      <Star key={s} size={14} fill={s <= review.rating ? '#FCD34D' : 'none'} color={s <= review.rating ? '#FCD34D' : '#E5E7EB'} />
+                    ))}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#9CA3AF' }}>
+                    {review.users?.email?.split('@')[0] || '익명'} · {new Date(review.created_at).toLocaleDateString()}
+                  </div>
+                </div>
+                {review.user_id === userId && (
+                  <button onClick={() => handleDeleteReview(review.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#D1D5DB' }}>
+                    <Trash2 size={16} />
+                  </button>
+                )}
+              </div>
+              <p style={{ fontSize: '14px', color: '#374151', lineHeight: 1.6, margin: 0 }}>{review.content}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <Analyzer />
     </div>
   );
+}
+
+function VetBadge({ riskLevel }: { riskLevel: string }) {
+  if (riskLevel === 'safe') return null;
+  const isDanger = riskLevel === 'danger';
+  return (
+    <div style={{ fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '8px', background: isDanger ? '#FEF2F2' : '#FFFBEB', color: isDanger ? '#991B1B' : '#92400E', border: `1px solid ${isDanger ? '#FECACA' : '#FDE68A'}` }}>
+      {isDanger ? '⚠️ 수의사 주의' : '👁 확인 권장'}
+    </div>
+  );
+}
+
+function getVetComment(ingredients: any[]): string {
+  const dangerCount = ingredients.filter(i => i.riskLevel === 'danger').length;
+  const cautionCount = ingredients.filter(i => i.riskLevel === 'caution').length;
+  if (dangerCount > 0) {
+    return `이 제품에는 ${dangerCount}개의 주의 성분이 포함되어 있습니다. 특히 BHA, BHT, 에톡시퀸 등 합성 보존료나 인공색소는 장기 섭취 시 간 부담을 줄 수 있으며, 알레르기 반응이 있는 반려동물에게는 주의가 필요합니다. 급여 전 수의사와 상담하세요.`;
+  }
+  if (cautionCount > 0) {
+    return `전반적으로 안전한 성분 구성이나 ${cautionCount}개 성분은 개체에 따라 반응이 다를 수 있습니다. 처음 급여 시 소량부터 시작하고 이상 반응(구토, 설사, 피부 발진 등)이 있으면 즉시 중단하세요.`;
+  }
+  return `주요 성분 모두 안전 등급으로 분류되었습니다. 천연 단백질원 위주의 건강한 구성입니다. 다만 각 반려동물마다 체질이 다르므로 처음에는 소량씩 테스트하며 급여하는 것을 권장합니다.`;
 }

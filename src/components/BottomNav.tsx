@@ -1,16 +1,16 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, GitCompare, User, ShoppingBag } from 'lucide-react';
+import { Home, Search, Trophy, User, ShoppingBag } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 export default function BottomNav() {
   const location = useLocation();
-  const { comparisonList, cart } = useStore();
-  
+  const { cart } = useStore();
+
   const navItems = [
     { path: '/', label: '홈', icon: Home, badge: 0 },
     { path: '/search', label: '탐색', icon: Search, badge: 0 },
     { path: '/cart', label: '장바구니', icon: ShoppingBag, badge: cart.length },
-    { path: '/comparison', label: '비교', icon: GitCompare, badge: comparisonList.length },
+    { path: '/ranking', label: '랭킹', icon: Trophy, badge: 0 },
     { path: '/profile', label: '마이 펫', icon: User, badge: 0 },
   ];
 
