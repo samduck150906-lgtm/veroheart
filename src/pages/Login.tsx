@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, ArrowLeft, PawPrint } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import { notify } from '../store/useNotification';
+import { HOME_HERO } from '../copy/marketing';
+import { VERORO_LOGO_SRC } from '../constants/assets';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -59,7 +61,7 @@ export default function Login() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#fff', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg-gradient)', display: 'flex', flexDirection: 'column' }}>
       <div style={{ padding: '16px 20px' }}>
         <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: '#374151', fontWeight: 600 }}>
           <ArrowLeft size={20} /> 뒤로
@@ -69,15 +71,16 @@ export default function Login() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 28px 80px' }}>
         {/* 로고 */}
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <div style={{ width: '64px', height: '64px', borderRadius: '20px', background: 'var(--primary-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-            <PawPrint color="#fff" size={32} />
-          </div>
-          <h1 style={{ fontSize: '26px', fontWeight: 900, color: '#111827' }}>베로하트</h1>
-          <p style={{ fontSize: '14px', color: '#6B7280', marginTop: '6px' }}>우리 아이를 위한 바른 성분 앱</p>
+          <img
+            src={VERORO_LOGO_SRC}
+            alt="VeRoRo"
+            style={{ height: '48px', width: 'auto', maxWidth: 'min(280px, 100%)', objectFit: 'contain', margin: '0 auto 18px', display: 'block' }}
+          />
+          <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: '0', lineHeight: 1.5 }}>{HOME_HERO.sub}</p>
         </div>
 
         {/* 탭 */}
-        <div style={{ display: 'flex', backgroundColor: '#F3F4F6', borderRadius: '14px', padding: '4px', marginBottom: '28px' }}>
+        <div style={{ display: 'flex', backgroundColor: 'rgba(255, 107, 74, 0.1)', borderRadius: '14px', padding: '4px', marginBottom: '28px' }}>
           {(['login', 'signup'] as const).map(m => (
             <button key={m} onClick={() => setMode(m)} style={{
               flex: 1, padding: '12px', borderRadius: '10px', border: 'none', cursor: 'pointer',
@@ -123,7 +126,7 @@ export default function Login() {
         <button
           onClick={handleSubmit}
           disabled={isLoading}
-          style={{ width: '100%', padding: '18px', borderRadius: '14px', backgroundColor: '#111827', color: '#fff', fontWeight: 800, fontSize: '16px', border: 'none', cursor: isLoading ? 'not-allowed' : 'pointer', opacity: isLoading ? 0.7 : 1, marginBottom: '20px' }}
+          style={{ width: '100%', padding: '18px', borderRadius: '14px', background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)', color: '#fff', fontWeight: 800, fontSize: '16px', border: 'none', cursor: isLoading ? 'not-allowed' : 'pointer', opacity: isLoading ? 0.7 : 1, marginBottom: '20px', boxShadow: 'var(--shadow-sm)' }}
         >
           {isLoading ? '처리 중...' : mode === 'login' ? '로그인' : '회원가입'}
         </button>

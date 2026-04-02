@@ -1,4 +1,4 @@
--- Supabase Schema for Vero Heart
+-- Supabase Schema for 베로로 (VeroRo)
 
 -- 1. Users Extension (managed by Supabase Auth)
 CREATE TABLE public.profiles (

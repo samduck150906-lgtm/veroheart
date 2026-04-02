@@ -65,11 +65,17 @@ export function generateAnalysisReport(product: Product, profile: UserPetProfile
   const highlights: { text: string; type: 'positive' | 'negative' | 'caution' }[] = [];
   
   if (allergyMatches.length > 0) {
-    highlights.push({ text: `주의: 알레르기 성분(${allergyMatches.join(', ')}) 포함`, type: 'negative' });
+    highlights.push({
+      text: `알레르기 주의보! ${allergyMatches.join(', ')} 등 우리 애가 못 먹는 원료가 포함되어 있어요.`,
+      type: 'negative',
+    });
   }
-  
+
   if (dangerIngredients.length > 0) {
-    highlights.push({ text: `위험: 주의가 필요한 성분(${dangerIngredients.join(', ')}) 포함`, type: 'caution' });
+    highlights.push({
+      text: `위험 성분 하이라이트: ${dangerIngredients.join(', ')} 포함 — 빨간색만 피하면 안심이에요.`,
+      type: 'caution',
+    });
   }
 
   if (concernMatches.length > 0) {

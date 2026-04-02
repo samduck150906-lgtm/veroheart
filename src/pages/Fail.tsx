@@ -9,7 +9,7 @@ export default function Fail() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 bg-white rounded-2xl shadow-sm border border-gray-100 animate-fade-in">
-      <Helmet><title>결제 실패 - 베로하트</title></Helmet>
+      <Helmet><title>결제 실패 - 베로로</title></Helmet>
       <AlertCircle className="w-20 h-20 text-red-500 mb-6 bg-red-50 p-4 rounded-full" />
       <h2 className="text-3xl font-bold mb-3 text-red-600">결제 처리에 실패했습니다</h2>
       <p className="text-gray-500 mb-8 max-w-md mx-auto">

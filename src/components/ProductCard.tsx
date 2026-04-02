@@ -22,8 +22,9 @@ export default function ProductCard({ product }: { product: Product }) {
         display: 'flex', gap: '16px'
       }}>
         <div style={{
-          width: '100px', height: '100px', borderRadius: '12px',
-          overflow: 'hidden', flexShrink: 0
+          width: '100px', height: '100px', borderRadius: '16px',
+          overflow: 'hidden', flexShrink: 0,
+          boxShadow: '0 4px 14px rgba(43, 38, 36, 0.08)',
         }}>
           <img src={product.imageUrl} alt={product.name} style={{
             width: '100%', height: '100%', objectFit: 'cover'

@@ -21,6 +21,8 @@ import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
 import Analyzer from '../components/Analyzer';
 import { getReviews, createReview, deleteReview } from '../lib/supabase';
+import { CORE_COPY, UGC_COPY } from '../copy/marketing';
+import { notify } from '../store/useNotification';
 
 export default function Detail() {
   const { id } = useParams();
@@ -101,7 +103,7 @@ export default function Detail() {
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '40px' }}>
       <Helmet>
-        <title>{product.name} - 베로하트 커머스</title>
+        <title>{product.name} - 베로로</title>
         <meta name="description" content={`${product.brand}의 ${product.name} 전성분 분석 결과 및 구매`} />
       </Helmet>
 
@@ -169,25 +171,45 @@ export default function Detail() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '40px' }}>
-        <button
-          onClick={() => toggleFavorite(product.id)}
-          style={{ height: '56px', width: '56px', borderRadius: '16px', border: '1.5px solid #E5E7EB', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
-        >
-          <Heart size={22} fill={isFav ? '#EF4444' : 'none'} color={isFav ? '#EF4444' : '#9CA3AF'} />
-        </button>
-        <button className="btn btn-outline" style={{ flex: 1, height: '56px', borderRadius: '16px' }} onClick={() => {
-          isComparing ? removeFromComparison(product.id) : addToComparison(product.id);
-        }}>
-          <GitCompare size={20} />
-          <span style={{ marginLeft: '8px' }}>비교</span>
-        </button>
-        <button className="btn btn-primary" style={{ flex: 2, backgroundColor: '#111827', color: '#fff', borderRadius: '16px', fontWeight: 800, fontSize: '16px', gap: '8px' }} onClick={() => {
-          addToCart(product.id, 1);
-          navigate('/checkout');
-        }}>
-          바로 구매하기
-        </button>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '40px' }}>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button
+            onClick={() => toggleFavorite(product.id)}
+            style={{ height: '56px', width: '56px', borderRadius: '16px', border: '1.5px solid #E5E7EB', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
+          >
+            <Heart size={22} fill={isFav ? '#EF4444' : 'none'} color={isFav ? '#EF4444' : '#9CA3AF'} />
+          </button>
+          <button className="btn btn-outline" style={{ flex: 1, height: '56px', borderRadius: '16px' }} onClick={() => {
+            isComparing ? removeFromComparison(product.id) : addToComparison(product.id);
+          }}>
+            <GitCompare size={20} />
+            <span style={{ marginLeft: '8px' }}>비교</span>
+          </button>
+        </div>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            type="button"
+            className="btn btn-outline"
+            style={{ flex: 1, height: '56px', borderRadius: '16px', fontWeight: 800, fontSize: '15px' }}
+            onClick={() => {
+              addToCart(product.id, 1);
+              notify.success('장바구니에 담았어요.');
+            }}
+          >
+            장바구니 담기
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary"
+            style={{ flex: 1, backgroundColor: '#111827', color: '#fff', borderRadius: '16px', fontWeight: 800, fontSize: '15px', gap: '6px' }}
+            onClick={() => {
+              addToCart(product.id, 1);
+              navigate('/checkout');
+            }}
+          >
+            바로 구매
+          </button>
+        </div>
       </div>
 
       {/* 수의사 한마디 */}
@@ -227,10 +249,11 @@ export default function Detail() {
       </section>
 
       {/* 전성분 분석 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '8px' }}>
         <h2 style={{ fontSize: '20px', fontWeight: 900 }}>전성분 분석</h2>
         <div style={{ fontSize: '13px', color: '#6B7280', fontWeight: 500 }}>성분 개수: {product.ingredients?.length}개</div>
       </div>
+      <p style={{ fontSize: '12px', color: '#6B7280', fontWeight: 600, marginBottom: '20px', lineHeight: 1.5 }}>{CORE_COPY.thorough}</p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {product.ingredients?.map(ing => {
@@ -260,8 +283,11 @@ export default function Detail() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
                 {isAllergy && (
-                  <div style={{ background: '#EF4444', color: '#fff', padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 900 }}>
-                    경보
+                  <div
+                    title={CORE_COPY.allergyAlert}
+                    style={{ background: '#EF4444', color: '#fff', padding: '6px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: 900, maxWidth: '120px', textAlign: 'center', lineHeight: 1.25 }}
+                  >
+                    알레르기 주의보
                   </div>
                 )}
                 <VetBadge riskLevel={ing.riskLevel} />
@@ -284,9 +310,15 @@ export default function Detail() {
 
       {/* 리뷰 섹션 */}
       <section style={{ marginBottom: '40px' }}>
-        <h2 style={{ fontSize: '20px', fontWeight: 900, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <h2 style={{ fontSize: '20px', fontWeight: 900, marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <MessageSquare size={20} /> 사용 후기 ({reviews.length})
         </h2>
+        <p style={{ fontSize: '13px', color: '#6B7280', lineHeight: 1.55, marginBottom: '18px', fontWeight: 600 }}>
+          {UGC_COPY.honestReviews}
+        </p>
+        <p style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '16px', lineHeight: 1.45 }}>
+          {UGC_COPY.allergyList} · {UGC_COPY.settleDown}
+        </p>
 
         {/* 리뷰 작성 */}
         <div style={{ background: '#F9FAFB', borderRadius: '20px', padding: '20px', marginBottom: '24px', border: '1px solid #F3F4F6' }}>
@@ -300,7 +332,7 @@ export default function Detail() {
           <textarea
             value={reviewContent}
             onChange={e => setReviewContent(e.target.value)}
-            placeholder={userId ? '이 제품에 대한 솔직한 후기를 남겨주세요...' : '로그인 후 리뷰를 작성할 수 있어요.'}
+            placeholder={userId ? `솔직한 후기를 남겨주세요. (${UGC_COPY.palatability})` : '로그인 후 리뷰를 작성할 수 있어요.'}
             disabled={!userId}
             style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid #E5E7EB', fontSize: '14px', outline: 'none', resize: 'none', height: '80px', boxSizing: 'border-box', background: userId ? '#fff' : '#F3F4F6' }}
           />

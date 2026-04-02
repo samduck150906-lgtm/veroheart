@@ -19,7 +19,7 @@ export default function TargetedAd() {
   return (
     <div style={{
       margin: '24px 0', padding: '16px', borderRadius: '12px',
-      background: 'linear-gradient(135deg, #1FDE91 0%, #0d9b62 100%)',
+      background: 'linear-gradient(135deg, var(--primary) 0%, #B83D28 100%)',
       color: '#fff', boxShadow: 'var(--shadow-md)', position: 'relative', overflow: 'hidden'
     }}>
       <div style={{ position: 'absolute', top: '10px', right: '12px', fontSize: '10px', background: 'rgba(0,0,0,0.2)', padding: '2px 6px', borderRadius: '4px' }}>

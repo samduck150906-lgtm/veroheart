@@ -3,6 +3,7 @@ import { Loader2, Zap, ShieldCheck, AlertTriangle } from 'lucide-react';
 import type { AnalysisResponse } from '../types/analyzer';
 import { useStore } from '../store/useStore';
 import { saveAnalysisReport } from '../lib/supabase';
+import { CORE_COPY } from '../copy/marketing';
 
 export default function Analyzer() {
   const { userId, selectedProduct } = useStore();
@@ -64,9 +65,11 @@ export default function Analyzer() {
 
   return (
     <div className="mt-8 bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-      <h2 className="text-xl font-extrabold flex items-center gap-2 mb-4 text-gray-800">
-        <Zap className="text-blue-500" /> AI 정밀 분석기 (OCR 연동 테스트)
+      <h2 className="text-xl font-extrabold flex items-center gap-2 mb-1 text-gray-800">
+        <Zap className="text-blue-500" /> AI 정밀 성분 분석
       </h2>
+      <p className="text-sm text-gray-600 font-medium mb-4 leading-relaxed">{CORE_COPY.ocr}</p>
+      <p className="text-xs text-gray-500 font-semibold mb-4">{CORE_COPY.thorough}</p>
       
       <div className="space-y-4 mb-6">
         <div className="flex gap-4">
@@ -91,7 +94,7 @@ export default function Analyzer() {
 
         <textarea
           className="w-full h-32 p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-          placeholder="여기에 사진에서 추출한 전성분 텍스트를 붙여넣으세요..."
+          placeholder={`${CORE_COPY.ocr} 여기에 붙여넣거나 직접 입력해 주세요.`}
           value={ingredientText}
           onChange={(e) => setIngredientText(e.target.value)}
         />
@@ -143,7 +146,7 @@ export default function Analyzer() {
           {result.alerts.length > 0 && (
             <div className="mb-6 bg-red-50 border border-red-100 rounded-xl p-4 space-y-2">
               <div className="flex items-center text-red-600 font-bold gap-2">
-                <AlertTriangle size={16} /> 꼭 확인하세요!
+                <AlertTriangle size={16} /> {CORE_COPY.dangerHighlight}
               </div>
               <ul className="list-disc pl-5 text-red-700 text-sm font-medium space-y-1">
                 {result.alerts.map((alert, i) => (

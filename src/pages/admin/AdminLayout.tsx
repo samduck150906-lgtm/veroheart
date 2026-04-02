@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { 
+import {
   ShoppingBag, 
   FlaskConical, 
   LayoutDashboard, 
@@ -8,8 +8,8 @@ import {
   ChevronRight,
   LogOut,
   Package,
-  ShieldCheck
 } from 'lucide-react';
+import { VERORO_LOGO_SRC } from '../../constants/assets';
 
 const AdminLayout: React.FC = () => {
   const location = useLocation();
@@ -25,9 +25,8 @@ const AdminLayout: React.FC = () => {
     <div className="admin-container">
       <aside className="admin-sidebar">
         <div className="admin-logo">
-          <ShieldCheck className="logo-icon" size={32} />
+          <img src={VERORO_LOGO_SRC} alt="VeRoRo" className="admin-logo-img" />
           <div className="logo-text">
-            <span>VERO HEART</span>
             <small>Admin Console</small>
           </div>
         </div>
@@ -104,20 +103,16 @@ const AdminLayout: React.FC = () => {
         .admin-logo {
           padding: 32px 24px;
           display: flex;
-          align-items: center;
-          gap: 12px;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 8px;
         }
 
-        .logo-icon {
-          color: #6366f1;
-        }
-
-        .logo-text span {
+        .admin-logo-img {
+          height: 32px;
+          width: auto;
+          object-fit: contain;
           display: block;
-          font-weight: 800;
-          font-size: 1.25rem;
-          letter-spacing: -0.025em;
-          color: #1e293b;
         }
 
         .logo-text small {

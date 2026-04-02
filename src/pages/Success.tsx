@@ -92,11 +92,11 @@ export default function Success() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 animate-fade-in">
-      <Helmet><title>결제 완료 - 베로하트</title></Helmet>
+      <Helmet><title>결제 완료 - 베로로</title></Helmet>
       <CheckCircle className="w-16 h-16 text-green-500 mb-4" />
       <h2 className="text-3xl font-bold mb-2 text-gray-900">결제가 안전하게 완료되었습니다!</h2>
       <p className="text-gray-600 mb-8 max-w-md mx-auto">
-        베로하트에서 소중한 반려견을 위한 사료를 구매해주셔서 감사합니다.<br />
+        베로로에서 소중한 반려견을 위한 사료를 구매해주셔서 감사합니다.<br />
         주문 내역은 마이페이지에서 확인 가능합니다.
       </p>
       <div className="bg-gray-50 p-6 rounded-2xl w-full max-w-sm mb-8 text-left border border-gray-100 shadow-inner">

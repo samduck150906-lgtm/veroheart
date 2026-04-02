@@ -125,6 +125,9 @@ export async function getProductDetail(productId: string): Promise<Product | nul
   return mapProduct(data);
 }
 
+/** 다이어트·체중 관련 태그( DB product_health_concerns 값과 맞추면 매칭됨 ) */
+export const DIET_HEALTH_TAGS = ['비만', '다이어트', '체중', '저칼로리', '체중관리', '다이어트케어'] as const;
+
 export async function searchProducts(
   query: string, 
   category?: string, 
@@ -134,7 +137,12 @@ export async function searchProducts(
     targetLifeStage?: string;
     formulation?: string;
     healthConcerns?: string[];
-    targetPetType?: 'dog' | 'cat' | 'all';
+    /** true이면 다이어트 관련 태그들과 건강 고민을 합쳐 overlaps */
+    dietPreset?: boolean;
+    /** 빈 문자열이면 종 필터 없음. 강아지/고양이 선택 시 해당 종 + 공용(all) 포함 */
+    targetPetType?: '' | 'dog' | 'cat' | 'all';
+    priceMin?: number;
+    priceMax?: number;
   } = {}
 ): Promise<Product[]> {
   let builder = supabase.from('products').select(`
@@ -153,8 +161,13 @@ export async function searchProducts(
     builder = builder.eq('main_category', category);
   }
 
-  if (filters.targetPetType) {
-    builder = builder.eq('target_pet_type', filters.targetPetType.toLowerCase());
+  const pet = filters.targetPetType?.toLowerCase();
+  if (pet === 'dog') {
+    builder = builder.in('target_pet_type', ['dog', 'all']);
+  } else if (pet === 'cat') {
+    builder = builder.in('target_pet_type', ['cat', 'all']);
+  } else if (pet === 'all') {
+    builder = builder.eq('target_pet_type', 'all');
   }
 
   if (filters.subCategory) {
@@ -169,8 +182,19 @@ export async function searchProducts(
     builder = builder.eq('formulation', filters.formulation);
   }
 
-  if (filters.healthConcerns && filters.healthConcerns.length > 0) {
-    builder = builder.overlaps('product_health_concerns', filters.healthConcerns);
+  let healthOverlap: string[] = [...(filters.healthConcerns || [])];
+  if (filters.dietPreset) {
+    healthOverlap = [...new Set([...healthOverlap, ...DIET_HEALTH_TAGS])];
+  }
+  if (healthOverlap.length > 0) {
+    builder = builder.overlaps('product_health_concerns', healthOverlap);
+  }
+
+  if (filters.priceMin != null && filters.priceMin > 0) {
+    builder = builder.gte('min_price', filters.priceMin);
+  }
+  if (filters.priceMax != null && filters.priceMax > 0) {
+    builder = builder.lte('min_price', filters.priceMax);
   }
 
   const { data, error } = await builder;

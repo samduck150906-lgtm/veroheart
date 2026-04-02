@@ -3,10 +3,10 @@ import { supabase } from '../../lib/supabase';
 import { ShieldCheck, Lock, Loader2 } from 'lucide-react';
 
 // 관리자 이메일 화이트리스트 (추후 DB 기반으로 교체 가능)
-const ADMIN_EMAILS = ['ceo@eternalsix.kr', 'admin@veroheart.com'];
+const ADMIN_EMAILS = ['ceo@eternalsix.kr', 'admin@eternalsix.kr'];
 
 // 관리자 비밀번호 (환경변수 기반이 이상적이나, 우선 간단한 가드)
-const ADMIN_PASSPHRASE = 'veroheart-admin-2026';
+const ADMIN_PASSPHRASE = 'eternalsix-admin-2026';
 
 interface AdminAuthGuardProps {
   children: ReactNode;
@@ -88,7 +88,7 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
           </div>
 
           <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#f1f5f9', marginBottom: '8px' }}>
-            VERO HEART Admin
+            베로로 Admin
           </h1>
           <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '32px' }}>
             관리자 콘솔에 접근하려면 인증이 필요합니다.

@@ -3,7 +3,7 @@ export default function Privacy() {
     <div style={{ padding: '20px', paddingTop: '80px', paddingBottom: '100px', lineHeight: '1.6' }}>
       <h1 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px' }}>개인정보처리방침</h1>
       <div style={{ fontSize: '13px', color: '#374151' }}>
-        <p>주식회사 베로하트(이하 "회사")는 「개인정보 보호법」 등 관련 법령상의 개인정보보호 규정을 준수하며, 정보주체의 개인정보 보호 및 권익을 보호하고 이와 관련한 고충을 신속하고 원활하게 처리할 수 있도록 개인정보 처리방침을 수립·공개합니다.</p>
+        <p>이터널식스(이하 "회사")는 Petty 서비스 운영과 관련하여 「개인정보 보호법」 등 관련 법령상의 개인정보보호 규정을 준수하며, 정보주체의 개인정보 보호 및 권익을 보호하고 이와 관련한 고충을 신속하고 원활하게 처리할 수 있도록 개인정보 처리방침을 수립·공개합니다.</p>
         
         <p style={{ fontWeight: 'bold', marginTop: '16px' }}>1. 개인정보의 수집 및 이용 목적</p>
         <p>회사는 다음의 목적을 위하여 개인정보를 처리합니다. <br/>- 회원 가입 및 관리 <br/>- 재화 또는 서비스 제공(결제, 배송 등)</p>

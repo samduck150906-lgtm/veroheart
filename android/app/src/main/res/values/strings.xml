@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">VeroHeart</string>
-    <string name="title_activity_main">VeroHeart</string>
-    <string name="package_name">com.veroheart.app</string>
-    <string name="custom_url_scheme">com.veroheart.app</string>
+    <string name="app_name">베로로</string>
+    <string name="title_activity_main">베로로</string>
+    <string name="package_name">com.veroro.app</string>
+    <string name="custom_url_scheme">com.veroro.app</string>
 </resources>

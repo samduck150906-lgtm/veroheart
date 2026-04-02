@@ -39,7 +39,7 @@ export default function Brand() {
 
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '80px' }}>
-      <Helmet><title>{decoded} - 베로하트</title></Helmet>
+      <Helmet><title>{decoded} - 베로로</title></Helmet>
 
       <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px', color: '#374151', fontWeight: 600 }}>
         <ArrowLeft size={20} /> 뒤로

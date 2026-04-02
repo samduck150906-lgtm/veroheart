@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import { Trash2 } from 'lucide-react';
+import { Trash2, CreditCard } from 'lucide-react';
 
 export default function Cart() {
   const navigate = useNavigate();
@@ -42,14 +42,49 @@ export default function Cart() {
         ))}
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '18px', fontWeight: 800, marginBottom: '24px', padding: '0 8px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '18px', fontWeight: 800, marginBottom: '16px', padding: '0 8px' }}>
         <span>총 결제금액</span>
         <span style={{ color: 'var(--primary-dark)', fontSize: '24px' }}>{totalPrice.toLocaleString()}원</span>
       </div>
 
-      <button className="btn" style={{ width: '100%', backgroundColor: '#1F2937', color: '#fff', padding: '16px', fontSize: '18px' }} onClick={() => navigate('/checkout')}>
-        {totalPrice.toLocaleString()}원 결제하기
-      </button>
+      {/* 스크롤 영역과 하단 고정 결제 버튼 사이 여백 */}
+      <div style={{ height: '120px' }} aria-hidden />
+
+      <div
+        style={{
+          position: 'fixed',
+          left: 0,
+          right: 0,
+          bottom: '84px',
+          zIndex: 9,
+          padding: '12px 20px calc(12px + env(safe-area-inset-bottom, 0px))',
+          background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.92) 18%, #fff 100%)',
+          boxShadow: '0 -8px 24px rgba(0,0,0,0.06)',
+          borderTop: '1px solid rgba(0,0,0,0.06)',
+        }}
+      >
+        <button
+          type="button"
+          className="btn"
+          style={{
+            width: '100%',
+            backgroundColor: '#111827',
+            color: '#fff',
+            padding: '16px',
+            fontSize: '17px',
+            fontWeight: 800,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            borderRadius: '16px',
+          }}
+          onClick={() => navigate('/checkout')}
+        >
+          <CreditCard size={22} strokeWidth={2.25} />
+          {totalPrice.toLocaleString()}원 결제하기
+        </button>
+      </div>
     </div>
   );
 }

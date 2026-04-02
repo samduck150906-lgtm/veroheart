@@ -1,15 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useStore } from '../store/useStore';
-import { loadPaymentWidget, type PaymentWidgetInstance } from '@tosspayments/payment-widget-sdk';
-import { Helmet } from 'react-helmet-async';
-import { getCurrentUser, createOrder } from '../lib/supabase';
-import { Loader2, CreditCard } from 'lucide-react';
-
-const clientKey = import.meta.env.VITE_TOSS_WIDGET_CLIENT_KEY || "live_gck_ZLKGPx4M3MpG0OOEvlW78BaWypv1";
-
-import { notify } from '../store/useNotification';
 import type { User } from '@supabase/supabase-js';
+import { Helmet } from 'react-helmet-async';
+import { Loader2, CreditCard } from 'lucide-react';
+import { loadPaymentWidget, type PaymentWidgetInstance } from '@tosspayments/payment-widget-sdk';
+import { useStore } from '../store/useStore';
+import { notify } from '../store/useNotification';
+import { getCurrentUser, createOrder } from '../lib/supabase';
+
+const clientKey = import.meta.env.VITE_TOSS_WIDGET_CLIENT_KEY ?? '';
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -28,6 +27,7 @@ export default function Checkout() {
   const [detailAddress, setDetailAddress] = useState('');
   const paymentWidgetRef = useRef<PaymentWidgetInstance | null>(null);
   const [isWidgetLoaded, setIsWidgetLoaded] = useState(false);
+  const [widgetError, setWidgetError] = useState(false);
 
   const openPostcode = () => {
     const script = document.createElement('script');
@@ -60,11 +60,16 @@ export default function Checkout() {
 
   useEffect(() => {
     if (cart.length === 0 || !user) return;
+    if (!clientKey.trim()) {
+      setWidgetError(true);
+      return;
+    }
 
     (async () => {
       try {
+        setWidgetError(false);
         const paymentWidget = await loadPaymentWidget(clientKey, user.id);
-        
+
         paymentWidget.renderPaymentMethods(
           '#payment-widget',
           { value: totalPrice },
@@ -77,6 +82,7 @@ export default function Checkout() {
         setIsWidgetLoaded(true);
       } catch (err) {
         console.error('Widget render error:', err);
+        setWidgetError(true);
       }
     })();
   }, [totalPrice, cart.length, user]);
@@ -142,7 +148,7 @@ export default function Checkout() {
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8 animate-fade-in" style={{ paddingBottom: '100px' }}>
-      <Helmet><title>안전 결제 - 베로하트 커머스</title></Helmet>
+      <Helmet><title>안전 결제 - 베로로</title></Helmet>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* 주문 정보 입력 */}
@@ -228,13 +234,19 @@ export default function Checkout() {
               <span className="bg-blue-50 text-blue-500 p-2 rounded-lg">3</span>
               결제 방법 선택
             </h3>
+            {widgetError && (
+              <p className="text-sm text-red-600 mb-3 p-3 bg-red-50 rounded-xl">
+                결제 위젯을 불러오지 못했습니다. 루트 <code className="text-xs bg-white px-1 rounded">.env</code>에{' '}
+                <code className="text-xs bg-white px-1 rounded">VITE_TOSS_WIDGET_CLIENT_KEY</code>를 설정한 뒤 개발 서버를 다시 실행해 주세요.
+              </p>
+            )}
             <div id="payment-widget" />
             <div id="agreement" />
           </section>
 
           <button 
             className="w-full bg-gray-900 text-white p-5 rounded-2xl font-bold text-lg shadow-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2" 
-            disabled={!isWidgetLoaded || isProcessing}
+            disabled={!isWidgetLoaded || isProcessing || widgetError || !clientKey.trim()}
             onClick={handlePayment}
           >
             {isProcessing ? (

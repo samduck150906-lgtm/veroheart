@@ -28,7 +28,7 @@
         <h1>간편 결제 (토스페이먼츠)</h1>
         <div class="product-info">
             <div style="color:#4b5563;font-size:14px;margin-bottom:8px;">주문 상품</div>
-            <div style="font-size:18px;font-weight:bold;">VeroHeart 맞춤형 펫 컨설팅 리포트</div>
+            <div style="font-size:18px;font-weight:bold;">베로로 맞춤형 펫 컨설팅 리포트</div>
             <div class="price">25,000 원</div>
         </div>
 
@@ -82,7 +82,7 @@
             payBtn.textContent = '결제 처리 중...';
             paymentWidget.requestPayment({
                 orderId: "ORD_" + Date.now() + "_" + Math.random().toString(36).substring(2,8),
-                orderName: "VeroHeart 맞춤형 펫 컨설팅 리포트",
+                orderName: "베로로 맞춤형 펫 컨설팅 리포트",
                 successUrl: window.location.origin + "/success.html",
                 failUrl: window.location.origin + "/fail.html",
                 customerEmail: emailInput.value.trim(),

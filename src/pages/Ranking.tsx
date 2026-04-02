@@ -4,6 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import { Trophy, TrendingUp, Star, Dog, Cat } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { calculateCompatibilityScore } from '../utils/score';
+import { UGC_COPY } from '../copy/marketing';
 
 const TABS = [
   { key: 'compatibility', label: '궁합 점수', icon: '💯' },
@@ -49,11 +50,14 @@ export default function Ranking() {
 
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '80px' }}>
-      <Helmet><title>랭킹 - 베로하트</title></Helmet>
+      <Helmet><title>랭킹 - 베로로</title></Helmet>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
-        <Trophy size={28} color="#F59E0B" />
-        <h1 style={{ fontSize: '24px', fontWeight: 900 }}>제품 랭킹</h1>
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+          <Trophy size={28} color="#F59E0B" />
+          <h1 style={{ fontSize: '24px', fontWeight: 900 }}>제품 랭킹</h1>
+        </div>
+        <p style={{ fontSize: '13px', color: '#6B7280', fontWeight: 600, lineHeight: 1.5, paddingLeft: '2px' }}>{UGC_COPY.settleDown}</p>
       </div>
 
       {/* 반려동물 필터 */}

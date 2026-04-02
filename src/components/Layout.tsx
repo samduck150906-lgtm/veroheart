@@ -1,39 +1,57 @@
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, Link } from 'react-router-dom';
 import BottomNav from './BottomNav';
 import Footer from './Footer';
+import { VERORO_LOGO_SRC } from '../constants/assets';
 
 export default function Layout() {
   const location = useLocation();
   const titleMap: Record<string, string> = {
-    '/': '베로하트 홈',
-    '/search': '스마트 탐색',
+    '/': '홈',
+    '/search': '탐색',
     '/comparison': '비교함',
     '/profile': '마이 펫',
+    '/cart': '장바구니',
+    '/checkout': '결제',
+    '/ranking': '랭킹',
   };
-  
-  // 만약 상세페이지(/product/1 등)라면 뒤로가기 헤더를 보여줄 수 있지만,
-  // MVP에서는 공통 헤더로 간단히 처리.
+
   const isDetailPage = location.pathname.startsWith('/product');
+  const pageTitle = isDetailPage
+    ? '제품 상세'
+    : titleMap[location.pathname] ?? '베로로';
 
   return (
     <div className="container" style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100%', padding: 0 }}>
-      {/* Header */}
       <header className="glass" style={{
-        position: 'absolute', top: 0, left: 0, right: 0, 
-        height: '60px', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        position: 'absolute', top: 0, left: 0, right: 0,
+        height: '60px', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '0 20px', fontWeight: 700, fontSize: '18px'
       }}>
-        {isDetailPage ? '제품 상세' : (titleMap[location.pathname] || '베로하트')}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', lineHeight: 0 }} aria-label="VeRoRo 홈">
+            <img
+              src={VERORO_LOGO_SRC}
+              alt="VeRoRo"
+              style={{ height: '28px', width: 'auto', objectFit: 'contain', display: 'block' }}
+            />
+          </Link>
+          <span style={{
+            fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
+            color: 'var(--community-tint)', background: 'rgba(124, 111, 156, 0.12)',
+            padding: '4px 8px', borderRadius: '999px', flexShrink: 0
+          }}>Community</span>
+        </div>
+        <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-dark)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '42%' }}>
+          {pageTitle}
+        </span>
       </header>
-      
-      {/* Main Content */}
+
       <main className="page-content container">
         <div className="animate-fade-in" style={{ paddingBottom: '20px' }}>
           <Outlet />
         </div>
       </main>
 
-      {/* Bottom Nav */}
       <Footer />
       <BottomNav />
     </div>

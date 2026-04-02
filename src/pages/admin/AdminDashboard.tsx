@@ -65,7 +65,7 @@ const AdminDashboard: React.FC = () => {
   return (
     <div className="admin-dashboard animate-fade-in" style={{ paddingBottom: '40px' }}>
       <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: 900, color: '#111827' }}>베로하트 대시보드</h1>
+        <h1 style={{ fontSize: '28px', fontWeight: 900, color: '#111827' }}>베로로 대시보드</h1>
         <p style={{ color: '#6B7280', marginTop: '4px' }}>플랫폼의 주요 지표와 활동 현황을 한눈에 확인하세요.</p>
       </div>
 

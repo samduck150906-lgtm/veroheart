@@ -15,29 +15,58 @@ export default function BottomNav() {
   ];
 
   return (
-    <nav className="glass" style={{
-      position: 'absolute', bottom: 0, left: 0, right: 0,
-      height: '80px', display: 'flex', justifyContent: 'space-around', alignItems: 'center',
-      paddingBottom: '20px', borderTop: '1px solid rgba(0,0,0,0.05)', zIndex: 10
-    }}>
+    <nav
+      className="glass-nav"
+      style={{
+        position: 'absolute',
+        bottom: '12px',
+        left: '16px',
+        right: '16px',
+        height: '64px',
+        display: 'flex',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+        borderRadius: '999px',
+        zIndex: 10,
+        padding: '0 6px',
+      }}
+    >
       {navItems.map(item => {
         const Icon = item.icon;
         const isActive = location.pathname === item.path;
         return (
           <Link key={item.path} to={item.path} style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center',
-            textDecoration: 'none', color: isActive ? 'var(--primary)' : 'var(--text-light)',
-            transition: 'color var(--transition-fast)', position: 'relative'
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textDecoration: 'none',
+            color: isActive ? 'var(--primary-dark)' : 'var(--text-light)',
+            transition: 'color var(--transition-fast)',
+            position: 'relative',
+            minWidth: '52px',
+            padding: '8px 4px',
+            borderRadius: '16px',
+            background: isActive ? 'rgba(255, 107, 74, 0.12)' : 'transparent',
           }}>
-            <Icon size={24} style={{ marginBottom: '4px' }} />
-            <span style={{ fontSize: '12px', fontWeight: isActive ? 600 : 400 }}>{item.label}</span>
+            <Icon size={22} strokeWidth={isActive ? 2.5 : 2} style={{ marginBottom: '2px' }} />
+            <span style={{ fontSize: '10px', fontWeight: isActive ? 700 : 500, letterSpacing: '-0.02em' }}>{item.label}</span>
             {item.badge > 0 && (
               <span style={{
-                position: 'absolute', top: '-4px', right: '-8px',
-                backgroundColor: 'var(--accent)', color: '#fff', fontSize: '10px',
-                fontWeight: 'bold', padding: '2px 6px', borderRadius: '10px'
+                position: 'absolute',
+                top: '2px',
+                right: '4px',
+                backgroundColor: 'var(--accent)',
+                color: '#fff',
+                fontSize: '10px',
+                fontWeight: 700,
+                padding: '2px 6px',
+                borderRadius: '10px',
+                minWidth: '18px',
+                textAlign: 'center',
+                lineHeight: 1.2,
               }}>
-                {item.badge}
+                {item.badge > 99 ? '99+' : item.badge}
               </span>
             )}
           </Link>

@@ -1,4 +1,4 @@
-package com.veroheart.app;
+package com.veroro.app;
 
 import com.getcapacitor.BridgeActivity;
 

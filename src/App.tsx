@@ -1,4 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { pickSplashTagline } from './copy/marketing';
+import { VERORO_LOGO_SRC } from './constants/assets';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useStore } from './store/useStore';
 import Layout from './components/Layout';
@@ -26,15 +28,31 @@ import AdminAuthGuard from './pages/admin/AdminAuthGuard';
 
 function App() {
   const { initApp, isInitializing } = useStore();
-  
+  const [splashLine] = useState(() => pickSplashTagline());
+
   useEffect(() => {
     initApp();
   }, [initApp]);
 
   if (isInitializing) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--background)' }}>
-        <p style={{ color: 'var(--primary-dark)', fontSize: '18px', fontWeight: 600 }}>베로하트 로딩중...</p>
+      <div style={{
+        display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
+        height: '100vh', background: 'var(--bg-gradient)', padding: '32px 24px', textAlign: 'center',
+        boxSizing: 'border-box',
+      }}>
+        <img
+          src={VERORO_LOGO_SRC}
+          alt="VeRoRo"
+          style={{ height: '52px', width: 'auto', objectFit: 'contain', marginBottom: '20px', display: 'block' }}
+        />
+        <p style={{
+          color: 'var(--text-dark)', fontSize: '15px', fontWeight: 600, lineHeight: 1.55, maxWidth: '320px', margin: '0 0 28px',
+        }}>
+          {splashLine}
+        </p>
+        <div style={{ width: '36px', height: '36px', border: '3px solid rgba(232, 90, 60, 0.25)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 0.85s linear infinite' }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
