@@ -33,7 +33,7 @@ export default function Login() {
         notify.success('회원가입 완료! 이메일을 확인해주세요.');
       }
       await initApp();
-      navigate(-1);
+      navigate('/profile');
     } catch (err: any) {
       const msg = err?.message || '오류가 발생했습니다.';
       if (msg.includes('Invalid login credentials')) notify.error('이메일 또는 비밀번호가 올바르지 않습니다.');

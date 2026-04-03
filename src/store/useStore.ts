@@ -1,7 +1,9 @@
 import { create } from 'zustand';
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { mockPetProfile, mockProducts as staticMockProducts } from '../data/mock';
 import type { UserPetProfile, Product } from '../data/mock';
 import {
+  supabase,
   getProducts,
   initializeAnonymousSession,
   getUserPets,
@@ -69,6 +71,7 @@ export const useStore = create<StoreState>((set, get) => ({
 
   initApp: async () => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       const user = await initializeAnonymousSession();
       if (!user) {
         set({ isInitializing: false });
@@ -76,11 +79,21 @@ export const useStore = create<StoreState>((set, get) => ({
         return;
       }
 
-      const isReal = user.app_metadata?.provider !== 'anonymous' && !user.is_anonymous;
-      set({ userId: user.id, isLoggedIn: isReal });
+      const activeUser = session?.user ?? user;
+      const isReal = activeUser.app_metadata?.provider !== 'anonymous' && !activeUser.is_anonymous;
+      const handleAuthStateChange = (_event: AuthChangeEvent, nextSession: Session | null) => {
+        const nextUser = nextSession?.user;
+        const nextIsReal = !!nextUser && nextUser.app_metadata?.provider !== 'anonymous' && !nextUser.is_anonymous;
+        set({
+          userId: nextUser?.id ?? null,
+          isLoggedIn: nextIsReal,
+        });
+      };
+      supabase.auth.onAuthStateChange(handleAuthStateChange);
+      set({ userId: activeUser.id, isLoggedIn: isReal });
 
       // Fetch Pet Profile
-      const pets = await getUserPets(user.id);
+      const pets = await getUserPets(activeUser.id);
       if (pets && pets.length > 0) {
         const p = pets[0];
         set({
@@ -97,8 +110,8 @@ export const useStore = create<StoreState>((set, get) => ({
 
       // Fetch Cart & Favorites
       const [cartData, favData] = await Promise.all([
-        fetchCartItems(user.id),
-        getFavorites(user.id)
+        fetchCartItems(activeUser.id),
+        getFavorites(activeUser.id)
       ]);
       set({
         cart: cartData.map(c => ({ productId: c.productId, quantity: c.quantity })),
@@ -106,7 +119,7 @@ export const useStore = create<StoreState>((set, get) => ({
       });
 
       // Fetch Recent Views
-      const recentData = await getRecentViews(user.id);
+      const recentData = await getRecentViews(activeUser.id);
       if (recentData.length > 0) {
         const mapped = recentData.map(mapProductFromRaw).filter(Boolean) as Product[];
         set({ recentViews: mapped });
