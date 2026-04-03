@@ -5,11 +5,12 @@ import { useStore } from '../store/useStore';
 export default function BottomNav() {
   const location = useLocation();
   const { cart } = useStore();
+  const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
   const navItems = [
     { path: '/', label: '홈', icon: Home, badge: 0 },
     { path: '/search', label: '탐색', icon: Search, badge: 0 },
-    { path: '/cart', label: '장바구니', icon: ShoppingBag, badge: cart.length },
+    { path: '/cart', label: '장바구니', icon: ShoppingBag, badge: cartCount },
     { path: '/ranking', label: '랭킹', icon: Trophy, badge: 0 },
     { path: '/profile', label: '마이 펫', icon: User, badge: 0 },
   ];
@@ -35,39 +36,84 @@ export default function BottomNav() {
         const Icon = item.icon;
         const isActive = location.pathname === item.path;
         return (
-          <Link key={item.path} to={item.path} style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            textDecoration: 'none',
-            color: isActive ? 'var(--primary-dark)' : 'var(--text-light)',
-            transition: 'color var(--transition-fast)',
-            position: 'relative',
-            minWidth: '52px',
-            padding: '8px 4px',
-            borderRadius: '16px',
-            background: isActive ? 'rgba(255, 107, 74, 0.12)' : 'transparent',
-          }}>
-            <Icon size={22} strokeWidth={isActive ? 2.5 : 2} style={{ marginBottom: '2px' }} />
-            <span style={{ fontSize: '10px', fontWeight: isActive ? 700 : 500, letterSpacing: '-0.02em' }}>{item.label}</span>
-            {item.badge > 0 && (
+          <Link
+            key={item.path}
+            to={item.path}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textDecoration: 'none',
+              color: isActive ? 'var(--primary-dark)' : 'var(--text-light)',
+              transition: 'all var(--transition-fast)',
+              position: 'relative',
+              minWidth: '52px',
+              padding: '8px 4px',
+              borderRadius: '20px',
+              background: isActive
+                ? 'linear-gradient(145deg, rgba(255, 107, 74, 0.15), rgba(232, 90, 60, 0.08))'
+                : 'transparent',
+            }}
+          >
+            <div style={{
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '2px',
+            }}>
+              <Icon
+                size={22}
+                strokeWidth={isActive ? 2.5 : 2}
+                style={{
+                  transition: 'transform var(--transition-bounce)',
+                  transform: isActive ? 'scale(1.1)' : 'scale(1)',
+                }}
+              />
+              {item.badge > 0 && (
+                <span style={{
+                  position: 'absolute',
+                  top: '-6px',
+                  right: '-8px',
+                  backgroundColor: 'var(--accent)',
+                  color: '#fff',
+                  fontSize: '9px',
+                  fontWeight: 800,
+                  width: '16px',
+                  height: '16px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  lineHeight: 1,
+                  border: '1.5px solid rgba(255, 255, 255, 0.96)',
+                  animation: 'bounceIn 0.4s ease',
+                }}>
+                  {item.badge > 9 ? '9+' : item.badge}
+                </span>
+              )}
+            </div>
+            <span style={{
+              fontSize: '10px',
+              fontWeight: isActive ? 700 : 500,
+              letterSpacing: '-0.02em',
+              transition: 'all var(--transition-fast)',
+              opacity: isActive ? 1 : 0.7,
+            }}>
+              {item.label}
+            </span>
+            {isActive && (
               <span style={{
                 position: 'absolute',
-                top: '2px',
-                right: '4px',
-                backgroundColor: 'var(--accent)',
-                color: '#fff',
-                fontSize: '10px',
-                fontWeight: 700,
-                padding: '2px 6px',
-                borderRadius: '10px',
-                minWidth: '18px',
-                textAlign: 'center',
-                lineHeight: 1.2,
-              }}>
-                {item.badge > 99 ? '99+' : item.badge}
-              </span>
+                bottom: '-4px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: '4px',
+                height: '4px',
+                borderRadius: '50%',
+                background: 'var(--primary)',
+              }} />
             )}
           </Link>
         );
