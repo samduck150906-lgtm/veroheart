@@ -1,0 +1,8 @@
+[build]
+command = "npm run build"
+publish = "dist"
+
+[build.environment]
+# Netlify's secret scanner can flag the public VITE_SUPABASE_URL bundle output
+# when a same-value SUPABASE_URL is also configured as a secret in the site UI.
+SECRETS_SCAN_OMIT_KEYS = "SUPABASE_URL"
