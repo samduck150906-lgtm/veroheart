@@ -21,12 +21,8 @@ export default function Layout() {
     : titleMap[location.pathname] ?? '베로로';
 
   return (
-    <div className="container" style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100%', padding: 0 }}>
-      <header className="glass" style={{
-        position: 'absolute', top: 0, left: 0, right: 0,
-        height: '60px', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 20px', fontWeight: 700, fontSize: '18px'
-      }}>
+    <div className="app-shell">
+      <header className="glass app-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
           <Link to="/" style={{ display: 'flex', alignItems: 'center', lineHeight: 0 }} aria-label="VeRoRo 홈">
             <img
@@ -46,7 +42,7 @@ export default function Layout() {
         </span>
       </header>
 
-      <main className="page-content container">
+      <main className="app-main container">
         <div className="animate-fade-in" style={{ paddingBottom: '20px' }}>
           <Outlet />
         </div>

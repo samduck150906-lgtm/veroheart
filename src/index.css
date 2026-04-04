@@ -50,18 +50,22 @@ body {
   line-height: 1.5;
   display: flex;
   justify-content: center;
+  min-height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior-y: none;
 }
 
 /* Mobile App Layout Container */
 #root {
   width: 100%;
   max-width: 480px;
-  min-height: 100vh;
+  height: 100dvh;
   background: var(--bg-gradient);
   box-shadow: 0 0 0 1px rgba(255, 107, 74, 0.06), 0 0 48px rgba(232, 90, 60, 0.08);
   position: relative;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -108,9 +112,67 @@ h1, h2, h3, h4, h5, h6 {
 
 .page-content {
   flex: 1;
-  padding-top: 60px;
-  padding-bottom: 96px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+/* App shell: one scroll area (main) */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  position: relative;
+}
+
+.app-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  font-weight: 700;
+  font-size: 18px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.app-main {
+  flex: 1;
+  padding-top: 60px;
+  padding-bottom: 104px; /* BottomNav + safe area */
+  overflow-y: auto;
+}
+
+.bottom-nav {
+  position: fixed;
+  bottom: 12px;
+  left: 16px;
+  right: 16px;
+  height: 64px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  border-radius: 999px;
+  z-index: 60;
+  padding: 0 6px;
+  max-width: calc(480px - 32px);
+  margin: 0 auto;
+}
+
+@supports (padding: max(0px)) {
+  .app-main {
+    padding-bottom: calc(104px + env(safe-area-inset-bottom));
+  }
+  .bottom-nav {
+    bottom: calc(12px + env(safe-area-inset-bottom));
+  }
 }
 
 /* Buttons */

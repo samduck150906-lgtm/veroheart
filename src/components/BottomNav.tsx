@@ -16,20 +16,7 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="glass-nav"
-      style={{
-        position: 'absolute',
-        bottom: '12px',
-        left: '16px',
-        right: '16px',
-        height: '64px',
-        display: 'flex',
-        justifyContent: 'space-around',
-        alignItems: 'center',
-        borderRadius: '999px',
-        zIndex: 10,
-        padding: '0 6px',
-      }}
+      className="glass-nav bottom-nav"
     >
       {navItems.map(item => {
         const Icon = item.icon;
