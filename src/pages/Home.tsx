@@ -1,9 +1,19 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useStore } from '../store/useStore';
 import ProductCard from '../components/ProductCard';
 import TargetedAd from '../components/TargetedAd';
 import { Helmet } from 'react-helmet-async';
-import { Sparkles, Clock, ChevronRight, X, Tag } from 'lucide-react';
+import {
+  Sparkles,
+  Clock,
+  ChevronRight,
+  X,
+  Tag,
+  ShieldCheck,
+  Search,
+  Star,
+  HeartHandshake,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { MOCK_EVENTS } from '../lib/supabase';
 import { HOME_HERO, CORE_COPY, UGC_COPY } from '../copy/marketing';
@@ -13,104 +23,173 @@ export default function Home() {
   const { products, profile, recentViews } = useStore();
   const navigate = useNavigate();
   const [closedEvents, setClosedEvents] = useState<string[]>([]);
-  const visibleEvents = MOCK_EVENTS.filter(e => !closedEvents.includes(e.id));
+  const visibleEvents = MOCK_EVENTS.filter((e) => !closedEvents.includes(e.id));
 
-  // Personalized Recommendations: Filter by species and prioritize health concerns
-  const personalRecs = products
-    .filter(p => !p.mainCategory?.includes('사료') || 
-      (profile.species === 'Dog' ? p.targetPetType === 'dog' : p.targetPetType === 'cat') ||
-      p.targetPetType === 'all'
-    )
-    .filter(p => {
-      const hasDirectMatch = p.healthConcerns?.some(c => profile.healthConcerns.includes(c));
-      const hasIngredientMatch = p.ingredients.some(ing => profile.healthConcerns.some(c => ing.purpose.includes(c)));
-      return hasDirectMatch || hasIngredientMatch;
-    })
-    .slice(0, 4);
+  const personalRecs = useMemo(
+    () =>
+      products
+        .filter((p) => {
+          if (!p.targetPetType) return true;
+          const petType = profile.species === 'Dog' ? 'dog' : 'cat';
+          return p.targetPetType === petType || p.targetPetType === 'all';
+        })
+        .filter((p) => {
+          const directMatch = p.healthConcerns?.some((c) => profile.healthConcerns.includes(c));
+          const ingredientMatch = p.ingredients.some((ing) =>
+            profile.healthConcerns.some((c) => ing.purpose.includes(c))
+          );
+          return directMatch || ingredientMatch;
+        })
+        .slice(0, 4),
+    [products, profile]
+  );
+
+  const trendProducts = useMemo(
+    () => [...products].sort((a, b) => b.averageRating * b.reviewsCount - a.averageRating * a.reviewsCount).slice(0, 4),
+    [products]
+  );
+
+  const quickLinks = [
+    {
+      title: `${profile.name} 맞춤 탐색`,
+      desc: profile.healthConcerns.length > 0 ? `${profile.healthConcerns.join(', ')} 중심 추천 보기` : '아이 정보 기준 추천 받기',
+      onClick: () => navigate('/search'),
+    },
+    {
+      title: '성분 바로 검색',
+      desc: '브랜드, 제품명, 성분명으로 탐색',
+      onClick: () => navigate('/search'),
+    },
+    {
+      title: '랭킹 살펴보기',
+      desc: '리뷰와 평점 높은 제품 확인',
+      onClick: () => navigate('/ranking'),
+    },
+  ];
 
   return (
     <div>
       <Helmet>
-        <title>베로로 — 성분 분석 &amp; 집사들의 찐 리뷰</title>
-        <meta name="description" content="베로로 — 사료 성분 분석과 집사들의 찐 리뷰. 의심 대신 베로로 하세요." />
+        <title>베로로 — 화해처럼 쉽게 보는 반려동물 쇼핑</title>
+        <meta
+          name="description"
+          content="성분, 리뷰, 랭킹, 맞춤 추천까지 한 번에 확인하는 반려동물 쇼핑 경험"
+        />
       </Helmet>
 
-      <section style={{
-        marginBottom: '28px', padding: '22px 20px', borderRadius: '24px',
-        background: 'linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(255, 245, 240, 0.9) 100%)',
-        border: '1px solid rgba(232, 90, 60, 0.12)', boxShadow: 'var(--shadow-md)',
-      }}>
-        <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--community-tint)', marginBottom: '10px', letterSpacing: '0.06em', textTransform: 'uppercase' }}>First impression</p>
-        <h1 style={{ fontSize: '21px', fontWeight: 800, color: 'var(--text-dark)', lineHeight: 1.45, letterSpacing: '-0.03em', margin: '0 0 12px' }}>
+      <section className="ui-hero-panel" style={{ marginBottom: '20px', padding: '22px' }}>
+        <span className="ui-badge ui-badge-soft" style={{ marginBottom: '12px', display: 'inline-flex' }}>
+          <Sparkles size={14} />
+          오늘의 발견
+        </span>
+        <h2 style={{ fontSize: '26px', lineHeight: 1.28, marginBottom: '10px', fontWeight: 900 }}>
           {HOME_HERO.headline}
-        </h1>
-        <p style={{ fontSize: '14px', fontWeight: 600, color: '#4B5563', lineHeight: 1.55, margin: '0 0 14px' }}>
-          {HOME_HERO.sub}
-        </p>
-        <div style={{
-          fontSize: '13px', fontWeight: 700, color: 'var(--primary-dark)', padding: '12px 14px', borderRadius: '14px',
-          background: 'rgba(232, 90, 60, 0.08)', border: '1px dashed rgba(232, 90, 60, 0.25)', marginBottom: '10px',
-        }}>
+        </h2>
+        <p style={{ fontSize: '15px', color: '#5C636E', lineHeight: 1.6, marginBottom: '16px' }}>{HOME_HERO.sub}</p>
+        <div className="ui-highlight-box" style={{ marginBottom: '12px' }}>
           {HOME_HERO.customTable}
         </div>
-        <p style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500, lineHeight: 1.5, margin: 0, fontStyle: 'italic' }}>
-          {HOME_HERO.footnote}
-        </p>
+        <p style={{ fontSize: '12px', color: '#8A9099', lineHeight: 1.55 }}>{HOME_HERO.footnote}</p>
       </section>
 
       <section style={{ marginBottom: '28px' }}>
-        <h2 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-dark)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Sparkles size={18} color="var(--primary)" /> 성분 분석
-        </h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {[CORE_COPY.ocr, CORE_COPY.dangerHighlight, CORE_COPY.allergyAlert, CORE_COPY.thorough].map((line) => (
-            <div key={line} style={{
-              fontSize: '13px', fontWeight: 600, color: '#374151', padding: '12px 14px', borderRadius: '14px',
-              background: 'var(--surface-elevated)', border: '1px solid rgba(0,0,0,0.04)', lineHeight: 1.5,
-            }}>
-              {line}
-            </div>
+        <div className="ui-section-head">
+          <div>
+            <div className="ui-section-kicker">quick start</div>
+            <h2 className="ui-section-title">무엇부터 볼지 바로 정해드릴게요</h2>
+          </div>
+        </div>
+        <div className="ui-grid-3">
+          {quickLinks.map((item) => (
+            <button
+              key={item.title}
+              type="button"
+              onClick={item.onClick}
+              className="ui-action-card"
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                <span className="ui-badge ui-badge-muted">{item.title}</span>
+                <ChevronRight size={16} color="#9AA1AA" />
+              </div>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-dark)', lineHeight: 1.45 }}>{item.desc}</div>
+            </button>
           ))}
         </div>
       </section>
 
-      <section style={{ marginBottom: '32px' }}>
-        <h2 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-dark)', marginBottom: '12px' }}>리뷰 &amp; 커뮤니티</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-          {[UGC_COPY.honestReviews, UGC_COPY.palatability, UGC_COPY.allergyList, UGC_COPY.settleDown].map((line) => (
-            <div key={line} style={{
-              fontSize: '12px', fontWeight: 600, color: '#4B5563', padding: '12px', borderRadius: '14px',
-              background: '#F9FAFB', border: '1px solid #F3F4F6', lineHeight: 1.45, minHeight: '72px', display: 'flex', alignItems: 'center',
-            }}>
-              {line}
-            </div>
+      <section style={{ marginBottom: '28px' }}>
+        <div className="ui-section-head">
+          <div>
+            <div className="ui-section-kicker">browse by category</div>
+            <h2 className="ui-section-title">카테고리별로 바로 탐색</h2>
+          </div>
+          <button type="button" className="ui-text-button" onClick={() => navigate('/search')}>
+            전체 보기 <ChevronRight size={15} />
+          </button>
+        </div>
+        <div className="ui-category-grid">
+          {HOME_CATEGORY_ITEMS.map((item) => (
+            <button
+              key={item.name}
+              type="button"
+              onClick={() =>
+                navigate({
+                  pathname: '/search',
+                  search: `?category=${encodeURIComponent(item.name)}`,
+                })
+              }
+              className="ui-category-card"
+            >
+              <div className="ui-category-icon">{item.emoji}</div>
+              <div style={{ fontSize: '12px', fontWeight: 800, color: '#525A65', lineHeight: 1.35 }}>{item.name}</div>
+            </button>
           ))}
         </div>
       </section>
 
-      {/* 이벤트/쿠폰 배너 */}
       {visibleEvents.length > 0 && (
-        <section style={{ marginBottom: '32px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {visibleEvents.map(ev => (
-              <div key={ev.id} style={{ background: ev.color, borderRadius: '16px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '12px', position: 'relative', border: '1px solid rgba(0,0,0,0.05)' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(0,0,0,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Tag size={18} color="#374151" />
+        <section style={{ marginBottom: '28px' }}>
+          <div className="ui-section-head">
+            <div>
+              <div className="ui-section-kicker">benefits</div>
+              <h2 className="ui-section-title">지금 받을 수 있는 혜택</h2>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gap: '10px' }}>
+            {visibleEvents.map((ev) => (
+              <div
+                key={ev.id}
+                style={{
+                  background: ev.color,
+                  borderRadius: '20px',
+                  padding: '16px',
+                  display: 'flex',
+                  gap: '12px',
+                  border: '1px solid rgba(17,24,39,0.05)',
+                  position: 'relative',
+                }}
+              >
+                <div className="ui-icon-pill">
+                  <Tag size={17} color="#374151" />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 700, background: '#111827', color: '#fff', padding: '2px 8px', borderRadius: '6px' }}>{ev.badge}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                    <span className="ui-badge ui-badge-dark">{ev.badge}</span>
                   </div>
-                  <div style={{ fontSize: '14px', fontWeight: 800, color: '#111827', marginBottom: '2px' }}>{ev.title}</div>
-                  <div style={{ fontSize: '12px', color: '#6B7280' }}>{ev.desc}</div>
+                  <div style={{ fontSize: '15px', fontWeight: 900, color: '#111827', marginBottom: '4px' }}>{ev.title}</div>
+                  <div style={{ fontSize: '13px', color: '#6B7280', lineHeight: 1.5 }}>{ev.desc}</div>
                   {ev.code && (
-                    <div style={{ fontSize: '13px', fontWeight: 700, color: '#374151', marginTop: '6px', background: 'rgba(0,0,0,0.05)', display: 'inline-block', padding: '4px 10px', borderRadius: '8px', fontFamily: 'monospace' }}>
+                    <div style={{ marginTop: '8px', fontFamily: 'monospace', fontSize: '13px', fontWeight: 800, color: '#111827' }}>
                       {ev.code}
                     </div>
                   )}
                 </div>
-                <button onClick={() => setClosedEvents(prev => [...prev, ev.id])} style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF' }}>
-                  <X size={16} />
+                <button
+                  type="button"
+                  onClick={() => setClosedEvents((prev) => [...prev, ev.id])}
+                  style={{ background: 'transparent', border: 'none', color: '#9CA3AF', cursor: 'pointer', position: 'absolute', right: '10px', top: '10px' }}
+                >
+                  <X size={15} />
                 </button>
               </div>
             ))}
@@ -118,107 +197,128 @@ export default function Home() {
         </section>
       )}
 
-      {/* Personalized Section */}
-      {personalRecs.length > 0 && (
-        <section style={{
-          marginBottom: '40px',
-          background: 'linear-gradient(135deg, var(--primary-dark) 0%, #C94A32 100%)',
-          margin: '0 -20px 40px -20px',
-          padding: '32px 20px',
-          color: '#fff',
-          borderRadius: '0 0 24px 24px',
-          boxShadow: 'var(--shadow-lg)',
-        }}>
-          <h2 style={{ fontSize: '22px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 900 }}>
-            <Sparkles size={24} color="#FDE68A" />
-            <span>{profile.name}를 위한 맞춤 추천</span>
-          </h2>
-          <p style={{ fontSize: '14px', opacity: 0.8, marginBottom: '24px' }}>
-            {profile.healthConcerns.join(', ')} 고민을 해결해줄 제품들을 모았어요.
-          </p>
-          <div style={{ 
-            display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '8px',
-            msOverflowStyle: 'none', scrollbarWidth: 'none'
-          }}>
-            {personalRecs.map((p) => (
-              <div key={p.id} className="card animate-scale-in" style={{ flex: '0 0 240px', padding: '12px', backgroundColor: '#fff', color: 'var(--text-dark)', borderRadius: '16px' }}>
-                <ProductCard product={p} />
+      <section style={{ marginBottom: '28px' }}>
+        <div className="ui-grid-3">
+          {[
+            { icon: ShieldCheck, title: '성분 검증', text: CORE_COPY.dangerHighlight },
+            { icon: Search, title: 'OCR 탐색', text: CORE_COPY.ocr },
+            { icon: HeartHandshake, title: '리뷰 신뢰도', text: UGC_COPY.honestReviews },
+          ].map(({ icon: Icon, title, text }) => (
+            <div key={title} className="ui-info-card">
+              <div className="ui-icon-pill" style={{ marginBottom: '12px' }}>
+                <Icon size={18} color="var(--primary-dark)" />
               </div>
+              <div style={{ fontSize: '15px', fontWeight: 800, marginBottom: '6px', color: 'var(--text-dark)' }}>{title}</div>
+              <div style={{ fontSize: '13px', lineHeight: 1.6, color: '#67707C' }}>{text}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {personalRecs.length > 0 && (
+        <section style={{ marginBottom: '28px' }}>
+          <div className="ui-section-head">
+            <div>
+              <div className="ui-section-kicker">for {profile.name}</div>
+              <h2 className="ui-section-title">{profile.name}에게 맞는 추천</h2>
+            </div>
+            <button type="button" className="ui-text-button" onClick={() => navigate('/search')}>
+              더 보기 <ChevronRight size={15} />
+            </button>
+          </div>
+          <p style={{ fontSize: '13px', color: '#67707C', marginBottom: '14px', lineHeight: 1.55 }}>
+            {profile.healthConcerns.length > 0
+              ? `${profile.healthConcerns.join(', ')} 고민을 기준으로 관련도가 높은 제품을 먼저 보여드려요.`
+              : '등록된 프로필 정보를 바탕으로 추천 순서를 조정해 보여드려요.'}
+          </p>
+          <div className="ui-grid-2">
+            {personalRecs.map((product) => (
+              <ProductCard key={product.id} product={product} />
             ))}
           </div>
         </section>
       )}
 
-      {/* Ranking Section */}
-      <section style={{ marginBottom: '48px' }}>
-        <h2 style={{ fontSize: '22px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', fontWeight: 800 }}>
-          <span>인기 급상승 랭킹 🔥</span>
-        </h2>
-        <div style={{ display: 'grid', gap: '16px' }}>
-          {products.slice(0, 4).map((p, idx) => (
-            <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '12px', borderRadius: '16px', border: '1px solid rgba(232, 90, 60, 0.12)', background: 'var(--surface-elevated)' }}>
-              <span style={{ 
-                fontSize: '24px', fontWeight: 900, width: '28px', textAlign: 'center', fontStyle: 'italic',
-                color: idx < 3 ? 'var(--primary-dark)' : '#D1D5DB' 
-              }}>{idx + 1}</span>
-              <div style={{ flex: 1 }}>
-                <ProductCard product={p} />
+      <section style={{ marginBottom: '28px' }}>
+        <div className="ui-section-head">
+          <div>
+            <div className="ui-section-kicker">trending now</div>
+            <h2 className="ui-section-title">평점과 리뷰가 함께 좋은 제품</h2>
+          </div>
+          <button type="button" className="ui-text-button" onClick={() => navigate('/ranking')}>
+            랭킹 보기 <ChevronRight size={15} />
+          </button>
+        </div>
+        <div style={{ display: 'grid', gap: '12px' }}>
+          {trendProducts.map((product, index) => (
+            <button
+              key={product.id}
+              type="button"
+              onClick={() => navigate(`/product/${product.id}`)}
+              className="ui-list-card"
+            >
+              <div className="ui-rank-index">{index + 1}</div>
+              <img
+                src={product.imageUrl}
+                alt={product.name}
+                style={{ width: '76px', height: '76px', borderRadius: '18px', objectFit: 'cover' }}
+              />
+              <div style={{ flex: 1, textAlign: 'left', minWidth: 0 }}>
+                <div style={{ fontSize: '12px', color: '#8A9099', fontWeight: 700, marginBottom: '4px' }}>{product.brand}</div>
+                <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-dark)', marginBottom: '8px', lineHeight: 1.45 }}>{product.name}</div>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <span className="ui-badge ui-badge-soft">
+                    <Star size={12} fill="#FFB020" color="#FFB020" />
+                    {product.averageRating.toFixed(1)}
+                  </span>
+                  <span className="ui-badge ui-badge-muted">리뷰 {product.reviewsCount.toLocaleString()}</span>
+                </div>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </section>
 
       <TargetedAd />
 
-      {/* 최근 본 제품 */}
       {recentViews.length > 0 && (
-        <section style={{ marginBottom: '48px' }}>
-          <h2 style={{ fontSize: '22px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 800 }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Clock size={20} /> 최근 본 제품</span>
-            <button onClick={() => navigate('/search')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: '#6B7280', fontWeight: 600 }}>
-              더보기 <ChevronRight size={16} />
-            </button>
-          </h2>
-          <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-            {recentViews.slice(0, 6).map(p => (
-              <div key={p.id} onClick={() => navigate(`/product/${p.id}`)} style={{ flexShrink: 0, width: '100px', cursor: 'pointer' }}>
-                <img src={p.imageUrl} alt={p.name} style={{ width: '100px', height: '100px', borderRadius: '14px', objectFit: 'cover', marginBottom: '6px' }} />
-                <div style={{ fontSize: '11px', fontWeight: 600, color: '#374151', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{p.name}</div>
-              </div>
+        <section style={{ margin: '28px 0' }}>
+          <div className="ui-section-head">
+            <div>
+              <div className="ui-section-kicker">recently viewed</div>
+              <h2 className="ui-section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Clock size={18} />
+                최근 본 제품
+              </h2>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '6px' }}>
+            {recentViews.slice(0, 6).map((product) => (
+              <button
+                key={product.id}
+                type="button"
+                onClick={() => navigate(`/product/${product.id}`)}
+                style={{
+                  flex: '0 0 126px',
+                  background: '#fff',
+                  border: '1px solid rgba(232, 90, 60, 0.08)',
+                  borderRadius: '18px',
+                  padding: '10px',
+                  cursor: 'pointer',
+                }}
+              >
+                <img
+                  src={product.imageUrl}
+                  alt={product.name}
+                  style={{ width: '100%', aspectRatio: '1 / 1', borderRadius: '14px', objectFit: 'cover', marginBottom: '10px' }}
+                />
+                <div style={{ fontSize: '11px', color: '#8A9099', fontWeight: 700, marginBottom: '4px', textAlign: 'left' }}>{product.brand}</div>
+                <div style={{ fontSize: '12px', fontWeight: 800, color: '#31363F', lineHeight: 1.45, textAlign: 'left' }}>{product.name}</div>
+              </button>
             ))}
           </div>
         </section>
       )}
-
-      {/* Category Grid */}
-      <section style={{ marginTop: '48px' }}>
-        <h2 style={{ fontSize: '22px', marginBottom: '24px', fontWeight: 800 }}>카테고리별 탐색</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-          {HOME_CATEGORY_ITEMS.map(item => (
-            <div 
-              key={item.name} 
-              onClick={() =>
-                navigate({
-                  pathname: '/search',
-                  search: `?category=${encodeURIComponent(item.name)}`,
-                })
-              }
-              style={{ textAlign: 'center', cursor: 'pointer' }}
-            >
-              <div style={{ 
-                width: '100%', aspectRatio: '1/1', background: 'linear-gradient(145deg, #FFF5F0 0%, #FFE8E0 100%)', 
-                borderRadius: '24px', display: 'flex', alignItems: 'center', 
-                justifyContent: 'center', marginBottom: '10px', fontSize: '28px',
-                border: '1px solid rgba(232, 90, 60, 0.1)'
-              }}>
-                {item.emoji}
-              </div>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: '#4B5563' }}>{item.name}</span>
-            </div>
-          ))}
-        </div>
-      </section>
     </div>
   );
 }

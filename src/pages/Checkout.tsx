@@ -44,7 +44,12 @@ export default function Checkout() {
   };
 
   useEffect(() => {
-    getCurrentUser().then(setUser);
+    getCurrentUser().then((currentUser) => {
+      setUser(currentUser);
+      if (currentUser?.email) {
+        setCustomerInfo((prev) => ({ ...prev, email: currentUser.email ?? prev.email }));
+      }
+    });
   }, []);
 
   const cartWithDetails = cart.map(item => {
@@ -90,6 +95,7 @@ export default function Checkout() {
   const handlePayment = async () => {
     const paymentWidget = paymentWidgetRef.current;
     if (!paymentWidget || !user) return;
+    const fullAddress = [customerInfo.address.trim(), detailAddress.trim()].filter(Boolean).join(' ');
 
     // 입력 검증
     if (!customerInfo.name.trim()) {
@@ -113,8 +119,8 @@ export default function Checkout() {
         user.id, 
         cartWithDetails, 
         totalPrice, 
-        customerInfo.address,
-        customerInfo
+        fullAddress,
+        { ...customerInfo, address: fullAddress }
       );
 
       if (!order) {
@@ -147,119 +153,140 @@ export default function Checkout() {
   );
 
   return (
-    <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8 animate-fade-in" style={{ paddingBottom: '100px' }}>
+    <div className="animate-fade-in" style={{ paddingBottom: '100px' }}>
       <Helmet><title>안전 결제 - 베로로</title></Helmet>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* 주문 정보 입력 */}
-        <div className="space-y-6">
-          <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <span className="bg-blue-50 text-blue-500 p-2 rounded-lg">1</span>
-              배송 정보 입력
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">받는 분</label>
-                <input 
-                  type="text" 
-                  value={customerInfo.name} 
-                  onChange={e => setCustomerInfo({...customerInfo, name: e.target.value})}
-                  className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">연락처</label>
-                <input 
-                  type="text" 
-                  value={customerInfo.phone} 
-                  onChange={e => setCustomerInfo({...customerInfo, phone: e.target.value})}
-                  className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">배송지 주소</label>
-                <div className="flex gap-2 mb-2">
-                  <input
-                    type="text"
-                    value={customerInfo.address}
-                    onChange={e => setCustomerInfo({...customerInfo, address: e.target.value})}
-                    className="flex-1 p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                    placeholder="도로명 주소"
-                    readOnly={!!customerInfo.address}
-                  />
-                  <button
-                    type="button"
-                    onClick={openPostcode}
-                    className="px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl border border-gray-200 whitespace-nowrap text-sm"
-                  >
-                    우편번호
-                  </button>
-                </div>
+      <section className="ui-hero-panel" style={{ marginBottom: '18px', padding: '20px' }}>
+        <span className="ui-badge ui-badge-soft" style={{ marginBottom: '10px', display: 'inline-flex' }}>
+          <CreditCard size={13} />
+          secure checkout
+        </span>
+        <h2 style={{ fontSize: '24px', fontWeight: 900, marginBottom: '8px' }}>안전 결제</h2>
+        <p style={{ fontSize: '14px', color: '#66707C', lineHeight: 1.6 }}>
+          배송 정보 입력 후 토스페이먼츠로 안전하게 주문을 완료하세요.
+        </p>
+      </section>
+
+      <div style={{ display: 'grid', gap: '16px' }}>
+        <section className="ui-info-card">
+          <div className="ui-checkout-step">1. 배송 정보</div>
+          <div style={{ display: 'grid', gap: '14px' }}>
+            <Field label="받는 분">
+              <input
+                type="text"
+                value={customerInfo.name}
+                onChange={(e) => setCustomerInfo({ ...customerInfo, name: e.target.value })}
+                className="ui-input"
+              />
+            </Field>
+            <Field label="이메일">
+              <input
+                type="email"
+                value={customerInfo.email}
+                onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
+                className="ui-input"
+                placeholder="영수증 수신용 이메일"
+              />
+            </Field>
+            <Field label="연락처">
+              <input
+                type="text"
+                value={customerInfo.phone}
+                onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
+                className="ui-input"
+              />
+            </Field>
+            <Field label="배송지 주소">
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
                 <input
                   type="text"
-                  value={detailAddress}
-                  onChange={e => setDetailAddress(e.target.value)}
-                  className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                  placeholder="상세 주소 (동/호수)"
+                  value={customerInfo.address}
+                  onChange={(e) => setCustomerInfo({ ...customerInfo, address: e.target.value })}
+                  className="ui-input"
+                  placeholder="도로명 주소"
+                  readOnly={!!customerInfo.address}
+                  style={{ flex: 1 }}
                 />
+                <button
+                  type="button"
+                  onClick={openPostcode}
+                  className="ui-secondary-button"
+                  style={{ flexShrink: 0 }}
+                >
+                  주소 검색
+                </button>
               </div>
-            </div>
-          </section>
+              <input
+                type="text"
+                value={detailAddress}
+                onChange={(e) => setDetailAddress(e.target.value)}
+                className="ui-input"
+                placeholder="상세 주소 (동/호수)"
+              />
+            </Field>
+          </div>
+        </section>
 
-          <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <span className="bg-blue-50 text-blue-500 p-2 rounded-lg">2</span>
-              주문 요약
-            </h3>
-            <div className="space-y-3">
-              {cartWithDetails.map((item, idx) => (
-                <div key={idx} className="flex justify-between text-sm">
-                  <span className="text-gray-600">{item.name} ({item.quantity}개)</span>
-                  <span className="font-medium">{(item.price * item.quantity).toLocaleString()}원</span>
-                </div>
-              ))}
-              <div className="pt-3 border-t border-gray-100 flex justify-between items-center">
-                <span className="font-bold text-gray-900">최종 결제 금액</span>
-                <span className="text-2xl font-black text-blue-600">{totalPrice.toLocaleString()}원</span>
+        <section className="ui-info-card">
+          <div className="ui-checkout-step">2. 주문 요약</div>
+          <div style={{ display: 'grid', gap: '10px' }}>
+            {cartWithDetails.map((item, idx) => (
+              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', fontSize: '14px' }}>
+                <span style={{ color: '#5F6772' }}>{item.name} ({item.quantity}개)</span>
+                <strong>{(item.price * item.quantity).toLocaleString()}원</strong>
               </div>
+            ))}
+            <div style={{ height: '1px', background: '#ECEEF3', margin: '8px 0' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: 800 }}>최종 결제 금액</span>
+              <span style={{ fontSize: '26px', fontWeight: 900, color: 'var(--primary-dark)' }}>{totalPrice.toLocaleString()}원</span>
             </div>
-          </section>
-        </div>
+          </div>
+        </section>
 
-        {/* 결제 위젯 */}
-        <div className="space-y-6">
-          <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <span className="bg-blue-50 text-blue-500 p-2 rounded-lg">3</span>
-              결제 방법 선택
-            </h3>
-            {widgetError && (
-              <p className="text-sm text-red-600 mb-3 p-3 bg-red-50 rounded-xl">
-                결제 위젯을 불러오지 못했습니다. 루트 <code className="text-xs bg-white px-1 rounded">.env</code>에{' '}
-                <code className="text-xs bg-white px-1 rounded">VITE_TOSS_WIDGET_CLIENT_KEY</code>를 설정한 뒤 개발 서버를 다시 실행해 주세요.
-              </p>
-            )}
-            <div id="payment-widget" />
-            <div id="agreement" />
-          </section>
+        <section className="ui-info-card">
+          <div className="ui-checkout-step">3. 결제 수단</div>
+          {widgetError && (
+            <p style={{ fontSize: '13px', color: '#B42318', marginBottom: '12px', padding: '12px', background: '#FEF3F2', borderRadius: '14px' }}>
+              결제 위젯을 불러오지 못했습니다. <code>.env</code>의 <code>VITE_TOSS_WIDGET_CLIENT_KEY</code> 설정을 확인해 주세요.
+            </p>
+          )}
+          <div id="payment-widget" />
+          <div id="agreement" />
+        </section>
 
-          <button 
-            className="w-full bg-gray-900 text-white p-5 rounded-2xl font-bold text-lg shadow-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2" 
-            disabled={!isWidgetLoaded || isProcessing || widgetError || !clientKey.trim()}
-            onClick={handlePayment}
-          >
-            {isProcessing ? (
-              <Loader2 className="w-6 h-6 animate-spin" />
-            ) : (
-              <>
-                <CreditCard className="w-6 h-6" />
-                {totalPrice.toLocaleString()}원 안전 결제하기
-              </>
-            )}
-          </button>
-        </div>
+        <button
+          className="btn"
+          style={{
+            width: '100%',
+            background: '#111827',
+            color: '#fff',
+            padding: '18px',
+            borderRadius: '18px',
+            fontWeight: 900,
+            fontSize: '17px',
+          }}
+          disabled={!isWidgetLoaded || isProcessing || widgetError || !clientKey.trim()}
+          onClick={handlePayment}
+        >
+          {isProcessing ? (
+            <Loader2 className="w-6 h-6 animate-spin" />
+          ) : (
+            <>
+              <CreditCard className="w-6 h-6" />
+              {totalPrice.toLocaleString()}원 안전 결제하기
+            </>
+          )}
+        </button>
       </div>
     </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label style={{ display: 'grid', gap: '8px' }}>
+      <span style={{ fontSize: '13px', fontWeight: 800, color: '#374151' }}>{label}</span>
+      {children}
+    </label>
   );
 }

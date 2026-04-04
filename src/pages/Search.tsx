@@ -12,6 +12,8 @@ import {
   Cat,
   LayoutGrid,
   Package,
+  SlidersHorizontal,
+  Sparkles,
 } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import { searchProducts, getAllIngredients } from '../lib/supabase';
@@ -96,6 +98,24 @@ export default function Search() {
     i.name_ko.includes(ingredientSearch) && !excludedIngredients.includes(i.name_ko)
   ).slice(0, 20);
 
+  const activeFilterChips = useMemo(() => {
+    const chips: string[] = [];
+    if (category !== '전체') chips.push(category);
+    if (filters.targetPetType === 'dog') chips.push('강아지');
+    if (filters.targetPetType === 'cat') chips.push('고양이');
+    if (filters.targetPetType === 'all') chips.push('공용');
+    if (filters.targetLifeStage) chips.push(filters.targetLifeStage);
+    if (filters.formulation) chips.push(filters.formulation);
+    if (filters.dietPreset) chips.push('다이어트·체중');
+    chips.push(...filters.healthConcerns);
+    chips.push(...excludedIngredients.map((name) => `제외:${name}`));
+    if (filters.priceBand !== 'any') {
+      const label = PRICE_BAND_LABELS.find((item) => item.id === filters.priceBand)?.label;
+      if (label) chips.push(label);
+    }
+    return chips;
+  }, [category, excludedIngredients, filters]);
+
   useEffect(() => {
     const timer = setTimeout(async () => {
       setIsLoading(true);
@@ -158,17 +178,28 @@ export default function Search() {
 
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '100px' }}>
-      <div style={{ position: 'sticky', top: 0, backgroundColor: 'rgba(255, 251, 248, 0.96)', zIndex: 10, padding: '12px 0', backdropFilter: 'blur(8px)' }}>
+      <section className="ui-hero-panel" style={{ marginBottom: '18px', padding: '18px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '14px' }}>
+          <div>
+            <span className="ui-badge ui-badge-soft" style={{ marginBottom: '10px', display: 'inline-flex' }}>
+              <Sparkles size={14} />
+              취향 기반 탐색
+            </span>
+            <h2 style={{ fontSize: '22px', fontWeight: 900, marginBottom: '6px' }}>조건을 조합해 정확하게 좁혀보세요</h2>
+            <p style={{ fontSize: '13px', lineHeight: 1.55, color: '#66707C' }}>{CORE_COPY.ocr}</p>
+          </div>
+        </div>
+
         <div style={{ 
-          display: 'flex', alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.95)',
-          borderRadius: '20px', padding: '12px 20px', marginBottom: '12px',
+          display: 'flex', alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.98)',
+          borderRadius: '20px', padding: '14px 16px', marginBottom: '14px',
           border: '1px solid rgba(232, 90, 60, 0.12)',
           boxShadow: 'var(--shadow-sm)',
         }}>
           <SearchIcon size={20} className="text-gray-400" />
           <input 
             type="text" 
-            placeholder="상품명, 브랜드, 성분을 입력하세요" 
+            placeholder="상품명, 브랜드, 성분명으로 검색" 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             style={{
@@ -177,14 +208,9 @@ export default function Search() {
             }}
           />
           {query && <X size={18} className="text-gray-400 cursor-pointer" onClick={() => setQuery('')} />}
-          <button type="button" onClick={() => setIsFilterOpen(true)} style={{ marginLeft: '12px', background: 'none', border: 'none', cursor: 'pointer', color: filterButtonActive ? 'var(--primary)' : '#6B7280' }}>
-            <Filter size={20} />
-          </button>
         </div>
-        <p style={{ fontSize: '12px', color: '#6B7280', fontWeight: 600, margin: '0 4px 12px', lineHeight: 1.45 }}>{CORE_COPY.ocr}</p>
 
-        {/* 강아지 / 고양이 / 전체 / 공용 */}
-        <div style={{ marginBottom: '12px' }}>
+        <div style={{ marginBottom: '14px' }}>
           <p style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '0.04em' }}>반려동물</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
             {([
@@ -216,8 +242,7 @@ export default function Search() {
           <p style={{ fontSize: '10px', color: '#9CA3AF', marginTop: '6px' }}>공용은 강아지·고양이 모두에게 맞는 상품만 보여줍니다.</p>
         </div>
 
-        {/* 가격대 */}
-        <div style={{ marginBottom: '12px' }}>
+        <div style={{ marginBottom: '14px' }}>
           <p style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '0.04em' }}>가격대</p>
           <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
             {PRICE_BAND_LABELS.map(({ id, label }) => (
@@ -240,8 +265,7 @@ export default function Search() {
           </div>
         </div>
 
-        {/* 빠른 목적 */}
-        <div style={{ marginBottom: '12px' }}>
+        <div style={{ marginBottom: '14px' }}>
           <p style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '0.04em' }}>빠른 목적</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             <button
@@ -276,7 +300,6 @@ export default function Search() {
           </div>
         </div>
 
-        {/* 정렬 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)' }}>정렬</span>
           {([
@@ -301,8 +324,38 @@ export default function Search() {
           ))}
         </div>
 
-        {/* 카테고리 칩 */}
-        <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
+          <button
+            type="button"
+            onClick={() => setIsFilterOpen(true)}
+            style={{
+              padding: '10px 14px',
+              borderRadius: '14px',
+              border: filterButtonActive ? '1px solid rgba(255, 107, 74, 0.35)' : '1px solid #E5E7EB',
+              background: filterButtonActive ? 'rgba(255, 107, 74, 0.12)' : '#fff',
+              color: filterButtonActive ? 'var(--primary-dark)' : '#4B5563',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontWeight: 800,
+              cursor: 'pointer',
+            }}
+          >
+            <SlidersHorizontal size={16} />
+            상세 필터
+          </button>
+          <button
+            type="button"
+            onClick={resetFilters}
+            className="ui-text-button"
+            style={{ padding: 0 }}
+          >
+            <Trash2 size={14} />
+            초기화
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '4px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
           {SEARCH_MAIN_CATEGORIES.map(cat => (
             <button
               key={cat.name}
@@ -325,25 +378,40 @@ export default function Search() {
             </button>
           ))}
         </div>
-      </div>
+      </section>
+
+      {activeFilterChips.length > 0 && (
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '14px' }}>
+          {activeFilterChips.map((chip) => (
+            <span key={chip} className="ui-badge ui-badge-muted">{chip}</span>
+          ))}
+        </div>
+      )}
 
       <div style={{ marginTop: '12px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <span style={{ fontSize: '14px', color: '#6B7280' }}>
+        <div className="ui-list-card" style={{ marginBottom: '16px', padding: '16px 18px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '14px', color: '#6B7280' }}>
             총 <strong style={{ color: '#111827' }}>{displayResults.length}</strong>개의 상품
             {isLoading && <span style={{ marginLeft: '8px', fontSize: '12px' }}>불러오는 중…</span>}
-          </span>
+            </span>
+            <span className="ui-badge ui-badge-soft">
+              <Filter size={12} />
+              {filterButtonActive ? '필터 적용 중' : '기본 추천순'}
+            </span>
+          </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+        <div className="ui-grid-2">
           {displayResults.map(product => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>
         
         {displayResults.length === 0 && !isLoading && (
-          <div style={{ textAlign: 'center', padding: '100px 0', color: '#9CA3AF' }}>
-            검색 결과가 없습니다. 필터를 넓혀 보세요.
+          <div className="ui-info-card" style={{ textAlign: 'center', padding: '56px 18px', color: '#9CA3AF' }}>
+            검색 결과가 없습니다.<br />
+            검색어를 바꾸거나 상세 필터를 넓혀 보세요.
           </div>
         )}
       </div>
@@ -489,8 +557,8 @@ export default function Search() {
             </Section>
 
             <div style={{ position: 'sticky', bottom: 0, paddingTop: '40px', paddingBottom: '24px', backgroundColor: '#fff', display: 'flex', gap: '12px' }}>
-              <button type="button" onClick={resetFilters} style={{ flex: 1, padding: '18px', borderRadius: '16px', border: '1px solid #E5E7EB', backgroundColor: '#fff', fontWeight: 700 }}><Trash2 size={18} /> 초기화</button>
-              <button type="button" onClick={() => setIsFilterOpen(false)} style={{ flex: 2, padding: '18px', borderRadius: '16px', background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)', color: '#fff', fontWeight: 800, border: 'none', cursor: 'pointer' }}>적용하기</button>
+              <button type="button" onClick={resetFilters} style={{ flex: 1, padding: '18px', borderRadius: '16px', border: '1px solid #E5E7EB', backgroundColor: '#fff', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}><Trash2 size={18} /> 초기화</button>
+              <button type="button" onClick={() => setIsFilterOpen(false)} style={{ flex: 2, padding: '18px', borderRadius: '16px', background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)', color: '#fff', fontWeight: 800, border: 'none', cursor: 'pointer' }}>결과 보기</button>
             </div>
           </div>
         </div>
