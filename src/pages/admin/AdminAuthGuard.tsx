@@ -50,8 +50,10 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
   };
 
   const handleAdminLogin = () => {
+    const id = adminId.trim();
+    const pw = adminPassword.trim();
     const matched = ADMIN_CREDENTIALS.find(
-      (cred) => cred.username === adminId.trim() && cred.password === adminPassword
+      (cred) => cred.username === id && cred.password === pw
     );
     if (matched) {
       sessionStorage.setItem('vh_admin_auth', btoa(`${matched.username}:${matched.password}`));
@@ -107,7 +109,7 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
               type="text"
               placeholder="관리자 아이디 입력"
               value={adminId}
-              onChange={(e) => setAdminId(e.target.value)}
+              onChange={(e) => { setAdminId(e.target.value); if (error) setError(''); }}
               onKeyDown={(e) => e.key === 'Enter' && handleAdminLogin()}
               style={{
                 width: '100%', padding: '16px', borderRadius: '14px',
@@ -124,7 +126,7 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
               type="password"
               placeholder="관리자 비밀번호 입력"
               value={adminPassword}
-              onChange={(e) => setAdminPassword(e.target.value)}
+              onChange={(e) => { setAdminPassword(e.target.value); if (error) setError(''); }}
               onKeyDown={(e) => e.key === 'Enter' && handleAdminLogin()}
               style={{
                 width: '100%', padding: '16px 16px 16px 48px', borderRadius: '14px',
