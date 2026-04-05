@@ -22,7 +22,8 @@ import {
   priceBandToMinMax,
   PRICE_BAND_LABELS,
   FORMULATION_OPTIONS,
-  HEALTH_CONCERN_OPTIONS,
+  HEALTH_DISEASE_OPTIONS,
+  HEALTH_BODY_PART_OPTIONS,
   LIFE_STAGE_OPTIONS,
   type PriceBand,
 } from '../constants/searchFilters';
@@ -431,9 +432,22 @@ export default function Search() {
               </div>
             </Section>
 
-            <Section title="건강 고민 (복수 선택 · OR)">
+            <Section title="건강 · 질병 (복수 선택 · OR)">
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {HEALTH_CONCERN_OPTIONS.map(concern => (
+                {HEALTH_DISEASE_OPTIONS.map(concern => (
+                  <FilterChip
+                    key={concern}
+                    label={concern}
+                    selected={filters.healthConcerns.includes(concern)}
+                    onClick={() => toggleHealthConcern(concern)}
+                  />
+                ))}
+              </div>
+            </Section>
+
+            <Section title="케어 부위 (복수 선택 · OR)">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {HEALTH_BODY_PART_OPTIONS.map(concern => (
                   <FilterChip
                     key={concern}
                     label={concern}

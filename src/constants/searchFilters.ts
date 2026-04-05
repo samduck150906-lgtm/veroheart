@@ -47,6 +47,29 @@ export const HEALTH_CONCERN_OPTIONS = [
   '간',
 ];
 
+/** 질병(상태) 중심 태그: product_health_concerns와 1:1로 매칭되는 값이어야 함 */
+export const HEALTH_DISEASE_OPTIONS = [
+  '알레르기',
+  '신장',
+  '요로',
+  '비만',
+  '소화',
+  '면역',
+  '스트레스',
+  '심장',
+  '간',
+];
+
+/** 케어 부위/목적 중심 태그: product_health_concerns와 1:1로 매칭되는 값이어야 함 */
+export const HEALTH_BODY_PART_OPTIONS = [
+  '피부',
+  '관절',
+  '눈물',
+  '구강',
+  '다이어트',
+  '체중',
+];
+
 export const LIFE_STAGE_OPTIONS: { value: string; label: string }[] = [
   { value: '퍼피·키튼', label: '퍼피·키튼' },
   { value: '성체', label: '성체' },
