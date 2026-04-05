@@ -19,6 +19,7 @@ import ProductCard from '../components/ProductCard';
 import { searchProducts, getAllIngredients } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import { CORE_COPY } from '../copy/marketing';
+import { rankProductsForProfile } from '../utils/score';
 import { SEARCH_MAIN_CATEGORIES, resolveCategoryFromSearchParams } from '../constants/productCategories';
 import {
   priceBandToMinMax,
@@ -142,11 +143,23 @@ export default function Search() {
   }, [query, category, filters, excludedIngredients, priceMin, priceMax]);
 
   const displayResults = useMemo(() => {
+    if (sortBy === 'default') {
+      return rankProductsForProfile(searchResults, profile).map(({ product, breakdown, score }) => ({
+        product,
+        breakdown,
+        score,
+      }));
+    }
+
     const arr = [...searchResults];
     if (sortBy === 'price_asc') arr.sort((a, b) => a.price - b.price);
     else if (sortBy === 'price_desc') arr.sort((a, b) => b.price - a.price);
     else if (sortBy === 'rating') arr.sort((a, b) => b.averageRating - a.averageRating);
-    return arr;
+    return arr.map((product) => ({
+      product,
+      breakdown: null,
+      score: null,
+    }));
   }, [searchResults, sortBy]);
 
   const toggleHealthConcern = (concern: string) => {
@@ -397,14 +410,35 @@ export default function Search() {
             </span>
             <span className="ui-badge ui-badge-soft">
               <Filter size={12} />
-              {filterButtonActive ? '필터 적용 중' : '기본 추천순'}
+              {sortBy === 'default' ? '프로필 추천순' : filterButtonActive ? '필터 적용 중' : '정렬 적용 중'}
             </span>
           </div>
         </div>
 
+        {sortBy === 'default' && displayResults.length > 0 && (
+          <div className="ui-info-card" style={{ marginBottom: '16px', padding: '16px 18px' }}>
+            <div className="ui-section-kicker">recommendation logic</div>
+            <div style={{ fontSize: '16px', fontWeight: 900, color: 'var(--text-dark)', marginBottom: '6px' }}>
+              {profile.name} 프로필 기반 추천순
+            </div>
+            <div style={{ fontSize: '13px', color: '#66707C', lineHeight: 1.6 }}>
+              알레르기 회피, 건강 고민 매칭, 리뷰 신뢰도, 가격 적정성, 종/연령 적합도를 함께 반영해 정렬합니다.
+            </div>
+          </div>
+        )}
+
         <div className="ui-grid-2">
-          {displayResults.map(product => (
-            <ProductCard key={product.id} product={product} />
+          {displayResults.map(({ product, breakdown, score }) => (
+            <div key={product.id}>
+              <ProductCard product={product} />
+              {breakdown && score != null && (
+                <div style={{ marginTop: '8px', padding: '0 4px', fontSize: '12px', color: '#66707C', lineHeight: 1.55 }}>
+                  <strong style={{ color: '#111827' }}>{score}점 추천</strong>
+                  {' · '}
+                  {breakdown.reasons.slice(0, 2).join(' · ')}
+                </div>
+              )}
+            </div>
           ))}
         </div>
         

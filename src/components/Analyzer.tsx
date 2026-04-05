@@ -138,6 +138,9 @@ export default function Analyzer() {
       </h2>
       <p className="text-sm text-gray-600 font-medium mb-4 leading-relaxed">{CORE_COPY.ocr}</p>
       <p className="text-xs text-gray-500 font-semibold mb-4">{CORE_COPY.thorough}</p>
+      <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs font-medium text-slate-600">
+        실제 출시 환경에서는 로그인 사용자만 사용할 수 있으며, 지나치게 짧거나 긴 성분표는 분석이 제한됩니다.
+      </div>
       {!isLoggedIn && (
         <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-medium text-amber-800">
           AI 정밀 분석은 비용이 발생하는 기능이라 로그인 사용자만 사용할 수 있습니다.
@@ -171,6 +174,10 @@ export default function Analyzer() {
           value={ingredientText}
           onChange={(e) => setIngredientText(e.target.value)}
         />
+        <div className="flex items-center justify-between text-xs text-gray-500">
+          <span>권장: 원재료명 전체를 20자 이상 입력</span>
+          <span>{ingredientText.trim().length}/4000</span>
+        </div>
 
         {error && <div className="text-red-500 text-sm font-medium">{error}</div>}
 
