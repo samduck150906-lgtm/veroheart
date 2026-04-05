@@ -5,9 +5,6 @@ import { ShieldCheck, Lock, Loader2 } from 'lucide-react';
 // 관리자 이메일 화이트리스트 (추후 DB 기반으로 교체 가능)
 const ADMIN_EMAILS = ['ceo@eternalsix.kr', 'admin@eternalsix.kr'];
 
-// 관리자 비밀번호 (환경변수 기반이 이상적이나, 우선 간단한 가드)
-const ADMIN_PASSPHRASE = 'eternalsix-admin-2026';
-
 interface AdminAuthGuardProps {
   children: ReactNode;
 }
@@ -15,43 +12,26 @@ interface AdminAuthGuardProps {
 export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [passphrase, setPassphrase] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
-    checkAuth();
+    void checkAuth();
   }, []);
 
   const checkAuth = async () => {
     try {
-      // 1차: Supabase Auth 세션 확인
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user?.email && ADMIN_EMAILS.includes(session.user.email)) {
         setIsAuthenticated(true);
         setIsLoading(false);
         return;
       }
-
-      // 2차: 세션스토리지 확인 (패스프레이즈 인증)
-      const stored = sessionStorage.getItem('vh_admin_auth');
-      if (stored === btoa(ADMIN_PASSPHRASE)) {
-        setIsAuthenticated(true);
-      }
+      setError('승인된 관리자 계정으로 로그인해야 관리자 콘솔에 접근할 수 있습니다.');
     } catch (err) {
       console.error('Admin auth check failed:', err);
+      setError('관리자 인증 상태를 확인하지 못했습니다.');
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handlePassphraseLogin = () => {
-    if (passphrase === ADMIN_PASSPHRASE) {
-      sessionStorage.setItem('vh_admin_auth', btoa(ADMIN_PASSPHRASE));
-      setIsAuthenticated(true);
-      setError('');
-    } else {
-      setError('관리자 인증에 실패했습니다.');
-      setPassphrase('');
     }
   };
 
@@ -91,24 +71,20 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
             베로로 Admin
           </h1>
           <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '32px' }}>
-            관리자 콘솔에 접근하려면 인증이 필요합니다.
+            승인된 관리자 이메일 계정으로 로그인해야 합니다.
           </p>
 
           <div style={{ position: 'relative', marginBottom: '16px' }}>
             <Lock size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#475569' }} />
-            <input
-              type="password"
-              placeholder="관리자 패스프레이즈 입력"
-              value={passphrase}
-              onChange={(e) => setPassphrase(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handlePassphraseLogin()}
+            <div
               style={{
                 width: '100%', padding: '16px 16px 16px 48px', borderRadius: '14px',
                 border: '1px solid rgba(255,255,255,0.1)', backgroundColor: '#0f172a',
-                color: '#f1f5f9', fontSize: '15px', outline: 'none', boxSizing: 'border-box',
-                transition: 'border-color 0.2s'
+                color: '#94a3b8', fontSize: '15px', outline: 'none', boxSizing: 'border-box',
               }}
-            />
+            >
+              일반 사용자 계정은 접근할 수 없습니다.
+            </div>
           </div>
 
           {error && (
@@ -117,17 +93,20 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
             </p>
           )}
 
-          <button
-            onClick={handlePassphraseLogin}
+          <a
+            href="/login"
             style={{
+              display: 'block',
               width: '100%', padding: '16px', borderRadius: '14px', border: 'none',
               backgroundColor: '#6366f1', color: '#fff', fontWeight: 700, fontSize: '16px',
-              cursor: 'pointer', transition: 'all 0.2s',
-              boxShadow: '0 8px 16px rgba(99,102,241,0.3)'
+              transition: 'all 0.2s',
+              boxShadow: '0 8px 16px rgba(99,102,241,0.3)',
+              textDecoration: 'none',
+              boxSizing: 'border-box',
             }}
           >
-            인증하기
-          </button>
+            로그인하러 가기
+          </a>
 
           <p style={{ marginTop: '24px', fontSize: '12px', color: '#475569' }}>
             관리자 계정이 없으신가요? <a href="mailto:ceo@eternalsix.kr" style={{ color: '#6366f1' }}>문의</a>

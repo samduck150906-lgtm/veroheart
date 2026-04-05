@@ -39,7 +39,7 @@ export default function Success() {
         if (error) {
           console.error('Edge Function Error:', error);
           setStatus('fail');
-          setMessage('결제 승인 서버 호출 중 오류가 발생했습니다.');
+          setMessage(error.message || '결제 승인 서버 호출 중 오류가 발생했습니다.');
           return;
         }
 

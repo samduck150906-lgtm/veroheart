@@ -102,6 +102,10 @@ export default function Checkout() {
       notify.error('받는 분 이름을 입력해주세요.');
       return;
     }
+    if (!customerInfo.email.trim()) {
+      notify.error('이메일 주소를 입력해주세요.');
+      return;
+    }
     if (!customerInfo.phone.trim() || customerInfo.phone.trim().length < 10) {
       notify.error('올바른 연락처를 입력해주세요.');
       return;
@@ -151,6 +155,27 @@ export default function Checkout() {
       <button onClick={() => navigate('/')} className="btn bg-gray-900 text-white px-6 py-2 rounded-lg">쇼핑하러 가기</button>
     </div>
   );
+
+  if (!user) {
+    return (
+      <div className="animate-fade-in" style={{ paddingBottom: '100px' }}>
+        <section className="ui-info-card" style={{ textAlign: 'center', padding: '48px 20px' }}>
+          <h2 style={{ fontSize: '22px', fontWeight: 900, marginBottom: '10px' }}>로그인 확인이 필요합니다</h2>
+          <p style={{ fontSize: '14px', color: '#66707C', lineHeight: 1.6, marginBottom: '18px' }}>
+            결제를 진행하려면 사용자 세션을 먼저 확인해야 합니다. 다시 로그인한 뒤 결제를 시도해주세요.
+          </p>
+          <button
+            type="button"
+            className="btn"
+            style={{ background: '#111827', color: '#fff' }}
+            onClick={() => navigate('/login')}
+          >
+            로그인하러 가기
+          </button>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '100px' }}>

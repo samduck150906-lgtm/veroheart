@@ -270,7 +270,14 @@ export async function createOrder(userId: string, cartItems: any[], totalAmount:
       price_at_purchase: item.price || prod?.min_price || 0
     });
   }
-  await supabase.from('order_items').insert(resolvedItems);
+
+  const { error: orderItemsError } = await supabase.from('order_items').insert(resolvedItems);
+  if (orderItemsError) {
+    await supabase.from('orders').delete().eq('id', order.id);
+    console.error('createOrder order_items insert error:', orderItemsError);
+    return null;
+  }
+
   return { ...order, orderIdExt };
 }
 

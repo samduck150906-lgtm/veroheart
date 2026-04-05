@@ -94,21 +94,35 @@ serve(async (req) => {
     }
 
     // 2. 결제 성공 → Orders 테이블 업데이트
-    const { error: orderError } = await supabaseAdmin
+    const paidAt = new Date().toISOString()
+    const { data: updatedOrder, error: orderError } = await supabaseAdmin
       .from('orders')
       .update({ 
         status: 'paid', 
         payment_key: paymentKey,
-        paid_at: new Date().toISOString()
+        paid_at: paidAt
       })
       .eq('order_id_ext', orderId)
+      .eq('status', 'pending')
+      .select('id, status, payment_key, paid_at')
+      .single()
 
     if (orderError) {
       console.error("Order Update Error:", orderError)
-      // 이미 성공한 결제이므로 에러를 리턴하진 않지만 로그를 남김
+      return new Response(JSON.stringify({
+        success: false,
+        message: '결제는 승인되었지만 주문 상태를 확정하지 못했습니다. 관리자에게 문의해주세요.',
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      })
     }
 
-    return new Response(JSON.stringify({ success: true, data: result }), {
+    return new Response(JSON.stringify({
+      success: true,
+      data: result,
+      order: updatedOrder,
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     })
