@@ -1,4 +1,4 @@
-import type { Product, UserPetProfile } from '../data/mock';
+import type { Product, UserPetProfile } from '../types';
 
 export interface AnalysisReport {
   score: number;

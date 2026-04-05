@@ -15,7 +15,6 @@ import {
   HeartHandshake,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { MOCK_EVENTS } from '../lib/supabase';
 import { HOME_HERO, CORE_COPY, UGC_COPY } from '../copy/marketing';
 import { HOME_CATEGORY_ITEMS } from '../constants/productCategories';
 
@@ -23,7 +22,6 @@ export default function Home() {
   const { products, profile, recentViews } = useStore();
   const navigate = useNavigate();
   const [closedEvents, setClosedEvents] = useState<string[]>([]);
-  const visibleEvents = MOCK_EVENTS.filter((e) => !closedEvents.includes(e.id));
 
   const personalRecs = useMemo(
     () =>
@@ -48,6 +46,59 @@ export default function Home() {
     () => [...products].sort((a, b) => b.averageRating * b.reviewsCount - a.averageRating * a.reviewsCount).slice(0, 4),
     [products]
   );
+
+  const visibleEvents = useMemo(() => {
+    const featuredCategory = products.reduce<Record<string, number>>((acc, product) => {
+      if (!product.mainCategory) return acc;
+      acc[product.mainCategory] = (acc[product.mainCategory] || 0) + 1;
+      return acc;
+    }, {});
+
+    const leadingCategory = Object.entries(featuredCategory).sort((a, b) => b[1] - a[1])[0];
+    const liveCards = [
+      personalRecs[0] && {
+        id: `personal-${personalRecs[0].id}`,
+        title: `${personalRecs[0].name} 맞춤 추천`,
+        desc: `${personalRecs[0].brand} · ${profile.healthConcerns.length > 0 ? `${profile.healthConcerns.join(', ')} 고민과 연관된` : '프로필 기반으로 점수가 높은'} 실제 카탈로그 제품`,
+        badge: '맞춤 추천',
+        color: '#EFF6FF',
+        action: () => navigate(`/product/${personalRecs[0].id}`),
+        cta: '제품 보기',
+      },
+      trendProducts[0] && {
+        id: `trending-${trendProducts[0].id}`,
+        title: `${trendProducts[0].name} 인기 급상승`,
+        desc: `${trendProducts[0].brand} · 평점 ${trendProducts[0].averageRating.toFixed(1)} · 리뷰 ${trendProducts[0].reviewsCount.toLocaleString()}개`,
+        badge: '실시간 랭킹',
+        color: '#FEF3C7',
+        action: () => navigate(`/product/${trendProducts[0].id}`),
+        cta: '상세 보기',
+      },
+      leadingCategory && {
+        id: `category-${leadingCategory[0]}`,
+        title: `${leadingCategory[0]} 카테고리 탐색`,
+        desc: `현재 등록 상품 ${leadingCategory[1]}개 · 실제 카탈로그 기준으로 가장 선택지가 많은 카테고리`,
+        badge: '카탈로그',
+        color: '#F0FDF4',
+        action: () =>
+          navigate({
+            pathname: '/search',
+            search: `?category=${encodeURIComponent(leadingCategory[0])}`,
+          }),
+        cta: '카테고리 보기',
+      },
+    ].filter(Boolean) as {
+      id: string;
+      title: string;
+      desc: string;
+      badge: string;
+      color: string;
+      action: () => void;
+      cta: string;
+    }[];
+
+    return liveCards.filter((item) => !closedEvents.includes(item.id));
+  }, [closedEvents, navigate, personalRecs, products, profile.healthConcerns, trendProducts]);
 
   const quickLinks = [
     {
@@ -91,6 +142,16 @@ export default function Home() {
         </div>
         <p style={{ fontSize: '12px', color: '#8A9099', lineHeight: 1.55 }}>{HOME_HERO.footnote}</p>
       </section>
+
+      {products.length === 0 && (
+        <section className="ui-info-card" style={{ marginBottom: '24px' }}>
+          <div className="ui-section-kicker">catalog status</div>
+          <h2 className="ui-section-title" style={{ marginBottom: '8px' }}>실제 상품 데이터를 기다리고 있어요</h2>
+          <p style={{ fontSize: '14px', color: '#66707C', lineHeight: 1.6 }}>
+            현재 카탈로그에 표시할 상품이 없습니다. Supabase 상품 데이터가 연결되면 홈 추천, 랭킹, 비교함이 모두 실데이터 기준으로 채워집니다.
+          </p>
+        </section>
+      )}
 
       <section style={{ marginBottom: '28px' }}>
         <div className="ui-section-head">
@@ -178,11 +239,14 @@ export default function Home() {
                   </div>
                   <div style={{ fontSize: '15px', fontWeight: 900, color: '#111827', marginBottom: '4px' }}>{ev.title}</div>
                   <div style={{ fontSize: '13px', color: '#6B7280', lineHeight: 1.5 }}>{ev.desc}</div>
-                  {ev.code && (
-                    <div style={{ marginTop: '8px', fontFamily: 'monospace', fontSize: '13px', fontWeight: 800, color: '#111827' }}>
-                      {ev.code}
-                    </div>
-                  )}
+                  <button
+                    type="button"
+                    onClick={ev.action}
+                    className="ui-text-button"
+                    style={{ marginTop: '8px' }}
+                  >
+                    {ev.cta} <ChevronRight size={14} />
+                  </button>
                 </div>
                 <button
                   type="button"

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Heart, ShieldCheck, Star } from 'lucide-react';
-import type { Product } from '../data/mock';
+import type { Product } from '../types';
 import { useStore } from '../store/useStore';
 import { calculateCompatibilityScore } from '../utils/score';
 

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { mockPetProfile, mockProducts as staticMockProducts } from '../data/mock';
-import type { UserPetProfile, Product } from '../data/mock';
+import type { UserPetProfile, Product } from '../types';
+import { DEFAULT_USER_PET_PROFILE } from '../types';
 import {
   getProducts,
   initializeAnonymousSession,
@@ -53,7 +53,7 @@ interface StoreState {
 export const useStore = create<StoreState>((set, get) => ({
   userId: null,
   isLoggedIn: false,
-  profile: mockPetProfile,
+  profile: DEFAULT_USER_PET_PROFILE,
   products: [],
   selectedProduct: null,
   orders: [],
@@ -64,7 +64,16 @@ export const useStore = create<StoreState>((set, get) => ({
 
   signOut: async () => {
     await supabaseSignOut();
-    set({ userId: null, isLoggedIn: false, orders: [], reports: [], favorites: [], recentViews: [], cart: [] });
+    set({
+      userId: null,
+      isLoggedIn: false,
+      orders: [],
+      reports: [],
+      favorites: [],
+      recentViews: [],
+      cart: [],
+      profile: DEFAULT_USER_PET_PROFILE,
+    });
     get().fetchProducts();
   },
 
@@ -72,7 +81,7 @@ export const useStore = create<StoreState>((set, get) => ({
     try {
       const user = await initializeAnonymousSession();
       if (!user) {
-        set({ isInitializing: false });
+        set({ isInitializing: false, profile: DEFAULT_USER_PET_PROFILE });
         get().fetchProducts();
         return;
       }
@@ -130,7 +139,7 @@ export const useStore = create<StoreState>((set, get) => ({
     
     if (userId) {
       await saveUserPet({
-        id: profile.id !== 'user_1' ? profile.id : undefined, // If default mock, don't pass ID to create new
+        id: profile.id !== DEFAULT_USER_PET_PROFILE.id ? profile.id : undefined,
         user_id: userId,
         name: newProfile.name,
         pet_type: newProfile.species === 'Cat' ? 'cat' : 'dog',
@@ -145,10 +154,10 @@ export const useStore = create<StoreState>((set, get) => ({
     set({ isLoadingProducts: true });
     try {
       const data = await getProducts();
-      set({ products: data.length > 0 ? data : staticMockProducts, isLoadingProducts: false });
+      set({ products: data, isLoadingProducts: false });
     } catch (err) {
       console.error(err);
-      set({ products: staticMockProducts, isLoadingProducts: false });
+      set({ products: [], isLoadingProducts: false });
     }
   },
 

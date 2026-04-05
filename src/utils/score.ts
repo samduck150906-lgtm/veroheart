@@ -1,4 +1,4 @@
-import type { Product, UserPetProfile } from '../data/mock';
+import type { Product, UserPetProfile } from '../types';
 
 /**
  * 궁합 점수 계산식: Compatibility = 0.35S + 0.25C + 0.20R + 0.10P + 0.10V

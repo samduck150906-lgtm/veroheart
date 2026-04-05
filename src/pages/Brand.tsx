@@ -5,7 +5,7 @@ import { ArrowLeft, Store, Package, Star, MessageSquare, Sparkles } from 'lucide
 import { getProductsByBrand, getBrands } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import ProductCard from '../components/ProductCard';
-import type { Product } from '../data/mock';
+import type { Product } from '../types';
 
 export default function Brand() {
   const { brandName } = useParams<{ brandName: string }>();

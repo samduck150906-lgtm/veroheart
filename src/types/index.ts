@@ -1,6 +1,47 @@
-import type { Ingredient, Product, UserPetProfile } from '../data/mock';
+export interface UserPetProfile {
+  id: string;
+  name: string;
+  species: 'Dog' | 'Cat';
+  age: number;
+  healthConcerns: string[];
+  allergies: string[];
+}
 
-export type { Ingredient, Product, UserPetProfile };
+export interface Ingredient {
+  id: string;
+  nameKo: string;
+  nameEn: string;
+  purpose: string;
+  riskLevel: 'safe' | 'caution' | 'danger';
+}
+
+export interface Product {
+  id: string;
+  brand: string;
+  name: string;
+  category: string;
+  mainCategory?: string;
+  subCategory?: string;
+  targetPetType?: 'dog' | 'cat' | 'all';
+  targetLifeStage?: string[];
+  formulation?: string;
+  healthConcerns?: string[];
+  hasRiskFactors?: string[];
+  price: number;
+  imageUrl: string;
+  ingredients: Ingredient[];
+  reviewsCount: number;
+  averageRating: number;
+}
+
+export const DEFAULT_USER_PET_PROFILE: UserPetProfile = {
+  id: 'local-profile',
+  name: '우리 아이',
+  species: 'Dog',
+  age: 4,
+  healthConcerns: [],
+  allergies: [],
+};
 
 export interface SupabaseProduct {
   id: string;
