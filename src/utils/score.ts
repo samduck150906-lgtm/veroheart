@@ -1,61 +1,188 @@
 import type { Product, UserPetProfile } from '../types';
 
-/**
- * 궁합 점수 계산식: Compatibility = 0.35S + 0.25C + 0.20R + 0.10P + 0.10V
- * S: 성분 안전성
- * C: 고민 적합도
- * R: 리뷰 만족도
- * P: 인기 점수
- * V: 가격 적합도 (여기서는 하드코딩된 예산 로직으로 대체)
- */
+export interface RecommendationBreakdown {
+  total: number;
+  safety: number;
+  concern: number;
+  socialProof: number;
+  value: number;
+  petFit: number;
+  allergyHits: string[];
+  matchedConcerns: string[];
+  dangerCount: number;
+  cautionCount: number;
+  reasons: string[];
+}
+
+function normalize(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function countConcernMatches(product: Product, profile: UserPetProfile) {
+  const matched = new Set<string>();
+
+  for (const concern of profile.healthConcerns) {
+    const normalizedConcern = normalize(concern);
+    const matchesConcernTag = product.healthConcerns?.some((item) => normalize(item).includes(normalizedConcern));
+    const matchesIngredient = product.ingredients.some(
+      (ingredient) =>
+        normalize(ingredient.purpose).includes(normalizedConcern) ||
+        normalize(ingredient.nameKo).includes(normalizedConcern) ||
+        normalize(ingredient.nameEn || '').includes(normalizedConcern)
+    );
+
+    if (matchesConcernTag || matchesIngredient) {
+      matched.add(concern);
+    }
+  }
+
+  return [...matched];
+}
+
+function countAllergyHits(product: Product, profile: UserPetProfile) {
+  const hits = new Set<string>();
+
+  for (const allergy of profile.allergies) {
+    const normalizedAllergy = normalize(allergy);
+    const hasHit = product.ingredients.some(
+      (ingredient) =>
+        normalize(ingredient.nameKo).includes(normalizedAllergy) ||
+        normalize(ingredient.nameEn || '').includes(normalizedAllergy) ||
+        normalize(ingredient.purpose).includes(normalizedAllergy)
+    );
+
+    if (hasHit) {
+      hits.add(allergy);
+    }
+  }
+
+  return [...hits];
+}
+
+export function getRecommendationBreakdown(product: Product, profile: UserPetProfile): RecommendationBreakdown {
+  const allergyHits = countAllergyHits(product, profile);
+  const matchedConcerns = countConcernMatches(product, profile);
+  const dangerCount = product.ingredients.filter((ingredient) => ingredient.riskLevel === 'danger').length;
+  const cautionCount = product.ingredients.filter((ingredient) => ingredient.riskLevel === 'caution').length;
+  const safeCount = product.ingredients.filter((ingredient) => ingredient.riskLevel === 'safe').length;
+  const totalIngredients = Math.max(product.ingredients.length, 1);
+
+  let safety = 35;
+  safety -= dangerCount * 10;
+  safety -= cautionCount * 4;
+  safety -= allergyHits.length * 18;
+  if (allergyHits.length > 0) safety -= 6;
+  safety += Math.min(6, safeCount);
+  safety = Math.max(0, Math.min(35, safety));
+
+  let concern = 8;
+  concern += matchedConcerns.length * 7;
+  if (product.healthConcerns?.length) {
+    concern += Math.min(4, product.healthConcerns.length);
+  }
+  concern = Math.max(0, Math.min(25, concern));
+
+  const weightedRating = Math.min(5, product.averageRating) / 5;
+  const reviewConfidence = Math.min(1, Math.log10((product.reviewsCount || 0) + 1) / 3);
+  const socialProof = Math.round((weightedRating * 0.75 + reviewConfidence * 0.25) * 20);
+
+  let value = 6;
+  if (product.price <= 15000) value += 4;
+  else if (product.price <= 30000) value += 2;
+  else if (product.price >= 70000) value -= 2;
+  value -= Math.max(0, dangerCount - 1);
+  value = Math.max(0, Math.min(10, value));
+
+  let petFit = 10;
+  const expectedPetType = profile.species === 'Cat' ? 'cat' : 'dog';
+  if (product.targetPetType && product.targetPetType !== expectedPetType && product.targetPetType !== 'all') {
+    petFit = 0;
+  } else if (product.targetPetType === 'all') {
+    petFit = 8;
+  }
+
+  if (profile.age >= 8 && product.targetLifeStage?.includes('시니어')) {
+    petFit = Math.min(10, petFit + 2);
+  }
+
+  if (profile.age <= 2 && product.targetLifeStage?.includes('퍼피·키튼')) {
+    petFit = Math.min(10, petFit + 2);
+  }
+
+  const total = Math.max(0, Math.min(100, Math.round(safety + concern + socialProof + value + petFit)));
+  const reasons: string[] = [];
+
+  if (allergyHits.length > 0) {
+    reasons.push(`회피 성분 ${allergyHits.join(', ')} 포함`);
+  }
+  if (matchedConcerns.length > 0) {
+    reasons.push(`${matchedConcerns.join(', ')} 고민과 연관`);
+  }
+  if (dangerCount === 0 && cautionCount === 0) {
+    reasons.push('위험/주의 성분이 거의 없음');
+  } else if (dangerCount === 0) {
+    reasons.push(`주의 성분 ${cautionCount}개`);
+  } else {
+    reasons.push(`위험 성분 ${dangerCount}개`);
+  }
+  if (product.reviewsCount > 0) {
+    reasons.push(`리뷰 ${product.reviewsCount.toLocaleString()}개`);
+  }
+
+  return {
+    total,
+    safety,
+    concern,
+    socialProof,
+    value,
+    petFit,
+    allergyHits,
+    matchedConcerns,
+    dangerCount,
+    cautionCount,
+    reasons,
+  };
+}
 
 export function calculateCompatibilityScore(product: Product, profile: UserPetProfile): number {
-  let score = 0;
-  
-  // 1. 성분 안전성 (S) - 35점 만점
-  let sScore = 35;
-  let allergyHit = false;
-  product.ingredients.forEach(ing => {
-    // 알레르기 성분 (치명적)
-    if (profile.allergies.includes(ing.nameKo)) {
-      allergyHit = true;
-      sScore -= 20; // 대폭 감점
-    }
-    // 위험도 기반
-    if (ing.riskLevel === 'danger') sScore -= 10;
-    if (ing.riskLevel === 'caution') sScore -= 5;
-  });
-  if (allergyHit) sScore = Math.max(0, sScore - 10);
-  score += Math.max(0, sScore);
+  return getRecommendationBreakdown(product, profile).total;
+}
 
-  // 2. 고민 적합도 (C) - 25점 만점
-  // (임시 매핑 로직)
-  let cScore = 15; // 기본 15점
-  profile.healthConcerns.forEach(concern => {
-    product.ingredients.forEach(ing => {
-      if (ing.purpose.includes(concern)) {
-        cScore += 5; 
-      }
-    });
-  });
-  score += Math.min(25, cScore);
+export function getCompatibilityBreakdown(product: Product, profile: UserPetProfile): RecommendationBreakdown {
+  return getRecommendationBreakdown(product, profile);
+}
 
-  // 3. 리뷰 만족도 (R) - 20점 만점
-  // 평점 5.0 기준 백분율
-  const rScore = (product.averageRating / 5.0) * 20;
-  score += Math.min(20, rScore);
+export function buildRecommendationBreakdown(product: Product, profile: UserPetProfile): RecommendationBreakdown {
+  return getRecommendationBreakdown(product, profile);
+}
 
-  // 4. 인기 (P) - 10점 만점
-  // 리뷰 수 1000개를 10점으로 가정
-  const pScore = Math.min(10, (product.reviewsCount / 1000) * 10);
-  score += pScore;
+export function getProductRecommendationInsights(product: Product, profile: UserPetProfile) {
+  const breakdown = getRecommendationBreakdown(product, profile);
+  return { breakdown, reasons: breakdown.reasons };
+}
 
-  // 5. 가격 적합도 (V) - 10점 만점
-  // MVP에서는 평균 가격을 25000원으로 가정하고 적당한 점수 부여
-  let vScore = 8;
-  if (product.price > 30000) vScore -= 2; // 비싸면 감점
-  if (product.price < 15000) vScore += 2; // 가성비 좋으면 가점
-  score += Math.min(10, vScore);
+export function rankProductsForProfile(
+  products: Product[],
+  profile: UserPetProfile,
+  options: {
+    limit?: number;
+    preferredPetType?: 'dog' | 'cat';
+    preferredCategory?: string;
+    excludeProductId?: string;
+  } = {}
+) {
+  const expectedPetType = options.preferredPetType || (profile.species === 'Cat' ? 'cat' : 'dog');
 
-  return Math.round(score);
+  const ranked = products
+    .filter((product) => product.id !== options.excludeProductId)
+    .filter((product) => !product.targetPetType || product.targetPetType === expectedPetType || product.targetPetType === 'all')
+    .filter((product) => !options.preferredCategory || !product.mainCategory || product.mainCategory === options.preferredCategory)
+    .map((product) => ({
+      product,
+      breakdown: getRecommendationBreakdown(product, profile),
+      score: getRecommendationBreakdown(product, profile).total,
+    }))
+    .sort((a, b) => b.score - a.score);
+
+  return ranked.slice(0, options.limit ?? ranked.length);
 }

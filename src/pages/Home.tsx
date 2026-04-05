@@ -17,6 +17,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { HOME_HERO, CORE_COPY, UGC_COPY } from '../copy/marketing';
 import { HOME_CATEGORY_ITEMS } from '../constants/productCategories';
+import { buildRecommendationBreakdown, calculateCompatibilityScore } from '../utils/score';
 
 export default function Home() {
   const { products, profile, recentViews } = useStore();
@@ -42,10 +43,57 @@ export default function Home() {
     [products, profile]
   );
 
+  const scoredRecommendations = useMemo(
+    () =>
+      products
+        .map((product) => ({
+          product,
+          breakdown: buildRecommendationBreakdown(product, profile),
+        }))
+        .sort((a, b) => b.breakdown.total - a.breakdown.total),
+    [products, profile]
+  );
+
   const trendProducts = useMemo(
     () => [...products].sort((a, b) => b.averageRating * b.reviewsCount - a.averageRating * a.reviewsCount).slice(0, 4),
     [products]
   );
+
+  const insightCards = useMemo(() => {
+    const safestProduct = [...products]
+      .filter((product) => product.ingredients.length > 0)
+      .sort((a, b) => {
+        const safeRatioA = a.ingredients.filter((ingredient) => ingredient.riskLevel === 'safe').length / a.ingredients.length;
+        const safeRatioB = b.ingredients.filter((ingredient) => ingredient.riskLevel === 'safe').length / b.ingredients.length;
+        return safeRatioB - safeRatioA;
+      })[0];
+
+    const bestFitProduct = scoredRecommendations[0]?.product;
+    const valueProduct = [...products]
+      .sort((a, b) => {
+        const valueA = a.price > 0 ? (a.averageRating * Math.max(1, Math.log10(a.reviewsCount + 10))) / a.price : 0;
+        const valueB = b.price > 0 ? (b.averageRating * Math.max(1, Math.log10(b.reviewsCount + 10))) / b.price : 0;
+        return valueB - valueA;
+      })[0];
+
+    return [
+      safestProduct && {
+        title: '안전 성분 우수',
+        body: safestProduct.name,
+        note: `${safestProduct.ingredients.filter((ingredient) => ingredient.riskLevel === 'safe').length}개의 안전 성분`,
+      },
+      bestFitProduct && {
+        title: `${profile.name} 맞춤도 상위`,
+        body: bestFitProduct.name,
+        note: `적합도 ${calculateCompatibilityScore(bestFitProduct, profile)}점`,
+      },
+      valueProduct && {
+        title: '가성비 주목',
+        body: valueProduct.name,
+        note: `${valueProduct.price.toLocaleString()}원 · 평점 ${valueProduct.averageRating.toFixed(1)}`,
+      },
+    ].filter(Boolean) as { title: string; body: string; note: string }[];
+  }, [products, profile, scoredRecommendations]);
 
   const visibleEvents = useMemo(() => {
     const featuredCategory = products.reduce<Record<string, number>>((acc, product) => {
@@ -279,7 +327,27 @@ export default function Home() {
         </div>
       </section>
 
-      {personalRecs.length > 0 && (
+      {insightCards.length > 0 && (
+        <section style={{ marginBottom: '28px' }}>
+          <div className="ui-section-head">
+            <div>
+              <div className="ui-section-kicker">catalog insights</div>
+              <h2 className="ui-section-title">실제 데이터로 보는 한눈 요약</h2>
+            </div>
+          </div>
+          <div className="ui-grid-3">
+            {insightCards.map((card) => (
+              <div key={card.title} className="ui-info-card">
+                <div style={{ fontSize: '12px', color: '#8A9099', fontWeight: 800, marginBottom: '8px' }}>{card.title}</div>
+                <div style={{ fontSize: '15px', fontWeight: 900, color: 'var(--text-dark)', marginBottom: '6px', lineHeight: 1.4 }}>{card.body}</div>
+                <div style={{ fontSize: '13px', color: '#66707C', lineHeight: 1.55 }}>{card.note}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {scoredRecommendations.length > 0 && (
         <section style={{ marginBottom: '28px' }}>
           <div className="ui-section-head">
             <div>
@@ -296,8 +364,13 @@ export default function Home() {
               : '등록된 프로필 정보를 바탕으로 추천 순서를 조정해 보여드려요.'}
           </p>
           <div className="ui-grid-2">
-            {personalRecs.map((product) => (
-              <ProductCard key={product.id} product={product} />
+            {scoredRecommendations.slice(0, 4).map(({ product, breakdown }) => (
+              <div key={product.id}>
+                <ProductCard product={product} />
+                <div style={{ marginTop: '8px', padding: '0 4px', fontSize: '12px', color: '#66707C', lineHeight: 1.5 }}>
+                  추천 이유: {breakdown.reasons.slice(0, 2).join(' · ')}
+                </div>
+              </div>
             ))}
           </div>
         </section>

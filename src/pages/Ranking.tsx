@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Trophy, TrendingUp, Star, Dog, Cat, ShieldCheck, MessageSquare, Sparkles } from 'lucide-react';
 import { useStore } from '../store/useStore';
-import { calculateCompatibilityScore } from '../utils/score';
+import { calculateCompatibilityScore, getProductRecommendationInsights } from '../utils/score';
 import { UGC_COPY } from '../copy/marketing';
 
 const TABS = [
@@ -35,6 +35,13 @@ export default function Ranking() {
     return safe / total;
   };
 
+  const trustScore = (product: (typeof filtered)[number]) => {
+    const rating = Math.min(1, (product.averageRating || 0) / 5);
+    const reviews = Math.min(1, Math.log10((product.reviewsCount || 0) + 1) / 3);
+    const safety = safeScore(product);
+    return Math.round((rating * 0.45 + reviews * 0.3 + safety * 0.25) * 100);
+  };
+
   const ranked = [...filtered]
     .sort((a, b) => {
       if (sortBy === 'compatibility') {
@@ -50,7 +57,7 @@ export default function Ranking() {
     .slice(0, 30);
 
   const heroStats = useMemo(() => {
-    const topRated = [...filtered].sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0))[0];
+    const topRated = [...filtered].sort((a, b) => trustScore(b) - trustScore(a))[0];
     const mostReviewed = [...filtered].sort((a, b) => (b.reviewsCount || 0) - (a.reviewsCount || 0))[0];
     const safest = [...filtered].sort((a, b) => safeScore(b) - safeScore(a))[0];
     return {
@@ -79,7 +86,7 @@ export default function Ranking() {
           <div className="ui-info-card" style={{ padding: '16px' }}>
             <div className="ui-icon-pill" style={{ marginBottom: '10px' }}><Star size={16} color="#F59E0B" /></div>
             <div style={{ fontSize: '12px', color: '#8A9099', fontWeight: 700, marginBottom: '4px' }}>평점 우수</div>
-            <div style={{ fontSize: '14px', fontWeight: 800, lineHeight: 1.45 }}>{heroStats.topRated?.name ?? '데이터 준비 중'}</div>
+              <div style={{ fontSize: '14px', fontWeight: 800, lineHeight: 1.45 }}>{heroStats.topRated?.name ?? '데이터 준비 중'}</div>
           </div>
           <div className="ui-info-card" style={{ padding: '16px' }}>
             <div className="ui-icon-pill" style={{ marginBottom: '10px' }}><MessageSquare size={16} color="#3B82F6" /></div>
@@ -180,9 +187,9 @@ export default function Ranking() {
               </div>
 
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                {sortBy === 'compatibility' && (
-                  <div style={{ fontSize: '20px', fontWeight: 900, color: score >= 80 ? '#10B981' : score >= 50 ? '#F59E0B' : '#EF4444' }}>{score}<span style={{ fontSize: '11px', color: '#9CA3AF' }}>점</span></div>
-                )}
+                  {sortBy === 'compatibility' && (
+                    <div style={{ fontSize: '20px', fontWeight: 900, color: score >= 80 ? '#10B981' : score >= 50 ? '#F59E0B' : '#EF4444' }}>{score}<span style={{ fontSize: '11px', color: '#9CA3AF' }}>점</span></div>
+                  )}
                 {sortBy === 'rating' && (
                   <div style={{ fontSize: '20px', fontWeight: 900, color: '#F59E0B' }}>{product.averageRating}</div>
                 )}
@@ -193,6 +200,11 @@ export default function Ranking() {
                   <div style={{ fontSize: '20px', fontWeight: 900, color: '#10B981' }}>{safeRatio}%</div>
                 )}
                 <div style={{ fontSize: '11px', color: '#9CA3AF' }}>{product.price?.toLocaleString()}원</div>
+                {sortBy === 'compatibility' && (
+                  <div style={{ marginTop: '6px', fontSize: '10px', color: '#667085', maxWidth: '120px', lineHeight: 1.35 }}>
+                    {getProductRecommendationInsights(product, profile).reasons[0] || '프로필 기준 추천'}
+                  </div>
+                )}
               </div>
             </div>
           );

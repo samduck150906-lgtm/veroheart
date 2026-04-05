@@ -1,4 +1,5 @@
 import type { Product, UserPetProfile } from '../types';
+import { getCompatibilityBreakdown } from './score';
 
 export interface AnalysisReport {
   score: number;
@@ -10,6 +11,7 @@ export interface AnalysisReport {
 
 export function generateAnalysisReport(product: Product, profile: UserPetProfile): AnalysisReport {
   const ingredients = product.ingredients || [];
+  const compatibility = getCompatibilityBreakdown(product, profile);
   let score = 0;
   
   // 1. Ingredient Safety (S) - 35 points
@@ -59,7 +61,7 @@ export function generateAnalysisReport(product: Product, profile: UserPetProfile
   const pScore = Math.min(10, (product.reviewsCount / 500) * 10);
   score += pScore + 8; // Default value score
 
-  const totalScore = Math.round(score);
+  const totalScore = Math.round((score + compatibility.total) / 2);
   
   // Highlights
   const highlights: { text: string; type: 'positive' | 'negative' | 'caution' }[] = [];
@@ -102,6 +104,10 @@ export function generateAnalysisReport(product: Product, profile: UserPetProfile
     grade,
     summary,
     highlights,
-    detailedAnalysis: `전체 ${ingredients.length}개의 성분 중 ${dangerIngredients.length}개의 위험 성분이 발견되었습니다. ${profile.name}의 건강 고민인 ${profile.healthConcerns.join(', ')}에 대한 고려도는 ${concernMatches.length > 0 ? '높음' : '보통'}입니다.`
+    detailedAnalysis: `전체 ${ingredients.length}개의 성분 중 ${dangerIngredients.length}개의 위험 성분이 발견되었습니다. ${
+      profile.healthConcerns.length > 0
+        ? `${profile.name}의 건강 고민(${profile.healthConcerns.join(', ')})과의 관련도는 ${concernMatches.length > 0 ? '높음' : '보통'}입니다. `
+        : ''
+    }리뷰/인기/가격까지 포함한 종합 적합도는 ${compatibility.total}점으로 계산되었습니다.`
   };
 }
