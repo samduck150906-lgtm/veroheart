@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
+const MAX_INGREDIENT_TEXT_LENGTH = 4000;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,11 +13,37 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ error: '허용되지 않은 메서드입니다.' }), {
+      status: 405,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
   try {
+    if (!ANTHROPIC_API_KEY) {
+      throw new Error('AI 분석 서비스 설정이 누락되었습니다.');
+    }
+
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: '로그인 사용자만 AI 분석을 사용할 수 있습니다.' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const { animal, product_type, ingredient } = await req.json();
 
     if (!ingredient?.trim()) {
       return new Response(JSON.stringify({ error: '성분 텍스트를 입력해주세요.' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (ingredient.length > MAX_INGREDIENT_TEXT_LENGTH) {
+      return new Response(JSON.stringify({ error: '성분 텍스트가 너무 깁니다. 4000자 이하로 입력해주세요.' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });

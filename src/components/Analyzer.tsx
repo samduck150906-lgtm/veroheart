@@ -8,7 +8,7 @@ import { CORE_COPY } from '../copy/marketing';
 import { calculateCompatibilityScore } from '../utils/score';
 
 export default function Analyzer() {
-  const { userId, selectedProduct, products, profile } = useStore();
+  const { userId, isLoggedIn, selectedProduct, products, profile } = useStore();
   const [animal, setAnimal] = useState<'dog' | 'cat'>('dog');
   const [productType, setProductType] = useState('food');
   const [ingredientText, setIngredientText] = useState('');
@@ -79,6 +79,16 @@ export default function Analyzer() {
       setError('전성분 텍스트를 입력해주세요.');
       return;
     }
+
+    if (!isLoggedIn || !userId) {
+      setError('AI 정밀 분석은 로그인 후 이용할 수 있습니다.');
+      return;
+    }
+
+    if (ingredientText.trim().length < 20) {
+      setError('조금 더 자세한 전성분 정보를 입력해주세요.');
+      return;
+    }
     
     setIsLoading(true);
     setError('');
@@ -111,11 +121,9 @@ export default function Analyzer() {
       const data: AnalysisResponse = await response.json();
       setResult(data);
 
-      if (userId) {
-        // Save to DB in background
-        saveAnalysisReport(userId, selectedProduct?.id || null, ingredientText, data).catch(console.error);
-        useStore.getState().fetchReports(); // trigger refresh
-      }
+      // Save to DB in background
+      saveAnalysisReport(userId, selectedProduct?.id || null, ingredientText, data).catch(console.error);
+      useStore.getState().fetchReports(); // trigger refresh
     } catch (err: any) {
       setError(err.message || '오류가 발생했습니다.');
     } finally {
@@ -130,6 +138,11 @@ export default function Analyzer() {
       </h2>
       <p className="text-sm text-gray-600 font-medium mb-4 leading-relaxed">{CORE_COPY.ocr}</p>
       <p className="text-xs text-gray-500 font-semibold mb-4">{CORE_COPY.thorough}</p>
+      {!isLoggedIn && (
+        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-medium text-amber-800">
+          AI 정밀 분석은 비용이 발생하는 기능이라 로그인 사용자만 사용할 수 있습니다.
+        </div>
+      )}
       
       <div className="space-y-4 mb-6">
         <div className="flex gap-4">
@@ -163,7 +176,7 @@ export default function Analyzer() {
 
         <button
           onClick={handleAnalyze}
-          disabled={isLoading}
+          disabled={isLoading || !isLoggedIn}
           className="w-full flex justify-center items-center py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl hover:from-blue-700 hover:to-indigo-700 transition"
         >
           {isLoading ? (
