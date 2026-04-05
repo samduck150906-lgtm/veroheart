@@ -43,18 +43,6 @@ function Footer() {
           >
             취소 및 환불 안내
           </Link>
-          <span style={{ color: '#C8BFB8' }}>|</span>
-          <Link
-            to="/cart"
-            style={{
-              fontSize: '9px',
-              color: '#8C5A4C',
-              textDecoration: 'none',
-              fontWeight: 700,
-            }}
-          >
-            장바구니
-          </Link>
         </div>
 
         <div
@@ -76,7 +64,7 @@ function Footer() {
             <a href="mailto:ceo@eternalsix.kr" style={{ color: 'inherit', textDecoration: 'none' }}>
               ceo@eternalsix.kr
             </a>{' '}
-            · TOSS PAYMENTS 가맹점 · © 이터널식스
+            · © 이터널식스
           </p>
         </div>
       </div>
