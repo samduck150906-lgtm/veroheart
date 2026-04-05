@@ -1,5 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react';
-import { ChevronDown } from 'lucide-react';
+import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 
 const btnStyle: CSSProperties = {
@@ -22,7 +21,7 @@ function Footer() {
   return (
     <footer
       style={{
-        padding: '18px 20px 22px',
+        padding: '16px 20px 20px',
         backgroundColor: 'rgba(255, 245, 240, 0.85)',
         borderTop: '1px solid rgba(232, 90, 60, 0.1)',
         color: '#6b6560',
@@ -40,7 +39,7 @@ function Footer() {
             display: 'flex',
             flexWrap: 'wrap',
             gap: '8px',
-            marginBottom: '14px',
+            marginBottom: '12px',
           }}
         >
           <Link to="/terms" style={btnStyle}>
@@ -54,71 +53,35 @@ function Footer() {
           </Link>
         </div>
 
-        <details
+        <div
           style={{
-            marginBottom: '14px',
-            background: 'rgba(255,255,255,0.72)',
-            border: '1px solid rgba(232, 90, 60, 0.12)',
-            borderRadius: '16px',
-            overflow: 'hidden',
+            marginBottom: '12px',
+            fontSize: '10px',
+            lineHeight: 1.7,
+            color: '#8B8681',
           }}
         >
-          <summary
-            style={{
-              listStyle: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '12px',
-              padding: '12px 14px',
-            }}
-          >
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.04em', marginBottom: '4px' }}>
-                사업자 정보
-              </div>
-              <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-dark)', lineHeight: 1.45 }}>
-                이터널식스 · 성아름 · 303-28-65658
-              </div>
-            </div>
-            <ChevronDown size={16} color="#8B8F97" style={{ flexShrink: 0 }} />
-          </summary>
-          <div
-            style={{
-              padding: '0 14px 14px',
-              display: 'grid',
-              gap: '8px',
-              color: '#5c564f',
-              fontSize: '11px',
-              borderTop: '1px solid rgba(232, 90, 60, 0.08)',
-            }}
-          >
-            <InfoRow label="통신판매업" value="제 2025-수원영통-1499호" />
-            <InfoRow
-              label="연락처"
-              value={
-                <a href="tel:010-8111-9370" style={{ color: 'inherit', textDecoration: 'underline' }}>
-                  010-8111-9370
-                </a>
-              }
-            />
-            <InfoRow label="주소" value="경기도 수원시 영통구 삼성로 186-1 4층" />
-            <InfoRow
-              label="이메일"
-              value={
-                <a href="mailto:ceo@eternalsix.kr" style={{ color: 'inherit', textDecoration: 'underline' }}>
-                  ceo@eternalsix.kr
-                </a>
-              }
-            />
-          </div>
-        </details>
+          <p style={{ margin: '0 0 2px' }}>
+            상호 이터널식스 · 대표자 성아름 · 사업자등록번호 303-28-65658 · 통신판매업 제 2025-수원영통-1499호
+          </p>
+          <p style={{ margin: '0 0 2px' }}>
+            주소 경기도 수원시 영통구 삼성로 186-1 4층 · 연락처{' '}
+            <a href="tel:010-8111-9370" style={{ color: 'inherit', textDecoration: 'underline' }}>
+              010-8111-9370
+            </a>
+          </p>
+          <p style={{ margin: 0 }}>
+            이메일{' '}
+            <a href="mailto:ceo@eternalsix.kr" style={{ color: 'inherit', textDecoration: 'underline' }}>
+              ceo@eternalsix.kr
+            </a>
+          </p>
+        </div>
 
         <div
           style={{
-            marginTop: '12px',
-            paddingTop: '14px',
+            marginTop: '10px',
+            paddingTop: '12px',
             borderTop: '1px solid rgba(232, 90, 60, 0.1)',
             display: 'flex',
             justifyContent: 'space-between',
@@ -141,11 +104,11 @@ function Footer() {
             장바구니 · 결제
           </Link>
         </div>
-        <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'flex-end' }}>
+        <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end' }}>
           <div
             style={{
               background: 'var(--surface-elevated)',
-              padding: '4px 10px',
+              padding: '3px 9px',
               borderRadius: '12px',
               border: '1px solid rgba(232, 90, 60, 0.15)',
               fontSize: '10px',
@@ -158,15 +121,6 @@ function Footer() {
         </div>
       </div>
     </footer>
-  );
-}
-
-function InfoRow({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: '72px 1fr', gap: '10px', alignItems: 'start', paddingTop: '8px' }}>
-      <strong style={{ color: 'var(--text-dark)', fontWeight: 700 }}>{label}</strong>
-      <span style={{ wordBreak: 'break-word', lineHeight: 1.55 }}>{value}</span>
-    </div>
   );
 }
 
