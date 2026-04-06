@@ -5,6 +5,7 @@ import {
   Filter,
   X,
   Check,
+  SlidersHorizontal,
   Trash2,
   Plus,
   FlaskConical,
@@ -22,7 +23,8 @@ import {
   priceBandToMinMax,
   PRICE_BAND_LABELS,
   FORMULATION_OPTIONS,
-  HEALTH_CONCERN_OPTIONS,
+  HEALTH_DISEASE_OPTIONS,
+  HEALTH_BODY_PART_OPTIONS,
   LIFE_STAGE_OPTIONS,
   type PriceBand,
 } from '../constants/searchFilters';
@@ -155,6 +157,70 @@ export default function Search() {
   const setPetFilter = (p: '' | 'dog' | 'cat' | 'all') => {
     setFilters(f => ({ ...f, targetPetType: p }));
   };
+
+  const activeFilterChips = useMemo(() => {
+    const chips: { key: string; label: string; onRemove: () => void }[] = [];
+    if (filters.targetPetType === 'dog') {
+      chips.push({ key: 'pet-dog', label: '강아지', onRemove: () => setPetFilter('') });
+    } else if (filters.targetPetType === 'cat') {
+      chips.push({ key: 'pet-cat', label: '고양이', onRemove: () => setPetFilter('') });
+    } else if (filters.targetPetType === 'all') {
+      chips.push({ key: 'pet-all', label: '공용', onRemove: () => setPetFilter('') });
+    }
+    if (filters.priceBand !== 'any') {
+      const found = PRICE_BAND_LABELS.find(({ id }) => id === filters.priceBand);
+      chips.push({
+        key: `price-${filters.priceBand}`,
+        label: found?.label ?? '가격대',
+        onRemove: () => setFilters(prev => ({ ...prev, priceBand: 'any' })),
+      });
+    }
+    if (filters.targetLifeStage) {
+      chips.push({
+        key: `life-${filters.targetLifeStage}`,
+        label: filters.targetLifeStage,
+        onRemove: () => setFilters(prev => ({ ...prev, targetLifeStage: '' })),
+      });
+    }
+    if (filters.formulation) {
+      chips.push({
+        key: `form-${filters.formulation}`,
+        label: filters.formulation,
+        onRemove: () => setFilters(prev => ({ ...prev, formulation: '' })),
+      });
+    }
+    if (filters.dietPreset) {
+      chips.push({
+        key: 'diet',
+        label: '다이어트·체중',
+        onRemove: () => setFilters(prev => ({ ...prev, dietPreset: false })),
+      });
+    }
+    filters.healthConcerns.forEach(concern => {
+      chips.push({
+        key: `concern-${concern}`,
+        label: concern,
+        onRemove: () => toggleHealthConcern(concern),
+      });
+    });
+    excludedIngredients.forEach(ingredient => {
+      chips.push({
+        key: `exclude-${ingredient}`,
+        label: `${ingredient} 제외`,
+        onRemove: () => setExcludedIngredients(prev => prev.filter(i => i !== ingredient)),
+      });
+    });
+    if (sortBy !== 'default') {
+      const sortLabel =
+        sortBy === 'price_asc'
+          ? '가격 낮은순'
+          : sortBy === 'price_desc'
+            ? '가격 높은순'
+            : '평점순';
+      chips.push({ key: `sort-${sortBy}`, label: sortLabel, onRemove: () => setSortBy('default') });
+    }
+    return chips;
+  }, [filters, excludedIngredients, sortBy]);
 
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '100px' }}>
@@ -325,6 +391,48 @@ export default function Search() {
             </button>
           ))}
         </div>
+
+        {activeFilterChips.length > 0 && (
+          <div style={{ marginTop: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+              <SlidersHorizontal size={14} color="#6B7280" />
+              <span style={{ fontSize: '11px', color: '#6B7280', fontWeight: 700 }}>적용 중 필터</span>
+              <button
+                type="button"
+                onClick={resetFilters}
+                style={{ marginLeft: 'auto', fontSize: '11px', color: '#9CA3AF', fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                전체 해제
+              </button>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+              {activeFilterChips.map(chip => (
+                <button
+                  key={chip.key}
+                  type="button"
+                  onClick={chip.onRemove}
+                  style={{
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '7px 11px',
+                    borderRadius: '999px',
+                    border: '1px solid #FBCFE8',
+                    background: '#FFF1F2',
+                    color: '#BE185D',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {chip.label}
+                  <X size={13} />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <div style={{ marginTop: '12px' }}>
@@ -431,9 +539,22 @@ export default function Search() {
               </div>
             </Section>
 
-            <Section title="건강 고민 (복수 선택 · OR)">
+            <Section title="건강 · 질병 (복수 선택 · OR)">
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {HEALTH_CONCERN_OPTIONS.map(concern => (
+                {HEALTH_DISEASE_OPTIONS.map(concern => (
+                  <FilterChip
+                    key={concern}
+                    label={concern}
+                    selected={filters.healthConcerns.includes(concern)}
+                    onClick={() => toggleHealthConcern(concern)}
+                  />
+                ))}
+              </div>
+            </Section>
+
+            <Section title="케어 부위 (복수 선택 · OR)">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {HEALTH_BODY_PART_OPTIONS.map(concern => (
                   <FilterChip
                     key={concern}
                     label={concern}

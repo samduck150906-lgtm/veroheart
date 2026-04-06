@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useStore } from '../store/useStore';
 import ProductCard from '../components/ProductCard';
 import TargetedAd from '../components/TargetedAd';
 import { Helmet } from 'react-helmet-async';
-import { Sparkles, Clock, ChevronRight, X, Tag } from 'lucide-react';
+import { Sparkles, Clock, ChevronRight, X, Tag, Flame, Stethoscope, Wallet } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { MOCK_EVENTS } from '../lib/supabase';
 import { HOME_HERO, CORE_COPY, UGC_COPY } from '../copy/marketing';
 import { HOME_CATEGORY_ITEMS } from '../constants/productCategories';
+import type { Product } from '../data/mock';
 
 export default function Home() {
   const { products, profile, recentViews } = useStore();
@@ -28,6 +29,20 @@ export default function Home() {
     })
     .slice(0, 4);
 
+  const trendingProducts = [...products]
+    .sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
+    .slice(0, 8);
+
+  const concernProducts = [...products]
+    .filter(p => (p.healthConcerns ?? []).some(c => profile.healthConcerns.includes(c)))
+    .sort((a, b) => (b.averageRating ?? 0) - (a.averageRating ?? 0))
+    .slice(0, 8);
+
+  const budgetProducts = [...products]
+    .filter(p => (p.price ?? 0) <= 30000)
+    .sort((a, b) => (b.averageRating ?? 0) - (a.averageRating ?? 0))
+    .slice(0, 8);
+
   return (
     <div>
       <Helmet>
@@ -36,51 +51,28 @@ export default function Home() {
       </Helmet>
 
       <section style={{
-        marginBottom: '28px', padding: '22px 20px', borderRadius: '24px',
+        marginBottom: '22px', padding: '20px 18px', borderRadius: '20px',
         background: 'linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(255, 245, 240, 0.9) 100%)',
         border: '1px solid rgba(232, 90, 60, 0.12)', boxShadow: 'var(--shadow-md)',
       }}>
-        <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--community-tint)', marginBottom: '10px', letterSpacing: '0.06em', textTransform: 'uppercase' }}>First impression</p>
-        <h1 style={{ fontSize: '21px', fontWeight: 800, color: 'var(--text-dark)', lineHeight: 1.45, letterSpacing: '-0.03em', margin: '0 0 12px' }}>
+        <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--community-tint)', marginBottom: '8px', letterSpacing: '0.06em', textTransform: 'uppercase' }}>First impression</p>
+        <h1 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-dark)', lineHeight: 1.4, letterSpacing: '-0.02em', margin: '0 0 10px' }}>
           {HOME_HERO.headline}
         </h1>
-        <p style={{ fontSize: '14px', fontWeight: 600, color: '#4B5563', lineHeight: 1.55, margin: '0 0 14px' }}>
+        <p style={{ fontSize: '13px', fontWeight: 600, color: '#4B5563', lineHeight: 1.5, margin: '0 0 10px' }}>
           {HOME_HERO.sub}
         </p>
-        <div style={{
-          fontSize: '13px', fontWeight: 700, color: 'var(--primary-dark)', padding: '12px 14px', borderRadius: '14px',
-          background: 'rgba(232, 90, 60, 0.08)', border: '1px dashed rgba(232, 90, 60, 0.25)', marginBottom: '10px',
-        }}>
-          {HOME_HERO.customTable}
-        </div>
-        <p style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500, lineHeight: 1.5, margin: 0, fontStyle: 'italic' }}>
-          {HOME_HERO.footnote}
+        <p style={{ fontSize: '12px', color: '#6B7280', fontWeight: 600, lineHeight: 1.5, margin: 0 }}>
+          {CORE_COPY.ocr}
         </p>
       </section>
 
-      <section style={{ marginBottom: '28px' }}>
-        <h2 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-dark)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Sparkles size={18} color="var(--primary)" /> 성분 분석
-        </h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {[CORE_COPY.ocr, CORE_COPY.dangerHighlight, CORE_COPY.allergyAlert, CORE_COPY.thorough].map((line) => (
+      <section style={{ marginBottom: '22px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          {[UGC_COPY.honestReviews, UGC_COPY.palatability].map((line) => (
             <div key={line} style={{
-              fontSize: '13px', fontWeight: 600, color: '#374151', padding: '12px 14px', borderRadius: '14px',
-              background: 'var(--surface-elevated)', border: '1px solid rgba(0,0,0,0.04)', lineHeight: 1.5,
-            }}>
-              {line}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section style={{ marginBottom: '32px' }}>
-        <h2 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-dark)', marginBottom: '12px' }}>리뷰 &amp; 커뮤니티</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-          {[UGC_COPY.honestReviews, UGC_COPY.palatability, UGC_COPY.allergyList, UGC_COPY.settleDown].map((line) => (
-            <div key={line} style={{
-              fontSize: '12px', fontWeight: 600, color: '#4B5563', padding: '12px', borderRadius: '14px',
-              background: '#F9FAFB', border: '1px solid #F3F4F6', lineHeight: 1.45, minHeight: '72px', display: 'flex', alignItems: 'center',
+              fontSize: '12px', fontWeight: 600, color: '#4B5563', padding: '10px', borderRadius: '12px',
+              background: '#F9FAFB', border: '1px solid #F3F4F6', lineHeight: 1.4, minHeight: '58px', display: 'flex', alignItems: 'center',
             }}>
               {line}
             </div>
@@ -118,60 +110,42 @@ export default function Home() {
         </section>
       )}
 
-      {/* Personalized Section */}
       {personalRecs.length > 0 && (
-        <section style={{
-          marginBottom: '40px',
-          background: 'linear-gradient(135deg, var(--primary-dark) 0%, #C94A32 100%)',
-          margin: '0 -20px 40px -20px',
-          padding: '32px 20px',
-          color: '#fff',
-          borderRadius: '0 0 24px 24px',
-          boxShadow: 'var(--shadow-lg)',
-        }}>
-          <h2 style={{ fontSize: '22px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 900 }}>
-            <Sparkles size={24} color="#FDE68A" />
-            <span>{profile.name}를 위한 맞춤 추천</span>
-          </h2>
-          <p style={{ fontSize: '14px', opacity: 0.8, marginBottom: '24px' }}>
-            {profile.healthConcerns.join(', ')} 고민을 해결해줄 제품들을 모았어요.
-          </p>
-          <div style={{ 
-            display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '8px',
-            msOverflowStyle: 'none', scrollbarWidth: 'none'
-          }}>
-            {personalRecs.map((p) => (
-              <div key={p.id} className="card animate-scale-in" style={{ flex: '0 0 240px', padding: '12px', backgroundColor: '#fff', color: 'var(--text-dark)', borderRadius: '16px' }}>
-                <ProductCard product={p} />
-              </div>
-            ))}
-          </div>
-        </section>
+        <HorizontalProductSection
+          title={`${profile.name} 맞춤 추천`}
+          subtitle={`${profile.healthConcerns.join(', ')} 고민 기준`}
+          icon={<Sparkles size={18} color="#F59E0B" />}
+          products={personalRecs}
+          onMore={() => navigate('/search')}
+        />
       )}
 
-      {/* Ranking Section */}
-      <section style={{ marginBottom: '48px' }}>
-        <h2 style={{ fontSize: '22px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', fontWeight: 800 }}>
-          <span>인기 급상승 랭킹 🔥</span>
-        </h2>
-        <div style={{ display: 'grid', gap: '16px' }}>
-          {products.slice(0, 4).map((p, idx) => (
-            <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '12px', borderRadius: '16px', border: '1px solid rgba(232, 90, 60, 0.12)', background: 'var(--surface-elevated)' }}>
-              <span style={{ 
-                fontSize: '24px', fontWeight: 900, width: '28px', textAlign: 'center', fontStyle: 'italic',
-                color: idx < 3 ? 'var(--primary-dark)' : '#D1D5DB' 
-              }}>{idx + 1}</span>
-              <div style={{ flex: 1 }}>
-                <ProductCard product={p} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      <HorizontalProductSection
+        title="급상승 랭킹"
+        subtitle="리뷰가 빠르게 늘고 있는 제품"
+        icon={<Flame size={18} color="#EF4444" />}
+        products={trendingProducts}
+        onMore={() => navigate('/ranking')}
+      />
+
+      <HorizontalProductSection
+        title="질병 · 부위별 추천"
+        subtitle="현재 프로필 건강 고민 기반"
+        icon={<Stethoscope size={18} color="#2563EB" />}
+        products={concernProducts}
+        onMore={() => navigate('/search')}
+      />
+
+      <HorizontalProductSection
+        title="가성비 추천"
+        subtitle="3만원 이하 평점 우수 제품"
+        icon={<Wallet size={18} color="#059669" />}
+        products={budgetProducts}
+        onMore={() => navigate('/search')}
+      />
 
       <TargetedAd />
 
-      {/* 최근 본 제품 */}
       {recentViews.length > 0 && (
         <section style={{ marginBottom: '48px' }}>
           <h2 style={{ fontSize: '22px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 800 }}>
@@ -191,7 +165,6 @@ export default function Home() {
         </section>
       )}
 
-      {/* Category Grid */}
       <section style={{ marginTop: '48px' }}>
         <h2 style={{ fontSize: '22px', marginBottom: '24px', fontWeight: 800 }}>카테고리별 탐색</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
@@ -220,5 +193,48 @@ export default function Home() {
         </div>
       </section>
     </div>
+  );
+}
+
+function HorizontalProductSection({
+  title,
+  subtitle,
+  icon,
+  products,
+  onMore,
+}: {
+  title: string;
+  subtitle: string;
+  icon: ReactNode;
+  products: Product[];
+  onMore: () => void;
+}) {
+  if (products.length === 0) return null;
+
+  return (
+    <section style={{ marginBottom: '34px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+        <div>
+          <h2 style={{ fontSize: '18px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800 }}>
+            {icon}
+            {title}
+          </h2>
+          <p style={{ fontSize: '12px', color: '#6B7280', fontWeight: 600, margin: 0 }}>{subtitle}</p>
+        </div>
+        <button onClick={onMore} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#6B7280', fontWeight: 700 }}>
+          더보기 <ChevronRight size={15} />
+        </button>
+      </div>
+      <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '6px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+        {products.map((product, idx) => (
+          <div key={product.id} style={{ flex: '0 0 290px', position: 'relative' }}>
+            <div style={{ position: 'absolute', top: '10px', left: '10px', zIndex: 2, width: '22px', height: '22px', borderRadius: '999px', background: '#111827', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 800 }}>
+              {idx + 1}
+            </div>
+            <ProductCard product={product} compact />
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }

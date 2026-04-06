@@ -4,10 +4,18 @@ import type { Product } from '../data/mock';
 import { useStore } from '../store/useStore';
 import { calculateCompatibilityScore } from '../utils/score';
 
-export default function ProductCard({ product }: { product: Product }) {
+type ProductCardProps = {
+  product: Product;
+  compact?: boolean;
+  showHealthTags?: boolean;
+};
+
+export default function ProductCard({ product, compact = false, showHealthTags = true }: ProductCardProps) {
   const { profile, favorites, toggleFavorite } = useStore();
   const score = calculateCompatibilityScore(product, profile);
   const isFav = favorites.includes(product.id);
+  const healthTags = (product.healthConcerns ?? []).slice(0, compact ? 2 : 3);
+  const imageSize = compact ? 86 : 100;
 
   const getScoreColor = (s: number) => {
     if (s >= 80) return 'var(--safe)';
@@ -16,13 +24,13 @@ export default function ProductCard({ product }: { product: Product }) {
   };
 
   return (
-    <div className="card" style={{ position: 'relative', marginBottom: '16px' }}>
+    <div className="card" style={{ position: 'relative', marginBottom: compact ? 0 : '16px' }}>
       <Link to={`/product/${product.id}`} style={{
         textDecoration: 'none', color: 'inherit',
-        display: 'flex', gap: '16px'
+        display: 'flex', gap: compact ? '12px' : '16px'
       }}>
         <div style={{
-          width: '100px', height: '100px', borderRadius: '16px',
+          width: `${imageSize}px`, height: `${imageSize}px`, borderRadius: '16px',
           overflow: 'hidden', flexShrink: 0,
           boxShadow: '0 4px 14px rgba(43, 38, 36, 0.08)',
         }}>
@@ -31,10 +39,30 @@ export default function ProductCard({ product }: { product: Product }) {
           }} />
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: 1, paddingRight: '32px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: 1, paddingRight: '30px' }}>
           <div>
             <div style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: 600 }}>{product.brand}</div>
-            <div style={{ fontSize: '16px', fontWeight: 700, marginTop: '4px', lineHeight: 1.3 }}>{product.name}</div>
+            <div style={{ fontSize: compact ? '14px' : '16px', fontWeight: 700, marginTop: '4px', lineHeight: 1.3 }}>{product.name}</div>
+            {showHealthTags && healthTags.length > 0 && (
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
+                {healthTags.map(tag => (
+                  <span
+                    key={`${product.id}-${tag}`}
+                    style={{
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      color: '#B45309',
+                      background: '#FFFBEB',
+                      border: '1px solid #FDE68A',
+                      borderRadius: '999px',
+                      padding: '3px 7px',
+                    }}
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -43,12 +71,17 @@ export default function ProductCard({ product }: { product: Product }) {
               <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>({product.reviewsCount})</span>
             </div>
 
-            <div style={{
-              padding: '4px 10px', borderRadius: '16px',
-              backgroundColor: getScoreColor(score) + '22',
-              color: getScoreColor(score), fontWeight: 800, fontSize: '14px'
-            }}>
-              {score}점
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: compact ? '12px' : '13px', color: '#6B7280', fontWeight: 700 }}>
+                {product.price.toLocaleString()}원
+              </span>
+              <div style={{
+                padding: '4px 10px', borderRadius: '16px',
+                backgroundColor: getScoreColor(score) + '22',
+                color: getScoreColor(score), fontWeight: 800, fontSize: compact ? '12px' : '14px'
+              }}>
+                {score}점
+              </div>
             </div>
           </div>
         </div>
