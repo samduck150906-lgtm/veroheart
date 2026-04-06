@@ -10,6 +10,10 @@ export default function Profile() {
   const [activeTab, setActiveTab] = useState<'info' | 'orders' | 'reports' | 'favorites'>('info');
   const favoriteProducts = products.filter(p => favorites.includes(p.id));
   const [formData, setFormData] = useState(profile);
+
+  useEffect(() => {
+    setFormData(profile);
+  }, [profile]);
   
   useEffect(() => {
     if (activeTab === 'orders') fetchOrders();

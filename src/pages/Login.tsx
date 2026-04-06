@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useStore } from '../store/useStore';
@@ -9,12 +9,18 @@ import { VERORO_LOGO_SRC } from '../constants/assets';
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { initApp } = useStore();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const redirectTo = useMemo(() => {
+    const from = (location.state as { from?: string } | null)?.from;
+    if (!from || from === '/login') return '/profile';
+    return from;
+  }, [location.state]);
 
   const handleSubmit = async () => {
     if (!email.trim() || !password.trim()) {
@@ -33,7 +39,7 @@ export default function Login() {
         notify.success('회원가입 완료! 이메일을 확인해주세요.');
       }
       await initApp();
-      navigate(-1);
+      navigate(redirectTo, { replace: true });
     } catch (err: any) {
       const msg = err?.message || '오류가 발생했습니다.';
       if (msg.includes('Invalid login credentials')) notify.error('이메일 또는 비밀번호가 올바르지 않습니다.');
@@ -47,7 +53,7 @@ export default function Login() {
   const handleGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin + '/profile' }
+      options: { redirectTo: window.location.origin + redirectTo }
     });
     if (error) notify.error('구글 로그인에 실패했습니다.');
   };
@@ -55,7 +61,7 @@ export default function Login() {
   const handleKakao = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'kakao',
-      options: { redirectTo: window.location.origin + '/profile' }
+      options: { redirectTo: window.location.origin + redirectTo }
     });
     if (error) notify.error('카카오 로그인에 실패했습니다.');
   };

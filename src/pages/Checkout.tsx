@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import type { User } from '@supabase/supabase-js';
 import { Helmet } from 'react-helmet-async';
 import { Loader2, CreditCard } from 'lucide-react';
@@ -33,7 +33,8 @@ function loadDaumPostcodeScript(): Promise<void> {
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { cart, products } = useStore();
+  const location = useLocation();
+  const { cart, products, isLoggedIn } = useStore();
   const [user, setUser] = useState<User | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   
@@ -65,8 +66,13 @@ export default function Checkout() {
   };
 
   useEffect(() => {
+    if (!isLoggedIn) {
+      notify.error('결제를 위해 먼저 로그인해 주세요.');
+      navigate('/login', { state: { from: location.pathname }, replace: true });
+      return;
+    }
     getCurrentUser().then(setUser);
-  }, []);
+  }, [isLoggedIn, navigate, location.pathname]);
 
   const cartWithDetails = cart.map(item => {
     const p = products.find(prod => prod.id === item.productId);

@@ -1,10 +1,11 @@
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { Trash2, CreditCard } from 'lucide-react';
+import { notify } from '../store/useNotification';
 
 export default function Cart() {
   const navigate = useNavigate();
-  const { cart, removeFromCart, products } = useStore();
+  const { cart, removeFromCart, products, isLoggedIn } = useStore();
   
   const cartItems = cart.map(c => {
     const p = products.find(prod => prod.id === c.productId);
@@ -12,6 +13,15 @@ export default function Cart() {
   }).filter(c => c.id) as (typeof products[number] & { quantity: number })[];
 
   const totalPrice = cartItems.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
+
+  const handleProceedCheckout = () => {
+    if (!isLoggedIn) {
+      notify.info('결제를 위해 로그인이 필요합니다.');
+      navigate('/login?redirect=/checkout');
+      return;
+    }
+    navigate('/checkout');
+  };
 
   if (cartItems.length === 0) {
     return (
@@ -79,7 +89,7 @@ export default function Cart() {
             gap: '8px',
             borderRadius: '16px',
           }}
-          onClick={() => navigate('/checkout')}
+          onClick={handleProceedCheckout}
         >
           <CreditCard size={22} strokeWidth={2.25} />
           {totalPrice.toLocaleString()}원 결제하기
