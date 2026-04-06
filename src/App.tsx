@@ -29,12 +29,18 @@ import AdminAuthGuard from './pages/admin/AdminAuthGuard';
 function App() {
   const { initApp, isInitializing } = useStore();
   const [splashLine] = useState(() => pickSplashTagline());
+  const [showEntrySplash, setShowEntrySplash] = useState(true);
 
   useEffect(() => {
     initApp();
   }, [initApp]);
 
-  if (isInitializing) {
+  useEffect(() => {
+    const timer = window.setTimeout(() => setShowEntrySplash(false), 1200);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  if (isInitializing || showEntrySplash) {
     return (
       <div style={{
         display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
@@ -44,7 +50,7 @@ function App() {
         <img
           src={VERORO_LOGO_SRC}
           alt="VeRoRo"
-          style={{ height: '52px', width: 'auto', objectFit: 'contain', marginBottom: '20px', display: 'block' }}
+          style={{ height: '90px', width: 'auto', objectFit: 'contain', marginBottom: '22px', display: 'block' }}
         />
         <p style={{
           color: 'var(--text-dark)', fontSize: '15px', fontWeight: 600, lineHeight: 1.55, maxWidth: '320px', margin: '0 0 28px',

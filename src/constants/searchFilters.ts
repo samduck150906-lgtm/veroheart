@@ -29,24 +29,6 @@ export const PRICE_BAND_LABELS: { id: PriceBand; label: string }[] = [
 
 export const FORMULATION_OPTIONS = ['건식', '습식', '동결건조', '소프트', '에어드라이', '스튜', '파우치'];
 
-export const HEALTH_CONCERN_OPTIONS = [
-  '알레르기',
-  '눈물',
-  '관절',
-  '신장',
-  '요로',
-  '피부',
-  '구강',
-  '비만',
-  '다이어트',
-  '체중',
-  '소화',
-  '면역',
-  '스트레스',
-  '심장',
-  '간',
-];
-
 /** 질병(상태) 중심 태그: product_health_concerns와 1:1로 매칭되는 값이어야 함 */
 export const HEALTH_DISEASE_OPTIONS = [
   '알레르기',
@@ -62,14 +44,18 @@ export const HEALTH_DISEASE_OPTIONS = [
 
 /** 케어 부위/목적 중심 태그: product_health_concerns와 1:1로 매칭되는 값이어야 함 */
 export const HEALTH_BODY_PART_OPTIONS = [
-  '피부',
-  '관절',
   '눈물',
+  '관절',
+  '피부',
   '구강',
   '다이어트',
   '체중',
 ];
 
+export const HEALTH_CONCERN_OPTIONS = [
+  ...HEALTH_DISEASE_OPTIONS,
+  ...HEALTH_BODY_PART_OPTIONS,
+];
 export const LIFE_STAGE_OPTIONS: { value: string; label: string }[] = [
   { value: '퍼피·키튼', label: '퍼피·키튼' },
   { value: '성체', label: '성체' },
