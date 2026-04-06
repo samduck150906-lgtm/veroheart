@@ -114,7 +114,7 @@ export default function Detail() {
         <ArrowLeft size={20} /> 뒤로
       </button>
 
-      <div style={{ position: 'relative', width: '100%', height: '360px', borderRadius: '24px', overflow: 'hidden', marginBottom: '32px', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}>
+      <div style={{ position: 'relative', width: '100%', height: '360px', borderRadius: '28px', overflow: 'hidden', marginBottom: '20px', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}>
         <img src={product.imageUrl} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         {report && (
           <div style={{
@@ -137,80 +137,87 @@ export default function Detail() {
         )}
       </div>
 
-      <div style={{ marginBottom: '8px', fontSize: '14px', color: 'var(--text-light)', fontWeight: 600 }}>{product.brand}</div>
-      <h1 style={{ fontSize: '24px', lineHeight: 1.3, marginBottom: '16px', fontWeight: 900 }}>{product.name}</h1>
+      <section className="ui-hero-panel" style={{ marginBottom: '24px', padding: '20px' }}>
+        <div style={{ marginBottom: '8px', fontSize: '13px', color: 'var(--text-light)', fontWeight: 700 }}>{product.brand}</div>
+        <h1 style={{ fontSize: '26px', lineHeight: 1.3, marginBottom: '14px', fontWeight: 900 }}>{product.name}</h1>
       
-      {/* V2 Metadata Badges */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '24px' }}>
-        {product.targetPetType && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: '#F3F4F6', padding: '6px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 700, color: '#4B5563' }}>
-            {product.targetPetType === 'dog' ? <Dog size={14} /> : (product.targetPetType === 'cat' ? <Cat size={14} /> : <Layers size={14} />)}
-            {product.targetPetType === 'dog' ? '강아지용' : (product.targetPetType === 'cat' ? '고양이용' : '공용')}
-          </div>
-        )}
-        {product.targetLifeStage && product.targetLifeStage.length > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: '#F3F4F6', padding: '6px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 700, color: '#4B5563' }}>
-            <Calendar size={14} />
-            {product.targetLifeStage.join(', ')}
-          </div>
-        )}
-        {product.formulation && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: '#F3F4F6', padding: '6px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 700, color: '#4B5563' }}>
-            <Layers size={14} />
-            {product.formulation}
-          </div>
-        )}
-      </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '18px' }}>
+          {product.targetPetType && (
+            <div className="ui-badge ui-badge-muted" style={{ display: 'inline-flex' }}>
+              {product.targetPetType === 'dog' ? <Dog size={14} /> : (product.targetPetType === 'cat' ? <Cat size={14} /> : <Layers size={14} />)}
+              {product.targetPetType === 'dog' ? '강아지용' : (product.targetPetType === 'cat' ? '고양이용' : '공용')}
+            </div>
+          )}
+          {product.targetLifeStage && product.targetLifeStage.length > 0 && (
+            <div className="ui-badge ui-badge-muted" style={{ display: 'inline-flex' }}>
+              <Calendar size={14} />
+              {product.targetLifeStage.join(', ')}
+            </div>
+          )}
+          {product.formulation && (
+            <div className="ui-badge ui-badge-muted" style={{ display: 'inline-flex' }}>
+              <Layers size={14} />
+              {product.formulation}
+            </div>
+          )}
+        </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-        <div style={{ fontSize: '24px', fontWeight: 900, color: 'var(--primary-dark)' }}>{product.price.toLocaleString()}원</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <span style={{ fontSize: '16px', color: '#FCD34D' }}>★</span>
-          <span style={{ fontWeight: 700 }}>{product.averageRating}</span> 
-          <span style={{ color: 'var(--text-muted)' }}>({product.reviewsCount})</span>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '12px', marginBottom: '18px' }}>
+          <div className="ui-info-card" style={{ padding: '16px' }}>
+            <div style={{ fontSize: '12px', color: '#8A9099', fontWeight: 700, marginBottom: '6px' }}>판매가</div>
+            <div style={{ fontSize: '28px', fontWeight: 900, color: 'var(--primary-dark)' }}>{product.price.toLocaleString()}원</div>
+          </div>
+          <div className="ui-info-card" style={{ padding: '16px' }}>
+            <div style={{ fontSize: '12px', color: '#8A9099', fontWeight: 700, marginBottom: '6px' }}>리뷰 평점</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 900, fontSize: '22px' }}>
+              <span style={{ color: '#FCD34D' }}>★</span>
+              {product.averageRating}
+              <span style={{ color: '#9CA3AF', fontSize: '13px', fontWeight: 700 }}>({product.reviewsCount})</span>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '40px' }}>
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <button
-            onClick={() => toggleFavorite(product.id)}
-            style={{ height: '56px', width: '56px', borderRadius: '16px', border: '1.5px solid #E5E7EB', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
-          >
-            <Heart size={22} fill={isFav ? '#EF4444' : 'none'} color={isFav ? '#EF4444' : '#9CA3AF'} />
-          </button>
-          <button className="btn btn-outline" style={{ flex: 1, height: '56px', borderRadius: '16px' }} onClick={() => {
-            isComparing ? removeFromComparison(product.id) : addToComparison(product.id);
-          }}>
-            <GitCompare size={20} />
-            <span style={{ marginLeft: '8px' }}>비교</span>
-          </button>
+        <div style={{ display: 'grid', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button
+              onClick={() => toggleFavorite(product.id)}
+              style={{ height: '56px', width: '56px', borderRadius: '16px', border: '1.5px solid #E5E7EB', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
+            >
+              <Heart size={22} fill={isFav ? '#EF4444' : 'none'} color={isFav ? '#EF4444' : '#9CA3AF'} />
+            </button>
+            <button className="btn btn-outline" style={{ flex: 1, height: '56px', borderRadius: '16px' }} onClick={() => {
+              isComparing ? removeFromComparison(product.id) : addToComparison(product.id);
+            }}>
+              <GitCompare size={20} />
+              <span style={{ marginLeft: '8px' }}>{isComparing ? '비교 해제' : '비교 추가'}</span>
+            </button>
+          </div>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button
+              type="button"
+              className="btn btn-outline"
+              style={{ flex: 1, height: '56px', borderRadius: '16px', fontWeight: 800, fontSize: '15px' }}
+              onClick={() => {
+                addToCart(product.id, 1);
+                notify.success('장바구니에 담았어요.');
+              }}
+            >
+              장바구니 담기
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              style={{ flex: 1, backgroundColor: '#111827', color: '#fff', borderRadius: '16px', fontWeight: 800, fontSize: '15px', gap: '6px' }}
+              onClick={() => {
+                addToCart(product.id, 1);
+                navigate('/checkout');
+              }}
+            >
+              바로 구매
+            </button>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button
-            type="button"
-            className="btn btn-outline"
-            style={{ flex: 1, height: '56px', borderRadius: '16px', fontWeight: 800, fontSize: '15px' }}
-            onClick={() => {
-              addToCart(product.id, 1);
-              notify.success('장바구니에 담았어요.');
-            }}
-          >
-            장바구니 담기
-          </button>
-          <button
-            type="button"
-            className="btn btn-primary"
-            style={{ flex: 1, backgroundColor: '#111827', color: '#fff', borderRadius: '16px', fontWeight: 800, fontSize: '15px', gap: '6px' }}
-            onClick={() => {
-              addToCart(product.id, 1);
-              navigate('/checkout');
-            }}
-          >
-            바로 구매
-          </button>
-        </div>
-      </div>
+      </section>
 
       {/* 수의사 한마디 */}
       <div style={{ marginBottom: '32px', padding: '20px', background: '#F0FDF4', borderRadius: '20px', border: '1px solid #BBF7D0', display: 'flex', gap: '14px', alignItems: 'flex-start' }}>

@@ -45,6 +45,7 @@ interface StoreState {
   removeFromComparison: (productId: string) => void;
   cart: { productId: string; quantity: number }[];
   addToCart: (productId: string, quantity?: number) => void;
+  updateCartQuantity: (productId: string, quantity: number) => void;
   removeFromCart: (productId: string) => void;
   clearCart: () => void;
   reports: any[];
@@ -165,7 +166,7 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   fetchProductDetail: async (id) => {
-    set({ isLoadingProducts: true });
+    set({ isLoadingProducts: true, selectedProduct: null });
     try {
       const { getProductDetail } = await import('../lib/supabase');
       const data = await getProductDetail(id);
@@ -175,13 +176,13 @@ export const useStore = create<StoreState>((set, get) => ({
           isLoadingProducts: false 
         });
       } else {
-        set({ isLoadingProducts: false });
+        set({ selectedProduct: null, isLoadingProducts: false });
       }
     } catch (err) {
       const { notify } = await import('./useNotification');
       notify.error('상품 정보를 가져오지 못했습니다.');
       console.error(err);
-      set({ isLoadingProducts: false });
+      set({ selectedProduct: null, isLoadingProducts: false });
     }
   },
 
@@ -254,6 +255,25 @@ export const useStore = create<StoreState>((set, get) => ({
 
     if (userId) {
       await saveCartItem(userId, id, newQuantity);
+    }
+  },
+
+  updateCartQuantity: async (id, qty) => {
+    const { userId, cart } = get();
+    if (qty <= 0) {
+      set({ cart: cart.filter(c => c.productId !== id) });
+      if (userId) {
+        await removeCartItemFromDB(userId, id);
+      }
+      return;
+    }
+
+    set({
+      cart: cart.map(c => c.productId === id ? { ...c, quantity: qty } : c)
+    });
+
+    if (userId) {
+      await saveCartItem(userId, id, qty);
     }
   },
   
