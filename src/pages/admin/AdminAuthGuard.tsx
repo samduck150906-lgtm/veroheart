@@ -2,11 +2,15 @@ import { useState, useEffect, type ReactNode } from 'react';
 import { supabase } from '../../lib/supabase';
 import { ShieldCheck, Lock, Loader2 } from 'lucide-react';
 
-// 관리자 이메일 화이트리스트 (추후 DB 기반으로 교체 가능)
+// 관리자 이메일 화이트리스트
 const ADMIN_EMAILS = ['ceo@eternalsix.kr', 'admin@eternalsix.kr'];
 
-// 관리자 비밀번호 (환경변수 기반이 이상적이나, 우선 간단한 가드)
-const ADMIN_PASSPHRASE = 'eternalsix-admin-2026';
+// 관리자 아이디/비밀번호 (앱 오너 계정)
+const ADMIN_CREDENTIALS = [
+  { username: 'rumi', password: 'fnalfnal' },
+  { username: 'young', password: 'duddlduddl' },
+  { username: 'jeong', password: 'wjddlwjddl' },
+] as const;
 
 interface AdminAuthGuardProps {
   children: ReactNode;
@@ -15,7 +19,8 @@ interface AdminAuthGuardProps {
 export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [passphrase, setPassphrase] = useState('');
+  const [adminId, setAdminId] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -32,9 +37,9 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
         return;
       }
 
-      // 2차: 세션스토리지 확인 (패스프레이즈 인증)
+      // 2차: 세션스토리지 확인 (아이디/비밀번호 인증)
       const stored = sessionStorage.getItem('vh_admin_auth');
-      if (stored === btoa(ADMIN_PASSPHRASE)) {
+      if (stored && ADMIN_CREDENTIALS.some((cred) => btoa(`${cred.username}:${cred.password}`) === stored)) {
         setIsAuthenticated(true);
       }
     } catch (err) {
@@ -44,14 +49,19 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
     }
   };
 
-  const handlePassphraseLogin = () => {
-    if (passphrase === ADMIN_PASSPHRASE) {
-      sessionStorage.setItem('vh_admin_auth', btoa(ADMIN_PASSPHRASE));
+  const handleAdminLogin = () => {
+    const id = adminId.trim();
+    const pw = adminPassword.trim();
+    const matched = ADMIN_CREDENTIALS.find(
+      (cred) => cred.username === id && cred.password === pw
+    );
+    if (matched) {
+      sessionStorage.setItem('vh_admin_auth', btoa(`${matched.username}:${matched.password}`));
       setIsAuthenticated(true);
       setError('');
     } else {
       setError('관리자 인증에 실패했습니다.');
-      setPassphrase('');
+      setAdminPassword('');
     }
   };
 
@@ -94,14 +104,30 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
             관리자 콘솔에 접근하려면 인증이 필요합니다.
           </p>
 
+          <div style={{ position: 'relative', marginBottom: '12px' }}>
+            <input
+              type="text"
+              placeholder="관리자 아이디 입력"
+              value={adminId}
+              onChange={(e) => { setAdminId(e.target.value); if (error) setError(''); }}
+              onKeyDown={(e) => e.key === 'Enter' && handleAdminLogin()}
+              style={{
+                width: '100%', padding: '16px', borderRadius: '14px',
+                border: '1px solid rgba(255,255,255,0.1)', backgroundColor: '#0f172a',
+                color: '#f1f5f9', fontSize: '15px', outline: 'none', boxSizing: 'border-box',
+                transition: 'border-color 0.2s'
+              }}
+            />
+          </div>
+
           <div style={{ position: 'relative', marginBottom: '16px' }}>
             <Lock size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#475569' }} />
             <input
               type="password"
-              placeholder="관리자 패스프레이즈 입력"
-              value={passphrase}
-              onChange={(e) => setPassphrase(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handlePassphraseLogin()}
+              placeholder="관리자 비밀번호 입력"
+              value={adminPassword}
+              onChange={(e) => { setAdminPassword(e.target.value); if (error) setError(''); }}
+              onKeyDown={(e) => e.key === 'Enter' && handleAdminLogin()}
               style={{
                 width: '100%', padding: '16px 16px 16px 48px', borderRadius: '14px',
                 border: '1px solid rgba(255,255,255,0.1)', backgroundColor: '#0f172a',
@@ -118,7 +144,7 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
           )}
 
           <button
-            onClick={handlePassphraseLogin}
+            onClick={handleAdminLogin}
             style={{
               width: '100%', padding: '16px', borderRadius: '14px', border: 'none',
               backgroundColor: '#6366f1', color: '#fff', fontWeight: 700, fontSize: '16px',
