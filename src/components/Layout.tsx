@@ -30,7 +30,7 @@ export default function Layout() {
             <img
               src={VERORO_LOGO_SRC}
               alt="VeRoRo"
-              style={{ height: '38px', width: 'auto', objectFit: 'contain', display: 'block' }}
+              style={{ height: '46px', width: 'auto', objectFit: 'contain', display: 'block' }}
             />
           </Link>
           <span style={{

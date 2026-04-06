@@ -50,7 +50,7 @@ function App() {
         <img
           src={VERORO_LOGO_SRC}
           alt="VeRoRo"
-          style={{ height: '90px', width: 'auto', objectFit: 'contain', marginBottom: '22px', display: 'block' }}
+          style={{ height: '128px', width: 'auto', objectFit: 'contain', marginBottom: '26px', display: 'block' }}
         />
         <p style={{
           color: 'var(--text-dark)', fontSize: '15px', fontWeight: 600, lineHeight: 1.55, maxWidth: '320px', margin: '0 0 28px',
