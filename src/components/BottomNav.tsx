@@ -39,7 +39,7 @@ export default function BottomNav() {
               padding: '8px 4px',
               borderRadius: '20px',
               background: isActive
-                ? 'linear-gradient(145deg, rgba(255, 107, 74, 0.15), rgba(232, 90, 60, 0.08))'
+                ? 'linear-gradient(145deg, rgba(250, 204, 21, 0.22), rgba(254, 240, 138, 0.42))'
                 : 'transparent',
             }}
           >

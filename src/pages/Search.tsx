@@ -224,11 +224,11 @@ export default function Search() {
 
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '100px' }}>
-      <div style={{ position: 'sticky', top: 0, backgroundColor: 'rgba(255, 251, 248, 0.96)', zIndex: 10, padding: '12px 0', backdropFilter: 'blur(8px)' }}>
+      <div style={{ position: 'sticky', top: 0, backgroundColor: 'rgba(255, 251, 214, 0.96)', zIndex: 10, padding: '12px 0', backdropFilter: 'blur(10px)' }}>
         <div style={{ 
           display: 'flex', alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.95)',
           borderRadius: '20px', padding: '12px 20px', marginBottom: '12px',
-          border: '1px solid rgba(232, 90, 60, 0.12)',
+          border: '1px solid rgba(245, 158, 11, 0.2)',
           boxShadow: 'var(--shadow-sm)',
         }}>
           <SearchIcon size={20} className="text-gray-400" />
@@ -268,7 +268,7 @@ export default function Search() {
                   style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
                     padding: '10px 6px', borderRadius: '14px', border: active ? '2px solid var(--primary)' : '1px solid rgba(0,0,0,0.08)',
-                    background: active ? 'rgba(255, 107, 74, 0.12)' : 'var(--surface-elevated)',
+                    background: active ? 'rgba(245, 158, 11, 0.18)' : '#FFFFFF',
                     color: active ? 'var(--primary-dark)' : 'var(--text-muted)',
                     fontWeight: 700, fontSize: '12px', cursor: 'pointer',
                   }}
@@ -294,7 +294,7 @@ export default function Search() {
                 style={{
                   flexShrink: 0,
                   padding: '8px 12px', borderRadius: '999px', fontSize: '12px', fontWeight: 700,
-                  border: filters.priceBand === id ? 'none' : '1px solid #E5E7EB',
+                  border: filters.priceBand === id ? 'none' : '1px solid #FDE68A',
                   backgroundColor: filters.priceBand === id ? 'var(--primary)' : '#fff',
                   color: filters.priceBand === id ? '#fff' : '#4B5563',
                   cursor: 'pointer',
@@ -315,7 +315,7 @@ export default function Search() {
               onClick={() => setFilters(f => ({ ...f, dietPreset: !f.dietPreset }))}
               style={{
                 padding: '8px 14px', borderRadius: '999px', fontSize: '12px', fontWeight: 700,
-                border: filters.dietPreset ? 'none' : '1px solid #E5E7EB',
+                border: filters.dietPreset ? 'none' : '1px solid #FDE68A',
                 backgroundColor: filters.dietPreset ? 'var(--primary)' : '#fff',
                 color: filters.dietPreset ? '#fff' : '#4B5563', cursor: 'pointer',
               }}
@@ -332,7 +332,7 @@ export default function Search() {
               }
               style={{
                 padding: '8px 14px', borderRadius: '999px', fontSize: '12px', fontWeight: 700,
-                border: filters.targetLifeStage === '시니어' ? 'none' : '1px solid #E5E7EB',
+                border: filters.targetLifeStage === '시니어' ? 'none' : '1px solid #FDE68A',
                 backgroundColor: filters.targetLifeStage === '시니어' ? 'var(--primary)' : '#fff',
                 color: filters.targetLifeStage === '시니어' ? '#fff' : '#4B5563', cursor: 'pointer',
               }}
@@ -357,8 +357,8 @@ export default function Search() {
               onClick={() => setSortBy(id)}
               style={{
                 padding: '6px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 700,
-                border: sortBy === id ? 'none' : '1px solid #E5E7EB',
-                backgroundColor: sortBy === id ? 'rgba(0,0,0,0.08)' : 'transparent',
+                border: sortBy === id ? 'none' : '1px solid #FDE68A',
+                backgroundColor: sortBy === id ? 'rgba(245, 158, 11, 0.24)' : '#FFFFFF',
                 color: '#374151', cursor: 'pointer',
               }}
             >
@@ -379,7 +379,7 @@ export default function Search() {
               }}
               style={{
                 padding: '10px 18px', borderRadius: '24px', fontSize: '14px', whiteSpace: 'nowrap',
-                border: category === cat.name ? 'none' : '1px solid #E5E7EB',
+                border: category === cat.name ? 'none' : '1px solid #FDE68A',
                 backgroundColor: category === cat.name ? 'var(--primary)' : '#fff',
                 color: category === cat.name ? '#fff' : '#4B5563',
                 cursor: 'pointer', fontWeight: 600, transition: 'all 0.2s',
@@ -418,9 +418,9 @@ export default function Search() {
                     gap: '6px',
                     padding: '7px 11px',
                     borderRadius: '999px',
-                    border: '1px solid #FBCFE8',
-                    background: '#FFF1F2',
-                    color: '#BE185D',
+                    border: '1px solid #FCD34D',
+                    background: '#FFFBEB',
+                    color: '#B45309',
                     fontSize: '12px',
                     fontWeight: 700,
                     cursor: 'pointer',

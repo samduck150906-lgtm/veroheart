@@ -5,8 +5,8 @@ function Footer() {
     <footer
       style={{
         padding: '8px 20px 11px',
-        backgroundColor: 'rgba(255, 245, 240, 0.56)',
-        borderTop: '1px solid rgba(232, 90, 60, 0.1)',
+        backgroundColor: 'rgba(255, 251, 235, 0.7)',
+        borderTop: '1px solid rgba(250, 204, 21, 0.22)',
         color: '#6b6560',
         fontSize: '9px',
         lineHeight: 1.35,

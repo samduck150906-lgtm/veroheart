@@ -93,10 +93,10 @@ export default function ProductCard({ product, compact = false, showHealthTags =
         style={{
           position: 'absolute', top: '12px', right: '12px',
           background: 'none', border: 'none', cursor: 'pointer', padding: '4px',
-          color: isFav ? '#EF4444' : '#D1D5DB', transition: 'color 0.2s'
+          color: isFav ? '#F59E0B' : '#D1D5DB', transition: 'color 0.2s'
         }}
       >
-        <Heart size={20} fill={isFav ? '#EF4444' : 'none'} />
+        <Heart size={20} fill={isFav ? '#F59E0B' : 'none'} />
       </button>
     </div>
   );

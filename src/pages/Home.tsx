@@ -51,9 +51,9 @@ export default function Home() {
       </Helmet>
 
       <section style={{
-        marginBottom: '22px', padding: '20px 18px', borderRadius: '20px',
-        background: 'linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(255, 245, 240, 0.9) 100%)',
-        border: '1px solid rgba(232, 90, 60, 0.12)', boxShadow: 'var(--shadow-md)',
+        marginBottom: '22px', padding: '20px 18px', borderRadius: '24px',
+        background: 'linear-gradient(160deg, #FFFFFF 0%, #FFFCE9 100%)',
+        border: '1px solid rgba(251, 191, 36, 0.28)', boxShadow: 'var(--shadow-md)',
       }}>
         <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--community-tint)', marginBottom: '8px', letterSpacing: '0.06em', textTransform: 'uppercase' }}>First impression</p>
         <h1 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-dark)', lineHeight: 1.4, letterSpacing: '-0.02em', margin: '0 0 10px' }}>
@@ -71,8 +71,8 @@ export default function Home() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
           {[UGC_COPY.honestReviews, UGC_COPY.palatability].map((line) => (
             <div key={line} style={{
-              fontSize: '12px', fontWeight: 600, color: '#4B5563', padding: '10px', borderRadius: '12px',
-              background: '#F9FAFB', border: '1px solid #F3F4F6', lineHeight: 1.4, minHeight: '58px', display: 'flex', alignItems: 'center',
+              fontSize: '12px', fontWeight: 600, color: '#4B5563', padding: '10px', borderRadius: '14px',
+              background: '#FFFBEB', border: '1px solid #FDE68A', lineHeight: 1.4, minHeight: '58px', display: 'flex', alignItems: 'center',
             }}>
               {line}
             </div>
@@ -85,18 +85,18 @@ export default function Home() {
         <section style={{ marginBottom: '32px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {visibleEvents.map(ev => (
-              <div key={ev.id} style={{ background: ev.color, borderRadius: '16px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '12px', position: 'relative', border: '1px solid rgba(0,0,0,0.05)' }}>
+              <div key={ev.id} style={{ background: '#FEF9C3', borderRadius: '18px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '12px', position: 'relative', border: '1px solid #FCD34D' }}>
                 <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(0,0,0,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <Tag size={18} color="#374151" />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 700, background: '#111827', color: '#fff', padding: '2px 8px', borderRadius: '6px' }}>{ev.badge}</span>
+                    <span style={{ fontSize: '11px', fontWeight: 700, background: '#92400E', color: '#fff', padding: '2px 8px', borderRadius: '999px' }}>{ev.badge}</span>
                   </div>
-                  <div style={{ fontSize: '14px', fontWeight: 800, color: '#111827', marginBottom: '2px' }}>{ev.title}</div>
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: '#713F12', marginBottom: '2px' }}>{ev.title}</div>
                   <div style={{ fontSize: '12px', color: '#6B7280' }}>{ev.desc}</div>
                   {ev.code && (
-                    <div style={{ fontSize: '13px', fontWeight: 700, color: '#374151', marginTop: '6px', background: 'rgba(0,0,0,0.05)', display: 'inline-block', padding: '4px 10px', borderRadius: '8px', fontFamily: 'monospace' }}>
+                    <div style={{ fontSize: '13px', fontWeight: 700, color: '#854D0E', marginTop: '6px', background: 'rgba(255,255,255,0.7)', display: 'inline-block', padding: '4px 10px', borderRadius: '999px', fontFamily: 'monospace', border: '1px dashed #F59E0B' }}>
                       {ev.code}
                     </div>
                   )}
