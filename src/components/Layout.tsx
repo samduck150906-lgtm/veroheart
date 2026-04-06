@@ -5,6 +5,8 @@ import { VERORO_LOGO_SRC } from '../constants/assets';
 
 export default function Layout() {
   const location = useLocation();
+  const hideFooterOn = ['/checkout', '/success', '/fail', '/login'];
+  const shouldHideFooter = hideFooterOn.some((path) => location.pathname.startsWith(path));
   const titleMap: Record<string, string> = {
     '/': '홈',
     '/search': '탐색',
@@ -48,7 +50,7 @@ export default function Layout() {
         </div>
       </main>
 
-      <Footer />
+      {!shouldHideFooter && <Footer />}
       <BottomNav />
     </div>
   );

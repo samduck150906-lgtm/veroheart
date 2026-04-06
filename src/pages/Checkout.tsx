@@ -9,6 +9,27 @@ import { notify } from '../store/useNotification';
 import { getCurrentUser, createOrder } from '../lib/supabase';
 
 const clientKey = import.meta.env.VITE_TOSS_WIDGET_CLIENT_KEY ?? '';
+const DAUM_POSTCODE_SCRIPT_SRC = 'https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+
+function loadDaumPostcodeScript(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if ((window as any).daum?.Postcode) {
+      resolve();
+      return;
+    }
+    const existing = document.querySelector(`script[src="${DAUM_POSTCODE_SCRIPT_SRC}"]`) as HTMLScriptElement | null;
+    if (existing) {
+      existing.addEventListener('load', () => resolve(), { once: true });
+      existing.addEventListener('error', () => reject(new Error('postcode script load failed')), { once: true });
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = DAUM_POSTCODE_SCRIPT_SRC;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('postcode script load failed'));
+    document.head.appendChild(script);
+  });
+}
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -29,18 +50,18 @@ export default function Checkout() {
   const [isWidgetLoaded, setIsWidgetLoaded] = useState(false);
   const [widgetError, setWidgetError] = useState(false);
 
-  const openPostcode = () => {
-    const script = document.createElement('script');
-    script.src = 'https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
-    script.onload = () => {
+  const openPostcode = async () => {
+    try {
+      await loadDaumPostcodeScript();
       new (window as any).daum.Postcode({
         oncomplete: (data: any) => {
           const addr = data.roadAddress || data.jibunAddress;
           setCustomerInfo(prev => ({ ...prev, address: addr }));
         }
       }).open();
-    };
-    document.head.appendChild(script);
+    } catch {
+      notify.error('주소 검색 스크립트를 불러오지 못했습니다.');
+    }
   };
 
   useEffect(() => {
@@ -104,6 +125,7 @@ export default function Checkout() {
       notify.error('배송지 주소를 입력해주세요.');
       return;
     }
+    const fullAddress = `${customerInfo.address} ${detailAddress}`.trim();
 
     setIsProcessing(true);
     try {
@@ -113,7 +135,7 @@ export default function Checkout() {
         user.id, 
         cartWithDetails, 
         totalPrice, 
-        customerInfo.address,
+        fullAddress,
         customerInfo
       );
 
@@ -121,10 +143,14 @@ export default function Checkout() {
         throw new Error('주문 생성 중 오류가 발생했습니다.');
       }
 
+      const orderName = cart.length > 1
+        ? `${cartWithDetails[0].name} 외 ${cart.length - 1}건`
+        : cartWithDetails[0].name;
+
       // 2. 토스페이먼츠 결제창 호출
       await paymentWidget.requestPayment({
         orderId: order.orderIdExt, // DB에서 생성한 고유 주문ID 사용
-        orderName: `${cartWithDetails[0].name} 외 ${cart.length - 1}건`,
+        orderName,
         successUrl: window.location.origin + '/success',
         failUrl: window.location.origin + '/fail',
         customerEmail: customerInfo.email,

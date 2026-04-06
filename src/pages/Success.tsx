@@ -14,6 +14,8 @@ export default function Success() {
   const paymentKey = searchParams.get('paymentKey');
   const orderId = searchParams.get('orderId');
   const amount = searchParams.get('amount');
+  const amountValue = Number(amount);
+  const hasValidAmount = Number.isFinite(amountValue) && amountValue >= 0;
 
   useEffect(() => {
     const confirmPayment = async () => {
@@ -106,7 +108,7 @@ export default function Success() {
         </div>
         <div className="flex justify-between">
           <span className="text-gray-500 font-medium">최종 결제 금액</span>
-          <span className="font-bold text-blue-600">{Number(amount).toLocaleString()}원</span>
+          <span className="font-bold text-blue-600">{hasValidAmount ? `${amountValue.toLocaleString()}원` : '-'}</span>
         </div>
       </div>
       <Link to="/" className="btn bg-gray-900 text-white px-12 py-4 rounded-full font-bold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1">
