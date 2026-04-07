@@ -2,8 +2,9 @@ import { Outlet, useLocation, Link } from 'react-router-dom';
 import BottomNav from './BottomNav';
 import Footer from './Footer';
 import { VERORO_LOGO_SRC } from '../constants/assets';
-
+import { useStore } from '../store/useStore';
 export default function Layout() {
+  const { profile, isLoggedIn } = useStore();
   const location = useLocation();
   const hideFooterOn = ['/checkout', '/success', '/fail', '/login'];
   const shouldHideFooter = hideFooterOn.some((path) => location.pathname.startsWith(path));
@@ -39,9 +40,32 @@ export default function Layout() {
             padding: '4px 8px', borderRadius: '999px', flexShrink: 0
           }}>Community</span>
         </div>
-        <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-dark)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '42%' }}>
-          {pageTitle}
-        </span>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: 0, maxWidth: '48%' }}>
+          <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-dark)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%', textAlign: 'right' }}>
+            {pageTitle}
+          </span>
+          {isLoggedIn && (
+            <span
+              style={{
+                marginTop: '2px',
+                fontSize: '10px',
+                fontWeight: 800,
+                color: 'var(--primary-dark)',
+                background: 'rgba(250, 204, 21, 0.2)',
+                padding: '2px 8px',
+                borderRadius: '999px',
+                maxWidth: '100%',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+              title={`${profile.name} (${profile.species === 'Cat' ? '고양이' : '강아지'})`}
+            >
+              {profile.name}
+              {profile.healthConcerns.length > 0 ? ` · ${profile.healthConcerns.slice(0, 2).join(',')}${profile.healthConcerns.length > 2 ? '…' : ''}` : ''}
+            </span>
+          )}
+        </div>
       </header>
 
       <main className="app-main container">

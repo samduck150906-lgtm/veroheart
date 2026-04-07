@@ -5,7 +5,7 @@ import { DEFAULT_USER_PET_PROFILE } from '../types';
 import {
   supabase,
   getProducts,
-  initializeAnonymousSession,
+  getInitialSessionUser,
   getUserPets,
   saveUserPet,
   fetchCartItems,
@@ -81,16 +81,19 @@ export const useStore = create<StoreState>((set, get) => ({
 
   initApp: async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const user = await initializeAnonymousSession();
+      const user = await getInitialSessionUser();
       if (!user) {
-        set({ isInitializing: false, profile: DEFAULT_USER_PET_PROFILE });
+        set({
+          isInitializing: false,
+          profile: DEFAULT_USER_PET_PROFILE,
+          userId: null,
+          isLoggedIn: false,
+        });
         get().fetchProducts();
         return;
       }
 
-      const activeUser = session?.user ?? user;
-      const isReal = activeUser.app_metadata?.provider !== 'anonymous' && !activeUser.is_anonymous;
+      const isReal = user.app_metadata?.provider !== 'anonymous' && !user.is_anonymous;
       const handleAuthStateChange = (_event: AuthChangeEvent, nextSession: Session | null) => {
         const nextUser = nextSession?.user;
         const nextIsReal = !!nextUser && nextUser.app_metadata?.provider !== 'anonymous' && !nextUser.is_anonymous;
@@ -100,10 +103,10 @@ export const useStore = create<StoreState>((set, get) => ({
         });
       };
       supabase.auth.onAuthStateChange(handleAuthStateChange);
-      set({ userId: activeUser.id, isLoggedIn: isReal });
+      set({ userId: user.id, isLoggedIn: isReal });
 
       // Fetch Pet Profile
-      const pets = await getUserPets(activeUser.id);
+      const pets = await getUserPets(user.id);
       if (pets && pets.length > 0) {
         const p = pets[0];
         set({
@@ -120,8 +123,8 @@ export const useStore = create<StoreState>((set, get) => ({
 
       // Fetch Cart & Favorites
       const [cartData, favData] = await Promise.all([
-        fetchCartItems(activeUser.id),
-        getFavorites(activeUser.id)
+        fetchCartItems(user.id),
+        getFavorites(user.id)
       ]);
       set({
         cart: cartData.map(c => ({ productId: c.productId, quantity: c.quantity })),
@@ -129,7 +132,7 @@ export const useStore = create<StoreState>((set, get) => ({
       });
 
       // Fetch Recent Views
-      const recentData = await getRecentViews(activeUser.id);
+      const recentData = await getRecentViews(user.id);
       if (recentData.length > 0) {
         const mapped = recentData.map(mapProductFromRaw).filter(Boolean) as Product[];
         set({ recentViews: mapped });
@@ -149,17 +152,21 @@ export const useStore = create<StoreState>((set, get) => ({
     const { userId, profile } = get();
     const newProfile = { ...profile, ...updates };
     set({ profile: newProfile });
-    
-    if (userId) {
-      await saveUserPet({
-        id: profile.id !== DEFAULT_USER_PET_PROFILE.id ? profile.id : undefined,
-        user_id: userId,
-        name: newProfile.name,
-        pet_type: newProfile.species === 'Cat' ? 'cat' : 'dog',
-        age_group: newProfile.age < 2 ? 'baby' : newProfile.age > 7 ? 'senior' : 'adult',
-        conditions: newProfile.healthConcerns,
-        allergies: newProfile.allergies
-      });
+
+    if (!userId) return;
+
+    const saved = await saveUserPet({
+      id: profile.id !== DEFAULT_USER_PET_PROFILE.id ? profile.id : undefined,
+      user_id: userId,
+      name: newProfile.name,
+      pet_type: newProfile.species === 'Cat' ? 'cat' : 'dog',
+      age_group: newProfile.age < 2 ? 'baby' : newProfile.age > 7 ? 'senior' : 'adult',
+      conditions: newProfile.healthConcerns,
+      allergies: newProfile.allergies,
+    });
+
+    if (saved?.id) {
+      set({ profile: { ...get().profile, id: saved.id } });
     }
   },
 

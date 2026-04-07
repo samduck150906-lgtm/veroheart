@@ -25,9 +25,8 @@ export default function Profile() {
     navigate('/');
   };
 
-  const handleSave = () => {
-    updateProfile(formData);
-    alert('프로필이 업데이트되었습니다! ✨');
+  const handleSave = async () => {
+    await updateProfile(formData);
   };
 
   const toggleArrayItem = (field: 'healthConcerns' | 'allergies', value: string) => {
@@ -99,7 +98,7 @@ export default function Profile() {
               <User color="#fff" size={24} />
             </div>
             <div>
-              <h2 style={{ fontSize: '20px', fontWeight: 800 }}>{profile.name}의 정보</h2>
+              <h2 style={{ fontSize: '20px', fontWeight: 800 }}>{formData.name || '우리 아이'}의 정보</h2>
               <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>아이의 건강 상태에 맞춘 성분 분석을 제공합니다.</p>
             </div>
           </div>
@@ -111,8 +110,67 @@ export default function Profile() {
               value={formData.name} 
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid #E5E7EB', fontSize: '16px', outline: 'none' }}
-              placeholder="반려견 이름을 입력하세요"
+              placeholder="반려동물 이름을 입력하세요"
             />
+          </div>
+
+          <div style={{ marginBottom: '24px' }}>
+            <label style={{ display: 'block', fontSize: '14px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '12px' }}>종류</label>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              {(['Dog', 'Cat'] as const).map((sp) => (
+                <button
+                  key={sp}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, species: sp })}
+                  style={{
+                    flex: 1,
+                    padding: '12px 16px',
+                    borderRadius: '14px',
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    border: formData.species === sp ? 'none' : '1px solid #E5E7EB',
+                    backgroundColor: formData.species === sp ? 'var(--primary-dark)' : '#fff',
+                    color: formData.species === sp ? '#fff' : 'var(--text-dark)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  {sp === 'Dog' ? '🐕 강아지' : '🐈 고양이'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '24px' }}>
+            <label style={{ display: 'block', fontSize: '14px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '12px' }}>나이대</label>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {[
+                { label: '아기', age: 1 },
+                { label: '성인', age: 4 },
+                { label: '시니어', age: 10 },
+              ].map(({ label, age }) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, age })}
+                  style={{
+                    padding: '10px 18px',
+                    borderRadius: '24px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    border: formData.age === age ? 'none' : '1px solid #E5E7EB',
+                    backgroundColor: formData.age === age ? 'var(--primary)' : '#fff',
+                    color: formData.age === age ? '#111827' : 'var(--text-dark)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <p style={{ margin: '8px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+              추천·분석에 반영됩니다.
+            </p>
           </div>
 
           <div style={{ marginBottom: '24px' }}>

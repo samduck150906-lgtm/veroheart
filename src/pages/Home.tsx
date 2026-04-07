@@ -4,14 +4,14 @@ import ProductCard from '../components/ProductCard';
 import TargetedAd from '../components/TargetedAd';
 import { Helmet } from 'react-helmet-async';
 import { Sparkles, Clock, ChevronRight, X, Tag, Flame, Stethoscope, Wallet } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { MOCK_EVENTS } from '../lib/supabase';
 import { HOME_HERO, CORE_COPY, UGC_COPY, VIRAL_LANDING_COPY, KAKAO_SHARE_MESSAGES } from '../copy/marketing';
 import { HOME_CATEGORY_ITEMS } from '../constants/productCategories';
 import type { Product } from '../types';
 
 export default function Home() {
-  const { products, profile, recentViews } = useStore();
+  const { products, profile, recentViews, isLoggedIn } = useStore();
   const navigate = useNavigate();
   const [closedEvents, setClosedEvents] = useState<string[]>([]);
   const visibleEvents = MOCK_EVENTS.filter(e => !closedEvents.includes(e.id));
@@ -46,7 +46,11 @@ export default function Home() {
   return (
     <div>
       <Helmet>
-        <title>베로로 — 성분 분석 &amp; 집사들의 찐 리뷰</title>
+        <title>
+          {isLoggedIn
+            ? `${profile.name} 맞춤 홈 — 베로로`
+            : '베로로 — 성분 분석 & 집사들의 찐 리뷰'}
+        </title>
         <meta name="description" content="베로로 — 사료 성분 분석과 집사들의 찐 리뷰. 의심 대신 베로로 하세요." />
       </Helmet>
 
@@ -66,6 +70,47 @@ export default function Home() {
           {CORE_COPY.ocr}
         </p>
       </section>
+
+      {isLoggedIn && (
+        <section
+          style={{
+            marginBottom: '22px',
+            padding: '16px 18px',
+            borderRadius: '20px',
+            background: 'linear-gradient(135deg, #ECFDF5 0%, #FFFFFF 100%)',
+            border: '1px solid #A7F3D0',
+            boxShadow: '0 8px 24px rgba(16, 185, 129, 0.08)',
+          }}
+        >
+          <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, color: '#047857', letterSpacing: '0.06em' }}>
+            MY PET
+          </p>
+          <h2 style={{ margin: '6px 0 6px', fontSize: '17px', fontWeight: 900, color: '#064E3B', lineHeight: 1.35 }}>
+            {profile.name} 맞춤 홈
+          </h2>
+          <p style={{ margin: 0, fontSize: '13px', color: '#374151', fontWeight: 600, lineHeight: 1.5 }}>
+            {profile.species === 'Cat' ? '🐈 고양이' : '🐕 강아지'}
+            {profile.healthConcerns.length > 0
+              ? ` · 선택한 고민: ${profile.healthConcerns.join(', ')}`
+              : ' · 프로필에서 건강 고민을 선택하면 추천이 더 정확해져요.'}
+          </p>
+          {profile.healthConcerns.length === 0 && (
+            <Link
+              to="/profile"
+              style={{
+                display: 'inline-block',
+                marginTop: '10px',
+                fontSize: '12px',
+                fontWeight: 800,
+                color: '#047857',
+                textDecoration: 'none',
+              }}
+            >
+              프로필 설정하기 →
+            </Link>
+          )}
+        </section>
+      )}
 
       <section
         style={{
@@ -154,7 +199,11 @@ export default function Home() {
       {personalRecs.length > 0 && (
         <HorizontalProductSection
           title={`${profile.name} 맞춤 추천`}
-          subtitle={`${profile.healthConcerns.join(', ')} 고민 기준`}
+          subtitle={
+            profile.healthConcerns.length > 0
+              ? `${profile.healthConcerns.join(', ')} 고민 기준`
+              : `${profile.name} 프로필 · 성분·리뷰 기반`
+          }
           icon={<Sparkles size={18} color="#F59E0B" />}
           products={personalRecs}
           onMore={() => navigate('/search')}
@@ -171,7 +220,11 @@ export default function Home() {
 
       <HorizontalProductSection
         title="질병 · 부위별 추천"
-        subtitle="현재 프로필 건강 고민 기반"
+        subtitle={
+          profile.healthConcerns.length > 0
+            ? `${profile.name} 프로필 건강 고민 기반`
+            : `${profile.name}을 위해 마이 펫에서 고민을 추가해 보세요`
+        }
         icon={<Stethoscope size={18} color="#2563EB" />}
         products={concernProducts}
         onMore={() => navigate('/search')}

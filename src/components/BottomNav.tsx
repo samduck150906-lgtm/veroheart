@@ -1,18 +1,28 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Search, Trophy, User, ShoppingBag } from 'lucide-react';
 import { useStore } from '../store/useStore';
+import { DEFAULT_USER_PET_PROFILE } from '../types';
 
 export default function BottomNav() {
   const location = useLocation();
-  const { cart } = useStore();
+  const { cart, profile, isLoggedIn } = useStore();
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+
+  const profileTabLabel =
+    isLoggedIn &&
+    profile.name.trim() &&
+    profile.name !== DEFAULT_USER_PET_PROFILE.name
+      ? profile.name.length > 5
+        ? `${profile.name.slice(0, 4)}…`
+        : profile.name
+      : '마이 펫';
 
   const navItems = [
     { path: '/', label: '홈', icon: Home, badge: 0 },
     { path: '/search', label: '탐색', icon: Search, badge: 0 },
     { path: '/cart', label: '장바구니', icon: ShoppingBag, badge: cartCount },
     { path: '/ranking', label: '랭킹', icon: Trophy, badge: 0 },
-    { path: '/profile', label: '마이 펫', icon: User, badge: 0 },
+    { path: '/profile', label: profileTabLabel, icon: User, badge: 0 },
   ];
 
   return (

@@ -27,11 +27,13 @@ import AdminProducts from './pages/admin/AdminProducts';
 import AdminIngredients from './pages/admin/AdminIngredients';
 import Notification from './components/Notification';
 import AdminAuthGuard from './pages/admin/AdminAuthGuard';
+import EntryGate, { markEntryGateDone, readEntryGateDone } from './components/EntryGate';
 
 function App() {
-  const { initApp, isInitializing } = useStore();
+  const { initApp, isInitializing, isLoggedIn } = useStore();
   const [splashLine] = useState(() => pickSplashTagline());
   const [showEntrySplash, setShowEntrySplash] = useState(true);
+  const [entryGateOpen, setEntryGateOpen] = useState(() => !readEntryGateDone());
 
   useEffect(() => {
     initApp();
@@ -42,7 +44,16 @@ function App() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  if (isInitializing || showEntrySplash) {
+  useEffect(() => {
+    if (!isInitializing && isLoggedIn) {
+      markEntryGateDone();
+      setEntryGateOpen(false);
+    }
+  }, [isInitializing, isLoggedIn]);
+
+  const showSplash = isInitializing || showEntrySplash;
+
+  if (showSplash) {
     return (
       <div style={{
         display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
@@ -66,41 +77,56 @@ function App() {
   }
 
   return (
-    <>
+    <BrowserRouter>
       <Notification />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Home />} />
-            <Route path="search" element={<Search />} />
-            <Route path="profile" element={<Profile />} />
-            <Route path="comparison" element={<Comparison />} />
-            <Route path="cart" element={<Cart />} />
-            <Route path="checkout" element={<Checkout />} />
-            <Route path="success" element={<Success />} />
-            <Route path="fail" element={<Fail />} />
-            <Route path="product/:id" element={<Detail />} />
-            <Route path="terms" element={<Terms />} />
-            <Route path="privacy" element={<Privacy />} />
-            <Route path="refund" element={<Refund />} />
-            <Route path="ranking" element={<Ranking />} />
-            <Route path="brand/:brandName" element={<Brand />} />
-            <Route path="event/viral" element={<ViralEvent />} />
-            <Route path="test" element={<Test />} />
-          </Route>
-        
-        {/* Login (no Layout wrapper) */}
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Home />} />
+          <Route path="search" element={<Search />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="comparison" element={<Comparison />} />
+          <Route path="cart" element={<Cart />} />
+          <Route path="checkout" element={<Checkout />} />
+          <Route path="success" element={<Success />} />
+          <Route path="fail" element={<Fail />} />
+          <Route path="product/:id" element={<Detail />} />
+          <Route path="terms" element={<Terms />} />
+          <Route path="privacy" element={<Privacy />} />
+          <Route path="refund" element={<Refund />} />
+          <Route path="ranking" element={<Ranking />} />
+          <Route path="brand/:brandName" element={<Brand />} />
+          <Route path="event/viral" element={<ViralEvent />} />
+          <Route path="test" element={<Test />} />
+        </Route>
+
         <Route path="/login" element={<Login />} />
 
-        {/* Admin CMS Routes — Protected */}
         <Route path="/admin" element={<AdminAuthGuard><AdminLayout /></AdminAuthGuard>}>
           <Route index element={<AdminDashboard />} />
           <Route path="products" element={<AdminProducts />} />
           <Route path="ingredients" element={<AdminIngredients />} />
         </Route>
       </Routes>
-      </BrowserRouter>
-    </>
+
+      {entryGateOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            background: 'var(--bg-gradient)',
+          }}
+        >
+          <EntryGate
+            onBrowse={() => {
+              markEntryGateDone();
+              setEntryGateOpen(false);
+            }}
+            onDismissForLogin={() => setEntryGateOpen(false)}
+          />
+        </div>
+      )}
+    </BrowserRouter>
   );
 }
 

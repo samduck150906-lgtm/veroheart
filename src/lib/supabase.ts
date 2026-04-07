@@ -15,19 +15,21 @@ export const supabase = createClient(
 // Auth, User functions (Omitted for brevity, but I will keep them same as before)
 // ... keeping them all for a complete file rewrite ...
 
-export async function initializeAnonymousSession() {
+/**
+ * 이메일 로그인만 사용합니다. 익명 로그인(signInAnonymously)은 호출하지 않습니다.
+ * (Supabase에서 익명 로그인이 꺼져 있으면 기존 구현이 진입 시 오류 토스트를 띄웠습니다.)
+ */
+export async function getInitialSessionUser() {
   if (!isSupabaseConfigured) return null;
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) return session.user;
-    const { data, error } = await supabase.auth.signInAnonymously();
+    const { data: { session }, error } = await supabase.auth.getSession();
     if (error) {
-      notify.error('익명 로그인에 실패했습니다. 다시 시도해주세요.');
+      console.warn('[auth] getSession:', error.message);
       return null;
     }
-    return data.user;
+    return session?.user ?? null;
   } catch (err) {
-    notify.error('서버 연결 중 오류가 발생했습니다.');
+    console.warn('[auth] getSession failed:', err);
     return null;
   }
 }
