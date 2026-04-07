@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { MOCK_EVENTS } from '../lib/supabase';
 import { HOME_HERO, CORE_COPY, UGC_COPY, VIRAL_LANDING_COPY, KAKAO_SHARE_MESSAGES } from '../copy/marketing';
 import { HOME_CATEGORY_ITEMS } from '../constants/productCategories';
-import type { Product } from '../data/mock';
+import type { Product } from '../types';
 
 export default function Home() {
   const { products, profile, recentViews } = useStore();

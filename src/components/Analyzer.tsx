@@ -1,14 +1,15 @@
-import { useState } from 'react';
-import { Loader2, Zap, ShieldCheck, AlertTriangle } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Loader2, Zap, ShieldCheck, AlertTriangle, ChevronRight } from 'lucide-react';
 import type { AnalysisResponse } from '../types/analyzer';
 import { useStore } from '../store/useStore';
 import { saveAnalysisReport } from '../lib/supabase';
 import { CORE_COPY } from '../copy/marketing';
+import { calculateCompatibilityScore } from '../utils/score';
 
 export default function Analyzer() {
-  const { userId, selectedProduct } = useStore();
   const navigate = useNavigate();
+  const { userId, isLoggedIn, selectedProduct, products, profile } = useStore();
   const [animal, setAnimal] = useState<'dog' | 'cat'>('dog');
   const [productType, setProductType] = useState('food');
   const [ingredientText, setIngredientText] = useState('');
@@ -16,9 +17,77 @@ export default function Analyzer() {
   const [result, setResult] = useState<AnalysisResponse | null>(null);
   const [error, setError] = useState('');
 
+  const recommendedProducts = useMemo(() => {
+    if (!result) return [];
+
+    const healthKeywordMap: Record<string, string[]> = {
+      kidney: ['신장'],
+      urinary: ['요로'],
+      joint: ['관절'],
+      obesity: ['비만', '다이어트', '체중'],
+      allergy: ['알레르기', '저알러지'],
+      dental: ['구강'],
+      none: [],
+    };
+
+    const preferredCategory =
+      productType === 'food' ? '사료' : productType === 'snack' ? '간식' : '영양제';
+
+    const preferredKeywords = result.recommended_for.flatMap((item) => healthKeywordMap[item] || []);
+
+    return products
+      .filter((product) => product.id !== selectedProduct?.id)
+      .filter((product) => !product.targetPetType || product.targetPetType === animal || product.targetPetType === 'all')
+      .filter((product) => !product.mainCategory || product.mainCategory === preferredCategory)
+      .map((product) => {
+        const concernHits = preferredKeywords.filter((keyword) =>
+          product.healthConcerns?.some((concern) => concern.includes(keyword)) ||
+          product.ingredients.some(
+            (ingredient) =>
+              ingredient.purpose.includes(keyword) ||
+              ingredient.nameKo.includes(keyword) ||
+              ingredient.nameEn?.toLowerCase().includes(keyword.toLowerCase())
+          )
+        ).length;
+        const safeIngredients = product.ingredients.filter((ingredient) => ingredient.riskLevel === 'safe').length;
+        const dangerIngredients = product.ingredients.filter((ingredient) => ingredient.riskLevel === 'danger').length;
+        const compatibility = calculateCompatibilityScore(product, profile);
+
+        return {
+          product,
+          rank: compatibility + concernHits * 10 + safeIngredients * 2 - dangerIngredients * 12,
+        };
+      })
+      .sort((a, b) => b.rank - a.rank)
+      .slice(0, 3);
+  }, [animal, productType, products, profile, result, selectedProduct?.id]);
+
+  const ingredientSuggestions = useMemo(() => {
+    const suggested = recommendedProducts
+      .flatMap(({ product }) => product.ingredients)
+      .filter((ingredient) => ingredient.riskLevel === 'safe')
+      .map((ingredient) => ({
+        key: ingredient.id || ingredient.nameKo,
+        label: ingredient.nameKo,
+        description: ingredient.purpose || '안전 성분',
+      }));
+
+    return Array.from(new Map(suggested.map((item) => [item.key, item])).values()).slice(0, 4);
+  }, [recommendedProducts]);
+
   const handleAnalyze = async () => {
     if (!ingredientText.trim()) {
       setError('전성분 텍스트를 입력해주세요.');
+      return;
+    }
+
+    if (!isLoggedIn || !userId) {
+      setError('AI 정밀 분석은 로그인 후 이용할 수 있습니다.');
+      return;
+    }
+
+    if (ingredientText.trim().length < 20) {
+      setError('조금 더 자세한 전성분 정보를 입력해주세요.');
       return;
     }
     
@@ -53,11 +122,9 @@ export default function Analyzer() {
       const data: AnalysisResponse = await response.json();
       setResult(data);
 
-      if (userId) {
-        // Save to DB in background
-        saveAnalysisReport(userId, selectedProduct?.id || null, ingredientText, data).catch(console.error);
-        useStore.getState().fetchReports(); // trigger refresh
-      }
+      // Save to DB in background
+      saveAnalysisReport(userId, selectedProduct?.id || null, ingredientText, data).catch(console.error);
+      useStore.getState().fetchReports(); // trigger refresh
     } catch (err: any) {
       setError(err.message || '오류가 발생했습니다.');
     } finally {
@@ -78,7 +145,7 @@ export default function Analyzer() {
         });
         return;
       } catch {
-        // User cancelled share.
+        // 사용자 취소
       }
     }
 
@@ -96,6 +163,14 @@ export default function Analyzer() {
       </h2>
       <p className="text-sm text-gray-600 font-medium mb-4 leading-relaxed">{CORE_COPY.ocr}</p>
       <p className="text-xs text-gray-500 font-semibold mb-4">{CORE_COPY.thorough}</p>
+      <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs font-medium text-slate-600">
+        실제 출시 환경에서는 로그인 사용자만 사용할 수 있으며, 지나치게 짧거나 긴 성분표는 분석이 제한됩니다.
+      </div>
+      {!isLoggedIn && (
+        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-medium text-amber-800">
+          AI 정밀 분석은 비용이 발생하는 기능이라 로그인 사용자만 사용할 수 있습니다.
+        </div>
+      )}
       
       <div className="space-y-4 mb-6">
         <div className="flex gap-4">
@@ -124,12 +199,16 @@ export default function Analyzer() {
           value={ingredientText}
           onChange={(e) => setIngredientText(e.target.value)}
         />
+        <div className="flex items-center justify-between text-xs text-gray-500">
+          <span>권장: 원재료명 전체를 20자 이상 입력</span>
+          <span>{ingredientText.trim().length}/4000</span>
+        </div>
 
         {error && <div className="text-red-500 text-sm font-medium">{error}</div>}
 
         <button
           onClick={handleAnalyze}
-          disabled={isLoading}
+          disabled={isLoading || !isLoggedIn}
           className="w-full flex justify-center items-center py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl hover:from-blue-700 hover:to-indigo-700 transition"
         >
           {isLoading ? (
@@ -236,7 +315,7 @@ export default function Analyzer() {
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={handleShareResult}
+                  onClick={() => void handleShareResult()}
                   className="rounded-lg border border-orange-300 bg-white px-3 py-2 text-xs font-bold text-orange-700"
                 >
                   결과 공유하기
@@ -250,17 +329,73 @@ export default function Analyzer() {
                 </button>
               </div>
             </div>
-            <h4 className="font-bold text-gray-800 mb-3 text-lg">AI 기반 매칭 추천 (Mock)</h4>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="h-32 bg-gray-100 rounded-xl border border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-500 p-4 text-center">
-                <span className="font-bold mb-1 block">추천 제품 연결</span>
-                <span className="text-xs">이 분석 결과를 바탕으로<br/>더 안전한 대안 추천</span>
+            <h4 className="font-bold text-gray-800 mb-3 text-lg">실제 카탈로그 기반 추천</h4>
+            <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+              분석 결과와 선택한 반려동물/제품 유형을 기준으로 현재 등록된 실제 상품 중 더 잘 맞는 후보를 추렸습니다.
+            </p>
+
+            {recommendedProducts.length > 0 ? (
+              <div className="space-y-3">
+                {recommendedProducts.map(({ product }) => (
+                  <Link
+                    key={product.id}
+                    to={`/product/${product.id}`}
+                    style={{
+                      textDecoration: 'none',
+                      color: 'inherit',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      borderRadius: '18px',
+                      border: '1px solid #E5E7EB',
+                      background: '#fff',
+                      padding: '12px',
+                      boxShadow: '0 4px 12px rgba(15, 23, 42, 0.04)',
+                    }}
+                  >
+                    <img
+                      src={product.imageUrl}
+                      alt={product.name}
+                      style={{ width: '80px', height: '80px', borderRadius: '18px', objectFit: 'cover', flexShrink: 0 }}
+                    />
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ marginBottom: '4px', fontSize: '12px', fontWeight: 800, color: '#98A2B3' }}>{product.brand}</div>
+                      <div style={{ marginBottom: '8px', fontSize: '14px', fontWeight: 900, lineHeight: 1.45, color: '#111827' }}>{product.name}</div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                        <span style={{ borderRadius: '999px', background: '#EFF6FF', padding: '5px 10px', fontSize: '11px', fontWeight: 800, color: '#1D4ED8' }}>
+                          적합도 {calculateCompatibilityScore(product, profile)}점
+                        </span>
+                        <span style={{ borderRadius: '999px', background: '#ECFDF3', padding: '5px 10px', fontSize: '11px', fontWeight: 800, color: '#027A48' }}>
+                          안전 성분 {product.ingredients.filter((ingredient) => ingredient.riskLevel === 'safe').length}개
+                        </span>
+                      </div>
+                    </div>
+                    <ChevronRight size={16} style={{ flexShrink: 0, color: '#98A2B3' }} />
+                  </Link>
+                ))}
               </div>
-              <div className="h-32 bg-gray-100 rounded-xl border border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-500 p-4 text-center">
-                <span className="font-bold mb-1 block">대체 천연 성분</span>
-                <span className="text-xs">유해 보존제 대신<br/>로즈마리, 비타민E 제품 분류</span>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-4 text-center text-sm font-medium text-gray-500">
+                현재 조건에 맞는 실제 추천 제품이 아직 충분하지 않습니다. 카탈로그가 더 채워지면 이 영역도 자동으로 강화됩니다.
               </div>
-            </div>
+            )}
+
+            {ingredientSuggestions.length > 0 && (
+              <div className="mt-5">
+                <h5 className="mb-3 text-sm font-bold text-gray-800">실제 추천 제품에서 자주 보이는 안전 성분</h5>
+                <div className="flex flex-wrap gap-2">
+                  {ingredientSuggestions.map((ingredient) => (
+                    <span
+                      key={ingredient.key}
+                      className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800"
+                      title={ingredient.description}
+                    >
+                      {ingredient.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

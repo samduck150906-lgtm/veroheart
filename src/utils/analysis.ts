@@ -1,11 +1,5 @@
-import type { Product, UserPetProfile } from '../data/mock';
-
-/** 건강 고민 매칭이 없을 때: 점수가 펫 맞춤이 아님을 드러내는 요약 문구 */
-function generalPopulationGoodSummary(product: Product): string {
-  if (product.targetPetType === 'dog') return '대부분의 강아지에게 안전하고 무난한 제품입니다.';
-  if (product.targetPetType === 'cat') return '대부분의 고양이에게 안전하고 무난한 제품입니다.';
-  return '대부분의 강아지/고양이에게 안전하고 무난한 제품입니다.';
-}
+import type { Product, UserPetProfile } from '../types';
+import { getCompatibilityBreakdown } from './score';
 
 export interface AnalysisReport {
   score: number;
@@ -15,72 +9,35 @@ export interface AnalysisReport {
   detailedAnalysis: string;
 }
 
-const SAFETY_POLICY = {
-  base: 35,
-  dangerPenalty: 6,
-  cautionPenalty: 3,
-  maxDangerPenalty: 18,
-  maxCautionPenalty: 9,
-  confirmedAllergyPenalty: 20,
-  suspectedAllergyPenalty: 12,
-  avoidancePenalty: 6,
-  maxPersonalPenalty: 30,
-} as const;
-
-function inferProfileType(allergyKeyword: string): 'confirmed' | 'suspected' | 'avoidance' {
-  const normalized = allergyKeyword.toLowerCase();
-  if (normalized.includes('의심')) return 'suspected';
-  if (normalized.includes('기피') || normalized.includes('피하기')) return 'avoidance';
-  return 'confirmed';
-}
-
 export function generateAnalysisReport(product: Product, profile: UserPetProfile): AnalysisReport {
   const ingredients = product.ingredients || [];
+  const compatibility = getCompatibilityBreakdown(product, profile);
   let score = 0;
   
   // 1. Ingredient Safety (S) - 35 points
-  const matchedAllergies = new Map<string, { ingredients: Set<string>; profileType: 'confirmed' | 'suspected' | 'avoidance' }>();
+  let sScore = 35;
+  const allergyMatches: string[] = [];
   const dangerIngredients: string[] = [];
-  let dangerCount = 0;
-  let cautionCount = 0;
 
   ingredients.forEach(ing => {
-    profile.allergies.forEach(allergyKeyword => {
-      const normalizedKeyword = allergyKeyword.replace(/\(.*?\)/g, '').trim();
-      const matchesAllergy =
-        ing.nameKo.includes(normalizedKeyword) ||
-        (ing.nameEn && ing.nameEn.toLowerCase().includes(normalizedKeyword.toLowerCase()));
+    // Check for allergies
+    const matchesAllergy = profile.allergies.some(a => 
+      ing.nameKo.includes(a) || (ing.nameEn && ing.nameEn.toLowerCase().includes(a.toLowerCase()))
+    );
 
-      if (!matchesAllergy) return;
-
-      const key = normalizedKeyword || allergyKeyword;
-      if (!matchedAllergies.has(key)) {
-        matchedAllergies.set(key, { ingredients: new Set<string>(), profileType: inferProfileType(allergyKeyword) });
-      }
-      matchedAllergies.get(key)?.ingredients.add(ing.nameKo);
-    });
+    if (matchesAllergy) {
+      allergyMatches.push(ing.nameKo);
+      sScore -= 15;
+    }
 
     if (ing.riskLevel === 'danger') {
       dangerIngredients.push(ing.nameKo);
-      dangerCount += 1;
+      sScore -= 10;
     } else if (ing.riskLevel === 'caution') {
-      cautionCount += 1;
+      sScore -= 5;
     }
   });
 
-  const riskPenalty =
-    Math.min(SAFETY_POLICY.maxDangerPenalty, dangerCount * SAFETY_POLICY.dangerPenalty) +
-    Math.min(SAFETY_POLICY.maxCautionPenalty, cautionCount * SAFETY_POLICY.cautionPenalty);
-
-  let personalPenalty = 0;
-  matchedAllergies.forEach((v) => {
-    if (v.profileType === 'confirmed') personalPenalty += SAFETY_POLICY.confirmedAllergyPenalty;
-    else if (v.profileType === 'suspected') personalPenalty += SAFETY_POLICY.suspectedAllergyPenalty;
-    else personalPenalty += SAFETY_POLICY.avoidancePenalty;
-  });
-  personalPenalty = Math.min(SAFETY_POLICY.maxPersonalPenalty, personalPenalty);
-
-  const sScore = Math.max(0, SAFETY_POLICY.base - riskPenalty - personalPenalty);
   score += Math.max(0, sScore);
 
   // 2. Health Concern Suitability (C) - 25 points
@@ -104,25 +61,17 @@ export function generateAnalysisReport(product: Product, profile: UserPetProfile
   const pScore = Math.min(10, (product.reviewsCount / 500) * 10);
   score += pScore + 8; // Default value score
 
-  const totalScore = Math.round(score);
+  const totalScore = Math.round((score + compatibility.total) / 2);
   
   // Highlights
   const highlights: { text: string; type: 'positive' | 'negative' | 'caution' }[] = [];
   
-  matchedAllergies.forEach((value, allergy) => {
-    const ingredientsText = Array.from(value.ingredients).join(', ');
-    if (value.profileType === 'avoidance') {
-      highlights.push({
-        text: `참고: ${allergy} 기피 성분(${ingredientsText})이 포함되어 있어요.`,
-        type: 'caution',
-      });
-      return;
-    }
+  if (allergyMatches.length > 0) {
     highlights.push({
-      text: `주의! ${allergy} 알러지 유발 성분(${ingredientsText})이 포함되어 있어요.`,
+      text: `알레르기 주의보! ${allergyMatches.join(', ')} 등 우리 애가 못 먹는 원료가 포함되어 있어요.`,
       type: 'negative',
     });
-  });
+  }
 
   if (dangerIngredients.length > 0) {
     highlights.push({
@@ -144,11 +93,8 @@ export function generateAnalysisReport(product: Product, profile: UserPetProfile
     summary = `${profile.name}에게 완벽하게 추천하는 제품입니다!`;
   } else if (totalScore >= 70) {
     grade = 'Good';
-    summary =
-      concernMatches.length > 0
-        ? `${profile.name}에게 대체로 안전하고 건강한 제품입니다.`
-        : generalPopulationGoodSummary(product);
-  } else if (totalScore < 50 || matchedAllergies.size > 0) {
+    summary = `${profile.name}에게 대체로 안전하고 건강한 제품입니다.`;
+  } else if (totalScore < 50 || allergyMatches.length > 0) {
     grade = 'Poor';
     summary = '급여 전 전문가와 상담이 필요한 제품입니다.';
   }
@@ -158,6 +104,10 @@ export function generateAnalysisReport(product: Product, profile: UserPetProfile
     grade,
     summary,
     highlights,
-    detailedAnalysis: `전체 ${ingredients.length}개 성분을 분석한 결과 위험도 감점 ${riskPenalty}점, 맞춤형 감점 ${personalPenalty}점이 반영되었습니다. ${profile.name}의 건강 고민인 ${profile.healthConcerns.join(', ')}에 대한 고려도는 ${concernMatches.length > 0 ? '높음' : '보통'}입니다.`
+    detailedAnalysis: `전체 ${ingredients.length}개의 성분 중 ${dangerIngredients.length}개의 위험 성분이 발견되었습니다. ${
+      profile.healthConcerns.length > 0
+        ? `${profile.name}의 건강 고민(${profile.healthConcerns.join(', ')})과의 관련도는 ${concernMatches.length > 0 ? '높음' : '보통'}입니다. `
+        : ''
+    }리뷰/인기/가격까지 포함한 종합 적합도는 ${compatibility.total}점으로 계산되었습니다.`
   };
 }

@@ -1,20 +1,16 @@
 import { Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import { calculateCompatibilityScore } from '../utils/score';
+import { calculateCompatibilityScore, rankProductsForProfile } from '../utils/score';
 
 export default function TargetedAd() {
   const { profile, products } = useStore();
-  
-  // 간단한 타겟팅 로직: 유저의 첫 번째 고민과 일치하는 제품 하나 추천, 없으면 첫번째 상품.
+  const ranked = rankProductsForProfile(products, profile, { limit: 1 });
+  const topCandidate = ranked[0];
   const targetConcern = profile.healthConcerns[0] || '';
-  let adProduct = products.find(p => p.ingredients?.some(i => i.purpose.includes(targetConcern)));
-  
-  // 없다면 아무거나
-  if (!adProduct) adProduct = products[0];
-  
-  if (!adProduct) return null;
 
-  const score = calculateCompatibilityScore(adProduct, profile);
+  if (!topCandidate) return null;
+
+  const { product: adProduct, score } = topCandidate;
 
   return (
     <div style={{
@@ -26,10 +22,10 @@ export default function TargetedAd() {
         Sponsor
       </div>
       <h3 style={{ fontSize: '18px', marginBottom: '8px', fontWeight: 800 }}>
-        {targetConcern ? `아이의 ${targetConcern}이 걱정된다면?` : '지금 가장 인기있는 추천 상품!'} 🐶
+        {targetConcern ? `${targetConcern} 고민 기준 추천 상품` : '실데이터 기반 추천 상품'} 🐶
       </h3>
       <p style={{ fontSize: '13px', opacity: 0.9, marginBottom: '16px' }}>
-        현재 프로필 기반 궁합 점수 {score}점으로 확인되었습니다.
+        실제 카탈로그와 프로필 기준 적합도 {score}점으로 계산되었습니다.
       </p>
       
       <div style={{ display: 'flex', gap: '16px', alignItems: 'center', background: 'rgba(255,255,255,0.1)', padding: '12px', borderRadius: '8px' }}>

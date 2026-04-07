@@ -1,17 +1,22 @@
 import { createClient } from '@supabase/supabase-js';
 import { notify } from '../store/useNotification';
-import type { Product } from '../data/mock';
+import type { Product } from '../types';
 import type { SupabasePet } from '../types';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder-project.supabase.co';
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-anon-key';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL ?? '';
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? '';
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseKey);
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = createClient(
+  isSupabaseConfigured ? supabaseUrl : 'https://veroro.invalid',
+  isSupabaseConfigured ? supabaseKey : 'public-anon-key'
+);
 
 // Auth, User functions (Omitted for brevity, but I will keep them same as before)
 // ... keeping them all for a complete file rewrite ...
 
 export async function initializeAnonymousSession() {
+  if (!isSupabaseConfigured) return null;
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (session) return session.user;
@@ -91,6 +96,7 @@ function mapProduct(p: any): Product {
 }
 
 export async function getProducts(): Promise<Product[]> {
+  if (!isSupabaseConfigured) return [];
   const { data, error } = await supabase.from('products').select(`
     *,
     product_ingredients (
@@ -106,6 +112,7 @@ export async function getProducts(): Promise<Product[]> {
 }
 
 export async function getProductDetail(productId: string): Promise<Product | null> {
+  if (!isSupabaseConfigured) return null;
   const { data, error } = await supabase
     .from('products')
     .select(`
@@ -145,6 +152,7 @@ export async function searchProducts(
     priceMax?: number;
   } = {}
 ): Promise<Product[]> {
+  if (!isSupabaseConfigured) return [];
   let builder = supabase.from('products').select(`
     *,
     product_ingredients (
@@ -218,6 +226,7 @@ export async function searchProducts(
 
 // Ingredients, Cart, Orders (same logic)
 export async function getAllIngredients() {
+  if (!isSupabaseConfigured) return [];
   const { data } = await supabase.from('ingredients').select('id, name_ko, risk_level').order('name_ko');
   return data || [];
 }
@@ -261,7 +270,14 @@ export async function createOrder(userId: string, cartItems: any[], totalAmount:
       price_at_purchase: item.price || prod?.min_price || 0
     });
   }
-  await supabase.from('order_items').insert(resolvedItems);
+
+  const { error: orderItemsError } = await supabase.from('order_items').insert(resolvedItems);
+  if (orderItemsError) {
+    await supabase.from('orders').delete().eq('id', order.id);
+    console.error('createOrder order_items insert error:', orderItemsError);
+    return null;
+  }
+
   return { ...order, orderIdExt };
 }
 
@@ -403,10 +419,10 @@ export async function getProductsByBrand(brandName: string): Promise<Product[]> 
   return (data as any[]).map(mapProduct);
 }
 
-// ─── Coupons ─────────────────────────────────────────────────────────────────
-
+/** 홈 이벤트/쿠폰 배너용 (정적) */
 export const MOCK_EVENTS = [
   { id: 'ev1', title: '신규 회원 첫 구매 10% 할인', code: 'WELCOME10', discount: 10, type: 'percent', desc: '첫 주문 한정 쿠폰', expires: '2026-12-31', color: '#FEF3C7', badge: '신규' },
-  { id: 'ev2', title: '사료 전품목 5,000원 할인', code: 'FOOD5000', discount: 5000, type: 'fixed', desc: '30,000원 이상 주문 시', expires: '2026-06-30', color: '#EFF6FF', badge: '기간한정' },
-  { id: 'ev3', title: '여름 펫 케어 기획전', code: null, discount: 0, type: 'event', desc: '7월 특선 케어 제품 모음', expires: '2026-07-31', color: '#F0FDF4', badge: '이벤트' },
-];
+  { id: 'ev2', title: '사료 정품 5,000원 할인', code: 'FOOD5000', discount: 5000, type: 'fixed', desc: '30,000원 이상 주문 시', expires: '2026-06-30', color: '#EFF6FF', badge: '기간한정' },
+  { id: 'ev3', title: '봄맞이 케어 기획전', code: null as string | null, discount: 0, type: 'event', desc: '7일 한정 케어 제품 모음', expires: '2026-07-31', color: '#F0FDF4', badge: '이벤트' },
+] as const;
+

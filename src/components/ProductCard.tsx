@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Heart } from 'lucide-react';
-import type { Product } from '../data/mock';
+import type { Product } from '../types';
 import { useStore } from '../store/useStore';
 import { calculateCompatibilityScore } from '../utils/score';
 
@@ -87,8 +87,8 @@ export default function ProductCard({ product, compact = false, showHealthTags =
         </div>
       </Link>
 
-      {/* 즐겨찾기 버튼 */}
       <button
+        type="button"
         onClick={e => { e.preventDefault(); toggleFavorite(product.id); }}
         style={{
           position: 'absolute', top: '12px', right: '12px',
