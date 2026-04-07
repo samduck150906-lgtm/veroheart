@@ -15,34 +15,72 @@ export interface AnalysisReport {
   detailedAnalysis: string;
 }
 
+const SAFETY_POLICY = {
+  base: 35,
+  dangerPenalty: 6,
+  cautionPenalty: 3,
+  maxDangerPenalty: 18,
+  maxCautionPenalty: 9,
+  confirmedAllergyPenalty: 20,
+  suspectedAllergyPenalty: 12,
+  avoidancePenalty: 6,
+  maxPersonalPenalty: 30,
+} as const;
+
+function inferProfileType(allergyKeyword: string): 'confirmed' | 'suspected' | 'avoidance' {
+  const normalized = allergyKeyword.toLowerCase();
+  if (normalized.includes('의심')) return 'suspected';
+  if (normalized.includes('기피') || normalized.includes('피하기')) return 'avoidance';
+  return 'confirmed';
+}
+
 export function generateAnalysisReport(product: Product, profile: UserPetProfile): AnalysisReport {
   const ingredients = product.ingredients || [];
   let score = 0;
   
   // 1. Ingredient Safety (S) - 35 points
-  let sScore = 35;
-  const allergyMatches: string[] = [];
+  const matchedAllergies = new Map<string, { ingredients: Set<string>; profileType: 'confirmed' | 'suspected' | 'avoidance' }>();
   const dangerIngredients: string[] = [];
+  let dangerCount = 0;
+  let cautionCount = 0;
 
   ingredients.forEach(ing => {
-    // Check for allergies
-    const matchesAllergy = profile.allergies.some(a => 
-      ing.nameKo.includes(a) || (ing.nameEn && ing.nameEn.toLowerCase().includes(a.toLowerCase()))
-    );
+    profile.allergies.forEach(allergyKeyword => {
+      const normalizedKeyword = allergyKeyword.replace(/\(.*?\)/g, '').trim();
+      const matchesAllergy =
+        ing.nameKo.includes(normalizedKeyword) ||
+        (ing.nameEn && ing.nameEn.toLowerCase().includes(normalizedKeyword.toLowerCase()));
 
-    if (matchesAllergy) {
-      allergyMatches.push(ing.nameKo);
-      sScore -= 15;
-    }
+      if (!matchesAllergy) return;
+
+      const key = normalizedKeyword || allergyKeyword;
+      if (!matchedAllergies.has(key)) {
+        matchedAllergies.set(key, { ingredients: new Set<string>(), profileType: inferProfileType(allergyKeyword) });
+      }
+      matchedAllergies.get(key)?.ingredients.add(ing.nameKo);
+    });
 
     if (ing.riskLevel === 'danger') {
       dangerIngredients.push(ing.nameKo);
-      sScore -= 10;
+      dangerCount += 1;
     } else if (ing.riskLevel === 'caution') {
-      sScore -= 5;
+      cautionCount += 1;
     }
   });
 
+  const riskPenalty =
+    Math.min(SAFETY_POLICY.maxDangerPenalty, dangerCount * SAFETY_POLICY.dangerPenalty) +
+    Math.min(SAFETY_POLICY.maxCautionPenalty, cautionCount * SAFETY_POLICY.cautionPenalty);
+
+  let personalPenalty = 0;
+  matchedAllergies.forEach((v) => {
+    if (v.profileType === 'confirmed') personalPenalty += SAFETY_POLICY.confirmedAllergyPenalty;
+    else if (v.profileType === 'suspected') personalPenalty += SAFETY_POLICY.suspectedAllergyPenalty;
+    else personalPenalty += SAFETY_POLICY.avoidancePenalty;
+  });
+  personalPenalty = Math.min(SAFETY_POLICY.maxPersonalPenalty, personalPenalty);
+
+  const sScore = Math.max(0, SAFETY_POLICY.base - riskPenalty - personalPenalty);
   score += Math.max(0, sScore);
 
   // 2. Health Concern Suitability (C) - 25 points
@@ -71,12 +109,20 @@ export function generateAnalysisReport(product: Product, profile: UserPetProfile
   // Highlights
   const highlights: { text: string; type: 'positive' | 'negative' | 'caution' }[] = [];
   
-  if (allergyMatches.length > 0) {
+  matchedAllergies.forEach((value, allergy) => {
+    const ingredientsText = Array.from(value.ingredients).join(', ');
+    if (value.profileType === 'avoidance') {
+      highlights.push({
+        text: `참고: ${allergy} 기피 성분(${ingredientsText})이 포함되어 있어요.`,
+        type: 'caution',
+      });
+      return;
+    }
     highlights.push({
-      text: `알레르기 주의보! ${allergyMatches.join(', ')} 등 우리 애가 못 먹는 원료가 포함되어 있어요.`,
+      text: `주의! ${allergy} 알러지 유발 성분(${ingredientsText})이 포함되어 있어요.`,
       type: 'negative',
     });
-  }
+  });
 
   if (dangerIngredients.length > 0) {
     highlights.push({
@@ -102,7 +148,7 @@ export function generateAnalysisReport(product: Product, profile: UserPetProfile
       concernMatches.length > 0
         ? `${profile.name}에게 대체로 안전하고 건강한 제품입니다.`
         : generalPopulationGoodSummary(product);
-  } else if (totalScore < 50 || allergyMatches.length > 0) {
+  } else if (totalScore < 50 || matchedAllergies.size > 0) {
     grade = 'Poor';
     summary = '급여 전 전문가와 상담이 필요한 제품입니다.';
   }
@@ -112,6 +158,6 @@ export function generateAnalysisReport(product: Product, profile: UserPetProfile
     grade,
     summary,
     highlights,
-    detailedAnalysis: `전체 ${ingredients.length}개의 성분 중 ${dangerIngredients.length}개의 위험 성분이 발견되었습니다. ${profile.name}의 건강 고민인 ${profile.healthConcerns.join(', ')}에 대한 고려도는 ${concernMatches.length > 0 ? '높음' : '보통'}입니다.`
+    detailedAnalysis: `전체 ${ingredients.length}개 성분을 분석한 결과 위험도 감점 ${riskPenalty}점, 맞춤형 감점 ${personalPenalty}점이 반영되었습니다. ${profile.name}의 건강 고민인 ${profile.healthConcerns.join(', ')}에 대한 고려도는 ${concernMatches.length > 0 ? '높음' : '보통'}입니다.`
   };
 }

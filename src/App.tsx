@@ -19,6 +19,8 @@ import Refund from './pages/Refund';
 import Login from './pages/Login';
 import Ranking from './pages/Ranking';
 import Brand from './pages/Brand';
+import ViralEvent from './pages/ViralEvent';
+import Test from './pages/Test';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
@@ -83,6 +85,8 @@ function App() {
             <Route path="refund" element={<Refund />} />
             <Route path="ranking" element={<Ranking />} />
             <Route path="brand/:brandName" element={<Brand />} />
+            <Route path="event/viral" element={<ViralEvent />} />
+            <Route path="test" element={<Test />} />
           </Route>
         
         {/* Login (no Layout wrapper) */}

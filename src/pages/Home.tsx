@@ -6,7 +6,7 @@ import { Helmet } from 'react-helmet-async';
 import { Sparkles, Clock, ChevronRight, X, Tag, Flame, Stethoscope, Wallet } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { MOCK_EVENTS } from '../lib/supabase';
-import { HOME_HERO, CORE_COPY, UGC_COPY } from '../copy/marketing';
+import { HOME_HERO, CORE_COPY, UGC_COPY, VIRAL_LANDING_COPY, KAKAO_SHARE_MESSAGES } from '../copy/marketing';
 import { HOME_CATEGORY_ITEMS } from '../constants/productCategories';
 import type { Product } from '../data/mock';
 
@@ -65,6 +65,47 @@ export default function Home() {
         <p style={{ fontSize: '12px', color: '#6B7280', fontWeight: 600, lineHeight: 1.5, margin: 0 }}>
           {CORE_COPY.ocr}
         </p>
+      </section>
+
+      <section
+        style={{
+          marginBottom: '22px',
+          padding: '18px',
+          borderRadius: '20px',
+          background: 'linear-gradient(145deg, #FFF7ED 0%, #FFFFFF 100%)',
+          border: '1px solid #FED7AA',
+        }}
+      >
+        <p style={{ fontSize: '11px', fontWeight: 800, color: '#C2410C', margin: '0 0 6px', letterSpacing: '0.05em' }}>
+          VIRAL TEST CAMPAIGN
+        </p>
+        <h2 style={{ fontSize: '18px', fontWeight: 900, color: '#7C2D12', margin: '0 0 8px', lineHeight: 1.35 }}>
+          {VIRAL_LANDING_COPY.hero.headline}
+        </h2>
+        <p style={{ fontSize: '13px', fontWeight: 600, color: '#9A3412', margin: '0 0 12px', lineHeight: 1.5 }}>
+          {VIRAL_LANDING_COPY.hero.sub}
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => navigate('/test')}
+            style={{ borderRadius: '12px', height: '42px', fontSize: '13px', fontWeight: 800 }}
+          >
+            {VIRAL_LANDING_COPY.hero.ctaPrimary}
+          </button>
+          <button
+            type="button"
+            className="btn btn-outline"
+            onClick={() => navigate('/test')}
+            style={{ borderRadius: '12px', height: '42px', fontSize: '13px', fontWeight: 800 }}
+          >
+            {VIRAL_LANDING_COPY.hero.ctaSecondary}
+          </button>
+        </div>
+        <div style={{ fontSize: '11px', color: '#7C2D12', background: '#FFF', border: '1px dashed #FDBA74', borderRadius: '10px', padding: '8px 10px', lineHeight: 1.45 }}>
+          카카오 공유 문구 예시: {KAKAO_SHARE_MESSAGES[0]}
+        </div>
       </section>
 
       <section style={{ marginBottom: '22px' }}>

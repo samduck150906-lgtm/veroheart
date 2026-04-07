@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Loader2, Zap, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import type { AnalysisResponse } from '../types/analyzer';
 import { useStore } from '../store/useStore';
 import { saveAnalysisReport } from '../lib/supabase';
@@ -7,6 +8,7 @@ import { CORE_COPY } from '../copy/marketing';
 
 export default function Analyzer() {
   const { userId, selectedProduct } = useStore();
+  const navigate = useNavigate();
   const [animal, setAnimal] = useState<'dog' | 'cat'>('dog');
   const [productType, setProductType] = useState('food');
   const [ingredientText, setIngredientText] = useState('');
@@ -60,6 +62,30 @@ export default function Analyzer() {
       setError(err.message || '오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleShareResult = async () => {
+    const shareUrl = `${window.location.origin}/event/viral`;
+    const shareText = `반려동물 성향/성분 분석 결과 이벤트 참여하기: ${shareUrl}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: '베로로 분석 이벤트',
+          text: shareText,
+          url: shareUrl,
+        });
+        return;
+      } catch {
+        // User cancelled share.
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareText);
+    } catch {
+      window.prompt('아래 문구를 복사해 공유해 주세요.', shareText);
     }
   };
 
@@ -204,6 +230,26 @@ export default function Analyzer() {
           </div>
 
           <div className="mt-8 border-t border-gray-200 pt-6">
+            <div className="mb-4 rounded-xl border border-orange-200 bg-orange-50 p-4">
+              <p className="text-sm font-bold text-orange-900">결과 공유 이벤트 진행 중</p>
+              <p className="mt-1 text-xs text-orange-800">공유 후 인증 제출하면 주간/월간 리워드 이벤트에 참여할 수 있어요.</p>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={handleShareResult}
+                  className="rounded-lg border border-orange-300 bg-white px-3 py-2 text-xs font-bold text-orange-700"
+                >
+                  결과 공유하기
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/event/viral')}
+                  className="rounded-lg bg-orange-600 px-3 py-2 text-xs font-bold text-white"
+                >
+                  인증 제출하러 가기
+                </button>
+              </div>
+            </div>
             <h4 className="font-bold text-gray-800 mb-3 text-lg">AI 기반 매칭 추천 (Mock)</h4>
             <div className="grid grid-cols-2 gap-4">
               <div className="h-32 bg-gray-100 rounded-xl border border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-500 p-4 text-center">

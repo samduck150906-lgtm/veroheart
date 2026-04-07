@@ -13,19 +13,27 @@ export function calculateCompatibilityScore(product: Product, profile: UserPetPr
   let score = 0;
   
   // 1. 성분 안전성 (S) - 35점 만점
-  let sScore = 35;
-  let allergyHit = false;
+  const baseSafety = 35;
+  let dangerCount = 0;
+  let cautionCount = 0;
+  const allergyMatches = new Set<string>();
+
   product.ingredients.forEach(ing => {
-    // 알레르기 성분 (치명적)
-    if (profile.allergies.includes(ing.nameKo)) {
-      allergyHit = true;
-      sScore -= 20; // 대폭 감점
-    }
-    // 위험도 기반
-    if (ing.riskLevel === 'danger') sScore -= 10;
-    if (ing.riskLevel === 'caution') sScore -= 5;
+    profile.allergies.forEach(a => {
+      if (
+        ing.nameKo.includes(a) ||
+        (ing.nameEn && ing.nameEn.toLowerCase().includes(a.toLowerCase()))
+      ) {
+        allergyMatches.add(a);
+      }
+    });
+    if (ing.riskLevel === 'danger') dangerCount += 1;
+    if (ing.riskLevel === 'caution') cautionCount += 1;
   });
-  if (allergyHit) sScore = Math.max(0, sScore - 10);
+
+  const riskPenalty = Math.min(18, dangerCount * 6) + Math.min(9, cautionCount * 3);
+  const personalPenalty = Math.min(30, allergyMatches.size * 20);
+  const sScore = Math.max(0, baseSafety - riskPenalty - personalPenalty);
   score += Math.max(0, sScore);
 
   // 2. 고민 적합도 (C) - 25점 만점
