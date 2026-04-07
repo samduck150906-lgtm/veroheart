@@ -1,5 +1,12 @@
 import type { Product, UserPetProfile } from '../data/mock';
 
+/** 건강 고민 매칭이 없을 때: 점수가 펫 맞춤이 아님을 드러내는 요약 문구 */
+function generalPopulationGoodSummary(product: Product): string {
+  if (product.targetPetType === 'dog') return '대부분의 강아지에게 안전하고 무난한 제품입니다.';
+  if (product.targetPetType === 'cat') return '대부분의 고양이에게 안전하고 무난한 제품입니다.';
+  return '대부분의 강아지/고양이에게 안전하고 무난한 제품입니다.';
+}
+
 export interface AnalysisReport {
   score: number;
   grade: 'Excellent' | 'Good' | 'Fair' | 'Poor';
@@ -91,7 +98,10 @@ export function generateAnalysisReport(product: Product, profile: UserPetProfile
     summary = `${profile.name}에게 완벽하게 추천하는 제품입니다!`;
   } else if (totalScore >= 70) {
     grade = 'Good';
-    summary = `${profile.name}에게 대체로 안전하고 건강한 제품입니다.`;
+    summary =
+      concernMatches.length > 0
+        ? `${profile.name}에게 대체로 안전하고 건강한 제품입니다.`
+        : generalPopulationGoodSummary(product);
   } else if (totalScore < 50 || allergyMatches.length > 0) {
     grade = 'Poor';
     summary = '급여 전 전문가와 상담이 필요한 제품입니다.';

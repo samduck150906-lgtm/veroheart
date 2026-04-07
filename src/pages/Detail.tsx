@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
+  ChevronUp,
   GitCompare,
   Loader2,
   AlertCircle,
@@ -75,6 +76,10 @@ export default function Detail() {
     setReviews(prev => prev.filter(r => r.id !== reviewId));
   };
 
+  const handleScrollTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   if (isLoadingProducts) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
@@ -101,18 +106,30 @@ export default function Detail() {
   };
 
   return (
-    <div className="animate-fade-in" style={{ paddingBottom: '40px' }}>
+    <div className="animate-fade-in detail-page-root" style={{ paddingBottom: '40px' }}>
       <Helmet>
         <title>{product.name} - 베로로</title>
         <meta name="description" content={`${product.brand}의 ${product.name} 전성분 분석 결과 및 구매`} />
       </Helmet>
 
-      <button onClick={() => navigate(-1)} style={{
-        background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center',
-        gap: '8px', marginBottom: '16px', color: 'var(--text-dark)', fontWeight: 600
-      }}>
-        <ArrowLeft size={20} /> 뒤로
-      </button>
+      <div className="detail-fab-stack" aria-label="빠른 이동 버튼">
+        <button
+          type="button"
+          className="detail-back-fab"
+          onClick={() => navigate(-1)}
+          aria-label="뒤로 가기"
+        >
+          <ArrowLeft size={24} strokeWidth={2.25} aria-hidden />
+        </button>
+        <button
+          type="button"
+          className="detail-scroll-top-fab"
+          onClick={handleScrollTop}
+          aria-label="맨 위로 이동"
+        >
+          <ChevronUp size={22} strokeWidth={2.4} aria-hidden />
+        </button>
+      </div>
 
       <div style={{ position: 'relative', width: '100%', height: '360px', borderRadius: '28px', overflow: 'hidden', marginBottom: '20px', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}>
         <img src={product.imageUrl} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
