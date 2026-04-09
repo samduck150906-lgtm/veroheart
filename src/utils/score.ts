@@ -7,6 +7,7 @@ export interface RecommendationBreakdown {
   socialProof: number;
   value: number;
   petFit: number;
+  verification: number;
   allergyHits: string[];
   matchedConcerns: string[];
   dangerCount: number;
@@ -109,7 +110,16 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
     petFit = Math.min(10, petFit + 2);
   }
 
-  const total = Math.max(0, Math.min(100, Math.round(safety + concern + socialProof + value + petFit)));
+  let verification = 4;
+  if (product.verificationStatus === 'verified') {
+    verification = 10;
+  } else if (product.verificationStatus === 'needs_review') {
+    verification = 1;
+  } else if (product.verificationStatus === 'pending') {
+    verification = 0;
+  }
+
+  const total = Math.max(0, Math.min(100, Math.round(safety + concern + socialProof + value + petFit + verification)));
   const reasons: string[] = [];
 
   if (allergyHits.length > 0) {
@@ -128,6 +138,13 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
   if (product.reviewsCount > 0) {
     reasons.push(`리뷰 ${product.reviewsCount.toLocaleString()}개`);
   }
+  if (product.verificationStatus === 'verified') {
+    reasons.push('운영 검수 완료 데이터');
+  } else if (product.verificationStatus === 'needs_review') {
+    reasons.push('재검토 필요한 데이터');
+  } else if (product.verificationStatus === 'pending') {
+    reasons.push('검수 대기 데이터');
+  }
 
   return {
     total,
@@ -136,6 +153,7 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
     socialProof,
     value,
     petFit,
+    verification,
     allergyHits,
     matchedConcerns,
     dangerCount,

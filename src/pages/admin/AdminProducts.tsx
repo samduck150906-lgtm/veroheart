@@ -14,6 +14,7 @@ interface Product {
   id: string;
   name: string;
   brand_name: string;
+  manufacturer_name?: string;
   product_type: string;
   main_category: string;
   sub_category?: string;
@@ -22,6 +23,9 @@ interface Product {
   formulation?: string;
   product_health_concerns?: string[];
   has_risk_factors?: string[];
+  verification_status?: 'pending' | 'verified' | 'needs_review';
+  verified_at?: string | null;
+  coupang_product_id?: string | null;
   image_url: string;
   min_price: number;
 }
@@ -32,6 +36,11 @@ const MAIN_CATEGORIES = [
 
 const LIFE_STAGES = ['퍼피·키튼', '성체', '시니어'];
 const PET_TYPES = ['dog', 'cat', 'all'];
+const VERIFICATION_OPTIONS = [
+  { value: 'pending', label: '검수 대기' },
+  { value: 'verified', label: '검수 완료' },
+  { value: 'needs_review', label: '재검토 필요' },
+] as const;
 
 const AdminProducts: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -132,7 +141,7 @@ const AdminProducts: React.FC = () => {
           <p style={{ color: '#6B7280', marginTop: '4px' }}>총 {products.length}개의 상품이 등록되어 있습니다.</p>
         </div>
         <button 
-          onClick={() => { setCurrentProduct({ target_pet_type: 'dog', target_life_stage: [], product_health_concerns: [], has_risk_factors: [] }); setIsModalOpen(true); }}
+          onClick={() => { setCurrentProduct({ target_pet_type: 'dog', target_life_stage: [], product_health_concerns: [], has_risk_factors: [], verification_status: 'pending' }); setIsModalOpen(true); }}
           style={{ 
             display: 'flex', alignItems: 'center', gap: '8px', background: '#4F46E5', color: '#fff', 
             padding: '12px 24px', borderRadius: '14px', border: 'none', fontWeight: 800, cursor: 'pointer',
@@ -199,15 +208,16 @@ const AdminProducts: React.FC = () => {
               <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '13px', color: '#6B7280' }}>아이템</th>
               <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '13px', color: '#6B7280' }}>카테고리</th>
               <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '13px', color: '#6B7280' }}>타겟</th>
+              <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '13px', color: '#6B7280' }}>검수</th>
               <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '13px', color: '#6B7280' }}>가격</th>
               <th style={{ padding: '16px 24px', textAlign: 'right', fontSize: '13px', color: '#6B7280' }}>관리</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={5} style={{ textAlign: 'center', padding: '100px 0', color: '#9CA3AF' }}>데이터를 불러오는 중...</td></tr>
+              <tr><td colSpan={6} style={{ textAlign: 'center', padding: '100px 0', color: '#9CA3AF' }}>데이터를 불러오는 중...</td></tr>
             ) : filteredProducts.length === 0 ? (
-              <tr><td colSpan={5} style={{ textAlign: 'center', padding: '100px 0', color: '#9CA3AF' }}>검색 결과가 없습니다.</td></tr>
+              <tr><td colSpan={6} style={{ textAlign: 'center', padding: '100px 0', color: '#9CA3AF' }}>검색 결과가 없습니다.</td></tr>
             ) : (
               filteredProducts.map((p) => (
                 <tr key={p.id} style={{ borderBottom: '1px solid #F3F4F6', transition: '0.2s' }} className="hover:bg-gray-50">
@@ -217,6 +227,7 @@ const AdminProducts: React.FC = () => {
                       <div>
                         <div style={{ fontWeight: 800, color: '#1F2937' }}>{p.name}</div>
                         <div style={{ fontSize: '12px', color: '#9CA3AF' }}>{p.brand_name} • {p.id.substring(0,8)}</div>
+                        <div style={{ fontSize: '11px', color: '#94A3B8', marginTop: '3px' }}>{p.manufacturer_name || '제조사 미입력'}</div>
                       </div>
                     </div>
                   </td>
@@ -229,6 +240,12 @@ const AdminProducts: React.FC = () => {
                       {p.target_pet_type}
                     </span>
                     <div style={{ fontSize: '11px', color: '#6B7280', marginTop: '4px' }}>{p.target_life_stage?.join(', ') || '전연령'}</div>
+                  </td>
+                  <td style={{ padding: '16px 24px' }}>
+                    <VerificationBadge status={p.verification_status} />
+                    <div style={{ fontSize: '11px', color: '#94A3B8', marginTop: '4px' }}>
+                      {p.verified_at ? new Date(p.verified_at).toLocaleDateString() : '검수일 없음'}
+                    </div>
                   </td>
                   <td style={{ padding: '16px 24px', fontWeight: 800, color: '#111827' }}>₩{p.min_price.toLocaleString()}</td>
                   <td style={{ padding: '16px 24px', textAlign: 'right' }}>
@@ -257,6 +274,7 @@ const AdminProducts: React.FC = () => {
               <Section label="제품 기본 정보">
                 <Input label="제품명*" value={currentProduct.name} onChange={(v) => setCurrentProduct({...currentProduct, name: v})} />
                 <Input label="브랜드*" value={currentProduct.brand_name} onChange={(v) => setCurrentProduct({...currentProduct, brand_name: v})} />
+                <Input label="제조사" value={currentProduct.manufacturer_name} onChange={(v) => setCurrentProduct({...currentProduct, manufacturer_name: v})} />
                 <Input label="가격" type="number" value={currentProduct.min_price} onChange={(v) => setCurrentProduct({...currentProduct, min_price: parseInt(v)})} />
                 <Input label="이미지 URL" value={currentProduct.image_url} onChange={(v) => setCurrentProduct({...currentProduct, image_url: v})} />
               </Section>
@@ -266,6 +284,19 @@ const AdminProducts: React.FC = () => {
                 <Input label="서브 카테고리" value={currentProduct.sub_category} onChange={(v) => setCurrentProduct({...currentProduct, sub_category: v})} />
                 <Input label="제형 (Dry, Wet, etc.)" value={currentProduct.formulation} onChange={(v) => setCurrentProduct({...currentProduct, formulation: v})} />
                 <Select label="타겟 반려동물" value={currentProduct.target_pet_type} options={PET_TYPES} onChange={(v) => setCurrentProduct({...currentProduct, target_pet_type: v})} />
+                <Select
+                  label="검수 상태"
+                  value={currentProduct.verification_status}
+                  options={VERIFICATION_OPTIONS.map((option) => option.value)}
+                  labels={Object.fromEntries(VERIFICATION_OPTIONS.map((option) => [option.value, option.label]))}
+                  onChange={(v) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      verification_status: v as Product['verification_status'],
+                      verified_at: v === 'verified' ? (currentProduct.verified_at || new Date().toISOString()) : currentProduct.verified_at ?? null,
+                    })
+                  }
+                />
               </Section>
             </div>
 
@@ -281,6 +312,16 @@ const AdminProducts: React.FC = () => {
                     placeholder="관절, 피부, 다이어트..."
                     style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid #E5E7EB', outline: 'none' }}
                   />
+                </div>
+                <div style={{ marginTop: '16px' }}>
+                  <Input
+                    label="쿠팡 상품 ID"
+                    value={currentProduct.coupang_product_id}
+                    onChange={(v) => setCurrentProduct({ ...currentProduct, coupang_product_id: v })}
+                  />
+                  <p style={{ margin: '8px 0 0', fontSize: '11px', color: '#94A3B8', lineHeight: 1.5 }}>
+                    입력하면 제품 상세에서 쿠팡 검색 대신 해당 상품으로 직접 연결합니다.
+                  </p>
                 </div>
               </Section>
             </div>
@@ -319,7 +360,19 @@ function Input({ label, value, onChange, type = 'text' }: { label: string, value
   );
 }
 
-function Select({ label, value, options, onChange }: { label: string, value?: string, options: string[], onChange: (v: string) => void }) {
+function Select({
+  label,
+  value,
+  options,
+  onChange,
+  labels,
+}: {
+  label: string,
+  value?: string,
+  options: string[],
+  onChange: (v: string) => void,
+  labels?: Record<string, string>,
+}) {
   return (
     <div>
       <label style={{ fontSize: '13px', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '8px' }}>{label}</label>
@@ -329,9 +382,35 @@ function Select({ label, value, options, onChange }: { label: string, value?: st
         style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid #E5E7EB', outline: 'none', backgroundColor: '#fff' }}
       >
         <option value="">선택하세요</option>
-        {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+        {options.map(opt => <option key={opt} value={opt}>{labels?.[opt] || opt}</option>)}
       </select>
     </div>
+  );
+}
+
+function VerificationBadge({ status }: { status?: Product['verification_status'] }) {
+  const config =
+    status === 'verified'
+      ? { label: '검수 완료', bg: '#DCFCE7', text: '#166534' }
+      : status === 'needs_review'
+        ? { label: '재검토 필요', bg: '#FEE2E2', text: '#991B1B' }
+        : { label: '검수 대기', bg: '#FEF3C7', text: '#92400E' };
+
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        padding: '4px 10px',
+        borderRadius: '999px',
+        backgroundColor: config.bg,
+        color: config.text,
+        fontSize: '12px',
+        fontWeight: 800,
+      }}
+    >
+      {config.label}
+    </span>
   );
 }
 

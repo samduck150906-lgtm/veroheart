@@ -402,7 +402,7 @@ export default function Search() {
               {profile.name} 프로필 기반 추천순
             </div>
             <div style={{ fontSize: '13px', color: '#66707C', lineHeight: 1.6 }}>
-              알레르기 회피, 건강 고민 매칭, 리뷰 신뢰도, 가격 적정성, 종/연령 적합도를 함께 반영해 정렬합니다.
+              검수 완료 여부, 알레르기 회피, 건강 고민 매칭, 리뷰 신뢰도, 가격 적정성, 종/연령 적합도를 함께 반영해 정렬합니다.
             </div>
           </div>
         )}

@@ -29,6 +29,16 @@ import { notify } from '../store/useNotification';
 import { TossButton, TossCard, TossSectionTitle } from '../components/TossUI';
 import { openCoupangForProduct } from '../utils/externalPurchase';
 
+function getVerificationMeta(status?: 'pending' | 'verified' | 'needs_review') {
+  if (status === 'verified') {
+    return { label: '검수 완료', bg: '#DCFCE7', color: '#166534' };
+  }
+  if (status === 'needs_review') {
+    return { label: '재검토 필요', bg: '#FEE2E2', color: '#991B1B' };
+  }
+  return { label: '검수 대기', bg: '#FEF3C7', color: '#92400E' };
+}
+
 export default function Detail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -102,6 +112,7 @@ export default function Detail() {
 
   const report = product ? generateAnalysisReport(product, profile) : null;
   const isComparing = comparisonList.includes(product?.id || '');
+  const verificationMeta = getVerificationMeta(product.verificationStatus);
 
   const getRiskColor = (level: string) => {
     if (level === 'danger') return '#EF4444';
@@ -163,6 +174,22 @@ export default function Detail() {
         <h1 style={{ fontSize: '26px', lineHeight: 1.3, marginBottom: '14px', fontWeight: 900 }}>{product.name}</h1>
       
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '18px' }}>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '12px',
+              fontWeight: 800,
+              padding: '7px 10px',
+              borderRadius: '999px',
+              background: verificationMeta.bg,
+              color: verificationMeta.color,
+            }}
+          >
+            <Shield size={14} />
+            {verificationMeta.label}
+          </div>
           {product.targetPetType && (
             <div className="ui-badge ui-badge-muted" style={{ display: 'inline-flex' }}>
               {product.targetPetType === 'dog' ? <Dog size={14} /> : (product.targetPetType === 'cat' ? <Cat size={14} /> : <Layers size={14} />)}
@@ -179,6 +206,19 @@ export default function Detail() {
             <div className="ui-badge ui-badge-muted" style={{ display: 'inline-flex' }}>
               <Layers size={14} />
               {product.formulation}
+            </div>
+          )}
+        </div>
+
+        <div style={{ display: 'grid', gap: '8px', marginBottom: '18px' }}>
+          {product.manufacturerName && (
+            <div style={{ fontSize: '13px', color: '#475569', fontWeight: 600 }}>
+              제조사 <span style={{ color: '#0F172A', fontWeight: 800 }}>{product.manufacturerName}</span>
+            </div>
+          )}
+          {product.verifiedAt && (
+            <div style={{ fontSize: '12px', color: '#64748B', fontWeight: 600 }}>
+              최근 검수일 {new Date(product.verifiedAt).toLocaleDateString()}
             </div>
           )}
         </div>
@@ -214,6 +254,10 @@ export default function Detail() {
             <p style={{ margin: 0, fontSize: '12px', color: '#475569', lineHeight: 1.6, fontWeight: 600 }}>
               베로로는 크롤링보다 사람 검수 비중을 높여 제품 정보를 다룹니다. AI는 추천과 해석을 돕지만,
               제조사/성분에 대한 검토와 카탈로그 검증은 운영자가 계속 보완합니다.
+            </p>
+            <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#475569', lineHeight: 1.6, fontWeight: 600 }}>
+              현재 이 제품 상태: <strong>{verificationMeta.label}</strong>
+              {product.manufacturerName ? ` · 제조사 ${product.manufacturerName}` : ''}
             </p>
           </div>
 
@@ -264,7 +308,10 @@ export default function Detail() {
             쿠팡 앱에서 이어서 보기
           </TossButton>
           <p style={{ margin: 0, fontSize: '11px', color: '#64748B', lineHeight: 1.5, fontWeight: 600 }}>
-            베로로에서 분석·추천한 뒤 구매는 외부 쇼핑앱으로 연결됩니다. 앱이 없으면 웹 검색으로 이동합니다.
+            베로로에서 분석·추천한 뒤 구매는 외부 쇼핑앱으로 연결됩니다.
+            {product.coupangProductId
+              ? ' 등록된 쿠팡 상품으로 바로 연결을 시도합니다.'
+              : ' 앱이 없거나 상품 연결 정보가 없으면 웹 검색으로 이동합니다.'}
           </p>
         </div>
       </TossCard>
