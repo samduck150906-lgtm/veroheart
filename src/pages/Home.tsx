@@ -274,10 +274,10 @@ export default function Home() {
               style={{ textAlign: 'center', cursor: 'pointer' }}
             >
               <div style={{ 
-                width: '100%', aspectRatio: '1/1', background: 'linear-gradient(145deg, #FFF5F0 0%, #FFE8E0 100%)', 
+                width: '100%', aspectRatio: '1/1', background: 'linear-gradient(145deg, #FFFDF0 0%, #FFF6CC 100%)', 
                 borderRadius: '24px', display: 'flex', alignItems: 'center', 
                 justifyContent: 'center', marginBottom: '10px', fontSize: '28px',
-                border: '1px solid rgba(232, 90, 60, 0.1)'
+                border: '1px solid rgba(250, 204, 21, 0.22)'
               }}>
                 {item.emoji}
               </div>
@@ -322,7 +322,7 @@ function HorizontalProductSection({
       <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '6px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
         {products.map((product, idx) => (
           <div key={product.id} style={{ flex: '0 0 290px', position: 'relative' }}>
-            <div style={{ position: 'absolute', top: '10px', left: '10px', zIndex: 2, width: '22px', height: '22px', borderRadius: '999px', background: '#111827', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 800 }}>
+            <div style={{ position: 'absolute', top: '10px', left: '10px', zIndex: 2, width: '22px', height: '22px', borderRadius: '999px', background: '#CA8A04', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 800 }}>
               {idx + 1}
             </div>
             <ProductCard product={product} compact />

@@ -203,7 +203,7 @@ export default function Login() {
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.55 }}>{HOME_HERO.sub}</p>
         </div>
 
-        <div style={{ display: 'flex', backgroundColor: 'rgba(255, 107, 74, 0.1)', borderRadius: '14px', padding: '4px', marginBottom: '22px' }}>
+        <div style={{ display: 'flex', backgroundColor: 'rgba(250, 204, 21, 0.2)', borderRadius: '14px', padding: '4px', marginBottom: '22px' }}>
           {(['login', 'signup'] as const).map((m) => (
             <button
               key={m}

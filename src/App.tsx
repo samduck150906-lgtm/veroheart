@@ -70,7 +70,7 @@ function App() {
         }}>
           {splashLine}
         </p>
-        <div style={{ width: '36px', height: '36px', border: '3px solid rgba(232, 90, 60, 0.25)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 0.85s linear infinite' }} />
+        <div style={{ width: '36px', height: '36px', border: '3px solid rgba(250, 204, 21, 0.3)', borderTopColor: 'var(--primary-dark)', borderRadius: '50%', animation: 'spin 0.85s linear infinite' }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );

@@ -206,7 +206,7 @@ export default function Search() {
         <div style={{ 
           display: 'flex', alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.98)',
           borderRadius: '20px', padding: '14px 16px', marginBottom: '14px',
-          border: '1px solid rgba(232, 90, 60, 0.12)',
+          border: '1px solid rgba(250, 204, 21, 0.25)',
           boxShadow: 'var(--shadow-sm)',
         }}>
           <SearchIcon size={20} className="text-gray-400" />
@@ -241,7 +241,7 @@ export default function Search() {
                   style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
                     padding: '10px 6px', borderRadius: '14px', border: active ? '2px solid var(--primary)' : '1px solid rgba(0,0,0,0.08)',
-                    background: active ? 'rgba(255, 107, 74, 0.12)' : 'var(--surface-elevated)',
+                    background: active ? 'rgba(250, 204, 21, 0.18)' : 'var(--surface-elevated)',
                     color: active ? 'var(--primary-dark)' : 'var(--text-muted)',
                     fontWeight: 700, fontSize: '12px', cursor: 'pointer',
                   }}
@@ -344,8 +344,8 @@ export default function Search() {
             style={{
               padding: '10px 14px',
               borderRadius: '14px',
-              border: filterButtonActive ? '1px solid rgba(255, 107, 74, 0.35)' : '1px solid #E5E7EB',
-              background: filterButtonActive ? 'rgba(255, 107, 74, 0.12)' : '#fff',
+              border: filterButtonActive ? '1px solid rgba(250, 204, 21, 0.5)' : '1px solid #E5E7EB',
+              background: filterButtonActive ? 'rgba(250, 204, 21, 0.18)' : '#fff',
               color: filterButtonActive ? 'var(--primary-dark)' : '#4B5563',
               display: 'inline-flex',
               alignItems: 'center',
@@ -505,7 +505,7 @@ export default function Search() {
                 style={{
                   width: '100%', textAlign: 'left', padding: '14px 16px', borderRadius: '14px',
                   border: filters.dietPreset ? '2px solid var(--primary)' : '1px solid #E5E7EB',
-                  background: filters.dietPreset ? 'rgba(255, 107, 74, 0.08)' : '#fff', cursor: 'pointer', fontWeight: 700, color: '#374151',
+                  background: filters.dietPreset ? 'rgba(250, 204, 21, 0.16)' : '#fff', cursor: 'pointer', fontWeight: 700, color: '#374151',
                 }}
               >
                 {filters.dietPreset ? '✓ ' : ''}다이어트·저칼로리·체중 관련 상품 우선 (태그 일치)
