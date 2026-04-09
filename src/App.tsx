@@ -28,12 +28,13 @@ import AdminIngredients from './pages/admin/AdminIngredients';
 import Notification from './components/Notification';
 import AdminAuthGuard from './pages/admin/AdminAuthGuard';
 import EntryGate, { markEntryGateDone, readEntryGateDone } from './components/EntryGate';
-import { isAdminHostname } from './utils/adminHost';
+import { isAdminExperience, isAdminHostname, toggleAdminDesktopMode } from './utils/adminHost';
 
 function App() {
   const { initApp, isInitializing, isLoggedIn } = useStore();
   const [splashLine] = useState(() => pickSplashTagline());
-  const adminMode = typeof window !== 'undefined' && isAdminHostname(window.location.hostname);
+  const adminMode = typeof window !== 'undefined'
+    && isAdminExperience(window.location.hostname, window.location.pathname);
   const [showEntrySplash, setShowEntrySplash] = useState(() => !adminMode);
   const [entryGateOpen, setEntryGateOpen] = useState(() => (adminMode ? false : !readEntryGateDone()));
 
@@ -42,6 +43,11 @@ function App() {
     window.location.replace(nextUrl);
     return null;
   }
+
+  useEffect(() => {
+    toggleAdminDesktopMode(adminMode);
+    return () => toggleAdminDesktopMode(false);
+  }, [adminMode]);
 
   useEffect(() => {
     initApp();

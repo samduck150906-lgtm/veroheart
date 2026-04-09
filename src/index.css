@@ -58,12 +58,17 @@ body {
   overscroll-behavior-y: none;
 }
 
-body.admin-host {
+html.admin-desktop-mode,
+body.admin-desktop-mode {
   background: #f8fafc;
   color: #0f172a;
-  justify-content: stretch;
+}
+
+body.admin-desktop-mode {
+  display: block;
   overflow: auto;
   overscroll-behavior-y: auto;
+  min-width: 1280px;
 }
 
 /* Mobile App Layout Container */
@@ -79,10 +84,13 @@ body.admin-host {
   overflow: hidden;
 }
 
-body.admin-host #root {
+#root.admin-desktop-mode,
+body.admin-desktop-mode #root {
   max-width: none;
   height: auto;
   min-height: 100vh;
+  min-width: 1280px;
+  width: 100%;
   background: #f8fafc;
   box-shadow: none;
   overflow: visible;
