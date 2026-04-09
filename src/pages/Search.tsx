@@ -29,6 +29,7 @@ import {
   LIFE_STAGE_OPTIONS,
   type PriceBand,
 } from '../constants/searchFilters';
+import { TossButton, TossCard, TossChip, TossSearchBar } from '../components/TossUI';
 
 function defaultPetFromProfile(profile: { species?: string } | undefined): '' | 'dog' | 'cat' | 'all' {
   if (profile?.species === 'Cat') return 'cat';
@@ -203,24 +204,12 @@ export default function Search() {
           </div>
         </div>
 
-        <div style={{ 
-          display: 'flex', alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.98)',
-          borderRadius: '20px', padding: '14px 16px', marginBottom: '14px',
-          border: '1px solid rgba(250, 204, 21, 0.25)',
-          boxShadow: 'var(--shadow-sm)',
-        }}>
-          <SearchIcon size={20} className="text-gray-400" />
-          <input 
-            type="text" 
-            placeholder="상품명, 브랜드, 성분명으로 검색" 
+        <div style={{ marginBottom: '14px' }}>
+          <TossSearchBar
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            style={{
-              border: 'none', background: 'transparent', outline: 'none',
-              width: '100%', marginLeft: '12px', fontSize: '16px', color: '#1F2937'
-            }}
+            onChange={setQuery}
+            placeholder="상품명, 브랜드, 성분명으로 검색"
           />
-          {query && <X size={18} className="text-gray-400 cursor-pointer" onClick={() => setQuery('')} />}
         </div>
 
         <div style={{ marginBottom: '14px' }}>
@@ -321,42 +310,15 @@ export default function Search() {
             { id: 'price_desc' as const, label: '가격 높은순' },
             { id: 'rating' as const, label: '평점순' },
           ]).map(({ id, label }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setSortBy(id)}
-              style={{
-                padding: '6px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 700,
-                border: sortBy === id ? 'none' : '1px solid #E5E7EB',
-                backgroundColor: sortBy === id ? 'rgba(0,0,0,0.08)' : 'transparent',
-                color: '#374151', cursor: 'pointer',
-              }}
-            >
-              {label}
-            </button>
+            <TossChip key={id} label={label} active={sortBy === id} onClick={() => setSortBy(id)} />
           ))}
         </div>
 
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
-          <button
-            type="button"
-            onClick={() => setIsFilterOpen(true)}
-            style={{
-              padding: '10px 14px',
-              borderRadius: '14px',
-              border: filterButtonActive ? '1px solid rgba(250, 204, 21, 0.5)' : '1px solid #E5E7EB',
-              background: filterButtonActive ? 'rgba(250, 204, 21, 0.18)' : '#fff',
-              color: filterButtonActive ? 'var(--primary-dark)' : '#4B5563',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontWeight: 800,
-              cursor: 'pointer',
-            }}
-          >
+          <TossButton variant={filterButtonActive ? 'soft' : 'outline'} onClick={() => setIsFilterOpen(true)} style={{ width: 'auto', height: '40px', padding: '0 14px' }}>
             <SlidersHorizontal size={16} />
             상세 필터
-          </button>
+          </TossButton>
           <button
             type="button"
             onClick={resetFilters}
@@ -396,7 +358,7 @@ export default function Search() {
       {activeFilterChips.length > 0 && (
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '14px' }}>
           {activeFilterChips.map((chip) => (
-            <span key={chip} className="ui-badge ui-badge-muted">{chip}</span>
+            <TossChip key={chip} label={chip} />
           ))}
         </div>
       )}

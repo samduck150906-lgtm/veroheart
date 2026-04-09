@@ -9,6 +9,7 @@ import { MOCK_EVENTS } from '../lib/supabase';
 import { HOME_HERO, CORE_COPY, UGC_COPY, VIRAL_LANDING_COPY, KAKAO_SHARE_MESSAGES } from '../copy/marketing';
 import { HOME_CATEGORY_ITEMS } from '../constants/productCategories';
 import type { Product } from '../types';
+import { TossCard, TossChip, TossSectionTitle } from '../components/TossUI';
 
 export default function Home() {
   const { products, profile, recentViews, isLoggedIn } = useStore();
@@ -54,11 +55,7 @@ export default function Home() {
         <meta name="description" content="베로로 — 사료 성분 분석과 집사들의 찐 리뷰. 의심 대신 베로로 하세요." />
       </Helmet>
 
-      <section style={{
-        marginBottom: '22px', padding: '20px 18px', borderRadius: '24px',
-        background: 'linear-gradient(160deg, #FFFFFF 0%, #FFFCE9 100%)',
-        border: '1px solid rgba(251, 191, 36, 0.28)', boxShadow: 'var(--shadow-md)',
-      }}>
+      <TossCard style={{ marginBottom: '22px', padding: '20px 18px' }}>
         <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--community-tint)', marginBottom: '8px', letterSpacing: '0.06em', textTransform: 'uppercase' }}>First impression</p>
         <h1 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-dark)', lineHeight: 1.4, letterSpacing: '-0.02em', margin: '0 0 10px' }}>
           {HOME_HERO.headline}
@@ -69,7 +66,7 @@ export default function Home() {
         <p style={{ fontSize: '12px', color: '#6B7280', fontWeight: 600, lineHeight: 1.5, margin: 0 }}>
           {CORE_COPY.ocr}
         </p>
-      </section>
+      </TossCard>
 
       {isLoggedIn && (
         <section
@@ -156,12 +153,12 @@ export default function Home() {
       <section style={{ marginBottom: '22px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
           {[UGC_COPY.honestReviews, UGC_COPY.palatability].map((line) => (
-            <div key={line} style={{
+            <TossCard key={line} style={{
               fontSize: '12px', fontWeight: 600, color: '#4B5563', padding: '10px', borderRadius: '14px',
               background: '#FFFBEB', border: '1px solid #FDE68A', lineHeight: 1.4, minHeight: '58px', display: 'flex', alignItems: 'center',
             }}>
               {line}
-            </div>
+            </TossCard>
           ))}
         </div>
       </section>
@@ -260,7 +257,7 @@ export default function Home() {
       )}
 
       <section style={{ marginTop: '48px' }}>
-        <h2 style={{ fontSize: '22px', marginBottom: '24px', fontWeight: 800 }}>카테고리별 탐색</h2>
+        <TossSectionTitle title="카테고리별 탐색" style={{ marginBottom: '24px' }} />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
           {HOME_CATEGORY_ITEMS.map(item => (
             <div 
@@ -273,14 +270,14 @@ export default function Home() {
               }
               style={{ textAlign: 'center', cursor: 'pointer' }}
             >
-              <div style={{ 
+              <TossCard style={{ 
                 width: '100%', aspectRatio: '1/1', background: 'linear-gradient(145deg, #FFFDF0 0%, #FFF6CC 100%)', 
                 borderRadius: '24px', display: 'flex', alignItems: 'center', 
                 justifyContent: 'center', marginBottom: '10px', fontSize: '28px',
                 border: '1px solid rgba(250, 204, 21, 0.22)'
               }}>
                 {item.emoji}
-              </div>
+              </TossCard>
               <span style={{ fontSize: '13px', fontWeight: 700, color: '#4B5563' }}>{item.name}</span>
             </div>
           ))}
@@ -322,8 +319,8 @@ function HorizontalProductSection({
       <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '6px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
         {products.map((product, idx) => (
           <div key={product.id} style={{ flex: '0 0 290px', position: 'relative' }}>
-            <div style={{ position: 'absolute', top: '10px', left: '10px', zIndex: 2, width: '22px', height: '22px', borderRadius: '999px', background: '#CA8A04', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 800 }}>
-              {idx + 1}
+            <div style={{ position: 'absolute', top: '10px', left: '10px', zIndex: 2 }}>
+              <TossChip active size="sm">{idx + 1}</TossChip>
             </div>
             <ProductCard product={product} compact />
           </div>

@@ -6,6 +6,7 @@ import { useStore } from '../store/useStore';
 import { notify } from '../store/useNotification';
 import { HOME_HERO } from '../copy/marketing';
 import { VERORO_LOGO_SRC } from '../constants/assets';
+import { TossButton, TossCard, TossChip } from '../components/TossUI';
 
 const PASSWORD_RULES = [
   {
@@ -266,15 +267,7 @@ export default function Login() {
         </div>
 
         {mode === 'signup' && (
-          <div
-            style={{
-              marginBottom: '18px',
-              padding: '12px 14px',
-              borderRadius: '12px',
-              background: '#F9FAFB',
-              border: '1px solid #E5E7EB',
-            }}
-          >
+          <TossCard style={{ marginBottom: '18px', padding: '12px 14px', borderRadius: '12px' }}>
             <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 800, color: '#374151' }}>비밀번호 정책</p>
             <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'grid', gap: '6px' }}>
               {PASSWORD_RULES.map((rule) => {
@@ -290,30 +283,17 @@ export default function Login() {
                 );
               })}
             </ul>
-          </div>
+          </TossCard>
         )}
 
-        <button
+        <TossButton
           type="button"
           onClick={() => void handleSubmit()}
           disabled={isLoading}
-          style={{
-            width: '100%',
-            padding: '18px',
-            borderRadius: '14px',
-            background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
-            color: '#fff',
-            fontWeight: 800,
-            fontSize: '16px',
-            border: 'none',
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-            opacity: isLoading ? 0.7 : 1,
-            marginBottom: '14px',
-            boxShadow: 'var(--shadow-sm)',
-          }}
+          style={{ width: '100%', marginBottom: '14px', height: '52px', fontSize: '16px' }}
         >
           {isLoading ? '처리 중...' : mode === 'login' ? '로그인' : '회원가입'}
-        </button>
+        </TossButton>
 
         <div style={{ marginBottom: '14px', padding: '12px 14px', borderRadius: '12px', background: '#EFF6FF', border: '1px solid #BFDBFE' }}>
           <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 800, color: '#1E40AF' }}>이메일 인증</p>
@@ -347,8 +327,9 @@ export default function Login() {
         </div>
 
         {(pendingVerification || mode === 'signup') && (
-          <div style={{ marginBottom: '12px', padding: '10px 12px', borderRadius: '10px', background: '#FFFBEB', border: '1px solid #FDE68A' }}>
-            <p style={{ margin: 0, fontSize: '11px', color: '#92400E', lineHeight: 1.5, fontWeight: 600 }}>
+          <div style={{ marginBottom: '12px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+            <TossChip active>{pendingVerification ? '인증 대기' : '가입 안내'}</TossChip>
+            <p style={{ margin: 0, fontSize: '11px', color: '#92400E', lineHeight: 1.5, fontWeight: 600, width: '100%' }}>
               {pendingVerification
                 ? '인증이 끝나면 로그인 탭에서 같은 이메일로 로그인해 주세요.'
                 : '회원가입 후 메일 인증이 필요할 수 있어요. 메일이 안 오면 재전송 버튼을 눌러 주세요.'}
