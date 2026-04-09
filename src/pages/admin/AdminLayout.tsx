@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import {
   ShoppingBag, 
@@ -10,11 +10,15 @@ import {
   Package,
 } from 'lucide-react';
 import { VERORO_LOGO_SRC } from '../../constants/assets';
-import { isAdminHostname } from '../../utils/adminHost';
+import { toggleAdminDesktopMode } from '../../utils/adminHost';
 
 const AdminLayout: React.FC = () => {
   const location = useLocation();
-  const forceAdminTheme = typeof window !== 'undefined' && isAdminHostname(window.location.hostname);
+
+  useEffect(() => {
+    toggleAdminDesktopMode(true);
+    return () => toggleAdminDesktopMode(false);
+  }, []);
 
   const menuItems = [
     { path: '/admin', icon: <LayoutDashboard size={20} />, label: '대시보드' },
@@ -24,7 +28,7 @@ const AdminLayout: React.FC = () => {
   ];
 
   return (
-    <div className={forceAdminTheme ? 'admin-container admin-container-forced' : 'admin-container'}>
+    <div className="admin-container">
       <aside className="admin-sidebar">
         <div className="admin-logo">
           <img src={VERORO_LOGO_SRC} alt="VeRoRo" className="admin-logo-img" />
@@ -85,29 +89,34 @@ const AdminLayout: React.FC = () => {
         .admin-container {
           display: flex;
           min-height: 100vh;
-          background-color: #f8fafc;
+          min-width: 1280px;
+          width: 100%;
+          background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
           color: #1e293b;
           font-family: 'Inter', sans-serif;
         }
 
         .admin-sidebar {
-          width: 280px;
-          background: #ffffff;
-          border-right: 1px solid #e2e8f0;
+          width: 296px;
+          min-width: 296px;
+          background: rgba(255, 255, 255, 0.96);
+          border-right: 1px solid #dbe3f1;
           display: flex;
           flex-direction: column;
           position: sticky;
           top: 0;
           height: 100vh;
           z-index: 100;
+          box-shadow: 24px 0 48px rgba(15, 23, 42, 0.06);
+          backdrop-filter: blur(18px);
         }
 
         .admin-logo {
-          padding: 32px 24px;
+          padding: 32px 24px 24px;
           display: flex;
           flex-direction: column;
           align-items: flex-start;
-          gap: 8px;
+          gap: 10px;
         }
 
         .admin-logo-img {
@@ -119,45 +128,46 @@ const AdminLayout: React.FC = () => {
 
         .logo-text small {
           font-size: 0.75rem;
-          color: #64748b;
-          font-weight: 500;
+          color: #6366f1;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
         }
 
         .admin-nav {
           flex: 1;
-          padding: 0 16px;
+          padding: 0 18px;
         }
 
         .admin-nav-item {
           display: flex;
           align-items: center;
-          padding: 12px 16px;
-          margin-bottom: 4px;
-          border-radius: 12px;
+          gap: 12px;
+          padding: 15px 16px;
+          margin-bottom: 8px;
+          border-radius: 16px;
           color: #64748b;
           text-decoration: none;
           transition: all 0.2s ease;
           position: relative;
+          border: 1px solid transparent;
         }
 
         .admin-nav-item:hover {
-          background-color: #f1f5f9;
-          color: #1e293b;
+          background-color: #eef2ff;
+          color: #312e81;
+          border-color: #c7d2fe;
         }
 
         .admin-nav-item.active {
-          background-color: #6366f1;
+          background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
           color: #ffffff;
-          box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
-        }
-
-        .item-icon {
-          margin-right: 12px;
+          box-shadow: 0 18px 32px rgba(99, 102, 241, 0.32);
         }
 
         .item-label {
-          font-weight: 500;
-          font-size: 0.9375rem;
+          font-weight: 700;
+          font-size: 0.95rem;
         }
 
         .active-arrow {
@@ -165,33 +175,34 @@ const AdminLayout: React.FC = () => {
         }
 
         .admin-sidebar-footer {
-          padding: 24px;
+          padding: 24px 18px 26px;
           border-top: 1px solid #e2e8f0;
           display: flex;
           flex-direction: column;
-          gap: 8px;
+          gap: 10px;
         }
 
         .back-to-site, .logout-btn {
           display: flex;
           align-items: center;
           gap: 12px;
-          padding: 12px;
-          border-radius: 8px;
+          padding: 14px 16px;
+          border-radius: 14px;
           font-size: 0.875rem;
-          font-weight: 500;
+          font-weight: 700;
           color: #64748b;
           text-decoration: none;
-          background: none;
+          background: #fff;
           border: none;
           cursor: pointer;
           width: 100%;
           transition: all 0.2s;
+          box-shadow: inset 0 0 0 1px #e2e8f0;
         }
 
         .back-to-site:hover, .logout-btn:hover {
-          background-color: #f1f5f9;
-          color: #1e293b;
+          background-color: #eef2ff;
+          color: #312e81;
         }
 
         .admin-main {
@@ -202,36 +213,42 @@ const AdminLayout: React.FC = () => {
         }
 
         .admin-header {
-          height: 100px;
-          padding: 0 40px;
-          background: #ffffff;
-          border-bottom: 1px solid #e2e8f0;
+          min-height: 96px;
+          padding: 24px 40px;
+          background: rgba(255, 255, 255, 0.92);
+          border-bottom: 1px solid #dbe3f1;
           display: flex;
           align-items: center;
           justify-content: space-between;
+          gap: 24px;
+          backdrop-filter: blur(18px);
+          position: sticky;
+          top: 0;
+          z-index: 40;
         }
 
         .header-title h1 {
-          font-size: 1.5rem;
-          font-weight: 700;
+          font-size: 2rem;
+          font-weight: 900;
           color: #1e293b;
           margin: 0;
         }
 
         .header-title p {
-          font-size: 0.875rem;
+          font-size: 0.95rem;
           color: #64748b;
-          margin: 4px 0 0 0;
+          margin: 6px 0 0 0;
         }
 
         .user-profile {
           display: flex;
           align-items: center;
           gap: 12px;
-          padding: 6px 12px;
-          background: #f8fafc;
-          border-radius: 50px;
-          border: 1px solid #e2e8f0;
+          padding: 8px 14px;
+          background: #ffffff;
+          border-radius: 999px;
+          border: 1px solid #dbe3f1;
+          box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
         }
 
         .avatar {
@@ -264,25 +281,9 @@ const AdminLayout: React.FC = () => {
         }
 
         .admin-content {
-          padding: 40px;
+          padding: 32px 40px 40px;
           overflow-y: auto;
           flex: 1;
-        }
-
-        @media (max-width: 1024px) {
-          .admin-sidebar {
-            width: 80px;
-          }
-          .logo-text, .item-label, .active-arrow, .back-to-site span, .logout-btn span, .info {
-            display: none;
-          }
-          .admin-logo, .admin-nav-item, .admin-sidebar-footer {
-            justify-content: center;
-            padding: 20px;
-          }
-          .item-icon {
-            margin-right: 0;
-          }
         }
       `}</style>
     </div>
