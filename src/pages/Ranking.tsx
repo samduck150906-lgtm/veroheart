@@ -5,6 +5,7 @@ import { Trophy, TrendingUp, Star, Dog, Cat, ShieldCheck, MessageSquare, Sparkle
 import { useStore } from '../store/useStore';
 import { calculateCompatibilityScore, getProductRecommendationInsights } from '../utils/score';
 import { UGC_COPY } from '../copy/marketing';
+import { TossChip, TossSectionTitle } from '../components/TossUI';
 
 const TABS = [
   { key: 'compatibility', label: '궁합 점수', icon: '💯' },
@@ -103,43 +104,35 @@ export default function Ranking() {
 
       <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
         {PET_TABS.map(tab => (
-          <button key={tab.key} onClick={() => setPetFilter(tab.key as any)} style={{
-            display: 'flex', alignItems: 'center', gap: '6px',
-            padding: '10px 18px', borderRadius: '24px', border: 'none', cursor: 'pointer',
-            fontWeight: 700, fontSize: '14px', transition: 'all 0.2s',
-            background: petFilter === tab.key ? '#111827' : '#F3F4F6',
-            color: petFilter === tab.key ? '#fff' : '#4B5563'
-          }}>
+          <TossChip key={tab.key} active={petFilter === tab.key} onClick={() => setPetFilter(tab.key as any)}>
             {tab.icon} {tab.label}
-          </button>
+          </TossChip>
         ))}
       </div>
 
       <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', marginBottom: '18px', paddingBottom: '4px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
         {TABS.map(tab => (
-          <button key={tab.key} onClick={() => setSortBy(tab.key as any)} style={{
-            padding: '10px 18px', borderRadius: '24px', border: '1px solid',
-            borderColor: sortBy === tab.key ? 'var(--primary)' : '#E5E7EB',
-            background: sortBy === tab.key ? 'var(--primary)' : '#fff',
-            color: sortBy === tab.key ? '#fff' : '#4B5563',
-            fontWeight: 700, fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap',
-            display: 'flex', alignItems: 'center', gap: '6px'
-          }}>
+          <TossChip key={tab.key} active={sortBy === tab.key} onClick={() => setSortBy(tab.key as any)} style={{ whiteSpace: 'nowrap' }}>
             <span>{tab.icon}</span> {tab.label}
-          </button>
+          </TossChip>
         ))}
       </div>
 
       <div className="ui-info-card" style={{ marginBottom: '18px', padding: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
           <div>
-            <div className="ui-section-kicker">ranking logic</div>
-            <div style={{ fontSize: '16px', fontWeight: 900, color: 'var(--text-dark)' }}>
-              {sortBy === 'compatibility' && `${profile.name} 맞춤 궁합 순`}
-              {sortBy === 'rating' && '평점 높은 순'}
-              {sortBy === 'reviews' && '리뷰 많은 순'}
-              {sortBy === 'safe' && '안전 성분 비율 순'}
-            </div>
+            <TossSectionTitle
+              title="ranking logic"
+              subtitle={
+                sortBy === 'compatibility'
+                  ? `${profile.name} 맞춤 궁합 순`
+                  : sortBy === 'rating'
+                    ? '평점 높은 순'
+                    : sortBy === 'reviews'
+                      ? '리뷰 많은 순'
+                      : '안전 성분 비율 순'
+              }
+            />
           </div>
           <span className="ui-badge ui-badge-muted">{ranked.length}개 제품</span>
         </div>

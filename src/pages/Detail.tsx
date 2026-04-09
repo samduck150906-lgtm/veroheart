@@ -24,6 +24,7 @@ import Analyzer from '../components/Analyzer';
 import { getReviews, createReview, deleteReview } from '../lib/supabase';
 import { CORE_COPY, UGC_COPY } from '../copy/marketing';
 import { notify } from '../store/useNotification';
+import { TossButton, TossCard, TossSectionTitle } from '../components/TossUI';
 
 export default function Detail() {
   const { id } = useParams();
@@ -154,7 +155,7 @@ export default function Detail() {
         )}
       </div>
 
-      <section className="ui-hero-panel" style={{ marginBottom: '24px', padding: '20px' }}>
+      <TossCard style={{ marginBottom: '24px', padding: '20px' }}>
         <div style={{ marginBottom: '8px', fontSize: '13px', color: 'var(--text-light)', fontWeight: 700 }}>{product.brand}</div>
         <h1 style={{ fontSize: '26px', lineHeight: 1.3, marginBottom: '14px', fontWeight: 900 }}>{product.name}</h1>
       
@@ -196,23 +197,23 @@ export default function Detail() {
 
         <div style={{ display: 'grid', gap: '10px' }}>
           <div style={{ display: 'flex', gap: '12px' }}>
-            <button
+            <TossButton
               onClick={() => toggleFavorite(product.id)}
-              style={{ height: '56px', width: '56px', borderRadius: '16px', border: '1.5px solid #E5E7EB', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
+              variant="outline"
+              style={{ height: '56px', width: '56px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
             >
               <Heart size={22} fill={isFav ? '#EF4444' : 'none'} color={isFav ? '#EF4444' : '#9CA3AF'} />
-            </button>
-            <button className="btn btn-outline" style={{ flex: 1, height: '56px', borderRadius: '16px' }} onClick={() => {
+            </TossButton>
+            <TossButton variant="outline" style={{ flex: 1, height: '56px', borderRadius: '16px' }} onClick={() => {
               isComparing ? removeFromComparison(product.id) : addToComparison(product.id);
             }}>
               <GitCompare size={20} />
               <span style={{ marginLeft: '8px' }}>{isComparing ? '비교 해제' : '비교 추가'}</span>
-            </button>
+            </TossButton>
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
-            <button
-              type="button"
-              className="btn btn-outline"
+            <TossButton
+              variant="outline"
               style={{ flex: 1, height: '56px', borderRadius: '16px', fontWeight: 800, fontSize: '15px' }}
               onClick={() => {
                 addToCart(product.id, 1);
@@ -220,10 +221,8 @@ export default function Detail() {
               }}
             >
               장바구니 담기
-            </button>
-            <button
-              type="button"
-              className="btn btn-primary"
+            </TossButton>
+            <TossButton
               style={{ flex: 1, backgroundColor: '#111827', color: '#fff', borderRadius: '16px', fontWeight: 800, fontSize: '15px', gap: '6px' }}
               onClick={() => {
                 addToCart(product.id, 1);
@@ -231,10 +230,10 @@ export default function Detail() {
               }}
             >
               바로 구매
-            </button>
+            </TossButton>
           </div>
         </div>
-      </section>
+      </TossCard>
 
       {/* 수의사 한마디 */}
       <div style={{ marginBottom: '32px', padding: '20px', background: '#F0FDF4', borderRadius: '20px', border: '1px solid #BBF7D0', display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
@@ -248,10 +247,12 @@ export default function Detail() {
       </div>
 
       {/* 정밀 분석 리포트 */}
-      <section style={{ marginBottom: '40px', background: '#F8FAFC', padding: '24px', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <ShieldCheck size={22} className="text-blue-600" /> {profile.name} 맞춤 분석 리포트
-        </h2>
+      <TossCard style={{ marginBottom: '40px', background: '#FFFEF7', padding: '24px' }}>
+        <TossSectionTitle
+          title={`${profile.name} 맞춤 분석 리포트`}
+          right={<ShieldCheck size={20} color="#1D4ED8" />}
+          style={{ marginBottom: '20px' }}
+        />
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {report?.highlights.map((h, i) => (
@@ -270,7 +271,7 @@ export default function Detail() {
         <p style={{ marginTop: '20px', fontSize: '15px', color: '#4B5563', lineHeight: 1.7, padding: '0 8px' }}>
           {report?.detailedAnalysis}
         </p>
-      </section>
+      </TossCard>
 
       {/* 전성분 분석 */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '8px' }}>

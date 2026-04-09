@@ -7,6 +7,7 @@ import { loadPaymentWidget, type PaymentWidgetInstance } from '@tosspayments/pay
 import { useStore } from '../store/useStore';
 import { notify } from '../store/useNotification';
 import { getCurrentUser, createOrder } from '../lib/supabase';
+import { TossCard, TossButton } from '../components/TossUI';
 
 const clientKey = import.meta.env.VITE_TOSS_WIDGET_CLIENT_KEY ?? '';
 const DAUM_POSTCODE_SCRIPT_SRC = 'https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
@@ -210,28 +211,30 @@ export default function Checkout() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* 주문 정보 입력 */}
         <div className="space-y-6">
-          <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <TossCard style={{ padding: '24px' }}>
             <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <span className="bg-blue-50 text-blue-500 p-2 rounded-lg">1</span>
+              <span style={{ background: '#FFFBEB', color: 'var(--primary-dark)' }} className="p-2 rounded-lg">1</span>
               배송 정보 입력
             </h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">받는 분</label>
-                <input 
+                  <input
                   type="text" 
                   value={customerInfo.name} 
                   onChange={e => setCustomerInfo({...customerInfo, name: e.target.value})}
-                  className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full p-3 border border-gray-200 rounded-xl outline-none"
+                  style={{ boxShadow: '0 0 0 0 transparent' }}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">연락처</label>
-                <input 
+                <input
                   type="text" 
                   value={customerInfo.phone} 
                   onChange={e => setCustomerInfo({...customerInfo, phone: e.target.value})}
-                  className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full p-3 border border-gray-200 rounded-xl outline-none"
+                  style={{ boxShadow: '0 0 0 0 transparent' }}
                 />
               </div>
               <div>
@@ -241,7 +244,8 @@ export default function Checkout() {
                     type="text"
                     value={customerInfo.address}
                     onChange={e => setCustomerInfo({...customerInfo, address: e.target.value})}
-                    className="flex-1 p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="flex-1 p-3 border border-gray-200 rounded-xl outline-none"
+                    style={{ boxShadow: '0 0 0 0 transparent' }}
                     placeholder="도로명 주소"
                     readOnly={!!customerInfo.address}
                   />
@@ -257,16 +261,17 @@ export default function Checkout() {
                   type="text"
                   value={detailAddress}
                   onChange={e => setDetailAddress(e.target.value)}
-                  className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full p-3 border border-gray-200 rounded-xl outline-none"
+                  style={{ boxShadow: '0 0 0 0 transparent' }}
                   placeholder="상세 주소 (동/호수)"
                 />
               </div>
             </div>
-          </section>
+          </TossCard>
 
-          <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <TossCard style={{ padding: '24px' }}>
             <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <span className="bg-blue-50 text-blue-500 p-2 rounded-lg">2</span>
+              <span style={{ background: '#FFFBEB', color: 'var(--primary-dark)' }} className="p-2 rounded-lg">2</span>
               주문 요약
             </h3>
             <div className="space-y-3">
@@ -278,17 +283,17 @@ export default function Checkout() {
               ))}
               <div className="pt-3 border-t border-gray-100 flex justify-between items-center">
                 <span className="font-bold text-gray-900">최종 결제 금액</span>
-                <span className="text-2xl font-black text-blue-600">{totalPrice.toLocaleString()}원</span>
+                <span className="text-2xl font-black" style={{ color: 'var(--primary-dark)' }}>{totalPrice.toLocaleString()}원</span>
               </div>
             </div>
-          </section>
+          </TossCard>
         </div>
 
         {/* 결제 위젯 */}
         <div className="space-y-6">
-          <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <TossCard style={{ padding: '24px' }}>
             <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <span className="bg-blue-50 text-blue-500 p-2 rounded-lg">3</span>
+              <span style={{ background: '#FFFBEB', color: 'var(--primary-dark)' }} className="p-2 rounded-lg">3</span>
               결제 방법 선택
             </h3>
             {widgetError && (
@@ -299,10 +304,11 @@ export default function Checkout() {
             )}
             <div id="payment-widget" />
             <div id="agreement" />
-          </section>
+          </TossCard>
 
-          <button 
-            className="w-full bg-gray-900 text-white p-5 rounded-2xl font-bold text-lg shadow-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2" 
+          <TossButton
+            variant="primary"
+            style={{ height: '56px', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
             disabled={!isWidgetLoaded || isProcessing || widgetError || !clientKey.trim()}
             onClick={handlePayment}
           >
@@ -314,7 +320,7 @@ export default function Checkout() {
                 {totalPrice.toLocaleString()}원 안전 결제하기
               </>
             )}
-          </button>
+          </TossButton>
         </div>
       </div>
     </div>

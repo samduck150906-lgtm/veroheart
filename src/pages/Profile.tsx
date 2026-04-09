@@ -3,6 +3,7 @@ import { useStore } from '../store/useStore';
 import { User, ChevronRight, Calendar, ShoppingBag, FileText, Activity, Heart, LogOut, LogIn } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
+import { TossButton, TossCard, TossChip, TossSectionTitle } from '../components/TossUI';
 
 export default function Profile() {
   const { profile, updateProfile, orders, fetchOrders, reports, fetchReports, isLoggedIn, signOut, favorites, products } = useStore();
@@ -46,34 +47,25 @@ export default function Profile() {
       {/* 로그인/로그아웃 버튼 */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
         {isLoggedIn ? (
-          <button onClick={handleSignOut} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: '1px solid #E5E7EB', borderRadius: '10px', padding: '8px 14px', fontSize: '13px', fontWeight: 600, color: '#6B7280', cursor: 'pointer' }}>
+          <TossButton variant="outline" onClick={handleSignOut} style={{ width: 'auto', height: '38px', padding: '0 14px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
             <LogOut size={15} /> 로그아웃
-          </button>
+          </TossButton>
         ) : (
-          <Link to="/login" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#111827', borderRadius: '10px', padding: '8px 14px', fontSize: '13px', fontWeight: 700, color: '#fff', textDecoration: 'none' }}>
+          <Link to="/login" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--primary-dark)', borderRadius: '10px', padding: '8px 14px', fontSize: '13px', fontWeight: 700, color: '#fff', textDecoration: 'none' }}>
             <LogIn size={15} /> 로그인 / 회원가입
           </Link>
         )}
       </div>
 
       {/* 탭 네비게이션 */}
-      <div style={{ display: 'flex', gap: '20px', marginBottom: '32px', borderBottom: '1px solid #eee', padding: '0 4px', overflowX: 'auto' }}>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', padding: '0 2px', overflowX: 'auto' }}>
         {([
           { key: 'info', label: '프로필 설정' },
           { key: 'favorites', label: `찜 목록 ${favorites.length > 0 ? `(${favorites.length})` : ''}` },
           { key: 'orders', label: '주문 내역' },
           { key: 'reports', label: '분석 리포트' },
         ] as const).map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            style={{
-              background: 'none', border: 'none', padding: '12px 4px', fontSize: '15px', fontWeight: 800,
-              color: activeTab === tab.key ? 'var(--primary-dark)' : '#BBC2CC',
-              borderBottom: activeTab === tab.key ? '3px solid var(--primary)' : '3px solid transparent',
-              cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap'
-            }}
-          >{tab.label}</button>
+          <TossChip key={tab.key} label={tab.label} active={activeTab === tab.key} onClick={() => setActiveTab(tab.key)} />
         ))}
       </div>
 
@@ -92,13 +84,13 @@ export default function Profile() {
           )}
         </div>
       ) : activeTab === 'info' ? (
-        <div className="card" style={{ padding: '24px' }}>
+        <TossCard style={{ padding: '24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
             <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <User color="#fff" size={24} />
             </div>
             <div>
-              <h2 style={{ fontSize: '20px', fontWeight: 800 }}>{formData.name || '우리 아이'}의 정보</h2>
+              <TossSectionTitle title={`${formData.name || '우리 아이'}의 정보`} style={{ marginBottom: '2px' }} />
               <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>아이의 건강 상태에 맞춘 성분 분석을 제공합니다.</p>
             </div>
           </div>
@@ -213,10 +205,10 @@ export default function Profile() {
             </div>
           </div>
 
-          <button className="btn" style={{ width: '100%', padding: '16px', borderRadius: '14px', fontWeight: 800, fontSize: '16px', backgroundColor: '#1F2937', color: '#fff' }} onClick={handleSave}>
+          <TossButton onClick={handleSave} style={{ height: '52px', fontSize: '16px' }}>
             변경 사항 저장
-          </button>
-        </div>
+          </TossButton>
+        </TossCard>
       ) : activeTab === 'orders' ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {orders.length > 0 ? (
