@@ -1,14 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { 
-  Plus, 
-  Search, 
-  Edit2, 
-  Trash2, 
+import {
+  Plus,
+  Edit2,
+  Trash2,
   X,
-  Check
+  Check,
+  Package,
+  ShieldCheck,
+  Link2,
+  Factory,
 } from 'lucide-react';
 import { notify } from '../../store/useNotification';
+import {
+  AdminBadge,
+  AdminButton,
+  AdminEmptyState,
+  AdminMetricCard,
+  AdminPageHeader,
+  AdminSearchField,
+  AdminSectionCard,
+  AdminToolbar,
+} from '../../components/admin/AdminUI';
 
 interface Product {
   id: string;
@@ -48,8 +61,6 @@ const AdminProducts: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Partial<Product>>({});
-  
-  // UI Helpers
   const [activeTab, setActiveTab] = useState('전체');
 
   useEffect(() => {
@@ -133,144 +144,266 @@ const AdminProducts: React.FC = () => {
     return matchesSearch && matchesTab;
   });
 
+  const productMetrics = useMemo(() => {
+    const verifiedCount = products.filter((product) => product.verification_status === 'verified').length;
+    const pendingCount = products.filter((product) => product.verification_status !== 'verified').length;
+    const linkedCount = products.filter((product) => !!product.coupang_product_id).length;
+    const manufacturerCount = products.filter((product) => !!product.manufacturer_name?.trim()).length;
+
+    return {
+      verifiedCount,
+      pendingCount,
+      linkedCount,
+      manufacturerCount,
+    };
+  }, [products]);
+
   return (
-    <div className="admin-products animate-fade-in" style={{ paddingBottom: '40px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-        <div>
-          <h1 style={{ fontSize: '28px', fontWeight: 900, color: '#111827' }}>제품 관리</h1>
-          <p style={{ color: '#6B7280', marginTop: '4px' }}>총 {products.length}개의 상품이 등록되어 있습니다.</p>
-        </div>
-        <button 
-          onClick={() => { setCurrentProduct({ target_pet_type: 'dog', target_life_stage: [], product_health_concerns: [], has_risk_factors: [], verification_status: 'pending' }); setIsModalOpen(true); }}
-          style={{ 
-            display: 'flex', alignItems: 'center', gap: '8px', background: '#4F46E5', color: '#fff', 
-            padding: '12px 24px', borderRadius: '14px', border: 'none', fontWeight: 800, cursor: 'pointer',
-            boxShadow: '0 10px 15px -3px rgba(79, 70, 229, 0.4)'
-          }}
-        >
-          <Plus size={20} /> 신규 제품 등록
-        </button>
-      </div>
-
-      <div
-        style={{
-          marginBottom: '24px',
-          padding: '16px 18px',
-          borderRadius: '18px',
-          background: '#FFF7ED',
-          border: '1px solid #FED7AA',
-          color: '#9A3412',
-        }}
-      >
-        <div style={{ fontSize: '13px', fontWeight: 900, marginBottom: '6px' }}>수동 검수 우선 운영 원칙</div>
-        <div style={{ fontSize: '13px', lineHeight: 1.6, fontWeight: 600 }}>
-          제품/브랜드/가격 정보는 자동 수집보다 사람 검수와 제조사 확인을 우선합니다.
-          등록 전에는 브랜드, 제조사, 전성분, 급여 대상, 건강 태그를 교차 확인해 주세요.
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', marginBottom: '24px', paddingBottom: '8px' }}>
-        {['전체', ...MAIN_CATEGORIES].map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            style={{
-              padding: '10px 20px', borderRadius: '12px', whiteSpace: 'nowrap', fontWeight: 700,
-              fontSize: '14px', border: '1px solid', transition: '0.2s', cursor: 'pointer',
-              backgroundColor: activeTab === tab ? '#111827' : '#fff',
-              color: activeTab === tab ? '#fff' : '#4B5563',
-              borderColor: activeTab === tab ? '#111827' : '#E5E7EB'
+    <div className="admin-products animate-fade-in">
+      <AdminPageHeader
+        eyebrow="catalog operations"
+        title="제품 관리"
+        description="제품 카탈로그, 제조사, 검수 상태, 외부 구매 연결을 한 화면에서 운영합니다."
+        actions={(
+          <AdminButton
+            onClick={() => {
+              setCurrentProduct({
+                target_pet_type: 'dog',
+                target_life_stage: [],
+                product_health_concerns: [],
+                has_risk_factors: [],
+                verification_status: 'pending',
+              });
+              setIsModalOpen(true);
             }}
           >
-            {tab}
-          </button>
-        ))}
+            <Plus size={18} />
+            신규 제품 등록
+          </AdminButton>
+        )}
+      />
+
+      <div className="admin-metrics-grid admin-metrics-grid-four">
+        <AdminMetricCard
+          label="전체 제품"
+          value={products.length.toLocaleString()}
+          delta="catalog"
+          icon={<Package size={22} />}
+          tone="indigo"
+          footnote="현재 등록된 카탈로그 총계"
+        />
+        <AdminMetricCard
+          label="검수 완료"
+          value={productMetrics.verifiedCount.toLocaleString()}
+          delta="trusted"
+          icon={<ShieldCheck size={22} />}
+          tone="emerald"
+          footnote="추천 우선 노출 대상"
+        />
+        <AdminMetricCard
+          label="검수 대기/재검토"
+          value={productMetrics.pendingCount.toLocaleString()}
+          delta="review"
+          icon={<Factory size={22} />}
+          tone="amber"
+          footnote="사람 검수 필요 항목"
+        />
+        <AdminMetricCard
+          label="쿠팡 연결"
+          value={productMetrics.linkedCount.toLocaleString()}
+          delta="affiliate"
+          icon={<Link2 size={22} />}
+          tone="rose"
+          footnote="상품 ID 직접 연결 완료"
+        />
       </div>
 
-      <div className="action-bar" style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
-        <div style={{ position: 'relative', flex: 1 }}>
-          <Search size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
-          <input 
-            type="text" 
-            placeholder="제품명 또는 브랜드로 검색하세요..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ width: '100%', padding: '14px 14px 14px 48px', borderRadius: '16px', border: '1px solid #E5E7EB', outline: 'none', fontSize: '15px' }}
-          />
-        </div>
+      <div className="admin-dashboard-grid admin-dashboard-grid-wide" style={{ marginTop: '24px' }}>
+        <AdminSectionCard
+          title="검수 운영 원칙"
+          description="자동 수집보다 사람 검수와 제조사 대조를 우선하는 운영 원칙입니다."
+        >
+          <div className="admin-info-banner admin-info-banner-amber">
+            <div className="admin-info-banner-title">수동 검수 우선 카탈로그</div>
+            <p>
+              제품 등록 전 브랜드, 제조사, 전성분, 급여 대상, 건강 태그, 외부 구매 연결 값을
+              교차 확인하세요. 검수 완료 상태만 추천 우선순위에 반영됩니다.
+            </p>
+          </div>
+        </AdminSectionCard>
+
+        <AdminSectionCard
+          title="데이터 완성도"
+          description="운영상 중요한 카탈로그 메타데이터 채움 정도를 추적합니다."
+        >
+          <div className="admin-inline-stats-grid">
+            <div className="admin-inline-stat">
+              <div className="admin-inline-stat-label">제조사 입력 완료</div>
+              <div className="admin-inline-stat-value">{productMetrics.manufacturerCount.toLocaleString()}</div>
+              <div className="admin-inline-stat-hint">브랜드 신뢰 검증에 사용</div>
+            </div>
+            <div className="admin-inline-stat">
+              <div className="admin-inline-stat-label">쿠팡 상품 연결</div>
+              <div className="admin-inline-stat-value">{productMetrics.linkedCount.toLocaleString()}</div>
+              <div className="admin-inline-stat-hint">외부 구매 전환 가능</div>
+            </div>
+          </div>
+        </AdminSectionCard>
       </div>
 
-      <div style={{ backgroundColor: '#fff', borderRadius: '24px', border: '1px solid #E5E7EB', overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
-              <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '13px', color: '#6B7280' }}>아이템</th>
-              <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '13px', color: '#6B7280' }}>카테고리</th>
-              <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '13px', color: '#6B7280' }}>타겟</th>
-              <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '13px', color: '#6B7280' }}>검수</th>
-              <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '13px', color: '#6B7280' }}>가격</th>
-              <th style={{ padding: '16px 24px', textAlign: 'right', fontSize: '13px', color: '#6B7280' }}>관리</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={6} style={{ textAlign: 'center', padding: '100px 0', color: '#9CA3AF' }}>데이터를 불러오는 중...</td></tr>
-            ) : filteredProducts.length === 0 ? (
-              <tr><td colSpan={6} style={{ textAlign: 'center', padding: '100px 0', color: '#9CA3AF' }}>검색 결과가 없습니다.</td></tr>
-            ) : (
-              filteredProducts.map((p) => (
-                <tr key={p.id} style={{ borderBottom: '1px solid #F3F4F6', transition: '0.2s' }} className="hover:bg-gray-50">
-                  <td style={{ padding: '16px 24px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                      <img src={p.image_url} alt={p.name} style={{ width: '56px', height: '56px', borderRadius: '12px', objectFit: 'cover', border: '1px solid #F1F5F9' }} />
-                      <div>
-                        <div style={{ fontWeight: 800, color: '#1F2937' }}>{p.name}</div>
-                        <div style={{ fontSize: '12px', color: '#9CA3AF' }}>{p.brand_name} • {p.id.substring(0,8)}</div>
-                        <div style={{ fontSize: '11px', color: '#94A3B8', marginTop: '3px' }}>{p.manufacturer_name || '제조사 미입력'}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td style={{ padding: '16px 24px' }}>
-                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#4B5563' }}>{p.main_category}</div>
-                    <div style={{ fontSize: '12px', color: '#9CA3AF' }}>{p.sub_category || '-'}</div>
-                  </td>
-                  <td style={{ padding: '16px 24px' }}>
-                    <span style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '8px', backgroundColor: '#EEF2FF', color: '#4F46E5', fontWeight: 800, textTransform: 'uppercase' }}>
-                      {p.target_pet_type}
-                    </span>
-                    <div style={{ fontSize: '11px', color: '#6B7280', marginTop: '4px' }}>{p.target_life_stage?.join(', ') || '전연령'}</div>
-                  </td>
-                  <td style={{ padding: '16px 24px' }}>
-                    <VerificationBadge status={p.verification_status} />
-                    <div style={{ fontSize: '11px', color: '#94A3B8', marginTop: '4px' }}>
-                      {p.verified_at ? new Date(p.verified_at).toLocaleDateString() : '검수일 없음'}
-                    </div>
-                  </td>
-                  <td style={{ padding: '16px 24px', fontWeight: 800, color: '#111827' }}>₩{p.min_price.toLocaleString()}</td>
-                  <td style={{ padding: '16px 24px', textAlign: 'right' }}>
-                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                      <button onClick={() => { setCurrentProduct(p); setIsModalOpen(true); }} style={{ padding: '8px', borderRadius: '10px', backgroundColor: '#F3F4F6', border: 'none', cursor: 'pointer', color: '#4B5563' }}><Edit2 size={16} /></button>
-                      <button onClick={() => handleDelete(p.id)} style={{ padding: '8px', borderRadius: '10px', backgroundColor: '#FEE2E2', border: 'none', cursor: 'pointer', color: '#EF4444' }}><Trash2 size={16} /></button>
-                    </div>
+      <AdminSectionCard
+        title="제품 카탈로그"
+        description="브랜드, 제조사, 검수 상태, 대상 종, 외부 구매 연결 정보를 데스크톱 테이블로 관리합니다."
+        style={{ marginTop: '24px' }}
+      >
+        <AdminToolbar
+          left={(
+            <>
+              <AdminSearchField
+                value={searchTerm}
+                onChange={setSearchTerm}
+                placeholder="제품명 또는 브랜드로 검색"
+              />
+              <div className="admin-chip-row">
+                {['전체', ...MAIN_CATEGORIES].map((tab) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    className={activeTab === tab ? 'admin-filter-chip active' : 'admin-filter-chip'}
+                    onClick={() => setActiveTab(tab)}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+          right={(
+            <div className="admin-table-meta">
+              <span>노출 제품 {filteredProducts.length}개</span>
+            </div>
+          )}
+        />
+
+        <div className="admin-table-shell">
+          <table className="admin-data-table">
+            <thead>
+              <tr>
+                <th>아이템</th>
+                <th>카테고리</th>
+                <th>대상</th>
+                <th>검수</th>
+                <th>쿠팡 연결</th>
+                <th>가격</th>
+                <th className="align-right">관리</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={7}>
+                    <div className="admin-table-loading">데이터를 불러오는 중...</div>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              ) : filteredProducts.length === 0 ? (
+                <tr>
+                  <td colSpan={7}>
+                    <AdminEmptyState
+                      title="조건에 맞는 제품이 없습니다."
+                      description="검색어를 바꾸거나 카테고리 필터를 조정해 다시 확인해 보세요."
+                    />
+                  </td>
+                </tr>
+              ) : (
+                filteredProducts.map((product) => (
+                  <tr key={product.id}>
+                    <td>
+                      <div className="admin-table-item">
+                        <img src={product.image_url} alt={product.name} />
+                        <div>
+                          <div className="admin-table-item-title">{product.name}</div>
+                          <div className="admin-table-item-subtitle">
+                            {product.brand_name} · {product.id.substring(0, 8)}
+                          </div>
+                          <div className="admin-table-item-meta">
+                            {product.manufacturer_name || '제조사 미입력'}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="admin-table-primary">{product.main_category}</div>
+                      <div className="admin-table-secondary">{product.sub_category || '-'}</div>
+                    </td>
+                    <td>
+                      <AdminBadge tone="indigo">{product.target_pet_type}</AdminBadge>
+                      <div className="admin-table-secondary" style={{ marginTop: '6px' }}>
+                        {product.target_life_stage?.join(', ') || '전연령'}
+                      </div>
+                    </td>
+                    <td>
+                      <VerificationBadge status={product.verification_status} />
+                      <div className="admin-table-secondary" style={{ marginTop: '6px' }}>
+                        {product.verified_at ? new Date(product.verified_at).toLocaleDateString() : '검수일 없음'}
+                      </div>
+                    </td>
+                    <td>
+                      {product.coupang_product_id ? (
+                        <>
+                          <AdminBadge tone="emerald">연결 완료</AdminBadge>
+                          <div className="admin-table-secondary" style={{ marginTop: '6px' }}>
+                            {product.coupang_product_id}
+                          </div>
+                        </>
+                      ) : (
+                        <AdminBadge tone="slate">미연결</AdminBadge>
+                      )}
+                    </td>
+                    <td className="admin-table-primary">₩{product.min_price.toLocaleString()}</td>
+                    <td className="align-right">
+                      <div className="admin-table-actions">
+                        <button
+                          type="button"
+                          className="admin-icon-btn"
+                          onClick={() => {
+                            setCurrentProduct(product);
+                            setIsModalOpen(true);
+                          }}
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          className="admin-icon-btn danger"
+                          onClick={() => handleDelete(product.id)}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </AdminSectionCard>
 
       {/* Product Modal */}
       {isModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="animate-scale-in" style={{ width: '90%', maxWidth: '700px', maxHeight: '90vh', backgroundColor: '#fff', borderRadius: '32px', padding: '40px', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-              <h2 style={{ fontSize: '24px', fontWeight: 900 }}>{currentProduct.id ? '제품 정보 수정' : '신규 제품 등록'}</h2>
-              <button onClick={() => setIsModalOpen(false)} style={{ padding: '8px', background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
+        <div className="admin-modal-backdrop">
+          <div className="admin-modal admin-modal-wide animate-scale-in">
+            <div className="admin-modal-head">
+              <div>
+                <div className="admin-page-eyebrow">catalog editor</div>
+                <h2 className="admin-modal-title">{currentProduct.id ? '제품 정보 수정' : '신규 제품 등록'}</h2>
+              </div>
+              <button type="button" className="admin-icon-btn" onClick={() => setIsModalOpen(false)}>
+                <X size={18} />
+              </button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+            <div className="admin-form-grid">
               <Section label="제품 기본 정보">
                 <Input label="제품명*" value={currentProduct.name} onChange={(v) => setCurrentProduct({...currentProduct, name: v})} />
                 <Input label="브랜드*" value={currentProduct.brand_name} onChange={(v) => setCurrentProduct({...currentProduct, brand_name: v})} />
@@ -304,13 +437,13 @@ const AdminProducts: React.FC = () => {
               <Section label="상세 분석 메타데이터">
                 <MultiChip label="생애주기" selected={currentProduct.target_life_stage || []} options={LIFE_STAGES} onToggle={(v) => toggleArrayField('target_life_stage', v)} />
                 <div style={{ marginTop: '16px' }}>
-                  <label style={{ fontSize: '13px', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '8px' }}>건강 고민 태그 (컴마로 구분)</label>
+                  <label className="admin-field-label">건강 고민 태그 (컴마로 구분)</label>
                   <input 
                     type="text" 
                     value={currentProduct.product_health_concerns?.join(', ') || ''} 
                     onChange={(e) => setCurrentProduct({...currentProduct, product_health_concerns: e.target.value.split(',').map(s => s.trim())})}
                     placeholder="관절, 피부, 다이어트..."
-                    style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid #E5E7EB', outline: 'none' }}
+                    className="admin-text-input"
                   />
                 </div>
                 <div style={{ marginTop: '16px' }}>
@@ -319,16 +452,20 @@ const AdminProducts: React.FC = () => {
                     value={currentProduct.coupang_product_id}
                     onChange={(v) => setCurrentProduct({ ...currentProduct, coupang_product_id: v })}
                   />
-                  <p style={{ margin: '8px 0 0', fontSize: '11px', color: '#94A3B8', lineHeight: 1.5 }}>
+                  <p className="admin-field-help">
                     입력하면 제품 상세에서 쿠팡 검색 대신 해당 상품으로 직접 연결합니다.
                   </p>
                 </div>
               </Section>
             </div>
 
-            <div style={{ display: 'flex', gap: '12px', marginTop: '40px' }}>
-              <button onClick={() => setIsModalOpen(false)} style={{ flex: 1, padding: '16px', borderRadius: '16px', border: '1px solid #E5E7EB', backgroundColor: '#fff', fontWeight: 700, cursor: 'pointer' }}>취소</button>
-              <button onClick={handleSave} style={{ flex: 2, padding: '16px', borderRadius: '16px', backgroundColor: '#111827', color: '#fff', fontWeight: 800, cursor: 'pointer' }}>저장하기</button>
+            <div className="admin-modal-actions">
+              <AdminButton variant="secondary" onClick={() => setIsModalOpen(false)} style={{ flex: 1 }}>
+                취소
+              </AdminButton>
+              <AdminButton onClick={handleSave} style={{ flex: 2 }}>
+                저장하기
+              </AdminButton>
             </div>
           </div>
         </div>
@@ -340,7 +477,7 @@ const AdminProducts: React.FC = () => {
 function Section({ label, children }: { label: string, children: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <h3 style={{ fontSize: '14px', fontWeight: 800, color: '#4F46E5' }}>{label}</h3>
+      <h3 className="admin-section-title" style={{ fontSize: '15px' }}>{label}</h3>
       {children}
     </div>
   );
@@ -349,12 +486,12 @@ function Section({ label, children }: { label: string, children: React.ReactNode
 function Input({ label, value, onChange, type = 'text' }: { label: string, value?: string | number, onChange: (v: string) => void, type?: string }) {
   return (
     <div>
-      <label style={{ fontSize: '13px', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '8px' }}>{label}</label>
+      <label className="admin-field-label">{label}</label>
       <input 
         type={type}
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
-        style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid #E5E7EB', outline: 'none' }}
+        className="admin-text-input"
       />
     </div>
   );
@@ -375,11 +512,11 @@ function Select({
 }) {
   return (
     <div>
-      <label style={{ fontSize: '13px', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '8px' }}>{label}</label>
+      <label className="admin-field-label">{label}</label>
       <select 
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
-        style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid #E5E7EB', outline: 'none', backgroundColor: '#fff' }}
+        className="admin-text-input"
       >
         <option value="">선택하세요</option>
         {options.map(opt => <option key={opt} value={opt}>{labels?.[opt] || opt}</option>)}
@@ -389,47 +526,22 @@ function Select({
 }
 
 function VerificationBadge({ status }: { status?: Product['verification_status'] }) {
-  const config =
-    status === 'verified'
-      ? { label: '검수 완료', bg: '#DCFCE7', text: '#166534' }
-      : status === 'needs_review'
-        ? { label: '재검토 필요', bg: '#FEE2E2', text: '#991B1B' }
-        : { label: '검수 대기', bg: '#FEF3C7', text: '#92400E' };
-
-  return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        padding: '4px 10px',
-        borderRadius: '999px',
-        backgroundColor: config.bg,
-        color: config.text,
-        fontSize: '12px',
-        fontWeight: 800,
-      }}
-    >
-      {config.label}
-    </span>
-  );
+  if (status === 'verified') return <AdminBadge tone="emerald">검수 완료</AdminBadge>;
+  if (status === 'needs_review') return <AdminBadge tone="rose">재검토 필요</AdminBadge>;
+  return <AdminBadge tone="amber">검수 대기</AdminBadge>;
 }
 
 function MultiChip({ label, selected, options, onToggle }: { label: string, selected: string[], options: string[], onToggle: (v: string) => void }) {
   return (
     <div>
-      <label style={{ fontSize: '13px', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '8px' }}>{label}</label>
-      <div style={{ display: 'flex', gap: '8px' }}>
+      <label className="admin-field-label">{label}</label>
+      <div className="admin-chip-row">
         {options.map(opt => (
           <button
+            type="button"
             key={opt}
             onClick={() => onToggle(opt)}
-            style={{
-              padding: '8px 16px', borderRadius: '12px', fontSize: '12px', fontWeight: 700,
-              border: '1px solid', transition: '0.2s', cursor: 'pointer',
-              backgroundColor: selected.includes(opt) ? '#EEF2FF' : '#fff',
-              color: selected.includes(opt) ? '#4F46E5' : '#6B7280',
-              borderColor: selected.includes(opt) ? '#C7D2FE' : '#E5E7EB'
-            }}
+            className={selected.includes(opt) ? 'admin-filter-chip active' : 'admin-filter-chip'}
           >
             {selected.includes(opt) && <Check size={12} style={{ marginRight: '4px' }} />}
             {opt}

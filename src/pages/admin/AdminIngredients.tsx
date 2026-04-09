@@ -1,13 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { 
-  Plus, 
-  Search, 
-  Edit2, 
-  Trash2, 
-  X
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  X,
+  FlaskConical,
+  AlertTriangle,
+  ShieldCheck,
+  Search,
 } from 'lucide-react';
 import { notify } from '../../store/useNotification';
+import {
+  AdminBadge,
+  AdminButton,
+  AdminEmptyState,
+  AdminMetricCard,
+  AdminPageHeader,
+  AdminSearchField,
+  AdminSectionCard,
+  AdminToolbar,
+} from '../../components/admin/AdminUI';
 
 interface Ingredient {
   id: string;
@@ -86,158 +99,259 @@ const AdminIngredients: React.FC = () => {
     (i.name_en && i.name_en.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const getRiskColor = (level: string) => {
-    switch(level) {
-      case 'safe': return '#10B981';
-      case 'caution': return '#F59E0B';
-      case 'danger': return '#EF4444';
-      default: return '#6B7280';
-    }
-  };
+  const safeCount = ingredients.filter(i => i.risk_level === 'safe').length;
+  const cautionCount = ingredients.filter(i => i.risk_level === 'caution').length;
+  const dangerCount = ingredients.filter(i => i.risk_level === 'danger').length;
+  const categorizedCount = ingredients.filter((item) => item.category).length;
+  const latestIngredients = [...ingredients].slice(0, 5);
 
   return (
-    <div className="admin-ingredients animate-fade-in" style={{ paddingBottom: '40px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-        <div>
-          <h1 style={{ fontSize: '28px', fontWeight: 900, color: '#111827' }}>성분 사전 관리</h1>
-          <p style={{ color: '#6B7280', marginTop: '4px' }}>총 {ingredients.length}개의 분석용 성분 데이터가 등록되어 있습니다.</p>
-        </div>
-        <button 
-          onClick={() => { setCurrentIngredient({ risk_level: 'safe' }); setIsModalOpen(true); }}
-          style={{ 
-            display: 'flex', alignItems: 'center', gap: '8px', background: '#059669', color: '#fff', 
-            padding: '12px 24px', borderRadius: '14px', border: 'none', fontWeight: 800, cursor: 'pointer',
-            boxShadow: '0 10px 15px -3px rgba(5, 150, 105, 0.4)'
-          }}
-        >
-          <Plus size={20} /> 신규 성분 등록
-        </button>
+    <div className="admin-page-shell animate-fade-in">
+      <AdminPageHeader
+        eyebrow="ingredient intelligence"
+        title="성분 사전 관리"
+        description="분석 엔진이 참조하는 성분 데이터와 위험도 레벨을 B2B 운영 기준으로 관리합니다."
+        actions={(
+          <AdminButton
+            onClick={() => { setCurrentIngredient({ risk_level: 'safe' }); setIsModalOpen(true); }}
+            style={{ minWidth: '180px' }}
+          >
+            <Plus size={18} />
+            신규 성분 등록
+          </AdminButton>
+        )}
+      />
+
+      <div className="admin-metric-grid admin-metric-grid-4">
+        <AdminMetricCard
+          label="전체 성분 사전"
+          value={ingredients.length.toLocaleString()}
+          delta="+8.6%"
+          icon={<FlaskConical size={20} />}
+          tone="indigo"
+          footnote="분석 엔진 참조 기준"
+        />
+        <AdminMetricCard
+          label="안전 성분"
+          value={safeCount.toLocaleString()}
+          delta={`${ingredients.length ? ((safeCount / ingredients.length) * 100).toFixed(1) : '0'}%`}
+          icon={<ShieldCheck size={20} />}
+          tone="emerald"
+          footnote="기본 추천 우호"
+        />
+        <AdminMetricCard
+          label="주의 성분"
+          value={cautionCount.toLocaleString()}
+          delta="검토 필요"
+          icon={<AlertTriangle size={20} />}
+          tone="amber"
+          footnote="조건부 안내 필요"
+        />
+        <AdminMetricCard
+          label="위험 성분"
+          value={dangerCount.toLocaleString()}
+          delta="강조 노출"
+          icon={<AlertTriangle size={20} />}
+          tone="rose"
+          footnote="차단/경고 우선"
+        />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '32px' }}>
-        <StatSmallCard label="안전 성분" value={ingredients.filter(i => i.risk_level === 'safe').length} color="#10B981" />
-        <StatSmallCard label="주의 성분" value={ingredients.filter(i => i.risk_level === 'caution').length} color="#F59E0B" />
-        <StatSmallCard label="위험 성분" value={ingredients.filter(i => i.risk_level === 'danger').length} color="#EF4444" />
-      </div>
+      <div className="admin-two-column-layout">
+        <div className="admin-column-main">
+          <AdminSectionCard
+            title="성분 사전"
+            description="한글/영문명, 위험도, 카테고리, 설명을 한 테이블에서 관리합니다."
+          >
+            <AdminToolbar
+              left={(
+                <AdminSearchField
+                  value={searchTerm}
+                  onChange={setSearchTerm}
+                  placeholder="성분명(한글/영문)으로 검색하세요"
+                />
+              )}
+              right={(
+                <div className="admin-toolbar-meta">
+                  <AdminBadge tone="slate">검색 결과 {filteredIngredients.length}개</AdminBadge>
+                </div>
+              )}
+            />
 
-      <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
-        <div style={{ position: 'relative', flex: 1 }}>
-          <Search size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
-          <input 
-            type="text" 
-            placeholder="성분명(한글/영문)으로 검색하세요..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ width: '100%', padding: '14px 14px 14px 48px', borderRadius: '16px', border: '1px solid #E5E7EB', outline: 'none', fontSize: '15px' }}
-          />
-        </div>
-      </div>
-
-      <div style={{ backgroundColor: '#fff', borderRadius: '24px', border: '1px solid #E5E7EB', overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
-              <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '13px', color: '#6B7280' }}>성분명 (한글/영문)</th>
-              <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '13px', color: '#6B7280' }}>위험도</th>
-              <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '13px', color: '#6B7280' }}>분류</th>
-              <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '13px', color: '#6B7280' }}>설명</th>
-              <th style={{ padding: '16px 24px', textAlign: 'right', fontSize: '13px', color: '#6B7280' }}>관리</th>
-            </tr>
-          </thead>
-          <tbody>
             {loading ? (
-              <tr><td colSpan={5} style={{ textAlign: 'center', padding: '100px 0', color: '#9CA3AF' }}>데이터를 불러오는 중...</td></tr>
+              <AdminEmptyState title="성분 사전 불러오는 중" description="Supabase에서 최신 성분 데이터를 동기화하고 있습니다." />
             ) : filteredIngredients.length === 0 ? (
-              <tr><td colSpan={5} style={{ textAlign: 'center', padding: '100px 0', color: '#9CA3AF' }}>검색 결과가 없습니다.</td></tr>
+              <AdminEmptyState
+                title="검색 결과가 없습니다"
+                description="검색어를 바꾸거나 신규 성분을 등록해 보세요."
+                action={(
+                  <AdminButton
+                    variant="secondary"
+                    onClick={() => { setCurrentIngredient({ risk_level: 'safe' }); setIsModalOpen(true); }}
+                  >
+                    <Plus size={16} />
+                    신규 성분 등록
+                  </AdminButton>
+                )}
+              />
             ) : (
-              filteredIngredients.map((ing) => (
-                <tr key={ing.id} style={{ borderBottom: '1px solid #F3F4F6' }} className="hover:bg-gray-50">
-                  <td style={{ padding: '16px 24px' }}>
-                    <div style={{ fontWeight: 800, color: '#1F2937' }}>{ing.name_ko}</div>
-                    <div style={{ fontSize: '12px', color: '#9CA3AF', fontWeight: 500 }}>{ing.name_en || '-'}</div>
-                  </td>
-                  <td style={{ padding: '16px 24px' }}>
-                    <div style={{ 
-                      display: 'inline-flex', alignItems: 'center', gap: '6px', 
-                      padding: '6px 14px', borderRadius: '12px', fontSize: '12px', fontWeight: 800,
-                      backgroundColor: `${getRiskColor(ing.risk_level)}10`, color: getRiskColor(ing.risk_level)
-                    }}>
-                      <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: getRiskColor(ing.risk_level) }} />
-                      {ing.risk_level === 'safe' ? '안전' : (ing.risk_level === 'caution' ? '주의' : '위험')}
-                    </div>
-                  </td>
-                  <td style={{ padding: '16px 24px' }}>
-                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#4B5563' }}>{ing.category || '-'}</div>
-                  </td>
-                  <td style={{ padding: '16px 24px' }}>
-                    <div style={{ fontSize: '13px', color: '#6B7280', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {ing.description || '-'}
-                    </div>
-                  </td>
-                  <td style={{ padding: '16px 24px', textAlign: 'right' }}>
-                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                      <button onClick={() => { setCurrentIngredient(ing); setIsModalOpen(true); }} style={{ padding: '8px', borderRadius: '10px', backgroundColor: '#F3F4F6', border: 'none', cursor: 'pointer', color: '#4B5563' }}><Edit2 size={16} /></button>
-                      <button onClick={() => handleDelete(ing.id)} style={{ padding: '8px', borderRadius: '10px', backgroundColor: '#FEE2E2', border: 'none', cursor: 'pointer', color: '#EF4444' }}><Trash2 size={16} /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+              <div className="admin-table-shell">
+                <table className="admin-data-table">
+                  <thead>
+                    <tr>
+                      <th>성분명</th>
+                      <th>위험도</th>
+                      <th>분류</th>
+                      <th>설명</th>
+                      <th>관리</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredIngredients.map((ing) => (
+                      <tr key={ing.id}>
+                        <td>
+                          <div className="admin-table-primary">{ing.name_ko}</div>
+                          <div className="admin-table-secondary">{ing.name_en || '영문명 미입력'}</div>
+                        </td>
+                        <td>
+                          <RiskBadge level={ing.risk_level} />
+                        </td>
+                        <td>
+                          <span className="admin-table-secondary-strong">{ing.category || '미분류'}</span>
+                        </td>
+                        <td>
+                          <div className="admin-table-description">{ing.description || '설명 미입력'}</div>
+                        </td>
+                        <td>
+                          <div className="admin-table-actions">
+                            <button
+                              type="button"
+                              className="admin-icon-action"
+                              onClick={() => { setCurrentIngredient(ing); setIsModalOpen(true); }}
+                            >
+                              <Edit2 size={16} />
+                            </button>
+                            <button
+                              type="button"
+                              className="admin-icon-action admin-icon-action-danger"
+                              onClick={() => handleDelete(ing.id)}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
-          </tbody>
-        </table>
+          </AdminSectionCard>
+        </div>
+
+        <div className="admin-column-side">
+          <AdminSectionCard
+            title="운영 힌트"
+            description="위험도 정의와 분류 누락을 빠르게 점검하세요."
+          >
+            <div className="admin-guidance-list">
+              <div className="admin-guidance-item">
+                <div className="admin-guidance-title">위험도 기준</div>
+                <p>주의/위험 성분은 설명과 맥락을 반드시 함께 입력해 추천/리포트에 반영되게 하세요.</p>
+              </div>
+              <div className="admin-guidance-item">
+                <div className="admin-guidance-title">분류 체계 유지</div>
+                <p>단백질원, 기능성 성분, 보존료 등 카테고리를 비우지 않으면 분석 품질이 안정적으로 유지됩니다.</p>
+              </div>
+              <div className="admin-guidance-item">
+                <div className="admin-guidance-title">최근 입력 샘플</div>
+                <p>최근 정렬 기준 상단 성분 5개를 검토해 영문명/설명이 빠진 항목을 채우세요.</p>
+              </div>
+            </div>
+          </AdminSectionCard>
+
+          <AdminSectionCard
+            title="사전 품질 현황"
+            description="카테고리와 설명 커버리지를 운영 관점에서 확인합니다."
+          >
+            <div className="admin-inline-stats-stack">
+              <div className="admin-inline-stat">
+                <div className="admin-inline-stat-label">카테고리 입력률</div>
+                <div className="admin-inline-stat-value">
+                  {ingredients.length ? `${((categorizedCount / ingredients.length) * 100).toFixed(1)}%` : '0%'}
+                </div>
+                <div className="admin-inline-stat-hint">{categorizedCount} / {ingredients.length}개</div>
+              </div>
+              <div className="admin-inline-stat">
+                <div className="admin-inline-stat-label">주의+위험 비율</div>
+                <div className="admin-inline-stat-value">
+                  {ingredients.length ? `${(((cautionCount + dangerCount) / ingredients.length) * 100).toFixed(1)}%` : '0%'}
+                </div>
+                <div className="admin-inline-stat-hint">설명 검수 우선순위</div>
+              </div>
+            </div>
+            <div className="admin-mini-list">
+              {latestIngredients.map((item) => (
+                <div key={item.id} className="admin-mini-list-item">
+                  <div>
+                    <div className="admin-mini-list-title">{item.name_ko}</div>
+                    <div className="admin-mini-list-subtitle">{item.category || '분류 미입력'}</div>
+                  </div>
+                  <RiskBadge level={item.risk_level} />
+                </div>
+              ))}
+            </div>
+          </AdminSectionCard>
+        </div>
       </div>
 
       {isModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="animate-scale-in" style={{ width: '90%', maxWidth: '600px', backgroundColor: '#fff', borderRadius: '32px', padding: '40px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-              <h2 style={{ fontSize: '24px', fontWeight: 900 }}>{currentIngredient.id ? '성분 정보 수정' : '신규 성분 등록'}</h2>
-              <button onClick={() => setIsModalOpen(false)} style={{ padding: '8px', background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
+        <div className="admin-modal-backdrop">
+          <div className="admin-modal admin-modal-md animate-scale-in">
+            <div className="admin-modal-head">
+              <div>
+                <div className="admin-page-eyebrow">ingredient form</div>
+                <h2 className="admin-modal-title">{currentIngredient.id ? '성분 정보 수정' : '신규 성분 등록'}</h2>
+              </div>
+              <button type="button" className="admin-icon-action" onClick={() => setIsModalOpen(false)}><X size={20} /></button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <Input label="한글 성분명*" value={currentIngredient.name_ko} onChange={(v) => setCurrentIngredient({...currentIngredient, name_ko: v})} />
-                <Input label="영문 성분명" value={currentIngredient.name_en} onChange={(v) => setCurrentIngredient({...currentIngredient, name_en: v})} />
-              </div>
+            <div className="admin-modal-grid-2">
+              <Input label="한글 성분명*" value={currentIngredient.name_ko} onChange={(v) => setCurrentIngredient({...currentIngredient, name_ko: v})} />
+              <Input label="영문 성분명" value={currentIngredient.name_en} onChange={(v) => setCurrentIngredient({...currentIngredient, name_en: v})} />
+            </div>
 
-              <div>
-                <label style={{ fontSize: '13px', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '12px' }}>위험도 레벨*</label>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  {['safe', 'caution', 'danger'].map(level => (
-                    <button
-                      key={level}
-                      onClick={() => setCurrentIngredient({...currentIngredient, risk_level: level as any})}
-                      style={{
-                        flex: 1, padding: '16px', borderRadius: '16px', border: '2px solid',
-                        transition: '0.2s', cursor: 'pointer', fontSize: '14px', fontWeight: 800,
-                        backgroundColor: currentIngredient.risk_level === level ? `${getRiskColor(level)}` : '#fff',
-                        borderColor: currentIngredient.risk_level === level ? getRiskColor(level) : '#E5E7EB',
-                        color: currentIngredient.risk_level === level ? '#fff' : '#6B7280'
-                      }}
-                    >
-                      {level === 'safe' ? '안전함' : (level === 'caution' ? '주의' : '위험함')}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <Select label="성분 분류" value={currentIngredient.category} options={INGREDIENT_CATEGORIES} onChange={(v) => setCurrentIngredient({...currentIngredient, category: v})} />
-
-              <div>
-                <label style={{ fontSize: '13px', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '8px' }}>설명 및 가이드</label>
-                <textarea 
-                  value={currentIngredient.description || ''} 
-                  onChange={(e) => setCurrentIngredient({...currentIngredient, description: e.target.value})}
-                  rows={4}
-                  style={{ width: '100%', padding: '16px', borderRadius: '16px', border: '1px solid #E5E7EB', outline: 'none', resize: 'none' }}
-                />
+            <div className="admin-field-block">
+              <label className="admin-field-label">위험도 레벨*</label>
+              <div className="admin-chip-grid-3">
+                {(['safe', 'caution', 'danger'] as const).map(level => (
+                  <button
+                    key={level}
+                    type="button"
+                    onClick={() => setCurrentIngredient({...currentIngredient, risk_level: level})}
+                    className={currentIngredient.risk_level === level ? 'admin-choice-chip active' : 'admin-choice-chip'}
+                  >
+                    {level === 'safe' ? '안전함' : level === 'caution' ? '주의' : '위험함'}
+                  </button>
+                ))}
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '12px', marginTop: '40px' }}>
-              <button onClick={() => setIsModalOpen(false)} style={{ flex: 1, padding: '16px', borderRadius: '16px', border: '1px solid #E5E7EB', backgroundColor: '#fff', fontWeight: 700, cursor: 'pointer' }}>취소</button>
-              <button onClick={handleSave} style={{ flex: 2, padding: '16px', borderRadius: '16px', backgroundColor: '#111827', color: '#fff', fontWeight: 800, cursor: 'pointer' }}>저장하기</button>
+            <Select label="성분 분류" value={currentIngredient.category} options={INGREDIENT_CATEGORIES} onChange={(v) => setCurrentIngredient({...currentIngredient, category: v})} />
+
+            <div className="admin-field-block">
+              <label className="admin-field-label">설명 및 가이드</label>
+              <textarea
+                className="admin-textarea"
+                value={currentIngredient.description || ''}
+                onChange={(e) => setCurrentIngredient({...currentIngredient, description: e.target.value})}
+                rows={5}
+              />
+            </div>
+
+            <div className="admin-modal-actions">
+              <AdminButton variant="secondary" onClick={() => setIsModalOpen(false)}>취소</AdminButton>
+              <AdminButton onClick={handleSave}>저장하기</AdminButton>
             </div>
           </div>
         </div>
@@ -246,24 +360,21 @@ const AdminIngredients: React.FC = () => {
   );
 };
 
-function StatSmallCard({ label, value, color }: { label: string, value: number, color: string }) {
-  return (
-    <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '20px', border: '1px solid #E5E7EB', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <span style={{ fontSize: '14px', fontWeight: 700, color: '#6B7280' }}>{label}</span>
-      <span style={{ fontSize: '20px', fontWeight: 900, color: color }}>{value.toLocaleString()}</span>
-    </div>
-  );
+function RiskBadge({ level }: { level: Ingredient['risk_level'] }) {
+  if (level === 'safe') return <AdminBadge tone="emerald">안전</AdminBadge>;
+  if (level === 'danger') return <AdminBadge tone="rose">위험</AdminBadge>;
+  return <AdminBadge tone="amber">주의</AdminBadge>;
 }
 
 function Input({ label, value, onChange }: { label: string, value?: string, onChange: (v: string) => void }) {
   return (
-    <div>
-      <label style={{ fontSize: '13px', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '8px' }}>{label}</label>
-      <input 
+    <div className="admin-field-block">
+      <label className="admin-field-label">{label}</label>
+      <input
         type="text"
+        className="admin-input"
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
-        style={{ width: '100%', padding: '14px 16px', borderRadius: '16px', border: '1px solid #E5E7EB', outline: 'none' }}
       />
     </div>
   );
@@ -271,12 +382,12 @@ function Input({ label, value, onChange }: { label: string, value?: string, onCh
 
 function Select({ label, value, options, onChange }: { label: string, value?: string, options: string[], onChange: (v: string) => void }) {
   return (
-    <div>
-      <label style={{ fontSize: '13px', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '8px' }}>{label}</label>
-      <select 
+    <div className="admin-field-block">
+      <label className="admin-field-label">{label}</label>
+      <select
+        className="admin-select"
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
-        style={{ width: '100%', padding: '14px 16px', borderRadius: '16px', border: '1px solid #E5E7EB', outline: 'none', backgroundColor: '#fff' }}
       >
         <option value="">분류 선택</option>
         {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
