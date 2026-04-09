@@ -18,6 +18,7 @@ export interface Ingredient {
 export interface Product {
   id: string;
   brand: string;
+  manufacturerName?: string;
   name: string;
   category: string;
   mainCategory?: string;
@@ -32,6 +33,9 @@ export interface Product {
   ingredients: Ingredient[];
   reviewsCount: number;
   averageRating: number;
+  verificationStatus?: 'pending' | 'verified' | 'needs_review';
+  verifiedAt?: string | null;
+  coupangProductId?: string | null;
 }
 
 export const DEFAULT_USER_PET_PROFILE: UserPetProfile = {
@@ -47,11 +51,15 @@ export interface SupabaseProduct {
   id: string;
   name: string;
   brand_name: string;
+  manufacturer_name?: string | null;
   product_type: string;
   image_url: string | null;
   avg_rating: number;
   review_count: number;
   min_price: number | null;
+  verification_status?: 'pending' | 'verified' | 'needs_review' | null;
+  verified_at?: string | null;
+  coupang_product_id?: string | null;
   product_ingredients?: {
     ingredients: SupabaseIngredient;
   }[];

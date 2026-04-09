@@ -10,9 +10,11 @@ import {
   Package,
 } from 'lucide-react';
 import { VERORO_LOGO_SRC } from '../../constants/assets';
+import { isAdminHostname } from '../../utils/adminHost';
 
 const AdminLayout: React.FC = () => {
   const location = useLocation();
+  const forceAdminTheme = typeof window !== 'undefined' && isAdminHostname(window.location.hostname);
 
   const menuItems = [
     { path: '/admin', icon: <LayoutDashboard size={20} />, label: '대시보드' },
@@ -22,7 +24,7 @@ const AdminLayout: React.FC = () => {
   ];
 
   return (
-    <div className="admin-container">
+    <div className={forceAdminTheme ? 'admin-container admin-container-forced' : 'admin-container'}>
       <aside className="admin-sidebar">
         <div className="admin-logo">
           <img src={VERORO_LOGO_SRC} alt="VeRoRo" className="admin-logo-img" />

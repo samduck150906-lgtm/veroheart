@@ -74,6 +74,7 @@ function mapProduct(p: any): Product {
   return {
     id: p.id,
     brand: p.brand_name,
+    manufacturerName: p.manufacturer_name || undefined,
     name: p.name,
     category: p.product_type,
     mainCategory: p.main_category,
@@ -83,6 +84,9 @@ function mapProduct(p: any): Product {
     formulation: p.formulation,
     healthConcerns: p.product_health_concerns,
     hasRiskFactors: p.has_risk_factors,
+    verificationStatus: p.verification_status || 'pending',
+    verifiedAt: p.verified_at || undefined,
+    coupangProductId: p.coupang_product_id || undefined,
     price: p.min_price || 0,
     imageUrl: p.image_url || 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&q=80',
     ingredients: p.product_ingredients?.map((pi: any) => ({

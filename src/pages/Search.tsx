@@ -205,6 +205,23 @@ export default function Search() {
           </div>
         </div>
 
+        <div
+          style={{
+            marginBottom: '14px',
+            padding: '12px 14px',
+            borderRadius: '16px',
+            background: '#FFFFFF',
+            border: '1px solid rgba(124, 111, 156, 0.16)',
+          }}
+        >
+          <div style={{ fontSize: '12px', fontWeight: 800, color: '#5B21B6', marginBottom: '4px' }}>
+            사람이 검수한 데이터 우선
+          </div>
+          <p style={{ margin: 0, fontSize: '12px', lineHeight: 1.55, color: '#66707C', fontWeight: 600 }}>
+            검색과 추천은 직접 정리한 제조사/성분 데이터와 프로필 기준으로 계산하며, AI는 해석 보조에만 사용됩니다.
+          </p>
+        </div>
+
         <div style={{ marginBottom: '14px' }}>
           <TossSearchBar
             value={query}
@@ -385,7 +402,7 @@ export default function Search() {
               {profile.name} 프로필 기반 추천순
             </div>
             <div style={{ fontSize: '13px', color: '#66707C', lineHeight: 1.6 }}>
-              알레르기 회피, 건강 고민 매칭, 리뷰 신뢰도, 가격 적정성, 종/연령 적합도를 함께 반영해 정렬합니다.
+              검수 완료 여부, 알레르기 회피, 건강 고민 매칭, 리뷰 신뢰도, 가격 적정성, 종/연령 적합도를 함께 반영해 정렬합니다.
             </div>
           </div>
         )}

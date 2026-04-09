@@ -26,9 +26,7 @@ export default function BottomNav() {
   ];
 
   return (
-    <nav
-      className="glass-nav bottom-nav"
-    >
+    <nav className="glass-nav bottom-nav bottom-nav-community">
       {navItems.map(item => {
         const Icon = item.icon;
         const isActive = location.pathname === item.path;
@@ -36,82 +34,23 @@ export default function BottomNav() {
           <Link
             key={item.path}
             to={item.path}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              textDecoration: 'none',
-              color: isActive ? 'var(--primary-dark)' : 'var(--text-light)',
-              transition: 'all var(--transition-fast)',
-              position: 'relative',
-              minWidth: '52px',
-              padding: '8px 4px',
-              borderRadius: '20px',
-              background: isActive
-                ? 'linear-gradient(145deg, rgba(250, 204, 21, 0.22), rgba(254, 240, 138, 0.42))'
-                : 'transparent',
-            }}
+            className={isActive ? 'bottom-nav-item bottom-nav-item-active' : 'bottom-nav-item'}
           >
-            <div style={{
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '2px',
-            }}>
+            <div className="bottom-nav-icon-wrap">
               <Icon
                 size={22}
                 strokeWidth={isActive ? 2.5 : 2}
-                style={{
-                  transition: 'transform var(--transition-bounce)',
-                  transform: isActive ? 'scale(1.1)' : 'scale(1)',
-                }}
+                style={{ transition: 'transform var(--transition-bounce)' }}
               />
               {item.badge > 0 && (
-                <span style={{
-                  position: 'absolute',
-                  top: '-6px',
-                  right: '-8px',
-                  backgroundColor: 'var(--accent)',
-                  color: '#fff',
-                  fontSize: '9px',
-                  fontWeight: 800,
-                  width: '16px',
-                  height: '16px',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  lineHeight: 1,
-                  border: '1.5px solid rgba(255, 255, 255, 0.96)',
-                  animation: 'bounceIn 0.4s ease',
-                }}>
+                <span className="bottom-nav-badge">
                   {item.badge > 9 ? '9+' : item.badge}
                 </span>
               )}
             </div>
-            <span style={{
-              fontSize: '10px',
-              fontWeight: isActive ? 700 : 500,
-              letterSpacing: '-0.02em',
-              transition: 'all var(--transition-fast)',
-              opacity: isActive ? 1 : 0.7,
-            }}>
+            <span className="bottom-nav-label">
               {item.label}
             </span>
-            {isActive && (
-              <span style={{
-                position: 'absolute',
-                bottom: '-4px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                width: '4px',
-                height: '4px',
-                borderRadius: '50%',
-                background: 'var(--primary)',
-              }} />
-            )}
           </Link>
         );
       })}

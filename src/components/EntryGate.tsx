@@ -73,6 +73,25 @@ export default function EntryGate({ onBrowse, onDismissForLogin }: EntryGateProp
       >
         로그인 없이도 상품과 성분 정보를 편하게 둘러볼 수 있어요.
       </p>
+      <div
+        style={{
+          width: '100%',
+          maxWidth: '320px',
+          marginBottom: '20px',
+          padding: '14px 16px',
+          borderRadius: '16px',
+          background: 'rgba(255, 255, 255, 0.82)',
+          border: '1px solid rgba(124, 111, 156, 0.16)',
+          textAlign: 'left',
+        }}
+      >
+        <div style={{ fontSize: '12px', fontWeight: 800, color: '#5B21B6', marginBottom: '6px' }}>
+          베로로 운영 원칙
+        </div>
+        <p style={{ margin: 0, fontSize: '12px', lineHeight: 1.55, color: '#5B566A', fontWeight: 600 }}>
+          제품 데이터는 자동 크롤링보다 사람 검수 중심으로 관리하고, AI 분석은 추천 보조 도구로만 활용합니다.
+        </p>
+      </div>
 
       <button
         type="button"
