@@ -25,6 +25,7 @@ import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminIngredients from './pages/admin/AdminIngredients';
+import AdminSettings from './pages/admin/AdminSettings';
 import Notification from './components/Notification';
 import AdminAuthGuard from './pages/admin/AdminAuthGuard';
 import EntryGate, { markEntryGateDone, readEntryGateDone } from './components/EntryGate';
@@ -105,6 +106,7 @@ function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="products" element={<AdminProducts />} />
           <Route path="ingredients" element={<AdminIngredients />} />
+          <Route path="settings" element={<AdminSettings />} />
         </Route>
       </Routes>
 
