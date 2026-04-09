@@ -155,6 +155,16 @@ type TossSearchBarProps = {
   rightSlot?: ReactNode;
 };
 
+type TossInputProps = {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  type?: string;
+  readOnly?: boolean;
+  disabled?: boolean;
+  style?: CSSProperties;
+};
+
 export function TossSearchBar({
   value,
   onChange,
@@ -211,5 +221,38 @@ export function TossSearchBar({
         </button>
       )}
     </div>
+  );
+}
+
+export function TossInput({
+  value,
+  onChange,
+  placeholder,
+  type = 'text',
+  readOnly = false,
+  disabled = false,
+  style,
+}: TossInputProps) {
+  return (
+    <input
+      type={type}
+      value={value}
+      readOnly={readOnly}
+      disabled={disabled}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      style={{
+        width: '100%',
+        padding: '13px 14px',
+        borderRadius: '12px',
+        border: '1px solid #E5E7EB',
+        fontSize: '15px',
+        outline: 'none',
+        background: disabled ? '#F9FAFB' : '#FFFFFF',
+        color: '#1F2937',
+        boxSizing: 'border-box',
+        ...style,
+      }}
+    />
   );
 }

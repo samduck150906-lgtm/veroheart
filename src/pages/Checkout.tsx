@@ -7,7 +7,7 @@ import { loadPaymentWidget, type PaymentWidgetInstance } from '@tosspayments/pay
 import { useStore } from '../store/useStore';
 import { notify } from '../store/useNotification';
 import { getCurrentUser, createOrder } from '../lib/supabase';
-import { TossCard, TossButton } from '../components/TossUI';
+import { TossCard, TossButton, TossInput } from '../components/TossUI';
 
 const clientKey = import.meta.env.VITE_TOSS_WIDGET_CLIENT_KEY ?? '';
 const DAUM_POSTCODE_SCRIPT_SRC = 'https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
@@ -219,50 +219,42 @@ export default function Checkout() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">받는 분</label>
-                  <input
+                  <TossInput
                   type="text" 
                   value={customerInfo.name} 
-                  onChange={e => setCustomerInfo({...customerInfo, name: e.target.value})}
-                  className="w-full p-3 border border-gray-200 rounded-xl outline-none"
-                  style={{ boxShadow: '0 0 0 0 transparent' }}
+                  onChange={value => setCustomerInfo({...customerInfo, name: value})}
+                  style={{ width: '100%' }}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">연락처</label>
-                <input
+                <TossInput
                   type="text" 
                   value={customerInfo.phone} 
-                  onChange={e => setCustomerInfo({...customerInfo, phone: e.target.value})}
-                  className="w-full p-3 border border-gray-200 rounded-xl outline-none"
-                  style={{ boxShadow: '0 0 0 0 transparent' }}
+                  onChange={value => setCustomerInfo({...customerInfo, phone: value})}
+                  style={{ width: '100%' }}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">배송지 주소</label>
                 <div className="flex gap-2 mb-2">
-                  <input
+                  <TossInput
                     type="text"
                     value={customerInfo.address}
-                    onChange={e => setCustomerInfo({...customerInfo, address: e.target.value})}
-                    className="flex-1 p-3 border border-gray-200 rounded-xl outline-none"
-                    style={{ boxShadow: '0 0 0 0 transparent' }}
+                    onChange={value => setCustomerInfo({...customerInfo, address: value})}
+                    style={{ flex: 1 }}
                     placeholder="도로명 주소"
                     readOnly={!!customerInfo.address}
                   />
-                  <button
-                    type="button"
-                    onClick={openPostcode}
-                    className="px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl border border-gray-200 whitespace-nowrap text-sm"
-                  >
+                  <TossButton type="button" variant="outline" size="md" onClick={openPostcode} style={{ width: 'auto', padding: '0 14px', whiteSpace: 'nowrap' }}>
                     우편번호
-                  </button>
+                  </TossButton>
                 </div>
-                <input
+                <TossInput
                   type="text"
                   value={detailAddress}
-                  onChange={e => setDetailAddress(e.target.value)}
-                  className="w-full p-3 border border-gray-200 rounded-xl outline-none"
-                  style={{ boxShadow: '0 0 0 0 transparent' }}
+                  onChange={setDetailAddress}
+                  style={{ width: '100%' }}
                   placeholder="상세 주소 (동/호수)"
                 />
               </div>

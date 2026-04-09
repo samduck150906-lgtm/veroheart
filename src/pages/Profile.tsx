@@ -3,7 +3,7 @@ import { useStore } from '../store/useStore';
 import { User, ChevronRight, Calendar, ShoppingBag, FileText, Activity, Heart, LogOut, LogIn } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
-import { TossButton, TossCard, TossChip, TossSectionTitle } from '../components/TossUI';
+import { TossButton, TossCard, TossChip, TossSectionTitle, TossInput } from '../components/TossUI';
 
 export default function Profile() {
   const { profile, updateProfile, orders, fetchOrders, reports, fetchReports, isLoggedIn, signOut, favorites, products } = useStore();
@@ -97,11 +97,9 @@ export default function Profile() {
           
           <div style={{ marginBottom: '24px' }}>
             <label style={{ display: 'block', fontSize: '14px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '12px' }}>아이 이름</label>
-            <input 
-              type="text" 
-              value={formData.name} 
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid #E5E7EB', fontSize: '16px', outline: 'none' }}
+            <TossInput
+              value={formData.name}
+              onChange={(value) => setFormData({ ...formData, name: value })}
               placeholder="반려동물 이름을 입력하세요"
             />
           </div>
