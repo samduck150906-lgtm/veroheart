@@ -29,11 +29,21 @@ import Notification from './components/Notification';
 import AdminAuthGuard from './pages/admin/AdminAuthGuard';
 import EntryGate, { markEntryGateDone, readEntryGateDone } from './components/EntryGate';
 
+function isAdminHost(hostname: string) {
+  return hostname === 'veroro-admin.netlify.app' || hostname.startsWith('veroro-admin-');
+}
+
 function App() {
   const { initApp, isInitializing, isLoggedIn } = useStore();
   const [splashLine] = useState(() => pickSplashTagline());
   const [showEntrySplash, setShowEntrySplash] = useState(true);
   const [entryGateOpen, setEntryGateOpen] = useState(() => !readEntryGateDone());
+
+  if (typeof window !== 'undefined' && isAdminHost(window.location.hostname) && !window.location.pathname.startsWith('/admin')) {
+    const nextUrl = `/admin${window.location.search}${window.location.hash}`;
+    window.location.replace(nextUrl);
+    return null;
+  }
 
   useEffect(() => {
     initApp();

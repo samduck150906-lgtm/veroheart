@@ -1,2 +1,13 @@
 [build.environment]
   SECRETS_SCAN_OMIT_KEYS = "SUPABASE_URL"
+
+[[redirects]]
+  from = "/"
+  to = "/admin"
+  status = 302
+  conditions = {Host = ["veroro-admin.netlify.app"]}
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
