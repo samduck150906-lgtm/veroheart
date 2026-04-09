@@ -1,10 +1,6 @@
 import { useState, useEffect, type ReactNode } from 'react';
-import { supabase } from '../../lib/supabase';
 import { ShieldCheck, Lock, Loader2 } from 'lucide-react';
 import './admin.css';
-
-// 관리자 이메일 화이트리스트
-const ADMIN_EMAILS = ['ceo@eternalsix.kr', 'admin@eternalsix.kr'];
 
 // 관리자 아이디/비밀번호 (앱 오너 계정)
 const ADMIN_CREDENTIALS = [
@@ -28,26 +24,13 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
     checkAuth();
   }, []);
 
-  const checkAuth = async () => {
-    try {
-      // 1차: Supabase Auth 세션 확인
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user?.email && ADMIN_EMAILS.includes(session.user.email)) {
-        setIsAuthenticated(true);
-        setIsLoading(false);
-        return;
-      }
-
-      // 2차: 세션스토리지 확인 (아이디/비밀번호 인증)
-      const stored = sessionStorage.getItem('vh_admin_auth');
-      if (stored && ADMIN_CREDENTIALS.some((cred) => btoa(`${cred.username}:${cred.password}`) === stored)) {
-        setIsAuthenticated(true);
-      }
-    } catch (err) {
-      console.error('Admin auth check failed:', err);
-    } finally {
-      setIsLoading(false);
+  const checkAuth = () => {
+    // 관리자 3계정 외 로그인 금지: 세션스토리지 토큰만 검증
+    const stored = sessionStorage.getItem('vh_admin_auth');
+    if (stored && ADMIN_CREDENTIALS.some((cred) => btoa(`${cred.username}:${cred.password}`) === stored)) {
+      setIsAuthenticated(true);
     }
+    setIsLoading(false);
   };
 
   const handleAdminLogin = () => {
@@ -97,6 +80,7 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
 
           <h1>VeRoRo Admin</h1>
           <p>관리자 콘솔에 접근하려면 인증이 필요합니다.</p>
+          <p style={{ marginTop: '-8px' }}>추가 가입은 불가하며 지정된 3명 관리자만 로그인할 수 있습니다.</p>
 
           <div className="admin-auth-field">
             <input
@@ -128,9 +112,10 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
             인증하기
           </button>
 
-          <p style={{ marginTop: '24px', fontSize: '12px', color: '#475569' }}>
-            관리자 계정이 없으신가요? <a href="mailto:ceo@eternalsix.kr" style={{ color: '#6366f1' }}>문의</a>
-          </p>
+          <div style={{ marginTop: '16px', fontSize: '12px', color: '#64748b', lineHeight: 1.6 }}>
+            <div>허용 계정: rumi / young / jeong</div>
+            <div>신규 관리자 가입: 불가</div>
+          </div>
         </div>
       </div>
     );

@@ -76,9 +76,10 @@ const AdminIngredients: React.FC = () => {
 
     const payload = {
       ...currentIngredient,
-      name_en: currentIngredient.name_en || '',
-      description: currentIngredient.description || '',
-      category: currentIngredient.category || '',
+      name_ko: (currentIngredient.name_ko || '').trim(),
+      name_en: (currentIngredient.name_en || '').trim(),
+      description: (currentIngredient.description || '').trim(),
+      category: (currentIngredient.category || '').trim(),
     };
 
     try {

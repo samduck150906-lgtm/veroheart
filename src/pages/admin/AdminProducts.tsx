@@ -88,12 +88,24 @@ const AdminProducts: React.FC = () => {
       return;
     }
 
+    const normalizeCommaValues = (value?: string[] | string) =>
+      (Array.isArray(value) ? value : (value || '').split(','))
+        .map((v) => String(v).trim())
+        .filter(Boolean);
+
     const payload = {
       ...currentProduct,
-      min_price: Number(currentProduct.min_price || 0),
-      target_life_stage: currentProduct.target_life_stage || [],
-      product_health_concerns: currentProduct.product_health_concerns || [],
-      has_risk_factors: currentProduct.has_risk_factors || [],
+      name: (currentProduct.name || '').trim(),
+      brand_name: (currentProduct.brand_name || '').trim(),
+      main_category: (currentProduct.main_category || '').trim(),
+      sub_category: (currentProduct.sub_category || '').trim() || null,
+      formulation: (currentProduct.formulation || '').trim() || null,
+      target_pet_type: (currentProduct.target_pet_type || 'dog').trim(),
+      image_url: (currentProduct.image_url || '').trim(),
+      min_price: Number.isFinite(Number(currentProduct.min_price)) ? Math.max(0, Number(currentProduct.min_price)) : 0,
+      target_life_stage: normalizeCommaValues(currentProduct.target_life_stage),
+      product_health_concerns: normalizeCommaValues(currentProduct.product_health_concerns),
+      has_risk_factors: normalizeCommaValues(currentProduct.has_risk_factors),
     };
 
     try {
