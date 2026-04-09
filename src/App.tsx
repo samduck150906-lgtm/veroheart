@@ -28,18 +28,16 @@ import AdminIngredients from './pages/admin/AdminIngredients';
 import Notification from './components/Notification';
 import AdminAuthGuard from './pages/admin/AdminAuthGuard';
 import EntryGate, { markEntryGateDone, readEntryGateDone } from './components/EntryGate';
-
-function isAdminHost(hostname: string) {
-  return hostname === 'veroro-admin.netlify.app' || hostname.startsWith('veroro-admin-');
-}
+import { isAdminHostname } from './utils/adminHost';
 
 function App() {
   const { initApp, isInitializing, isLoggedIn } = useStore();
   const [splashLine] = useState(() => pickSplashTagline());
-  const [showEntrySplash, setShowEntrySplash] = useState(true);
-  const [entryGateOpen, setEntryGateOpen] = useState(() => !readEntryGateDone());
+  const adminMode = typeof window !== 'undefined' && isAdminHostname(window.location.hostname);
+  const [showEntrySplash, setShowEntrySplash] = useState(() => !adminMode);
+  const [entryGateOpen, setEntryGateOpen] = useState(() => (adminMode ? false : !readEntryGateDone()));
 
-  if (typeof window !== 'undefined' && isAdminHost(window.location.hostname) && !window.location.pathname.startsWith('/admin')) {
+  if (typeof window !== 'undefined' && adminMode && !window.location.pathname.startsWith('/admin')) {
     const nextUrl = `/admin${window.location.search}${window.location.hash}`;
     window.location.replace(nextUrl);
     return null;
@@ -50,9 +48,10 @@ function App() {
   }, [initApp]);
 
   useEffect(() => {
+    if (adminMode) return;
     const timer = window.setTimeout(() => setShowEntrySplash(false), 1200);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [adminMode]);
 
   useEffect(() => {
     if (!isInitializing && isLoggedIn) {
@@ -61,7 +60,7 @@ function App() {
     }
   }, [isInitializing, isLoggedIn]);
 
-  const showSplash = isInitializing || showEntrySplash;
+  const showSplash = !adminMode && (isInitializing || showEntrySplash);
 
   if (showSplash) {
     return (
@@ -118,7 +117,7 @@ function App() {
         </Route>
       </Routes>
 
-      {entryGateOpen && (
+      {!adminMode && entryGateOpen && (
         <div
           style={{
             position: 'fixed',

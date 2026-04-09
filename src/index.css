@@ -58,6 +58,14 @@ body {
   overscroll-behavior-y: none;
 }
 
+body.admin-host {
+  background: #f8fafc;
+  color: #0f172a;
+  justify-content: stretch;
+  overflow: auto;
+  overscroll-behavior-y: auto;
+}
+
 /* Mobile App Layout Container */
 #root {
   width: 100%;
@@ -69,6 +77,15 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+body.admin-host #root {
+  max-width: none;
+  height: auto;
+  min-height: 100vh;
+  background: #f8fafc;
+  box-shadow: none;
+  overflow: visible;
 }
 
 h1, h2, h3, h4, h5, h6 {
