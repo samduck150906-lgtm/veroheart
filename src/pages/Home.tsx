@@ -142,6 +142,24 @@ export default function Home() {
           {CORE_COPY.ocr}
         </div>
 
+        <div
+          style={{
+            marginBottom: '14px',
+            padding: '14px',
+            borderRadius: '18px',
+            background: 'rgba(255, 255, 255, 0.72)',
+            border: '1px solid rgba(124, 111, 156, 0.16)',
+          }}
+        >
+          <div style={{ fontSize: '12px', fontWeight: 900, color: '#241C33', marginBottom: '6px' }}>
+            데이터 신뢰 원칙
+          </div>
+          <p style={{ margin: 0, fontSize: '12px', lineHeight: 1.6, color: '#5B566A', fontWeight: 600 }}>
+            제품 등록과 성분 매핑은 크롤링 자동화보다 운영자 수기 검수와 성분 사전 관리에 더 많이 의존합니다.
+            AI는 추천과 요약을 돕지만, 제조사/원재료 이해와 최종 검증은 사람이 맡습니다.
+          </p>
+        </div>
+
         <div className="ui-grid-3">
           {homeStats.map((item) => (
             <div

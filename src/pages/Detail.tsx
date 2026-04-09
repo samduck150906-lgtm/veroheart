@@ -15,7 +15,9 @@ import {
   Star,
   Heart,
   MessageSquare,
-  Trash2
+  Trash2,
+  Shield,
+  ExternalLink
 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { useStore } from '../store/useStore';
@@ -25,6 +27,7 @@ import { getReviews, createReview, deleteReview } from '../lib/supabase';
 import { CORE_COPY, UGC_COPY } from '../copy/marketing';
 import { notify } from '../store/useNotification';
 import { TossButton, TossCard, TossSectionTitle } from '../components/TossUI';
+import { openCoupangForProduct } from '../utils/externalPurchase';
 
 export default function Detail() {
   const { id } = useParams();
@@ -196,6 +199,24 @@ export default function Detail() {
         </div>
 
         <div style={{ display: 'grid', gap: '10px' }}>
+          <div
+            style={{
+              padding: '14px 16px',
+              borderRadius: '16px',
+              background: '#F8FAFC',
+              border: '1px solid #E2E8F0',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+              <Shield size={16} color="#0F172A" />
+              <span style={{ fontSize: '13px', fontWeight: 800, color: '#0F172A' }}>데이터 신뢰 원칙</span>
+            </div>
+            <p style={{ margin: 0, fontSize: '12px', color: '#475569', lineHeight: 1.6, fontWeight: 600 }}>
+              베로로는 크롤링보다 사람 검수 비중을 높여 제품 정보를 다룹니다. AI는 추천과 해석을 돕지만,
+              제조사/성분에 대한 검토와 카탈로그 검증은 운영자가 계속 보완합니다.
+            </p>
+          </div>
+
           <div style={{ display: 'flex', gap: '12px' }}>
             <TossButton
               onClick={() => toggleFavorite(product.id)}
@@ -232,6 +253,19 @@ export default function Detail() {
               바로 구매
             </TossButton>
           </div>
+          <TossButton
+            variant="soft"
+            style={{ height: '54px', borderRadius: '16px', fontWeight: 800, fontSize: '15px' }}
+            onClick={() => {
+              openCoupangForProduct(product);
+            }}
+          >
+            <ExternalLink size={18} />
+            쿠팡 앱에서 이어서 보기
+          </TossButton>
+          <p style={{ margin: 0, fontSize: '11px', color: '#64748B', lineHeight: 1.5, fontWeight: 600 }}>
+            베로로에서 분석·추천한 뒤 구매는 외부 쇼핑앱으로 연결됩니다. 앱이 없으면 웹 검색으로 이동합니다.
+          </p>
         </div>
       </TossCard>
 
@@ -271,6 +305,22 @@ export default function Detail() {
         <p style={{ marginTop: '20px', fontSize: '15px', color: '#4B5563', lineHeight: 1.7, padding: '0 8px' }}>
           {report?.detailedAnalysis}
         </p>
+        <div
+          style={{
+            marginTop: '18px',
+            padding: '14px 16px',
+            borderRadius: '14px',
+            background: '#EFF6FF',
+            border: '1px solid #BFDBFE',
+            fontSize: '12px',
+            lineHeight: 1.6,
+            color: '#1E3A8A',
+            fontWeight: 600,
+          }}
+        >
+          이 분석은 현재 구축된 성분 사전과 상품 메타데이터를 바탕으로 생성됩니다. 최종 급여 판단은 반려동물 상태,
+          제조사 정보, 원재료 공개 수준을 함께 보고 결정하는 것이 안전합니다.
+        </div>
       </TossCard>
 
       {/* 전성분 분석 */}

@@ -143,6 +143,23 @@ const AdminProducts: React.FC = () => {
         </button>
       </div>
 
+      <div
+        style={{
+          marginBottom: '24px',
+          padding: '16px 18px',
+          borderRadius: '18px',
+          background: '#FFF7ED',
+          border: '1px solid #FED7AA',
+          color: '#9A3412',
+        }}
+      >
+        <div style={{ fontSize: '13px', fontWeight: 900, marginBottom: '6px' }}>수동 검수 우선 운영 원칙</div>
+        <div style={{ fontSize: '13px', lineHeight: 1.6, fontWeight: 600 }}>
+          제품/브랜드/가격 정보는 자동 수집보다 사람 검수와 제조사 확인을 우선합니다.
+          등록 전에는 브랜드, 제조사, 전성분, 급여 대상, 건강 태그를 교차 확인해 주세요.
+        </div>
+      </div>
+
       {/* Tabs */}
       <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', marginBottom: '24px', paddingBottom: '8px' }}>
         {['전체', ...MAIN_CATEGORIES].map(tab => (
