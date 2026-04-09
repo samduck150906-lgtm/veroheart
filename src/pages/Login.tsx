@@ -6,7 +6,7 @@ import { useStore } from '../store/useStore';
 import { notify } from '../store/useNotification';
 import { HOME_HERO } from '../copy/marketing';
 import { VERORO_LOGO_SRC } from '../constants/assets';
-import { TossButton, TossCard, TossChip } from '../components/TossUI';
+import { TossButton, TossCard, TossChip, TossInput, TossField, TossSectionBlock } from '../components/TossUI';
 
 const PASSWORD_RULES = [
   {
@@ -233,6 +233,34 @@ export default function Login() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '16px' }}>
+          <TossField icon={<Mail size={18} color="#9CA3AF" />}>
+            <TossInput
+              type="email"
+              placeholder="이메일 주소"
+              value={email}
+              onChange={setEmail}
+              style={{ border: 'none', padding: '0', background: 'transparent', fontSize: '16px' }}
+            />
+          </TossField>
+          <TossField icon={<Lock size={18} color="#9CA3AF" />}>
+            <TossInput
+              type={showPw ? 'text' : 'password'}
+              placeholder="비밀번호"
+              value={password}
+              onChange={setPassword}
+              style={{ border: 'none', padding: '0', background: 'transparent', fontSize: '16px' }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPw(!showPw)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', display: 'inline-flex' }}
+            >
+              {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </TossField>
+        </div>
+
+        <div style={{ display: 'none' }}>
           <div style={{ position: 'relative' }}>
             <Mail size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
             <input
@@ -295,7 +323,7 @@ export default function Login() {
           {isLoading ? '처리 중...' : mode === 'login' ? '로그인' : '회원가입'}
         </TossButton>
 
-        <div style={{ marginBottom: '14px', padding: '12px 14px', borderRadius: '12px', background: '#EFF6FF', border: '1px solid #BFDBFE' }}>
+        <TossSectionBlock title="이메일 인증" style={{ marginBottom: '14px', borderRadius: '12px', background: '#EFF6FF', border: '1px solid #BFDBFE' }}>
           <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 800, color: '#1E40AF' }}>이메일 인증</p>
           <p style={{ margin: '0 0 10px', fontSize: '12px', color: '#1D4ED8', lineHeight: 1.5, fontWeight: 600 }}>
             가입 직후 또는 로그인이 안 될 때, 아래 버튼으로 인증 메일을 다시 보낼 수 있어요. 스팸함도 꼭 확인해 주세요.
@@ -324,7 +352,7 @@ export default function Login() {
             <RefreshCw size={16} style={{ animation: resendLoading ? 'spin 0.85s linear infinite' : undefined }} />
             {resendCooldown > 0 ? `${resendCooldown}초 후 다시 보내기` : '인증 메일 다시 보내기'}
           </button>
-        </div>
+        </TossSectionBlock>
 
         {(pendingVerification || mode === 'signup') && (
           <div style={{ marginBottom: '12px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>

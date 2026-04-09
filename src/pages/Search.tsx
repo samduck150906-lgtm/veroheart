@@ -16,6 +16,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
+import { TossFilterSection } from '../components/TossUI';
 import { searchProducts, getAllIngredients } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import { CORE_COPY } from '../copy/marketing';
@@ -420,16 +421,16 @@ export default function Search() {
               <button type="button" onClick={() => setIsFilterOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
             </div>
 
-            <Section title="반려동물">
+            <TossFilterSection title="반려동물">
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 <FilterChip label="전체" selected={filters.targetPetType === ''} onClick={() => setFilters({ ...filters, targetPetType: '' })} />
                 <FilterChip label="강아지" selected={filters.targetPetType === 'dog'} onClick={() => setFilters({ ...filters, targetPetType: 'dog' })} />
                 <FilterChip label="고양이" selected={filters.targetPetType === 'cat'} onClick={() => setFilters({ ...filters, targetPetType: 'cat' })} />
                 <FilterChip label="공용 제품만" selected={filters.targetPetType === 'all'} onClick={() => setFilters({ ...filters, targetPetType: 'all' })} />
               </div>
-            </Section>
+            </TossFilterSection>
 
-            <Section title="가격대">
+            <TossFilterSection title="가격대">
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 {PRICE_BAND_LABELS.map(({ id, label }) => (
                   <FilterChip
@@ -440,9 +441,9 @@ export default function Search() {
                   />
                 ))}
               </div>
-            </Section>
+            </TossFilterSection>
 
-            <Section title="생애 단계">
+            <TossFilterSection title="생애 단계">
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 {LIFE_STAGE_OPTIONS.map(({ value, label }) => (
                   <FilterChip
@@ -458,9 +459,9 @@ export default function Search() {
                   />
                 ))}
               </div>
-            </Section>
+            </TossFilterSection>
 
-            <Section title="특화 · 다이어트">
+            <TossFilterSection title="특화 · 다이어트">
               <button
                 type="button"
                 onClick={() => setFilters(f => ({ ...f, dietPreset: !f.dietPreset }))}
@@ -475,9 +476,9 @@ export default function Search() {
               <p style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '8px', lineHeight: 1.5 }}>
                 상품에 등록된 건강 태그(비만, 다이어트, 체중 등) 중 하나라도 있으면 표시됩니다. DB에 태그가 없으면 결과가 비어 있을 수 있습니다.
               </p>
-            </Section>
+            </TossFilterSection>
 
-            <Section title="급여 형태">
+            <TossFilterSection title="급여 형태">
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 {FORMULATION_OPTIONS.map(form => (
                   <FilterChip
@@ -493,9 +494,9 @@ export default function Search() {
                   />
                 ))}
               </div>
-            </Section>
+            </TossFilterSection>
 
-            <Section title="건강 고민 (복수 선택 · OR)">
+            <TossFilterSection title="건강 고민 (복수 선택 · OR)">
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 {HEALTH_CONCERN_OPTIONS.map(concern => (
                   <FilterChip
@@ -506,9 +507,9 @@ export default function Search() {
                   />
                 ))}
               </div>
-            </Section>
+            </TossFilterSection>
 
-            <Section title="성분 제외 필터">
+            <TossFilterSection title="성분 제외 필터">
               {excludedIngredients.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
                   {excludedIngredients.map(name => (
@@ -550,7 +551,7 @@ export default function Search() {
                 </div>
               )}
               <p style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '6px' }}>선택한 성분이 포함된 제품은 검색에서 제외됩니다.</p>
-            </Section>
+            </TossFilterSection>
 
             <div style={{ position: 'sticky', bottom: 0, paddingTop: '40px', paddingBottom: '24px', backgroundColor: '#fff', display: 'flex', gap: '12px' }}>
               <button type="button" onClick={resetFilters} style={{ flex: 1, padding: '18px', borderRadius: '16px', border: '1px solid #E5E7EB', backgroundColor: '#fff', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}><Trash2 size={18} /> 초기화</button>
@@ -559,15 +560,6 @@ export default function Search() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function Section({ title, children }: { title: string, children: React.ReactNode }) {
-  return (
-    <div style={{ marginBottom: '32px' }}>
-      <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '16px', color: '#1F2937' }}>{title}</h3>
-      {children}
     </div>
   );
 }

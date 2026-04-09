@@ -147,6 +147,68 @@ export function TossSectionTitle({ title, subtitle, right, style }: TossSectionT
   );
 }
 
+type TossFieldProps = {
+  label?: string;
+  children: ReactNode;
+  helperText?: string;
+  icon?: ReactNode;
+  style?: CSSProperties;
+};
+
+export function TossField({ label, children, helperText, icon, style }: TossFieldProps) {
+  return (
+    <div style={{ marginBottom: '14px', ...style }}>
+      {(label || icon) && (
+        <label style={{ display: 'block', fontSize: '13px', fontWeight: 800, color: '#4B5563', marginBottom: '8px' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            {icon}
+            {label}
+          </span>
+        </label>
+      )}
+      {children}
+      {helperText && (
+        <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9CA3AF', fontWeight: 600, lineHeight: 1.45 }}>
+          {helperText}
+        </p>
+      )}
+    </div>
+  );
+}
+
+type TossSectionBlockProps = {
+  title: string;
+  subtitle?: string;
+  children: ReactNode;
+  style?: CSSProperties;
+};
+
+export function TossSectionBlock({ title, subtitle, children, style }: TossSectionBlockProps) {
+  return (
+    <TossCard style={{ padding: '16px', ...style }}>
+      <TossSectionTitle title={title} subtitle={subtitle} style={{ marginBottom: '12px' }} />
+      {children}
+    </TossCard>
+  );
+}
+
+type TossFilterSectionProps = {
+  title: string;
+  children: ReactNode;
+  style?: CSSProperties;
+};
+
+export function TossFilterSection({ title, children, style }: TossFilterSectionProps) {
+  return (
+    <div style={{ marginBottom: '14px', ...style }}>
+      <p style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '0.04em' }}>
+        {title}
+      </p>
+      {children}
+    </div>
+  );
+}
+
 type TossSearchBarProps = {
   value: string;
   onChange: (value: string) => void;
