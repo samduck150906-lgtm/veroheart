@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
+import type { SupabaseOrderItem } from '../types';
 import { User, ChevronRight, Calendar, ShoppingBag, FileText, Activity, Heart, LogOut, LogIn } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
@@ -221,7 +222,7 @@ export default function Profile() {
                 </div>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {order.order_items.map((item: any) => (
+                  {order.order_items.map((item: SupabaseOrderItem) => (
                     <Link key={item.id} to={`/product/${item.product_id}`} style={{ display: 'flex', gap: '12px', textDecoration: 'none', color: 'inherit' }}>
                       <img src={item.products.image_url} alt={item.products.name} style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover' }} />
                       <div style={{ flex: 1 }}>

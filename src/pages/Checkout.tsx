@@ -14,7 +14,7 @@ const DAUM_POSTCODE_SCRIPT_SRC = 'https://t1.daumcdn.net/mapjsapi/bundle/postcod
 
 function loadDaumPostcodeScript(): Promise<void> {
   return new Promise((resolve, reject) => {
-    if ((window as any).daum?.Postcode) {
+    if (window.daum?.Postcode) {
       resolve();
       return;
     }
@@ -55,11 +55,13 @@ export default function Checkout() {
   const openPostcode = async () => {
     try {
       await loadDaumPostcodeScript();
-      new (window as any).daum.Postcode({
-        oncomplete: (data: any) => {
+      const Postcode = window.daum?.Postcode;
+      if (!Postcode) throw new Error('postcode API missing');
+      new Postcode({
+        oncomplete: (data) => {
           const addr = data.roadAddress || data.jibunAddress;
-          setCustomerInfo(prev => ({ ...prev, address: addr }));
-        }
+          setCustomerInfo((prev) => ({ ...prev, address: addr ?? '' }));
+        },
       }).open();
     } catch {
       notify.error('주소 검색 스크립트를 불러오지 못했습니다.');

@@ -14,7 +14,6 @@ import {
   Wallet,
   Search,
   Heart,
-  LayoutGrid,
   MessageCircle,
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
@@ -85,7 +84,7 @@ export default function Home() {
       description: '바이럴 테스트로 취향과 니즈 파악',
       icon: <MessageCircle size={18} color="#2563EB" />,
       accent: 'rgba(37, 99, 235, 0.12)',
-      onClick: () => navigate('/test'),
+      onClick: () => navigate('/event/personality-quiz'),
     },
     {
       title: '프로필 설정',
@@ -284,7 +283,7 @@ export default function Home() {
           <button
             type="button"
             className="btn btn-primary"
-            onClick={() => navigate('/test')}
+            onClick={() => navigate('/event/personality-quiz')}
             style={{ borderRadius: '14px', height: '44px', fontSize: '13px', fontWeight: 800 }}
           >
             {VIRAL_LANDING_COPY.hero.ctaPrimary}
@@ -292,7 +291,7 @@ export default function Home() {
           <button
             type="button"
             className="btn btn-outline"
-            onClick={() => navigate('/test')}
+            onClick={() => navigate('/event/personality-quiz')}
             style={{ borderRadius: '14px', height: '44px', fontSize: '13px', fontWeight: 800 }}
           >
             {VIRAL_LANDING_COPY.hero.ctaSecondary}

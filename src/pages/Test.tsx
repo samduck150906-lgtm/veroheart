@@ -103,7 +103,7 @@ export default function Test() {
     ? `우리 아이 결과는 "${result.detail.type}"! ${result.detail.summary} 추천: ${result.detail.category}`
     : KAKAO_SHARE_MESSAGES[0];
 
-  const testPageUrl = useMemo(() => `${window.location.origin}/test`, []);
+  const testPageUrl = useMemo(() => `${window.location.origin}/event/personality-quiz`, []);
 
   const handleKakaoShare = async () => {
     if (!isKakaoShareConfigured()) {

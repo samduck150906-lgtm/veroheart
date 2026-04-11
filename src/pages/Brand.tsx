@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, startTransition } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { ArrowLeft, Store, Package, Star, MessageSquare, Sparkles } from 'lucide-react';
@@ -19,19 +19,18 @@ export default function Brand() {
 
   useEffect(() => {
     if (!decoded) return;
-    setIsLoading(true);
-    Promise.all([
-      getProductsByBrand(decoded),
-      getBrands()
-    ]).then(([prods, brands]) => {
-      // Fallback to in-memory products if DB returns nothing
-      const result = prods.length > 0
-        ? prods
-        : products.filter(p => p.brand === decoded);
+    let cancelled = false;
+    startTransition(() => setIsLoading(true));
+    void Promise.all([getProductsByBrand(decoded), getBrands()]).then(([prods, brands]) => {
+      if (cancelled) return;
+      const result = prods.length > 0 ? prods : products.filter((p) => p.brand === decoded);
       setBrandProducts(result);
-      setOtherBrands(brands.filter(b => b !== decoded).slice(0, 10));
+      setOtherBrands(brands.filter((b) => b !== decoded).slice(0, 10));
       setIsLoading(false);
     });
+    return () => {
+      cancelled = true;
+    };
   }, [decoded, products]);
 
   const allBrands = [...new Set(products.map(p => p.brand))].filter(Boolean);

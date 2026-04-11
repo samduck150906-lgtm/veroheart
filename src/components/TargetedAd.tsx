@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import { calculateCompatibilityScore, rankProductsForProfile } from '../utils/score';
+import { rankProductsForProfile } from '../utils/score';
 
 export default function TargetedAd() {
   const { profile, products } = useStore();

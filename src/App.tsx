@@ -20,15 +20,16 @@ import Login from './pages/Login';
 import Ranking from './pages/Ranking';
 import Brand from './pages/Brand';
 import ViralEvent from './pages/ViralEvent';
-import Test from './pages/Test';
+import PersonalityQuiz from './pages/Test';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminIngredients from './pages/admin/AdminIngredients';
 import Notification from './components/Notification';
 import AdminAuthGuard from './pages/admin/AdminAuthGuard';
-import EntryGate, { markEntryGateDone, readEntryGateDone } from './components/EntryGate';
-import { isAdminExperience, isAdminHostname, toggleAdminDesktopMode } from './utils/adminHost';
+import EntryGate from './components/EntryGate';
+import { markEntryGateDone, readEntryGateDone } from './lib/entryGateStorage';
+import { isAdminExperience, toggleAdminDesktopMode } from './utils/adminHost';
 
 function App() {
   const { initApp, isInitializing, isLoggedIn } = useStore();
@@ -38,11 +39,13 @@ function App() {
   const [showEntrySplash, setShowEntrySplash] = useState(() => !adminMode);
   const [entryGateOpen, setEntryGateOpen] = useState(() => (adminMode ? false : !readEntryGateDone()));
 
-  if (typeof window !== 'undefined' && adminMode && !window.location.pathname.startsWith('/admin')) {
+  useEffect(() => {
+    if (!adminMode) return;
+    if (typeof window === 'undefined') return;
+    if (window.location.pathname.startsWith('/admin')) return;
     const nextUrl = `/admin${window.location.search}${window.location.hash}`;
     window.location.replace(nextUrl);
-    return null;
-  }
+  }, [adminMode]);
 
   useEffect(() => {
     toggleAdminDesktopMode(adminMode);
@@ -62,7 +65,7 @@ function App() {
   useEffect(() => {
     if (!isInitializing && isLoggedIn) {
       markEntryGateDone();
-      setEntryGateOpen(false);
+      queueMicrotask(() => setEntryGateOpen(false));
     }
   }, [isInitializing, isLoggedIn]);
 
@@ -111,7 +114,7 @@ function App() {
           <Route path="ranking" element={<Ranking />} />
           <Route path="brand/:brandName" element={<Brand />} />
           <Route path="event/viral" element={<ViralEvent />} />
-          <Route path="test" element={<Test />} />
+          <Route path="event/personality-quiz" element={<PersonalityQuiz />} />
         </Route>
 
         <Route path="/login" element={<Login />} />

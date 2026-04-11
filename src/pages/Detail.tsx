@@ -24,6 +24,7 @@ import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
 import Analyzer from '../components/Analyzer';
 import { getReviews, createReview, deleteReview } from '../lib/supabase';
+import type { Ingredient } from '../types';
 import { CORE_COPY, UGC_COPY } from '../copy/marketing';
 import { notify } from '../store/useNotification';
 import { TossButton, TossCard, TossSectionTitle } from '../components/TossUI';
@@ -57,7 +58,15 @@ export default function Detail() {
     trackRecentView
   } = useStore();
 
-  const [reviews, setReviews] = useState<any[]>([]);
+  type ReviewRow = {
+    id: string;
+    user_id: string;
+    rating: number;
+    content: string;
+    created_at: string;
+    users?: { email?: string | null };
+  };
+  const [reviews, setReviews] = useState<ReviewRow[]>([]);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewContent, setReviewContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -269,9 +278,14 @@ export default function Detail() {
             >
               <Heart size={22} fill={isFav ? '#EF4444' : 'none'} color={isFav ? '#EF4444' : '#9CA3AF'} />
             </TossButton>
-            <TossButton variant="outline" style={{ flex: 1, height: '56px', borderRadius: '16px' }} onClick={() => {
-              isComparing ? removeFromComparison(product.id) : addToComparison(product.id);
-            }}>
+            <TossButton
+              variant="outline"
+              style={{ flex: 1, height: '56px', borderRadius: '16px' }}
+              onClick={() => {
+                if (isComparing) removeFromComparison(product.id);
+                else addToComparison(product.id);
+              }}
+            >
               <GitCompare size={20} />
               <span style={{ marginLeft: '8px' }}>{isComparing ? '비교 해제' : '비교 추가'}</span>
             </TossButton>
@@ -517,7 +531,7 @@ function VetBadge({ riskLevel }: { riskLevel: string }) {
   );
 }
 
-function getVetComment(ingredients: any[]): string {
+function getVetComment(ingredients: Ingredient[]): string {
   const dangerCount = ingredients.filter(i => i.riskLevel === 'danger').length;
   const cautionCount = ingredients.filter(i => i.riskLevel === 'caution').length;
   if (dangerCount > 0) {

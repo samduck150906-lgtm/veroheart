@@ -101,7 +101,7 @@ export interface SupabaseCartItem {
 export interface SupabaseOrder {
   id: string;
   user_id: string;
-  status: 'pending' | 'paid' | 'completed' | 'cancelled';
+  status: 'pending' | 'paid' | 'completed' | 'cancelled' | 'failed';
   total_amount: number;
   shipping_address: string | null;
   customer_name: string | null;
@@ -111,3 +111,35 @@ export interface SupabaseOrder {
   paid_at?: string;
   created_at: string;
 }
+
+export interface SupabaseOrderItem {
+  id: string;
+  product_id: string;
+  quantity: number;
+  price_at_purchase: number;
+  products: {
+    brand_name: string;
+    name: string;
+    image_url: string | null;
+  };
+}
+
+export type SupabaseOrderWithItems = SupabaseOrder & {
+  order_items: SupabaseOrderItem[];
+};
+
+/** `analysis_reports` + join `products` (getAnalysisReports select) */
+export type AnalysisReportRow = {
+  id: string;
+  created_at: string;
+  product_id: string | null;
+  analysis_json: {
+    scores?: { final?: number };
+    summary?: string;
+  };
+  products?: {
+    image_url: string | null;
+    name: string;
+    brand_name: string;
+  } | null;
+};

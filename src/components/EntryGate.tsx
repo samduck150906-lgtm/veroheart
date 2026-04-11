@@ -2,24 +2,6 @@ import { useNavigate } from 'react-router-dom';
 import { VERORO_LOGO_SRC } from '../constants/assets';
 import { HOME_HERO } from '../copy/marketing';
 
-const STORAGE_KEY = 'vero_entry_gate_done';
-
-export function markEntryGateDone() {
-  try {
-    localStorage.setItem(STORAGE_KEY, '1');
-  } catch {
-    /* ignore */
-  }
-}
-
-export function readEntryGateDone(): boolean {
-  try {
-    return localStorage.getItem(STORAGE_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
-
 type EntryGateProps = {
   /** 둘러보기: 이후 앱 진입 시 게이트 생략 */
   onBrowse: () => void;

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
-import type { UserPetProfile, Product } from '../types';
+import type { UserPetProfile, Product, SupabaseOrderWithItems, AnalysisReportRow } from '../types';
 import { DEFAULT_USER_PET_PROFILE } from '../types';
 import {
   supabase,
@@ -28,8 +28,8 @@ interface StoreState {
   profile: UserPetProfile;
   updateProfile: (updates: Partial<UserPetProfile>) => void;
   products: Product[];
-  selectedProduct: (Product & { ingredients: any[] }) | null;
-  orders: any[];
+  selectedProduct: Product | null;
+  orders: SupabaseOrderWithItems[];
   isLoadingProducts: boolean;
   isInitializing: boolean;
   initApp: () => Promise<void>;
@@ -48,7 +48,7 @@ interface StoreState {
   updateCartQuantity: (productId: string, quantity: number) => void;
   removeFromCart: (productId: string) => void;
   clearCart: () => void;
-  reports: any[];
+  reports: AnalysisReportRow[];
   fetchReports: () => Promise<void>;
 }
 
@@ -208,7 +208,7 @@ export const useStore = create<StoreState>((set, get) => ({
     try {
       const { getOrders } = await import('../lib/supabase');
       const data = await getOrders(userId);
-      set({ orders: data });
+      set({ orders: data as SupabaseOrderWithItems[] });
     } catch (err) {
       console.error(err);
     }
@@ -220,7 +220,7 @@ export const useStore = create<StoreState>((set, get) => ({
     try {
       const { getAnalysisReports } = await import('../lib/supabase');
       const data = await getAnalysisReports(userId);
-      set({ reports: data });
+      set({ reports: data as AnalysisReportRow[] });
     } catch (err) {
       console.error(err);
     }
