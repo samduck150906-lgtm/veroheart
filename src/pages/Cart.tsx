@@ -3,6 +3,7 @@ import { useStore } from '../store/useStore';
 import { Trash2, ExternalLink } from 'lucide-react';
 import { notify } from '../store/useNotification';
 import { openCoupangForProduct } from '../utils/externalPurchase';
+import { COUPANG_PARTNERS_DISCLOSURE } from '../constants/coupangPartners';
 
 export default function Cart() {
   const navigate = useNavigate();
@@ -43,8 +44,23 @@ export default function Cart() {
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '100px' }}>
       <h2 style={{ fontSize: '24px', marginBottom: '8px' }}>장바구니</h2>
-      <p style={{ fontSize: '13px', color: '#64748B', marginBottom: '24px', lineHeight: 1.5, fontWeight: 600 }}>
+      <p style={{ fontSize: '13px', color: '#64748B', marginBottom: '12px', lineHeight: 1.5, fontWeight: 600 }}>
         베로로는 결제를 받지 않습니다. 담아둔 상품은 쿠팡에서 이어서 확인·구매할 수 있습니다(쿠팡파트너스).
+      </p>
+      <p
+        style={{
+          fontSize: '11px',
+          lineHeight: 1.5,
+          fontWeight: 600,
+          color: '#64748B',
+          marginBottom: '24px',
+          padding: '10px 12px',
+          background: '#F8FAFC',
+          borderRadius: '12px',
+          border: '1px solid #E2E8F0',
+        }}
+      >
+        {COUPANG_PARTNERS_DISCLOSURE}
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '32px' }}>

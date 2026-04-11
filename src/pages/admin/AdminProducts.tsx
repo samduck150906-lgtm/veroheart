@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import {
   Plus,
@@ -22,6 +22,8 @@ import {
   AdminSectionCard,
   AdminToolbar,
 } from '../../components/admin/AdminUI';
+import { isValidCoupangLink, normalizeCoupangLink } from '../../utils/coupangLink';
+import { parseCsv, rowToObject } from '../../utils/csvParse';
 
 interface Product {
   id: string;
@@ -39,6 +41,7 @@ interface Product {
   verification_status?: 'pending' | 'verified' | 'needs_review';
   verified_at?: string | null;
   coupang_product_id?: string | null;
+  coupang_link?: string | null;
   image_url: string;
   min_price: number;
 }
@@ -62,6 +65,9 @@ const AdminProducts: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Partial<Product>>({});
   const [activeTab, setActiveTab] = useState('전체');
+  const [csvBusy, setCsvBusy] = useState(false);
+  const [csvLog, setCsvLog] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchProducts();
@@ -85,9 +91,15 @@ const AdminProducts: React.FC = () => {
       notify.error('필수 항목을 입력해주세요.');
       return;
     }
+    const linkNorm = normalizeCoupangLink(currentProduct.coupang_link ?? undefined);
+    if (linkNorm && !isValidCoupangLink(linkNorm)) {
+      notify.error('쿠팡 파트너스 링크는 https:// 로 시작하는 유효한 쿠팡/단축 URL이어야 합니다.');
+      return;
+    }
 
     const payload = {
       ...currentProduct,
+      coupang_link: linkNorm,
       target_life_stage: currentProduct.target_life_stage || [],
       product_health_concerns: currentProduct.product_health_concerns || [],
       has_risk_factors: currentProduct.has_risk_factors || []
@@ -123,6 +135,86 @@ const AdminProducts: React.FC = () => {
     }
   };
 
+  const processAffiliateCsv = async (text: string) => {
+    const { headers, rows } = parseCsv(text);
+    if (headers.length === 0) {
+      notify.error('CSV가 비어 있습니다.');
+      return;
+    }
+    const h = (key: string) => headers.indexOf(key);
+    const idxId = ['id', 'product_id', 'uuid'].map((k) => h(k)).find((i) => i >= 0) ?? -1;
+    const idxLink = ['coupang_link', 'coupanglink', 'affiliate_link', 'partner_link', 'link']
+      .map((k) => h(k))
+      .find((i) => i >= 0) ?? -1;
+    if (idxId < 0 || idxLink < 0) {
+      notify.error('CSV에 id(또는 product_id) 열과 coupang_link 열이 필요합니다.');
+      return;
+    }
+
+    const logs: string[] = [];
+    let ok = 0;
+    let fail = 0;
+
+    for (let r = 0; r < rows.length; r++) {
+      const cells = rows[r];
+      const row = rowToObject(headers, cells);
+      const id = (cells[idxId] || '').trim();
+      const rawLink = (cells[idxLink] || '').trim();
+      const link = normalizeCoupangLink(rawLink);
+      if (!id) {
+        logs.push(`행 ${r + 2}: id 없음 — 건너뜀`);
+        fail++;
+        continue;
+      }
+      if (!link) {
+        logs.push(`행 ${r + 2}: ${id.slice(0, 8)}… 링크 비움(업데이트)`);
+        const { error } = await supabase.from('products').update({ coupang_link: null }).eq('id', id);
+        if (error) {
+          logs.push(`  실패: ${error.message}`);
+          fail++;
+        } else {
+          ok++;
+        }
+        continue;
+      }
+      if (!isValidCoupangLink(link)) {
+        logs.push(`행 ${r + 2}: ${id.slice(0, 8)}… URL 형식 오류`);
+        fail++;
+        continue;
+      }
+      const pid = row.coupang_product_id?.trim() || row.coupangproductid?.trim() || undefined;
+      const patch: { coupang_link: string; coupang_product_id?: string | null } = { coupang_link: link };
+      if (pid) patch.coupang_product_id = pid;
+
+      const { error } = await supabase.from('products').update(patch).eq('id', id);
+      if (error) {
+        logs.push(`행 ${r + 2}: ${id.slice(0, 8)}… ${error.message}`);
+        fail++;
+      } else {
+        ok++;
+      }
+    }
+
+    setCsvLog(logs.slice(-40));
+    notify.success(`CSV 반영: 성공 ${ok}건, 실패 ${fail}건`);
+    fetchProducts();
+  };
+
+  const onCsvFile = async (file: File) => {
+    setCsvBusy(true);
+    setCsvLog([]);
+    try {
+      const text = await file.text();
+      await processAffiliateCsv(text);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      notify.error(`파일 읽기 실패: ${msg}`);
+    } finally {
+      setCsvBusy(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   const toggleArrayField = (field: keyof Product, value: string) => {
     const currentArray = (currentProduct[field] as string[]) || [];
     if (currentArray.includes(value)) {
@@ -148,7 +240,9 @@ const AdminProducts: React.FC = () => {
   const productMetrics = useMemo(() => {
     const verifiedCount = products.filter((product) => product.verification_status === 'verified').length;
     const pendingCount = products.filter((product) => product.verification_status !== 'verified').length;
-    const linkedCount = products.filter((product) => !!product.coupang_product_id).length;
+    const linkedCount = products.filter(
+      (product) => !!(product.coupang_link?.trim() || product.coupang_product_id?.trim())
+    ).length;
     const manufacturerCount = products.filter((product) => !!product.manufacturer_name?.trim()).length;
 
     return {
@@ -183,6 +277,70 @@ const AdminProducts: React.FC = () => {
           </AdminButton>
         )}
       />
+
+      <AdminSectionCard
+        title="쿠팡 파트너스 링크 일괄 반영 (CSV)"
+        description="헤더에 id, coupang_link 가 있어야 합니다. 선택: coupang_product_id. UTF-8 CSV를 드롭하거나 파일을 선택하세요."
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv,text/csv"
+          style={{ display: 'none' }}
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void onCsvFile(f);
+          }}
+        />
+        <div
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') fileInputRef.current?.click();
+          }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            const f = e.dataTransfer.files?.[0];
+            if (f && (f.name.endsWith('.csv') || f.type === 'text/csv')) void onCsvFile(f);
+            else notify.error('CSV 파일만 올려 주세요.');
+          }}
+          onClick={() => fileInputRef.current?.click()}
+          style={{
+            border: '2px dashed #CBD5E1',
+            borderRadius: '16px',
+            padding: '28px 20px',
+            textAlign: 'center',
+            cursor: csvBusy ? 'wait' : 'pointer',
+            background: '#F8FAFC',
+            color: '#475569',
+            fontWeight: 700,
+            fontSize: '14px',
+          }}
+        >
+          {csvBusy ? '처리 중…' : 'CSV 드래그 앤 드롭 또는 클릭하여 선택'}
+        </div>
+        {csvLog.length > 0 && (
+          <pre
+            style={{
+              marginTop: '14px',
+              maxHeight: '160px',
+              overflow: 'auto',
+              fontSize: '11px',
+              padding: '12px',
+              background: '#0F172A',
+              color: '#E2E8F0',
+              borderRadius: '12px',
+              lineHeight: 1.45,
+            }}
+          >
+            {csvLog.join('\n')}
+          </pre>
+        )}
+      </AdminSectionCard>
 
       <div className="admin-metrics-grid admin-metrics-grid-four">
         <AdminMetricCard
@@ -349,11 +507,13 @@ const AdminProducts: React.FC = () => {
                       </div>
                     </td>
                     <td>
-                      {product.coupang_product_id ? (
+                      {product.coupang_link?.trim() || product.coupang_product_id ? (
                         <>
-                          <AdminBadge tone="emerald">연결 완료</AdminBadge>
-                          <div className="admin-table-secondary" style={{ marginTop: '6px' }}>
-                            {product.coupang_product_id}
+                          <AdminBadge tone="emerald">연결</AdminBadge>
+                          <div className="admin-table-secondary" style={{ marginTop: '6px', wordBreak: 'break-all' }}>
+                            {product.coupang_link?.trim()
+                              ? product.coupang_link.slice(0, 48) + (product.coupang_link.length > 48 ? '…' : '')
+                              : product.coupang_product_id}
                           </div>
                         </>
                       ) : (
@@ -449,12 +609,22 @@ const AdminProducts: React.FC = () => {
                 </div>
                 <div style={{ marginTop: '16px' }}>
                   <Input
-                    label="쿠팡 상품 ID"
+                    label="쿠팡 파트너스 링크 (https)"
+                    value={currentProduct.coupang_link ?? ''}
+                    onChange={(v) => setCurrentProduct({ ...currentProduct, coupang_link: v })}
+                  />
+                  <p className="admin-field-help">
+                    파트너스에서 발급한 단축 URL을 넣으면 상세·장바구니에서 이 주소로 이동합니다. 비우면 아래 상품 ID·검색 순으로 연결됩니다.
+                  </p>
+                </div>
+                <div style={{ marginTop: '16px' }}>
+                  <Input
+                    label="쿠팡 상품 ID (선택)"
                     value={currentProduct.coupang_product_id}
                     onChange={(v) => setCurrentProduct({ ...currentProduct, coupang_product_id: v })}
                   />
                   <p className="admin-field-help">
-                    입력하면 제품 상세에서 쿠팡 검색 대신 해당 상품으로 직접 연결합니다.
+                    링크가 없을 때만 사용됩니다.
                   </p>
                 </div>
               </Section>

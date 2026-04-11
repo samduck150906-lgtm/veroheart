@@ -29,6 +29,7 @@ import { CORE_COPY } from '../copy/marketing';
 import { notify } from '../store/useNotification';
 import { TossButton, TossCard, TossSectionTitle } from '../components/TossUI';
 import { openCoupangForProduct } from '../utils/externalPurchase';
+import { COUPANG_PARTNERS_DISCLOSURE } from '../constants/coupangPartners';
 import { buildProductConclusion } from '../utils/productConclusion';
 import { REVIEW_QUICK_TAGS } from '../constants/reviewTags';
 
@@ -535,6 +536,22 @@ export default function Detail() {
           ))}
         </div>
       </section>
+
+      <p
+        style={{
+          margin: '32px 0 0',
+          padding: '14px 16px',
+          fontSize: '11px',
+          lineHeight: 1.55,
+          fontWeight: 600,
+          color: '#64748B',
+          textAlign: 'center',
+          background: '#F1F5F9',
+          borderRadius: '14px',
+        }}
+      >
+        {COUPANG_PARTNERS_DISCLOSURE}
+      </p>
 
       <Analyzer />
     </div>

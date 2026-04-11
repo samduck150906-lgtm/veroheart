@@ -38,6 +38,8 @@ export interface Product {
   verificationStatus?: 'pending' | 'verified' | 'needs_review';
   verifiedAt?: string | null;
   coupangProductId?: string | null;
+  /** 파트너스 등 수동 발급 전체 URL — 있으면 구매 버튼이 이 주소로 이동 */
+  coupangLink?: string | null;
 }
 
 export const DEFAULT_USER_PET_PROFILE: UserPetProfile = {
@@ -62,6 +64,7 @@ export interface SupabaseProduct {
   verification_status?: 'pending' | 'verified' | 'needs_review' | null;
   verified_at?: string | null;
   coupang_product_id?: string | null;
+  coupang_link?: string | null;
   product_ingredients?: {
     ingredients: SupabaseIngredient;
   }[];

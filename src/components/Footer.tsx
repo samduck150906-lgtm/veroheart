@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { COUPANG_PARTNERS_DISCLOSURE } from '../constants/coupangPartners';
 
 function Footer() {
   return (
@@ -55,6 +56,18 @@ function Footer() {
         >
           Petty Community powered by VeRoRo
         </div>
+
+        <p
+          style={{
+            margin: '0 0 10px',
+            fontSize: '10px',
+            lineHeight: 1.45,
+            fontWeight: 600,
+            color: '#6B6560',
+          }}
+        >
+          {COUPANG_PARTNERS_DISCLOSURE}
+        </p>
 
         <div
           style={{
