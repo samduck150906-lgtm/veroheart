@@ -1,0 +1,12 @@
+# Netlify에서 이 저장소의 Base directory를 `landing`으로 두면
+# 이 설정이 적용되고, 정적 랜딩만 publish 됩니다.
+[build]
+  publish = "public"
+  command = ""
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="반려동물 사료 성분을 쉽게 확인하는 베로로(VeRoRo) 앱입니다." />
+    <meta name="theme-color" content="#1a1f2e" />
+    <title>VeRoRo · 베로로</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0f1219;
+        --surface: #161b26;
+        --text: #f4f6fb;
+        --muted: #9aa3b5;
+        --accent: #7c9cff;
+        --accent-soft: rgba(124, 156, 255, 0.15);
+        --radius: 20px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .bg-gradient {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background:
+          radial-gradient(ellipse 80% 50% at 50% -20%, rgba(124, 156, 255, 0.25), transparent),
+          radial-gradient(ellipse 60% 40% at 100% 100%, rgba(124, 156, 255, 0.08), transparent);
+        z-index: 0;
+      }
+
+      main {
+        position: relative;
+        z-index: 1;
+        max-width: 520px;
+        margin: 0 auto;
+        padding: clamp(2.5rem, 8vw, 4rem) 1.5rem 3rem;
+        text-align: center;
+      }
+
+      .mark {
+        width: 72px;
+        height: 72px;
+        margin: 0 auto 1.5rem;
+        border-radius: 22px;
+        background: var(--accent-soft);
+        border: 1px solid rgba(124, 156, 255, 0.35);
+        display: grid;
+        place-items: center;
+      }
+
+      .mark svg {
+        width: 36px;
+        height: 36px;
+        color: var(--accent);
+      }
+
+      h1 {
+        font-size: clamp(1.75rem, 5vw, 2.125rem);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin: 0 0 0.5rem;
+      }
+
+      .subtitle {
+        color: var(--muted);
+        font-size: 1rem;
+        font-weight: 500;
+        margin: 0 0 2rem;
+      }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: var(--radius);
+        padding: 1.5rem 1.25rem;
+        margin-bottom: 1.5rem;
+        text-align: left;
+      }
+
+      .card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.9375rem;
+      }
+
+      .card p + p {
+        margin-top: 0.75rem;
+      }
+
+      .cta {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.9rem 1.25rem;
+        border-radius: 14px;
+        font-weight: 600;
+        font-size: 0.9375rem;
+        text-decoration: none;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+      }
+
+      .btn:active {
+        transform: scale(0.98);
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #8aa8ff 0%, #6b8cff 100%);
+        color: #0a0d14;
+        box-shadow: 0 8px 28px rgba(107, 140, 255, 0.35);
+      }
+
+      .btn-primary:hover {
+        box-shadow: 0 10px 32px rgba(107, 140, 255, 0.45);
+      }
+
+      .btn-ghost {
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .btn-ghost:hover {
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      footer {
+        margin-top: 2.5rem;
+        font-size: 0.8125rem;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bg-gradient" aria-hidden="true"></div>
+    <main>
+      <div class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M12 21s-6.5-4.35-8.5-9C1.5 8.5 4 5 7.5 5c2 0 3.5 1.5 4.5 3C13 6.5 14.5 5 16.5 5 20 5 22.5 8.5 20.5 12c-2 4.65-8.5 9-8.5 9Z"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </div>
+      <h1>VeRoRo</h1>
+      <p class="subtitle">반려동물 사료 성분을 더 알기 쉽게</p>
+
+      <div class="card">
+        <p>
+          베로로는 <strong style="color: var(--text)">모바일 앱</strong>으로 이용할 수 있습니다. 웹 앱은 제공하지 않습니다.
+        </p>
+        <p>아래에서 스토어로 이동해 앱을 설치해 주세요. (검색 결과에서 공식 앱을 확인해 주세요.)</p>
+      </div>
+
+      <div class="cta">
+        <a
+          class="btn btn-primary"
+          href="https://apps.apple.com/kr/search?term=%EB%B2%A0%EB%A1%9C%EB%A1%9C"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          App Store에서 찾기
+        </a>
+        <a
+          class="btn btn-ghost"
+          href="https://play.google.com/store/search?q=%EB%B2%A0%EB%A1%9C%EB%A1%9C&c=apps"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Google Play에서 찾기
+        </a>
+      </div>
+
+      <footer>
+        <p>Petty Community · powered by VeRoRo</p>
+      </footer>
+    </main>
+  </body>
+</html>
