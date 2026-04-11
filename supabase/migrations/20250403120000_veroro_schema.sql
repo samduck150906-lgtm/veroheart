@@ -1,4 +1,4 @@
--- veroheart / Petty — 앱(supabase.ts) 기준 통합 스키마
+-- Veroro(베로로) / Petty — 앱(supabase.ts) 기준 통합 스키마
 -- idempotent: 기존 객체가 있으면 건너뜀 또는 IF NOT EXISTS
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
