@@ -15,16 +15,17 @@ import {
   Search,
   Heart,
   MessageCircle,
+  ScanLine,
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { MOCK_EVENTS } from '../lib/supabase';
-import { HOME_HERO, CORE_COPY, UGC_COPY, VIRAL_LANDING_COPY } from '../copy/marketing';
+import { VIRAL_LANDING_COPY } from '../copy/marketing';
 import { HOME_CATEGORY_ITEMS } from '../constants/productCategories';
 import type { Product } from '../types';
-import { TossCard, TossChip, TossSectionTitle } from '../components/TossUI';
+import { TossChip, TossSectionTitle } from '../components/TossUI';
 
 export default function Home() {
-  const { products, profile, recentViews, isLoggedIn, favorites } = useStore();
+  const { products, profile, recentViews, isLoggedIn } = useStore();
   const navigate = useNavigate();
   const [closedEvents, setClosedEvents] = useState<string[]>([]);
   const visibleEvents = MOCK_EVENTS.filter(e => !closedEvents.includes(e.id));
@@ -58,37 +59,32 @@ export default function Home() {
     .slice(0, 8);
 
   const topCommunityPicks = trendingProducts.slice(0, 3);
-  const homeStats = [
-    { label: '큐레이션', value: `${products.length}+`, caption: '성분 기반 추천' },
-    { label: '찜 목록', value: `${favorites.length}`, caption: '관심 제품 저장' },
-    { label: '최근 활동', value: `${recentViews.length}`, caption: '다시 보기 가능' },
-  ];
 
   const quickActions = [
     {
-      title: '전체 탐색',
-      description: '카테고리와 고민별로 빠르게 둘러보기',
+      title: '탐색',
+      description: '',
       icon: <Search size={18} color="#7C3AED" />,
       accent: 'rgba(124, 58, 237, 0.12)',
       onClick: () => navigate('/search'),
     },
     {
-      title: '랭킹 보기',
-      description: '집사들이 많이 보는 인기 제품 확인',
+      title: '랭킹',
+      description: '',
       icon: <Flame size={18} color="#DC2626" />,
       accent: 'rgba(239, 68, 68, 0.12)',
       onClick: () => navigate('/ranking'),
     },
     {
-      title: '테스트 참여',
-      description: '바이럴 테스트로 취향과 니즈 파악',
+      title: '성향 테스트',
+      description: '',
       icon: <MessageCircle size={18} color="#2563EB" />,
       accent: 'rgba(37, 99, 235, 0.12)',
       onClick: () => navigate('/event/personality-quiz'),
     },
     {
-      title: '프로필 설정',
-      description: '반려동물 정보를 등록하고 추천 고도화',
+      title: '마이 펫',
+      description: '',
       icon: <Heart size={18} color="#DB2777" />,
       accent: 'rgba(219, 39, 119, 0.12)',
       onClick: () => navigate('/profile'),
@@ -106,78 +102,37 @@ export default function Home() {
         <meta name="description" content="베로로 — 사료 성분 분석과 집사들의 찐 리뷰. 의심 대신 베로로 하세요." />
       </Helmet>
 
-      <section className="ui-hero-panel" style={{ padding: '22px 18px', marginBottom: '18px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '16px' }}>
-          <div>
-            <p className="ui-section-kicker" style={{ marginBottom: '8px' }}>Petty pick</p>
-            <h1 style={{ fontSize: '26px', fontWeight: 900, color: '#221B35', lineHeight: 1.25, margin: '0 0 10px' }}>
-              {isLoggedIn ? `${profile.name}에게 맞는 커뮤니티 홈` : HOME_HERO.headline}
-            </h1>
-            <p style={{ fontSize: '14px', fontWeight: 600, color: '#5B566A', lineHeight: 1.6, margin: '0 0 12px' }}>
-              {isLoggedIn
-                ? `${profile.species === 'Cat' ? '고양이' : '강아지'} 보호자를 위한 추천, 인기 후기, 테스트 참여를 한 화면에서 모았어요.`
-                : HOME_HERO.sub}
-            </p>
-          </div>
-          <span className="ui-badge" style={{ background: '#FFFFFF', color: '#7C3AED', boxShadow: 'var(--shadow-sm)', flexShrink: 0 }}>
-            Live
-          </span>
-        </div>
-
+      <section className="ui-hero-panel" style={{ padding: '24px 18px 20px', marginBottom: '16px' }}>
         <button
           type="button"
           className="ui-search-shortcut"
           onClick={() => navigate('/search')}
-          style={{ width: '100%', justifyContent: 'space-between', marginBottom: '14px' }}
+          style={{ width: '100%', justifyContent: 'space-between', minHeight: '52px' }}
         >
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
-            <Search size={18} color="#7C6F9C" />
-            제품, 성분, 브랜드를 검색해 보세요
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '12px', color: '#4B5563', fontSize: '15px', fontWeight: 600 }}>
+            <Search size={20} color="#7C6F9C" />
+            궁금한 사료나 간식 이름을 검색해 보세요
           </span>
-          <ChevronRight size={16} color="#9CA3AF" />
+          <ChevronRight size={18} color="#9CA3AF" />
         </button>
-
-        <div className="ui-highlight-box" style={{ marginBottom: '14px' }}>
-          {CORE_COPY.ocr}
-        </div>
-
-        <div
+        <button
+          type="button"
+          disabled
+          title="준비 중"
+          className="ui-search-shortcut"
           style={{
-            marginBottom: '14px',
-            padding: '14px',
-            borderRadius: '18px',
-            background: 'rgba(255, 255, 255, 0.72)',
-            border: '1px solid rgba(124, 111, 156, 0.16)',
+            width: '100%',
+            justifyContent: 'center',
+            gap: '10px',
+            marginTop: '10px',
+            opacity: 0.55,
+            cursor: 'not-allowed',
+            borderStyle: 'dashed',
           }}
         >
-          <div style={{ fontSize: '12px', fontWeight: 900, color: '#241C33', marginBottom: '6px' }}>
-            데이터 신뢰 원칙
-          </div>
-          <p style={{ margin: 0, fontSize: '12px', lineHeight: 1.6, color: '#5B566A', fontWeight: 600 }}>
-            제품 등록과 성분 매핑은 크롤링 자동화보다 운영자 수기 검수와 성분 사전 관리에 더 많이 의존합니다.
-            AI는 추천과 요약을 돕지만, 제조사/원재료 이해와 최종 검증은 사람이 맡습니다.
-          </p>
-        </div>
-
-        <div className="ui-grid-3">
-          {homeStats.map((item) => (
-            <div
-              key={item.label}
-              style={{
-                background: 'rgba(255, 255, 255, 0.82)',
-                border: '1px solid rgba(255, 255, 255, 0.9)',
-                borderRadius: '18px',
-                padding: '14px',
-              }}
-            >
-              <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 800, color: '#8B7AAE', letterSpacing: '0.04em' }}>
-                {item.label}
-              </p>
-              <div style={{ fontSize: '22px', fontWeight: 900, color: '#241C33', marginBottom: '4px' }}>{item.value}</div>
-              <p style={{ margin: 0, fontSize: '12px', color: '#6B7280', fontWeight: 600 }}>{item.caption}</p>
-            </div>
-          ))}
-        </div>
+          <ScanLine size={20} color="#9CA3AF" />
+          <span style={{ fontSize: '14px', fontWeight: 700, color: '#6B7280' }}>바코드 스캔 · 준비 중</span>
+        </button>
       </section>
 
       {isLoggedIn && (
@@ -203,11 +158,10 @@ export default function Home() {
             </Link>
           </div>
 
-          <p style={{ margin: '0 0 14px', fontSize: '13px', color: '#5B6474', fontWeight: 600, lineHeight: 1.6 }}>
-            {profile.species === 'Cat' ? '고양이' : '강아지'} 보호자
+          <p style={{ margin: '0 0 14px', fontSize: '13px', color: '#6B7280', fontWeight: 600, lineHeight: 1.5 }}>
             {profile.healthConcerns.length > 0
-              ? ` · ${profile.healthConcerns.join(', ')} 중심으로 추천을 정리했어요.`
-              : ' · 아직 건강 고민이 비어 있어요. 프로필을 채우면 추천 정확도가 올라가요.'}
+              ? profile.healthConcerns.slice(0, 3).join(' · ')
+              : '프로필에서 건강 고민을 선택하면 피드가 더 정확해져요.'}
           </p>
 
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -222,11 +176,7 @@ export default function Home() {
       )}
 
       <section style={{ marginBottom: '18px' }}>
-        <TossSectionTitle
-          title="지금 바로 참여해 보세요"
-          subtitle="탐색, 랭킹, 테스트, 프로필을 빠르게 이동할 수 있어요"
-          style={{ marginBottom: '12px' }}
-        />
+        <TossSectionTitle title="바로 가기" style={{ marginBottom: '12px' }} />
         <div className="ui-grid-2">
           {quickActions.map((item) => (
             <button
@@ -240,23 +190,12 @@ export default function Home() {
                 {item.icon}
               </span>
               <div style={{ fontSize: '16px', fontWeight: 900, color: '#1F2937', marginBottom: '6px' }}>{item.title}</div>
-              <p style={{ margin: 0, fontSize: '12px', color: '#6B7280', fontWeight: 600, lineHeight: 1.5 }}>
-                {item.description}
-              </p>
+              {item.description ? (
+                <p style={{ margin: 0, fontSize: '12px', color: '#6B7280', fontWeight: 600, lineHeight: 1.5 }}>
+                  {item.description}
+                </p>
+              ) : null}
             </button>
-          ))}
-        </div>
-      </section>
-
-      <section style={{ marginBottom: '22px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-          {[UGC_COPY.honestReviews, UGC_COPY.palatability].map((line) => (
-            <TossCard key={line} style={{
-              fontSize: '12px', fontWeight: 600, color: '#4B5563', padding: '10px', borderRadius: '14px',
-              background: '#FFFBEB', border: '1px solid #FDE68A', lineHeight: 1.4, minHeight: '58px', display: 'flex', alignItems: 'center',
-            }}>
-              {line}
-            </TossCard>
           ))}
         </div>
       </section>

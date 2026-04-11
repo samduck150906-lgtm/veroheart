@@ -4,6 +4,7 @@ import BottomNav from './BottomNav';
 import Footer from './Footer';
 import { VERORO_LOGO_SRC } from '../constants/assets';
 import { useStore } from '../store/useStore';
+import { buildHomeFeedTitle } from '../utils/homeHeadline';
 export default function Layout() {
   const navigate = useNavigate();
   const { profile, isLoggedIn, cart } = useStore();
@@ -25,6 +26,7 @@ export default function Layout() {
     : titleMap[location.pathname] ?? '베로로';
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
   const isHome = location.pathname === '/';
+  const homeHeadline = isHome ? buildHomeFeedTitle(profile, isLoggedIn) : '';
 
   return (
     <div className="app-shell">
@@ -58,8 +60,16 @@ export default function Layout() {
                 Petty Community
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', minWidth: 0 }}>
-                <span style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-dark)', whiteSpace: 'nowrap' }}>
-                  {isHome ? '반가워요' : pageTitle}
+                <span
+                  style={{
+                    fontSize: isHome ? '16px' : '18px',
+                    fontWeight: 900,
+                    color: 'var(--text-dark)',
+                    whiteSpace: isHome ? 'normal' : 'nowrap',
+                    lineHeight: isHome ? 1.35 : undefined,
+                  }}
+                >
+                  {isHome ? homeHeadline : pageTitle}
                 </span>
                 {isLoggedIn && (
                   <span

@@ -3,6 +3,8 @@ export interface UserPetProfile {
   name: string;
   species: 'Dog' | 'Cat';
   age: number;
+  /** kg, 선택 — DB 미연동 시에도 폼에만 반영 가능 */
+  weightKg?: number;
   healthConcerns: string[];
   allergies: string[];
 }
