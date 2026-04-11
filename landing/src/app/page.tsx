@@ -22,20 +22,20 @@ export default function HomePage() {
   return (
     <div className="min-h-screen overflow-x-hidden">
       {/* Hero */}
-      <header className="relative border-b border-cream-200/80 bg-gradient-to-b from-sky-soft/60 via-cream-50 to-cream-50">
+      <header className="relative border-b border-gold-muted/30 bg-gradient-to-b from-gold-soft via-cream-50 to-cream-100">
         <div className="mx-auto flex max-w-6xl flex-col gap-12 px-5 pb-16 pt-10 sm:px-6 sm:pb-20 sm:pt-14 lg:flex-row lg:items-center lg:gap-16 lg:pb-24">
           <div className="max-w-xl flex-1">
-            <p className="mb-3 inline-flex items-center rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-sky-deep shadow-sm ring-1 ring-sky-soft">
+            <p className="mb-3 inline-flex items-center rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-gold-darker shadow-sm ring-1 ring-gold-muted/70">
               반려동물 성분 분석 · 리뷰 · 커머스
             </p>
-            <h1 className="text-balance text-3xl font-extrabold leading-tight tracking-tight text-forest-900 sm:text-4xl lg:text-[2.65rem] lg:leading-[1.15]">
+            <h1 className="text-balance text-3xl font-extrabold leading-tight tracking-tight text-ink-900 sm:text-4xl lg:text-[2.65rem] lg:leading-[1.15]">
               우리 아이 입에 들어가는 것,
               <br />
-              <span className="text-sky-deep">정말 안전할까요?</span>
+              <span className="text-gold-deep">정말 안전할까요?</span>
             </h1>
-            <p className="mt-5 text-pretty text-base leading-relaxed text-forest-800/85 sm:text-lg">
+            <p className="mt-5 text-pretty text-base leading-relaxed text-ink-800/90 sm:text-lg">
               어려운 사료 성분표 분석부터 깐깐한 반려인들의 진짜 리뷰까지.
-              <span className="font-semibold text-forest-900"> 베로로</span>
+              <span className="font-semibold text-ink-900"> 베로로</span>
               에서 한 번에 확인하세요.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
@@ -43,24 +43,24 @@ export default function HomePage() {
                 href={APP_STORE}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center rounded-2xl bg-forest-800 px-6 py-3.5 text-center text-sm font-semibold text-cream-50 shadow-soft transition hover:bg-forest-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest-800"
+                className="inline-flex items-center justify-center rounded-2xl bg-gold-deep px-6 py-3.5 text-center text-sm font-semibold text-white shadow-soft transition hover:bg-gold-darker focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-deep"
               >
                 앱 다운로드하기
               </a>
               <a
                 href={PREORDER_MAIL}
-                className="inline-flex items-center justify-center rounded-2xl border-2 border-forest-800/15 bg-white px-6 py-3.5 text-center text-sm font-semibold text-forest-900 shadow-sm transition hover:border-peach-deep/40 hover:bg-peach-soft/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-deep"
+                className="inline-flex items-center justify-center rounded-2xl border-2 border-gold-deep/35 bg-white px-6 py-3.5 text-center text-sm font-semibold text-ink-900 shadow-sm transition hover:border-gold-darker hover:bg-gold-soft/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-deep"
               >
                 사전 예약하고 혜택받기
               </a>
             </div>
-            <p className="mt-4 text-xs text-forest-800/55">
+            <p className="mt-4 text-xs text-ink-800/60">
               스토어에서 공식 앱을 확인한 뒤 설치해 주세요.{" "}
               <a
                 href={PLAY_STORE}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-medium text-sky-deep underline-offset-2 hover:underline"
+                className="font-medium text-gold-deep underline-offset-2 hover:underline"
               >
                 Google Play
               </a>
@@ -71,32 +71,32 @@ export default function HomePage() {
             <PhoneMockup label="베로로 앱 화면 예시">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-forest-800/70">
+                  <span className="text-xs font-semibold text-ink-800/75">
                     성분 스캔
                   </span>
-                  <span className="rounded-full bg-sky-soft px-2 py-0.5 text-[10px] font-bold text-sky-deep">
+                  <span className="rounded-full bg-gold-soft px-2 py-0.5 text-[10px] font-bold text-gold-darker">
                     OCR
                   </span>
                 </div>
-                <div className="rounded-xl border border-cream-200 bg-white p-3 shadow-card">
-                  <p className="text-[10px] font-medium uppercase tracking-wide text-forest-800/50">
+                <div className="rounded-xl border border-gold-muted/35 bg-white p-3 shadow-card">
+                  <p className="text-[10px] font-medium uppercase tracking-wide text-ink-800/55">
                     분석 결과
                   </p>
-                  <p className="mt-1 text-sm font-bold text-forest-900">
+                  <p className="mt-1 text-sm font-bold text-ink-900">
                     닭고기, 현미, 완두단백…
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1">
-                    <span className="rounded-md bg-peach-soft px-2 py-0.5 text-[10px] font-semibold text-peach-deep">
+                    <span className="rounded-md bg-gold-muted/90 px-2 py-0.5 text-[10px] font-semibold text-gold-darkest">
                       알레르기 주의
                     </span>
-                    <span className="rounded-md bg-cream-200 px-2 py-0.5 text-[10px] font-semibold text-forest-800">
+                    <span className="rounded-md bg-cream-200 px-2 py-0.5 text-[10px] font-semibold text-ink-800">
                       유해 성분 없음
                     </span>
                   </div>
                 </div>
-                <div className="rounded-xl border border-cream-200 bg-white p-3 shadow-card">
-                  <p className="text-[10px] text-forest-800/55">찐 리뷰</p>
-                  <p className="mt-1 text-xs leading-snug text-forest-800">
+                <div className="rounded-xl border border-gold-muted/35 bg-white p-3 shadow-card">
+                  <p className="text-[10px] text-ink-800/60">찐 리뷰</p>
+                  <p className="mt-1 text-xs leading-snug text-ink-800">
                     “광고 없이 성분만 보고 골랐어요. 우리 아이 알러지 체크가
                     편해요.”
                   </p>
@@ -110,7 +110,7 @@ export default function HomePage() {
       {/* Pain points */}
       <section
         id="pain"
-        className="border-b border-cream-200 bg-white py-16 sm:py-20"
+        className="border-b border-gold-muted/25 bg-white py-16 sm:py-20"
         aria-labelledby="pain-heading"
       >
         <div className="mx-auto max-w-6xl px-5 sm:px-6">
@@ -138,11 +138,11 @@ export default function HomePage() {
               },
             ].map((card, i) => (
               <Reveal key={card.title} delayMs={i * 70}>
-                <article className="h-full rounded-2xl border border-cream-200 bg-cream-50/80 p-6 shadow-card transition hover:border-sky-soft hover:shadow-soft">
-                  <h3 className="text-lg font-bold text-forest-900">
+                <article className="h-full rounded-2xl border border-gold-muted/40 bg-cream-50/90 p-6 shadow-card transition hover:border-gold-deep/50 hover:shadow-soft">
+                  <h3 className="text-lg font-bold text-ink-900">
                     {card.title}
                   </h3>
-                  <p className="mt-3 text-sm leading-relaxed text-forest-800/80">
+                  <p className="mt-3 text-sm leading-relaxed text-ink-800/85">
                     {card.body}
                   </p>
                 </article>
@@ -155,7 +155,7 @@ export default function HomePage() {
       {/* Features */}
       <section
         id="features"
-        className="border-b border-cream-200 bg-gradient-to-b from-cream-50 to-sky-soft/40 py-16 sm:py-20"
+        className="border-b border-gold-muted/25 bg-gradient-to-b from-cream-50 to-gold-soft/70 py-16 sm:py-20"
         aria-labelledby="features-heading"
       >
         <div className="mx-auto max-w-6xl px-5 sm:px-6">
@@ -173,13 +173,13 @@ export default function HomePage() {
               <div className="flex flex-col items-center gap-10 lg:flex-row lg:items-center lg:gap-14">
                 <PhoneMockup label="OCR 성분 분석">
                   <div className="flex flex-col items-center justify-center py-8">
-                    <div className="flex h-24 w-24 items-center justify-center rounded-2xl border-2 border-dashed border-sky-deep/40 bg-sky-soft/50">
+                    <div className="flex h-24 w-24 items-center justify-center rounded-2xl border-2 border-dashed border-gold-deep/50 bg-gold-soft/80">
                       <svg
                         width="40"
                         height="40"
                         viewBox="0 0 24 24"
                         fill="none"
-                        className="text-sky-deep"
+                        className="text-gold-deep"
                         aria-hidden
                       >
                         <path
@@ -197,19 +197,19 @@ export default function HomePage() {
                         />
                       </svg>
                     </div>
-                    <p className="mt-4 text-center text-xs font-semibold text-forest-900">
+                    <p className="mt-4 text-center text-xs font-semibold text-ink-900">
                       성분표 촬영
                     </p>
-                    <p className="mt-1 text-center text-[11px] text-forest-800/65">
+                    <p className="mt-1 text-center text-[11px] text-ink-800/70">
                       AI가 유해·알레르기 주의 성분을 즉시 정리합니다.
                     </p>
                   </div>
                 </PhoneMockup>
                 <div className="max-w-lg flex-1 text-center lg:text-left">
-                  <h3 className="text-xl font-bold text-forest-900 sm:text-2xl">
+                  <h3 className="text-xl font-bold text-ink-900 sm:text-2xl">
                     찰칵 한 번으로 끝나는 성분 분석
                   </h3>
-                  <p className="mt-3 text-sm leading-relaxed text-forest-800/80 sm:text-base">
+                  <p className="mt-3 text-sm leading-relaxed text-ink-800/85 sm:text-base">
                     스마트폰 카메라로 성분표를 찍기만 하면 OCR로 텍스트를
                     읽고, 유해 성분부터 알레르기에 주의해야 할 성분까지 한눈에
                     정리해 드립니다.
@@ -228,25 +228,25 @@ export default function HomePage() {
                   ].map((row) => (
                     <div
                       key={row.label}
-                      className="flex items-center justify-between rounded-2xl border border-cream-200 bg-white px-4 py-3 shadow-card"
+                      className="flex items-center justify-between rounded-2xl border border-gold-muted/35 bg-white px-4 py-3 shadow-card"
                     >
                       <div>
-                        <p className="text-xs text-forest-800/55">{row.label}</p>
-                        <p className="text-lg font-bold text-forest-900">
+                        <p className="text-xs text-ink-800/60">{row.label}</p>
+                        <p className="text-lg font-bold text-ink-900">
                           {row.score}
                         </p>
                       </div>
-                      <span className="rounded-full bg-forest-800/10 px-2.5 py-1 text-[10px] font-bold text-forest-800">
+                      <span className="rounded-full bg-gold-muted/80 px-2.5 py-1 text-[10px] font-bold text-gold-darkest">
                         {row.tag}
                       </span>
                     </div>
                   ))}
                 </div>
                 <div className="max-w-lg flex-1 text-center lg:text-left">
-                  <h3 className="text-xl font-bold text-forest-900 sm:text-2xl">
+                  <h3 className="text-xl font-bold text-ink-900 sm:text-2xl">
                     광고 없는 청정 구역, 찐 리뷰
                   </h3>
-                  <p className="mt-3 text-sm leading-relaxed text-forest-800/80 sm:text-base">
+                  <p className="mt-3 text-sm leading-relaxed text-ink-800/85 sm:text-base">
                     깐깐한 보호자들이 직접 남긴 솔직한 평가를 모았습니다.
                     과장된 광고 문구 대신, 실제 급여 경험과 성분 만족도를
                     중심으로 신뢰할 수 있는 리뷰 시스템을 지향합니다.
@@ -259,28 +259,28 @@ export default function HomePage() {
               <div className="flex flex-col items-center gap-10 lg:flex-row lg:items-center lg:gap-14">
                 <PhoneMockup label="맞춤 커머스">
                   <div className="space-y-3">
-                    <p className="text-xs font-semibold text-forest-800/70">
+                    <p className="text-xs font-semibold text-ink-800/75">
                       오늘의 추천
                     </p>
-                    <div className="rounded-xl bg-forest-800 p-3 text-cream-50">
-                      <p className="text-[10px] text-cream-200">우리 아이 맞춤</p>
+                    <div className="rounded-xl bg-gold-darkest p-3 text-cream-50">
+                      <p className="text-[10px] text-gold-muted">우리 아이 맞춤</p>
                       <p className="mt-1 text-sm font-bold">
                         저알러지 · 그레인프리
                       </p>
                     </div>
                     <button
                       type="button"
-                      className="w-full rounded-xl bg-peach-deep py-2.5 text-xs font-bold text-white"
+                      className="w-full rounded-xl bg-gold-deep py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-gold-darker"
                     >
                       바로 구매하기
                     </button>
                   </div>
                 </PhoneMockup>
                 <div className="max-w-lg flex-1 text-center lg:text-left">
-                  <h3 className="text-xl font-bold text-forest-900 sm:text-2xl">
+                  <h3 className="text-xl font-bold text-ink-900 sm:text-2xl">
                     우리 아이 맞춤형 커머스
                   </h3>
-                  <p className="mt-3 text-sm leading-relaxed text-forest-800/80 sm:text-base">
+                  <p className="mt-3 text-sm leading-relaxed text-ink-800/85 sm:text-base">
                     분석 결과와 리뷰 신호를 바탕으로 반려동물에게 맞는 제품을
                     추천하고, 앱 안에서 바로 구매까지 이어질 수 있도록
                     설계했습니다.
@@ -295,7 +295,7 @@ export default function HomePage() {
       {/* Audience */}
       <section
         id="audience"
-        className="border-b border-cream-200 bg-white py-16 sm:py-20"
+        className="border-b border-gold-muted/25 bg-white py-16 sm:py-20"
         aria-labelledby="audience-heading"
       >
         <div className="mx-auto max-w-6xl px-5 sm:px-6">
@@ -313,14 +313,14 @@ export default function HomePage() {
               "나이가 많거나 알레르기가 있어 특별한 식단 관리가 필요한 반려동물을 키우시는 분",
             ].map((text, i) => (
               <Reveal key={i} delayMs={i * 60}>
-                <li className="flex gap-4 rounded-2xl border border-cream-200 bg-cream-50/60 px-5 py-4 shadow-card">
+                <li className="flex gap-4 rounded-2xl border border-gold-muted/35 bg-cream-50/70 px-5 py-4 shadow-card">
                   <span
-                    className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sky-soft text-sm font-bold text-sky-deep"
+                    className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gold-muted/90 text-sm font-bold text-gold-darkest"
                     aria-hidden
                   >
                     ✓
                   </span>
-                  <span className="text-sm leading-relaxed text-forest-800 sm:text-base">
+                  <span className="text-sm leading-relaxed text-ink-800 sm:text-base">
                     {text}
                   </span>
                 </li>
@@ -333,13 +333,13 @@ export default function HomePage() {
       {/* Premium */}
       <section
         id="premium"
-        className="bg-forest-900 py-16 text-cream-50 sm:py-20"
+        className="bg-gold-darkest py-16 text-cream-50 sm:py-20"
         aria-labelledby="premium-heading"
       >
         <div className="mx-auto max-w-6xl px-5 sm:px-6">
           <Reveal>
             <div className="mx-auto mb-10 max-w-2xl text-center">
-              <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-sky-soft">
+              <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-gold-muted">
                 Premium
               </p>
               <h2
@@ -348,7 +348,7 @@ export default function HomePage() {
               >
                 프리미엄 구독으로 더 깊은 맞춤 분석
               </h2>
-              <p className="mt-3 text-sm leading-relaxed text-cream-200 sm:text-base">
+              <p className="mt-3 text-sm leading-relaxed text-cream-100 sm:text-base">
                 베로로만의 맞춤형 분석 리포트와 커머스 혜택을 한 번에. 성분
                 인사이트를 넘어 급여 루틴까지 설계할 수 있도록 준비 중입니다.
               </p>
@@ -376,7 +376,7 @@ export default function HomePage() {
           <Reveal delayMs={120} className="mt-10 text-center">
             <a
               href={PREORDER_MAIL}
-              className="inline-flex rounded-2xl bg-cream-50 px-6 py-3 text-sm font-bold text-forest-900 shadow-soft transition hover:bg-white"
+              className="inline-flex rounded-2xl bg-gold-muted px-6 py-3 text-sm font-bold text-gold-darkest shadow-soft transition hover:bg-cream-50"
             >
               사전 예약하고 혜택받기
             </a>
@@ -386,40 +386,40 @@ export default function HomePage() {
 
       {/* Footer */}
       <footer
-        className="border-t border-cream-200 bg-cream-100/80 py-12"
+        className="border-t border-gold-muted/30 bg-cream-100 py-12"
         aria-label="푸터"
       >
         <div className="mx-auto flex max-w-6xl flex-col gap-8 px-5 sm:px-6 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-lg font-extrabold tracking-tight text-forest-900">
+            <p className="text-lg font-extrabold tracking-tight text-ink-900">
               VeRoRo
             </p>
-            <p className="mt-1 text-sm text-forest-800/65">
+            <p className="mt-1 text-sm text-ink-800/70">
               반려동물계의 필수 앱을 향해
             </p>
           </div>
           <nav className="flex flex-wrap gap-x-8 gap-y-3 text-sm">
             <Link
               href="/terms"
-              className="text-forest-800/80 underline-offset-4 hover:text-forest-900 hover:underline"
+              className="text-ink-800/85 underline-offset-4 hover:text-gold-deep hover:underline"
             >
               이용약관
             </Link>
             <Link
               href="/privacy"
-              className="text-forest-800/80 underline-offset-4 hover:text-forest-900 hover:underline"
+              className="text-ink-800/85 underline-offset-4 hover:text-gold-deep hover:underline"
             >
               개인정보처리방침
             </Link>
             <Link
               href="/refund"
-              className="text-forest-800/80 underline-offset-4 hover:text-forest-900 hover:underline"
+              className="text-ink-800/85 underline-offset-4 hover:text-gold-deep hover:underline"
             >
               취소 및 환불 안내
             </Link>
             <a
               href={PREORDER_MAIL}
-              className="text-forest-800/80 underline-offset-4 hover:text-forest-900 hover:underline"
+              className="text-ink-800/85 underline-offset-4 hover:text-gold-deep hover:underline"
             >
               고객센터 문의
             </a>
@@ -430,7 +430,7 @@ export default function HomePage() {
               {...(SOCIAL_INSTAGRAM.startsWith("http")
                 ? { target: "_blank", rel: "noopener noreferrer" }
                 : {})}
-              className="text-sm font-semibold text-sky-deep hover:underline"
+              className="text-sm font-semibold text-gold-deep hover:underline"
               aria-label="Instagram"
             >
               Instagram
@@ -440,14 +440,14 @@ export default function HomePage() {
               {...(SOCIAL_YOUTUBE.startsWith("http")
                 ? { target: "_blank", rel: "noopener noreferrer" }
                 : {})}
-              className="text-sm font-semibold text-sky-deep hover:underline"
+              className="text-sm font-semibold text-gold-deep hover:underline"
               aria-label="YouTube"
             >
               YouTube
             </a>
           </div>
         </div>
-        <p className="mx-auto mt-10 max-w-6xl px-5 text-center text-xs text-forest-800/50 sm:px-6">
+        <p className="mx-auto mt-10 max-w-6xl px-5 text-center text-xs text-ink-800/55 sm:px-6">
           © {new Date().getFullYear()} VeRoRo · Petty Community. All rights
           reserved.
         </p>

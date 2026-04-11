@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
@@ -20,6 +20,10 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: "#b45309",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -27,7 +31,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" className={jakarta.variable}>
-      <body className="bg-cream-50 font-sans text-forest-900 antialiased">
+      <body className="bg-cream-50 font-sans text-ink-900 antialiased">
         {children}
       </body>
     </html>
