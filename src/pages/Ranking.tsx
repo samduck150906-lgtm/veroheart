@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Trophy, TrendingUp, Star, Dog, Cat, ShieldCheck, MessageSquare, Sparkles } from 'lucide-react';
 import { useStore } from '../store/useStore';
+import type { Product } from '../types';
 import { calculateCompatibilityScore, getProductRecommendationInsights } from '../utils/score';
 import { UGC_COPY } from '../copy/marketing';
 import { TossChip, TossSectionTitle } from '../components/TossUI';
@@ -30,13 +31,13 @@ export default function Ranking() {
     petFilter === 'all' || p.targetPetType === petFilter || p.targetPetType === 'all'
   );
 
-  const safeScore = (p: any) => {
+  const safeScore = (p: Product) => {
     const total = p.ingredients?.length || 1;
-    const safe = p.ingredients?.filter((i: any) => i.riskLevel === 'safe').length || 0;
+    const safe = p.ingredients?.filter((i) => i.riskLevel === 'safe').length || 0;
     return safe / total;
   };
 
-  const trustScore = (product: (typeof filtered)[number]) => {
+  const trustScore = (product: Product) => {
     const rating = Math.min(1, (product.averageRating || 0) / 5);
     const reviews = Math.min(1, Math.log10((product.reviewsCount || 0) + 1) / 3);
     const safety = safeScore(product);
@@ -57,16 +58,12 @@ export default function Ranking() {
     })
     .slice(0, 30);
 
-  const heroStats = useMemo(() => {
-    const topRated = [...filtered].sort((a, b) => trustScore(b) - trustScore(a))[0];
-    const mostReviewed = [...filtered].sort((a, b) => (b.reviewsCount || 0) - (a.reviewsCount || 0))[0];
-    const safest = [...filtered].sort((a, b) => safeScore(b) - safeScore(a))[0];
-    return {
-      topRated,
-      mostReviewed,
-      safest,
-    };
-  }, [filtered]);
+  const copy = [...filtered];
+  const heroStats = {
+    topRated: [...copy].sort((a, b) => trustScore(b) - trustScore(a))[0],
+    mostReviewed: [...copy].sort((a, b) => (b.reviewsCount || 0) - (a.reviewsCount || 0))[0],
+    safest: [...copy].sort((a, b) => safeScore(b) - safeScore(a))[0],
+  };
 
   const medalColors = ['#F59E0B', '#94A3B8', '#CD7C2E'];
 
@@ -104,7 +101,11 @@ export default function Ranking() {
 
       <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
         {PET_TABS.map(tab => (
-          <TossChip key={tab.key} active={petFilter === tab.key} onClick={() => setPetFilter(tab.key as any)}>
+          <TossChip
+            key={tab.key}
+            active={petFilter === tab.key}
+            onClick={() => setPetFilter(tab.key as 'all' | 'dog' | 'cat')}
+          >
             {tab.icon} {tab.label}
           </TossChip>
         ))}
@@ -112,7 +113,12 @@ export default function Ranking() {
 
       <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', marginBottom: '18px', paddingBottom: '4px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
         {TABS.map(tab => (
-          <TossChip key={tab.key} active={sortBy === tab.key} onClick={() => setSortBy(tab.key as any)} style={{ whiteSpace: 'nowrap' }}>
+          <TossChip
+            key={tab.key}
+            active={sortBy === tab.key}
+            onClick={() => setSortBy(tab.key as 'compatibility' | 'rating' | 'reviews' | 'safe')}
+            style={{ whiteSpace: 'nowrap' }}
+          >
             <span>{tab.icon}</span> {tab.label}
           </TossChip>
         ))}
@@ -142,7 +148,7 @@ export default function Ranking() {
         {ranked.map((product, idx) => {
           const score = calculateCompatibilityScore(product, profile);
           const safeRatio = product.ingredients?.length
-            ? Math.round((product.ingredients.filter((i: any) => i.riskLevel === 'safe').length / product.ingredients.length) * 100)
+            ? Math.round((product.ingredients.filter((i) => i.riskLevel === 'safe').length / product.ingredients.length) * 100)
             : 0;
 
           return (

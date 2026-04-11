@@ -5,7 +5,7 @@ import { VIRAL_EVENT_CONFIG } from '../copy/marketing';
 import { isKakaoShareConfigured, kakaoShareTextWithLink } from '../lib/kakaoShare';
 import { notify } from '../store/useNotification';
 
-const SHARE_PATH = '/test';
+const SHARE_PATH = '/event/personality-quiz';
 
 export default function ViralEvent() {
   const [kakaoSharing, setKakaoSharing] = useState(false);
@@ -145,7 +145,7 @@ export default function ViralEvent() {
         </button>
 
         <a
-          href="/test"
+          href="/event/personality-quiz"
           className="btn btn-primary"
           style={{ height: '48px', borderRadius: '12px', fontWeight: 800, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
         >

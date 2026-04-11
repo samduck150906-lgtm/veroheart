@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
   Activity,
-  ArrowUpRight,
   BarChart3,
   ClipboardCheck,
   FlaskConical,
@@ -53,10 +52,6 @@ const AdminDashboard: React.FC = () => {
   });
   const [categoryStats, setCategoryStats] = useState<Record<string, number>>({});
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
   const fetchStats = async () => {
     const [u, p, i, o, productMeta] = await Promise.all([
       supabase.from('users').select('*', { count: 'exact', head: true }),
@@ -91,6 +86,13 @@ const AdminDashboard: React.FC = () => {
       needsReviewProducts,
     });
   };
+
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      void fetchStats();
+    }, 0);
+    return () => window.clearTimeout(t);
+  }, []);
 
   const metricCards = [
     {

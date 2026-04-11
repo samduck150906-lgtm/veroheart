@@ -261,9 +261,6 @@ max_frequency = "5s"
 [functions.analyze-ingredients]
 verify_jwt = true
 
-[functions.confirm-payment]
-verify_jwt = true
-
 # This hook runs before a new user is created and allows developers to reject the request based on the incoming user object.
 # [auth.hook.before_user_created]
 # enabled = true

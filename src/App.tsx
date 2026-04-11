@@ -10,9 +10,6 @@ import Profile from './pages/Profile';
 import Detail from './pages/Detail';
 import Comparison from './pages/Comparison';
 import Cart from './pages/Cart';
-import Checkout from './pages/Checkout';
-import Success from './pages/Success';
-import Fail from './pages/Fail';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Refund from './pages/Refund';
@@ -20,15 +17,16 @@ import Login from './pages/Login';
 import Ranking from './pages/Ranking';
 import Brand from './pages/Brand';
 import ViralEvent from './pages/ViralEvent';
-import Test from './pages/Test';
+import PersonalityQuiz from './pages/Test';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminIngredients from './pages/admin/AdminIngredients';
 import Notification from './components/Notification';
 import AdminAuthGuard from './pages/admin/AdminAuthGuard';
-import EntryGate, { markEntryGateDone, readEntryGateDone } from './components/EntryGate';
-import { isAdminExperience, isAdminHostname, toggleAdminDesktopMode } from './utils/adminHost';
+import EntryGate from './components/EntryGate';
+import { markEntryGateDone, readEntryGateDone } from './lib/entryGateStorage';
+import { isAdminExperience, toggleAdminDesktopMode } from './utils/adminHost';
 
 function App() {
   const { initApp, isInitializing, isLoggedIn } = useStore();
@@ -38,11 +36,13 @@ function App() {
   const [showEntrySplash, setShowEntrySplash] = useState(() => !adminMode);
   const [entryGateOpen, setEntryGateOpen] = useState(() => (adminMode ? false : !readEntryGateDone()));
 
-  if (typeof window !== 'undefined' && adminMode && !window.location.pathname.startsWith('/admin')) {
+  useEffect(() => {
+    if (!adminMode) return;
+    if (typeof window === 'undefined') return;
+    if (window.location.pathname.startsWith('/admin')) return;
     const nextUrl = `/admin${window.location.search}${window.location.hash}`;
     window.location.replace(nextUrl);
-    return null;
-  }
+  }, [adminMode]);
 
   useEffect(() => {
     toggleAdminDesktopMode(adminMode);
@@ -62,7 +62,7 @@ function App() {
   useEffect(() => {
     if (!isInitializing && isLoggedIn) {
       markEntryGateDone();
-      setEntryGateOpen(false);
+      queueMicrotask(() => setEntryGateOpen(false));
     }
   }, [isInitializing, isLoggedIn]);
 
@@ -101,9 +101,6 @@ function App() {
           <Route path="profile" element={<Profile />} />
           <Route path="comparison" element={<Comparison />} />
           <Route path="cart" element={<Cart />} />
-          <Route path="checkout" element={<Checkout />} />
-          <Route path="success" element={<Success />} />
-          <Route path="fail" element={<Fail />} />
           <Route path="product/:id" element={<Detail />} />
           <Route path="terms" element={<Terms />} />
           <Route path="privacy" element={<Privacy />} />
@@ -111,7 +108,7 @@ function App() {
           <Route path="ranking" element={<Ranking />} />
           <Route path="brand/:brandName" element={<Brand />} />
           <Route path="event/viral" element={<ViralEvent />} />
-          <Route path="test" element={<Test />} />
+          <Route path="event/personality-quiz" element={<PersonalityQuiz />} />
         </Route>
 
         <Route path="/login" element={<Login />} />

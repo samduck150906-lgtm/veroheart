@@ -3,6 +3,8 @@ export interface UserPetProfile {
   name: string;
   species: 'Dog' | 'Cat';
   age: number;
+  /** kg, 선택 — DB 미연동 시에도 폼에만 반영 가능 */
+  weightKg?: number;
   healthConcerns: string[];
   allergies: string[];
 }
@@ -36,6 +38,8 @@ export interface Product {
   verificationStatus?: 'pending' | 'verified' | 'needs_review';
   verifiedAt?: string | null;
   coupangProductId?: string | null;
+  /** 파트너스 등 수동 발급 전체 URL — 있으면 구매 버튼이 이 주소로 이동 */
+  coupangLink?: string | null;
 }
 
 export const DEFAULT_USER_PET_PROFILE: UserPetProfile = {
@@ -60,6 +64,7 @@ export interface SupabaseProduct {
   verification_status?: 'pending' | 'verified' | 'needs_review' | null;
   verified_at?: string | null;
   coupang_product_id?: string | null;
+  coupang_link?: string | null;
   product_ingredients?: {
     ingredients: SupabaseIngredient;
   }[];
@@ -101,7 +106,7 @@ export interface SupabaseCartItem {
 export interface SupabaseOrder {
   id: string;
   user_id: string;
-  status: 'pending' | 'paid' | 'completed' | 'cancelled';
+  status: 'pending' | 'paid' | 'completed' | 'cancelled' | 'failed';
   total_amount: number;
   shipping_address: string | null;
   customer_name: string | null;
@@ -111,3 +116,35 @@ export interface SupabaseOrder {
   paid_at?: string;
   created_at: string;
 }
+
+export interface SupabaseOrderItem {
+  id: string;
+  product_id: string;
+  quantity: number;
+  price_at_purchase: number;
+  products: {
+    brand_name: string;
+    name: string;
+    image_url: string | null;
+  };
+}
+
+export type SupabaseOrderWithItems = SupabaseOrder & {
+  order_items: SupabaseOrderItem[];
+};
+
+/** `analysis_reports` + join `products` (getAnalysisReports select) */
+export type AnalysisReportRow = {
+  id: string;
+  created_at: string;
+  product_id: string | null;
+  analysis_json: {
+    scores?: { final?: number };
+    summary?: string;
+  };
+  products?: {
+    image_url: string | null;
+    name: string;
+    brand_name: string;
+  } | null;
+};

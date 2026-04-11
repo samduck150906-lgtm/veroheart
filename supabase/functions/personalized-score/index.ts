@@ -1,9 +1,5 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { buildCorsHeaders } from '../_shared/cors.ts';
 
 type RiskLevel = 'safe' | 'caution' | 'danger' | 'warning';
 type ProfileType = 'allergy' | 'avoidance';
@@ -43,6 +39,7 @@ const POLICY = {
 } as const;
 
 serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req);
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -139,8 +136,9 @@ serve(async (req) => {
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
-  } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message || '개인화 점수 계산 중 오류가 발생했습니다.' }), {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : '개인화 점수 계산 중 오류가 발생했습니다.';
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

@@ -8,7 +8,6 @@ import {
   FlaskConical,
   AlertTriangle,
   ShieldCheck,
-  Search,
 } from 'lucide-react';
 import { notify } from '../../store/useNotification';
 import {
@@ -77,8 +76,9 @@ const AdminIngredients: React.FC = () => {
       }
       setIsModalOpen(false);
       fetchIngredients();
-    } catch (err: any) {
-      notify.error(`저장 실패: ${err.message}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      notify.error(`저장 실패: ${msg}`);
     }
   };
 

@@ -125,8 +125,8 @@ export default function Analyzer() {
       // Save to DB in background
       saveAnalysisReport(userId, selectedProduct?.id || null, ingredientText, data).catch(console.error);
       useStore.getState().fetchReports(); // trigger refresh
-    } catch (err: any) {
-      setError(err.message || '오류가 발생했습니다.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : '오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }

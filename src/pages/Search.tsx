@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-  Search as SearchIcon,
   Filter,
   X,
   Check,
@@ -16,6 +15,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
+import type { Product } from '../types';
 import { TossFilterSection } from '../components/TossUI';
 import { searchProducts, getAllIngredients } from '../lib/supabase';
 import { useStore } from '../store/useStore';
@@ -30,7 +30,7 @@ import {
   LIFE_STAGE_OPTIONS,
   type PriceBand,
 } from '../constants/searchFilters';
-import { TossButton, TossCard, TossChip, TossSearchBar } from '../components/TossUI';
+import { TossButton, TossChip, TossSearchBar } from '../components/TossUI';
 
 function defaultPetFromProfile(profile: { species?: string } | undefined): '' | 'dog' | 'cat' | 'all' {
   if (profile?.species === 'Cat') return 'cat';
@@ -56,7 +56,7 @@ export default function Search() {
   };
 
   const [query, setQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [sortBy, setSortBy] = useState<'default' | 'price_asc' | 'price_desc' | 'rating'>('default');
 

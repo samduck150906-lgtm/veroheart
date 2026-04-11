@@ -2,6 +2,14 @@ import { createClient } from '@supabase/supabase-js';
 import { notify } from '../store/useNotification';
 import type { Product } from '../types';
 import type { SupabasePet } from '../types';
+import {
+  mapProductFromSupabaseRow,
+  type SupabaseBrandNameRow,
+  type SupabaseCartItemRow,
+  type SupabaseFavoriteRow,
+  type SupabaseProductRow,
+  type SupabaseRecentViewRow,
+} from './supabaseRowTypes';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL ?? '';
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? '';
@@ -34,11 +42,6 @@ export async function getInitialSessionUser() {
   }
 }
 
-export async function getCurrentUser() {
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.user || null;
-}
-
 export async function getUserProfile(userId: string) {
   const { data, error } = await supabase.from('users').select('*').eq('id', userId).single();
   if (error && error.code !== 'PGRST116') {
@@ -66,39 +69,8 @@ export async function saveUserPet(petData: Partial<SupabasePet>) {
 }
 
 // Products
-export function mapProductFromRaw(p: any): Product {
-  return mapProduct(p);
-}
-
-function mapProduct(p: any): Product {
-  return {
-    id: p.id,
-    brand: p.brand_name,
-    manufacturerName: p.manufacturer_name || undefined,
-    name: p.name,
-    category: p.product_type,
-    mainCategory: p.main_category,
-    subCategory: p.sub_category,
-    targetPetType: p.target_pet_type as any,
-    targetLifeStage: p.target_life_stage,
-    formulation: p.formulation,
-    healthConcerns: p.product_health_concerns,
-    hasRiskFactors: p.has_risk_factors,
-    verificationStatus: p.verification_status || 'pending',
-    verifiedAt: p.verified_at || undefined,
-    coupangProductId: p.coupang_product_id || undefined,
-    price: p.min_price || 0,
-    imageUrl: p.image_url || 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&q=80',
-    ingredients: p.product_ingredients?.map((pi: any) => ({
-      id: pi.ingredients?.id || '',
-      nameKo: pi.ingredients?.name_ko || '',
-      nameEn: pi.ingredients?.name_en || '',
-      riskLevel: pi.ingredients?.risk_level || 'safe',
-      purpose: pi.ingredients?.description || ''
-    })) || [],
-    reviewsCount: p.review_count || 0,
-    averageRating: p.avg_rating || 0
-  };
+export function mapProductFromRaw(p: SupabaseProductRow): Product {
+  return mapProductFromSupabaseRow(p);
 }
 
 export async function getProducts(): Promise<Product[]> {
@@ -114,7 +86,7 @@ export async function getProducts(): Promise<Product[]> {
     console.error('getProducts error:', error.message);
     return [];
   }
-  return (data as any[]).map(mapProduct);
+  return (data as SupabaseProductRow[]).map(mapProductFromSupabaseRow);
 }
 
 export async function getProductDetail(productId: string): Promise<Product | null> {
@@ -135,7 +107,7 @@ export async function getProductDetail(productId: string): Promise<Product | nul
     console.error('getProductDetail error:', error);
     return null;
   }
-  return mapProduct(data);
+  return mapProductFromSupabaseRow(data as SupabaseProductRow);
 }
 
 /** 다이어트·체중 관련 태그( DB product_health_concerns 값과 맞추면 매칭됨 ) */
@@ -217,17 +189,18 @@ export async function searchProducts(
     return [];
   }
 
-  let filtered = data || [];
+  let filtered: SupabaseProductRow[] = (data as SupabaseProductRow[]) || [];
   if (excludeIngredients.length > 0) {
-    filtered = filtered.filter((p: any) => {
-      const hasExcluded = p.product_ingredients?.some((pi: any) => 
-        excludeIngredients.includes(pi.ingredients?.id) || excludeIngredients.includes(pi.ingredients?.name_ko)
+    filtered = filtered.filter((p) => {
+      const hasExcluded = p.product_ingredients?.some((pi) =>
+        excludeIngredients.includes(pi.ingredients?.id ?? '') ||
+        excludeIngredients.includes(pi.ingredients?.name_ko ?? '')
       );
       return !hasExcluded;
     });
   }
 
-  return filtered.map(mapProduct);
+  return filtered.map(mapProductFromSupabaseRow);
 }
 
 // Ingredients, Cart, Orders (same logic)
@@ -239,7 +212,8 @@ export async function getAllIngredients() {
 
 export async function fetchCartItems(userId: string) {
   const { data } = await supabase.from('cart_items').select('id, product_id, quantity').eq('user_id', userId);
-  return (data || []).map((item: any) => ({
+  const rows = (data ?? []) as SupabaseCartItemRow[];
+  return rows.map((item) => ({
     productId: item.product_id,
     quantity: item.quantity,
     cartItemId: item.id
@@ -258,41 +232,17 @@ export async function clearUserCart(userId: string) {
   await supabase.from('cart_items').delete().eq('user_id', userId);
 }
 
-export async function createOrder(userId: string, cartItems: any[], totalAmount: number, address: string, customerInfo: any) {
-  const orderIdExt = `ORDER_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-  const { data: order, error } = await supabase.from('orders').insert({ 
-    user_id: userId, status: 'pending', total_amount: totalAmount, shipping_address: address,
-    customer_name: customerInfo.name, customer_email: customerInfo.email, customer_phone: customerInfo.phone,
-    order_id_ext: orderIdExt
-  }).select().single();
-
-  if (error || !order) return null;
-
-  const resolvedItems = [];
-  for (const item of cartItems) {
-    const { data: prod } = await supabase.from('products').select('min_price').eq('id', item.productId).single();
-    resolvedItems.push({
-      order_id: order.id, product_id: item.productId, quantity: item.quantity,
-      price_at_purchase: item.price || prod?.min_price || 0
-    });
-  }
-
-  const { error: orderItemsError } = await supabase.from('order_items').insert(resolvedItems);
-  if (orderItemsError) {
-    await supabase.from('orders').delete().eq('id', order.id);
-    console.error('createOrder order_items insert error:', orderItemsError);
-    return null;
-  }
-
-  return { ...order, orderIdExt };
-}
-
 export async function getOrders(userId: string) {
   const { data } = await supabase.from('orders').select(`*, order_items (*, products (*))`).eq('user_id', userId).order('created_at', { ascending: false });
   return data || [];
 }
 
-export async function saveAnalysisReport(userId: string, productId: string | null, rawText: string, analysisJson: any) {
+export async function saveAnalysisReport(
+  userId: string,
+  productId: string | null,
+  rawText: string,
+  analysisJson: object
+) {
   const { data, error } = await supabase.from('analysis_reports').insert({
     user_id: userId,
     product_id: productId,
@@ -373,7 +323,7 @@ export async function getFavorites(userId: string): Promise<string[]> {
     .select('product_id')
     .eq('user_id', userId);
   if (error) return [];
-  return (data || []).map((r: any) => r.product_id);
+  return ((data ?? []) as SupabaseFavoriteRow[]).map((r) => r.product_id);
 }
 
 export async function addFavorite(userId: string, productId: string) {
@@ -401,7 +351,10 @@ export async function getRecentViews(userId: string) {
     .order('viewed_at', { ascending: false })
     .limit(10);
   if (error) return [];
-  return (data || []).map((r: any) => r.products).filter(Boolean);
+  const rows = (data ?? []) as unknown as SupabaseRecentViewRow[];
+  return rows
+    .map((r) => r.products)
+    .filter((p): p is SupabaseProductRow => Boolean(p));
 }
 
 // ─── Brands ──────────────────────────────────────────────────────────────────
@@ -412,7 +365,8 @@ export async function getBrands(): Promise<string[]> {
     .select('brand_name')
     .order('brand_name');
   if (error) return [];
-  const brands = [...new Set((data || []).map((r: any) => r.brand_name).filter(Boolean))];
+  const rows = (data ?? []) as SupabaseBrandNameRow[];
+  const brands = [...new Set(rows.map((r) => r.brand_name).filter((name): name is string => Boolean(name)))];
   return brands;
 }
 
@@ -422,7 +376,7 @@ export async function getProductsByBrand(brandName: string): Promise<Product[]> 
     .select(`*, product_ingredients(ingredients(*))`)
     .eq('brand_name', brandName);
   if (error) return [];
-  return (data as any[]).map(mapProduct);
+  return (data as SupabaseProductRow[]).map(mapProductFromSupabaseRow);
 }
 
 /** 홈 이벤트/쿠폰 배너용 (정적) */

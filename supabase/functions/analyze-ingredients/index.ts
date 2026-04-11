@@ -1,14 +1,11 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+import { buildCorsHeaders } from '../_shared/cors.ts';
 
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
 const MAX_INGREDIENT_TEXT_LENGTH = 4000;
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
 serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req);
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -115,8 +112,9 @@ ${ingredient}
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-  } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message || '알 수 없는 오류가 발생했습니다.' }), {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.';
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
+import type { SupabaseOrderItem } from '../types';
 import { User, ChevronRight, Calendar, ShoppingBag, FileText, Activity, Heart, LogOut, LogIn } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
@@ -11,9 +12,24 @@ export default function Profile() {
   const [activeTab, setActiveTab] = useState<'info' | 'orders' | 'reports' | 'favorites'>('info');
   const favoriteProducts = products.filter(p => favorites.includes(p.id));
   const [formData, setFormData] = useState(profile);
+  const [profileStep, setProfileStep] = useState(0);
+
+  const concernOptions = ['관절', '피부', '체중', '소화', '눈'];
+  const allergyOptions = ['닭고기', '소고기', '연어', '곡물', '인공색소'];
+  const PROFILE_STEP_META = [
+    { title: '이름', prompt: '반려동물의 이름을 알려주세요.' },
+    { title: '종', prompt: '강아지인가요, 고양이인가요?' },
+    { title: '나이', prompt: '나이에 가까운 단계를 골라 주세요.' },
+    { title: '몸무게', prompt: '몸무게를 알고 있다면 입력해 주세요. (선택)' },
+    { title: '알레르기', prompt: '피해야 할 알레르기·회피 성분이 있다면 모두 선택해 주세요.' },
+    { title: '건강 고민', prompt: '요즘 가장 신경 쓰이는 고민을 골라 주세요. (복수 선택)' },
+  ] as const;
 
   useEffect(() => {
-    setFormData(profile);
+    queueMicrotask(() => {
+      setFormData(profile);
+      setProfileStep(0);
+    });
   }, [profile]);
   
   useEffect(() => {
@@ -39,8 +55,141 @@ export default function Profile() {
     }
   };
 
-  const concernOptions = ['관절', '피부', '체중', '소화', '눈'];
-  const allergyOptions = ['닭고기', '소고기', '연어', '곡물', '인공색소'];
+  const stepCount = PROFILE_STEP_META.length;
+  const step = PROFILE_STEP_META[profileStep];
+
+  const profileStepBody = (() => {
+    switch (profileStep) {
+      case 0:
+        return (
+          <TossInput
+            value={formData.name}
+            onChange={(value) => setFormData({ ...formData, name: value })}
+            placeholder="예: 로니"
+          />
+        );
+      case 1:
+        return (
+          <div style={{ display: 'flex', gap: '10px' }}>
+            {(['Dog', 'Cat'] as const).map((sp) => (
+              <button
+                key={sp}
+                type="button"
+                onClick={() => setFormData({ ...formData, species: sp })}
+                style={{
+                  flex: 1,
+                  padding: '16px 14px',
+                  borderRadius: '16px',
+                  fontSize: '15px',
+                  fontWeight: 800,
+                  border: formData.species === sp ? 'none' : '1px solid #E5E7EB',
+                  backgroundColor: formData.species === sp ? 'var(--primary-dark)' : '#fff',
+                  color: formData.species === sp ? '#fff' : 'var(--text-dark)',
+                  cursor: 'pointer',
+                }}
+              >
+                {sp === 'Dog' ? '강아지' : '고양이'}
+              </button>
+            ))}
+          </div>
+        );
+      case 2:
+        return (
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {[
+              { label: '아기', age: 1 },
+              { label: '성인', age: 4 },
+              { label: '시니어', age: 10 },
+            ].map(({ label, age }) => (
+              <button
+                key={label}
+                type="button"
+                onClick={() => setFormData({ ...formData, age })}
+                style={{
+                  padding: '12px 20px',
+                  borderRadius: '999px',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  border: formData.age === age ? 'none' : '1px solid #E5E7EB',
+                  backgroundColor: formData.age === age ? 'var(--primary)' : '#fff',
+                  color: formData.age === age ? '#111827' : 'var(--text-dark)',
+                  cursor: 'pointer',
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        );
+      case 3:
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <TossInput
+              value={formData.weightKg != null ? String(formData.weightKg) : ''}
+              onChange={(v) => {
+                const n = parseFloat(v.replace(/[^0-9.]/g, ''));
+                setFormData({
+                  ...formData,
+                  weightKg: Number.isFinite(n) && n > 0 ? n : undefined,
+                });
+              }}
+              placeholder="예: 5.2"
+            />
+            <span style={{ fontSize: '14px', fontWeight: 700, color: '#64748B' }}>kg</span>
+          </div>
+        );
+      case 4:
+        return (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+            {allergyOptions.map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => toggleArrayItem('allergies', opt)}
+                style={{
+                  padding: '10px 18px',
+                  borderRadius: '999px',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  border: formData.allergies.includes(opt) ? 'none' : '1px solid #E5E7EB',
+                  backgroundColor: formData.allergies.includes(opt) ? 'var(--danger)' : '#fff',
+                  color: formData.allergies.includes(opt) ? '#fff' : 'var(--text-dark)',
+                  cursor: 'pointer',
+                }}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        );
+      case 5:
+        return (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+            {concernOptions.map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => toggleArrayItem('healthConcerns', opt)}
+                style={{
+                  padding: '10px 18px',
+                  borderRadius: '999px',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  border: formData.healthConcerns.includes(opt) ? 'none' : '1px solid #E5E7EB',
+                  backgroundColor: formData.healthConcerns.includes(opt) ? 'var(--primary-dark)' : '#fff',
+                  color: formData.healthConcerns.includes(opt) ? '#fff' : 'var(--text-dark)',
+                  cursor: 'pointer',
+                }}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        );
+      default:
+        return null;
+    }
+  })();
 
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '40px' }}>
@@ -84,128 +233,65 @@ export default function Profile() {
           )}
         </div>
       ) : activeTab === 'info' ? (
-        <TossCard style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <User color="#fff" size={24} />
+        <TossCard style={{ padding: '28px 22px 24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+            <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <User color="#fff" size={22} />
             </div>
-            <div>
-              <TossSectionTitle title={`${formData.name || '우리 아이'}의 정보`} style={{ marginBottom: '2px' }} />
-              <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>아이의 건강 상태에 맞춘 성분 분석을 제공합니다.</p>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '11px', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.06em', marginBottom: '4px' }}>
+                마이 펫 · {profileStep + 1} / {stepCount}
+              </div>
+              <TossSectionTitle title={step.title} style={{ marginBottom: '0' }} />
             </div>
           </div>
-          
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', fontSize: '14px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '12px' }}>아이 이름</label>
-            <TossInput
-              value={formData.name}
-              onChange={(value) => setFormData({ ...formData, name: value })}
-              placeholder="반려동물 이름을 입력하세요"
+
+          <div
+            style={{
+              height: '4px',
+              borderRadius: '999px',
+              background: '#EEF2F6',
+              marginBottom: '24px',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                height: '100%',
+                width: `${((profileStep + 1) / stepCount) * 100}%`,
+                borderRadius: '999px',
+                background: 'linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%)',
+                transition: 'width 0.25s ease',
+              }}
             />
           </div>
 
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', fontSize: '14px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '12px' }}>종류</label>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              {(['Dog', 'Cat'] as const).map((sp) => (
-                <button
-                  key={sp}
-                  type="button"
-                  onClick={() => setFormData({ ...formData, species: sp })}
-                  style={{
-                    flex: 1,
-                    padding: '12px 16px',
-                    borderRadius: '14px',
-                    fontSize: '14px',
-                    fontWeight: 700,
-                    border: formData.species === sp ? 'none' : '1px solid #E5E7EB',
-                    backgroundColor: formData.species === sp ? 'var(--primary-dark)' : '#fff',
-                    color: formData.species === sp ? '#fff' : 'var(--text-dark)',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  {sp === 'Dog' ? '🐕 강아지' : '🐈 고양이'}
-                </button>
-              ))}
-            </div>
-          </div>
+          <p style={{ margin: '0 0 22px', fontSize: '16px', fontWeight: 700, color: '#334155', lineHeight: 1.5 }}>
+            {step.prompt}
+          </p>
 
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', fontSize: '14px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '12px' }}>나이대</label>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              {[
-                { label: '아기', age: 1 },
-                { label: '성인', age: 4 },
-                { label: '시니어', age: 10 },
-              ].map(({ label, age }) => (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={() => setFormData({ ...formData, age })}
-                  style={{
-                    padding: '10px 18px',
-                    borderRadius: '24px',
-                    fontSize: '13px',
-                    fontWeight: 700,
-                    border: formData.age === age ? 'none' : '1px solid #E5E7EB',
-                    backgroundColor: formData.age === age ? 'var(--primary)' : '#fff',
-                    color: formData.age === age ? '#111827' : 'var(--text-dark)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            <p style={{ margin: '8px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
-              추천·분석에 반영됩니다.
-            </p>
-          </div>
+          <div style={{ marginBottom: '28px' }}>{profileStepBody}</div>
 
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', fontSize: '14px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '12px' }}>관심 건강 고민</label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-              {concernOptions.map(opt => (
-                <button 
-                  key={opt}
-                  onClick={() => toggleArrayItem('healthConcerns', opt)}
-                  style={{
-                    padding: '10px 18px', borderRadius: '24px', fontSize: '14px', fontWeight: 600,
-                    border: formData.healthConcerns.includes(opt) ? 'none' : '1px solid #E5E7EB',
-                    backgroundColor: formData.healthConcerns.includes(opt) ? 'var(--primary-dark)' : '#fff',
-                    color: formData.healthConcerns.includes(opt) ? '#fff' : 'var(--text-dark)',
-                    cursor: 'pointer', transition: 'all 0.2s',
-                    boxShadow: formData.healthConcerns.includes(opt) ? '0 4px 12px rgba(0,0,0,0.1)' : 'none'
-                  }}
-                >{opt}</button>
-              ))}
-            </div>
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '14px' }}>
+            <TossButton
+              type="button"
+              variant="outline"
+              style={{ flex: 1, height: '50px' }}
+              disabled={profileStep === 0}
+              onClick={() => setProfileStep((s) => Math.max(0, s - 1))}
+            >
+              이전
+            </TossButton>
+            {profileStep < stepCount - 1 ? (
+              <TossButton type="button" style={{ flex: 1, height: '50px' }} onClick={() => setProfileStep((s) => Math.min(stepCount - 1, s + 1))}>
+                다음
+              </TossButton>
+            ) : (
+              <TossButton type="button" style={{ flex: 1, height: '50px' }} onClick={handleSave}>
+                저장
+              </TossButton>
+            )}
           </div>
-
-          <div style={{ marginBottom: '40px' }}>
-            <label style={{ display: 'block', fontSize: '14px', fontWeight: 700, color: 'var(--danger)', marginBottom: '12px' }}>알레르기 / 회피 성분</label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-              {allergyOptions.map(opt => (
-                <button 
-                  key={opt}
-                  onClick={() => toggleArrayItem('allergies', opt)}
-                  style={{
-                    padding: '10px 18px', borderRadius: '24px', fontSize: '14px', fontWeight: 600,
-                    border: formData.allergies.includes(opt) ? 'none' : '1px solid #E5E7EB',
-                    backgroundColor: formData.allergies.includes(opt) ? 'var(--danger)' : '#fff',
-                    color: formData.allergies.includes(opt) ? '#fff' : 'var(--text-dark)',
-                    cursor: 'pointer', transition: 'all 0.2s',
-                    boxShadow: formData.allergies.includes(opt) ? '0 4px 12px rgba(239,68,68,0.2)' : 'none'
-                  }}
-                >{opt}</button>
-              ))}
-            </div>
-          </div>
-
-          <TossButton onClick={handleSave} style={{ height: '52px', fontSize: '16px' }}>
-            변경 사항 저장
-          </TossButton>
         </TossCard>
       ) : activeTab === 'orders' ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -221,7 +307,7 @@ export default function Profile() {
                 </div>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {order.order_items.map((item: any) => (
+                  {order.order_items.map((item: SupabaseOrderItem) => (
                     <Link key={item.id} to={`/product/${item.product_id}`} style={{ display: 'flex', gap: '12px', textDecoration: 'none', color: 'inherit' }}>
                       <img src={item.products.image_url} alt={item.products.name} style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover' }} />
                       <div style={{ flex: 1 }}>

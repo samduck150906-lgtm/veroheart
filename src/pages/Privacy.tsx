@@ -1,3 +1,5 @@
+import { COMPANY } from '../constants/companyInfo';
+
 export default function Privacy() {
   return (
     <div style={{ padding: '20px', paddingTop: '80px', paddingBottom: '100px', lineHeight: 1.65 }}>
@@ -5,88 +7,33 @@ export default function Privacy() {
       <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '20px' }}>시행일: 2026년 4월 12일</p>
 
       <div style={{ fontSize: '13px', color: '#374151' }}>
-        <p>
-          이터널식스(이하 &quot;회사&quot;)는 VeRoRo(베로로) 및 Petty Community 서비스(이하 &quot;서비스&quot;)와 관련하여
-          「개인정보 보호법」 등 관련 법령을 준수하며, 이용자의 개인정보가 보호받을 수 있도록 다음과 같이 개인정보처리방침을
-          수립·공개합니다.
+        <p style={{ fontWeight: 'bold', marginBottom: '8px' }}>사업자 정보</p>
+        <p style={{ marginBottom: '16px', fontSize: '12px', color: '#4B5563' }}>
+          상호 {COMPANY.tradeName}
+          <br />
+          대표자 {COMPANY.representative}
+          <br />
+          사업자등록번호 {COMPANY.bizRegNo}
+          <br />
+          통신판매업 {COMPANY.mailOrderBizNo}
+          <br />
+          연락처 {COMPANY.phone}
+          <br />
+          주소 {COMPANY.address}
+          <br />
+          이메일 {COMPANY.email}
         </p>
 
-        <p style={{ fontWeight: 'bold', marginTop: '18px' }}>1. 수집하는 개인정보 항목 및 방법</p>
-        <p>① 회사는 회원가입, 서비스 이용, 상품 주문, 고객 상담 등을 위해 아래와 같은 개인정보를 수집할 수 있습니다.</p>
-        <ul style={{ marginTop: '6px', paddingLeft: '20px' }}>
-          <li><strong>회원 가입·계정:</strong> 이메일, 닉네임, 프로필 이미지(선택), 소셜 로그인 시 해당 플랫폼이 제공하는 식별자</li>
-          <li><strong>반려동물 정보(선택):</strong> 이름, 종류, 나이·체중 구간, 알레르기·질환 관련 정보(서비스 맞춤 기능 제공 시)</li>
-          <li><strong>성분 분석·OCR:</strong> 이용자가 촬영·업로드한 성분표 이미지 및 추출된 텍스트</li>
-          <li><strong>결제·배송:</strong> 주문자 정보, 수령인 정보, 배송지, 연락처, 결제에 필요한 최소 정보(결제 대행사가 처리하는
-            카드·간편결제 정보는 해당 사의 정책에 따름)</li>
-          <li><strong>자동 수집:</strong> 서비스 이용 기록, 접속 로그, 기기 정보(OS·앱 버전), 쿠키·광고식별자(설정에 따름)</li>
-        </ul>
-        <p>② 개인정보는 이용자가 동의한 범위에서 홈페이지·모바일 앱·고객센터 등을 통해 수집됩니다.</p>
-
-        <p style={{ fontWeight: 'bold', marginTop: '18px' }}>2. 개인정보의 처리 목적</p>
-        <p>회사는 수집한 개인정보를 다음의 목적 범위 내에서만 처리합니다.</p>
-        <ul style={{ marginTop: '6px', paddingLeft: '20px' }}>
-          <li>회원 식별, 가입 의사 확인, 부정이용 방지, 회원제 서비스 제공</li>
-          <li>성분 분석·제품 추천·리뷰·커뮤니티 등 서비스 기능 제공 및 품질 개선</li>
-          <li>상품 주문·결제·배송·CS, 전자상거래 관련 의무 이행</li>
-          <li>이용자 문의 응대, 분쟁 처리, 고지·통지</li>
-          <li>서비스 이용 통계·분석(비식별·익명화 형태로 활용 가능)</li>
-          <li>법령에 따른 의무 이행 및 수사기관 요청에 대한 협조</li>
-        </ul>
-
-        <p style={{ fontWeight: 'bold', marginTop: '18px' }}>3. 개인정보의 보유 및 이용 기간</p>
-        <p>① 회사는 원칙적으로 개인정보 수집·이용 목적이 달성된 후에는 해당 정보를 지체 없이 파기합니다.</p>
-        <p>② 다만 관계 법령에 따라 보존할 필요가 있는 경우 회사는 법령에서 정한 기간 동안 보관합니다. 예시는 다음과 같습니다.</p>
-        <ul style={{ marginTop: '6px', paddingLeft: '20px' }}>
-          <li>계약 또는 청약철회 등에 관한 기록: 5년(전자상거래법)</li>
-          <li>대금결제 및 재화 등의 공급에 관한 기록: 5년(전자상거래법)</li>
-          <li>소비자의 불만 또는 분쟁처리에 관한 기록: 3년(전자상거래법)</li>
-          <li>웹사이트 방문기록: 3개월(통신비밀보호법)</li>
-        </ul>
-
-        <p style={{ fontWeight: 'bold', marginTop: '18px' }}>4. 개인정보의 제3자 제공</p>
-        <p>① 회사는 이용자의 개인정보를 본 방침에서 고지한 범위를 넘어 제3자에게 제공하지 않습니다.</p>
-        <p>② 다만 이용자의 동의가 있거나 법령에 의해 요구되는 경우는 예외로 합니다.</p>
-
-        <p style={{ fontWeight: 'bold', marginTop: '18px' }}>5. 개인정보 처리 위탁</p>
-        <p>회사는 원활한 서비스 제공을 위해 개인정보 처리 업무를 외부에 위탁할 수 있으며, 위탁 시 관련 법령에 따라
-          수탁자·위탁업무 내용을 개인정보처리방침에 공개하고 필요한 경우 이용자에게 고지합니다. (예: 클라우드 호스팅,
-          결제·배송 대행, 문자·이메일 발송 등)</p>
-
-        <p style={{ fontWeight: 'bold', marginTop: '18px' }}>6. 이용자의 권리·의무 및 행사 방법</p>
-        <p>① 이용자는 언제든지 자신의 개인정보를 열람·정정·삭제·처리정지 요구할 수 있으며, 회원 탈퇴를 통해
-          수집·이용 동의를 철회할 수 있습니다.</p>
-        <p>② 권리 행사는 고객센터(전화·이메일) 또는 앱 내 설정·문의 기능을 통해 요청할 수 있으며, 회사는 지체 없이
-          조치합니다.</p>
-
-        <p style={{ fontWeight: 'bold', marginTop: '18px' }}>7. 개인정보의 파기</p>
-        <p>회사는 개인정보 보유기간의 경과, 처리목적 달성 등 파기 사유가 발생한 경우 지체 없이 파기합니다. 전자적 파일은
-          복구 불가한 방법으로 삭제하며, 출력물은 분쇄 또는 소각합니다.</p>
-
-        <p style={{ fontWeight: 'bold', marginTop: '18px' }}>8. 개인정보의 안전성 확보 조치</p>
-        <p>회사는 개인정보의 분실·도난·유출·변조·훼손을 방지하기 위해 접근권한 관리, 암호화, 보안 프로그램 운영 등
-          법령이 요구하는 조치를 취합니다.</p>
-
-        <p style={{ fontWeight: 'bold', marginTop: '18px' }}>9. 쿠키의 운영</p>
-        <p>회사는 이용자에게 개인화된 서비스를 제공하기 위해 쿠키를 사용할 수 있습니다. 이용자는 브라우저 설정 등을 통해
-          쿠키 저장을 거부할 수 있으나, 일부 기능 이용이 제한될 수 있습니다.</p>
-
-        <p style={{ fontWeight: 'bold', marginTop: '18px' }}>10. 개인정보 보호책임자</p>
-        <p>
-          회사는 개인정보 처리에 관한 업무를 총괄하여 책임지고, 이용자의 불만 처리 및 피해 구제를 위해 아래와 같이
-          개인정보 보호책임자를 지정합니다.
-          <br />
-          · 성명/직책: 개인정보 보호책임자(고객센터 경유)
-          <br />
-          · 연락처:{' '}
-          <a href="tel:010-8111-9370" style={{ color: '#4f46e5' }}>010-8111-9370</a>
-          {' · '}
-          <a href="mailto:veroro@eternalsix.com" style={{ color: '#4f46e5' }}>veroro@eternalsix.com</a>
-        </p>
-
-        <p style={{ fontWeight: 'bold', marginTop: '18px' }}>11. 고지의 의무</p>
-        <p>현 개인정보처리방침의 내용 추가·삭제 및 수정이 있을 시 개정 최소 7일 전에 서비스 내 공지합니다. 다만
-          이용자 권리에 중대한 영향을 미치는 변경의 경우에는 30일 전에 공지하고 필요 시 별도 동의를 받습니다.</p>
+        <p>{COMPANY.tradeName}(이하 "회사")는 Petty 서비스 운영과 관련하여 「개인정보 보호법」 등 관련 법령상의 개인정보보호 규정을 준수하며, 정보주체의 개인정보 보호 및 권익을 보호하고 이와 관련한 고충을 신속하고 원활하게 처리할 수 있도록 개인정보 처리방침을 수립·공개합니다.</p>
+        
+        <p style={{ fontWeight: 'bold', marginTop: '16px' }}>1. 개인정보의 수집 및 이용 목적</p>
+        <p>회사는 다음의 목적을 위하여 개인정보를 처리합니다. <br/>- 회원 가입 및 관리 <br/>- 재화 또는 서비스 제공(결제, 배송 등)</p>
+        
+        <p style={{ fontWeight: 'bold', marginTop: '16px' }}>2. 수집하는 개인정보 항목</p>
+        <p>회사는 서비스 제공을 위해 아래의 개인정보를 수집합니다. <br/>- 필수항목: 성명, 연락처, 이메일, 배송지 주소, 결제정보</p>
+        
+        <p style={{ fontWeight: 'bold', marginTop: '16px' }}>3. 개인정보의 보유 및 이용기간</p>
+        <p>회사는 법령에 따른 보존기간 또는 정보주체로부터 수집 시 동의받은 기간 내에서 개인정보를 보유·이용합니다. 전자상거래 등에서의 소비자 보호에 관한 법률 등 법령 기준에 따릅니다.</p>
       </div>
     </div>
   );

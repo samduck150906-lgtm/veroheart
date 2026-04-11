@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom';
+import { COUPANG_PARTNERS_DISCLOSURE } from '../constants/coupangPartners';
+import { COMPANY } from '../constants/companyInfo';
 
 function Footer() {
   return (
@@ -56,6 +58,18 @@ function Footer() {
           Petty Community powered by VeRoRo
         </div>
 
+        <p
+          style={{
+            margin: '0 0 10px',
+            fontSize: '10px',
+            lineHeight: 1.45,
+            fontWeight: 600,
+            color: '#6B6560',
+          }}
+        >
+          {COUPANG_PARTNERS_DISCLOSURE}
+        </p>
+
         <div
           style={{
             fontSize: '8.5px',
@@ -64,18 +78,19 @@ function Footer() {
           }}
         >
           <p style={{ margin: '0 0 1px' }}>
-            상호 이터널식스 · 대표자 성아름 · 사업자등록번호 303-28-65658 · 통신판매업 제 2025-수원영통-1499호
+            상호 {COMPANY.tradeName} · 대표자 {COMPANY.representative} · 사업자등록번호 {COMPANY.bizRegNo} · 통신판매업{' '}
+            {COMPANY.mailOrderBizNo}
           </p>
           <p style={{ margin: 0 }}>
-            주소 경기도 수원시 영통구 삼성로 186-1 4층 · 연락처{' '}
-            <a href="tel:010-8111-9370" style={{ color: 'inherit', textDecoration: 'none' }}>
-              010-8111-9370
+            주소 {COMPANY.address} · 연락처{' '}
+            <a href={COMPANY.phoneTelHref} style={{ color: 'inherit', textDecoration: 'none' }}>
+              {COMPANY.phone}
             </a>{' '}
             · 이메일{' '}
-            <a href="mailto:veroro@eternalsix.com" style={{ color: 'inherit', textDecoration: 'none' }}>
-              veroro@eternalsix.com
+            <a href={`mailto:${COMPANY.email}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+              {COMPANY.email}
             </a>{' '}
-            · © 이터널식스
+            · © {COMPANY.tradeName}
           </p>
         </div>
       </div>

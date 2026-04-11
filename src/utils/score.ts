@@ -66,7 +66,6 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
   const dangerCount = product.ingredients.filter((ingredient) => ingredient.riskLevel === 'danger').length;
   const cautionCount = product.ingredients.filter((ingredient) => ingredient.riskLevel === 'caution').length;
   const safeCount = product.ingredients.filter((ingredient) => ingredient.riskLevel === 'safe').length;
-  const totalIngredients = Math.max(product.ingredients.length, 1);
 
   let safety = 35;
   safety -= dangerCount * 10;

@@ -1,3 +1,5 @@
+import { COMPANY } from '../constants/companyInfo';
+
 export default function Refund() {
   return (
     <div style={{ padding: '20px', paddingTop: '80px', paddingBottom: '100px', lineHeight: 1.65 }}>
@@ -22,11 +24,13 @@ export default function Refund() {
           <li>그 밖에 법령에서 정한 청약철회 제한 사유에 해당하는 경우</li>
         </ul>
 
-        <p style={{ fontWeight: 'bold', marginTop: '18px' }}>제2조 (반려동물 식품·간식 특별 안내)</p>
-        <p>① 사료·간식 등 식품은 위생·안전 관리를 위해 포장을 개봉하거나 제품이 훼손된 경우 단순 변심에 의한
-          교환·반품이 제한될 수 있습니다.</p>
-        <p>② 유통기한 경과, 이물 혼입, 변질 등 회사 또는 제조사 귀책에 해당하는 하자가 있는 경우, 수령일(또는
-          하자를 알 수 있었던 날)로부터 관계 법령이 정한 기간 내에 교환·환불·수리 등을 요청하실 수 있습니다.</p>
+        <p style={{ fontWeight: 'bold', marginTop: '24px' }}>제2조 (환불 절차)</p>
+        <p>
+          1. 환불 요청은 마이페이지 내 주문내역에서 가능하며, 고객센터({COMPANY.phone})를 통해서도 접수 가능합니다.<br/>
+          2. 환불 요청이 정상적으로 접수되면 3영업일 이내에 환불 처리됩니다.<br/>
+          3. 결제 수단에 따라 실제 환불 완료까지 최대 7영업일이 소요될 수 있습니다.<br/>
+          4. 신용카드 결제의 경우 카드사 매입 취소를 통해 승인이 취소됩니다.
+        </p>
 
         <p style={{ fontWeight: 'bold', marginTop: '18px' }}>제3조 (환불 절차 및 기한)</p>
         <p>① 취소·환불 신청은 앱 내 마이페이지 또는 주문 상세에서 가능하며, 고객센터를 통해서도 접수할 수 있습니다.</p>
@@ -45,28 +49,22 @@ export default function Refund() {
           법령이 정한 범위 내에서 중도 해지 시 이용 기간에 따른 일할 계산 등을 적용할 수 있습니다.</p>
         <p>② 이미 사용·다운로드된 디지털 콘텐츠 등은 그 성격상 환불이 제한될 수 있습니다.</p>
 
-        <p style={{ fontWeight: 'bold', marginTop: '18px' }}>제6조 (기타)</p>
-        <p>본 안내에서 정하지 않은 사항은 「전자상거래 등에서의 소비자보호에 관한 법률」, 서비스 이용약관 및 회사의
-          고객응대 정책에 따릅니다.</p>
-
-        <div
-          style={{
-            marginTop: '28px',
-            padding: '16px',
-            backgroundColor: '#F3F4F6',
-            borderRadius: '12px',
-            fontSize: '12px',
-          }}
-        >
-          <p style={{ fontWeight: 'bold', marginBottom: '8px' }}>고객센터</p>
-          <p style={{ margin: 0 }}>
-            전화:{' '}
-            <a href="tel:010-8111-9370" style={{ color: '#4f46e5' }}>010-8111-9370</a>
+        <div style={{ marginTop: '32px', padding: '16px', backgroundColor: '#F3F4F6', borderRadius: '12px' }}>
+          <p style={{ fontWeight: 'bold', marginBottom: '8px' }}>📞 고객센터 · 사업자 정보</p>
+          <p>
+            상호 {COMPANY.tradeName} · 대표 {COMPANY.representative}
             <br />
-            이메일:{' '}
-            <a href="mailto:veroro@eternalsix.com" style={{ color: '#4f46e5' }}>veroro@eternalsix.com</a>
+            사업자등록번호 {COMPANY.bizRegNo} · 통신판매업 {COMPANY.mailOrderBizNo}
             <br />
-            운영시간: 평일 10:00 ~ 18:00 (점심 12:00 ~ 13:00 제외), 주말·공휴일 휴무
+            주소 {COMPANY.address}
+            <br />
+            전화: {COMPANY.phone}
+            <br />
+            이메일: {COMPANY.email}
+            <br />
+            운영시간: 평일 10:00 ~ 18:00 (점심 12:00 ~ 13:00 제외)
+            <br />
+            주말 및 공휴일 휴무
           </p>
         </div>
       </div>

@@ -2,15 +2,15 @@ import { useState, useEffect, type ReactNode } from 'react';
 import { supabase } from '../../lib/supabase';
 import { ShieldCheck, Lock, Loader2 } from 'lucide-react';
 
-// 관리자 이메일 화이트리스트
-const ADMIN_EMAILS = ['veroro@eternalsix.com'];
+function parseAdminEmails(raw: string | undefined): string[] {
+  if (!raw?.trim()) return [];
+  return raw
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+}
 
-// 관리자 아이디/비밀번호 (앱 오너 계정)
-const ADMIN_CREDENTIALS = [
-  { username: 'rumi', password: 'fnalfnal' },
-  { username: 'young', password: 'duddlduddl' },
-  { username: 'jeong', password: 'wjddlwjddl' },
-] as const;
+const ADMIN_EMAILS = parseAdminEmails(import.meta.env.VITE_ADMIN_EMAILS);
 
 interface AdminAuthGuardProps {
   children: ReactNode;
@@ -19,51 +19,35 @@ interface AdminAuthGuardProps {
 export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [adminId, setAdminId] = useState('');
-  const [adminPassword, setAdminPassword] = useState('');
-  const [error, setError] = useState('');
 
   useEffect(() => {
-    checkAuth();
+    let cancelled = false;
+
+    const checkAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const email = session?.user?.email?.trim().toLowerCase();
+        if (email && ADMIN_EMAILS.length > 0 && ADMIN_EMAILS.includes(email)) {
+          if (!cancelled) setIsAuthenticated(true);
+          return;
+        }
+        if (email && ADMIN_EMAILS.length === 0) {
+          console.warn(
+            '[admin] VITE_ADMIN_EMAILS가 비어 있습니다. 관리자 콘솔은 로그인된 Supabase 사용자 중에서도 열리지 않습니다.'
+          );
+        }
+      } catch (err) {
+        console.error('Admin auth check failed:', err);
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+
+    void checkAuth();
+    return () => {
+      cancelled = true;
+    };
   }, []);
-
-  const checkAuth = async () => {
-    try {
-      // 1차: Supabase Auth 세션 확인
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user?.email && ADMIN_EMAILS.includes(session.user.email)) {
-        setIsAuthenticated(true);
-        setIsLoading(false);
-        return;
-      }
-
-      // 2차: 세션스토리지 확인 (아이디/비밀번호 인증)
-      const stored = sessionStorage.getItem('vh_admin_auth');
-      if (stored && ADMIN_CREDENTIALS.some((cred) => btoa(`${cred.username}:${cred.password}`) === stored)) {
-        setIsAuthenticated(true);
-      }
-    } catch (err) {
-      console.error('Admin auth check failed:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleAdminLogin = () => {
-    const id = adminId.trim();
-    const pw = adminPassword.trim();
-    const matched = ADMIN_CREDENTIALS.find(
-      (cred) => cred.username === id && cred.password === pw
-    );
-    if (matched) {
-      sessionStorage.setItem('vh_admin_auth', btoa(`${matched.username}:${matched.password}`));
-      setIsAuthenticated(true);
-      setError('');
-    } else {
-      setError('관리자 인증에 실패했습니다.');
-      setAdminPassword('');
-    }
-  };
 
   if (isLoading) {
     return (
@@ -100,63 +84,26 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
           <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#f1f5f9', marginBottom: '8px' }}>
             베로로 Admin
           </h1>
-          <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '32px' }}>
-            관리자 콘솔에 접근하려면 인증이 필요합니다.
+          <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '24px', lineHeight: 1.55 }}>
+            관리자 콘솔은 <strong style={{ color: '#94a3b8' }}>허용된 Supabase 계정</strong>으로 로그인한 경우에만 이용할 수 있습니다.
+            일반 로그인 화면에서 해당 이메일로 로그인한 뒤 다시 접속해 주세요.
           </p>
 
-          <div style={{ position: 'relative', marginBottom: '12px' }}>
-            <input
-              type="text"
-              placeholder="관리자 아이디 입력"
-              value={adminId}
-              onChange={(e) => { setAdminId(e.target.value); if (error) setError(''); }}
-              onKeyDown={(e) => e.key === 'Enter' && handleAdminLogin()}
-              style={{
-                width: '100%', padding: '16px', borderRadius: '14px',
-                border: '1px solid rgba(255,255,255,0.1)', backgroundColor: '#0f172a',
-                color: '#f1f5f9', fontSize: '15px', outline: 'none', boxSizing: 'border-box',
-                transition: 'border-color 0.2s'
-              }}
-            />
-          </div>
-
-          <div style={{ position: 'relative', marginBottom: '16px' }}>
-            <Lock size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#475569' }} />
-            <input
-              type="password"
-              placeholder="관리자 비밀번호 입력"
-              value={adminPassword}
-              onChange={(e) => { setAdminPassword(e.target.value); if (error) setError(''); }}
-              onKeyDown={(e) => e.key === 'Enter' && handleAdminLogin()}
-              style={{
-                width: '100%', padding: '16px 16px 16px 48px', borderRadius: '14px',
-                border: '1px solid rgba(255,255,255,0.1)', backgroundColor: '#0f172a',
-                color: '#f1f5f9', fontSize: '15px', outline: 'none', boxSizing: 'border-box',
-                transition: 'border-color 0.2s'
-              }}
-            />
-          </div>
-
-          {error && (
-            <p style={{ color: '#ef4444', fontSize: '13px', fontWeight: 600, marginBottom: '16px' }}>
-              {error}
-            </p>
-          )}
-
-          <button
-            onClick={handleAdminLogin}
+          <a
+            href="/login"
             style={{
-              width: '100%', padding: '16px', borderRadius: '14px', border: 'none',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+              width: '100%', padding: '16px', borderRadius: '14px',
               backgroundColor: '#6366f1', color: '#fff', fontWeight: 700, fontSize: '16px',
-              cursor: 'pointer', transition: 'all 0.2s',
-              boxShadow: '0 8px 16px rgba(99,102,241,0.3)'
+              textDecoration: 'none', boxShadow: '0 8px 16px rgba(99,102,241,0.3)',
             }}
           >
-            인증하기
-          </button>
+            <Lock size={18} />
+            로그인으로 이동
+          </a>
 
           <p style={{ marginTop: '24px', fontSize: '12px', color: '#475569' }}>
-            관리자 계정이 없으신가요? <a href="mailto:veroro@eternalsix.com" style={{ color: '#6366f1' }}>문의</a>
+            배포 시 빌드 환경 변수 <code style={{ color: '#a5b4fc' }}>VITE_ADMIN_EMAILS</code>에 관리자 이메일을 쉼표로 구분해 설정하세요.
           </p>
         </div>
       </div>

@@ -1,73 +1,53 @@
-# React + TypeScript + Vite
+# 베로로 (VeRoRo)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 19 + Vite + TypeScript 기반의 반려동물 사료·용품 탐색·성분 분석 웹 앱입니다. 구매 전환은 **쿠팡(파트너스)** 연동을 전제로 하며, 앱 내 결제(토스페이먼츠 등)는 사용하지 않습니다. 데이터는 Supabase(Postgres + Auth + Edge Functions)를 사용합니다.
 
-Currently, two official plugins are available:
+## 요구 환경
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Node.js 20+
+- npm 10+
 
-## React Compiler
+## 환경 변수
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+루트에 `.env`를 두고 Vite 접두사 `VITE_` 변수를 설정합니다.
 
-## Expanding the ESLint configuration
+| 변수 | 용도 |
+|------|------|
+| `VITE_SUPABASE_URL` | Supabase 프로젝트 URL |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anon(공개) 키 |
+| `VITE_KAKAO_JAVASCRIPT_KEY` | (선택) 카카오 공유 |
+| `VITE_ADMIN_EMAILS` | (선택) 관리자 콘솔 접근 허용 이메일, 쉼표로 구분. 비어 있으면 `/admin`은 로그인해도 열리지 않음 |
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+**Supabase Edge (선택)**
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- `CORS_ALLOWED_ORIGINS` — Edge Function CORS. 비어 있으면 `*`. 운영 시 허용 도메인을 쉼표로 지정하세요.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+**쿠팡 파트너스 링크 (`products.coupang_link`)**
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+1. Supabase에 마이그레이션 적용: `supabase/migrations/20260411120000_add_coupang_link_to_products.sql` (컬럼 `coupang_link`).
+2. **`/admin/products`**: 제품 편집 폼에 **쿠팡 파트너스 링크** 입력(HTTPS·쿠팡 도메인 검증). 비우면 기존처럼 `coupang_product_id` 또는 검색 URL로 이동합니다.
+3. **CSV 일괄 반영**: 같은 화면 상단 카드에 CSV 드래그 앤 드롭. 필수 헤더 **`id`**, **`coupang_link`**. 선택 **`coupang_product_id`**. UTF-8, 첫 행은 헤더.
+4. 앱·푸터에 공정위 고지 문구가 노출됩니다(`COUPANG_PARTNERS_DISCLOSURE`).
+
+## 스크립트
+
+```bash
+npm ci
+npm run dev      # 개발 서버
+npm run build    # 타입체크 + 프로덕션 빌드
+npm run lint     # ESLint
+npm run test     # Vitest 단위 테스트
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 배포 개요
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- **프론트**: Vite 정적 빌드(`dist`). Netlify 사용 시 `netlify.toml`의 SPA 폴백과 관리자 호스트 리다이렉트를 참고하세요.
+- **Supabase**: `analyze-ingredients`, `personalized-score` 등 AI·점수 관련 Edge Function.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 관리자 콘솔
+
+`/admin`은 Supabase Auth로 로그인한 사용자의 이메일이 `VITE_ADMIN_EMAILS`에 포함될 때만 접근 가능합니다.
+
+## 라이선스
+
+비공개 저장소(`private: true`)입니다.
