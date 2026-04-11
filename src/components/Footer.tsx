@@ -72,8 +72,8 @@ function Footer() {
               010-8111-9370
             </a>{' '}
             · 이메일{' '}
-            <a href="mailto:ceo@eternalsix.kr" style={{ color: 'inherit', textDecoration: 'none' }}>
-              ceo@eternalsix.kr
+            <a href="mailto:veroro@eternalsix.com" style={{ color: 'inherit', textDecoration: 'none' }}>
+              veroro@eternalsix.com
             </a>{' '}
             · © 이터널식스
           </p>

@@ -8,20 +8,15 @@ const APP_STORE =
 const PLAY_STORE =
   "https://play.google.com/store/search?q=%EB%B2%A0%EB%A1%9C%EB%A1%9C&c=apps";
 
-const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL?.trim();
+const DEFAULT_CONTACT = "veroro@eternalsix.com";
+const CONTACT_EMAIL =
+  process.env.NEXT_PUBLIC_CONTACT_EMAIL?.trim() || DEFAULT_CONTACT;
 const SOCIAL_INSTAGRAM =
   process.env.NEXT_PUBLIC_SOCIAL_INSTAGRAM_URL?.trim() || "#";
 const SOCIAL_YOUTUBE =
   process.env.NEXT_PUBLIC_SOCIAL_YOUTUBE_URL?.trim() || "#";
 
-const PREORDER_MAIL = CONTACT_EMAIL
-  ? `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("[VeRoRo] 사전 예약 신청")}`
-  : "mailto:?subject=" +
-    encodeURIComponent("[VeRoRo] 사전 예약 신청") +
-    "&body=" +
-    encodeURIComponent(
-      "아래에 연락처를 남겨 주세요.\n\n- 이름:\n- 휴대폰:\n- 반려동물 종류:\n",
-    );
+const PREORDER_MAIL = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("[VeRoRo] 사전 예약 신청")}`;
 
 export default function HomePage() {
   return (

@@ -64,7 +64,7 @@ export default function Refund() {
             <a href="tel:010-8111-9370" style={{ color: '#4f46e5' }}>010-8111-9370</a>
             <br />
             이메일:{' '}
-            <a href="mailto:ceo@eternalsix.kr" style={{ color: '#4f46e5' }}>ceo@eternalsix.kr</a>
+            <a href="mailto:veroro@eternalsix.com" style={{ color: '#4f46e5' }}>veroro@eternalsix.com</a>
             <br />
             운영시간: 평일 10:00 ~ 18:00 (점심 12:00 ~ 13:00 제외), 주말·공휴일 휴무
           </p>

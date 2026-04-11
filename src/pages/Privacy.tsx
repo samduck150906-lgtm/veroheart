@@ -81,7 +81,7 @@ export default function Privacy() {
           · 연락처:{' '}
           <a href="tel:010-8111-9370" style={{ color: '#4f46e5' }}>010-8111-9370</a>
           {' · '}
-          <a href="mailto:ceo@eternalsix.kr" style={{ color: '#4f46e5' }}>ceo@eternalsix.kr</a>
+          <a href="mailto:veroro@eternalsix.com" style={{ color: '#4f46e5' }}>veroro@eternalsix.com</a>
         </p>
 
         <p style={{ fontWeight: 'bold', marginTop: '18px' }}>11. 고지의 의무</p>

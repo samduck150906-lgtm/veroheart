@@ -120,7 +120,7 @@ export const TERMS_DOC: LegalDoc = {
       heading: "제13조 (회사 정보)",
       paragraphs: [
         "상호: 이터널식스 · 대표: 성아름 · 사업자등록번호: 303-28-65658 · 통신판매업 신고번호: 제 2025-수원영통-1499호",
-        "주소: 경기도 수원시 영통구 삼성로 186-1 4층 · 고객센터: 010-8111-9370 · 이메일: ceo@eternalsix.kr",
+        "주소: 경기도 수원시 영통구 삼성로 186-1 4층 · 고객센터: 010-8111-9370 · 이메일: veroro@eternalsix.com",
       ],
     },
   ],
@@ -212,7 +212,7 @@ export const PRIVACY_DOC: LegalDoc = {
       heading: "10. 개인정보 보호책임자",
       paragraphs: [
         "회사는 개인정보 처리에 관한 업무를 총괄하여 책임지고, 이용자의 불만 처리 및 피해 구제를 위해 개인정보 보호책임자를 지정합니다.",
-        "연락처: 010-8111-9370 · ceo@eternalsix.kr",
+        "연락처: 010-8111-9370 · veroro@eternalsix.com",
       ],
     },
     {
@@ -283,7 +283,7 @@ export const REFUND_DOC: LegalDoc = {
       heading: "고객센터",
       paragraphs: [
         "전화: 010-8111-9370",
-        "이메일: ceo@eternalsix.kr",
+        "이메일: veroro@eternalsix.com",
         "운영시간: 평일 10:00 ~ 18:00 (점심 12:00 ~ 13:00 제외), 주말·공휴일 휴무",
       ],
     },

@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { ShieldCheck, Lock, Loader2 } from 'lucide-react';
 
 // 관리자 이메일 화이트리스트
-const ADMIN_EMAILS = ['ceo@eternalsix.kr', 'admin@eternalsix.kr'];
+const ADMIN_EMAILS = ['veroro@eternalsix.com'];
 
 // 관리자 아이디/비밀번호 (앱 오너 계정)
 const ADMIN_CREDENTIALS = [
@@ -156,7 +156,7 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
           </button>
 
           <p style={{ marginTop: '24px', fontSize: '12px', color: '#475569' }}>
-            관리자 계정이 없으신가요? <a href="mailto:ceo@eternalsix.kr" style={{ color: '#6366f1' }}>문의</a>
+            관리자 계정이 없으신가요? <a href="mailto:veroro@eternalsix.com" style={{ color: '#6366f1' }}>문의</a>
           </p>
         </div>
       </div>

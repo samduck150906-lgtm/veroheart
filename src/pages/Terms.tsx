@@ -101,7 +101,7 @@ export default function Terms() {
           주소: 경기도 수원시 영통구 삼성로 186-1 4층 · 고객센터:{' '}
           <a href="tel:010-8111-9370" style={{ color: '#4f46e5' }}>010-8111-9370</a>
           {' · '}
-          <a href="mailto:ceo@eternalsix.kr" style={{ color: '#4f46e5' }}>ceo@eternalsix.kr</a>
+          <a href="mailto:veroro@eternalsix.com" style={{ color: '#4f46e5' }}>veroro@eternalsix.com</a>
         </p>
       </div>
     </div>
