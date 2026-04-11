@@ -1,3 +1,5 @@
+import { COMPANY } from '../constants/companyInfo';
+
 export default function Refund() {
   return (
     <div style={{ padding: '20px', paddingTop: '80px', paddingBottom: '100px', lineHeight: '1.8' }}>
@@ -17,7 +19,7 @@ export default function Refund() {
 
         <p style={{ fontWeight: 'bold', marginTop: '24px' }}>제2조 (환불 절차)</p>
         <p>
-          1. 환불 요청은 마이페이지 내 주문내역에서 가능하며, 고객센터(010-8111-9370)를 통해서도 접수 가능합니다.<br/>
+          1. 환불 요청은 마이페이지 내 주문내역에서 가능하며, 고객센터({COMPANY.phone})를 통해서도 접수 가능합니다.<br/>
           2. 환불 요청이 정상적으로 접수되면 3영업일 이내에 환불 처리됩니다.<br/>
           3. 결제 수단에 따라 실제 환불 완료까지 최대 7영업일이 소요될 수 있습니다.<br/>
           4. 신용카드 결제의 경우 카드사 매입 취소를 통해 승인이 취소됩니다.
@@ -44,11 +46,20 @@ export default function Refund() {
         </p>
 
         <div style={{ marginTop: '32px', padding: '16px', backgroundColor: '#F3F4F6', borderRadius: '12px' }}>
-          <p style={{ fontWeight: 'bold', marginBottom: '8px' }}>📞 고객센터 안내</p>
+          <p style={{ fontWeight: 'bold', marginBottom: '8px' }}>📞 고객센터 · 사업자 정보</p>
           <p>
-            전화: 010-8111-9370<br/>
-            이메일: ceo@eternalsix.kr<br/>
-            운영시간: 평일 10:00 ~ 18:00 (점심 12:00 ~ 13:00 제외)<br/>
+            상호 {COMPANY.tradeName} · 대표 {COMPANY.representative}
+            <br />
+            사업자등록번호 {COMPANY.bizRegNo} · 통신판매업 {COMPANY.mailOrderBizNo}
+            <br />
+            주소 {COMPANY.address}
+            <br />
+            전화: {COMPANY.phone}
+            <br />
+            이메일: {COMPANY.email}
+            <br />
+            운영시간: 평일 10:00 ~ 18:00 (점심 12:00 ~ 13:00 제외)
+            <br />
             주말 및 공휴일 휴무
           </p>
         </div>
