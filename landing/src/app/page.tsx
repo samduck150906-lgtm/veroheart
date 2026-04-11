@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Reveal } from "@/components/Reveal";
 import { PhoneMockup } from "@/components/PhoneMockup";
 import { SectionHeading } from "@/components/SectionHeading";
@@ -6,11 +7,6 @@ const APP_STORE =
   "https://apps.apple.com/kr/search?term=%EB%B2%A0%EB%A1%9C%EB%A1%9C";
 const PLAY_STORE =
   "https://play.google.com/store/search?q=%EB%B2%A0%EB%A1%9C%EB%A1%9C&c=apps";
-
-const SITE_ORIGIN =
-  process.env.NEXT_PUBLIC_APP_SITE_ORIGIN ?? "https://www.veroro.kr";
-const TERMS_URL = `${SITE_ORIGIN.replace(/\/$/, "")}/terms`;
-const PRIVACY_URL = `${SITE_ORIGIN.replace(/\/$/, "")}/privacy`;
 
 const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL?.trim();
 const SOCIAL_INSTAGRAM =
@@ -408,18 +404,24 @@ export default function HomePage() {
             </p>
           </div>
           <nav className="flex flex-wrap gap-x-8 gap-y-3 text-sm">
-            <a
-              href={TERMS_URL}
+            <Link
+              href="/terms"
               className="text-forest-800/80 underline-offset-4 hover:text-forest-900 hover:underline"
             >
-              서비스 이용약관
-            </a>
-            <a
-              href={PRIVACY_URL}
+              이용약관
+            </Link>
+            <Link
+              href="/privacy"
               className="text-forest-800/80 underline-offset-4 hover:text-forest-900 hover:underline"
             >
               개인정보처리방침
-            </a>
+            </Link>
+            <Link
+              href="/refund"
+              className="text-forest-800/80 underline-offset-4 hover:text-forest-900 hover:underline"
+            >
+              취소 및 환불 안내
+            </Link>
             <a
               href={PREORDER_MAIL}
               className="text-forest-800/80 underline-offset-4 hover:text-forest-900 hover:underline"
