@@ -20,25 +20,8 @@ const RECENT_ACTIVITIES = [
   { type: 'OCR', user: '사용자_291', target: '로얄캐닌 인도어', time: '1시간 전' },
 ];
 
-const RECENT_ACTIVITY = [
-  { type: 'OCR', user: '사용자_772', target: '금사료 프리미엄', time: '3분 전' },
-  { type: 'Search', user: '사용자_102', target: '눈물 사료 추천', time: '12분 전' },
-  { type: 'Report', user: '사용자_405', target: '오리젠 피트앤트림', time: '24분 전' },
-  { type: 'OCR', user: '사용자_291', target: '로얄캐닌 인도어', time: '1시간 전' },
-] as const;
-
-type DashboardStats = {
-  users: number;
-  products: number;
-  ingredients: number;
-  orders: number;
-  verifiedProducts: number;
-  pendingProducts: number;
-  needsReviewProducts: number;
-};
-
 const AdminDashboard: React.FC = () => {
-  const [stats, setStats] = useState<DashboardStats>({
+  const [stats, setStats] = useState({
     users: 0,
     products: 0,
     ingredients: 0,

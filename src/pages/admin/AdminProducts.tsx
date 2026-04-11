@@ -2,24 +2,11 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Plus, Search, Edit2, Trash2, X } from 'lucide-react';
 import { notify } from '../../store/useNotification';
-import {
-  AdminBadge,
-  AdminButton,
-  AdminEmptyState,
-  AdminMetricCard,
-  AdminPageHeader,
-  AdminSearchField,
-  AdminSectionCard,
-  AdminToolbar,
-} from '../../components/admin/AdminUI';
-import { isValidCoupangLink, normalizeCoupangLink } from '../../utils/coupangLink';
-import { parseCsv, rowToObject } from '../../utils/csvParse';
 
 interface Product {
   id: string;
   name: string;
   brand_name: string;
-  manufacturer_name?: string;
   product_type: string;
   main_category: string;
   sub_category?: string;
@@ -28,10 +15,6 @@ interface Product {
   formulation?: string;
   product_health_concerns?: string[];
   has_risk_factors?: string[];
-  verification_status?: 'pending' | 'verified' | 'needs_review';
-  verified_at?: string | null;
-  coupang_product_id?: string | null;
-  coupang_link?: string | null;
   image_url: string;
   min_price: number;
 }
@@ -48,11 +31,6 @@ const MAIN_CATEGORIES = [
 ];
 
 const PET_TYPES = ['dog', 'cat', 'all'];
-const VERIFICATION_OPTIONS = [
-  { value: 'pending', label: '검수 대기' },
-  { value: 'verified', label: '검수 완료' },
-  { value: 'needs_review', label: '재검토 필요' },
-] as const;
 
 const AdminProducts: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -109,11 +87,6 @@ const AdminProducts: React.FC = () => {
       notify.error('제품명과 브랜드는 필수입니다.');
       return;
     }
-    const linkNorm = normalizeCoupangLink(currentProduct.coupang_link ?? undefined);
-    if (linkNorm && !isValidCoupangLink(linkNorm)) {
-      notify.error('쿠팡 파트너스 링크는 https:// 로 시작하는 유효한 쿠팡/단축 URL이어야 합니다.');
-      return;
-    }
 
     const normalizeCommaValues = (value?: string[] | string) =>
       (Array.isArray(value) ? value : (value || '').split(','))
@@ -147,9 +120,8 @@ const AdminProducts: React.FC = () => {
       }
       setIsModalOpen(false);
       fetchProducts();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      notify.error(`저장 실패: ${msg}`);
+    } catch (err: any) {
+      notify.error(`저장 실패: ${err.message}`);
     }
   };
 
@@ -184,11 +156,10 @@ const AdminProducts: React.FC = () => {
             className={`admin-chip ${activeTab === tab ? 'active' : ''}`}
             onClick={() => setActiveTab(tab)}
           >
-            <Plus size={18} />
-            신규 제품 등록
-          </AdminButton>
-        )}
-      />
+            {tab}
+          </button>
+        ))}
+      </div>
 
       <div className="admin-search-wrap">
         <Search size={16} className="admin-search-icon" />
@@ -272,91 +243,11 @@ const AdminProducts: React.FC = () => {
                     </div>
                   </td>
                 </tr>
-              ) : filteredProducts.length === 0 ? (
-                <tr>
-                  <td colSpan={7}>
-                    <AdminEmptyState
-                      title="조건에 맞는 제품이 없습니다."
-                      description="검색어를 바꾸거나 카테고리 필터를 조정해 다시 확인해 보세요."
-                    />
-                  </td>
-                </tr>
-              ) : (
-                filteredProducts.map((product) => (
-                  <tr key={product.id}>
-                    <td>
-                      <div className="admin-table-item">
-                        <img src={product.image_url} alt={product.name} />
-                        <div>
-                          <div className="admin-table-item-title">{product.name}</div>
-                          <div className="admin-table-item-subtitle">
-                            {product.brand_name} · {product.id.substring(0, 8)}
-                          </div>
-                          <div className="admin-table-item-meta">
-                            {product.manufacturer_name || '제조사 미입력'}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="admin-table-primary">{product.main_category}</div>
-                      <div className="admin-table-secondary">{product.sub_category || '-'}</div>
-                    </td>
-                    <td>
-                      <AdminBadge tone="indigo">{product.target_pet_type}</AdminBadge>
-                      <div className="admin-table-secondary" style={{ marginTop: '6px' }}>
-                        {product.target_life_stage?.join(', ') || '전연령'}
-                      </div>
-                    </td>
-                    <td>
-                      <VerificationBadge status={product.verification_status} />
-                      <div className="admin-table-secondary" style={{ marginTop: '6px' }}>
-                        {product.verified_at ? new Date(product.verified_at).toLocaleDateString() : '검수일 없음'}
-                      </div>
-                    </td>
-                    <td>
-                      {product.coupang_link?.trim() || product.coupang_product_id ? (
-                        <>
-                          <AdminBadge tone="emerald">연결</AdminBadge>
-                          <div className="admin-table-secondary" style={{ marginTop: '6px', wordBreak: 'break-all' }}>
-                            {product.coupang_link?.trim()
-                              ? product.coupang_link.slice(0, 48) + (product.coupang_link.length > 48 ? '…' : '')
-                              : product.coupang_product_id}
-                          </div>
-                        </>
-                      ) : (
-                        <AdminBadge tone="slate">미연결</AdminBadge>
-                      )}
-                    </td>
-                    <td className="admin-table-primary">₩{product.min_price.toLocaleString()}</td>
-                    <td className="align-right">
-                      <div className="admin-table-actions">
-                        <button
-                          type="button"
-                          className="admin-icon-btn"
-                          onClick={() => {
-                            setCurrentProduct(product);
-                            setIsModalOpen(true);
-                          }}
-                        >
-                          <Edit2 size={16} />
-                        </button>
-                        <button
-                          type="button"
-                          className="admin-icon-btn danger"
-                          onClick={() => handleDelete(product.id)}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </AdminSectionCard>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {isModalOpen && (
         <div className="admin-modal-backdrop" onClick={() => setIsModalOpen(false)}>

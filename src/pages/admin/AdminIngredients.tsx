@@ -2,16 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Plus, Search, Edit2, Trash2, X } from 'lucide-react';
 import { notify } from '../../store/useNotification';
-import {
-  AdminBadge,
-  AdminButton,
-  AdminEmptyState,
-  AdminMetricCard,
-  AdminPageHeader,
-  AdminSearchField,
-  AdminSectionCard,
-  AdminToolbar,
-} from '../../components/admin/AdminUI';
 
 interface Ingredient {
   id: string;
@@ -104,9 +94,8 @@ const AdminIngredients: React.FC = () => {
       }
       setIsModalOpen(false);
       fetchIngredients();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      notify.error(`저장 실패: ${msg}`);
+    } catch (err: any) {
+      notify.error(`저장 실패: ${err.message}`);
     }
   };
 
@@ -244,63 +233,8 @@ const AdminIngredients: React.FC = () => {
                 </tr>
               ))
             )}
-          </AdminSectionCard>
-        </div>
-
-        <div className="admin-column-side">
-          <AdminSectionCard
-            title="운영 힌트"
-            description="위험도 정의와 분류 누락을 빠르게 점검하세요."
-          >
-            <div className="admin-guidance-list">
-              <div className="admin-guidance-item">
-                <div className="admin-guidance-title">위험도 기준</div>
-                <p>주의/위험 성분은 설명과 맥락을 반드시 함께 입력해 추천/리포트에 반영되게 하세요.</p>
-              </div>
-              <div className="admin-guidance-item">
-                <div className="admin-guidance-title">분류 체계 유지</div>
-                <p>단백질원, 기능성 성분, 보존료 등 카테고리를 비우지 않으면 분석 품질이 안정적으로 유지됩니다.</p>
-              </div>
-              <div className="admin-guidance-item">
-                <div className="admin-guidance-title">최근 입력 샘플</div>
-                <p>최근 정렬 기준 상단 성분 5개를 검토해 영문명/설명이 빠진 항목을 채우세요.</p>
-              </div>
-            </div>
-          </AdminSectionCard>
-
-          <AdminSectionCard
-            title="사전 품질 현황"
-            description="카테고리와 설명 커버리지를 운영 관점에서 확인합니다."
-          >
-            <div className="admin-inline-stats-stack">
-              <div className="admin-inline-stat">
-                <div className="admin-inline-stat-label">카테고리 입력률</div>
-                <div className="admin-inline-stat-value">
-                  {ingredients.length ? `${((categorizedCount / ingredients.length) * 100).toFixed(1)}%` : '0%'}
-                </div>
-                <div className="admin-inline-stat-hint">{categorizedCount} / {ingredients.length}개</div>
-              </div>
-              <div className="admin-inline-stat">
-                <div className="admin-inline-stat-label">주의+위험 비율</div>
-                <div className="admin-inline-stat-value">
-                  {ingredients.length ? `${(((cautionCount + dangerCount) / ingredients.length) * 100).toFixed(1)}%` : '0%'}
-                </div>
-                <div className="admin-inline-stat-hint">설명 검수 우선순위</div>
-              </div>
-            </div>
-            <div className="admin-mini-list">
-              {latestIngredients.map((item) => (
-                <div key={item.id} className="admin-mini-list-item">
-                  <div>
-                    <div className="admin-mini-list-title">{item.name_ko}</div>
-                    <div className="admin-mini-list-subtitle">{item.category || '분류 미입력'}</div>
-                  </div>
-                  <RiskBadge level={item.risk_level} />
-                </div>
-              ))}
-            </div>
-          </AdminSectionCard>
-        </div>
+          </tbody>
+        </table>
       </div>
 
       {isModalOpen && (

@@ -2,7 +2,12 @@ import { useState, useEffect, type ReactNode } from 'react';
 import { ShieldCheck, Lock, Loader2 } from 'lucide-react';
 import './admin.css';
 
-const ADMIN_EMAILS = parseAdminEmails(import.meta.env.VITE_ADMIN_EMAILS);
+// 관리자 아이디/비밀번호 (앱 오너 계정)
+const ADMIN_CREDENTIALS = [
+  { username: 'rumi', password: 'fnalfnal' },
+  { username: 'young', password: 'duddlduddl' },
+  { username: 'jeong', password: 'wjddlwjddl' },
+] as const;
 
 interface AdminAuthGuardProps {
   children: ReactNode;
@@ -11,34 +16,12 @@ interface AdminAuthGuardProps {
 export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [adminId, setAdminId] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    let cancelled = false;
-
-    const checkAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const email = session?.user?.email?.trim().toLowerCase();
-        if (email && ADMIN_EMAILS.length > 0 && ADMIN_EMAILS.includes(email)) {
-          if (!cancelled) setIsAuthenticated(true);
-          return;
-        }
-        if (email && ADMIN_EMAILS.length === 0) {
-          console.warn(
-            '[admin] VITE_ADMIN_EMAILS가 비어 있습니다. 관리자 콘솔은 로그인된 Supabase 사용자 중에서도 열리지 않습니다.'
-          );
-        }
-      } catch (err) {
-        console.error('Admin auth check failed:', err);
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    };
-
-    void checkAuth();
-    return () => {
-      cancelled = true;
-    };
+    checkAuth();
   }, []);
 
   const checkAuth = () => {
@@ -132,6 +115,12 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
           <div style={{ marginTop: '16px', fontSize: '12px', color: '#64748b', lineHeight: 1.6 }}>
             <div>허용 계정: rumi / young / jeong</div>
             <div>신규 관리자 가입: 불가</div>
+            <div style={{ marginTop: '10px' }}>
+              문의:{' '}
+              <a href="mailto:veroro@eternalsix.com" style={{ color: '#6366f1' }}>
+                veroro@eternalsix.com
+              </a>
+            </div>
           </div>
         </div>
       </div>
