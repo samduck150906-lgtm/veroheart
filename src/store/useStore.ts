@@ -21,6 +21,9 @@ import {
   signOut as supabaseSignOut
 } from '../lib/supabase';
 
+let adminDataSyncChannel: any = null;
+let adminDataSyncTimer: ReturnType<typeof setTimeout> | null = null;
+
 interface StoreState {
   userId: string | null;
   isLoggedIn: boolean;
@@ -81,6 +84,38 @@ export const useStore = create<StoreState>((set, get) => ({
 
   initApp: async () => {
     try {
+      const scheduleProductRefresh = () => {
+        if (adminDataSyncTimer) clearTimeout(adminDataSyncTimer);
+        adminDataSyncTimer = setTimeout(() => {
+          const { fetchProducts, fetchProductDetail, selectedProduct } = get();
+          fetchProducts();
+          if (selectedProduct?.id) {
+            fetchProductDetail(selectedProduct.id);
+          }
+        }, 250);
+      };
+
+      if (!adminDataSyncChannel) {
+        adminDataSyncChannel = supabase
+          .channel('admin-data-sync')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'products' },
+            scheduleProductRefresh
+          )
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'ingredients' },
+            scheduleProductRefresh
+          )
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'product_ingredients' },
+            scheduleProductRefresh
+          )
+          .subscribe();
+      }
+
       const user = await getInitialSessionUser();
       if (!user) {
         set({

@@ -1,14 +1,6 @@
 import { useState, useEffect, type ReactNode } from 'react';
-import { supabase } from '../../lib/supabase';
 import { ShieldCheck, Lock, Loader2 } from 'lucide-react';
-
-function parseAdminEmails(raw: string | undefined): string[] {
-  if (!raw?.trim()) return [];
-  return raw
-    .split(',')
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean);
-}
+import './admin.css';
 
 const ADMIN_EMAILS = parseAdminEmails(import.meta.env.VITE_ADMIN_EMAILS);
 
@@ -49,14 +41,36 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
     };
   }, []);
 
+  const checkAuth = () => {
+    // 관리자 3계정 외 로그인 금지: 세션스토리지 토큰만 검증
+    const stored = sessionStorage.getItem('vh_admin_auth');
+    if (stored && ADMIN_CREDENTIALS.some((cred) => btoa(`${cred.username}:${cred.password}`) === stored)) {
+      setIsAuthenticated(true);
+    }
+    setIsLoading(false);
+  };
+
+  const handleAdminLogin = () => {
+    const id = adminId.trim();
+    const pw = adminPassword.trim();
+    const matched = ADMIN_CREDENTIALS.find(
+      (cred) => cred.username === id && cred.password === pw
+    );
+    if (matched) {
+      sessionStorage.setItem('vh_admin_auth', btoa(`${matched.username}:${matched.password}`));
+      setIsAuthenticated(true);
+      setError('');
+    } else {
+      setError('관리자 인증에 실패했습니다.');
+      setAdminPassword('');
+    }
+  };
+
   if (isLoading) {
     return (
-      <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        height: '100vh', backgroundColor: '#f8fafc'
-      }}>
-        <Loader2 size={40} style={{ animation: 'spin 1s linear infinite', color: '#6366f1' }} />
-        <p style={{ marginTop: '16px', color: '#64748b', fontWeight: 500 }}>인증 확인 중...</p>
+      <div className="admin-auth-page">
+        <Loader2 size={40} style={{ animation: 'spin 1s linear infinite', color: '#a78bfa' }} />
+        <p style={{ marginTop: '14px', color: '#cbd5e1', fontWeight: 700 }}>인증 확인 중...</p>
         <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
       </div>
     );
@@ -64,47 +78,61 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
 
   if (!isAuthenticated) {
     return (
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        height: '100vh', backgroundColor: '#0f172a',
-        backgroundImage: 'radial-gradient(circle at 25% 25%, rgba(99,102,241,0.15) 0%, transparent 50%)'
-      }}>
-        <div style={{
-          backgroundColor: '#1e293b', borderRadius: '24px', padding: '48px 40px',
-          width: '100%', maxWidth: '420px', boxShadow: '0 25px 50px rgba(0,0,0,0.3)',
-          textAlign: 'center', border: '1px solid rgba(255,255,255,0.05)'
-        }}>
-          <div style={{
-            width: '72px', height: '72px', borderRadius: '20px', backgroundColor: 'rgba(99,102,241,0.15)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px'
-          }}>
+      <div className="admin-auth-page">
+        <div className="admin-auth-card">
+          <div
+            style={{
+              width: '72px',
+              height: '72px',
+              borderRadius: '20px',
+              backgroundColor: 'rgba(99,102,241,0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px',
+            }}
+          >
             <ShieldCheck size={36} color="#6366f1" />
           </div>
 
-          <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#f1f5f9', marginBottom: '8px' }}>
-            베로로 Admin
-          </h1>
-          <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '24px', lineHeight: 1.55 }}>
-            관리자 콘솔은 <strong style={{ color: '#94a3b8' }}>허용된 Supabase 계정</strong>으로 로그인한 경우에만 이용할 수 있습니다.
-            일반 로그인 화면에서 해당 이메일로 로그인한 뒤 다시 접속해 주세요.
-          </p>
+          <h1>VeRoRo Admin</h1>
+          <p>관리자 콘솔에 접근하려면 인증이 필요합니다.</p>
+          <p style={{ marginTop: '-8px' }}>추가 가입은 불가하며 지정된 3명 관리자만 로그인할 수 있습니다.</p>
 
-          <a
-            href="/login"
-            style={{
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-              width: '100%', padding: '16px', borderRadius: '14px',
-              backgroundColor: '#6366f1', color: '#fff', fontWeight: 700, fontSize: '16px',
-              textDecoration: 'none', boxShadow: '0 8px 16px rgba(99,102,241,0.3)',
-            }}
-          >
-            <Lock size={18} />
-            로그인으로 이동
-          </a>
+          <div className="admin-auth-field">
+            <input
+              type="text"
+              placeholder="관리자 아이디 입력"
+              value={adminId}
+              onChange={(e) => { setAdminId(e.target.value); if (error) setError(''); }}
+              onKeyDown={(e) => e.key === 'Enter' && handleAdminLogin()}
+            />
+          </div>
 
-          <p style={{ marginTop: '24px', fontSize: '12px', color: '#475569' }}>
-            배포 시 빌드 환경 변수 <code style={{ color: '#a5b4fc' }}>VITE_ADMIN_EMAILS</code>에 관리자 이메일을 쉼표로 구분해 설정하세요.
-          </p>
+          <div className="admin-auth-field" style={{ position: 'relative' }}>
+            <Lock size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#475569' }} />
+            <input
+              type="password"
+              placeholder="관리자 비밀번호 입력"
+              value={adminPassword}
+              onChange={(e) => { setAdminPassword(e.target.value); if (error) setError(''); }}
+              onKeyDown={(e) => e.key === 'Enter' && handleAdminLogin()}
+              style={{
+                paddingLeft: '46px',
+              }}
+            />
+          </div>
+
+          {error && <p className="admin-auth-error">{error}</p>}
+
+          <button onClick={handleAdminLogin} className="admin-auth-submit">
+            인증하기
+          </button>
+
+          <div style={{ marginTop: '16px', fontSize: '12px', color: '#64748b', lineHeight: 1.6 }}>
+            <div>허용 계정: rumi / young / jeong</div>
+            <div>신규 관리자 가입: 불가</div>
+          </div>
         </div>
       </div>
     );

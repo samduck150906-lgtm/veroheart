@@ -1,14 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import {
-  Plus,
-  Edit2,
-  Trash2,
-  X,
-  FlaskConical,
-  AlertTriangle,
-  ShieldCheck,
-} from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, X } from 'lucide-react';
 import { notify } from '../../store/useNotification';
 import {
   AdminBadge,
@@ -31,7 +23,14 @@ interface Ingredient {
 }
 
 const INGREDIENT_CATEGORIES = [
-  '단백질원', '탄수화물원', '지방원', '비타민·미네랄', '기능성 성분', '보존료·산화방지제', '유산균', '기타'
+  '단백질원',
+  '탄수화물원',
+  '지방원',
+  '비타민·미네랄',
+  '기능성 성분',
+  '보존료·산화방지제',
+  '유산균',
+  '기타',
 ];
 
 const AdminIngredients: React.FC = () => {
@@ -52,11 +51,32 @@ const AdminIngredients: React.FC = () => {
       .select('*')
       .order('name_ko', { ascending: true });
 
-    if (!error && data) {
-      setIngredients(data);
+    if (error) {
+      notify.error(`성분 조회 실패: ${error.message}`);
+      setLoading(false);
+      return;
     }
+
+    setIngredients((data || []) as Ingredient[]);
     setLoading(false);
   };
+
+  const filteredIngredients = useMemo(() => {
+    return ingredients.filter(
+      (ingredient) =>
+        ingredient.name_ko.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        ingredient.name_en?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [ingredients, searchTerm]);
+
+  const stats = useMemo(
+    () => ({
+      safe: ingredients.filter((ingredient) => ingredient.risk_level === 'safe').length,
+      caution: ingredients.filter((ingredient) => ingredient.risk_level === 'caution').length,
+      danger: ingredients.filter((ingredient) => ingredient.risk_level === 'danger').length,
+    }),
+    [ingredients]
+  );
 
   const handleSave = async () => {
     if (!currentIngredient.name_ko || !currentIngredient.risk_level) {
@@ -64,13 +84,21 @@ const AdminIngredients: React.FC = () => {
       return;
     }
 
+    const payload = {
+      ...currentIngredient,
+      name_ko: (currentIngredient.name_ko || '').trim(),
+      name_en: (currentIngredient.name_en || '').trim(),
+      description: (currentIngredient.description || '').trim(),
+      category: (currentIngredient.category || '').trim(),
+    };
+
     try {
       if (currentIngredient.id) {
-        const { error } = await supabase.from('ingredients').update(currentIngredient).eq('id', currentIngredient.id);
+        const { error } = await supabase.from('ingredients').update(payload).eq('id', currentIngredient.id);
         if (error) throw error;
         notify.success('성분 정보가 수정되었습니다.');
       } else {
-        const { error } = await supabase.from('ingredients').insert([currentIngredient]);
+        const { error } = await supabase.from('ingredients').insert([payload]);
         if (error) throw error;
         notify.success('신규 성분이 등록되었습니다.');
       }
@@ -83,168 +111,138 @@ const AdminIngredients: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('정말 이 성분을 삭제하시겠습니까? 관련 데이터가 영향을 받을 수 있습니다.')) {
-      const { error } = await supabase.from('ingredients').delete().eq('id', id);
-      if (error) {
-        notify.error('삭제 실패');
-      } else {
-        notify.success('성분이 삭제되었습니다.');
-        fetchIngredients();
-      }
+    if (!window.confirm('정말 이 성분을 삭제하시겠습니까?')) return;
+    const { error } = await supabase.from('ingredients').delete().eq('id', id);
+    if (error) {
+      notify.error(`삭제 실패: ${error.message}`);
+      return;
     }
+    notify.success('성분이 삭제되었습니다.');
+    fetchIngredients();
   };
 
-  const filteredIngredients = ingredients.filter(i => 
-    i.name_ko.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (i.name_en && i.name_en.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
-  const safeCount = ingredients.filter(i => i.risk_level === 'safe').length;
-  const cautionCount = ingredients.filter(i => i.risk_level === 'caution').length;
-  const dangerCount = ingredients.filter(i => i.risk_level === 'danger').length;
-  const categorizedCount = ingredients.filter((item) => item.category).length;
-  const latestIngredients = [...ingredients].slice(0, 5);
-
   return (
-    <div className="admin-page-shell animate-fade-in">
-      <AdminPageHeader
-        eyebrow="ingredient intelligence"
-        title="성분 사전 관리"
-        description="분석 엔진이 참조하는 성분 데이터와 위험도 레벨을 B2B 운영 기준으로 관리합니다."
-        actions={(
-          <AdminButton
-            onClick={() => { setCurrentIngredient({ risk_level: 'safe' }); setIsModalOpen(true); }}
-            style={{ minWidth: '180px' }}
-          >
-            <Plus size={18} />
-            신규 성분 등록
-          </AdminButton>
-        )}
-      />
+    <div>
+      <div className="admin-toolbar">
+        <div className="admin-title-wrap">
+          <h2>성분 사전 관리</h2>
+          <p>총 {ingredients.length.toLocaleString()}개 성분</p>
+        </div>
+        <button
+          className="admin-btn-primary"
+          onClick={() => {
+            setCurrentIngredient({ risk_level: 'safe' });
+            setIsModalOpen(true);
+          }}
+        >
+          <Plus size={16} />
+          신규 성분 등록
+        </button>
+      </div>
 
-      <div className="admin-metric-grid admin-metric-grid-4">
-        <AdminMetricCard
-          label="전체 성분 사전"
-          value={ingredients.length.toLocaleString()}
-          delta="+8.6%"
-          icon={<FlaskConical size={20} />}
-          tone="indigo"
-          footnote="분석 엔진 참조 기준"
-        />
-        <AdminMetricCard
-          label="안전 성분"
-          value={safeCount.toLocaleString()}
-          delta={`${ingredients.length ? ((safeCount / ingredients.length) * 100).toFixed(1) : '0'}%`}
-          icon={<ShieldCheck size={20} />}
-          tone="emerald"
-          footnote="기본 추천 우호"
-        />
-        <AdminMetricCard
-          label="주의 성분"
-          value={cautionCount.toLocaleString()}
-          delta="검토 필요"
-          icon={<AlertTriangle size={20} />}
-          tone="amber"
-          footnote="조건부 안내 필요"
-        />
-        <AdminMetricCard
-          label="위험 성분"
-          value={dangerCount.toLocaleString()}
-          delta="강조 노출"
-          icon={<AlertTriangle size={20} />}
-          tone="rose"
-          footnote="차단/경고 우선"
+      <div className="admin-grid-cards" style={{ marginBottom: 14 }}>
+        <article className="admin-card">
+          <span className="admin-stat-label">안전 성분</span>
+          <div className="admin-stat-value" style={{ color: '#16a34a' }}>
+            {stats.safe.toLocaleString()}
+          </div>
+        </article>
+        <article className="admin-card">
+          <span className="admin-stat-label">주의 성분</span>
+          <div className="admin-stat-value" style={{ color: '#ea580c' }}>
+            {stats.caution.toLocaleString()}
+          </div>
+        </article>
+        <article className="admin-card">
+          <span className="admin-stat-label">위험 성분</span>
+          <div className="admin-stat-value" style={{ color: '#dc2626' }}>
+            {stats.danger.toLocaleString()}
+          </div>
+        </article>
+      </div>
+
+      <div className="admin-search-wrap">
+        <Search size={16} className="admin-search-icon" />
+        <input
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="성분명(한글/영문) 검색"
         />
       </div>
 
-      <div className="admin-two-column-layout">
-        <div className="admin-column-main">
-          <AdminSectionCard
-            title="성분 사전"
-            description="한글/영문명, 위험도, 카테고리, 설명을 한 테이블에서 관리합니다."
-          >
-            <AdminToolbar
-              left={(
-                <AdminSearchField
-                  value={searchTerm}
-                  onChange={setSearchTerm}
-                  placeholder="성분명(한글/영문)으로 검색하세요"
-                />
-              )}
-              right={(
-                <div className="admin-toolbar-meta">
-                  <AdminBadge tone="slate">검색 결과 {filteredIngredients.length}개</AdminBadge>
-                </div>
-              )}
-            />
-
+      <div className="admin-table-wrap">
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>성분명</th>
+              <th>위험도</th>
+              <th>분류</th>
+              <th>설명</th>
+              <th style={{ textAlign: 'right' }}>관리</th>
+            </tr>
+          </thead>
+          <tbody>
             {loading ? (
-              <AdminEmptyState title="성분 사전 불러오는 중" description="Supabase에서 최신 성분 데이터를 동기화하고 있습니다." />
+              <tr>
+                <td colSpan={5}>
+                  <div className="admin-empty">데이터를 불러오는 중입니다...</div>
+                </td>
+              </tr>
             ) : filteredIngredients.length === 0 ? (
-              <AdminEmptyState
-                title="검색 결과가 없습니다"
-                description="검색어를 바꾸거나 신규 성분을 등록해 보세요."
-                action={(
-                  <AdminButton
-                    variant="secondary"
-                    onClick={() => { setCurrentIngredient({ risk_level: 'safe' }); setIsModalOpen(true); }}
-                  >
-                    <Plus size={16} />
-                    신규 성분 등록
-                  </AdminButton>
-                )}
-              />
+              <tr>
+                <td colSpan={5}>
+                  <div className="admin-empty">표시할 성분이 없습니다.</div>
+                </td>
+              </tr>
             ) : (
-              <div className="admin-table-shell">
-                <table className="admin-data-table">
-                  <thead>
-                    <tr>
-                      <th>성분명</th>
-                      <th>위험도</th>
-                      <th>분류</th>
-                      <th>설명</th>
-                      <th>관리</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredIngredients.map((ing) => (
-                      <tr key={ing.id}>
-                        <td>
-                          <div className="admin-table-primary">{ing.name_ko}</div>
-                          <div className="admin-table-secondary">{ing.name_en || '영문명 미입력'}</div>
-                        </td>
-                        <td>
-                          <RiskBadge level={ing.risk_level} />
-                        </td>
-                        <td>
-                          <span className="admin-table-secondary-strong">{ing.category || '미분류'}</span>
-                        </td>
-                        <td>
-                          <div className="admin-table-description">{ing.description || '설명 미입력'}</div>
-                        </td>
-                        <td>
-                          <div className="admin-table-actions">
-                            <button
-                              type="button"
-                              className="admin-icon-action"
-                              onClick={() => { setCurrentIngredient(ing); setIsModalOpen(true); }}
-                            >
-                              <Edit2 size={16} />
-                            </button>
-                            <button
-                              type="button"
-                              className="admin-icon-action admin-icon-action-danger"
-                              onClick={() => handleDelete(ing.id)}
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              filteredIngredients.map((ingredient) => (
+                <tr key={ingredient.id}>
+                  <td>
+                    <div className="admin-item-main">{ingredient.name_ko}</div>
+                    <div className="admin-item-sub">{ingredient.name_en || '-'}</div>
+                  </td>
+                  <td>
+                    <span
+                      className={`admin-tag ${
+                        ingredient.risk_level === 'safe'
+                          ? 'green'
+                          : ingredient.risk_level === 'caution'
+                          ? 'orange'
+                          : 'red'
+                      }`}
+                    >
+                      {ingredient.risk_level === 'safe'
+                        ? '안전'
+                        : ingredient.risk_level === 'caution'
+                        ? '주의'
+                        : '위험'}
+                    </span>
+                  </td>
+                  <td>{ingredient.category || '-'}</td>
+                  <td>{ingredient.description || '-'}</td>
+                  <td style={{ textAlign: 'right' }}>
+                    <div className="admin-actions">
+                      <button
+                        className="admin-icon-btn edit"
+                        onClick={() => {
+                          setCurrentIngredient(ingredient);
+                          setIsModalOpen(true);
+                        }}
+                        aria-label="성분 수정"
+                      >
+                        <Edit2 size={14} />
+                      </button>
+                      <button
+                        className="admin-icon-btn delete"
+                        onClick={() => handleDelete(ingredient.id)}
+                        aria-label="성분 삭제"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
             )}
           </AdminSectionCard>
         </div>
@@ -306,52 +304,55 @@ const AdminIngredients: React.FC = () => {
       </div>
 
       {isModalOpen && (
-        <div className="admin-modal-backdrop">
-          <div className="admin-modal admin-modal-md animate-scale-in">
-            <div className="admin-modal-head">
-              <div>
-                <div className="admin-page-eyebrow">ingredient form</div>
-                <h2 className="admin-modal-title">{currentIngredient.id ? '성분 정보 수정' : '신규 성분 등록'}</h2>
-              </div>
-              <button type="button" className="admin-icon-action" onClick={() => setIsModalOpen(false)}><X size={20} /></button>
+        <div className="admin-modal-backdrop" onClick={() => setIsModalOpen(false)}>
+          <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3>{currentIngredient.id ? '성분 정보 수정' : '신규 성분 등록'}</h3>
+              <button className="admin-btn-soft" onClick={() => setIsModalOpen(false)} aria-label="모달 닫기">
+                <X size={16} />
+              </button>
             </div>
 
-            <div className="admin-modal-grid-2">
-              <Input label="한글 성분명*" value={currentIngredient.name_ko} onChange={(v) => setCurrentIngredient({...currentIngredient, name_ko: v})} />
-              <Input label="영문 성분명" value={currentIngredient.name_en} onChange={(v) => setCurrentIngredient({...currentIngredient, name_en: v})} />
-            </div>
-
-            <div className="admin-field-block">
-              <label className="admin-field-label">위험도 레벨*</label>
-              <div className="admin-chip-grid-3">
-                {(['safe', 'caution', 'danger'] as const).map(level => (
-                  <button
-                    key={level}
-                    type="button"
-                    onClick={() => setCurrentIngredient({...currentIngredient, risk_level: level})}
-                    className={currentIngredient.risk_level === level ? 'admin-choice-chip active' : 'admin-choice-chip'}
-                  >
-                    {level === 'safe' ? '안전함' : level === 'caution' ? '주의' : '위험함'}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <Select label="성분 분류" value={currentIngredient.category} options={INGREDIENT_CATEGORIES} onChange={(v) => setCurrentIngredient({...currentIngredient, category: v})} />
-
-            <div className="admin-field-block">
-              <label className="admin-field-label">설명 및 가이드</label>
-              <textarea
-                className="admin-textarea"
-                value={currentIngredient.description || ''}
-                onChange={(e) => setCurrentIngredient({...currentIngredient, description: e.target.value})}
-                rows={5}
+            <div className="admin-form-grid">
+              <InputField
+                label="한글 성분명*"
+                value={currentIngredient.name_ko}
+                onChange={(value) => setCurrentIngredient({ ...currentIngredient, name_ko: value })}
+              />
+              <InputField
+                label="영문 성분명"
+                value={currentIngredient.name_en}
+                onChange={(value) => setCurrentIngredient({ ...currentIngredient, name_en: value })}
+              />
+              <SelectField
+                label="위험도*"
+                value={currentIngredient.risk_level}
+                options={['safe', 'caution', 'danger']}
+                onChange={(value) =>
+                  setCurrentIngredient({ ...currentIngredient, risk_level: value as Ingredient['risk_level'] })
+                }
+              />
+              <SelectField
+                label="성분 분류"
+                value={currentIngredient.category}
+                options={INGREDIENT_CATEGORIES}
+                onChange={(value) => setCurrentIngredient({ ...currentIngredient, category: value })}
+              />
+              <TextAreaField
+                className="admin-form-span-2"
+                label="설명 및 가이드"
+                value={currentIngredient.description}
+                onChange={(value) => setCurrentIngredient({ ...currentIngredient, description: value })}
               />
             </div>
 
-            <div className="admin-modal-actions">
-              <AdminButton variant="secondary" onClick={() => setIsModalOpen(false)}>취소</AdminButton>
-              <AdminButton onClick={handleSave}>저장하기</AdminButton>
+            <div className="admin-modal-footer">
+              <button className="admin-btn-soft" onClick={() => setIsModalOpen(false)}>
+                취소
+              </button>
+              <button className="admin-btn-primary" onClick={handleSave}>
+                저장하기
+              </button>
             </div>
           </div>
         </div>
@@ -360,38 +361,66 @@ const AdminIngredients: React.FC = () => {
   );
 };
 
-function RiskBadge({ level }: { level: Ingredient['risk_level'] }) {
-  if (level === 'safe') return <AdminBadge tone="emerald">안전</AdminBadge>;
-  if (level === 'danger') return <AdminBadge tone="rose">위험</AdminBadge>;
-  return <AdminBadge tone="amber">주의</AdminBadge>;
-}
-
-function Input({ label, value, onChange }: { label: string, value?: string, onChange: (v: string) => void }) {
+function InputField({
+  label,
+  value,
+  onChange,
+  type = 'text',
+}: {
+  label: string;
+  value?: string;
+  onChange: (value: string) => void;
+  type?: string;
+}) {
   return (
-    <div className="admin-field-block">
-      <label className="admin-field-label">{label}</label>
-      <input
-        type="text"
-        className="admin-input"
-        value={value || ''}
-        onChange={(e) => onChange(e.target.value)}
-      />
+    <div className="admin-form-group">
+      <label>{label}</label>
+      <input type={type} value={value || ''} onChange={(e) => onChange(e.target.value)} />
     </div>
   );
 }
 
-function Select({ label, value, options, onChange }: { label: string, value?: string, options: string[], onChange: (v: string) => void }) {
+function SelectField({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value?: string;
+  options: string[];
+  onChange: (value: string) => void;
+}) {
   return (
-    <div className="admin-field-block">
-      <label className="admin-field-label">{label}</label>
-      <select
-        className="admin-select"
-        value={value || ''}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        <option value="">분류 선택</option>
-        {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+    <div className="admin-form-group">
+      <label>{label}</label>
+      <select value={value || ''} onChange={(e) => onChange(e.target.value)}>
+        <option value="">선택하세요</option>
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
       </select>
+    </div>
+  );
+}
+
+function TextAreaField({
+  label,
+  value,
+  onChange,
+  className,
+}: {
+  label: string;
+  value?: string;
+  onChange: (value: string) => void;
+  className?: string;
+}) {
+  return (
+    <div className={`admin-form-group ${className || ''}`}>
+      <label>{label}</label>
+      <textarea rows={4} value={value || ''} onChange={(e) => onChange(e.target.value)} />
     </div>
   );
 }
