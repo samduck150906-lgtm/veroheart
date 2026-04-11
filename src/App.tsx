@@ -10,9 +10,6 @@ import Profile from './pages/Profile';
 import Detail from './pages/Detail';
 import Comparison from './pages/Comparison';
 import Cart from './pages/Cart';
-import Checkout from './pages/Checkout';
-import Success from './pages/Success';
-import Fail from './pages/Fail';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Refund from './pages/Refund';
@@ -104,9 +101,6 @@ function App() {
           <Route path="profile" element={<Profile />} />
           <Route path="comparison" element={<Comparison />} />
           <Route path="cart" element={<Cart />} />
-          <Route path="checkout" element={<Checkout />} />
-          <Route path="success" element={<Success />} />
-          <Route path="fail" element={<Fail />} />
           <Route path="product/:id" element={<Detail />} />
           <Route path="terms" element={<Terms />} />
           <Route path="privacy" element={<Privacy />} />

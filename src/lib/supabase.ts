@@ -4,8 +4,6 @@ import type { Product } from '../types';
 import type { SupabasePet } from '../types';
 import {
   mapProductFromSupabaseRow,
-  type CreateOrderCartLine,
-  type CreateOrderCustomerInfo,
   type SupabaseBrandNameRow,
   type SupabaseCartItemRow,
   type SupabaseFavoriteRow,
@@ -42,11 +40,6 @@ export async function getInitialSessionUser() {
     console.warn('[auth] getSession failed:', err);
     return null;
   }
-}
-
-export async function getCurrentUser() {
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.user || null;
 }
 
 export async function getUserProfile(userId: string) {
@@ -237,41 +230,6 @@ export async function removeCartItemFromDB(userId: string, productId: string) {
 
 export async function clearUserCart(userId: string) {
   await supabase.from('cart_items').delete().eq('user_id', userId);
-}
-
-export async function createOrder(
-  userId: string,
-  cartItems: CreateOrderCartLine[],
-  totalAmount: number,
-  address: string,
-  customerInfo: CreateOrderCustomerInfo
-) {
-  const orderIdExt = `ORDER_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-  const { data: order, error } = await supabase.from('orders').insert({ 
-    user_id: userId, status: 'pending', total_amount: totalAmount, shipping_address: address,
-    customer_name: customerInfo.name, customer_email: customerInfo.email, customer_phone: customerInfo.phone,
-    order_id_ext: orderIdExt
-  }).select().single();
-
-  if (error || !order) return null;
-
-  const resolvedItems = [];
-  for (const item of cartItems) {
-    const { data: prod } = await supabase.from('products').select('min_price').eq('id', item.productId).single();
-    resolvedItems.push({
-      order_id: order.id, product_id: item.productId, quantity: item.quantity,
-      price_at_purchase: item.price || prod?.min_price || 0
-    });
-  }
-
-  const { error: orderItemsError } = await supabase.from('order_items').insert(resolvedItems);
-  if (orderItemsError) {
-    await supabase.from('orders').delete().eq('id', order.id);
-    console.error('createOrder order_items insert error:', orderItemsError);
-    return null;
-  }
-
-  return { ...order, orderIdExt };
 }
 
 export async function getOrders(userId: string) {

@@ -8,7 +8,7 @@ export default function Layout() {
   const navigate = useNavigate();
   const { profile, isLoggedIn, cart } = useStore();
   const location = useLocation();
-  const hideFooterOn = ['/checkout', '/success', '/fail', '/login'];
+  const hideFooterOn = ['/login'];
   const shouldHideFooter = hideFooterOn.some((path) => location.pathname.startsWith(path));
   const titleMap: Record<string, string> = {
     '/': '홈',
@@ -16,7 +16,6 @@ export default function Layout() {
     '/comparison': '비교함',
     '/profile': '마이 펫',
     '/cart': '장바구니',
-    '/checkout': '결제',
     '/ranking': '랭킹',
   };
 

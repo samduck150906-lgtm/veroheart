@@ -301,15 +301,6 @@ export default function Detail() {
             >
               장바구니 담기
             </TossButton>
-            <TossButton
-              style={{ flex: 1, backgroundColor: '#111827', color: '#fff', borderRadius: '16px', fontWeight: 800, fontSize: '15px', gap: '6px' }}
-              onClick={() => {
-                addToCart(product.id, 1);
-                navigate('/checkout');
-              }}
-            >
-              바로 구매
-            </TossButton>
           </div>
           <TossButton
             variant="soft"

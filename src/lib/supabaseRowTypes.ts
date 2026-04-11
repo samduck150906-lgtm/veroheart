@@ -41,18 +41,6 @@ export type SupabaseCartItemRow = {
   id: string;
 };
 
-export type CreateOrderCartLine = {
-  productId: string;
-  quantity: number;
-  price?: number;
-};
-
-export type CreateOrderCustomerInfo = {
-  name: string;
-  email: string;
-  phone: string;
-};
-
 export type SupabaseFavoriteRow = { product_id: string };
 
 export type SupabaseRecentViewRow = { products: SupabaseProductRow | null };
