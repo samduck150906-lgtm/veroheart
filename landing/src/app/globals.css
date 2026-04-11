@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --reveal-duration: 0.65s;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@layer utilities {
+  .reveal-base {
+    opacity: 0;
+    transform: translateY(14px);
+    transition:
+      opacity var(--reveal-duration) ease,
+      transform var(--reveal-duration) ease;
+  }
+  .reveal-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
