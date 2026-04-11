@@ -140,16 +140,16 @@ export default function Home() {
           style={{
             marginBottom: '18px',
             padding: '18px',
-            borderRadius: '24px',
-            background: 'linear-gradient(135deg, #FFFFFF 0%, #F5F3FF 48%, #EEF2FF 100%)',
-            border: '1px solid rgba(124, 111, 156, 0.18)',
-            boxShadow: '0 12px 32px rgba(76, 29, 149, 0.08)',
+            borderRadius: '18px',
+            background: '#ffffff',
+            border: '1px solid rgba(28, 25, 23, 0.08)',
+            boxShadow: 'var(--shadow-card)',
           }}
         >
           <div className="ui-section-head">
             <div>
               <p className="ui-section-kicker">my pet community</p>
-              <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 900, color: '#221B35', lineHeight: 1.35 }}>
+              <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 600, color: 'var(--text-dark)', lineHeight: 1.35 }}>
                 {profile.name} 맞춤 피드
               </h2>
             </div>
@@ -158,7 +158,7 @@ export default function Home() {
             </Link>
           </div>
 
-          <p style={{ margin: '0 0 14px', fontSize: '13px', color: '#6B7280', fontWeight: 600, lineHeight: 1.5 }}>
+          <p style={{ margin: '0 0 14px', fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500, lineHeight: 1.5 }}>
             {profile.healthConcerns.length > 0
               ? profile.healthConcerns.slice(0, 3).join(' · ')
               : '프로필에서 건강 고민을 선택하면 피드가 더 정확해져요.'}
@@ -186,12 +186,12 @@ export default function Home() {
               onClick={item.onClick}
               style={{ background: '#FFFFFF' }}
             >
-              <span className="ui-icon-pill" style={{ background: item.accent, marginBottom: '14px' }}>
+              <span className="ui-icon-pill" style={{ background: item.accent, marginBottom: '12px' }}>
                 {item.icon}
               </span>
-              <div style={{ fontSize: '16px', fontWeight: 900, color: '#1F2937', marginBottom: '6px' }}>{item.title}</div>
+              <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-dark)', marginBottom: '4px' }}>{item.title}</div>
               {item.description ? (
-                <p style={{ margin: 0, fontSize: '12px', color: '#6B7280', fontWeight: 600, lineHeight: 1.5 }}>
+                <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500, lineHeight: 1.5 }}>
                   {item.description}
                 </p>
               ) : null}
@@ -204,18 +204,18 @@ export default function Home() {
         style={{
           marginBottom: '22px',
           padding: '18px',
-          borderRadius: '24px',
-          background: 'linear-gradient(145deg, #FFF7ED 0%, #FFFFFF 100%)',
-          border: '1px solid #FED7AA',
+          borderRadius: '18px',
+          background: '#fffbeb',
+          border: '1px solid rgba(234, 179, 8, 0.25)',
         }}
       >
-        <p style={{ fontSize: '11px', fontWeight: 800, color: '#C2410C', margin: '0 0 6px', letterSpacing: '0.05em' }}>
+        <p style={{ fontSize: '11px', fontWeight: 600, color: '#a16207', margin: '0 0 6px', letterSpacing: '0.04em' }}>
           VIRAL TEST CAMPAIGN
         </p>
-        <h2 style={{ fontSize: '18px', fontWeight: 900, color: '#7C2D12', margin: '0 0 8px', lineHeight: 1.35 }}>
+        <h2 style={{ fontSize: '17px', fontWeight: 600, color: '#44403c', margin: '0 0 8px', lineHeight: 1.35 }}>
           {VIRAL_LANDING_COPY.hero.headline}
         </h2>
-        <p style={{ fontSize: '13px', fontWeight: 600, color: '#9A3412', margin: '0 0 12px', lineHeight: 1.5 }}>
+        <p style={{ fontSize: '13px', fontWeight: 500, color: '#78716c', margin: '0 0 12px', lineHeight: 1.5 }}>
           {VIRAL_LANDING_COPY.hero.sub}
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
@@ -223,7 +223,7 @@ export default function Home() {
             type="button"
             className="btn btn-primary"
             onClick={() => navigate('/event/personality-quiz')}
-            style={{ borderRadius: '14px', height: '44px', fontSize: '13px', fontWeight: 800 }}
+            style={{ borderRadius: '12px', height: '44px', fontSize: '13px', fontWeight: 600 }}
           >
             {VIRAL_LANDING_COPY.hero.ctaPrimary}
           </button>
@@ -231,12 +231,12 @@ export default function Home() {
             type="button"
             className="btn btn-outline"
             onClick={() => navigate('/event/personality-quiz')}
-            style={{ borderRadius: '14px', height: '44px', fontSize: '13px', fontWeight: 800 }}
+            style={{ borderRadius: '12px', height: '44px', fontSize: '13px', fontWeight: 600 }}
           >
             {VIRAL_LANDING_COPY.hero.ctaSecondary}
           </button>
         </div>
-        <div style={{ fontSize: '11px', color: '#7C2D12', background: '#FFF', border: '1px dashed #FDBA74', borderRadius: '12px', padding: '8px 10px', lineHeight: 1.45 }}>
+        <div style={{ fontSize: '11px', color: '#57534e', background: '#fff', border: '1px solid #e7e5e4', borderRadius: '10px', padding: '8px 10px', lineHeight: 1.45 }}>
           반려동물 취향과 라이프스타일을 가볍게 체크하고 결과를 공유해 보세요.
         </div>
       </section>
@@ -259,8 +259,8 @@ export default function Home() {
                     <span className="ui-badge ui-badge-dark">{ev.badge}</span>
                     {ev.code && <span className="ui-badge ui-badge-soft">{ev.code}</span>}
                   </div>
-                  <div style={{ fontSize: '15px', fontWeight: 900, color: '#1F2937', marginBottom: '4px' }}>{ev.title}</div>
-                  <div style={{ fontSize: '12px', color: '#6B7280', fontWeight: 600, lineHeight: 1.55 }}>{ev.desc}</div>
+                  <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-dark)', marginBottom: '4px' }}>{ev.title}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500, lineHeight: 1.55 }}>{ev.desc}</div>
                 </div>
                 <button
                   type="button"
@@ -305,7 +305,7 @@ export default function Home() {
                 />
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ fontSize: '11px', fontWeight: 700, color: '#8A9099', marginBottom: '4px' }}>{product.brand}</div>
-                  <div className="line-clamp-2" style={{ fontSize: '14px', fontWeight: 800, color: '#1F2937', lineHeight: 1.45, marginBottom: '6px' }}>
+                  <div className="line-clamp-2" style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-dark)', lineHeight: 1.45, marginBottom: '6px' }}>
                     {product.name}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
@@ -365,9 +365,9 @@ export default function Home() {
 
       {recentViews.length > 0 && (
         <section style={{ marginBottom: '38px' }}>
-          <h2 style={{ fontSize: '22px', marginBottom: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 800 }}>
+          <h2 style={{ fontSize: '18px', marginBottom: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 600 }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Clock3 size={20} /> 최근 본 제품</span>
-            <button onClick={() => navigate('/search')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: '#6B7280', fontWeight: 600 }}>
+            <button onClick={() => navigate('/search')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>
               더보기 <ChevronRight size={16} />
             </button>
           </h2>
@@ -375,7 +375,7 @@ export default function Home() {
             {recentViews.slice(0, 6).map(p => (
               <div key={p.id} onClick={() => navigate(`/product/${p.id}`)} style={{ flexShrink: 0, width: '124px', cursor: 'pointer' }}>
                 <img src={p.imageUrl} alt={p.name} style={{ width: '124px', height: '124px', borderRadius: '18px', objectFit: 'cover', marginBottom: '8px', boxShadow: 'var(--shadow-sm)' }} />
-                <div className="line-clamp-2" style={{ fontSize: '12px', fontWeight: 700, color: '#374151', lineHeight: 1.45 }}>{p.name}</div>
+                <div className="line-clamp-2" style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-dark)', lineHeight: 1.45 }}>{p.name}</div>
               </div>
             ))}
           </div>
@@ -407,7 +407,7 @@ export default function Home() {
             >
               <div className="ui-category-card">
                 <div className="ui-category-icon">{item.emoji}</div>
-                <span style={{ fontSize: '13px', fontWeight: 800, color: '#3F3A2A' }}>{item.name}</span>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-dark)' }}>{item.name}</span>
               </div>
             </div>
           ))}
@@ -436,11 +436,11 @@ function HorizontalProductSection({
     <section style={{ marginBottom: '30px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', gap: '10px' }}>
         <div>
-          <h2 style={{ fontSize: '18px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800 }}>
+          <h2 style={{ fontSize: '17px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
             {icon}
             {title}
           </h2>
-          <p style={{ fontSize: '12px', color: '#6B7280', fontWeight: 600, margin: 0 }}>{subtitle}</p>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500, margin: 0 }}>{subtitle}</p>
         </div>
         <button onClick={onMore} className="ui-text-button" style={{ flexShrink: 0 }}>
           더보기 <ChevronRight size={15} />

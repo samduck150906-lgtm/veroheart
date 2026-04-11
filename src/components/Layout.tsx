@@ -48,11 +48,11 @@ export default function Layout() {
                   gap: '6px',
                   padding: '4px 8px',
                   borderRadius: '999px',
-                  background: 'rgba(124, 111, 156, 0.12)',
+                  background: 'rgba(120, 113, 108, 0.1)',
                   color: 'var(--community-tint)',
                   fontSize: '10px',
-                  fontWeight: 800,
-                  letterSpacing: '0.05em',
+                  fontWeight: 600,
+                  letterSpacing: '0.04em',
                   textTransform: 'uppercase',
                   marginBottom: '6px',
                 }}
@@ -63,7 +63,7 @@ export default function Layout() {
                 <span
                   style={{
                     fontSize: isHome ? '16px' : '18px',
-                    fontWeight: 900,
+                    fontWeight: 600,
                     color: 'var(--text-dark)',
                     whiteSpace: isHome ? 'normal' : 'nowrap',
                     lineHeight: isHome ? 1.35 : undefined,
@@ -75,8 +75,8 @@ export default function Layout() {
                   <span
                     style={{
                       fontSize: '13px',
-                      fontWeight: 700,
-                      color: '#6B7280',
+                      fontWeight: 500,
+                      color: 'var(--text-muted)',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',

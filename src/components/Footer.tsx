@@ -7,9 +7,9 @@ function Footer() {
     <footer
       style={{
         padding: '12px 20px 14px',
-        background: 'linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(245,243,255,0.92) 100%)',
-        borderTop: '1px solid rgba(124, 111, 156, 0.14)',
-        color: '#6b6560',
+        background: 'rgba(250, 250, 249, 0.96)',
+        borderTop: '1px solid rgba(28, 25, 23, 0.08)',
+        color: '#78716c',
         fontSize: '9px',
         lineHeight: 1.45,
         marginTop: 'auto',
@@ -27,21 +27,21 @@ function Footer() {
         >
           <Link
             to="/terms"
-            style={{ fontSize: '10px', color: '#6B5FA3', textDecoration: 'none', fontWeight: 700 }}
+            style={{ fontSize: '10px', color: '#57534e', textDecoration: 'none', fontWeight: 600 }}
           >
             이용약관
           </Link>
-          <span style={{ color: '#C8BFB8' }}>|</span>
+          <span style={{ color: '#d6d3d1' }}>|</span>
           <Link
             to="/privacy"
-            style={{ fontSize: '10px', color: '#6B5FA3', textDecoration: 'none', fontWeight: 700 }}
+            style={{ fontSize: '10px', color: '#57534e', textDecoration: 'none', fontWeight: 600 }}
           >
             개인정보처리방침
           </Link>
-          <span style={{ color: '#C8BFB8' }}>|</span>
+          <span style={{ color: '#d6d3d1' }}>|</span>
           <Link
             to="/refund"
-            style={{ fontSize: '10px', color: '#6B5FA3', textDecoration: 'none', fontWeight: 700 }}
+            style={{ fontSize: '10px', color: '#57534e', textDecoration: 'none', fontWeight: 600 }}
           >
             취소 및 환불 안내
           </Link>
@@ -51,8 +51,8 @@ function Footer() {
           style={{
             marginBottom: '8px',
             fontSize: '11px',
-            fontWeight: 800,
-            color: '#221B35',
+            fontWeight: 600,
+            color: '#292524',
           }}
         >
           Petty Community powered by VeRoRo

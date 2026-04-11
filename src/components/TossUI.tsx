@@ -12,8 +12,8 @@ export function TossCard({ children, style }: TossCardProps) {
       style={{
         background: '#FFFFFF',
         borderRadius: '20px',
-        border: '1px solid rgba(250, 204, 21, 0.22)',
-        boxShadow: '0 8px 22px rgba(202, 138, 4, 0.08)',
+        border: '1px solid rgba(28, 25, 23, 0.08)',
+        boxShadow: '0 1px 3px rgba(28, 25, 23, 0.06)',
         ...style,
       }}
     >
@@ -74,7 +74,7 @@ export function TossButton({
       disabled={disabled}
       style={{
         width: '100%',
-        fontWeight: 800,
+        fontWeight: 600,
         cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.65 : 1,
         ...sizeStyle,
@@ -118,7 +118,7 @@ export function TossChip({
         background: isActive ? '#FFFBEB' : '#FFFFFF',
         color: isActive ? '#92400E' : '#6B7280',
         fontSize: size === 'sm' ? '11px' : '12px',
-        fontWeight: 700,
+        fontWeight: 500,
         cursor: 'pointer',
         ...style,
       }}
@@ -139,8 +139,8 @@ export function TossSectionTitle({ title, subtitle, right, style }: TossSectionT
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '10px', ...style }}>
       <div>
-        <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 900, color: '#1F2937', lineHeight: 1.35 }}>{title}</h2>
-        {subtitle && <p style={{ margin: '4px 0 0', fontSize: '12px', fontWeight: 600, color: '#6B7280' }}>{subtitle}</p>}
+        <h2 style={{ margin: 0, fontSize: '17px', fontWeight: 600, color: '#292524', lineHeight: 1.35 }}>{title}</h2>
+        {subtitle && <p style={{ margin: '4px 0 0', fontSize: '12px', fontWeight: 500, color: '#78716c' }}>{subtitle}</p>}
       </div>
       {right}
     </div>
@@ -159,7 +159,7 @@ export function TossField({ label, children, helperText, icon, style }: TossFiel
   return (
     <div style={{ marginBottom: '14px', ...style }}>
       {(label || icon) && (
-        <label style={{ display: 'block', fontSize: '13px', fontWeight: 800, color: '#4B5563', marginBottom: '8px' }}>
+        <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#44403c', marginBottom: '8px' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
             {icon}
             {label}
@@ -201,7 +201,7 @@ type TossFilterSectionProps = {
 export function TossFilterSection({ title, children, style }: TossFilterSectionProps) {
   return (
     <div style={{ marginBottom: '14px', ...style }}>
-      <p style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '0.04em' }}>
+      <p style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '0.03em' }}>
         {title}
       </p>
       {children}
@@ -241,8 +241,8 @@ export function TossSearchBar({
         alignItems: 'center',
         borderRadius: '16px',
         background: '#FFFFFF',
-        border: '1px solid rgba(250, 204, 21, 0.26)',
-        boxShadow: '0 6px 16px rgba(202, 138, 4, 0.08)',
+        border: '1px solid rgba(28, 25, 23, 0.08)',
+        boxShadow: '0 1px 2px rgba(28, 25, 23, 0.05)',
         padding: '12px 14px',
       }}
     >

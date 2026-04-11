@@ -39,8 +39,8 @@ export default function BottomNav() {
             <div className="bottom-nav-icon-wrap">
               <Icon
                 size={22}
-                strokeWidth={isActive ? 2.5 : 2}
-                style={{ transition: 'transform var(--transition-bounce)' }}
+                strokeWidth={isActive ? 2.25 : 2}
+                style={{ transition: 'color 0.15s ease' }}
               />
               {item.badge > 0 && (
                 <span className="bottom-nav-badge">
