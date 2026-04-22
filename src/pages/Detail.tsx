@@ -23,6 +23,8 @@ import { Helmet } from 'react-helmet-async';
 import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
 import Analyzer from '../components/Analyzer';
+import FishboneDiagram from '../components/FishboneDiagram';
+import { buildProductFishbone } from '../utils/fishboneData';
 import { getReviews, createReview, deleteReview } from '../lib/supabase';
 import type { Ingredient } from '../types';
 import { CORE_COPY } from '../copy/marketing';
@@ -384,6 +386,21 @@ export default function Detail() {
           </p>
         ) : null}
       </TossCard>
+
+      {/* 피쉬본 원인 분석 */}
+      <section style={{ marginBottom: '36px' }}>
+        <div style={{ marginBottom: '10px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 900, color: '#0F172A', margin: '0 0 4px' }}>원인 분석</h2>
+          <p style={{ margin: 0, fontSize: '12px', color: '#94A3B8', fontWeight: 600 }}>
+            제품 적합도를 결정하는 4가지 축을 한눈에 확인해 보세요.
+          </p>
+        </div>
+        <FishboneDiagram
+          effect={`${product.name} 적합도`}
+          categories={buildProductFishbone(product, profile)}
+          caption={`${profile.name} 기준 · 성분 ${product.ingredients?.length ?? 0}개 · 후기 ${product.reviewsCount}건`}
+        />
+      </section>
 
       {/* 전성분 분석 */}
       <div style={{ marginBottom: '6px' }}>
