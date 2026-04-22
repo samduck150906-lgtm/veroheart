@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Reveal } from "@/components/Reveal";
 import { PhoneMockup } from "@/components/PhoneMockup";
 import { SectionHeading } from "@/components/SectionHeading";
@@ -23,6 +24,23 @@ export default function HomePage() {
     <div className="min-h-screen overflow-x-hidden">
       {/* Hero */}
       <header className="relative border-b border-gold-muted/30 bg-gradient-to-b from-gold-soft via-cream-50 to-cream-100">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 pt-6 sm:px-6 sm:pt-8">
+          <Link href="/" aria-label="베로로 홈" className="inline-flex items-center gap-2">
+            <Image
+              src="/veroro-logo.png"
+              alt="VeRoRo"
+              width={132}
+              height={48}
+              priority
+              className="h-10 w-auto drop-shadow-sm sm:h-12"
+            />
+          </Link>
+          <nav aria-label="주요 메뉴" className="hidden items-center gap-6 text-sm font-semibold text-ink-800/80 sm:flex">
+            <a href="#features" className="hover:text-gold-deep">기능</a>
+            <a href="#audience" className="hover:text-gold-deep">추천 대상</a>
+            <a href="#premium" className="hover:text-gold-deep">프리미엄</a>
+          </nav>
+        </div>
         <div className="mx-auto flex max-w-6xl flex-col gap-12 px-5 pb-16 pt-10 sm:px-6 sm:pb-20 sm:pt-14 lg:flex-row lg:items-center lg:gap-16 lg:pb-24">
           <div className="max-w-xl flex-1">
             <p className="mb-3 inline-flex items-center rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-gold-darker shadow-sm ring-1 ring-gold-muted/70">
@@ -391,10 +409,16 @@ export default function HomePage() {
       >
         <div className="mx-auto flex max-w-6xl flex-col gap-8 px-5 sm:px-6 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-lg font-extrabold tracking-tight text-ink-900">
-              VeRoRo
-            </p>
-            <p className="mt-1 text-sm text-ink-800/70">
+            <div className="flex items-center gap-3">
+              <Image
+                src="/veroro-logo.png"
+                alt="VeRoRo"
+                width={120}
+                height={44}
+                className="h-9 w-auto drop-shadow-sm"
+              />
+            </div>
+            <p className="mt-2 text-sm text-ink-800/70">
               반려동물계의 필수 앱을 향해
             </p>
           </div>
