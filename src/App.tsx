@@ -91,7 +91,6 @@ function App() {
   return (
     <BrowserRouter>
       <Notification />
-      <BrowserRouter>
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
@@ -100,9 +99,9 @@ function App() {
             <Route path="profile" element={<Profile />} />
             <Route path="comparison" element={<Comparison />} />
             <Route path="cart" element={<Cart />} />
-            <Route path="checkout" element={<Checkout />} />
-            <Route path="success" element={<Success />} />
-            <Route path="fail" element={<Fail />} />
+            {/* <Route path="checkout" element={<Checkout />} /> */}
+            {/* <Route path="success" element={<Success />} /> */}
+            {/* <Route path="fail" element={<Fail />} /> */}
             <Route path="product/:id" element={<Detail />} />
             <Route path="terms" element={<Terms />} />
             <Route path="privacy" element={<Privacy />} />

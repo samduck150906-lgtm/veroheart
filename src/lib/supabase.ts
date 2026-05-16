@@ -117,8 +117,8 @@ function mapProduct(p: any): Product {
     hasRiskFactors: p.has_risk_factors,
     price: p.min_price || 0,
     imageUrl: p.image_url || 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&q=80',
-    productUrl: p.product_url,
-    source: p.source,
+    // productUrl: p.product_url,
+    // source: p.source,
     ingredients: p.product_ingredients?.map((pi: any) => ({
       id: pi.ingredients?.id || '',
       nameKo: pi.ingredients?.name_ko || '',
@@ -330,12 +330,6 @@ export async function getAnalysisReports(userId: string) {
     return [];
   }
   return data || [];
-}
-
-// ─── Auth ───────────────────────────────────────────────────────────────────
-
-export async function signOut() {
-  await supabase.auth.signOut();
 }
 
 // ─── Reviews ────────────────────────────────────────────────────────────────
