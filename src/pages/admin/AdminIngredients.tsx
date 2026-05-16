@@ -1,7 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Plus, Search, Edit2, Trash2, X } from 'lucide-react';
+import { 
+  Plus, 
+  Search, 
+  Edit2, 
+  Trash2, 
+  X,
+  Database
+} from 'lucide-react';
 import { notify } from '../../store/useNotification';
+import standardFeedData from '../../data/standard_feed_data.json';
 
 interface Ingredient {
   id: string;
@@ -28,6 +36,8 @@ const AdminIngredients: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isStandardFeedModalOpen, setIsStandardFeedModalOpen] = useState(false);
+  const [standardFeedSearch, setStandardFeedSearch] = useState('');
   const [currentIngredient, setCurrentIngredient] = useState<Partial<Ingredient>>({});
 
   useEffect(() => {
@@ -100,11 +110,44 @@ const AdminIngredients: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('정말 이 성분을 삭제하시겠습니까?')) return;
-    const { error } = await supabase.from('ingredients').delete().eq('id', id);
-    if (error) {
-      notify.error(`삭제 실패: ${error.message}`);
-      return;
+    if (window.confirm('정말 이 성분을 삭제하시겠습니까? 관련 데이터가 영향을 받을 수 있습니다.')) {
+      const { error } = await supabase.from('ingredients').delete().eq('id', id);
+      if (error) {
+        notify.error('삭제 실패');
+      } else {
+        notify.success('성분이 삭제되었습니다.');
+        fetchIngredients();
+      }
+    }
+  };
+
+  const filteredIngredients = ingredients.filter(i => 
+    i.name_ko.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    (i.name_en && i.name_en.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  const filteredStandardFeed = standardFeedData.filter((item: any) => 
+    item.name_ko.toLowerCase().includes(standardFeedSearch.toLowerCase()) ||
+    item.name_en.toLowerCase().includes(standardFeedSearch.toLowerCase())
+  );
+
+  const handleSelectStandardFeed = (item: any) => {
+    setCurrentIngredient({
+      ...currentIngredient,
+      name_ko: item.name_ko,
+      name_en: item.name_en,
+      description: `수분: ${item.moisture}% / 조단백질: ${item.protein}% / 조지방: ${item.fat}% / 조회분: ${item.ash}% / 조섬유: ${item.fiber}% (출처: 한국표준사료성분표 2022)`,
+      risk_level: 'safe'
+    });
+    setIsStandardFeedModalOpen(false);
+  };
+
+  const getRiskColor = (level: string) => {
+    switch(level) {
+      case 'safe': return '#10B981';
+      case 'caution': return '#F59E0B';
+      case 'danger': return '#EF4444';
+      default: return '#6B7280';
     }
     notify.success('성분이 삭제되었습니다.');
     fetchIngredients();
@@ -238,46 +281,62 @@ const AdminIngredients: React.FC = () => {
       </div>
 
       {isModalOpen && (
-        <div className="admin-modal-backdrop" onClick={() => setIsModalOpen(false)}>
-          <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3>{currentIngredient.id ? '성분 정보 수정' : '신규 성분 등록'}</h3>
-              <button className="admin-btn-soft" onClick={() => setIsModalOpen(false)} aria-label="모달 닫기">
-                <X size={16} />
-              </button>
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="animate-scale-in" style={{ width: '90%', maxWidth: '600px', backgroundColor: '#fff', borderRadius: '32px', padding: '40px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: 900 }}>{currentIngredient.id ? '성분 정보 수정' : '신규 성분 등록'}</h2>
+              <button onClick={() => setIsModalOpen(false)} style={{ padding: '8px', background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
             </div>
 
-            <div className="admin-form-grid">
-              <InputField
-                label="한글 성분명*"
-                value={currentIngredient.name_ko}
-                onChange={(value) => setCurrentIngredient({ ...currentIngredient, name_ko: value })}
-              />
-              <InputField
-                label="영문 성분명"
-                value={currentIngredient.name_en}
-                onChange={(value) => setCurrentIngredient({ ...currentIngredient, name_en: value })}
-              />
-              <SelectField
-                label="위험도*"
-                value={currentIngredient.risk_level}
-                options={['safe', 'caution', 'danger']}
-                onChange={(value) =>
-                  setCurrentIngredient({ ...currentIngredient, risk_level: value as Ingredient['risk_level'] })
-                }
-              />
-              <SelectField
-                label="성분 분류"
-                value={currentIngredient.category}
-                options={INGREDIENT_CATEGORIES}
-                onChange={(value) => setCurrentIngredient({ ...currentIngredient, category: value })}
-              />
-              <TextAreaField
-                className="admin-form-span-2"
-                label="설명 및 가이드"
-                value={currentIngredient.description}
-                onChange={(value) => setCurrentIngredient({ ...currentIngredient, description: value })}
-              />
+            {!currentIngredient.id && (
+              <div style={{ marginBottom: '24px' }}>
+                <button 
+                  onClick={() => setIsStandardFeedModalOpen(true)}
+                  style={{ width: '100%', padding: '14px', borderRadius: '16px', backgroundColor: '#F3F4F6', border: '1px dashed #D1D5DB', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontWeight: 700, color: '#4B5563', cursor: 'pointer' }}
+                >
+                  <Database size={18} /> 한국표준사료성분표 데이터에서 불러오기
+                </button>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <Input label="한글 성분명*" value={currentIngredient.name_ko} onChange={(v) => setCurrentIngredient({...currentIngredient, name_ko: v})} />
+                <Input label="영문 성분명" value={currentIngredient.name_en} onChange={(v) => setCurrentIngredient({...currentIngredient, name_en: v})} />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '13px', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '12px' }}>위험도 레벨*</label>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  {['safe', 'caution', 'danger'].map(level => (
+                    <button
+                      key={level}
+                      onClick={() => setCurrentIngredient({...currentIngredient, risk_level: level as any})}
+                      style={{
+                        flex: 1, padding: '16px', borderRadius: '16px', border: '2px solid',
+                        transition: '0.2s', cursor: 'pointer', fontSize: '14px', fontWeight: 800,
+                        backgroundColor: currentIngredient.risk_level === level ? `${getRiskColor(level)}` : '#fff',
+                        borderColor: currentIngredient.risk_level === level ? getRiskColor(level) : '#E5E7EB',
+                        color: currentIngredient.risk_level === level ? '#fff' : '#6B7280'
+                      }}
+                    >
+                      {level === 'safe' ? '안전함' : (level === 'caution' ? '주의' : '위험함')}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <Select label="성분 분류" value={currentIngredient.category} options={INGREDIENT_CATEGORIES} onChange={(v) => setCurrentIngredient({...currentIngredient, category: v})} />
+
+              <div>
+                <label style={{ fontSize: '13px', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '8px' }}>설명 및 가이드</label>
+                <textarea 
+                  value={currentIngredient.description || ''} 
+                  onChange={(e) => setCurrentIngredient({...currentIngredient, description: e.target.value})}
+                  rows={4}
+                  style={{ width: '100%', padding: '16px', borderRadius: '16px', border: '1px solid #E5E7EB', outline: 'none', resize: 'none' }}
+                />
+              </div>
             </div>
 
             <div className="admin-modal-footer">
@@ -287,6 +346,53 @@ const AdminIngredients: React.FC = () => {
               <button className="admin-btn-primary" onClick={handleSave}>
                 저장하기
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Standard Feed Modal */}
+      {isStandardFeedModalOpen && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="animate-scale-in" style={{ width: '90%', maxWidth: '600px', backgroundColor: '#fff', borderRadius: '32px', padding: '40px', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 900 }}>한국표준사료성분 DB 검색</h2>
+              <button onClick={() => setIsStandardFeedModalOpen(false)} style={{ padding: '8px', background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
+            </div>
+            
+            <div style={{ position: 'relative', marginBottom: '16px' }}>
+              <Search size={16} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+              <input 
+                type="text" 
+                placeholder="성분명 검색..." 
+                value={standardFeedSearch}
+                onChange={(e) => setStandardFeedSearch(e.target.value)}
+                style={{ width: '100%', padding: '12px 12px 12px 42px', borderRadius: '12px', border: '1px solid #E5E7EB', outline: 'none', fontSize: '14px' }}
+              />
+            </div>
+
+            <div style={{ overflowY: 'auto', flex: 1, border: '1px solid #E5E7EB', borderRadius: '12px' }}>
+              {filteredStandardFeed.length === 0 ? (
+                <div style={{ padding: '40px', textAlign: 'center', color: '#9CA3AF' }}>검색 결과가 없습니다.</div>
+              ) : (
+                filteredStandardFeed.map((item: any, idx: number) => (
+                  <div 
+                    key={idx}
+                    onClick={() => handleSelectStandardFeed(item)}
+                    style={{ 
+                      padding: '16px', borderBottom: '1px solid #E5E7EB', cursor: 'pointer',
+                      display: 'flex', flexDirection: 'column', gap: '4px'
+                    }}
+                    className="hover:bg-gray-50"
+                  >
+                    <div style={{ fontWeight: 800, color: '#1F2937' }}>{item.name_ko}</div>
+                    <div style={{ fontSize: '12px', color: '#6B7280' }}>{item.name_en}</div>
+                    <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '4px' }}>
+                      단백질: {item.protein}% | 지방: {item.fat}% | 수분: {item.moisture}% | 회분: {item.ash}%
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

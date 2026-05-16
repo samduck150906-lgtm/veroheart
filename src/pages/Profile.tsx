@@ -1,41 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
-import type { SupabaseOrderItem } from '../types';
-import { User, ChevronRight, Calendar, ShoppingBag, FileText, Activity, Heart, LogOut, LogIn } from 'lucide-react';
+import { User, ChevronRight, Calendar, ShoppingBag, FileText, Activity, LogOut } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import ProductCard from '../components/ProductCard';
-import { TossButton, TossCard, TossChip, TossSectionTitle, TossInput } from '../components/TossUI';
 
 export default function Profile() {
-  const { profile, updateProfile, orders, fetchOrders, reports, fetchReports, isLoggedIn, signOut, favorites, products } = useStore();
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'info' | 'orders' | 'reports' | 'favorites'>('info');
-  const favoriteProducts = products.filter(p => favorites.includes(p.id));
+  const { userId, profile, updateProfile, orders, fetchOrders, reports, fetchReports, logout } = useStore();
+  const [activeTab, setActiveTab] = useState<'info' | 'orders' | 'reports'>('info');
   const [formData, setFormData] = useState(profile);
-  const [profileStep, setProfileStep] = useState(0);
-
-  const concernOptions = ['관절', '피부', '체중', '소화', '눈'];
-  const allergyOptions = ['닭고기', '소고기', '연어', '곡물', '인공색소'];
-  const PROFILE_STEP_META = [
-    { title: '이름', prompt: '반려동물의 이름을 알려주세요.' },
-    { title: '종', prompt: '강아지인가요, 고양이인가요?' },
-    { title: '나이', prompt: '나이에 가까운 단계를 골라 주세요.' },
-    { title: '몸무게', prompt: '몸무게를 알고 있다면 입력해 주세요. (선택)' },
-    { title: '알레르기', prompt: '피해야 할 알레르기·회피 성분이 있다면 모두 선택해 주세요.' },
-    { title: '건강 고민', prompt: '요즘 가장 신경 쓰이는 고민을 골라 주세요. (복수 선택)' },
-  ] as const;
-
-  useEffect(() => {
-    queueMicrotask(() => {
-      setFormData(profile);
-      setProfileStep(0);
-    });
-  }, [profile]);
+  const navigate = useNavigate();
   
   useEffect(() => {
+    if (!userId) return;
     if (activeTab === 'orders') fetchOrders();
     if (activeTab === 'reports') fetchReports();
-  }, [activeTab, fetchOrders, fetchReports]);
+  }, [activeTab, fetchOrders, fetchReports, userId]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -191,6 +169,36 @@ export default function Profile() {
     }
   })();
 
+  const allergyOptions = ['닭고기', '소고기', '연어', '곡물', '인공색소'];
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
+
+  if (!userId) {
+    return (
+      <div className="animate-fade-in" style={{ padding: '40px 20px', minHeight: '80vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+        <div style={{ width: '80px', height: '80px', borderRadius: '24px', backgroundColor: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
+          <User size={40} color="#D1D5DB" />
+        </div>
+        <h2 style={{ fontSize: '24px', fontWeight: 900, color: 'var(--text-dark)', marginBottom: '12px' }}>
+          로그인이 필요해요
+        </h2>
+        <p style={{ fontSize: '15px', color: 'var(--text-muted)', marginBottom: '32px', textAlign: 'center', lineHeight: 1.5 }}>
+          프로필을 설정하고 아이의 건강 맞춤<br/>사료 분석을 시작해보세요!
+        </p>
+        <button 
+          className="btn btn-primary" 
+          style={{ width: '100%', maxWidth: '320px', padding: '16px', borderRadius: '20px', fontWeight: 800, fontSize: '16px' }}
+          onClick={() => navigate('/auth')}
+        >
+          로그인 / 회원가입 하기
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '40px' }}>
       {/* 로그인/로그아웃 버튼 */}
@@ -272,27 +280,19 @@ export default function Profile() {
 
           <div style={{ marginBottom: '28px' }}>{profileStepBody}</div>
 
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '14px' }}>
-            <TossButton
-              type="button"
-              variant="outline"
-              style={{ flex: 1, height: '50px' }}
-              disabled={profileStep === 0}
-              onClick={() => setProfileStep((s) => Math.max(0, s - 1))}
+          <button className="btn btn-primary" style={{ width: '100%', padding: '16px', borderRadius: '14px', fontWeight: 800, fontSize: '16px' }} onClick={handleSave}>
+            변경 사항 저장
+          </button>
+          
+          <div style={{ marginTop: '32px', borderTop: '1px solid #E5E8EB', paddingTop: '24px' }}>
+            <button 
+              onClick={handleLogout}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}
             >
-              이전
-            </TossButton>
-            {profileStep < stepCount - 1 ? (
-              <TossButton type="button" style={{ flex: 1, height: '50px' }} onClick={() => setProfileStep((s) => Math.min(stepCount - 1, s + 1))}>
-                다음
-              </TossButton>
-            ) : (
-              <TossButton type="button" style={{ flex: 1, height: '50px' }} onClick={handleSave}>
-                저장
-              </TossButton>
-            )}
+              <LogOut size={16} /> 로그아웃
+            </button>
           </div>
-        </TossCard>
+        </div>
       ) : activeTab === 'orders' ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {orders.length > 0 ? (

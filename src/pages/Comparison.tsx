@@ -11,14 +11,19 @@ export default function Comparison() {
 
   if (products.length === 0) {
     return (
-      <div className="ui-info-card" style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
-        <div className="ui-icon-pill" style={{ margin: '0 auto 14px', width: '56px', height: '56px' }}>
-          <GitCompare size={22} color="var(--primary-dark)" />
+      <div style={{ textAlign: 'center', padding: '100px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{ width: '120px', height: '120px', borderRadius: '50%', backgroundColor: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
+          <img src="https://cdn-icons-png.flaticon.com/512/9322/9322127.png" alt="Empty Comparison" style={{ width: '60px', opacity: 0.6 }} />
         </div>
-        <p style={{ marginBottom: '16px', fontSize: '16px', fontWeight: 800 }}>
-          비교함이 비어있습니다.<br/>마음에 드는 제품을 담아 꼼꼼히 비교해보세요!
-        </p>
-        <button className="btn btn-primary" onClick={() => navigate('/search')}>제품 탐색하러 가기</button>
+        <h3 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '8px', color: '#1F2937' }}>비교함이 비어있습니다.</h3>
+        <p style={{ marginBottom: '32px', color: '#6B7280', fontSize: '15px' }}>마음에 드는 사료들을 담아<br/>어떤 점이 다른지 꼼꼼히 비교해보세요!</p>
+        <button 
+          className="btn btn-primary" 
+          style={{ padding: '16px 32px', borderRadius: '16px', fontWeight: 800, fontSize: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', border: 'none', cursor: 'pointer' }}
+          onClick={() => navigate('/search')}
+        >
+          비교할 사료 탐색하기
+        </button>
       </div>
     );
   }

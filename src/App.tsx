@@ -13,11 +13,7 @@ import Cart from './pages/Cart';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Refund from './pages/Refund';
-import Login from './pages/Login';
-import Ranking from './pages/Ranking';
-import Brand from './pages/Brand';
-import ViralEvent from './pages/ViralEvent';
-import PersonalityQuiz from './pages/Test';
+import Auth from './pages/Auth';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
@@ -95,25 +91,25 @@ function App() {
   return (
     <BrowserRouter>
       <Notification />
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Home />} />
-          <Route path="search" element={<Search />} />
-          <Route path="profile" element={<Profile />} />
-          <Route path="comparison" element={<Comparison />} />
-          <Route path="cart" element={<Cart />} />
-          <Route path="product/:id" element={<Detail />} />
-          <Route path="terms" element={<Terms />} />
-          <Route path="privacy" element={<Privacy />} />
-          <Route path="refund" element={<Refund />} />
-          <Route path="ranking" element={<Ranking />} />
-          <Route path="brand/:brandName" element={<Brand />} />
-          <Route path="event/viral" element={<ViralEvent />} />
-          <Route path="event/personality-quiz" element={<PersonalityQuiz />} />
-        </Route>
-
-        <Route path="/login" element={<Login />} />
-
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<Home />} />
+            <Route path="search" element={<Search />} />
+            <Route path="auth" element={<Auth />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="comparison" element={<Comparison />} />
+            <Route path="cart" element={<Cart />} />
+            <Route path="checkout" element={<Checkout />} />
+            <Route path="success" element={<Success />} />
+            <Route path="fail" element={<Fail />} />
+            <Route path="product/:id" element={<Detail />} />
+            <Route path="terms" element={<Terms />} />
+            <Route path="privacy" element={<Privacy />} />
+            <Route path="refund" element={<Refund />} />
+          </Route>
+        
+        {/* Admin CMS Routes — Protected */}
         <Route path="/admin" element={<AdminAuthGuard><AdminLayout /></AdminAuthGuard>}>
           <Route index element={<AdminDashboard />} />
           <Route path="products" element={<AdminProducts />} />
