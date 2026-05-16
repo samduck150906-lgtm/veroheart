@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Reveal } from "@/components/Reveal";
-import { PhoneMockup } from "@/components/PhoneMockup";
 
 const APP_STORE = "https://apps.apple.com/kr/search?term=%EB%B2%A0%EB%A1%9C%EB%A1%9C";
 const PLAY_STORE = "https://play.google.com/store/search?q=%EB%B2%A0%EB%A1%9C%EB%A1%9C&c=apps";
@@ -170,7 +169,7 @@ export default function HomePage() {
                   </div>
                 </div>
                 <p className="text-[#57534e] leading-relaxed italic">
-                  "매번 뒷면의 깨알 같은 글씨를 보면서도 뭐가 뭔지 몰랐는데, 베로로 앱 하나로 알레르기 유발 성분을 피할 수 있게 됐어요!"
+                  &quot;매번 뒷면의 깨알 같은 글씨를 보면서도 뭐가 뭔지 몰랐는데, 베로로 앱 하나로 알레르기 유발 성분을 피할 수 있게 됐어요!&quot;
                 </p>
               </div>
             </Reveal>
