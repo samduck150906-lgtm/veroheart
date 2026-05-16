@@ -3,6 +3,7 @@ export interface UserPetProfile {
   name: string;
   species: 'Dog' | 'Cat';
   age: number;
+  weight?: number;
   healthConcerns: string[];
   allergies: string[];
 }
@@ -29,6 +30,8 @@ export interface Product {
   hasRiskFactors?: string[];
   price: number;
   imageUrl: string;
+  productUrl?: string;
+  source?: string;
   ingredients: Ingredient[];
   reviewsCount: number;
   averageRating: number;
@@ -39,6 +42,7 @@ export const mockPetProfile: UserPetProfile = {
   name: '로니',
   species: 'Dog',
   age: 4,
+  weight: 5.5,
   healthConcerns: ['관절', '피부'],
   allergies: ['닭고기', '인공색소'],
 };

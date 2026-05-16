@@ -1,0 +1,1812 @@
+[
+  {
+    "id": 2,
+    "name_ko": "귀리 (연맥)",
+    "name_en": "Oat grain",
+    "moisture": 12.17,
+    "protein": 9.64,
+    "fat": 3.89,
+    "ash": 2.56,
+    "fiber": 10.72
+  },
+  {
+    "id": 3,
+    "name_ko": "귀리 (연맥, 탈피)",
+    "name_en": "Oat grain (dehulled)",
+    "moisture": 12.01,
+    "protein": 12.1,
+    "fat": 4.37,
+    "ash": 2.01,
+    "fiber": 3.0
+  },
+  {
+    "id": 4,
+    "name_ko": "밀 (소맥)",
+    "name_en": "Wheat grain",
+    "moisture": 12.13,
+    "protein": 11.3,
+    "fat": 1.47,
+    "ash": 1.55,
+    "fiber": 2.41
+  },
+  {
+    "id": 5,
+    "name_ko": "보리 (대맥)",
+    "name_en": "Barley grain",
+    "moisture": 10.69,
+    "protein": 9.58,
+    "fat": 1.85,
+    "ash": 2.09,
+    "fiber": 4.75
+  },
+  {
+    "id": 6,
+    "name_ko": "소맥분 (밀가루, 조섬유 1%이상)",
+    "name_en": "Wheat flour (CF>1%)",
+    "moisture": 13.17,
+    "protein": 15.29,
+    "fat": 3.26,
+    "ash": 2.24,
+    "fiber": 2.87
+  },
+  {
+    "id": 7,
+    "name_ko": "소맥분 (밀가루, 조섬유 1%이하)",
+    "name_en": "Wheat flour (CF<1%)",
+    "moisture": 13.18,
+    "protein": 13.99,
+    "fat": 2.26,
+    "ash": 1.24,
+    "fiber": 0.57
+  },
+  {
+    "id": 8,
+    "name_ko": "옥수수",
+    "name_en": "Corn grain",
+    "moisture": 14.12,
+    "protein": 7.24,
+    "fat": 3.37,
+    "ash": 1.14,
+    "fiber": 2.07
+  },
+  {
+    "id": 9,
+    "name_ko": "옥수수 (남미)",
+    "name_en": "Corn grain (South America)",
+    "moisture": 14.03,
+    "protein": 7.24,
+    "fat": 3.63,
+    "ash": 1.14,
+    "fiber": 2.1
+  },
+  {
+    "id": 10,
+    "name_ko": "옥수수 (미국)",
+    "name_en": "Corn grain (USA)",
+    "moisture": 14.46,
+    "protein": 7.04,
+    "fat": 3.16,
+    "ash": 1.14,
+    "fiber": 1.91
+  },
+  {
+    "id": 11,
+    "name_ko": "옥수수 (유럽)",
+    "name_en": "Corn grain (Europe)",
+    "moisture": 13.91,
+    "protein": 7.37,
+    "fat": 3.22,
+    "ash": 1.13,
+    "fiber": 2.21
+  },
+  {
+    "id": 12,
+    "name_ko": "옥수수 (후레이크)",
+    "name_en": "Steam flaked corn",
+    "moisture": 13.09,
+    "protein": 7.38,
+    "fat": 3.28,
+    "ash": 1.33,
+    "fiber": 1.29
+  },
+  {
+    "id": 13,
+    "name_ko": "현미 (재고미)",
+    "name_en": "Brown rice",
+    "moisture": 14.06,
+    "protein": 7.36,
+    "fat": 2.61,
+    "ash": 1.11,
+    "fiber": 1.64
+  },
+  {
+    "id": 14,
+    "name_ko": "호밀",
+    "name_en": "Rye grain",
+    "moisture": 3.03,
+    "protein": 12.14,
+    "fat": 1.65,
+    "ash": 2.49,
+    "fiber": 2.61
+  },
+  {
+    "id": 15,
+    "name_ko": "귀리피",
+    "name_en": "Oat hulls",
+    "moisture": 8.8,
+    "protein": 4.95,
+    "fat": 2.3,
+    "ash": 4.99,
+    "fiber": 22.5
+  },
+  {
+    "id": 16,
+    "name_ko": "대두피",
+    "name_en": "Soybean hulls",
+    "moisture": 10.28,
+    "protein": 11.99,
+    "fat": 2.83,
+    "ash": 4.34,
+    "fiber": 33.69
+  },
+  {
+    "id": 17,
+    "name_ko": "루핀피",
+    "name_en": "Lupine hulls",
+    "moisture": 7.96,
+    "protein": 7.08,
+    "fat": 2.12,
+    "ash": 2.53,
+    "fiber": 51.08
+  },
+  {
+    "id": 18,
+    "name_ko": "면실피",
+    "name_en": "Cottonseed hulls",
+    "moisture": 10.0,
+    "protein": 6.66,
+    "fat": 1.76,
+    "ash": 4.86,
+    "fiber": 38.72
+  },
+  {
+    "id": 19,
+    "name_ko": "보릿겨 (맥강)",
+    "name_en": "Barley bran",
+    "moisture": 8.49,
+    "protein": 12.41,
+    "fat": 1.8,
+    "ash": 7.11,
+    "fiber": 17.49
+  },
+  {
+    "id": 20,
+    "name_ko": "소맥피 (밀기울)",
+    "name_en": "Wheat bran",
+    "moisture": 12.77,
+    "protein": 14.92,
+    "fat": 3.59,
+    "ash": 4.58,
+    "fiber": 9.56
+  },
+  {
+    "id": 21,
+    "name_ko": "소맥피 (밀기울, 국산)",
+    "name_en": "Wheat bran  (Korea)",
+    "moisture": 13.07,
+    "protein": 14.95,
+    "fat": 3.47,
+    "ash": 4.55,
+    "fiber": 9.57
+  },
+  {
+    "id": 22,
+    "name_ko": "수수겨",
+    "name_en": "Sorghum bran",
+    "moisture": 9.57,
+    "protein": 11.08,
+    "fat": 6.15,
+    "ash": 4.72,
+    "fiber": 6.85
+  },
+  {
+    "id": 23,
+    "name_ko": "쌀겨 (생미강)",
+    "name_en": "Rice bran",
+    "moisture": 11.68,
+    "protein": 14.03,
+    "fat": 18.24,
+    "ash": 8.7,
+    "fiber": 7.77
+  },
+  {
+    "id": 24,
+    "name_ko": "아몬드피",
+    "name_en": "Almond hulls",
+    "moisture": 10.32,
+    "protein": 3.59,
+    "fat": 1.46,
+    "ash": 5.59,
+    "fiber": 42.22
+  },
+  {
+    "id": 25,
+    "name_ko": "옥수수단백피",
+    "name_en": "Corn gluten feed",
+    "moisture": 8.21,
+    "protein": 20.4,
+    "fat": 2.72,
+    "ash": 6.25,
+    "fiber": 9.16
+  },
+  {
+    "id": 26,
+    "name_ko": "율무피",
+    "name_en": "Job's tears hulls",
+    "moisture": 5.08,
+    "protein": 2.59,
+    "fat": 1.74,
+    "ash": 11.71,
+    "fiber": 38.78
+  },
+  {
+    "id": 27,
+    "name_ko": "캐슈너트피",
+    "name_en": "Cashew nut hulls",
+    "moisture": 9.66,
+    "protein": 11.48,
+    "fat": 11.1,
+    "ash": 1.87,
+    "fiber": 10.99
+  },
+  {
+    "id": 28,
+    "name_ko": "커피피",
+    "name_en": "Coffee hulls",
+    "moisture": 13.66,
+    "protein": 10.05,
+    "fat": 1.08,
+    "ash": 5.8,
+    "fiber": 30.52
+  },
+  {
+    "id": 29,
+    "name_ko": "겨자박 (압착)",
+    "name_en": "Mustard oil meal (mech-extracted)",
+    "moisture": 10.6,
+    "protein": 20.53,
+    "fat": 9.0,
+    "ash": 12.69,
+    "fiber": 21.8
+  },
+  {
+    "id": 30,
+    "name_ko": "구아박",
+    "name_en": "Guar meal",
+    "moisture": 6.56,
+    "protein": 46.2,
+    "fat": 5.09,
+    "ash": 5.51,
+    "fiber": 10.16
+  },
+  {
+    "id": 31,
+    "name_ko": "대두단백 (농축)",
+    "name_en": "Soy protein concentrate",
+    "moisture": 7.12,
+    "protein": 60.55,
+    "fat": 3.54,
+    "ash": 4.27,
+    "fiber": 2.85
+  },
+  {
+    "id": 32,
+    "name_ko": "대두단백 (분리)",
+    "name_en": "Soy protein isolate",
+    "moisture": 5.43,
+    "protein": 86.12,
+    "fat": 0.4,
+    "ash": 4.48,
+    "fiber": 0.19
+  },
+  {
+    "id": 33,
+    "name_ko": "대두박",
+    "name_en": "Soybean meal",
+    "moisture": 12.14,
+    "protein": 45.47,
+    "fat": 1.49,
+    "ash": 6.19,
+    "fiber": 4.85
+  },
+  {
+    "id": 34,
+    "name_ko": "대두박 (콩깻묵, 국산)",
+    "name_en": "Soybean meal  (Korea)",
+    "moisture": 11.61,
+    "protein": 47.42,
+    "fat": 1.66,
+    "ash": 6.02,
+    "fiber": 4.01
+  },
+  {
+    "id": 35,
+    "name_ko": "대두박 (조단백질 44~46%)",
+    "name_en": "Soybean meal (CP 44~46%)",
+    "moisture": 12.2,
+    "protein": 45.38,
+    "fat": 1.43,
+    "ash": 6.2,
+    "fiber": 4.86
+  },
+  {
+    "id": 36,
+    "name_ko": "대두박 (CP 47% 이상)",
+    "name_en": "Soybean meal (CP>47%)",
+    "moisture": 11.36,
+    "protein": 47.62,
+    "fat": 1.55,
+    "ash": 6.06,
+    "fiber": 4.12
+  },
+  {
+    "id": 37,
+    "name_ko": "대두박 (탈피, 국산)",
+    "name_en": "Soybean meal (dehulled, Korea)",
+    "moisture": 12.14,
+    "protein": 47.36,
+    "fat": 1.87,
+    "ash": 6.43,
+    "fiber": 3.31
+  },
+  {
+    "id": 38,
+    "name_ko": "들깻묵 (임자박)",
+    "name_en": "Perilla meal",
+    "moisture": 5.87,
+    "protein": 40.0,
+    "fat": 8.83,
+    "ash": 6.32,
+    "fiber": 23.23
+  },
+  {
+    "id": 39,
+    "name_ko": "땅콩박",
+    "name_en": "Peanut meal",
+    "moisture": 7.78,
+    "protein": 46.93,
+    "fat": 0.77,
+    "ash": 6.4,
+    "fiber": 10.98
+  },
+  {
+    "id": 40,
+    "name_ko": "맥주박",
+    "name_en": "Brewers grain",
+    "moisture": 65.34,
+    "protein": 8.05,
+    "fat": 2.22,
+    "ash": 1.78,
+    "fiber": 5.79
+  },
+  {
+    "id": 41,
+    "name_ko": "면실박",
+    "name_en": "Cottonseed meal",
+    "moisture": 9.93,
+    "protein": 39.3,
+    "fat": 1.55,
+    "ash": 5.92,
+    "fiber": 16.31
+  },
+  {
+    "id": 42,
+    "name_ko": "밀글루텐밀",
+    "name_en": "Wheat gluten meal",
+    "moisture": 7.93,
+    "protein": 76.14,
+    "fat": 1.55,
+    "ash": 1.1,
+    "fiber": 0.27
+  },
+  {
+    "id": 43,
+    "name_ko": "밀 배아박",
+    "name_en": "Wheat germ meal",
+    "moisture": 11.48,
+    "protein": 22.03,
+    "fat": 4.81,
+    "ash": 2.52,
+    "fiber": 7.38
+  },
+  {
+    "id": 44,
+    "name_ko": "밀주정박",
+    "name_en": "Wheat distiller's dried grains  with solubles (DDGS)",
+    "moisture": 7.75,
+    "protein": 33.03,
+    "fat": 5.44,
+    "ash": 5.19,
+    "fiber": 6.78
+  },
+  {
+    "id": 45,
+    "name_ko": "아마박",
+    "name_en": "Linseed meal (Flaxseed Meal)",
+    "moisture": 8.93,
+    "protein": 32.07,
+    "fat": 13.26,
+    "ash": 4.95,
+    "fiber": 6.83
+  },
+  {
+    "id": 46,
+    "name_ko": "아몬드박",
+    "name_en": "Almond meal",
+    "moisture": 9.31,
+    "protein": 13.04,
+    "fat": 6.55,
+    "ash": 4.94,
+    "fiber": 32.62
+  },
+  {
+    "id": 47,
+    "name_ko": "야자박 (추출)",
+    "name_en": "Coconut (Copra) meal (solvent-extracted)",
+    "moisture": 11.31,
+    "protein": 21.12,
+    "fat": 2.61,
+    "ash": 6.31,
+    "fiber": 14.06
+  },
+  {
+    "id": 48,
+    "name_ko": "야자박 (압착)",
+    "name_en": "Coconut (Copra) meal (mech-extracted)",
+    "moisture": 9.4,
+    "protein": 20.8,
+    "fat": 10.3,
+    "ash": 5.96,
+    "fiber": 13.15
+  },
+  {
+    "id": 49,
+    "name_ko": "옥수수글루텐밀",
+    "name_en": "Corn gluten meal",
+    "moisture": 8.56,
+    "protein": 65.84,
+    "fat": 1.85,
+    "ash": 2.58,
+    "fiber": 0.68
+  },
+  {
+    "id": 50,
+    "name_ko": "옥수수배아박",
+    "name_en": "Corn germ meal",
+    "moisture": 8.92,
+    "protein": 20.79,
+    "fat": 10.72,
+    "ash": 2.53,
+    "fiber": 9.47
+  },
+  {
+    "id": 51,
+    "name_ko": "옥수수 주정박",
+    "name_en": "Corn distiller's dried grains  with solubles (DDGS)",
+    "moisture": 10.91,
+    "protein": 27.5,
+    "fat": 9.51,
+    "ash": 4.71,
+    "fiber": 7.09
+  },
+  {
+    "id": 52,
+    "name_ko": "장유박",
+    "name_en": "Soysauce byproduct",
+    "moisture": 25.22,
+    "protein": 25.39,
+    "fat": 5.29,
+    "ash": 8.98,
+    "fiber": 9.56
+  },
+  {
+    "id": 53,
+    "name_ko": "전분박",
+    "name_en": "Starch pulp",
+    "moisture": 12.77,
+    "protein": 10.39,
+    "fat": 1.52,
+    "ash": 4.67,
+    "fiber": 12.58
+  },
+  {
+    "id": 54,
+    "name_ko": "참깨묵 (호마박, 압착)",
+    "name_en": "Sesame meal (extracted)",
+    "moisture": 4.02,
+    "protein": 45.61,
+    "fat": 13.44,
+    "ash": 9.91,
+    "fiber": 11.83
+  },
+  {
+    "id": 55,
+    "name_ko": "채종박 (추출)",
+    "name_en": "Rapeseed meal",
+    "moisture": 10.68,
+    "protein": 37.05,
+    "fat": 1.13,
+    "ash": 8.43,
+    "fiber": 9.5
+  },
+  {
+    "id": 56,
+    "name_ko": "팜박 (압착)",
+    "name_en": "Palm kernel meal (mech-extracted)",
+    "moisture": 9.06,
+    "protein": 15.42,
+    "fat": 8.11,
+    "ash": 4.22,
+    "fiber": 17.41
+  },
+  {
+    "id": 57,
+    "name_ko": "팜박 (추출)",
+    "name_en": "Palm kernel meal (solvent-extracted)",
+    "moisture": 10.35,
+    "protein": 16.19,
+    "fat": 2.89,
+    "ash": 4.45,
+    "fiber": 16.92
+  },
+  {
+    "id": 58,
+    "name_ko": "감귤박 (생)",
+    "name_en": "Citrus juice pulp  (fresh)",
+    "moisture": 84.95,
+    "protein": 1.37,
+    "fat": 0.87,
+    "ash": 0.43,
+    "fiber": 2.96
+  },
+  {
+    "id": 59,
+    "name_ko": "당밀",
+    "name_en": "Molasses",
+    "moisture": 19.39,
+    "protein": 7.09,
+    "fat": 0.6,
+    "ash": 8.75,
+    "fiber": 0.01
+  },
+  {
+    "id": 60,
+    "name_ko": "도토리박",
+    "name_en": "Acorn by-products",
+    "moisture": 62.08,
+    "protein": 1.88,
+    "fat": 0.28,
+    "ash": 0.54,
+    "fiber": 8.11
+  },
+  {
+    "id": 61,
+    "name_ko": "땅콩피",
+    "name_en": "Peanut hulls",
+    "moisture": 9.7,
+    "protein": 7.31,
+    "fat": 0.62,
+    "ash": 5.04,
+    "fiber": 56.27
+  },
+  {
+    "id": 62,
+    "name_ko": "라면부스러기",
+    "name_en": "Instant noodle by-product",
+    "moisture": 11.27,
+    "protein": 8.02,
+    "fat": 9.56,
+    "ash": 3.57,
+    "fiber": 2.38
+  },
+  {
+    "id": 63,
+    "name_ko": "배추부산물",
+    "name_en": "Chinese cabbage by-product",
+    "moisture": 91.55,
+    "protein": 1.6,
+    "fat": 0.17,
+    "ash": 1.51,
+    "fiber": 1.51
+  },
+  {
+    "id": 64,
+    "name_ko": "버섯재배부산물 (느타리)",
+    "name_en": "Oyster mushroom  by-product",
+    "moisture": 63.02,
+    "protein": 3.87,
+    "fat": 0.34,
+    "ash": 2.63,
+    "fiber": 14.1
+  },
+  {
+    "id": 65,
+    "name_ko": "버섯재배부산물 (팽이)",
+    "name_en": "Enoki mushroom by-product",
+    "moisture": 54.46,
+    "protein": 4.27,
+    "fat": 2.81,
+    "ash": 4.89,
+    "fiber": 11.46
+  },
+  {
+    "id": 66,
+    "name_ko": "버섯재배부산물 (새송이)",
+    "name_en": "King oyster mushroom  by-product",
+    "moisture": 59.2,
+    "protein": 3.68,
+    "fat": 0.64,
+    "ash": 3.47,
+    "fiber": 4.7
+  },
+  {
+    "id": 67,
+    "name_ko": "비지 (두부박)",
+    "name_en": "Tofu residue",
+    "moisture": 80.84,
+    "protein": 3.87,
+    "fat": 1.01,
+    "ash": 0.69,
+    "fiber": 1.93
+  },
+  {
+    "id": 68,
+    "name_ko": "사과박 (건조)",
+    "name_en": "Apple pomace",
+    "moisture": 11.3,
+    "protein": 11.55,
+    "fat": 2.81,
+    "ash": 7.27,
+    "fiber": 19.23
+  },
+  {
+    "id": 69,
+    "name_ko": "엿밥",
+    "name_en": "Maltose by-products",
+    "moisture": 45.12,
+    "protein": 19.03,
+    "fat": 3.11,
+    "ash": 2.77,
+    "fiber": 1.83
+  },
+  {
+    "id": 70,
+    "name_ko": "율피 (밤껍질, 1차)",
+    "name_en": "Chestnut shell",
+    "moisture": 39.63,
+    "protein": 6.09,
+    "fat": 0.36,
+    "ash": 1.32,
+    "fiber": 0.0
+  },
+  {
+    "id": 71,
+    "name_ko": "율피 (밤껍질, 2차)",
+    "name_en": "Chestnut hull",
+    "moisture": 13.85,
+    "protein": 9.54,
+    "fat": 0.41,
+    "ash": 2.11,
+    "fiber": 0.0
+  },
+  {
+    "id": 72,
+    "name_ko": "자두박",
+    "name_en": "Plum meal",
+    "moisture": 9.81,
+    "protein": 10.02,
+    "fat": 5.73,
+    "ash": 4.45,
+    "fiber": 34.44
+  },
+  {
+    "id": 73,
+    "name_ko": "제과부산물",
+    "name_en": "Snack by-product",
+    "moisture": 7.42,
+    "protein": 7.17,
+    "fat": 11.51,
+    "ash": 3.45,
+    "fiber": 6.22
+  },
+  {
+    "id": 74,
+    "name_ko": "제빵부산물",
+    "name_en": "Bakery by-product",
+    "moisture": 7.68,
+    "protein": 8.03,
+    "fat": 12.74,
+    "ash": 2.8,
+    "fiber": 5.26
+  },
+  {
+    "id": 75,
+    "name_ko": "커피부산물",
+    "name_en": "Coffee by-product",
+    "moisture": 41.99,
+    "protein": 8.43,
+    "fat": 4.27,
+    "ash": 2.49,
+    "fiber": 18.38
+  },
+  {
+    "id": 76,
+    "name_ko": "파인애플박",
+    "name_en": "Pineapple by-product",
+    "moisture": 75.34,
+    "protein": 1.77,
+    "fat": 0.08,
+    "ash": 1.32,
+    "fiber": 4.77
+  },
+  {
+    "id": 77,
+    "name_ko": "포도씨박",
+    "name_en": "Grape pomace",
+    "moisture": 10.46,
+    "protein": 10.59,
+    "fat": 6.16,
+    "ash": 6.55,
+    "fiber": 28.76
+  },
+  {
+    "id": 78,
+    "name_ko": "홍삼박",
+    "name_en": "Ginseng red beverage  by-product",
+    "moisture": 8.53,
+    "protein": 13.74,
+    "fat": 0.65,
+    "ash": 3.26,
+    "fiber": 17.59
+  },
+  {
+    "id": 79,
+    "name_ko": "갈파래",
+    "name_en": "Sea lattuce",
+    "moisture": 21.11,
+    "protein": 6.78,
+    "fat": 0.22,
+    "ash": 41.57,
+    "fiber": 4.27
+  },
+  {
+    "id": 80,
+    "name_ko": "김",
+    "name_en": "Seawoods",
+    "moisture": 10.74,
+    "protein": 29.73,
+    "fat": 1.19,
+    "ash": 16.48,
+    "fiber": 1.9
+  },
+  {
+    "id": 81,
+    "name_ko": "다시마",
+    "name_en": "Kelp",
+    "moisture": 10.69,
+    "protein": 10.58,
+    "fat": 1.77,
+    "ash": 33.29,
+    "fiber": 6.76
+  },
+  {
+    "id": 82,
+    "name_ko": "모자반",
+    "name_en": "Gulfweed",
+    "moisture": 9.4,
+    "protein": 15.64,
+    "fat": 0.0,
+    "ash": 28.8,
+    "fiber": 9.09
+  },
+  {
+    "id": 83,
+    "name_ko": "미역",
+    "name_en": "Sea mustard",
+    "moisture": 9.54,
+    "protein": 16.69,
+    "fat": 0.7,
+    "ash": 34.11,
+    "fiber": 3.56
+  },
+  {
+    "id": 84,
+    "name_ko": "스피루리나",
+    "name_en": "Spirulina",
+    "moisture": 8.21,
+    "protein": 61.77,
+    "fat": 1.02,
+    "ash": 6.76,
+    "fiber": 0.07
+  },
+  {
+    "id": 85,
+    "name_ko": "클로렐라",
+    "name_en": "Chlorella",
+    "moisture": 30.8,
+    "protein": 37.52,
+    "fat": 11.64,
+    "ash": 3.99,
+    "fiber": 0.73
+  },
+  {
+    "id": 86,
+    "name_ko": "파래",
+    "name_en": "Green laver",
+    "moisture": 13.76,
+    "protein": 12.45,
+    "fat": 0.22,
+    "ash": 35.22,
+    "fiber": 2.79
+  },
+  {
+    "id": 87,
+    "name_ko": "해조분",
+    "name_en": "Kelp meal",
+    "moisture": 11.48,
+    "protein": 15.17,
+    "fat": 0.88,
+    "ash": 25.47,
+    "fiber": 14.85
+  },
+  {
+    "id": 88,
+    "name_ko": "레드클로버 (붉은토끼풀)",
+    "name_en": "Red clover",
+    "moisture": 74.7,
+    "protein": 5.2,
+    "fat": 1.6,
+    "ash": 3.5,
+    "fiber": 6.3
+  },
+  {
+    "id": 89,
+    "name_ko": "리드카나리그라스",
+    "name_en": "Reed canarygrass",
+    "moisture": 89.14,
+    "protein": 1.54,
+    "fat": 0.37,
+    "ash": 0.76,
+    "fiber": 2.59
+  },
+  {
+    "id": 90,
+    "name_ko": "버뮤다그라스",
+    "name_en": "Bermuda grass",
+    "moisture": 7.93,
+    "protein": 8.23,
+    "fat": 0.94,
+    "ash": 7.33,
+    "fiber": 27.44
+  },
+  {
+    "id": 91,
+    "name_ko": "알팔파 (고단백)",
+    "name_en": "Alfalfa (High CP)",
+    "moisture": 10.94,
+    "protein": 19.78,
+    "fat": 1.59,
+    "ash": 8.44,
+    "fiber": 29.74
+  },
+  {
+    "id": 92,
+    "name_ko": "알팔파  (저단백)",
+    "name_en": "Alfalfa (Low CP)",
+    "moisture": 10.62,
+    "protein": 16.19,
+    "fat": 1.67,
+    "ash": 8.32,
+    "fiber": 29.95
+  },
+  {
+    "id": 93,
+    "name_ko": "알팔파 펠렛",
+    "name_en": "Alfalfa pellet",
+    "moisture": 9.28,
+    "protein": 14.09,
+    "fat": 1.66,
+    "ash": 11.05,
+    "fiber": 27.99
+  },
+  {
+    "id": 94,
+    "name_ko": "연맥 목초",
+    "name_en": "Oat hay",
+    "moisture": 10.54,
+    "protein": 6.82,
+    "fat": 1.31,
+    "ash": 6.42,
+    "fiber": 30.14
+  },
+  {
+    "id": 95,
+    "name_ko": "오차드그라스",
+    "name_en": "Orchardgrass",
+    "moisture": 8.54,
+    "protein": 12.62,
+    "fat": 2.1,
+    "ash": 9.6,
+    "fiber": 0.0
+  },
+  {
+    "id": 96,
+    "name_ko": "켄터키블루그라스",
+    "name_en": "Kentucky blue grass",
+    "moisture": 8.71,
+    "protein": 7.12,
+    "fat": 0.82,
+    "ash": 7.99,
+    "fiber": 32.72
+  },
+  {
+    "id": 97,
+    "name_ko": "톨페스큐",
+    "name_en": "Tall fescue",
+    "moisture": 11.07,
+    "protein": 5.07,
+    "fat": 0.8,
+    "ash": 7.47,
+    "fiber": 29.43
+  },
+  {
+    "id": 98,
+    "name_ko": "티모시",
+    "name_en": "Timothy hay",
+    "moisture": 9.36,
+    "protein": 9.35,
+    "fat": 1.24,
+    "ash": 5.97,
+    "fiber": 32.6
+  },
+  {
+    "id": 99,
+    "name_ko": "귀리짚 (연맥짚)",
+    "name_en": "Oat straw",
+    "moisture": 9.96,
+    "protein": 4.61,
+    "fat": 1.28,
+    "ash": 5.51,
+    "fiber": 32.46
+  },
+  {
+    "id": 100,
+    "name_ko": "밀짚",
+    "name_en": "Wheat straw",
+    "moisture": 10.51,
+    "protein": 3.38,
+    "fat": 0.9,
+    "ash": 6.16,
+    "fiber": 38.31
+  },
+  {
+    "id": 101,
+    "name_ko": "볒짚 (건초)",
+    "name_en": "Rice straw",
+    "moisture": 14.47,
+    "protein": 4.42,
+    "fat": 1.24,
+    "ash": 10.49,
+    "fiber": 31.89
+  },
+  {
+    "id": 102,
+    "name_ko": "볏짚 (사일리지)",
+    "name_en": "Rice straw silage",
+    "moisture": 39.14,
+    "protein": 2.54,
+    "fat": 0.64,
+    "ash": 7.36,
+    "fiber": 20.02
+  },
+  {
+    "id": 103,
+    "name_ko": "보릿짚",
+    "name_en": "Barley straw",
+    "moisture": 9.48,
+    "protein": 2.68,
+    "fat": 0.7,
+    "ash": 4.55,
+    "fiber": 38.79
+  },
+  {
+    "id": 104,
+    "name_ko": "알팔파 짚",
+    "name_en": "Alfalfa straw (CP<14%)",
+    "moisture": 9.49,
+    "protein": 11.99,
+    "fat": 1.43,
+    "ash": 9.25,
+    "fiber": 30.71
+  },
+  {
+    "id": 105,
+    "name_ko": "애뉴얼라이그라스 짚",
+    "name_en": "Annual ryegrass straw",
+    "moisture": 8.69,
+    "protein": 4.64,
+    "fat": 0.75,
+    "ash": 4.83,
+    "fiber": 36.84
+  },
+  {
+    "id": 106,
+    "name_ko": "오차드그라스 짚",
+    "name_en": "Orchardgrass straw",
+    "moisture": 9.32,
+    "protein": 5.11,
+    "fat": 1.21,
+    "ash": 5.31,
+    "fiber": 34.41
+  },
+  {
+    "id": 107,
+    "name_ko": "옥수수대",
+    "name_en": "Corn stalks",
+    "moisture": 10.17,
+    "protein": 4.45,
+    "fat": 0.73,
+    "ash": 20.27,
+    "fiber": 33.17
+  },
+  {
+    "id": 108,
+    "name_ko": "티모시 짚",
+    "name_en": "Thimothy straw",
+    "moisture": 8.48,
+    "protein": 5.58,
+    "fat": 1.15,
+    "ash": 5.18,
+    "fiber": 34.49
+  },
+  {
+    "id": 109,
+    "name_ko": "페레니얼 라이그라스 짚",
+    "name_en": "Perennial ryegrass straw",
+    "moisture": 20.46,
+    "protein": 4.35,
+    "fat": 0.74,
+    "ash": 6.15,
+    "fiber": 21.52
+  },
+  {
+    "id": 110,
+    "name_ko": "보리사일리지 (호숙기)",
+    "name_en": "Barley silage  (dough stage)",
+    "moisture": 60.0,
+    "protein": 5.64,
+    "fat": 1.58,
+    "ash": 5.79,
+    "fiber": 11.05
+  },
+  {
+    "id": 111,
+    "name_ko": "보리사일리지 (황숙기)",
+    "name_en": "Barley silage  (yellow ripe stage)",
+    "moisture": 60.0,
+    "protein": 3.09,
+    "fat": 1.46,
+    "ash": 2.26,
+    "fiber": 17.19
+  },
+  {
+    "id": 112,
+    "name_ko": "수수수단그라스 사일리지(개화기)",
+    "name_en": "Sorghum sudan silage  (prebloom stage)",
+    "moisture": 70.0,
+    "protein": 2.17,
+    "fat": 0.97,
+    "ash": 2.52,
+    "fiber": 10.84
+  },
+  {
+    "id": 113,
+    "name_ko": "수수수단그라스 사일리지(출수기)",
+    "name_en": "Sorghum sudan silage  (heading stage)",
+    "moisture": 70.0,
+    "protein": 3.02,
+    "fat": 0.97,
+    "ash": 2.52,
+    "fiber": 10.09
+  },
+  {
+    "id": 114,
+    "name_ko": "옥수수사일리지 (호숙기)",
+    "name_en": "Corn silage  (dough Stage)",
+    "moisture": 70.0,
+    "protein": 2.87,
+    "fat": 0.84,
+    "ash": 2.13,
+    "fiber": 9.82
+  },
+  {
+    "id": 115,
+    "name_ko": "옥수수사일리지 (황숙기)",
+    "name_en": "Corn silage  (yellow ripe stage)",
+    "moisture": 70.0,
+    "protein": 2.86,
+    "fat": 0.91,
+    "ash": 2.68,
+    "fiber": 8.06
+  },
+  {
+    "id": 116,
+    "name_ko": "이탈리안라이그라스  사일리지(개화후기)",
+    "name_en": "Italian ryegrass silage  (full bloom stage)",
+    "moisture": 60.0,
+    "protein": 3.21,
+    "fat": 1.52,
+    "ash": 2.71,
+    "fiber": 13.9
+  },
+  {
+    "id": 117,
+    "name_ko": "이탈리안라이그라스 사일리지(출수기)",
+    "name_en": "Italian ryegrass silage  (heading stage)",
+    "moisture": 60.0,
+    "protein": 4.29,
+    "fat": 1.14,
+    "ash": 3.05,
+    "fiber": 15.72
+  },
+  {
+    "id": 118,
+    "name_ko": "청예보리 (호숙기)",
+    "name_en": "Barley forage  (dough stage)",
+    "moisture": 74.3,
+    "protein": 2.48,
+    "fat": 0.69,
+    "ash": 2.15,
+    "fiber": 8.7
+  },
+  {
+    "id": 119,
+    "name_ko": "청예보리 (황숙기)",
+    "name_en": "Barley forage  (yellow ripe stage)",
+    "moisture": 57.23,
+    "protein": 4.1,
+    "fat": 1.57,
+    "ash": 2.76,
+    "fiber": 13.61
+  },
+  {
+    "id": 120,
+    "name_ko": "청예수수수단그라스 (개화기)",
+    "name_en": "Green sudan grass  (full bloom stage)",
+    "moisture": 73.97,
+    "protein": 1.85,
+    "fat": 1.17,
+    "ash": 2.35,
+    "fiber": 10.37
+  },
+  {
+    "id": 121,
+    "name_ko": "청예수수수단그라스 (출수기)",
+    "name_en": "Green sudan grass  (heading stage)",
+    "moisture": 83.77,
+    "protein": 1.39,
+    "fat": 0.26,
+    "ash": 1.47,
+    "fiber": 5.79
+  },
+  {
+    "id": 122,
+    "name_ko": "청예옥수수 (유숙기)",
+    "name_en": "Corn forage  (milk stage)",
+    "moisture": 81.73,
+    "protein": 1.71,
+    "fat": 0.56,
+    "ash": 1.12,
+    "fiber": 5.06
+  },
+  {
+    "id": 123,
+    "name_ko": "청예옥수수 (출수기)",
+    "name_en": "Corn forage  (heading stage)",
+    "moisture": 80.77,
+    "protein": 2.09,
+    "fat": 0.37,
+    "ash": 1.33,
+    "fiber": 6.74
+  },
+  {
+    "id": 124,
+    "name_ko": "청예옥수수 (호숙기)",
+    "name_en": "Corn forage  (dough stage)",
+    "moisture": 67.47,
+    "protein": 2.46,
+    "fat": 0.9,
+    "ash": 1.95,
+    "fiber": 8.4
+  },
+  {
+    "id": 125,
+    "name_ko": "청예옥수수 (황숙기)",
+    "name_en": "Corn forage  (yellow ripe stage)",
+    "moisture": 64.03,
+    "protein": 2.25,
+    "fat": 0.61,
+    "ash": 2.15,
+    "fiber": 12.25
+  },
+  {
+    "id": 126,
+    "name_ko": "청예이탈리안 라이그라스(개화후기)",
+    "name_en": "Italian ryegrass forage  (full bloom stage)",
+    "moisture": 76.9,
+    "protein": 2.15,
+    "fat": 0.88,
+    "ash": 2.25,
+    "fiber": 8.03
+  },
+  {
+    "id": 127,
+    "name_ko": "청예이탈리안 라이그라스(출수기)",
+    "name_en": "Italian ryegrass forage (heading stage)",
+    "moisture": 80.53,
+    "protein": 2.33,
+    "fat": 0.56,
+    "ash": 1.59,
+    "fiber": 7.65
+  },
+  {
+    "id": 128,
+    "name_ko": "청예호밀 (개화기)",
+    "name_en": "Rye forage  (full bloom stage)",
+    "moisture": 71.03,
+    "protein": 2.72,
+    "fat": 0.8,
+    "ash": 2.14,
+    "fiber": 10.19
+  },
+  {
+    "id": 129,
+    "name_ko": "청예호밀 (출수기)",
+    "name_en": "Rye forage (heading stage)",
+    "moisture": 79.33,
+    "protein": 2.82,
+    "fat": 2.89,
+    "ash": 0.83,
+    "fiber": 6.31
+  },
+  {
+    "id": 130,
+    "name_ko": "총체벼사일리지 (호숙기)",
+    "name_en": "Rice silage  (dough stage)",
+    "moisture": 60.0,
+    "protein": 3.7,
+    "fat": 1.25,
+    "ash": 5.27,
+    "fiber": 10.28
+  },
+  {
+    "id": 131,
+    "name_ko": "총체벼 사일리지 (완숙기)",
+    "name_en": "Rice silage  (mature stage)",
+    "moisture": 60.67,
+    "protein": 2.75,
+    "fat": 0.88,
+    "ash": 4.64,
+    "fiber": 9.17
+  },
+  {
+    "id": 132,
+    "name_ko": "호밀사일리지 (개화기)",
+    "name_en": "Rye silage (full bloom stage)",
+    "moisture": 60.0,
+    "protein": 5.39,
+    "fat": 1.11,
+    "ash": 2.95,
+    "fiber": 14.07
+  },
+  {
+    "id": 133,
+    "name_ko": "호밀사일리지 (출수기)",
+    "name_en": "Rye silage  (heading stage)",
+    "moisture": 60.0,
+    "protein": 5.67,
+    "fat": 1.62,
+    "ash": 2.89,
+    "fiber": 12.22
+  },
+  {
+    "id": 134,
+    "name_ko": "대두 (콩)",
+    "name_en": "Soybean seeds",
+    "moisture": 9.86,
+    "protein": 35.3,
+    "fat": 17.68,
+    "ash": 5.04,
+    "fiber": 6.22
+  },
+  {
+    "id": 135,
+    "name_ko": "루핀씨드",
+    "name_en": "Lupin seeds",
+    "moisture": 10.53,
+    "protein": 30.51,
+    "fat": 5.56,
+    "ash": 2.74,
+    "fiber": 14.49
+  },
+  {
+    "id": 136,
+    "name_ko": "전지면실",
+    "name_en": "Cottonseed, whole",
+    "moisture": 9.49,
+    "protein": 20.46,
+    "fat": 16.4,
+    "ash": 3.68,
+    "fiber": 28.39
+  },
+  {
+    "id": 137,
+    "name_ko": "아미종실",
+    "name_en": "Flaxseed",
+    "moisture": 6.97,
+    "protein": 22.04,
+    "fat": 33.96,
+    "ash": 3.21,
+    "fiber": 16.84
+  },
+  {
+    "id": 138,
+    "name_ko": "고구마 (건조)",
+    "name_en": "Sweet potato (dried)",
+    "moisture": 11.15,
+    "protein": 6.07,
+    "fat": 0.84,
+    "ash": 4.18,
+    "fiber": 2.84
+  },
+  {
+    "id": 139,
+    "name_ko": "비트펄프",
+    "name_en": "Beet pulp",
+    "moisture": 11.81,
+    "protein": 8.61,
+    "fat": 0.78,
+    "ash": 4.23,
+    "fiber": 17.85
+  },
+  {
+    "id": 140,
+    "name_ko": "옥공이",
+    "name_en": "Corn cobs",
+    "moisture": 10.74,
+    "protein": 3.73,
+    "fat": 0.82,
+    "ash": 2.29,
+    "fiber": 33.19
+  },
+  {
+    "id": 141,
+    "name_ko": "카사바",
+    "name_en": "Cassava",
+    "moisture": 12.38,
+    "protein": 2.79,
+    "fat": 1.17,
+    "ash": 3.1,
+    "fiber": 2.98
+  },
+  {
+    "id": 142,
+    "name_ko": "타피오카",
+    "name_en": "Tapioca",
+    "moisture": 11.99,
+    "protein": 2.45,
+    "fat": 1.22,
+    "ash": 5.23,
+    "fiber": 15.23
+  },
+  {
+    "id": 143,
+    "name_ko": "화분 (꽃가루)",
+    "name_en": "Pollen",
+    "moisture": 8.23,
+    "protein": 26.32,
+    "fat": 3.33,
+    "ash": 3.35,
+    "fiber": 1.04
+  },
+  {
+    "id": 144,
+    "name_ko": "가금내장분 (CP<70%)",
+    "name_en": "Poultry meal (CP<70%)",
+    "moisture": 4.09,
+    "protein": 66.71,
+    "fat": 14.0,
+    "ash": 12.31,
+    "fiber": 1.11
+  },
+  {
+    "id": 145,
+    "name_ko": "가금내장분 (CP>70%)",
+    "name_en": "Poultry meal (CP>70%)",
+    "moisture": 3.73,
+    "protein": 72.59,
+    "fat": 11.03,
+    "ash": 10.7,
+    "fiber": 0.99
+  },
+  {
+    "id": 146,
+    "name_ko": "새우분",
+    "name_en": "Shrimp meal",
+    "moisture": 8.37,
+    "protein": 49.0,
+    "fat": 6.57,
+    "ash": 25.42,
+    "fiber": 8.11
+  },
+  {
+    "id": 147,
+    "name_ko": "새우분헤드밀",
+    "name_en": "Shrimp heads meal",
+    "moisture": 7.49,
+    "protein": 50.7,
+    "fat": 9.05,
+    "ash": 22.43,
+    "fiber": 14.08
+  },
+  {
+    "id": 148,
+    "name_ko": "수지박 (우지박, 돈지박)",
+    "name_en": "Greaves",
+    "moisture": 3.59,
+    "protein": 66.89,
+    "fat": 11.7,
+    "ash": 18.13,
+    "fiber": 1.47
+  },
+  {
+    "id": 149,
+    "name_ko": "어분 (고단백)",
+    "name_en": "Fish meal (High CP)",
+    "moisture": 8.32,
+    "protein": 69.88,
+    "fat": 8.52,
+    "ash": 13.93,
+    "fiber": 0.27
+  },
+  {
+    "id": 150,
+    "name_ko": "어분 (중단백)",
+    "name_en": "Fish meal (Medium CP)",
+    "moisture": 7.82,
+    "protein": 65.16,
+    "fat": 8.19,
+    "ash": 18.03,
+    "fiber": 0.33
+  },
+  {
+    "id": 151,
+    "name_ko": "어분 (저단백)",
+    "name_en": "Fish meal (Low CP)",
+    "moisture": 7.78,
+    "protein": 55.28,
+    "fat": 8.66,
+    "ash": 21.82,
+    "fiber": 1.0
+  },
+  {
+    "id": 152,
+    "name_ko": "우모분",
+    "name_en": "Poultry feathers meal",
+    "moisture": 6.68,
+    "protein": 78.36,
+    "fat": 11.02,
+    "ash": 2.72,
+    "fiber": 0.84
+  },
+  {
+    "id": 153,
+    "name_ko": "육골분",
+    "name_en": "Meat and bone meal",
+    "moisture": 4.01,
+    "protein": 49.14,
+    "fat": 13.42,
+    "ash": 31.53,
+    "fiber": 1.52
+  },
+  {
+    "id": 154,
+    "name_ko": "거저리유충",
+    "name_en": "Mealworm",
+    "moisture": 6.61,
+    "protein": 51.69,
+    "fat": 25.12,
+    "ash": 4.11,
+    "fiber": 4.5
+  },
+  {
+    "id": 155,
+    "name_ko": "귀뚜라미",
+    "name_en": "Cricket",
+    "moisture": 6.09,
+    "protein": 63.76,
+    "fat": 19.05,
+    "ash": 5.33,
+    "fiber": 7.66
+  },
+  {
+    "id": 156,
+    "name_ko": "동애등에 유충",
+    "name_en": "Black soldier fly larvae",
+    "moisture": 14.49,
+    "protein": 34.78,
+    "fat": 31.08,
+    "ash": 11.29,
+    "fiber": 6.74
+  },
+  {
+    "id": 157,
+    "name_ko": "장구벌레",
+    "name_en": "Mosquito larva",
+    "moisture": 36.29,
+    "protein": 36.05,
+    "fat": 3.2,
+    "ash": 14.49,
+    "fiber": 0.0
+  },
+  {
+    "id": 158,
+    "name_ko": "유장",
+    "name_en": "Whey Powder",
+    "moisture": 3.26,
+    "protein": 15.85,
+    "fat": 0.66,
+    "ash": 8.05,
+    "fiber": 0.24
+  },
+  {
+    "id": 159,
+    "name_ko": "전지분유",
+    "name_en": "Milk Powder",
+    "moisture": 7.88,
+    "protein": 22.78,
+    "fat": 24.94,
+    "ash": 5.54,
+    "fiber": 0.48
+  },
+  {
+    "id": 160,
+    "name_ko": "탈지분유",
+    "name_en": "Skim Milk Powder",
+    "moisture": 5.2,
+    "protein": 35.04,
+    "fat": 0.23,
+    "ash": 8.44,
+    "fiber": 0.1
+  },
+  {
+    "id": 161,
+    "name_ko": "카제인",
+    "name_en": "Casein  (milk)",
+    "moisture": 8.8,
+    "protein": 85.3,
+    "fat": 0.5,
+    "ash": 2.4,
+    "fiber": 0.2
+  },
+  {
+    "id": 162,
+    "name_ko": "골분",
+    "name_en": "Bone meal",
+    "moisture": 7.92,
+    "protein": 26.04,
+    "fat": 0.0,
+    "ash": 48.99,
+    "fiber": 0.0
+  },
+  {
+    "id": 163,
+    "name_ko": "난각분",
+    "name_en": "Egg shell",
+    "moisture": 0.96,
+    "protein": 2.91,
+    "fat": 0.32,
+    "ash": 92.77,
+    "fiber": 0.12
+  },
+  {
+    "id": 164,
+    "name_ko": "패분",
+    "name_en": "Oyster shell",
+    "moisture": 0.85,
+    "protein": 0.0,
+    "fat": 0.0,
+    "ash": 96.36,
+    "fiber": 0.0
+  },
+  {
+    "id": 165,
+    "name_ko": "알테미아",
+    "name_en": "Brine Shrimp",
+    "moisture": 26.42,
+    "protein": 42.49,
+    "fat": 3.08,
+    "ash": 5.96,
+    "fiber": 2.62
+  },
+  {
+    "id": 166,
+    "name_ko": "코페코다",
+    "name_en": "Copepoda",
+    "moisture": 91.5,
+    "protein": 6.41,
+    "fat": 1.59,
+    "ash": 0.55,
+    "fiber": 1.31
+  },
+  {
+    "id": 167,
+    "name_ko": "크릴새우밀",
+    "name_en": "Shrimp krill meal",
+    "moisture": 7.92,
+    "protein": 61.26,
+    "fat": 14.5,
+    "ash": 11.15,
+    "fiber": 3.64
+  },
+  {
+    "id": 168,
+    "name_ko": "대두유",
+    "name_en": "Soybean oil",
+    "moisture": 0.0,
+    "protein": 0.0,
+    "fat": 100.0,
+    "ash": 0.0,
+    "fiber": 0.0
+  },
+  {
+    "id": 169,
+    "name_ko": "야자유",
+    "name_en": "Copra oil (coconut oil.)",
+    "moisture": 0.0,
+    "protein": 0.0,
+    "fat": 99.53,
+    "ash": 0.0,
+    "fiber": 0.0
+  },
+  {
+    "id": 170,
+    "name_ko": "팜유",
+    "name_en": "Palm oil",
+    "moisture": 0.0,
+    "protein": 0.0,
+    "fat": 99.88,
+    "ash": 0.0,
+    "fiber": 0.0
+  },
+  {
+    "id": 171,
+    "name_ko": "곤충유",
+    "name_en": "Insect oil",
+    "moisture": 0.17,
+    "protein": 13.92,
+    "fat": 73.84,
+    "ash": 4.39,
+    "fiber": 0.0
+  },
+  {
+    "id": 172,
+    "name_ko": "닭기름 (계유)",
+    "name_en": "Poultry fat",
+    "moisture": 0.0,
+    "protein": 0.0,
+    "fat": 99.44,
+    "ash": 0.0,
+    "fiber": 0.0
+  },
+  {
+    "id": 173,
+    "name_ko": "우지",
+    "name_en": "Tallow",
+    "moisture": 0.0,
+    "protein": 0.0,
+    "fat": 99.72,
+    "ash": 0.0,
+    "fiber": 0.0
+  },
+  {
+    "id": 174,
+    "name_ko": "어류기름 (어유)",
+    "name_en": "Fish oil",
+    "moisture": 0.0,
+    "protein": 0.33,
+    "fat": 99.7,
+    "ash": 0.0,
+    "fiber": 0.0
+  },
+  {
+    "id": 175,
+    "name_ko": "산화아연",
+    "name_en": "Zinc oxide",
+    "moisture": 0.13,
+    "protein": 0.0,
+    "fat": 0.0,
+    "ash": 0.0,
+    "fiber": 0.0
+  },
+  {
+    "id": 176,
+    "name_ko": "석회석",
+    "name_en": "Limestone",
+    "moisture": 0.06,
+    "protein": 0.0,
+    "fat": 0.0,
+    "ash": 98.93,
+    "fiber": 0.0
+  },
+  {
+    "id": 177,
+    "name_ko": "소금",
+    "name_en": "Salt  (Sodium chloride)",
+    "moisture": 0.0,
+    "protein": 0.0,
+    "fat": 0.0,
+    "ash": 99.3,
+    "fiber": 0.0
+  },
+  {
+    "id": 178,
+    "name_ko": "인산칼슘 (제일)",
+    "name_en": "Monocalcium phosphate  (MCP)",
+    "moisture": 2.55,
+    "protein": 0.0,
+    "fat": 0.0,
+    "ash": 0.0,
+    "fiber": 0.0
+  },
+  {
+    "id": 179,
+    "name_ko": "인산칼슘 (제이)",
+    "name_en": "Dicalcium phosphate  (DCP)",
+    "moisture": 3.58,
+    "protein": 0.0,
+    "fat": 0.0,
+    "ash": 0.0,
+    "fiber": 0.0
+  },
+  {
+    "id": 180,
+    "name_ko": "제삼인산칼슘",
+    "name_en": "Tricalcium phosphate  (TCP)",
+    "moisture": 0.0,
+    "protein": 0.0,
+    "fat": 0.0,
+    "ash": 0.0,
+    "fiber": 0.0
+  },
+  {
+    "id": 181,
+    "name_ko": "인산칼슘 (혼합)",
+    "name_en": "Monodicalcium phosphate  (MDCP)",
+    "moisture": 2.27,
+    "protein": 0.0,
+    "fat": 0.0,
+    "ash": 0.0,
+    "fiber": 0.0
+  },
+  {
+    "id": 182,
+    "name_ko": "중조",
+    "name_en": "Sodium bicarbonate",
+    "moisture": 0.0,
+    "protein": 0.0,
+    "fat": 0.0,
+    "ash": 0.0,
+    "fiber": 0.0
+  }
+]

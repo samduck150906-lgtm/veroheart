@@ -15,16 +15,42 @@ export async function initializeAnonymousSession() {
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (session) return session.user;
-    const { data, error } = await supabase.auth.signInAnonymously();
-    if (error) {
-      notify.error('익명 로그인에 실패했습니다. 다시 시도해주세요.');
-      return null;
-    }
-    return data.user;
+    
+    // We do NOT sign in anonymously anymore, we wait for user to sign up
+    return null;
   } catch (err) {
-    notify.error('서버 연결 중 오류가 발생했습니다.');
+    console.error('Session init error:', err);
     return null;
   }
+}
+
+export async function signUpWithEmail(email: string, password: string) {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+  });
+  if (error) {
+    notify.error(error.message);
+    return null;
+  }
+  return data.user;
+}
+
+export async function signInWithEmail(email: string, password: string) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+  if (error) {
+    notify.error('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
+    return null;
+  }
+  return data.user;
+}
+
+export async function signOut() {
+  const { error } = await supabase.auth.signOut();
+  if (error) notify.error(error.message);
 }
 
 export async function getCurrentUser() {
@@ -74,6 +100,8 @@ function mapProduct(p: any): Product {
     hasRiskFactors: p.has_risk_factors,
     price: p.min_price || 0,
     imageUrl: p.image_url || 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&q=80',
+    productUrl: p.product_url,
+    source: p.source,
     ingredients: p.product_ingredients?.map((pi: any) => ({
       id: pi.ingredients?.id || '',
       nameKo: pi.ingredients?.name_ko || '',

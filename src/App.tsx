@@ -14,6 +14,7 @@ import Fail from './pages/Fail';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Refund from './pages/Refund';
+import Auth from './pages/Auth';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
@@ -44,6 +45,7 @@ function App() {
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="search" element={<Search />} />
+            <Route path="auth" element={<Auth />} />
             <Route path="profile" element={<Profile />} />
             <Route path="comparison" element={<Comparison />} />
             <Route path="cart" element={<Cart />} />

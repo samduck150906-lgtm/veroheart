@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
-import { User, ChevronRight, Calendar, ShoppingBag, FileText, Activity } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { User, ChevronRight, Calendar, ShoppingBag, FileText, Activity, LogOut } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function Profile() {
-  const { profile, updateProfile, orders, fetchOrders, reports, fetchReports } = useStore();
+  const { userId, profile, updateProfile, orders, fetchOrders, reports, fetchReports, logout } = useStore();
   const [activeTab, setActiveTab] = useState<'info' | 'orders' | 'reports'>('info');
   const [formData, setFormData] = useState(profile);
+  const navigate = useNavigate();
   
   useEffect(() => {
+    if (!userId) return;
     if (activeTab === 'orders') fetchOrders();
     if (activeTab === 'reports') fetchReports();
-  }, [activeTab, fetchOrders, fetchReports]);
+  }, [activeTab, fetchOrders, fetchReports, userId]);
 
   const handleSave = () => {
     updateProfile(formData);
@@ -29,6 +31,36 @@ export default function Profile() {
 
   const concernOptions = ['관절', '피부', '체중', '소화', '눈'];
   const allergyOptions = ['닭고기', '소고기', '연어', '곡물', '인공색소'];
+
+  const allergyOptions = ['닭고기', '소고기', '연어', '곡물', '인공색소'];
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
+
+  if (!userId) {
+    return (
+      <div className="animate-fade-in" style={{ padding: '40px 20px', minHeight: '80vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+        <div style={{ width: '80px', height: '80px', borderRadius: '24px', backgroundColor: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
+          <User size={40} color="#D1D5DB" />
+        </div>
+        <h2 style={{ fontSize: '24px', fontWeight: 900, color: 'var(--text-dark)', marginBottom: '12px' }}>
+          로그인이 필요해요
+        </h2>
+        <p style={{ fontSize: '15px', color: 'var(--text-muted)', marginBottom: '32px', textAlign: 'center', lineHeight: 1.5 }}>
+          프로필을 설정하고 아이의 건강 맞춤<br/>사료 분석을 시작해보세요!
+        </p>
+        <button 
+          className="btn btn-primary" 
+          style={{ width: '100%', maxWidth: '320px', padding: '16px', borderRadius: '20px', fontWeight: 800, fontSize: '16px' }}
+          onClick={() => navigate('/auth')}
+        >
+          로그인 / 회원가입 하기
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '40px' }}>
@@ -126,9 +158,18 @@ export default function Profile() {
             </div>
           </div>
 
-          <button className="btn" style={{ width: '100%', padding: '16px', borderRadius: '14px', fontWeight: 800, fontSize: '16px', backgroundColor: '#1F2937', color: '#fff' }} onClick={handleSave}>
+          <button className="btn btn-primary" style={{ width: '100%', padding: '16px', borderRadius: '14px', fontWeight: 800, fontSize: '16px' }} onClick={handleSave}>
             변경 사항 저장
           </button>
+          
+          <div style={{ marginTop: '32px', borderTop: '1px solid #E5E8EB', paddingTop: '24px' }}>
+            <button 
+              onClick={handleLogout}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}
+            >
+              <LogOut size={16} /> 로그아웃
+            </button>
+          </div>
         </div>
       ) : activeTab === 'orders' ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>

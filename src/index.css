@@ -1,34 +1,36 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+
 :root {
-  /* Colors */
-  --primary: #1FDE91; /* Fresh, healthy green */
-  --primary-dark: #19BA7A;
-  --secondary: #F6F9F8; /* Light greenish grey background */
-  --accent: #FF5A5F; /* Warning / Alert red */
+  /* Toss-like Colors */
+  --primary: #FEE500; /* Yellow */
+  --primary-dark: #E5CE00; 
+  --secondary: #F2F4F6; /* Toss light grey background */
+  --accent: #FF5A5F; 
   
-  --text-dark: #1F2937;
-  --text-muted: #6B7280;
-  --text-light: #9CA3AF;
+  --text-dark: #191F28; /* Deep grey/black for absolute readability */
+  --text-muted: #8B95A1;
+  --text-light: #B0B8C1;
   
   --bg-color: #FFFFFF;
-  --bg-gradient: linear-gradient(135deg, #F6F9F8 0%, #E8F3F1 100%);
+  --bg-gradient: #F2F4F6;
   
   /* Traffic Light Colors */
-  --safe: #22C55E;    /* Green */
+  --safe: #3182F6;    /* Toss Blue */
   --warning: #F59E0B; /* Yellow */
-  --danger: #EF4444;  /* Red */
+  --danger: #F04452;  /* Toss Red */
 
-  /* Borders & Shadows */
-  --border-radius-sm: 8px;
-  --border-radius-md: 16px;
-  --border-radius-lg: 24px;
+  /* Borders & Shadows (Toss style) */
+  --border-radius-sm: 12px;
+  --border-radius-md: 20px;
+  --border-radius-lg: 28px;
   
-  --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
-  --shadow-md: 0 8px 24px rgba(0,0,0,0.08);
-  --shadow-lg: 0 16px 32px rgba(31,222,145,0.15); /* Primary tinted shadow */
+  --shadow-sm: 0 2px 10px rgba(0,0,0,0.03);
+  --shadow-md: 0 10px 30px rgba(0,0,0,0.06);
+  --shadow-lg: 0 20px 40px rgba(0,0,0,0.08);
 
   /* Transitions */
-  --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-smooth: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 * {
@@ -53,7 +55,7 @@ body {
   max-width: 480px; /* Mobile restriction */
   min-height: 100vh;
   background-color: var(--bg-color);
-  box-shadow: 0 0 20px rgba(0,0,0,0.05);
+  box-shadow: 0 0 40px rgba(0,0,0,0.03);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -106,50 +108,55 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 14px 24px;
+  padding: 16px 24px;
   border-radius: var(--border-radius-md);
   border: none;
-  font-weight: 600;
-  font-size: 16px;
+  font-weight: 700;
+  font-size: 17px;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: transform var(--transition-fast), background-color var(--transition-fast);
+  color: var(--text-dark);
+}
+
+.btn:active {
+  transform: scale(0.96);
 }
 
 .btn-primary {
   background-color: var(--primary);
-  color: #FFF;
-  box-shadow: var(--shadow-sm);
-}
-
-.btn-primary:hover, .btn-primary:active {
-  background-color: var(--primary-dark);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.btn-outline {
-  background-color: transparent;
-  border: 1px solid var(--border-radius-lg);
   color: var(--text-dark);
 }
 
-.btn-outline:hover {
+.btn-primary:hover {
+  background-color: var(--primary-dark);
+}
+
+.btn-outline {
   background-color: var(--secondary);
+  color: var(--text-dark);
+  font-weight: 600;
+}
+
+.btn-outline:hover {
+  background-color: #E5E8EB;
 }
 
 /* Cards */
 .card {
   background-color: var(--bg-color);
-  border-radius: var(--border-radius-md);
-  padding: 20px;
+  border-radius: var(--border-radius-lg);
+  padding: 24px;
   box-shadow: var(--shadow-sm);
   transition: transform var(--transition-fast), box-shadow var(--transition-fast);
-  border: 1px solid rgba(0,0,0,0.03);
+  border: none;
 }
 
 .card:hover {
-  transform: translateY(-4px);
   box-shadow: var(--shadow-md);
+}
+
+.card:active {
+  transform: scale(0.98);
 }
 
 /* Notification Animations */
