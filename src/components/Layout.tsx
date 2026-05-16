@@ -9,7 +9,7 @@ export default function Layout() {
   const navigate = useNavigate();
   const { profile, isLoggedIn, cart } = useStore();
   const location = useLocation();
-  const hideFooterOn = ['/login'];
+  const hideFooterOn = ['/auth'];
   const shouldHideFooter = hideFooterOn.some((path) => location.pathname.startsWith(path));
   const titleMap: Record<string, string> = {
     '/': '홈',

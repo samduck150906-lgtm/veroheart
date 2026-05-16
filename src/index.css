@@ -42,12 +42,14 @@
 }
 
 body {
-  background: var(--bg-gradient);
+  background: #E5E8EB;
   color: var(--text-dark);
   line-height: 1.5;
   display: flex;
   justify-content: center;
+  align-items: center;
   min-height: 100dvh;
+  margin: 0;
   overflow: hidden;
   overscroll-behavior-y: none;
 }
@@ -69,13 +71,22 @@ body.admin-desktop-mode {
 #root {
   width: 100%;
   max-width: 480px; /* Mobile restriction */
-  min-height: 100vh;
+  height: 100dvh;
   background-color: var(--bg-color);
-  box-shadow: 0 0 40px rgba(0,0,0,0.03);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.08);
   position: relative;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+@media (min-width: 481px) and (min-height: 800px) {
+  #root {
+    height: 90vh;
+    max-height: 900px;
+    border-radius: 32px;
+    border: 8px solid #191F28;
+  }
 }
 
 #root.admin-desktop-mode,

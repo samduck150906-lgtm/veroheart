@@ -81,7 +81,7 @@ export default function EntryGate({ onBrowse, onDismissForLogin }: EntryGateProp
         type="button"
         onClick={() => {
           onDismissForLogin();
-          navigate('/login', { state: { from: '/' } });
+          navigate('/auth', { state: { from: '/' } });
         }}
         style={{
           background: 'none',
