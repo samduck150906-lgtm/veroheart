@@ -9,7 +9,7 @@ import Search from './pages/Search';
 import Profile from './pages/Profile';
 import Detail from './pages/Detail';
 import Comparison from './pages/Comparison';
-import Cart from './pages/Cart';
+// import Cart from './pages/Cart';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Refund from './pages/Refund';
@@ -98,7 +98,7 @@ function App() {
             <Route path="auth" element={<Auth />} />
             <Route path="profile" element={<Profile />} />
             <Route path="comparison" element={<Comparison />} />
-            <Route path="cart" element={<Cart />} />
+            {/* <Route path="cart" element={<Cart />} /> */}
             {/* <Route path="checkout" element={<Checkout />} /> */}
             {/* <Route path="success" element={<Success />} /> */}
             {/* <Route path="fail" element={<Fail />} /> */}

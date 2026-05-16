@@ -1,5 +1,5 @@
 import { Outlet, useLocation, Link, useNavigate } from 'react-router-dom';
-import { Bell, Search, ShoppingBag } from 'lucide-react';
+import { Bell, Search } from 'lucide-react';
 import BottomNav from './BottomNav';
 import Footer from './Footer';
 import { VERORO_LOGO_SRC } from '../constants/assets';
@@ -98,22 +98,6 @@ export default function Layout() {
               aria-label="검색"
             >
               <Search size={18} />
-            </button>
-            <button
-              type="button"
-              className="app-icon-button"
-              aria-label="알림"
-            >
-              <Bell size={18} />
-            </button>
-            <button
-              type="button"
-              className="app-icon-button app-icon-button-emphasis"
-              onClick={() => navigate('/cart')}
-              aria-label="장바구니"
-            >
-              <ShoppingBag size={18} />
-              {cartCount > 0 && <span className="ui-count-badge">{cartCount > 9 ? '9+' : cartCount}</span>}
             </button>
           </div>
         </div>

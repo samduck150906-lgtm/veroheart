@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, Trophy, User, ShoppingBag } from 'lucide-react';
+import { Home, Search, Trophy, User } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { DEFAULT_USER_PET_PROFILE } from '../types';
 
@@ -20,7 +20,6 @@ export default function BottomNav() {
   const navItems = [
     { path: '/', label: '홈', icon: Home, badge: 0 },
     { path: '/search', label: '탐색', icon: Search, badge: 0 },
-    { path: '/cart', label: '장바구니', icon: ShoppingBag, badge: cartCount },
     { path: '/ranking', label: '랭킹', icon: Trophy, badge: 0 },
     { path: '/profile', label: profileTabLabel, icon: User, badge: 0 },
   ];

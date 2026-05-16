@@ -33,6 +33,7 @@ interface Ingredient { id: string; riskLevel: string; nameKo: string; nameEn?: s
 import { Helmet } from 'react-helmet-async';
 import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
+import { openCoupangForProduct } from '../utils/externalPurchase';
 import Analyzer from '../components/Analyzer';
 import BottomSheet from '../components/BottomSheet';
 import { TossCard } from '../components/TossUI';
@@ -296,28 +297,15 @@ export default function Detail() {
           <span style={{ marginLeft: '4px' }}>비교</span>
         </button>
         
-        {product.productUrl ? (
-          <a 
-            href={product.productUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-primary"
-            style={{ 
-              flex: 2, borderRadius: 'var(--border-radius-md)', 
-              fontWeight: 800, fontSize: '17px', display: 'flex', alignItems: 'center', 
-              justifyContent: 'center', gap: '8px', textDecoration: 'none'
-            }}
-          >
-            🚀 쿠팡 최저가 구매 <ExternalLink size={18} />
-          </a>
-        ) : (
-          <button className="btn btn-primary" style={{ flex: 2, borderRadius: 'var(--border-radius-md)', fontWeight: 800, fontSize: '17px', gap: '8px' }} onClick={() => {
-            addToCart(product.id, 1);
-            navigate('/checkout');
-          }}>
-            바로 구매하기
-          </button>
-        )}
+        <button 
+          className="btn btn-primary" 
+          style={{ flex: 2, borderRadius: 'var(--border-radius-md)', fontWeight: 800, fontSize: '17px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }} 
+          onClick={() => {
+            openCoupangForProduct(product);
+          }}
+        >
+          🚀 쿠팡 최저가 구매 <ExternalLink size={18} />
+        </button>
       </div>
 
       {alternativeProduct && (
