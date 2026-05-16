@@ -6,8 +6,21 @@ import requests
 # -----------------------------------------------------------------------------
 # 1. 설정 및 환경 변수
 # -----------------------------------------------------------------------------
-SUPABASE_URL = 'https://zddsnabeaenwvczilxeb.supabase.co'
-SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkZHNuYWJlYWVud3ZjemlseGViIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDc4NDE1NSwiZXhwIjoyMDkwMzYwMTU1fQ.phJd8BUCkdLjAXuKDyRjLxgv4omTGTqGUndavTYmrd8'
+def load_env():
+    env_path = os.path.join(os.path.dirname(__file__), '.env.local')
+    env_vars = {}
+    if os.path.exists(env_path):
+        with open(env_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, val = line.split('=', 1)
+                    env_vars[key.strip()] = val.strip()
+    return env_vars
+
+env = load_env()
+SUPABASE_URL = env.get('VITE_SUPABASE_URL', 'https://zddsnabeaenwvczilxeb.supabase.co')
+SUPABASE_KEY = env.get('SUPABASE_SERVICE_ROLE_KEY') or env.get('VITE_SUPABASE_ANON_KEY', '')
 
 HEADERS = {
     'apikey': SUPABASE_KEY,

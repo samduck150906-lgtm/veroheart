@@ -26,8 +26,8 @@ def load_env():
     return env_vars
 
 env = load_env()
-SUPABASE_URL = env.get('VITE_SUPABASE_URL')
-SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkZHNuYWJlYWVud3ZjemlseGViIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDc4NDE1NSwiZXhwIjoyMDkwMzYwMTU1fQ.phJd8BUCkdLjAXuKDyRjLxgv4omTGTqGUndavTYmrd8'
+SUPABASE_URL = env.get('VITE_SUPABASE_URL', '')
+SUPABASE_KEY = env.get('SUPABASE_SERVICE_ROLE_KEY') or env.get('VITE_SUPABASE_ANON_KEY', '')
 
 HEADERS = {
     'apikey': SUPABASE_KEY,
