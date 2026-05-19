@@ -54,7 +54,7 @@ export default function Auth() {
   return (
     <div className="animate-fade-in" style={{ padding: '40px 20px', minHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
       <div style={{ marginBottom: '40px' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: 900, color: 'var(--text-dark)', marginBottom: '12px', letterSpacing: '-0.03em' }}>
+        <h1 style={{ fontSize: '28px', fontWeight: 900, color: 'var(--text-dark)', marginBottom: '12px', letterSpacing: '-0.03em', whiteSpace: 'pre-line', lineHeight: 1.35 }}>
           {isLogin ? '반갑습니다!\n베로하트입니다.' : '베로하트와 함께\n아이의 건강을 챙겨요!'}
         </h1>
         <p style={{ fontSize: '15px', color: 'var(--text-muted)' }}>
@@ -68,7 +68,7 @@ export default function Auth() {
             이메일
           </label>
           <div style={{ position: 'relative' }}>
-            <Mail size={20} color="var(--text-muted)" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
+            <Mail size={20} color="var(--text-muted)" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', zIndex: 2 }} />
             <input 
               type="email" 
               placeholder="vero@heart.com"
@@ -76,8 +76,18 @@ export default function Auth() {
               onChange={(e) => setEmail(e.target.value)}
               style={{ 
                 width: '100%', padding: '16px 16px 16px 48px', borderRadius: '16px', 
-                border: '1px solid #E5E8EB', fontSize: '16px', outline: 'none',
-                backgroundColor: '#F9FAFB', transition: 'border-color 0.2s', boxSizing: 'border-box'
+                border: '1.5px solid #E5E8EB', fontSize: '16px', outline: 'none',
+                backgroundColor: '#F9FAFB', transition: 'all 0.2s', boxSizing: 'border-box'
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--primary)';
+                e.currentTarget.style.backgroundColor = '#FFFFFF';
+                e.currentTarget.style.boxShadow = '0 0 0 4px rgba(79, 70, 229, 0.1)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = '#E5E8EB';
+                e.currentTarget.style.backgroundColor = '#F9FAFB';
+                e.currentTarget.style.boxShadow = 'none';
               }}
             />
           </div>
@@ -89,7 +99,7 @@ export default function Auth() {
               이메일 확인
             </label>
             <div style={{ position: 'relative' }}>
-              <CheckCircle2 size={20} color={email === confirmEmail && confirmEmail ? 'var(--safe)' : 'var(--text-muted)'} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
+              <CheckCircle2 size={20} color={email === confirmEmail && confirmEmail ? 'var(--safe)' : 'var(--text-muted)'} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', zIndex: 2 }} />
               <input 
                 type="email" 
                 placeholder="이메일을 한 번 더 입력해주세요"
@@ -97,9 +107,21 @@ export default function Auth() {
                 onChange={(e) => setConfirmEmail(e.target.value)}
                 style={{ 
                   width: '100%', padding: '16px 16px 16px 48px', borderRadius: '16px', 
-                  border: email === confirmEmail && confirmEmail ? '1px solid var(--safe)' : '1px solid #E5E8EB', 
+                  border: email === confirmEmail && confirmEmail ? '1.5px solid var(--safe)' : '1.5px solid #E5E8EB', 
                   fontSize: '16px', outline: 'none', backgroundColor: '#F9FAFB', 
                   transition: 'all 0.2s', boxSizing: 'border-box'
+                }}
+                onFocus={(e) => {
+                  if (email !== confirmEmail || !confirmEmail) {
+                    e.currentTarget.style.borderColor = 'var(--primary)';
+                    e.currentTarget.style.boxShadow = '0 0 0 4px rgba(79, 70, 229, 0.1)';
+                  }
+                  e.currentTarget.style.backgroundColor = '#FFFFFF';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = email === confirmEmail && confirmEmail ? 'var(--safe)' : '#E5E8EB';
+                  e.currentTarget.style.backgroundColor = '#F9FAFB';
+                  e.currentTarget.style.boxShadow = 'none';
                 }}
               />
             </div>
@@ -111,7 +133,7 @@ export default function Auth() {
             비밀번호
           </label>
           <div style={{ position: 'relative' }}>
-            <Lock size={20} color="var(--text-muted)" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
+            <Lock size={20} color="var(--text-muted)" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', zIndex: 2 }} />
             <input 
               type="password" 
               placeholder="비밀번호 (6자리 이상)"
@@ -119,8 +141,18 @@ export default function Auth() {
               onChange={(e) => setPassword(e.target.value)}
               style={{ 
                 width: '100%', padding: '16px 16px 16px 48px', borderRadius: '16px', 
-                border: '1px solid #E5E8EB', fontSize: '16px', outline: 'none',
-                backgroundColor: '#F9FAFB', transition: 'border-color 0.2s', boxSizing: 'border-box'
+                border: '1.5px solid #E5E8EB', fontSize: '16px', outline: 'none',
+                backgroundColor: '#F9FAFB', transition: 'all 0.2s', boxSizing: 'border-box'
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--primary)';
+                e.currentTarget.style.backgroundColor = '#FFFFFF';
+                e.currentTarget.style.boxShadow = '0 0 0 4px rgba(79, 70, 229, 0.1)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = '#E5E8EB';
+                e.currentTarget.style.backgroundColor = '#F9FAFB';
+                e.currentTarget.style.boxShadow = 'none';
               }}
             />
           </div>
@@ -130,7 +162,7 @@ export default function Auth() {
           type="submit" 
           disabled={isLoading}
           className="btn btn-primary" 
-          style={{ width: '100%', padding: '18px', borderRadius: '20px', fontWeight: 800, fontSize: '17px', marginTop: '24px' }}
+          style={{ width: '100%', padding: '18px', borderRadius: '20px', fontWeight: 800, fontSize: '17px', marginTop: '24px', transition: 'all 0.2s' }}
         >
           {isLoading ? '처리 중...' : (isLogin ? '로그인' : '회원가입')}
         </button>

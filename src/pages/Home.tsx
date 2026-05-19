@@ -176,6 +176,29 @@ export default function Home() {
         </section>
       )}
 
+      {/* Trending Products - SHOW FIRST */}
+      <HorizontalProductSection
+        title="급상승 랭킹"
+        subtitle="리뷰가 빠르게 늘고 있는 제품"
+        icon={<Flame size={18} color="#EF4444" />}
+        products={trendingProducts}
+        onMore={() => navigate('/ranking')}
+      />
+
+      {personalRecs.length > 0 && (
+        <HorizontalProductSection
+          title={`${profile.name} 맞춤 추천`}
+          subtitle={
+            profile.healthConcerns.length > 0
+              ? `${profile.healthConcerns.join(', ')} 고민 기준`
+              : `${profile.name} 프로필 · 성분·리뷰 기반`
+          }
+          icon={<Sparkles size={18} color="#F59E0B" />}
+          products={personalRecs}
+          onMore={() => navigate('/search')}
+        />
+      )}
+
       <section style={{ marginBottom: '18px' }}>
         <TossSectionTitle title="바로 가기" style={{ marginBottom: '12px' }} />
         <div className="ui-grid-2">
@@ -206,17 +229,17 @@ export default function Home() {
           marginBottom: '22px',
           padding: '18px',
           borderRadius: '18px',
-          background: '#fffbeb',
-          border: '1px solid rgba(234, 179, 8, 0.25)',
+          background: 'var(--primary-light)',
+          border: '1px solid rgba(79, 70, 229, 0.12)',
         }}
       >
-        <p style={{ fontSize: '11px', fontWeight: 600, color: '#a16207', margin: '0 0 6px', letterSpacing: '0.04em' }}>
+        <p style={{ fontSize: '11px', fontWeight: 600, color: 'var(--primary)', margin: '0 0 6px', letterSpacing: '0.04em' }}>
           VIRAL TEST CAMPAIGN
         </p>
-        <h2 style={{ fontSize: '17px', fontWeight: 600, color: '#44403c', margin: '0 0 8px', lineHeight: 1.35 }}>
+        <h2 style={{ fontSize: '17px', fontWeight: 600, color: 'var(--text-dark)', margin: '0 0 8px', lineHeight: 1.35 }}>
           {VIRAL_LANDING_COPY.hero.headline}
         </h2>
-        <p style={{ fontSize: '13px', fontWeight: 500, color: '#78716c', margin: '0 0 12px', lineHeight: 1.5 }}>
+        <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-muted)', margin: '0 0 12px', lineHeight: 1.5 }}>
           {VIRAL_LANDING_COPY.hero.sub}
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
@@ -236,9 +259,6 @@ export default function Home() {
           >
             {VIRAL_LANDING_COPY.hero.ctaSecondary}
           </button>
-        </div>
-        <div style={{ fontSize: '11px', color: '#57534e', background: '#fff', border: '1px solid #e7e5e4', borderRadius: '10px', padding: '8px 10px', lineHeight: 1.45 }}>
-          반려동물 취향과 라이프스타일을 가볍게 체크하고 결과를 공유해 보세요.
         </div>
       </section>
 
@@ -319,28 +339,6 @@ export default function Home() {
           </div>
         </section>
       )}
-
-      {personalRecs.length > 0 && (
-        <HorizontalProductSection
-          title={`${profile.name} 맞춤 추천`}
-          subtitle={
-            profile.healthConcerns.length > 0
-              ? `${profile.healthConcerns.join(', ')} 고민 기준`
-              : `${profile.name} 프로필 · 성분·리뷰 기반`
-          }
-          icon={<Sparkles size={18} color="#F59E0B" />}
-          products={personalRecs}
-          onMore={() => navigate('/search')}
-        />
-      )}
-
-      <HorizontalProductSection
-        title="급상승 랭킹"
-        subtitle="리뷰가 빠르게 늘고 있는 제품"
-        icon={<Flame size={18} color="#EF4444" />}
-        products={trendingProducts}
-        onMore={() => navigate('/ranking')}
-      />
 
       <HorizontalProductSection
         title="질병 · 부위별 추천"
@@ -449,11 +447,21 @@ function HorizontalProductSection({
       </div>
       <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '6px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
         {products.map((product, idx) => (
-          <div key={product.id} style={{ flex: '0 0 292px', position: 'relative' }}>
-            <div style={{ position: 'absolute', top: '10px', left: '10px', zIndex: 2 }}>
-              <TossChip active size="sm">{idx + 1}</TossChip>
+          <div key={product.id} style={{ flex: '0 0 180px', position: 'relative' }}>
+            <div style={{ position: 'absolute', top: '18px', left: '18px', zIndex: 2 }}>
+              <span style={{ 
+                background: 'rgba(79, 70, 229, 0.9)', 
+                color: '#ffffff', 
+                fontSize: '11px', 
+                fontWeight: 800, 
+                padding: '4px 8px', 
+                borderRadius: '8px',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
+              }}>
+                {idx + 1}
+              </span>
             </div>
-            <ProductCard product={product} compact />
+            <ProductCard product={product} variant="vertical" />
           </div>
         ))}
       </div>

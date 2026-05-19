@@ -169,24 +169,37 @@ export default function Ranking() {
 
               <ProductImage src={product.imageUrl} alt={product.name} style={{ width: '72px', height: '72px', borderRadius: '18px', objectFit: 'cover', flexShrink: 0 }} />
 
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ flex: 1, minWidth: 0, paddingRight: '4px' }}>
                 <div style={{ fontSize: '11px', color: '#9CA3AF', fontWeight: 700, marginBottom: '4px' }}>{product.brand}</div>
-                <div style={{ fontSize: '15px', fontWeight: 800, color: '#111827', lineHeight: 1.45, marginBottom: '8px' }}>{product.name}</div>
-                <div style={{ display: 'flex', gap: '8px', marginTop: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '12px', color: '#6B7280', display: 'flex', alignItems: 'center', gap: '2px', fontWeight: 700 }}>
+                <div style={{ 
+                  fontSize: '14px', 
+                  fontWeight: 800, 
+                  color: '#111827', 
+                  lineHeight: 1.35, 
+                  marginBottom: '6px',
+                  overflow: 'hidden',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  textOverflow: 'ellipsis'
+                }} title={product.name}>
+                  {product.name}
+                </div>
+                <div style={{ display: 'flex', gap: '6px', marginTop: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '11px', color: '#6B7280', display: 'flex', alignItems: 'center', gap: '2px', fontWeight: 700 }}>
                     <Star size={11} fill="#FCD34D" color="#FCD34D" /> {product.averageRating}
                   </span>
-                  <span className="ui-badge ui-badge-muted">리뷰 {product.reviewsCount}</span>
+                  <span className="ui-badge ui-badge-muted" style={{ padding: '3px 6px', fontSize: '10px' }}>리뷰 {product.reviewsCount}</span>
                   {idx < 3 && (
-                    <span className="ui-badge ui-badge-soft">
-                      <Sparkles size={12} />
+                    <span className="ui-badge ui-badge-soft" style={{ padding: '3px 6px', fontSize: '10px' }}>
+                      <Sparkles size={10} />
                       상위권
                     </span>
                   )}
                 </div>
               </div>
 
-              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+              <div style={{ textAlign: 'right', flexShrink: 0, width: '92px', minWidth: '92px' }}>
                   {sortBy === 'compatibility' && (
                     <div style={{ fontSize: '20px', fontWeight: 900, color: score >= 80 ? '#10B981' : score >= 50 ? '#F59E0B' : '#EF4444' }}>{score}<span style={{ fontSize: '11px', color: '#9CA3AF' }}>점</span></div>
                   )}

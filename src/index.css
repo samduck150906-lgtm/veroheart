@@ -1,36 +1,42 @@
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
 
 :root {
-  /* Toss-like Colors */
-  --primary: #FEE500; /* Yellow */
-  --primary-dark: #E5CE00; 
-  --secondary: #F2F4F6; /* Toss light grey background */
-  --accent: #FF5A5F; 
+  /* Modern Blue/Indigo Colors */
+  --primary: #4F46E5; /* Indigo */
+  --primary-dark: #3730A3;
+  --primary-light: #EEF2FF;
+  --secondary: #F1F5F9;
+  --accent: #F43F5E;
   
-  --text-dark: #191F28; /* Deep grey/black for absolute readability */
-  --text-muted: #8B95A1;
-  --text-light: #B0B8C1;
+  --text-dark: #0F172A;
+  --text-muted: #64748B;
+  --text-light: #94A3B8;
   
   --bg-color: #FFFFFF;
-  --bg-gradient: #F2F4F6;
+  --bg-gradient: linear-gradient(135deg, #EEF2FF 0%, #F8FAFC 50%, #F0F9FF 100%);
+  --surface-elevated: #F8FAFC;
   
   /* Traffic Light Colors */
-  --safe: #3182F6;    /* Toss Blue */
-  --warning: #F59E0B; /* Yellow */
-  --danger: #F04452;  /* Toss Red */
+  --safe: #10B981;    /* Emerald */
+  --warning: #F59E0B; /* Amber */
+  --danger: #EF4444;  /* Red */
 
-  /* Borders & Shadows (Toss style) */
+  /* Borders & Shadows */
   --border-radius-sm: 12px;
   --border-radius-md: 20px;
   --border-radius-lg: 28px;
   
-  --shadow-sm: 0 2px 10px rgba(0,0,0,0.03);
-  --shadow-md: 0 10px 30px rgba(0,0,0,0.06);
-  --shadow-lg: 0 20px 40px rgba(0,0,0,0.08);
+  --shadow-sm: 0 1px 3px rgba(15,23,42,0.04), 0 1px 2px rgba(15,23,42,0.02);
+  --shadow-md: 0 4px 16px rgba(15,23,42,0.06), 0 2px 4px rgba(15,23,42,0.03);
+  --shadow-lg: 0 12px 40px rgba(15,23,42,0.1);
+  --shadow-card: 0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04);
+  --nav-shadow: 0 -2px 20px rgba(15,23,42,0.06);
 
   /* Transitions */
   --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-smooth: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  
+  --community-tint: #4F46E5;
 }
 
 * {
@@ -42,16 +48,15 @@
 }
 
 body {
-  background: #E5E8EB;
+  background: var(--bg-gradient);
   color: var(--text-dark);
   line-height: 1.5;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   min-height: 100dvh;
   margin: 0;
-  overflow: hidden;
-  overscroll-behavior-y: none;
+  overflow-y: auto;
 }
 
 html.admin-desktop-mode,
@@ -70,22 +75,19 @@ body.admin-desktop-mode {
 /* Mobile App Layout Container */
 #root {
   width: 100%;
-  max-width: 480px; /* Mobile restriction */
-  height: 100dvh;
+  max-width: 520px;
+  min-height: 100dvh;
   background-color: var(--bg-color);
-  box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+  box-shadow: 0 0 60px rgba(15,23,42,0.08);
   position: relative;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
 }
 
-@media (min-width: 481px) and (min-height: 800px) {
+@media (min-width: 521px) {
   #root {
-    height: 90vh;
-    max-height: 900px;
-    border-radius: 32px;
-    border: 8px solid #191F28;
+    margin: 0 auto;
   }
 }
 
@@ -217,15 +219,15 @@ h1, h2, h3, h4, h5, h6 {
   top: 0;
   left: 0;
   right: 0;
-  min-height: 72px;
+  min-height: 56px;
   z-index: 50;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 14px 20px 12px;
+  padding: 10px 20px;
   font-weight: 700;
   font-size: 18px;
-  max-width: 480px;
+  max-width: 520px;
   margin: 0 auto;
 }
 
@@ -237,9 +239,15 @@ h1, h2, h3, h4, h5, h6 {
 
 .app-main {
   flex: 1;
-  padding-top: 128px;
-  padding-bottom: 104px; /* BottomNav + safe area */
+  padding-top: 84px;
+  padding-bottom: 100px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.app-main::-webkit-scrollbar {
+  display: none;
 }
 
 .bottom-nav {
@@ -279,9 +287,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .bottom-nav-item-active {
-  color: var(--primary-dark);
-  background: rgba(254, 243, 199, 0.65);
-  box-shadow: inset 0 0 0 1px rgba(234, 179, 8, 0.22);
+  color: var(--primary);
+  background: var(--primary-light);
+  box-shadow: inset 0 0 0 1.5px rgba(79, 70, 229, 0.2);
 }
 
 .bottom-nav-item-active .bottom-nav-icon-wrap svg {
@@ -416,12 +424,14 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-primary {
-  background-color: var(--primary);
-  color: var(--text-dark);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
 }
 
 .btn-primary:hover {
-  background-color: var(--primary-dark);
+  filter: brightness(1.05);
+  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
 }
 
 .btn-outline {
@@ -488,8 +498,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .badge-primary {
-  background: rgba(250, 204, 21, 0.2);
-  color: var(--primary-dark);
+  background: rgba(79, 70, 229, 0.1);
+  color: var(--primary);
 }
 
 .badge-safe {
@@ -537,7 +547,7 @@ h1, h2, h3, h4, h5, h6 {
 /* Divider */
 .divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(250, 204, 21, 0.35), transparent);
+  background: linear-gradient(90deg, transparent, rgba(79, 70, 229, 0.15), transparent);
   margin: 24px 0;
 }
 
@@ -557,7 +567,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .input-base:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.2);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
 }
 
 /* Chip / Tag styles */
@@ -789,8 +799,8 @@ button:active {
 }
 
 .ui-badge-soft {
-  background: rgba(254, 243, 199, 0.7);
-  color: var(--primary-dark);
+  background: var(--primary-light);
+  color: var(--primary);
 }
 
 .ui-badge-muted {

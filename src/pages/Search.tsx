@@ -14,33 +14,65 @@ import {
   Package,
   SlidersHorizontal,
   Sparkles,
+  Search as SearchIcon,
+  Database
 } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import type { Product } from '../types';
-import { TossFilterSection } from '../components/TossUI';
+import { TossFilterSection, TossChip, TossButton } from '../components/TossUI';
 import { searchProducts, getAllIngredients } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import standardFeedData from '../data/standard_feed_data.json';
-import { Database } from 'lucide-react';
-const resolveCategoryFromSearchParams = (s: any) => s || '전체';
-type PriceBand = 'any';
-const priceMin = 0;
-const priceMax = 999999;
+import { 
+  SEARCH_MAIN_CATEGORIES, 
+  resolveCategoryFromSearchParams 
+} from '../constants/productCategories';
+import { 
+  PRICE_BAND_LABELS, 
+  FORMULATION_OPTIONS, 
+  HEALTH_CONCERN_OPTIONS, 
+  LIFE_STAGE_OPTIONS, 
+  priceBandToMinMax,
+  type PriceBand
+} from '../constants/searchFilters';
+
 const rankProductsForProfile = (res: any, pro: any) => res.map((r: any) => ({ product: r, breakdown: { reasons: [] }, score: 100 }));
-const CORE_COPY = { ocr: '' };
-const TossSearchBar = (props: any) => <input />;
-const PRICE_BAND_LABELS = [{ id: 'any', label: 'Any' }];
-const TossChip = (props: any) => <div />;
-const TossButton = (props: any) => <button />;
-const filterButtonActive = false;
-const SEARCH_MAIN_CATEGORIES = [{ name: '전체', icon: () => <div /> }];
-const LIFE_STAGE_OPTIONS = [{ value: '', label: '' }];
-const FORMULATION_OPTIONS: string[] = [];
-const HEALTH_CONCERN_OPTIONS: string[] = [];
-const ingredientSearch = '';
-const setIngredientSearch = (v: any) => {};
-const filteredIngList: any[] = [];
-const SearchIcon = (props: any) => <div />;
+const CORE_COPY = { ocr: '반려동물의 체질과 알레르기, 건강 고민을 조합하여 딱 맞는 완벽한 한 끼를 찾아보세요.' };
+
+const TossSearchBar = ({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) => (
+  <div style={{ position: 'relative' }}>
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder || '검색'}
+      style={{
+        width: '100%',
+        padding: '14px 16px 14px 44px',
+        borderRadius: '14px',
+        border: '1.5px solid rgba(79, 70, 229, 0.15)',
+        fontSize: '15px',
+        fontWeight: 500,
+        outline: 'none',
+        background: '#F8FAFC',
+        color: '#0F172A',
+        boxSizing: 'border-box',
+        transition: 'border-color 0.2s, box-shadow 0.2s',
+      }}
+      onFocus={(e) => {
+        e.currentTarget.style.borderColor = '#4F46E5';
+        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(79, 70, 229, 0.1)';
+      }}
+      onBlur={(e) => {
+        e.currentTarget.style.borderColor = 'rgba(79, 70, 229, 0.15)';
+        e.currentTarget.style.boxShadow = 'none';
+      }}
+    />
+    <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8', pointerEvents: 'none', display: 'flex' }}>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    </span>
+  </div>
+);
 
 function defaultPetFromProfile(profile: { species?: string } | undefined): '' | 'dog' | 'cat' | 'all' {
   if (profile?.species === 'Cat') return 'cat';
@@ -81,9 +113,32 @@ export default function Search() {
     priceBand: 'any' as PriceBand,
   });
 
+  const [allIngredients, setAllIngredients] = useState<any[]>([]);
+  const [ingredientSearch, setIngredientSearch] = useState('');
   const [excludedIngredients, setExcludedIngredients] = useState<string[]>([]);
+  
   const [isStandardFeedModalOpen, setIsStandardFeedModalOpen] = useState(false);
   const [standardFeedSearch, setStandardFeedSearch] = useState('');
+
+  // Load all ingredients for auto-completion
+  useEffect(() => {
+    async function loadIngs() {
+      try {
+        const ings = await getAllIngredients();
+        setAllIngredients(ings || []);
+      } catch (err) {
+        console.error('Failed to load ingredients', err);
+      }
+    }
+    loadIngs();
+  }, []);
+
+  const filteredIngList = useMemo(() => {
+    if (!ingredientSearch.trim()) return [];
+    return allIngredients.filter(ing => 
+      ing.name_ko.toLowerCase().includes(ingredientSearch.toLowerCase())
+    );
+  }, [ingredientSearch, allIngredients]);
 
   const filteredStandardFeed = standardFeedData.filter((item: any) => 
     item.name_ko.toLowerCase().includes(standardFeedSearch.toLowerCase()) ||
@@ -95,6 +150,8 @@ export default function Search() {
       setIsLoading(true);
       try {
         const pet = filters.targetPetType;
+        const { priceMin, priceMax } = priceBandToMinMax(filters.priceBand);
+        
         const results = await searchProducts(query, category, excludedIngredients, {
           targetPetType: pet === '' ? undefined : pet,
           targetLifeStage: filters.targetLifeStage || undefined,
@@ -102,8 +159,8 @@ export default function Search() {
           subCategory: filters.subCategory || undefined,
           healthConcerns: filters.healthConcerns,
           dietPreset: filters.dietPreset,
-          priceMin,
-          priceMax,
+          priceMin: priceMin ?? 0,
+          priceMax: priceMax ?? 999999,
         });
         setSearchResults(results);
       } catch (err) {
@@ -113,7 +170,7 @@ export default function Search() {
       }
     }, 400);
     return () => clearTimeout(timer);
-  }, [query, category, filters, excludedIngredients, priceMin, priceMax]);
+  }, [query, category, filters, excludedIngredients]);
 
   const displayResults = useMemo(() => {
     if (sortBy === 'default') {
@@ -161,6 +218,15 @@ export default function Search() {
   const setPetFilter = (p: '' | 'dog' | 'cat' | 'all') => {
     setFilters(f => ({ ...f, targetPetType: p }));
   };
+
+  const filterButtonActive = 
+    filters.targetPetType !== defaultPetFromProfile(profile) ||
+    filters.targetLifeStage !== '' ||
+    filters.formulation !== '' ||
+    filters.healthConcerns.length > 0 ||
+    filters.dietPreset ||
+    filters.priceBand !== 'any' ||
+    excludedIngredients.length > 0;
 
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '100px' }}>
@@ -320,27 +386,30 @@ export default function Search() {
         </div>
 
         <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '4px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-          {SEARCH_MAIN_CATEGORIES.map(cat => (
-            <button
-              key={cat.name}
-              type="button"
-              onClick={() => {
-                setCategory(cat.name);
-                setFilters(f => ({ ...f, subCategory: '' }));
-              }}
-              style={{
-                padding: '10px 18px', borderRadius: '24px', fontSize: '14px', whiteSpace: 'nowrap',
-                border: category === cat.name ? 'none' : '1px solid #E5E7EB',
-                backgroundColor: category === cat.name ? 'var(--primary)' : '#fff',
-                color: category === cat.name ? '#fff' : '#4B5563',
-                cursor: 'pointer', fontWeight: 600, transition: 'all 0.2s',
-                display: 'flex', alignItems: 'center', gap: '8px'
-              }}
-            >
-              <cat.icon size={16} />
-              {cat.name}
-            </button>
-          ))}
+          {SEARCH_MAIN_CATEGORIES.map(cat => {
+            const CatIcon = cat.icon;
+            return (
+              <button
+                key={cat.name}
+                type="button"
+                onClick={() => {
+                  setCategory(cat.name);
+                  setFilters(f => ({ ...f, subCategory: '' }));
+                }}
+                style={{
+                  padding: '10px 18px', borderRadius: '24px', fontSize: '14px', whiteSpace: 'nowrap',
+                  border: category === cat.name ? 'none' : '1px solid #E5E7EB',
+                  backgroundColor: category === cat.name ? 'var(--primary)' : '#fff',
+                  color: category === cat.name ? '#fff' : '#4B5563',
+                  cursor: 'pointer', fontWeight: 600, transition: 'all 0.2s',
+                  display: 'flex', alignItems: 'center', gap: '8px'
+                }}
+              >
+                {CatIcon && <CatIcon size={16} />}
+                {cat.name}
+              </button>
+            );
+          })}
         </div>
         
         {/* Standard Feed DB Button */}

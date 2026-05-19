@@ -8,6 +8,7 @@ import Home from './pages/Home';
 import Search from './pages/Search';
 import Profile from './pages/Profile';
 import Detail from './pages/Detail';
+import Ranking from './pages/Ranking';
 import Comparison from './pages/Comparison';
 // import Cart from './pages/Cart';
 import Terms from './pages/Terms';
@@ -98,6 +99,7 @@ function App() {
             <Route path="auth" element={<Auth />} />
             <Route path="profile" element={<Profile />} />
             <Route path="comparison" element={<Comparison />} />
+            <Route path="ranking" element={<Ranking />} />
             {/* <Route path="cart" element={<Cart />} /> */}
             {/* <Route path="checkout" element={<Checkout />} /> */}
             {/* <Route path="success" element={<Success />} /> */}
