@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { calculateCompatibilityScore } from '../utils/score';
 import { X, GitCompare, ShieldCheck, Star, ShoppingBag } from 'lucide-react';
+import ProductImage from '../components/ProductImage';
 
 export default function Comparison() {
   const navigate = useNavigate();
@@ -78,7 +79,7 @@ export default function Comparison() {
               ><X size={16} /></button>
               
               <div style={{ width: '100%', height: '168px', borderRadius: '14px', overflow: 'hidden', marginBottom: '12px' }}>
-                <img src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <ProductImage src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
               
               <div style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: 700 }}>{p.brand}</div>

@@ -6,6 +6,7 @@ import { useStore } from '../store/useStore';
 import { saveAnalysisReport } from '../lib/supabase';
 import { CORE_COPY } from '../copy/marketing';
 import { calculateCompatibilityScore } from '../utils/score';
+import ProductImage from './ProductImage';
 
 export default function Analyzer() {
   const navigate = useNavigate();
@@ -353,7 +354,7 @@ export default function Analyzer() {
                       boxShadow: '0 4px 12px rgba(15, 23, 42, 0.04)',
                     }}
                   >
-                    <img
+                    <ProductImage
                       src={product.imageUrl}
                       alt={product.name}
                       style={{ width: '80px', height: '80px', borderRadius: '18px', objectFit: 'cover', flexShrink: 0 }}

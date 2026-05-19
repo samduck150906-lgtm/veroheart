@@ -37,6 +37,7 @@ import { openCoupangForProduct } from '../utils/externalPurchase';
 import Analyzer from '../components/Analyzer';
 import BottomSheet from '../components/BottomSheet';
 import { TossCard } from '../components/TossUI';
+import ProductImage from '../components/ProductImage';
 
 export default function Detail() {
   const { id } = useParams();
@@ -66,6 +67,7 @@ export default function Detail() {
   const [reviewContent, setReviewContent] = useState('');
   const [reviewTags, setReviewTags] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedIngredient, setSelectedIngredient] = useState<any>(null);
   const isFav = favorites.includes(id || '');
 
   useEffect(() => {
@@ -157,7 +159,7 @@ export default function Detail() {
     return '#3182F6'; // Toss Blue for safe
   };
 
-  const [selectedIngredient, setSelectedIngredient] = useState<any>(null);
+  // selectedIngredient state moved to top with other hooks
   
   // Create Toss-style Headline Data
   let headline = `${profile.name}가 안심하고 먹을 수 있어요!`;
@@ -244,7 +246,7 @@ export default function Detail() {
       </div>
 
       <div style={{ position: 'relative', width: '100%', height: '320px', borderRadius: '24px', overflow: 'hidden', marginBottom: '20px', boxShadow: '0 16px 40px -12px rgb(0 0 0 / 0.12)' }}>
-        <img src={product.imageUrl} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <ProductImage src={product.imageUrl} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </div>
 
       <TossCard style={{ marginBottom: '24px', padding: '20px' }}>

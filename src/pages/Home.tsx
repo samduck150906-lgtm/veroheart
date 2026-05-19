@@ -23,6 +23,7 @@ import { VIRAL_LANDING_COPY } from '../copy/marketing';
 import { HOME_CATEGORY_ITEMS } from '../constants/productCategories';
 import type { Product } from '../types';
 import { TossChip, TossSectionTitle } from '../components/TossUI';
+import ProductImage from '../components/ProductImage';
 
 export default function Home() {
   const { products, profile, recentViews, isLoggedIn } = useStore();
@@ -298,7 +299,7 @@ export default function Home() {
                 style={{ textAlign: 'left', background: '#FFFFFF', border: 'none', cursor: 'pointer' }}
               >
                 <div className="ui-rank-index">{index + 1}</div>
-                <img
+                <ProductImage
                   src={product.imageUrl}
                   alt={product.name}
                   style={{ width: '62px', height: '62px', borderRadius: '18px', objectFit: 'cover', flexShrink: 0 }}
@@ -374,7 +375,7 @@ export default function Home() {
           <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
             {recentViews.slice(0, 6).map(p => (
               <div key={p.id} onClick={() => navigate(`/product/${p.id}`)} style={{ flexShrink: 0, width: '124px', cursor: 'pointer' }}>
-                <img src={p.imageUrl} alt={p.name} style={{ width: '124px', height: '124px', borderRadius: '18px', objectFit: 'cover', marginBottom: '8px', boxShadow: 'var(--shadow-sm)' }} />
+                <ProductImage src={p.imageUrl} alt={p.name} style={{ width: '124px', height: '124px', borderRadius: '18px', objectFit: 'cover', marginBottom: '8px', boxShadow: 'var(--shadow-sm)' }} />
                 <div className="line-clamp-2" style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-dark)', lineHeight: 1.45 }}>{p.name}</div>
               </div>
             ))}

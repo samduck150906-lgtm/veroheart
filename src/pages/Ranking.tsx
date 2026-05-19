@@ -7,6 +7,7 @@ import type { Product } from '../types';
 import { calculateCompatibilityScore, getProductRecommendationInsights } from '../utils/score';
 import { UGC_COPY } from '../copy/marketing';
 import { TossChip, TossSectionTitle } from '../components/TossUI';
+import ProductImage from '../components/ProductImage';
 
 const TABS = [
   { key: 'compatibility', label: '궁합 점수', icon: '💯' },
@@ -166,7 +167,7 @@ export default function Ranking() {
                 )}
               </div>
 
-              <img src={product.imageUrl} alt={product.name} style={{ width: '72px', height: '72px', borderRadius: '18px', objectFit: 'cover', flexShrink: 0 }} />
+              <ProductImage src={product.imageUrl} alt={product.name} style={{ width: '72px', height: '72px', borderRadius: '18px', objectFit: 'cover', flexShrink: 0 }} />
 
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '11px', color: '#9CA3AF', fontWeight: 700, marginBottom: '4px' }}>{product.brand}</div>

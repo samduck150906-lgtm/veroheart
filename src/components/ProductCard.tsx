@@ -3,6 +3,7 @@ import { Heart } from 'lucide-react';
 import type { Product } from '../types';
 import { useStore } from '../store/useStore';
 import { calculateCompatibilityScore } from '../utils/score';
+import ProductImage from './ProductImage';
 
 type ProductCardProps = {
   product: Product;
@@ -34,7 +35,7 @@ export default function ProductCard({ product, compact = false, showHealthTags =
           overflow: 'hidden', flexShrink: 0,
           boxShadow: '0 4px 14px rgba(43, 38, 36, 0.08)',
         }}>
-          <img src={product.imageUrl} alt={product.name} style={{
+          <ProductImage src={product.imageUrl} alt={product.name} style={{
             width: '100%', height: '100%', objectFit: 'cover'
           }} />
         </div>
