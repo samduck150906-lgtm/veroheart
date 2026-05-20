@@ -44,4 +44,12 @@ export interface AnalysisResponse {
   };
   recommended_for: HealthCondition[];
   not_recommended_for: HealthCondition[];
+  estimated_calories_kcal_kg?: number;
+  caloric_distribution?: {
+    protein: number;
+    fat: number;
+    carbs: number;
+  };
+  contains_toxic?: boolean;
+  toxic_ingredients?: Array<{ name: string; reason: string }>;
 }

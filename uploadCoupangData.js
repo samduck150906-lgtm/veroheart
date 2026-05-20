@@ -36,8 +36,7 @@ async function run() {
       target_pet_type: p.target_pet_type,
       min_price: p.price,
       image_url: p.image_url,
-      product_url: p.product_url,
-      source: p.source
+      coupang_link: 'https://link.coupang.com/a/dSKpcEFiRo'
     };
   });
 

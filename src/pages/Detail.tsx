@@ -178,7 +178,7 @@ export default function Detail() {
   }
 
   return (
-    <div className="animate-fade-in detail-page-root" style={{ paddingBottom: '40px' }}>
+    <div className="animate-stack-push detail-page-root" style={{ paddingBottom: '40px' }}>
       <Helmet>
         <title>{product.name} - 베로로</title>
         <meta name="description" content={`${product.brand}의 ${product.name} 전성분 분석 결과 및 구매`} />

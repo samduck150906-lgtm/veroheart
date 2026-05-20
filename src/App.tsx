@@ -8,6 +8,8 @@ import Home from './pages/Home';
 import Search from './pages/Search';
 import Profile from './pages/Profile';
 import Detail from './pages/Detail';
+import Scanner from './pages/Scanner';
+import Community from './pages/Community';
 import Ranking from './pages/Ranking';
 import Comparison from './pages/Comparison';
 // import Cart from './pages/Cart';
@@ -25,6 +27,7 @@ import AdminAuthGuard from './pages/admin/AdminAuthGuard';
 import EntryGate from './components/EntryGate';
 import { markEntryGateDone, readEntryGateDone } from './lib/entryGateStorage';
 import { isAdminExperience, toggleAdminDesktopMode } from './utils/adminHost';
+import { ThemeProvider } from './theme/ThemeProvider';
 
 function App() {
   const { initApp, isInitializing, isLoggedIn } = useStore();
@@ -33,6 +36,21 @@ function App() {
     && isAdminExperience(window.location.hostname, window.location.pathname);
   const [showEntrySplash, setShowEntrySplash] = useState(() => !adminMode);
   const [entryGateOpen, setEntryGateOpen] = useState(() => (adminMode ? false : !readEntryGateDone()));
+  const [fontsLoaded, setFontsLoaded] = useState(false);
+
+  // Proactive Web Font Loading Verification API
+  useEffect(() => {
+    if (typeof document !== 'undefined' && 'fonts' in document) {
+      document.fonts.ready.then(() => {
+        setFontsLoaded(true);
+      }).catch((err) => {
+        console.warn('Google/Pretendard Web Font load deferred, falling back to system fonts:', err);
+        setFontsLoaded(true);
+      });
+    } else {
+      setFontsLoaded(true);
+    }
+  }, []);
 
   useEffect(() => {
     if (!adminMode) return;
@@ -64,7 +82,7 @@ function App() {
     }
   }, [isInitializing, isLoggedIn]);
 
-  const showSplash = !adminMode && (isInitializing || showEntrySplash);
+  const showSplash = !adminMode && (isInitializing || showEntrySplash || !fontsLoaded);
 
   if (showSplash) {
     return (
@@ -90,54 +108,58 @@ function App() {
   }
 
   return (
-    <BrowserRouter>
-      <Notification />
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Home />} />
-            <Route path="search" element={<Search />} />
-            <Route path="auth" element={<Auth />} />
-            <Route path="profile" element={<Profile />} />
-            <Route path="comparison" element={<Comparison />} />
-            <Route path="ranking" element={<Ranking />} />
-            {/* <Route path="cart" element={<Cart />} /> */}
-            {/* <Route path="checkout" element={<Checkout />} /> */}
-            {/* <Route path="success" element={<Success />} /> */}
-            {/* <Route path="fail" element={<Fail />} /> */}
-            <Route path="product/:id" element={<Detail />} />
-            <Route path="terms" element={<Terms />} />
-            <Route path="privacy" element={<Privacy />} />
-            <Route path="refund" element={<Refund />} />
+    <ThemeProvider>
+      <BrowserRouter>
+        <Notification />
+          <Routes>
+            <Route path="/" element={<Layout />}>
+              <Route index element={<Home />} />
+              <Route path="search" element={<Search />} />
+              <Route path="scanner" element={<Scanner />} />
+              <Route path="community" element={<Community />} />
+              <Route path="auth" element={<Auth />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="comparison" element={<Comparison />} />
+              <Route path="ranking" element={<Ranking />} />
+              {/* <Route path="cart" element={<Cart />} /> */}
+              {/* <Route path="checkout" element={<Checkout />} /> */}
+              {/* <Route path="success" element={<Success />} /> */}
+              {/* <Route path="fail" element={<Fail />} /> */}
+              <Route path="product/:id" element={<Detail />} />
+              <Route path="terms" element={<Terms />} />
+              <Route path="privacy" element={<Privacy />} />
+              <Route path="refund" element={<Refund />} />
+            </Route>
+          
+          {/* Admin CMS Routes — Protected */}
+          <Route path="/admin" element={<AdminAuthGuard><AdminLayout /></AdminAuthGuard>}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="products" element={<AdminProducts />} />
+            <Route path="ingredients" element={<AdminIngredients />} />
+            <Route path="settings" element={<AdminSettings />} />
           </Route>
-        
-        {/* Admin CMS Routes — Protected */}
-        <Route path="/admin" element={<AdminAuthGuard><AdminLayout /></AdminAuthGuard>}>
-          <Route index element={<AdminDashboard />} />
-          <Route path="products" element={<AdminProducts />} />
-          <Route path="ingredients" element={<AdminIngredients />} />
-          <Route path="settings" element={<AdminSettings />} />
-        </Route>
-      </Routes>
+        </Routes>
 
-      {!adminMode && entryGateOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 9999,
-            background: 'var(--bg-gradient)',
-          }}
-        >
-          <EntryGate
-            onBrowse={() => {
-              markEntryGateDone();
-              setEntryGateOpen(false);
+        {!adminMode && entryGateOpen && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 9999,
+              background: 'var(--bg-gradient)',
             }}
-            onDismissForLogin={() => setEntryGateOpen(false)}
-          />
-        </div>
-      )}
-    </BrowserRouter>
+          >
+            <EntryGate
+              onBrowse={() => {
+                markEntryGateDone();
+                setEntryGateOpen(false);
+              }}
+              onDismissForLogin={() => setEntryGateOpen(false)}
+            />
+          </div>
+        )}
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
 

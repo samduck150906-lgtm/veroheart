@@ -4,6 +4,7 @@ import { useStore } from '../store/useStore';
 import { User, ChevronRight, Calendar, ShoppingBag, FileText, Activity, LogOut, LogIn, Heart } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { TossCard, TossInput, TossButton, TossChip, TossSectionTitle } from '../components/TossUI';
+import { Button } from '../components/Button';
 const signOut = async () => {};
 const PROFILE_STEP_META = [{ title: 'Info', prompt: '' }, { title: 'Species', prompt: '' }, { title: 'Age', prompt: '' }, { title: 'Weight', prompt: '' }, { title: 'Allergies', prompt: '' }, { title: 'Health', prompt: '' }];
 const profileStep = 0;
@@ -199,13 +200,11 @@ export default function Profile() {
         <p style={{ fontSize: '15px', color: 'var(--text-muted)', marginBottom: '32px', textAlign: 'center', lineHeight: 1.5 }}>
           프로필을 설정하고 아이의 건강 맞춤<br/>사료 분석을 시작해보세요!
         </p>
-        <button 
-          className="btn btn-primary" 
-          style={{ width: '100%', maxWidth: '320px', padding: '16px', borderRadius: '20px', fontWeight: 800, fontSize: '16px' }}
+        <Button 
+          title="로그인 / 회원가입 하기"
+          style={{ width: '100%', maxWidth: '320px', borderRadius: '20px', fontSize: '16px' }}
           onClick={() => navigate('/auth')}
-        >
-          로그인 / 회원가입 하기
-        </button>
+        />
       </div>
     );
   }
@@ -291,9 +290,11 @@ export default function Profile() {
 
           <div style={{ marginBottom: '28px' }}>{profileStepBody}</div>
 
-          <button className="btn btn-primary" style={{ width: '100%', padding: '16px', borderRadius: '14px', fontWeight: 800, fontSize: '16px' }} onClick={handleSave}>
-            변경 사항 저장
-          </button>
+          <Button 
+            title="변경 사항 저장"
+            style={{ borderRadius: '14px', fontSize: '16px' }} 
+            onClick={handleSave}
+          />
           
           <div style={{ marginTop: '32px', borderTop: '1px solid #E5E8EB', paddingTop: '24px' }}>
             <button 

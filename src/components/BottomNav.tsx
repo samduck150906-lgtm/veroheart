@@ -1,12 +1,11 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, Trophy, User } from 'lucide-react';
+import { Home, Search, Scan, MessageSquare, User } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { DEFAULT_USER_PET_PROFILE } from '../types';
 
 export default function BottomNav() {
   const location = useLocation();
-  const { cart, profile, isLoggedIn } = useStore();
-  const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+  const { profile, isLoggedIn } = useStore();
 
   const profileTabLabel =
     isLoggedIn &&
@@ -15,13 +14,14 @@ export default function BottomNav() {
       ? profile.name.length > 5
         ? `${profile.name.slice(0, 4)}…`
         : profile.name
-      : '마이 펫';
+      : '마이펫';
 
   const navItems = [
-    { path: '/', label: '홈', icon: Home, badge: 0 },
-    { path: '/search', label: '탐색', icon: Search, badge: 0 },
-    { path: '/ranking', label: '랭킹', icon: Trophy, badge: 0 },
-    { path: '/profile', label: profileTabLabel, icon: User, badge: 0 },
+    { path: '/', label: '홈', icon: Home, badge: 0, isFab: false },
+    { path: '/search', label: '검색', icon: Search, badge: 0, isFab: false },
+    { path: '/scanner', label: '스캐너', icon: Scan, badge: 0, isFab: true },
+    { path: '/community', label: '커뮤니티', icon: MessageSquare, badge: 0, isFab: false },
+    { path: '/profile', label: profileTabLabel, icon: User, badge: 0, isFab: false },
   ];
 
   return (
@@ -29,11 +29,35 @@ export default function BottomNav() {
       {navItems.map(item => {
         const Icon = item.icon;
         const isActive = location.pathname === item.path;
+
+        if (item.isFab) {
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`bottom-nav-fab-wrap ${isActive ? 'bottom-nav-fab-active' : ''}`}
+              aria-label={item.label}
+            >
+              <div className="bottom-nav-fab">
+                <Icon
+                  size={24}
+                  strokeWidth={2.5}
+                  color="#FFFFFF"
+                />
+              </div>
+              <span className="bottom-nav-label fab-label">
+                {item.label}
+              </span>
+            </Link>
+          );
+        }
+
         return (
           <Link
             key={item.path}
             to={item.path}
             className={isActive ? 'bottom-nav-item bottom-nav-item-active' : 'bottom-nav-item'}
+            aria-label={item.label}
           >
             <div className="bottom-nav-icon-wrap">
               <Icon

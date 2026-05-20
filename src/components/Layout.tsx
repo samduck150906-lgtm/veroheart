@@ -13,7 +13,9 @@ export default function Layout() {
   const shouldHideFooter = hideFooterOn.some((path) => location.pathname.startsWith(path));
   const titleMap: Record<string, string> = {
     '/': '홈',
-    '/search': '탐색',
+    '/search': '검색',
+    '/scanner': '성분 스캐너',
+    '/community': '커뮤니티',
     '/comparison': '비교함',
     '/profile': '마이 펫',
     '/cart': '장바구니',

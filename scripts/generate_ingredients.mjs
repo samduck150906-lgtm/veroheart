@@ -42,37 +42,93 @@ async function generateIngredientsWithAI(productName, petType, subCategory) {
   const animalLabel = petType === 'cat' ? '고양이' : '강아지';
   const categoryLabel = subCategory === 'snack' ? '간식' : '사료';
 
-  const prompt = `당신은 반려동물 영양 전문가입니다.
-아래 ${animalLabel} ${categoryLabel} 제품의 주요 성분 10~15개를 추론해서 JSON 배열로 알려주세요.
-실제 시중 제품 성분표를 참고하여 현실적인 성분을 추론해 주세요.
+  const systemInstruction = `당신은 수의 영양학 전문 분석 AI입니다.
+제품의 전성분표나 제품 설명 이미지를 스캔하여 필수 영양 정보와 성분을 추출합니다.
+화려한 마케팅 문구는 무시하고, 법적으로 요구되는 '사용 원료(Ingredients)' 목록과 '보증 성분량(Guaranteed Analysis)'을 정확히 분석해 주세요.
+특히 AAFCO 2024년 펫푸드 라벨 현대화(Pet Food Label Modernization) 규정에 맞게, 기존 조섬유 외에 '총 식이섬유(Total Dietary Fiber)' 표기가 있다면 추출하고, 제품에 표시된 '칼로리 분포(단백질, 지방, 탄수화물 유래 칼로리 비율)'를 찾아 caloric_distribution에 저장하십시오. 만약 칼로리 분포가 명시적으로 기재되어 있지 않다면, 보증 성분(조단백, 조지방, 조섬유, 조회분, 수분 등)을 바탕으로 Modified Atwater 계수(단백질 3.5, 지방 8.5, 탄수화물 3.5)를 활용해 직접 추정 계산하여 소수점 첫째 자리까지 제공하십시오.
+성분 오류나 오탈자가 있을 시 표준 사료 원료명으로 정규화(Normalization)하여 저장하십시오.
+(예: '닭고기 분말' -> '닭고기분', '비타민 E 보존제' -> '혼합 토코페롤')`;
 
-제품명: ${productName}
+  const prompt = `아래 ${animalLabel} ${categoryLabel} 제품의 전성분을 분석하고 보증 성분을 추출해서 구조화된 JSON 데이터로 응답해 주세요.
+만일 자일리톨, 초콜릿, 포도, 양파, 마늘 등 강아지/고양이에게 유해하거나 치명적인 성분이 단 하나라도 발견된다면, contains_toxic 필드를 true로 설정하고 toxic_ingredients 목록에 해당 성분명과 수의학적 위험 원인을 작성해 주세요.
+총 식이섬유(total_dietary_fiber) 값이 이미지에 나타나지 않는 경우 제외하거나 null로 지정하지 않고 0 또는 추정값으로 기록해도 좋습니다.
 
-다음 JSON 형식으로만 응답해주세요 (마크다운 없이 순수 JSON 배열):
-[
-  {
-    "name_ko": "성분 한국어명",
-    "name_en": "English name",
-    "risk_level": "safe | caution | danger",
-    "description": "이 성분의 역할 (한국어, 10자 이내)"
-  }
-]
+제품명: ${productName}`;
 
-risk_level 기준:
-- safe: 천연 단백질원, 비타민, 미네랄, 유익한 지방 등
-- caution: 옥수수, 밀, 대두 등 알레르기 가능성 있는 원료, 일부 보존료
-- danger: BHA, BHT, 에톡시퀸, 인공색소, 프로필렌글리콜 등 유해 첨가물`;
+  // OpenAPI Schema 정의
+  const responseSchema = {
+    type: "OBJECT",
+    properties: {
+      product_name: { type: "STRING" },
+      ingredients: {
+        type: "ARRAY",
+        items: {
+          type: "OBJECT",
+          properties: {
+            name_ko: { type: "STRING" },
+            name_en: { type: "STRING" },
+            risk_level: { type: "STRING", enum: ["safe", "caution", "danger"] },
+            description: { type: "STRING" }
+          },
+          required: ["name_ko", "risk_level"]
+        }
+      },
+      guaranteed_analysis: {
+        type: "OBJECT",
+        properties: {
+          crudeProtein: { type: "NUMBER" },
+          crudeFat: { type: "NUMBER" },
+          crudeFiber: { type: "NUMBER" },
+          crudeAsh: { type: "NUMBER" },
+          moisture: { type: "NUMBER" },
+          calcium: { type: "NUMBER" },
+          phosphorus: { type: "NUMBER" },
+          total_dietary_fiber: { type: "NUMBER" }
+        },
+        required: ["crudeProtein", "crudeFat", "crudeFiber", "crudeAsh", "moisture"]
+      },
+      calories_per_kg: { type: "NUMBER" },
+      intended_life_stage: { type: "STRING", enum: ["Puppy", "Adult", "Senior", "All"] },
+      contains_toxic: { type: "BOOLEAN" },
+      toxic_ingredients: {
+        type: "ARRAY",
+        items: {
+          type: "OBJECT",
+          properties: {
+            name: { type: "STRING" },
+            reason: { type: "STRING" }
+          },
+          required: ["name", "reason"]
+        }
+      },
+      caloric_distribution: {
+        type: "OBJECT",
+        properties: {
+          protein: { type: "NUMBER" },
+          fat: { type: "NUMBER" },
+          carbs: { type: "NUMBER" }
+        },
+        required: ["protein", "fat", "carbs"]
+      }
+    },
+    required: ["product_name", "ingredients", "guaranteed_analysis", "intended_life_stage", "contains_toxic", "caloric_distribution"]
+  };
 
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GEMINI_KEY}`;
+    // structured output을 지원하는 최신 gemini-2.5-flash 모델 사용
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
+    
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
+        systemInstruction: { parts: [{ text: systemInstruction }] },
         generationConfig: {
-          temperature: 0.3,
-          maxOutputTokens: 1024,
+          temperature: 0.2,
+          maxOutputTokens: 2048,
+          responseMimeType: "application/json",
+          responseSchema: responseSchema
         },
       }),
     });
@@ -85,12 +141,7 @@ risk_level 기준:
 
     const data = await response.json();
     const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-    const jsonMatch = rawText.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) {
-      console.error('  Failed to parse Gemini response');
-      return null;
-    }
-    return JSON.parse(jsonMatch[0]);
+    return JSON.parse(rawText.trim());
   } catch (err) {
     console.error('  Gemini fetch error:', err.message);
     return null;
@@ -173,11 +224,13 @@ async function processProduct(product) {
   
   console.log(`\n🔬 [${product.name}]`);
   
-  const ingredients = await generateIngredientsWithAI(product.name, petType, subCategory);
-  if (!ingredients || ingredients.length === 0) {
+  const aiData = await generateIngredientsWithAI(product.name, petType, subCategory);
+  if (!aiData || !aiData.ingredients || aiData.ingredients.length === 0) {
     console.log('  ❌ AI 성분 생성 실패');
     return 0;
   }
+
+  const ingredients = aiData.ingredients;
 
   let linked = 0;
   for (const ing of ingredients) {

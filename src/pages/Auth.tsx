@@ -4,6 +4,7 @@ import { Mail, Lock, CheckCircle2 } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { signUpWithEmail, signInWithEmail } from '../lib/supabase';
 import { notify } from '../store/useNotification';
+import { Button } from '../components/Button';
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -158,14 +159,12 @@ export default function Auth() {
           </div>
         </div>
 
-        <button 
-          type="submit" 
-          disabled={isLoading}
-          className="btn btn-primary" 
-          style={{ width: '100%', padding: '18px', borderRadius: '20px', fontWeight: 800, fontSize: '17px', marginTop: '24px', transition: 'all 0.2s' }}
-        >
-          {isLoading ? '처리 중...' : (isLogin ? '로그인' : '회원가입')}
-        </button>
+        <Button
+          type="submit"
+          title={isLogin ? '로그인' : '회원가입'}
+          loading={isLoading}
+          style={{ marginTop: '24px', height: '56px', borderRadius: '20px', fontSize: '17px' }}
+        />
 
         <div style={{ textAlign: 'center', marginTop: '16px' }}>
           <button 

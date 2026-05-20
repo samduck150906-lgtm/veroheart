@@ -40,6 +40,73 @@ const COUPANG_ACCESS_KEY = "d87f5aa5-f003-4928-b46e-9503ab77568a";
 const COUPANG_SECRET_KEY = "f3de518a140a75028d1ad0c8f851f1314da45a84";
 const COUPANG_BASE_URL = "https://api-gateway.coupang.com";
 
+// ──────── 1. Chrome TLS/Headers Spoofer & Proxy Rotation Manager ────────
+function getChromeSpooferHeaders() {
+  const chromeVersions = ['120.0.0.0', '121.0.0.0', '122.0.0.0', '123.0.0.0', '124.0.0.0'];
+  const randomVersion = chromeVersions[Math.floor(Math.random() * chromeVersions.length)];
+  
+  return {
+    'User-Agent': `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${randomVersion} Safari/537.36`,
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+    'Sec-Ch-Ua': `"Chromium";v="${randomVersion.split('.')[0]}", "Not(A:Brand";v="24", "Google Chrome";v="${randomVersion.split('.')[0]}"`,
+    'Sec-Ch-Ua-Mobile': '?0',
+    'Sec-Ch-Ua-Platform': '"Windows"',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'none',
+    'Sec-Fetch-User': '?1',
+    'Upgrade-Insecure-Requests': '1'
+  };
+}
+
+// BrightData or ScrapFly residential proxy URL generator
+function getProxyUrl() {
+  const proxyHost = envConfig['PROXY_HOST'] || process.env.PROXY_HOST;
+  const proxyPort = envConfig['PROXY_PORT'] || process.env.PROXY_PORT;
+  const proxyUser = envConfig['PROXY_USER'] || process.env.PROXY_USER;
+  const proxyPass = envConfig['PROXY_PASS'] || process.env.PROXY_PASS;
+
+  if (proxyHost && proxyPort && proxyUser && proxyPass) {
+    // Return standard proxy URL
+    return `http://${proxyUser}:${proxyPass}@${proxyHost}:${proxyPort}`;
+  }
+  return null; // Local routing fallback
+}
+
+// ──────── 2. Exponential Backoff with Jitter Retry Helper ────────
+async function fetchWithRetry(url, options = {}, retries = 5, delay = 1000) {
+  try {
+    const headers = {
+      ...getChromeSpooferHeaders(),
+      ...(options.headers || {})
+    };
+    
+    // In node fetch, proxy agent can be set if needed, but standard fetch follows default system routing
+    const response = await fetch(url, { ...options, headers });
+    
+    if (!response.ok) {
+      if (response.status === 403 || response.status === 429) {
+        console.warn(` ⚠ [Akamai/Rate Limit detected] Status ${response.status}. Retrying in ${delay}ms...`);
+      } else {
+        throw new Error(`HTTP Error Status: ${response.status}`);
+      }
+    } else {
+      return response;
+    }
+  } catch (error) {
+    if (retries <= 0) {
+      throw new Error(`Failed after maximum retries: ${error.message}`);
+    }
+  }
+  
+  // 지수적 백오프 + 무작위 지터(Jitter)
+  const jitter = Math.random() * 500;
+  const nextDelay = delay * 2 + jitter;
+  await new Promise(resolve => setTimeout(resolve, delay));
+  return fetchWithRetry(url, options, retries - 1, nextDelay);
+}
+
 function generateHmac(method, url, secretKey, accessKey) {
   const parts = url.split('?');
   const path = parts[0];
@@ -73,7 +140,7 @@ async function searchCoupangProducts(keyword, targetCount = 100) {
     const authorization = generateHmac(method, requestUri, COUPANG_SECRET_KEY, COUPANG_ACCESS_KEY);
     
     try {
-      const response = await fetch(url, {
+      const response = await fetchWithRetry(url, {
         method: 'GET',
         headers: {
           "Authorization": authorization,
@@ -81,7 +148,7 @@ async function searchCoupangProducts(keyword, targetCount = 100) {
         }
       });
       
-      if (response.ok) {
+      if (response && response.ok) {
         const data = await response.json();
         const items = data.data?.productData || data.data || [];
         
@@ -101,9 +168,7 @@ async function searchCoupangProducts(keyword, targetCount = 100) {
           break;
         }
       } else {
-        console.error(`Coupang API Error on page ${page}: ${response.status}`);
-        const text = await response.text();
-        console.error(text);
+        console.error(`Coupang API Error on page ${page}`);
         break;
       }
     } catch (error) {

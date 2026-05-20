@@ -1,25 +1,25 @@
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
 
 :root {
-  /* Modern Blue/Indigo Colors */
-  --primary: #4F46E5; /* Indigo */
-  --primary-dark: #3730A3;
-  --primary-light: #EEF2FF;
-  --secondary: #F1F5F9;
-  --accent: #F43F5E;
+  /* Premium Soft HSL Palette (베로로 민트 & 레드) */
+  --primary: #81C995; /* Soft Mint Green */
+  --primary-dark: #66B57D;
+  --primary-light: #F0FAF4;
+  --secondary: #F7F9F8;
+  --accent: #D93025; /* Soft Red */
   
-  --text-dark: #0F172A;
-  --text-muted: #64748B;
-  --text-light: #94A3B8;
+  --text-dark: #111111; /* Near Black */
+  --text-muted: #575B5F; /* Muted Slate */
+  --text-light: #8A9099;
   
   --bg-color: #FFFFFF;
-  --bg-gradient: linear-gradient(135deg, #EEF2FF 0%, #F8FAFC 50%, #F0F9FF 100%);
-  --surface-elevated: #F8FAFC;
+  --bg-gradient: linear-gradient(135deg, #F0FAF4 0%, #FFFFFF 50%, #FCFDFB 100%);
+  --surface-elevated: #F4F6F5;
   
-  /* Traffic Light Colors */
-  --safe: #10B981;    /* Emerald */
-  --warning: #F59E0B; /* Amber */
-  --danger: #EF4444;  /* Red */
+  /* Traffic Light Colors (Hwahae/ToxiPets-inspired) */
+  --safe: #81C995;     /* Soft Mint Green */
+  --warning: #F5A623;  /* Soft Warm Amber */
+  --danger: #D93025;   /* Soft Red */
 
   /* Borders & Shadows */
   --border-radius-sm: 12px;
@@ -161,6 +161,24 @@ h1, h2, h3, h4, h5, h6 {
   animation: fadeIn var(--transition-smooth) forwards;
 }
 
+@keyframes stackPush {
+  from {
+    transform: translate3d(100%, 0, 0);
+    opacity: 0.95;
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+.animate-stack-push {
+  animation: stackPush 0.35s cubic-bezier(0.32, 0.94, 0.6, 1) forwards;
+  background-color: var(--bg-color);
+  position: relative;
+  z-index: 10;
+}
+
 .animate-fade-in-up {
   animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -175,6 +193,16 @@ h1, h2, h3, h4, h5, h6 {
 
 .animate-pulse {
   animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes recallPing {
+  0% { transform: scale(0.95); opacity: 1; }
+  50% { transform: scale(1.35); opacity: 0.55; }
+  100% { transform: scale(0.95); opacity: 1; }
+}
+
+.recall-ping-dot {
+  animation: recallPing 1.25s ease-in-out infinite;
 }
 
 /* Glassmorphism */
@@ -326,6 +354,65 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   justify-content: center;
   border: 1.5px solid rgba(255, 255, 255, 0.96);
+}
+
+/* 5-Tab Floating FAB Scanner Styles */
+.bottom-nav-fab-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 60px;
+  height: 100%;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bottom-nav-fab {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 4px solid #FFFFFF;
+  box-shadow: 0 6px 20px rgba(129, 201, 149, 0.4);
+  transform: translateY(-16px);
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.bottom-nav-fab-wrap:hover .bottom-nav-fab {
+  transform: translateY(-20px) scale(1.08);
+  box-shadow: 0 10px 24px rgba(129, 201, 149, 0.5);
+}
+
+.bottom-nav-fab-wrap:active .bottom-nav-fab {
+  transform: translateY(-12px) scale(0.92);
+  box-shadow: 0 4px 10px rgba(129, 201, 149, 0.3);
+}
+
+.bottom-nav-fab-active .bottom-nav-fab {
+  background: var(--primary-dark);
+  box-shadow: 0 8px 24px rgba(102, 181, 125, 0.6);
+}
+
+.fab-label {
+  transform: translateY(-10px);
+  color: var(--text-light);
+  font-weight: 700;
+  transition: color 0.15s ease;
+}
+
+.bottom-nav-fab-wrap:hover .fab-label {
+  color: var(--text-dark);
+}
+
+.bottom-nav-fab-active .fab-label {
+  color: var(--primary-dark);
+  font-weight: 800;
 }
 
 @supports (padding: max(0px)) {
