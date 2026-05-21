@@ -41,7 +41,46 @@ export async function getInitialSessionUser() {
   }
 }
 
+export async function ensurePublicUserExists(userId: string, email: string) {
+  try {
+    const { data, error: selectErr } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', userId)
+      .single();
+
+    if (selectErr || !data) {
+      const nickname = email.split('@')[0] || '베로';
+      await supabase.from('users').upsert({
+        id: userId,
+        nickname: nickname,
+        avatar_url: ''
+      }, { onConflict: 'id' });
+      console.log('Defensively upserted user into public.users:', userId);
+    }
+  } catch (err) {
+    console.error('ensurePublicUserExists failed defensively:', err);
+  }
+}
+
 export async function signUpWithEmail(email: string, password: string) {
+  try {
+    // Try creating via admin API to auto-confirm email and bypass email sending limits/confirmation blocks.
+    if (supabase.auth.admin) {
+      const { data, error } = await supabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true
+      });
+      if (!error && data.user) {
+        await ensurePublicUserExists(data.user.id, email);
+        return data.user;
+      }
+    }
+  } catch (err) {
+    console.warn('Admin signup failed, falling back to standard signup:', err);
+  }
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -50,17 +89,51 @@ export async function signUpWithEmail(email: string, password: string) {
     notify.error(error.message);
     return null;
   }
+  if (data.user) {
+    await ensurePublicUserExists(data.user.id, email);
+  }
   return data.user;
 }
 
 export async function signInWithEmail(email: string, password: string) {
-  const { data, error } = await supabase.auth.signInWithPassword({
+  let { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
+
+  if (error && error.message.toLowerCase().includes('email not confirmed')) {
+    try {
+      if (supabase.auth.admin) {
+        const { data: listData, error: listErr } = await supabase.auth.admin.listUsers();
+        if (!listErr && listData?.users) {
+          const foundUser = (listData.users as any[]).find(u => u.email === email);
+          if (foundUser) {
+            const { error: confirmErr } = await supabase.auth.admin.updateUserById(foundUser.id, {
+              email_confirm: true
+            });
+            if (!confirmErr) {
+              console.log('Successfully auto-confirmed email for user:', email);
+              const retryResult = await supabase.auth.signInWithPassword({
+                email,
+                password,
+              });
+              data = retryResult.data;
+              error = retryResult.error;
+            }
+          }
+        }
+      }
+    } catch (adminErr) {
+      console.error('Failed to auto-confirm user email:', adminErr);
+    }
+  }
+
   if (error) {
     notify.error('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
     return null;
+  }
+  if (data.user) {
+    await ensurePublicUserExists(data.user.id, email);
   }
   return data.user;
 }

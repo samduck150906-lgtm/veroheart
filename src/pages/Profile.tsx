@@ -5,22 +5,52 @@ import { User, ChevronRight, Calendar, ShoppingBag, FileText, Activity, LogOut, 
 import { Link, useNavigate } from 'react-router-dom';
 import { TossCard, TossInput, TossButton, TossChip, TossSectionTitle } from '../components/TossUI';
 import { Button } from '../components/Button';
-const signOut = async () => {};
-const PROFILE_STEP_META = [{ title: 'Info', prompt: '' }, { title: 'Species', prompt: '' }, { title: 'Age', prompt: '' }, { title: 'Weight', prompt: '' }, { title: 'Allergies', prompt: '' }, { title: 'Health', prompt: '' }];
-const profileStep = 0;
-const concernOptions: string[] = [];
-const isLoggedIn = true;
-const favorites: string[] = [];
-const favoriteProducts: any[] = [];
-const ProductCard = ({ product }: { product: any }) => <div />;
+import ProductCard from '../components/ProductCard';
+import { notify } from '../store/useNotification';
+
+const PROFILE_STEP_META = [
+  { title: '이름', prompt: '반려동물의 이름을 알려주세요.' },
+  { title: '종류', prompt: '반려동물의 종류를 알려주세요.' },
+  { title: '나이', prompt: '반려동물의 나이를 알려주세요.' },
+  { title: '체중', prompt: '반려동물의 체중을 알려주세요.' },
+  { title: '알레르기', prompt: '피해야 할 알레르기 성분이 있나요?' },
+  { title: '건강 고민', prompt: '어떤 건강 고민이 있나요?' }
+];
+
+const concernOptions = [
+  '비만', '관절 질환', '신장 질환', '당뇨', '심장 질환',
+  '피부 민감', '소화 예민', '구강 질환', '암/종양', '눈/귀 질환'
+];
+
 type SupabaseOrderItem = any;
 
 export default function Profile() {
-  const { userId, profile, updateProfile, orders, fetchOrders, reports, fetchReports, logout } = useStore();
-  const [activeTab, setActiveTab] = useState<'info' | 'orders' | 'reports'>('info');
+  const { 
+    userId, 
+    isLoggedIn, 
+    profile, 
+    updateProfile, 
+    orders, 
+    fetchOrders, 
+    reports, 
+    fetchReports, 
+    logout,
+    favorites,
+    products
+  } = useStore();
+
+  const [activeTab, setActiveTab] = useState<'info' | 'orders' | 'reports' | 'favorites'>('info');
   const [formData, setFormData] = useState(profile);
+  const [profileStep, setProfileStep] = useState(0);
   const navigate = useNavigate();
   
+  // Sync state if profile changes
+  useEffect(() => {
+    if (profile) {
+      setFormData(profile);
+    }
+  }, [profile]);
+
   useEffect(() => {
     if (!userId) return;
     if (activeTab === 'orders') fetchOrders();
@@ -28,7 +58,7 @@ export default function Profile() {
   }, [activeTab, fetchOrders, fetchReports, userId]);
 
   const handleSignOut = async () => {
-    await signOut();
+    await logout();
     navigate('/');
   };
 
@@ -36,8 +66,22 @@ export default function Profile() {
     await updateProfile(formData);
   };
 
+  const handleNext = () => {
+    if (profileStep < PROFILE_STEP_META.length - 1) {
+      setProfileStep(prev => prev + 1);
+    } else {
+      handleSave();
+    }
+  };
+
+  const handlePrev = () => {
+    if (profileStep > 0) {
+      setProfileStep(prev => prev - 1);
+    }
+  };
+
   const toggleArrayItem = (field: 'healthConcerns' | 'allergies', value: string) => {
-    const list = formData[field];
+    const list = formData[field] || [];
     if (list.includes(value)) {
       setFormData({ ...formData, [field]: list.filter(i => i !== value) });
     } else {
@@ -47,6 +91,7 @@ export default function Profile() {
 
   const stepCount = PROFILE_STEP_META.length;
   const step = PROFILE_STEP_META[profileStep];
+  const favoriteProducts = products.filter(p => favorites.includes(p.id));
 
   const profileStepBody = (() => {
     switch (profileStep) {
@@ -290,11 +335,23 @@ export default function Profile() {
 
           <div style={{ marginBottom: '28px' }}>{profileStepBody}</div>
 
-          <Button 
-            title="변경 사항 저장"
-            style={{ borderRadius: '14px', fontSize: '16px' }} 
-            onClick={handleSave}
-          />
+          <div style={{ display: 'flex', gap: '10px' }}>
+            {profileStep > 0 && (
+              <TossButton 
+                variant="outline" 
+                onClick={handlePrev}
+                style={{ flex: 1, height: '48px', fontSize: '15px' }}
+              >
+                이전
+              </TossButton>
+            )}
+            <TossButton 
+              onClick={handleNext}
+              style={{ flex: 2, height: '48px', fontSize: '15px' }}
+            >
+              {profileStep === stepCount - 1 ? '변경 사항 저장' : '다음'}
+            </TossButton>
+          </div>
           
           <div style={{ marginTop: '32px', borderTop: '1px solid #E5E8EB', paddingTop: '24px' }}>
             <button 

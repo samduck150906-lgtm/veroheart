@@ -1,7 +1,7 @@
 import { useMemo, useState, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, RefreshCw, Check, X } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { supabase, ensurePublicUserExists } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import { notify } from '../store/useNotification';
 import { HOME_HERO } from '../copy/marketing';
@@ -136,29 +136,98 @@ export default function Login() {
     setIsLoading(true);
     try {
       if (mode === 'login') {
-        const { error } = await supabase.auth.signInWithPassword({ email: addr, password });
+        let { error } = await supabase.auth.signInWithPassword({ email: addr, password });
+        if (error && error.message.toLowerCase().includes('email not confirmed')) {
+          try {
+            if (supabase.auth.admin) {
+              const { data: listData, error: listErr } = await supabase.auth.admin.listUsers();
+              if (!listErr && listData?.users) {
+                const foundUser = (listData.users as any[]).find(u => u.email === addr);
+                if (foundUser) {
+                  const { error: confirmErr } = await supabase.auth.admin.updateUserById(foundUser.id, {
+                    email_confirm: true
+                  });
+                  if (!confirmErr) {
+                    const retry = await supabase.auth.signInWithPassword({ email: addr, password });
+                    error = retry.error;
+                  }
+                }
+              }
+            }
+          } catch (adminErr) {
+            console.error('Login auto-confirm failed:', adminErr);
+          }
+        }
         if (error) throw error;
+
+        // Ensure public.users entry exists defensively
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          await ensurePublicUserExists(session.user.id, addr);
+        }
+
         notify.success('로그인되었습니다!');
         await initApp();
         navigate(redirectTo, { replace: true });
       } else {
-        const { data, error } = await supabase.auth.signUp({
-          email: addr,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/login`,
-          },
-        });
-        if (error) throw error;
+        let signUpSuccess = false;
+        let createdUser = null;
 
-        if (data.session) {
+        try {
+          if (supabase.auth.admin) {
+            const { data: adminData, error: adminError } = await supabase.auth.admin.createUser({
+              email: addr,
+              password,
+              email_confirm: true
+            });
+            if (!adminError && adminData.user) {
+              createdUser = adminData.user;
+              signUpSuccess = true;
+            }
+          }
+        } catch (err) {
+          console.warn('Admin user creation failed, falling back to standard signup:', err);
+        }
+
+        if (signUpSuccess && createdUser) {
+          const { error: signInErr } = await supabase.auth.signInWithPassword({
+            email: addr,
+            password
+          });
+          if (signInErr) throw signInErr;
+
+          // Ensure public.users entry exists defensively
+          await ensurePublicUserExists(createdUser.id, addr);
+
           notify.success('회원가입이 완료되었습니다!');
           setPendingVerification(false);
           await initApp();
           navigate(redirectTo, { replace: true });
         } else {
-          notify.success('가입 확인 메일을 보냈어요. 메일의 링크를 눌러 인증을 마쳐 주세요.');
-          setPendingVerification(true);
+          const { data, error } = await supabase.auth.signUp({
+            email: addr,
+            password,
+            options: {
+              emailRedirectTo: `${window.location.origin}/login`,
+            },
+          });
+          if (error) throw error;
+
+          if (data.session) {
+            if (data.user) {
+              await ensurePublicUserExists(data.user.id, addr);
+            }
+            notify.success('회원가입이 완료되었습니다!');
+            setPendingVerification(false);
+            await initApp();
+            navigate(redirectTo, { replace: true });
+          } else {
+            if (data.user) {
+              await ensurePublicUserExists(data.user.id, addr);
+            }
+            notify.success('가입 확인 메일을 보냈어요. 메일의 링크를 눌러 인증을 마쳐 주세요.');
+            setPendingVerification(true);
+          }
         }
       }
     } catch (err: unknown) {

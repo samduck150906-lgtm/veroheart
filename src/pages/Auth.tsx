@@ -40,9 +40,15 @@ export default function Auth() {
       } else {
         const user = await signUpWithEmail(email, password);
         if (user) {
-          notify.success('회원가입이 완료되었습니다!');
-          await initApp();
-          navigate('/profile'); // Redirect to profile to fill out pet info
+          const loggedInUser = await signInWithEmail(email, password);
+          if (loggedInUser) {
+            notify.success('회원가입이 완료되었습니다!');
+            await initApp();
+            navigate('/profile'); // Redirect to profile to fill out pet info
+          } else {
+            notify.success('회원가입이 완료되었습니다. 로그인해주세요.');
+            setIsLogin(true);
+          }
         }
       }
     } catch (err) {

@@ -18,7 +18,7 @@ import PetProfilePage from './pages/PetProfile';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Refund from './pages/Refund';
-import Auth from './pages/Auth';
+import Login from './pages/Login';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
@@ -119,7 +119,8 @@ function App() {
               <Route path="search" element={<Search />} />
               <Route path="scanner" element={<Scanner />} />
               <Route path="community" element={<Community />} />
-              <Route path="auth" element={<Auth />} />
+              <Route path="auth" element={<Login />} />
+              <Route path="login" element={<Login />} />
               <Route path="profile" element={<Profile />} />
               <Route path="comparison" element={<Comparison />} />
               <Route path="ranking" element={<Ranking />} />
