@@ -65,20 +65,33 @@ export async function ensurePublicUserExists(userId: string, email: string) {
 
 export async function signUpWithEmail(email: string, password: string) {
   try {
-    // Try creating via admin API to auto-confirm email and bypass email sending limits/confirmation blocks.
-    if (supabase.auth.admin) {
-      const { data, error } = await supabase.auth.admin.createUser({
+    // Call our secure server-side admin-auth Edge Function
+    const functionUrl = `${supabaseUrl}/functions/v1/admin-auth`;
+    const response = await fetch(functionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(supabaseKey ? { 'Authorization': `Bearer ${supabaseKey}` } : {})
+      },
+      body: JSON.stringify({
+        action: 'signup',
         email,
-        password,
-        email_confirm: true
-      });
-      if (!error && data.user) {
-        await ensurePublicUserExists(data.user.id, email);
-        return data.user;
+        password
+      }),
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      if (result.user) {
+        await ensurePublicUserExists(result.user.id, email);
+        return result.user;
       }
+    } else {
+      const errRes = await response.json().catch(() => ({}));
+      console.warn('Edge signup failed:', errRes.error);
     }
   } catch (err) {
-    console.warn('Admin signup failed, falling back to standard signup:', err);
+    console.warn('Edge signup failed, falling back to standard signup:', err);
   }
 
   const { data, error } = await supabase.auth.signUp({
@@ -103,28 +116,34 @@ export async function signInWithEmail(email: string, password: string) {
 
   if (error && error.message.toLowerCase().includes('email not confirmed')) {
     try {
-      if (supabase.auth.admin) {
-        const { data: listData, error: listErr } = await supabase.auth.admin.listUsers();
-        if (!listErr && listData?.users) {
-          const foundUser = (listData.users as any[]).find(u => u.email === email);
-          if (foundUser) {
-            const { error: confirmErr } = await supabase.auth.admin.updateUserById(foundUser.id, {
-              email_confirm: true
-            });
-            if (!confirmErr) {
-              console.log('Successfully auto-confirmed email for user:', email);
-              const retryResult = await supabase.auth.signInWithPassword({
-                email,
-                password,
-              });
-              data = retryResult.data;
-              error = retryResult.error;
-            }
-          }
-        }
+      // Call our secure server-side admin-auth Edge Function to confirm the email
+      const functionUrl = `${supabaseUrl}/functions/v1/admin-auth`;
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(supabaseKey ? { 'Authorization': `Bearer ${supabaseKey}` } : {})
+        },
+        body: JSON.stringify({
+          action: 'confirm',
+          email
+        }),
+      });
+
+      if (response.ok) {
+        console.log('Successfully auto-confirmed email via Edge Function for user:', email);
+        const retryResult = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        data = retryResult.data;
+        error = retryResult.error;
+      } else {
+        const errRes = await response.json().catch(() => ({}));
+        console.warn('Edge email confirmation failed:', errRes.error);
       }
     } catch (adminErr) {
-      console.error('Failed to auto-confirm user email:', adminErr);
+      console.error('Failed to auto-confirm user email via Edge Function:', adminErr);
     }
   }
 
@@ -137,6 +156,7 @@ export async function signInWithEmail(email: string, password: string) {
   }
   return data.user;
 }
+
 
 export async function signOut() {
   const { error } = await supabase.auth.signOut();
