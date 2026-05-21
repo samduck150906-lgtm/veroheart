@@ -97,7 +97,7 @@ export default function BottomSheetFilters({
     >
       <div
         className="bottom-sheet-container"
-        style={{{
+        style={{
           background: 'var(--surface-elevated)',
           borderTopLeftRadius: '18px',
           borderTopRightRadius: '18px',
@@ -108,7 +108,7 @@ export default function BottomSheetFilters({
           padding: '24px',
           boxShadow: 'var(--shadow-lg)',
           animation: 'slideUp 0.3s ease-out',
-        }}}
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>

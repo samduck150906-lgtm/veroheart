@@ -54,6 +54,9 @@ interface StoreState {
   reports: AnalysisReportRow[];
   fetchReports: () => Promise<void>;
   logout: () => Promise<void>;
+  // New scanner mode state
+  scannerMode: 'barcode' | 'text';
+  setScannerMode: (mode: 'barcode' | 'text') => void;
 }
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -67,6 +70,8 @@ export const useStore = create<StoreState>((set, get) => ({
   recentViews: [],
   isLoadingProducts: false,
   isInitializing: true,
+  scannerMode: 'barcode' as 'barcode' | 'text',
+  setScannerMode: (mode: 'barcode' | 'text') => set({ scannerMode: mode }),
 
   signOut: async () => {
     await supabaseSignOut();

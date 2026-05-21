@@ -12,6 +12,8 @@ import Scanner from './pages/Scanner';
 import Community from './pages/Community';
 import Ranking from './pages/Ranking';
 import Comparison from './pages/Comparison';
+import AnalysisResult from './pages/AnalysisResult';
+import PetProfilePage from './pages/PetProfile';
 // import Cart from './pages/Cart';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
@@ -126,6 +128,8 @@ function App() {
               {/* <Route path="success" element={<Success />} /> */}
               {/* <Route path="fail" element={<Fail />} /> */}
               <Route path="product/:id" element={<Detail />} />
+              <Route path="analysis" element={<AnalysisResult />} />
+              <Route path="pet-profile" element={<PetProfilePage />} />
               <Route path="terms" element={<Terms />} />
               <Route path="privacy" element={<Privacy />} />
               <Route path="refund" element={<Refund />} />
