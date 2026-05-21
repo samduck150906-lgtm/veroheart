@@ -17,7 +17,9 @@ import {
   Shield,
   MessageSquare,
   Star,
-  Trash2
+  Trash2,
+  Sparkles,
+  ChevronRight
 } from 'lucide-react';
 const favorites: string[] = [];
 const trackRecentView = (id: string) => {};
@@ -290,6 +292,44 @@ export default function Detail() {
           )}
         </div>
       </TossCard>
+
+      <button
+        onClick={() => navigate('/analysis', { state: { product } })}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          width: '100%',
+          padding: '16px 20px',
+          background: 'linear-gradient(135deg, #6366F1 0%, #3B82F6 100%)',
+          color: '#ffffff',
+          border: 'none',
+          borderRadius: '20px',
+          boxShadow: '0 8px 24px rgba(99, 102, 241, 0.22)',
+          cursor: 'pointer',
+          marginBottom: '24px',
+          transition: 'all 0.2s ease',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'translateY(-2px)';
+          e.currentTarget.style.boxShadow = '0 12px 28px rgba(99, 102, 241, 0.32)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'none';
+          e.currentTarget.style.boxShadow = '0 8px 24px rgba(99, 102, 241, 0.22)';
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ background: 'rgba(255,255,255,0.18)', padding: '8px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Sparkles size={20} color="#FFD700" />
+          </div>
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ fontSize: '15px', fontWeight: 800, letterSpacing: '-0.02em', color: '#ffffff' }}>AI 프리미엄 영양 리포트 보기</div>
+            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>DMB 건물기준 변환 · 급여량 계산기 · 유해성분 탐지</div>
+          </div>
+        </div>
+        <ChevronRight size={20} color="#ffffff" />
+      </button>
 
       <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
         <button className="btn btn-outline" style={{ flex: 1, height: '56px', borderRadius: 'var(--border-radius-md)' }} onClick={() => {
