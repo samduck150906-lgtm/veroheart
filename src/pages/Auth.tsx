@@ -56,7 +56,7 @@ export default function Auth() {
     <div className="animate-fade-in" style={{ padding: '40px 20px', minHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
       <div style={{ marginBottom: '40px' }}>
         <h1 style={{ fontSize: '28px', fontWeight: 900, color: 'var(--text-dark)', marginBottom: '12px', letterSpacing: '-0.03em', whiteSpace: 'pre-line', lineHeight: 1.35 }}>
-          {isLogin ? '반갑습니다!\n베로하트입니다.' : '베로하트와 함께\n아이의 건강을 챙겨요!'}
+          {isLogin ? '반갑습니다!\n베로로입니다.' : '베로로와 함께\n아이의 건강을 챙겨요!'}
         </h1>
         <p style={{ fontSize: '15px', color: 'var(--text-muted)' }}>
           {isLogin ? '가입하신 이메일로 로그인해주세요.' : '회원가입을 위해 이메일을 입력해주세요.'}

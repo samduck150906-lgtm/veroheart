@@ -55,7 +55,7 @@ function Footer() {
             color: '#292524',
           }}
         >
-          Petty Community powered by VeRoRo
+          베로로(Veroro) · 우리 아이 맞춤 영양 케어
         </div>
 
         <p

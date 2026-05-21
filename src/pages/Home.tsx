@@ -66,34 +66,86 @@ export default function Home() {
     return matchesQuery && matchesAge && matchesIngredient && matchesAllergen;
   });
 
-  // Personalized Recommendations: Filter by species and prioritize health concerns
+  // 1. Identify expected pet type from profile
+  const expectedPetType = profile.species === 'Cat' ? 'cat' : 'dog';
+
+  // 2. Strict Curation Filter for personalRecs (Hero)
   const personalRecs = products
-    .filter(p => !p.mainCategory?.includes('사료') || 
-      (profile.species === 'Dog' ? p.targetPetType === 'dog' : p.targetPetType === 'cat') ||
-      p.targetPetType === 'all'
-    )
+    // STAGE A: Enforce Species Match Across ALL categories (no just dry feed)
+    .filter(p => p.targetPetType === expectedPetType || p.targetPetType === 'all')
+    // STAGE B: Filter Out Allergens
     .filter(p => {
-      const hasDirectMatch = p.healthConcerns?.some(c => profile.healthConcerns.includes(c));
-      const hasIngredientMatch = p.ingredients.some(ing => profile.healthConcerns.some(c => ing.purpose.includes(c)));
-      return hasDirectMatch || hasIngredientMatch;
+      if (!profile.allergies || profile.allergies.length === 0) return true;
+      const hasAllergenInIngredients = p.ingredients?.some(ing => 
+        profile.allergies.some(allergen => 
+          ing.nameKo?.includes(allergen) || ing.nameEn?.toLowerCase().includes(allergen.toLowerCase())
+        )
+      );
+      const hasAllergenInList = p.allergens?.some(a => 
+        profile.allergies.some(allergen => a.includes(allergen))
+      );
+      return !hasAllergenInIngredients && !hasAllergenInList;
+    })
+    // STAGE C: Prioritize Health Concerns (e.g. skin, kidney, joints, digestion, etc.)
+    .sort((a, b) => {
+      const aMatches = a.healthConcerns?.filter(c => profile.healthConcerns.includes(c)).length || 0;
+      const bMatches = b.healthConcerns?.filter(c => profile.healthConcerns.includes(c)).length || 0;
+      
+      if (aMatches !== bMatches) {
+        return bMatches - aMatches; // Prioritize more health concern matches
+      }
+      
+      // Secondary: Sort by high rating
+      return (b.averageRating ?? 0) - (a.averageRating ?? 0);
     })
     .slice(0, 4);
 
-  const trendingProducts = [...products]
-    .sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
-    .slice(0, 8);
+  // 3. Populated Backfill for personalRecs to ensure it's never empty
+  if (personalRecs.length < 4) {
+    const backfillCount = 4 - personalRecs.length;
+    const existingIds = new Set(personalRecs.map(p => p.id));
+    const backfill = products
+      .filter(p => (p.targetPetType === expectedPetType || p.targetPetType === 'all') && !existingIds.has(p.id))
+      .filter(p => {
+        if (!profile.allergies || profile.allergies.length === 0) return true;
+        const hasAllergenInIngredients = p.ingredients?.some(ing => 
+          profile.allergies.some(allergen => 
+            ing.nameKo?.includes(allergen) || ing.nameEn?.toLowerCase().includes(allergen.toLowerCase())
+          )
+        );
+        const hasAllergenInList = p.allergens?.some(a => 
+          profile.allergies.some(allergen => a.includes(allergen))
+        );
+        return !hasAllergenInIngredients && !hasAllergenInList;
+      })
+      .sort((a, b) => (b.averageRating ?? 0) - (a.averageRating ?? 0))
+      .slice(0, backfillCount);
+    
+    personalRecs.push(...backfill);
+  }
 
+  // 4. Strict Species-Matching Trending Feed
+  const trendingProducts = [...products]
+    .filter(p => p.targetPetType === expectedPetType || p.targetPetType === 'all')
+    .sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
+    .slice(0, 5); // condensed down to 5 to save scroll length
+
+  // 5. Strict Species-Matching Concern Feed
   const concernProducts = [...products]
+    .filter(p => p.targetPetType === expectedPetType || p.targetPetType === 'all')
     .filter(p => (p.healthConcerns ?? []).some(c => profile.healthConcerns.includes(c)))
     .sort((a, b) => (b.averageRating ?? 0) - (a.averageRating ?? 0))
-    .slice(0, 8);
+    .slice(0, 5); // condensed down to 5
 
+  // 6. Strict Species-Matching Budget Feed
   const budgetProducts = [...products]
+    .filter(p => p.targetPetType === expectedPetType || p.targetPetType === 'all')
     .filter(p => (p.price ?? 0) <= 30000)
     .sort((a, b) => (b.averageRating ?? 0) - (a.averageRating ?? 0))
-    .slice(0, 8);
+    .slice(0, 5); // condensed down to 5
 
-  const topCommunityPicks = trendingProducts.slice(0, 3);
+  const topCommunityPicks = []; // Removed for vertical space optimization
+
 
   const quickActions = [
     {
@@ -421,46 +473,6 @@ export default function Home() {
         </button>
       </section>
 
-      {isLoggedIn && (
-        <section
-          style={{
-            marginBottom: '18px',
-            padding: '18px',
-            borderRadius: '18px',
-            background: '#ffffff',
-            border: '1px solid rgba(28, 25, 23, 0.08)',
-            boxShadow: 'var(--shadow-card)',
-          }}
-        >
-          <div className="ui-section-head">
-            <div>
-              <Text variant="caption" color="textGray" fontWeight="semibold" className="ui-section-kicker" style={{ display: 'block' }}>my pet community</Text>
-              <Text variant="h2" as="h2">
-                {profile.name} 맞춤 피드
-              </Text>
-            </div>
-            <Link to="/profile" className="ui-text-button" style={{ textDecoration: 'none' }}>
-              수정하기 <ChevronRight size={14} />
-            </Link>
-          </div>
-
-          <Text variant="body" color="textGray" style={{ marginBottom: '14px', fontSize: '13px' }}>
-            {profile.healthConcerns.length > 0
-              ? profile.healthConcerns.slice(0, 3).join(' · ')
-              : '프로필에서 건강 고민을 선택하면 피드가 더 정확해져요.'}
-          </Text>
-
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <TossChip active size="sm">{profile.species === 'Cat' ? 'Cat parent' : 'Dog parent'}</TossChip>
-            {profile.healthConcerns.length > 0
-              ? profile.healthConcerns.slice(0, 3).map((concern) => (
-                  <TossChip key={concern} size="sm">{concern}</TossChip>
-                ))
-              : <TossChip size="sm">건강 고민 설정 필요</TossChip>}
-          </div>
-        </section>
-      )}
-
       {/* Trending Products - SHOW FIRST */}
       <HorizontalProductSection
         title="급상승 랭킹"
@@ -484,142 +496,86 @@ export default function Home() {
         />
       )}
 
-      <section style={{ marginBottom: '18px' }}>
-        <TossSectionTitle title="바로 가기" style={{ marginBottom: '12px' }} />
-        <div className="ui-grid-2">
+      {/* Sleek, Premium Compact Single-row Quick Actions for maximum vertical space optimization */}
+      <section style={{ marginBottom: '14px', padding: '0 4px' }}>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(4, 1fr)', 
+          gap: '12px', 
+          background: '#FFFFFF',
+          borderRadius: '16px',
+          padding: '14px 10px',
+          border: '1px solid rgba(0,0,0,0.04)',
+          boxShadow: 'var(--shadow-sm)'
+        }}>
           {quickActions.map((item) => (
             <button
               key={item.title}
               type="button"
-              className="ui-action-card"
               onClick={item.onClick}
-              style={{ background: '#FFFFFF' }}
+              style={{ 
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '4px 0',
+                outline: 'none',
+                transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
             >
-              <span className="ui-icon-pill" style={{ background: item.accent, marginBottom: '12px' }}>
+              <span style={{ 
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '42px',
+                height: '42px',
+                borderRadius: '14px',
+                background: item.accent,
+                marginBottom: '6px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
+              }}>
                 {item.icon}
               </span>
-              <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-dark)', marginBottom: '4px' }}>{item.title}</div>
-              {item.description ? (
-                <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500, lineHeight: 1.5 }}>
-                  {item.description}
-                </p>
-              ) : null}
+              <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-dark)' }}>{item.title}</div>
             </button>
           ))}
         </div>
       </section>
 
-      <section
-        style={{
-          marginBottom: '22px',
-          padding: '18px',
-          borderRadius: '18px',
-          background: 'var(--primary-light)',
-          border: '1px solid rgba(79, 70, 229, 0.12)',
-        }}
-      >
-        <Text variant="caption" color="primary" fontWeight="bold" style={{ display: 'block', marginBottom: '6px', letterSpacing: '0.04em' }}>
-          VIRAL TEST CAMPAIGN
-        </Text>
-        <Text variant="h2" as="h2" style={{ fontSize: '17px', marginBottom: '8px' }}>
-          {VIRAL_LANDING_COPY.hero.headline}
-        </Text>
-        <Text variant="body" color="textGray" style={{ fontSize: '13px', marginBottom: '12px' }}>
-          {VIRAL_LANDING_COPY.hero.sub}
-        </Text>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => navigate('/event/personality-quiz')}
-            style={{ borderRadius: '12px', height: '44px', fontSize: '13px', fontWeight: 600 }}
-          >
-            {VIRAL_LANDING_COPY.hero.ctaPrimary}
-          </button>
-          <button
-            type="button"
-            className="btn btn-outline"
-            onClick={() => navigate('/event/personality-quiz')}
-            style={{ borderRadius: '12px', height: '44px', fontSize: '13px', fontWeight: 600 }}
-          >
-            {VIRAL_LANDING_COPY.hero.ctaSecondary}
-          </button>
-        </div>
-      </section>
-
       {featuredEvent && (
-        <section style={{ marginBottom: '26px' }}>
+        <section style={{ marginBottom: '20px' }}>
           <TossSectionTitle
-            title="커뮤니티 공지"
+            title="베로로 새로운 소식"
             subtitle="놓치기 쉬운 이벤트와 쿠폰 소식을 한 번에"
-            style={{ marginBottom: '12px' }}
+            style={{ marginBottom: '10px' }}
           />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {visibleEvents.map(ev => (
-              <div key={ev.id} className="ui-list-card" style={{ alignItems: 'flex-start', position: 'relative' }}>
+              <div key={ev.id} className="ui-list-card" style={{ alignItems: 'flex-start', position: 'relative', padding: '12px 14px' }}>
                 <div className="ui-icon-pill" style={{ background: 'rgba(245, 158, 11, 0.14)', flexShrink: 0 }}>
                   <Tag size={18} color="#B45309" />
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: 0, paddingRight: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', flexWrap: 'wrap' }}>
                     <span className="ui-badge ui-badge-dark">{ev.badge}</span>
                     {ev.code && <span className="ui-badge ui-badge-soft">{ev.code}</span>}
                   </div>
-                  <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-dark)', marginBottom: '4px' }}>{ev.title}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500, lineHeight: 1.55 }}>{ev.desc}</div>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '3px' }}>{ev.title}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500, lineHeight: 1.45 }}>{ev.desc}</div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setClosedEvents(prev => [...prev, ev.id])}
-                  style={{ position: 'absolute', top: '12px', right: '12px', background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF' }}
+                  style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF' }}
                   aria-label="공지 닫기"
                 >
-                  <X size={16} />
+                  <X size={14} />
                 </button>
               </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {topCommunityPicks.length > 0 && (
-        <section style={{ marginBottom: '30px' }}>
-          <TossSectionTitle
-            title="지금 많이 보는 커뮤니티 픽"
-            subtitle="후기와 반응이 빠르게 모이는 제품"
-            right={(
-              <button type="button" className="ui-text-button" onClick={() => navigate('/ranking')}>
-                전체 랭킹 <ChevronRight size={14} />
-              </button>
-            )}
-            style={{ marginBottom: '12px' }}
-          />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {topCommunityPicks.map((product, index) => (
-              <button
-                key={product.id}
-                type="button"
-                className="ui-list-card"
-                onClick={() => navigate(`/product/${product.id}`)}
-                style={{ textAlign: 'left', background: '#FFFFFF', border: 'none', cursor: 'pointer' }}
-              >
-                <div className="ui-rank-index">{index + 1}</div>
-                <ProductImage
-                  src={product.imageUrl}
-                  alt={product.name}
-                  style={{ width: '62px', height: '62px', borderRadius: '18px', objectFit: 'cover', flexShrink: 0 }}
-                />
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#8A9099', marginBottom: '4px' }}>{product.brand}</div>
-                  <div className="line-clamp-2" style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-dark)', lineHeight: 1.45, marginBottom: '6px' }}>
-                    {product.name}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <span className="ui-badge ui-badge-soft">★ {product.averageRating}</span>
-                    <span className="ui-badge ui-badge-muted">리뷰 {product.reviewsCount}</span>
-                  </div>
-                </div>
-              </button>
             ))}
           </div>
         </section>
@@ -952,30 +908,30 @@ function HorizontalProductSection({
   if (products.length === 0) return null;
 
   return (
-    <section style={{ marginBottom: '30px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', gap: '10px' }}>
+    <section style={{ marginBottom: '22px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', gap: '10px' }}>
         <div>
-          <h2 style={{ fontSize: '17px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
+          <h2 style={{ fontSize: '16.5px', marginBottom: '3px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}>
             {icon}
             {title}
           </h2>
           <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500, margin: 0 }}>{subtitle}</p>
         </div>
-        <button onClick={onMore} className="ui-text-button" style={{ flexShrink: 0 }}>
-          더보기 <ChevronRight size={15} />
+        <button onClick={onMore} className="ui-text-button" style={{ flexShrink: 0, fontSize: '12.5px' }}>
+          더보기 <ChevronRight size={14} />
         </button>
       </div>
-      <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '6px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+      <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
         {products.map((product, idx) => (
-          <div key={product.id} style={{ flex: '0 0 180px', position: 'relative' }}>
-            <div style={{ position: 'absolute', top: '18px', left: '18px', zIndex: 2 }}>
+          <div key={product.id} style={{ flex: '0 0 172px', position: 'relative' }}>
+            <div style={{ position: 'absolute', top: '14px', left: '14px', zIndex: 2 }}>
               <span style={{ 
                 background: 'rgba(79, 70, 229, 0.9)', 
                 color: '#ffffff', 
-                fontSize: '11px', 
+                fontSize: '10.5px', 
                 fontWeight: 800, 
-                padding: '4px 8px', 
-                borderRadius: '8px',
+                padding: '3px 7px', 
+                borderRadius: '6px',
                 boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
               }}>
                 {idx + 1}

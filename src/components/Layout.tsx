@@ -59,7 +59,7 @@ export default function Layout() {
                   marginBottom: '6px',
                 }}
               >
-                Petty Community
+                베로로(Veroro)
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', minWidth: 0 }}>
                 <span
