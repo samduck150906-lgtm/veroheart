@@ -145,10 +145,11 @@ export default function Profile() {
                   borderRadius: '999px',
                   fontSize: '14px',
                   fontWeight: 700,
-                  border: formData.age === age ? 'none' : '1px solid #E5E7EB',
-                  backgroundColor: formData.age === age ? 'var(--primary)' : '#fff',
-                  color: formData.age === age ? '#111827' : 'var(--text-dark)',
+                  border: formData.age === age ? 'none' : '1px solid #E2E8F0',
+                  backgroundColor: formData.age === age ? 'var(--primary-dark)' : '#FFFFFF',
+                  color: formData.age === age ? '#FFFFFF' : 'var(--text-dark)',
                   cursor: 'pointer',
+                  transition: 'all 0.2s',
                 }}
               >
                 {label}

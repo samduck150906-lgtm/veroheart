@@ -556,8 +556,8 @@ export default function Home() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {visibleEvents.map(ev => (
               <div key={ev.id} className="ui-list-card" style={{ alignItems: 'flex-start', position: 'relative', padding: '12px 14px' }}>
-                <div className="ui-icon-pill" style={{ background: 'rgba(245, 158, 11, 0.14)', flexShrink: 0 }}>
-                  <Tag size={18} color="#B45309" />
+                <div className="ui-icon-pill" style={{ background: 'rgba(79, 70, 229, 0.1)', flexShrink: 0 }}>
+                  <Tag size={18} color="#4F46E5" />
                 </div>
                 <div style={{ flex: 1, minWidth: 0, paddingRight: '16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', flexWrap: 'wrap' }}>

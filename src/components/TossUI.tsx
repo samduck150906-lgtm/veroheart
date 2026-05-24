@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { Search as SearchIcon, X } from 'lucide-react';
+import { Search as SearchIcon, X, SlidersHorizontal } from 'lucide-react';
 
 type TossCardProps = {
   children: ReactNode;
@@ -57,9 +57,9 @@ export function TossButton({
         }
       : variant === 'soft'
         ? {
-            background: '#FFFBEB',
-            color: '#92400E',
-            border: '1px solid #FCD34D',
+            background: 'var(--primary-light)',
+            color: 'var(--primary-dark)',
+            border: '1px solid rgba(129, 201, 149, 0.3)',
           }
         : {
             background: '#FFFFFF',
@@ -114,13 +114,26 @@ export function TossChip({
       style={{
         padding: size === 'sm' ? '6px 10px' : '8px 12px',
         borderRadius: '999px',
-        border: isActive ? '1px solid #F59E0B' : '1px solid #E5E7EB',
-        background: isActive ? '#FFFBEB' : '#FFFFFF',
-        color: isActive ? '#92400E' : '#6B7280',
+        border: isActive ? '1px solid var(--primary-dark)' : '1px solid #E2E8F0',
+        background: isActive ? 'var(--primary-light)' : '#FFFFFF',
+        color: isActive ? 'var(--primary-dark)' : 'var(--text-muted)',
         fontSize: size === 'sm' ? '11px' : '12px',
-        fontWeight: 500,
+        fontWeight: 600,
         cursor: 'pointer',
+        transition: 'all 0.2s ease',
         ...style,
+      }}
+      onMouseEnter={(e) => {
+        if (!isActive) {
+          e.currentTarget.style.backgroundColor = '#F8FAFC';
+          e.currentTarget.style.borderColor = '#CBD5E1';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isActive) {
+          e.currentTarget.style.backgroundColor = '#FFFFFF';
+          e.currentTarget.style.borderColor = '#E2E8F0';
+        }
       }}
     >
       {children ?? label}
@@ -276,10 +289,10 @@ export function TossSearchBar({
         <button
           type="button"
           onClick={onFilterClick}
-          style={{ marginLeft: '8px', background: 'none', border: 'none', cursor: 'pointer' }}
+          style={{ marginLeft: '12px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#6B7280' }}
           aria-label="필터 열기"
         >
-          ⚙️
+          <SlidersHorizontal size={18} />
         </button>
       )}
     </div>
