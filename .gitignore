@@ -29,3 +29,6 @@ dist-ssr
 # Python
 __pycache__/
 *.py[cod]
+
+# Local Netlify folder
+.netlify

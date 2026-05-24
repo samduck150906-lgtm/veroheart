@@ -21,12 +21,13 @@ try {
 }
 
 const SUPABASE_URL = envConfig['VITE_SUPABASE_URL'] || process.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = envConfig['VITE_SUPABASE_ANON_KEY'] || process.env.VITE_SUPABASE_ANON_KEY;
+const SUPABASE_KEY = envConfig['SUPABASE_SERVICE_ROLE_KEY'] || process.env.SUPABASE_SERVICE_ROLE_KEY || envConfig['VITE_SUPABASE_ANON_KEY'] || process.env.VITE_SUPABASE_ANON_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error("Error: VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY not found in .env.local");
+  console.error("Error: VITE_SUPABASE_URL or SUPABASE_KEY not found");
   process.exit(1);
 }
+
 
 const API_URL = `${SUPABASE_URL}/rest/v1`;
 const HEADERS = {
