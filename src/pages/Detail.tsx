@@ -21,16 +21,21 @@ import {
   Sparkles,
   ChevronRight
 } from 'lucide-react';
-const favorites: string[] = [];
-const trackRecentView = (id: string) => {};
-const getReviews = async (id: string) => ([] as any);
-const createReview = async (uid: string, pid: string, rating: number, content: string) => null;
-const deleteReview = async (rid: string, uid: string) => {};
-const userId = 'dummy';
-const buildProductConclusion = (p: any, pr: any, rep: any) => ({ tone: 'safe', headline: 'Good', subline: '' });
-const getVerificationMeta = (s: any) => ({ bg: '#000', color: '#fff', label: 'Verified' });
-const REVIEW_QUICK_TAGS: string[] = [];
-const COUPANG_PARTNERS_DISCLOSURE = '';
+import { 
+  getReviews, 
+  createReview, 
+  deleteReview,
+} from '../lib/supabase';
+import { buildProductConclusion } from '../utils/productConclusion';
+import { COUPANG_PARTNERS_DISCLOSURE } from '../constants/coupangPartners';
+import { REVIEW_QUICK_TAGS } from '../constants/reviewTags';
+
+const getVerificationMeta = (s: string) => {
+  if (s === 'verified') return { bg: '#E0F2FE', color: '#0369A1', label: '베로로 공식 인증' };
+  if (s === 'needs_review') return { bg: '#FEF3C7', color: '#B45309', label: '정보 재검토 중' };
+  return { bg: '#F3F4F6', color: '#4B5563', label: '영양 성분 검수 대기' };
+};
+
 interface Ingredient { id: string; riskLevel: string; nameKo: string; nameEn?: string; purpose?: string; description?: string; }
 import { Helmet } from 'react-helmet-async';
 import { useStore } from '../store/useStore';
@@ -45,6 +50,7 @@ export default function Detail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { 
+    userId,
     profile, 
     selectedProduct: product, 
     isLoadingProducts, 
@@ -53,7 +59,9 @@ export default function Detail() {
     addToComparison, 
     removeFromComparison, 
     addToCart,
-    products
+    products,
+    favorites,
+    trackRecentView,
   } = useStore();
 
   type ReviewRow = {
