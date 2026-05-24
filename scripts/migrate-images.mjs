@@ -9,12 +9,21 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+import path from 'path';
 
-const SUPABASE_URL = 'https://nlutpmjloryqdomgbqrr.supabase.co';
-const SERVICE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5sdXRwbWpsb3J5cWRvbWdicXJyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTEzNjcxNywiZXhwIjoyMDkwNzEyNzE3fQ.ZputW7l509gTjdrdfgCdiThmbMlBFRQE5bbifa6F0w8';
+dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://nlutpmjloryqdomgbqrr.supabase.co';
+const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const BUCKET_NAME  = 'product-images';
 const CONCURRENCY  = 5;  // 동시 업로드 수
 const SKIP_ALREADY_MIGRATED = true; // 이미 supabase.co URL이면 건너뜀
+
+if (!SERVICE_KEY) {
+  console.error('SUPABASE_SERVICE_ROLE_KEY is missing from environment variables!');
+  process.exit(1);
+}
 
 const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 
