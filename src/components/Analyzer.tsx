@@ -1001,6 +1001,187 @@ export default function Analyzer({ initialMode = 'text' }: AnalyzerProps) {
           </div>
         )}
       </BottomSheet>
+
+      <style>{`
+        /* Tailwind CSS polyfills for Analyzer component */
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .items-center { align-items: center; }
+        .items-start { align-items: flex-start; }
+        .justify-center { justify-content: center; }
+        .justify-between { justify-content: space-between; }
+        .shrink-0, .flex-shrink-0 { flex-shrink: 0; }
+        .flex-1 { flex: 1 1 0%; }
+        .min-w-0 { min-width: 0; }
+        
+        .grid { display: grid; }
+        .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        
+        .gap-1.5 { gap: 6px; }
+        .gap-2 { gap: 8px; }
+        .gap-2.5 { gap: 10px; }
+        .gap-3 { gap: 12px; }
+        .gap-3.5 { gap: 14px; }
+        .gap-4 { gap: 16px; }
+        .gap-6 { gap: 24px; }
+        
+        .bg-white { background-color: #ffffff; }
+        .bg-slate-50 { background-color: #f8fafc; }
+        .bg-slate-50\\/50 { background-color: rgba(248, 250, 252, 0.5); }
+        .bg-slate-50\\/60 { background-color: rgba(248, 250, 252, 0.6); }
+        .bg-slate-50\\/70 { background-color: rgba(248, 250, 252, 0.7); }
+        .bg-slate-100 { background-color: #f1f5f9; }
+        .bg-slate-900 { background-color: #0f172a; }
+        .bg-slate-950 { background-color: #020617; }
+        .bg-emerald-50 { background-color: #f0faf4; }
+        .bg-emerald-50\\/40 { background-color: rgba(240, 250, 244, 0.4); }
+        .bg-emerald-50\\/50 { background-color: rgba(240, 250, 244, 0.5); }
+        .bg-emerald-50\\/60 { background-color: rgba(240, 250, 244, 0.6); }
+        .bg-emerald-100 { background-color: #d1fae5; }
+        .bg-rose-50 { background-color: #fef2f2; }
+        .bg-rose-50\\/30 { background-color: rgba(254, 242, 242, 0.3); }
+        .bg-rose-50\\/50 { background-color: rgba(254, 242, 242, 0.5); }
+        .bg-rose-50\\/60 { background-color: rgba(254, 242, 242, 0.6); }
+        .bg-rose-50\\/80 { background-color: rgba(254, 242, 242, 0.8); }
+        .bg-\\[\\#FCE8E6\\] { background-color: #fce8e6; }
+        .bg-teal-50 { background-color: #f0fdfa; }
+        .bg-teal-50\\/50 { background-color: rgba(240, 253, 250, 0.5); }
+        .bg-amber-50 { background-color: #fffbeb; }
+        .bg-amber-50\\/30 { background-color: rgba(253, 230, 138, 0.3); }
+        .bg-sky-50 { background-color: #f0f9ff; }
+        
+        .rounded-xl { border-radius: 12px; }
+        .rounded-2xl { border-radius: 20px; }
+        .rounded-3xl { border-radius: 28px; }
+        .rounded-full { border-radius: 9999px; }
+        
+        .border { border: 1px solid #e2e8f0; }
+        .border-t { border-top: 1px solid #e2e8f0; }
+        .border-slate-100 { border-color: #f1f5f9; }
+        .border-slate-100\\/50 { border-color: rgba(241, 245, 249, 0.5); }
+        .border-slate-200 { border-color: #cbd5e1; }
+        .border-slate-200\\/60 { border-color: rgba(203, 213, 225, 0.6); }
+        .border-emerald-100 { border-color: #a7f3d0; }
+        .border-emerald-100\\/50 { border-color: rgba(167, 243, 208, 0.5); }
+        .border-emerald-400 { border-color: #34d399; }
+        .border-teal-100 { border-color: #99f6e4; }
+        .border-teal-100\\/60 { border-color: rgba(153, 246, 228, 0.6); }
+        .border-teal-300 { border-color: #5eead4; }
+        .border-amber-100 { border-color: #fde68a; }
+        .border-amber-300 { border-color: #fcd34d; }
+        .border-rose-100 { border-color: #fecaca; }
+        .border-rose-100\\/80 { border-color: rgba(254, 202, 202, 0.8); }
+        .border-rose-400 { border-color: #f87171; }
+        .border-dashed { border-style: dashed; }
+        
+        .w-8 { width: 32px; }
+        .h-8 { height: 32px; }
+        .w-10 { width: 40px; }
+        .h-10 { height: 40px; }
+        .w-16 { width: 64px; }
+        .h-16 { height: 64px; }
+        .w-28 { width: 112px; }
+        .h-28 { height: 112px; }
+        .w-full { width: 100%; }
+        .h-full { height: 100%; }
+        .h-1.5 { height: 6px; }
+        .h-32 { height: 128px; }
+        .aspect-\\[3\\/2\\] { aspect-ratio: 3 / 2; }
+        
+        .text-xs { font-size: 12px; }
+        .text-sm { font-size: 14px; }
+        .text-base { font-size: 16px; }
+        .text-lg { font-size: 18px; }
+        .text-2xl { font-size: 24px; }
+        .text-3xl { font-size: 30px; }
+        
+        .text-slate-200 { color: #e2e8f0; }
+        .text-slate-300 { color: #cbd5e1; }
+        .text-slate-400 { color: #94a3b8; }
+        .text-slate-500 { color: #64748b; }
+        .text-slate-600 { color: #475569; }
+        .text-slate-700 { color: #334155; }
+        .text-slate-800 { color: #1e293b; }
+        .text-emerald-500 { color: #10b981; }
+        .text-emerald-600 { color: #059669; }
+        .text-emerald-700 { color: #047857; }
+        .text-emerald-800 { color: #065f46; }
+        .text-rose-500 { color: #ef4444; }
+        .text-rose-600 { color: #dc2626; }
+        .text-rose-700 { color: #b91c1c; }
+        .text-rose-800 { color: #991b1b; }
+        .text-rose-900 { color: #7f1d1d; }
+        .text-\\[\\#D93025\\] { color: #D93025; }
+        .text-amber-500 { color: #f59e0b; }
+        .text-amber-600 { color: #d97706; }
+        .text-amber-700 { color: #b45309; }
+        .text-amber-800 { color: #92400e; }
+        .text-amber-900 { color: #78350f; }
+        .text-teal-700 { color: #0f766e; }
+        .text-teal-800 { color: #115e59; }
+        .text-teal-900 { color: #134e4a; }
+        .text-sky-50 { color: #0284c7; }
+        .text-sky-500 { color: #0ea5e9; }
+        .text-gray-800 { color: #1f2937; }
+        
+        .font-black { font-weight: 900; }
+        .font-bold { font-weight: 700; }
+        .font-semibold { font-weight: 600; }
+        .font-medium { font-weight: 500; }
+        
+        .tracking-tight { letter-spacing: -0.025em; }
+        .tracking-wide { letter-spacing: 0.025em; }
+        .tracking-widest { letter-spacing: 0.1em; }
+        .leading-none { line-height: 1; }
+        .leading-tight { line-height: 1.25; }
+        .leading-normal { line-height: 1.5; }
+        .leading-relaxed { line-height: 1.625; }
+        
+        .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .shadow-inner { box-shadow: inset 0 2px 4px 0 rgba(0,0,0,0.06); }
+        
+        .transition-all { transition-property: all; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+        .duration-200 { transition-duration: 200ms; }
+        .duration-300 { transition-duration: 300ms; }
+        .duration-500 { transition-duration: 500ms; }
+        
+        .hover\\:bg-slate-50:hover { background-color: #f8fafc; }
+        .hover\\:bg-slate-50\\/60:hover { background-color: rgba(248, 250, 252, 0.6); }
+        .hover\\:bg-rose-50\\/60:hover { background-color: rgba(254, 242, 242, 0.6); }
+        .hover\\:border-slate-200:hover { border-color: #cbd5e1; }
+        
+        .active\\:scale-95:active { transform: scale(0.95); }
+        .active\\:scale-\\[0\\.99\\]:active { transform: scale(0.99); }
+        .active\\:scale-\\[0\\.98\\]:active { transform: scale(0.98); }
+        
+        .shrink-0 { flex-shrink: 0; }
+        .grow { flex-grow: 1; }
+        
+        /* Range slider styling */
+        input[type="range"] {
+          -webkit-appearance: none;
+          appearance: none;
+          background: transparent;
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+          background: #e2e8f0;
+          height: 6px;
+          border-radius: 999px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          background: #81C995;
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          cursor: pointer;
+          margin-top: -6px;
+          border: 2px solid #ffffff;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+      `}</style>
     </div>
   );
 }
