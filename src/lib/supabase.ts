@@ -433,7 +433,22 @@ export async function getReviews(productId: string) {
     .select('*, users(email)')
     .eq('product_id', productId)
     .order('created_at', { ascending: false });
-  if (error) console.error('getReviews error:', error);
+  if (error) {
+    // users(email) join may fail when RLS hides the users table for anonymous reads.
+    // Fall back to the bare review rows so the UI can render an empty/safe state.
+    const fallback = await supabase
+      .from('reviews')
+      .select('*')
+      .eq('product_id', productId)
+      .order('created_at', { ascending: false });
+    if (fallback.error) {
+      if (import.meta.env.DEV) {
+        console.warn('getReviews fallback failed:', fallback.error.message);
+      }
+      return [];
+    }
+    return fallback.data || [];
+  }
   return data || [];
 }
 

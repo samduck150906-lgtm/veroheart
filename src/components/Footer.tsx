@@ -83,8 +83,12 @@ function Footer() {
           </p>
           <p style={{ margin: 0 }}>
             주소 {COMPANY.address} · 연락처{' '}
-            <a href={COMPANY.phoneTelHref} style={{ color: 'inherit', textDecoration: 'none' }}>
-              {COMPANY.phone}
+            <a
+              href={COMPANY.phoneTelHref}
+              style={{ color: 'inherit', textDecoration: 'none' }}
+              aria-label={`고객센터 ${COMPANY.phone} 연결`}
+            >
+              {COMPANY.phoneDisplay}
             </a>{' '}
             · 이메일{' '}
             <a href={`mailto:${COMPANY.email}`} style={{ color: 'inherit', textDecoration: 'none' }}>

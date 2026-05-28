@@ -120,17 +120,51 @@ export default function Detail() {
 
   if (isLoadingProducts) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
-        <p className="mt-4 text-gray-500 font-medium">제품 정보를 불러오는 중입니다...</p>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: 'calc(100vh - 200px)',
+          padding: '40px 24px',
+        }}
+      >
+        <Loader2 size={48} color="#3B82F6" style={{ animation: 'spin 1s linear infinite' }} />
+        <p style={{ marginTop: '16px', color: '#6B7280', fontWeight: 600 }}>
+          제품 정보를 불러오는 중입니다...
+        </p>
       </div>
     );
   }
 
   if (!product) return (
-    <div className="text-center p-12">
-      <p className="text-gray-500">제품을 찾을 수 없습니다.</p>
-      <button onClick={() => navigate('/')} className="mt-4 text-primary font-bold">홈으로 이동</button>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 'calc(100vh - 200px)',
+        padding: '40px 24px',
+        textAlign: 'center',
+      }}
+    >
+      <p style={{ color: '#6B7280', marginBottom: '16px' }}>제품을 찾을 수 없습니다.</p>
+      <button
+        onClick={() => navigate('/')}
+        style={{
+          padding: '10px 20px',
+          borderRadius: '12px',
+          background: '#3B82F6',
+          color: '#fff',
+          border: 'none',
+          fontWeight: 700,
+          cursor: 'pointer',
+        }}
+      >
+        홈으로 이동
+      </button>
     </div>
   );
 
@@ -339,17 +373,23 @@ export default function Detail() {
         <ChevronRight size={20} color="#ffffff" />
       </button>
 
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
-        <button className="btn btn-outline" style={{ flex: 1, height: '56px', borderRadius: 'var(--border-radius-md)' }} onClick={() => {
-          isComparing ? removeFromComparison(product.id) : addToComparison(product.id);
-        }}>
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '10px' }}>
+        <button
+          className="btn btn-outline"
+          aria-label={isComparing ? '비교함에서 빼기' : '비교함에 담기'}
+          style={{ flex: 1, height: '56px', borderRadius: 'var(--border-radius-md)' }}
+          onClick={() => {
+            isComparing ? removeFromComparison(product.id) : addToComparison(product.id);
+          }}
+        >
           <GitCompare size={20} />
           <span style={{ marginLeft: '4px' }}>비교</span>
         </button>
-        
-        <button 
-          className="btn btn-primary" 
-          style={{ flex: 2, borderRadius: 'var(--border-radius-md)', fontWeight: 800, fontSize: '17px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }} 
+
+        <button
+          className="btn btn-primary"
+          aria-label="쿠팡에서 최저가 구매하기 (외부 링크)"
+          style={{ flex: 2, borderRadius: 'var(--border-radius-md)', fontWeight: 800, fontSize: '17px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
           onClick={() => {
             openCoupangForProduct(product);
           }}
@@ -357,6 +397,20 @@ export default function Detail() {
           🚀 쿠팡 최저가 구매 <ExternalLink size={18} />
         </button>
       </div>
+      <p
+        style={{
+          margin: '0 0 24px',
+          padding: '0 4px',
+          fontSize: '10.5px',
+          lineHeight: 1.5,
+          fontWeight: 600,
+          color: '#94A3B8',
+          textAlign: 'right',
+          letterSpacing: '-0.01em',
+        }}
+      >
+        {COUPANG_PARTNERS_DISCLOSURE}
+      </p>
 
       {alternativeProduct && (
         <div className="card" style={{ backgroundColor: 'var(--bg-color)', marginBottom: '40px' }}>

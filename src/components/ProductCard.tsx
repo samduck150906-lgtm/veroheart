@@ -124,11 +124,17 @@ export default function ProductCard({
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px', borderTop: '1px solid #F1F5F9', paddingTop: '8px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                <Star size={11} fill="#F59E0B" color="#F59E0B" />
-                <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#1E293B' }}>{product.averageRating.toFixed(1)}</span>
-                <span style={{ fontSize: '10px', color: 'var(--text-light)', fontWeight: 500 }}>({product.reviewsCount})</span>
-              </div>
+              {product.reviewsCount > 0 ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <Star size={11} fill="#F59E0B" color="#F59E0B" />
+                  <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#1E293B' }}>{product.averageRating.toFixed(1)}</span>
+                  <span style={{ fontSize: '10px', color: 'var(--text-light)', fontWeight: 500 }}>({product.reviewsCount})</span>
+                </div>
+              ) : (
+                <span style={{ fontSize: '10.5px', color: '#94A3B8', fontWeight: 700, letterSpacing: '-0.01em' }}>
+                  첫 리뷰 주인공 되기
+                </span>
+              )}
               <span style={{ fontSize: '13px', color: 'var(--text-dark)', fontWeight: 900 }}>
                 {product.price >= 1000000 ? `${(product.price / 10000).toLocaleString()}만원` : `${product.price.toLocaleString()}원`}
               </span>
@@ -140,9 +146,11 @@ export default function ProductCard({
         <button
           type="button"
           onClick={e => { e.preventDefault(); e.stopPropagation(); toggleFavorite(product.id); }}
+          aria-label={isFav ? `${product.name} 찜 해제` : `${product.name} 찜하기`}
+          aria-pressed={isFav}
           style={{
             position: 'absolute', top: '16px', right: '16px',
-            background: 'rgba(255, 255, 255, 0.9)', border: 'none', cursor: 'pointer', 
+            background: 'rgba(255, 255, 255, 0.9)', border: 'none', cursor: 'pointer',
             width: '28px', height: '28px', borderRadius: '50%',
             display: 'flex', alignItems: 'center',
             justifyContent: 'center',
@@ -233,11 +241,17 @@ export default function ProductCard({
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <Star size={12} fill="#F59E0B" color="#F59E0B" />
-              <span style={{ fontSize: '13px', fontWeight: 800, color: '#1E293B' }}>{product.averageRating.toFixed(1)}</span>
-              <span style={{ fontSize: '11px', color: 'var(--text-light)', fontWeight: 500 }}>({product.reviewsCount})</span>
-            </div>
+            {product.reviewsCount > 0 ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Star size={12} fill="#F59E0B" color="#F59E0B" />
+                <span style={{ fontSize: '13px', fontWeight: 800, color: '#1E293B' }}>{product.averageRating.toFixed(1)}</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-light)', fontWeight: 500 }}>({product.reviewsCount})</span>
+              </div>
+            ) : (
+              <span style={{ fontSize: '11.5px', color: '#94A3B8', fontWeight: 700, letterSpacing: '-0.01em' }}>
+                첫 리뷰 주인공 되기
+              </span>
+            )}
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontSize: compact ? '13px' : '14px', color: '#1E293B', fontWeight: 850 }}>
@@ -259,6 +273,8 @@ export default function ProductCard({
       <button
         type="button"
         onClick={e => { e.preventDefault(); toggleFavorite(product.id); }}
+        aria-label={isFav ? `${product.name} 찜 해제` : `${product.name} 찜하기`}
+        aria-pressed={isFav}
         style={{
           position: 'absolute', top: '12px', right: '12px',
           background: 'none', border: 'none', cursor: 'pointer', padding: '6px',

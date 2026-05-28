@@ -19,6 +19,7 @@ import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Refund from './pages/Refund';
 import Login from './pages/Login';
+import NotFound from './pages/NotFound';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
@@ -27,6 +28,7 @@ import AdminSettings from './pages/admin/AdminSettings';
 import Notification from './components/Notification';
 import AdminAuthGuard from './pages/admin/AdminAuthGuard';
 import EntryGate from './components/EntryGate';
+import DesktopBanner from './components/DesktopBanner';
 import { markEntryGateDone, readEntryGateDone } from './lib/entryGateStorage';
 import { isAdminExperience, toggleAdminDesktopMode } from './utils/adminHost';
 import { ThemeProvider } from './theme/ThemeProvider';
@@ -113,6 +115,7 @@ function App() {
     <ThemeProvider>
       <BrowserRouter>
         <Notification />
+        {!adminMode && <DesktopBanner />}
           <Routes>
             <Route path="/" element={<Layout />}>
               <Route index element={<Home />} />
@@ -134,8 +137,9 @@ function App() {
               <Route path="terms" element={<Terms />} />
               <Route path="privacy" element={<Privacy />} />
               <Route path="refund" element={<Refund />} />
+              <Route path="*" element={<NotFound />} />
             </Route>
-          
+
           {/* Admin CMS Routes — Protected */}
           <Route path="/admin" element={<AdminAuthGuard><AdminLayout /></AdminAuthGuard>}>
             <Route index element={<AdminDashboard />} />

@@ -1,5 +1,6 @@
 import { useMemo, useState, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, RefreshCw, Check, X } from 'lucide-react';
 import { supabase, ensurePublicUserExists } from '../lib/supabase';
 import { useStore } from '../store/useStore';
@@ -248,12 +249,19 @@ export default function Login() {
     }
   };
 
+  const pageTitle = mode === 'signup' ? '회원가입 | 베로로' : '로그인 | 베로로';
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-gradient)', display: 'flex', flexDirection: 'column' }}>
+      <Helmet>
+        <title>{pageTitle}</title>
+        <meta name="description" content="베로로 계정으로 반려동물 맞춤 사료 분석과 추천을 받아보세요." />
+      </Helmet>
       <div style={{ padding: '16px 20px' }}>
         <button
           type="button"
           onClick={() => navigate(-1)}
+          aria-label="뒤로 가기"
           style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: '#374151', fontWeight: 600 }}
         >
           <ArrowLeft size={20} /> 뒤로

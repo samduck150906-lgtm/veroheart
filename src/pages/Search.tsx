@@ -17,6 +17,7 @@ import {
   Search as SearchIcon,
   Database
 } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 import ProductCard from '../components/ProductCard';
 import type { Product } from '../types';
 import { TossFilterSection, TossChip, TossButton } from '../components/TossUI';
@@ -230,6 +231,10 @@ export default function Search() {
 
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '100px' }}>
+      <Helmet>
+        <title>제품 검색 | 베로로</title>
+        <meta name="description" content="반려동물 종류, 가격대, 건강 고민에 따라 사료를 정밀하게 탐색하세요." />
+      </Helmet>
       <section className="ui-hero-panel" style={{ marginBottom: '18px', padding: '18px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '14px' }}>
           <div>

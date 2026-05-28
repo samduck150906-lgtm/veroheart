@@ -285,6 +285,7 @@ export default function Home() {
         {/* Right side Premium Notification Icon */}
         <button
           type="button"
+          aria-label="알림 수신함 열기"
           onClick={() => {
             alert(`🔔 알림 수신함\n\n- ${petName}를 위한 맞춤 영양 리포트가 발급되었습니다.\n- 이번 달 사료 유해성분 모니터링이 완료되었습니다.`);
           }}
@@ -337,6 +338,9 @@ export default function Home() {
       {/* FDA / Korean Ministry of Agriculture Recent Recall Widget Banner */}
       {isRecallBannerVisible && (
         <section
+          role="button"
+          tabIndex={0}
+          aria-label="FDA 및 농식품부 긴급 회수 공고 자세히 보기"
           style={{
             margin: '12px 18px 0',
             padding: '12px 16px',
@@ -354,6 +358,12 @@ export default function Home() {
             transition: 'transform 0.2s, box-shadow 0.2s'
           }}
           onClick={() => setIsRecallModalOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setIsRecallModalOpen(true);
+            }
+          }}
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = 'translateY(-2px)';
             e.currentTarget.style.boxShadow = '0 6px 20px rgba(217, 48, 37, 0.08)';
@@ -417,10 +427,29 @@ export default function Home() {
           </div>
 
           {/* Chevron with Micro-interaction */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '10px' }}>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsRecallModalOpen(true);
+            }}
+            aria-label="긴급 회수 공고 자세히 보기"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              marginLeft: '10px',
+              padding: '6px 10px',
+              borderRadius: '999px',
+              background: 'rgba(217, 48, 37, 0.08)',
+              border: 'none',
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
+          >
             <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent)' }}>보기</span>
             <ChevronRight size={16} color="var(--accent)" strokeWidth={2.2} />
-          </div>
+          </button>
 
           {/* Close/Dismiss Button with absolute positioning */}
           <button
@@ -429,6 +458,7 @@ export default function Home() {
               e.stopPropagation(); // Stop opening the modal
               setIsRecallBannerVisible(false);
             }}
+            aria-label="공고 배너 닫기"
             style={{
               position: 'absolute',
               top: '-8px',
@@ -921,9 +951,26 @@ function HorizontalProductSection({
           더보기 <ChevronRight size={14} />
         </button>
       </div>
-      <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: '10px',
+          overflowX: 'auto',
+          paddingBottom: '4px',
+          paddingRight: '32px',
+          msOverflowStyle: 'none',
+          scrollbarWidth: 'none',
+          WebkitMaskImage: 'linear-gradient(to right, #000 0, #000 calc(100% - 28px), transparent 100%)',
+          maskImage: 'linear-gradient(to right, #000 0, #000 calc(100% - 28px), transparent 100%)',
+          scrollSnapType: 'x proximity',
+        }}
+        aria-label={`${title} 가로 스크롤 목록`}
+      >
         {products.map((product, idx) => (
-          <div key={product.id} style={{ flex: '0 0 172px', position: 'relative' }}>
+          <div
+            key={product.id}
+            style={{ flex: '0 0 172px', position: 'relative', scrollSnapAlign: 'start' }}
+          >
             <div style={{ position: 'absolute', top: '14px', left: '14px', zIndex: 2 }}>
               <span style={{ 
                 background: 'rgba(79, 70, 229, 0.9)', 

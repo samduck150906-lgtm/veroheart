@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useStore } from '../store/useStore';
 import { User, ChevronRight, Calendar, ShoppingBag, FileText, Activity, LogOut, LogIn, Heart } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -237,6 +238,10 @@ export default function Profile() {
   if (!userId) {
     return (
       <div className="animate-fade-in" style={{ padding: '40px 20px', minHeight: '80vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+        <Helmet>
+          <title>마이 펫 | 베로로</title>
+          <meta name="description" content="베로로에서 반려동물 프로필을 등록하고 맞춤 추천을 받아보세요." />
+        </Helmet>
         <div style={{ width: '80px', height: '80px', borderRadius: '24px', backgroundColor: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
           <User size={40} color="#D1D5DB" />
         </div>
@@ -257,6 +262,10 @@ export default function Profile() {
 
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '40px' }}>
+      <Helmet>
+        <title>마이 펫 | 베로로</title>
+        <meta name="description" content="반려동물 프로필, 찜한 사료, 주문 내역, 분석 리포트를 한곳에서 관리하세요." />
+      </Helmet>
       {/* 로그인/로그아웃 버튼 */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
         {isLoggedIn ? (
