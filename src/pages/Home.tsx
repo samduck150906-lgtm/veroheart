@@ -151,29 +151,25 @@ export default function Home() {
     {
       title: '탐색',
       description: '',
-      icon: <Search size={18} color="#7C3AED" />,
-      accent: 'rgba(124, 58, 237, 0.12)',
+      icon: <Search size={18} color="var(--text-muted)" strokeWidth={1.8} />,
       onClick: () => navigate('/search'),
     },
     {
       title: '랭킹',
       description: '',
-      icon: <Flame size={18} color="#DC2626" />,
-      accent: 'rgba(239, 68, 68, 0.12)',
+      icon: <Flame size={18} color="var(--text-muted)" strokeWidth={1.8} />,
       onClick: () => navigate('/ranking'),
     },
     {
       title: '성향 테스트',
       description: '',
-      icon: <MessageCircle size={18} color="#2563EB" />,
-      accent: 'rgba(37, 99, 235, 0.12)',
+      icon: <MessageCircle size={18} color="var(--text-muted)" strokeWidth={1.8} />,
       onClick: () => navigate('/event/personality-quiz'),
     },
     {
       title: '마이 펫',
       description: '',
-      icon: <Heart size={18} color="#DB2777" />,
-      accent: 'rgba(219, 39, 119, 0.12)',
+      icon: <Heart size={18} color="var(--text-muted)" strokeWidth={1.8} />,
       onClick: () => navigate('/profile'),
     },
   ];
@@ -189,173 +185,111 @@ export default function Home() {
         <meta name="description" content="베로로 — 사료 성분 분석과 집사들의 찐 리뷰. 의심 대신 베로로 하세요." />
       </Helmet>
 
-      {/* Premium Pet Profile Header Component */}
+      {/* Quiet pet header — minimal photo + name */}
       <header
-        className="glass"
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '16px 20px',
-          borderBottom: '1px solid rgba(28, 25, 23, 0.06)',
-          background: 'rgba(255, 255, 255, 0.96)',
-          backdropFilter: 'blur(10px)',
+          padding: '14px 20px',
+          borderBottom: '1px solid var(--border-subtle)',
+          background: 'var(--bg-color)',
           position: 'sticky',
           top: 0,
           zIndex: 40,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          {/* Pet Profile Photo with Premium HSL Soft Mint Green Gradient Ring */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div
             style={{
-              position: 'relative',
-              width: '48px',
-              height: '48px',
+              width: '40px',
+              height: '40px',
               borderRadius: '50%',
-              padding: '2.5px',
-              background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
-              boxShadow: '0 6px 16px rgba(129, 201, 149, 0.28)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              overflow: 'hidden',
+              background: 'var(--surface-muted)',
+              flexShrink: 0,
             }}
           >
             <img
-              src={profile.species === 'Cat' 
-                ? 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=120&auto=format&fit=crop&q=80' 
+              src={profile.species === 'Cat'
+                ? 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=120&auto=format&fit=crop&q=80'
                 : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=120&auto=format&fit=crop&q=80'}
               alt={`${petName} 프로필`}
-              style={{
-                width: '100%',
-                height: '100%',
-                borderRadius: '50%',
-                objectFit: 'cover',
-                border: '2px solid #FFFFFF',
-              }}
-            />
-            {/* Active/Status pulse ring */}
-            <span
-              style={{
-                position: 'absolute',
-                bottom: '1px',
-                right: '1px',
-                width: '11px',
-                height: '11px',
-                borderRadius: '50%',
-                backgroundColor: 'var(--primary)',
-                border: '2px solid #FFFFFF',
-                boxShadow: '0 0 0 2px rgba(129, 201, 149, 0.3)',
-              }}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
           </div>
 
-          {/* Personalization Info */}
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
             <span
               style={{
                 fontSize: '11px',
-                fontWeight: 800,
-                color: 'var(--primary-dark)',
-                letterSpacing: '0.06em',
-                marginBottom: '1px',
+                fontWeight: 600,
+                color: 'var(--text-light)',
+                letterSpacing: '0.04em',
+                marginBottom: '2px',
               }}
             >
-              PET NUTRITION CURATION
+              맞춤 추천
             </span>
             <h1
               style={{
                 fontSize: '15px',
-                fontWeight: 800,
+                fontWeight: 700,
                 color: 'var(--text-dark)',
                 margin: 0,
-                letterSpacing: '-0.02em',
-                lineHeight: 1.2,
+                letterSpacing: '-0.01em',
+                lineHeight: 1.25,
               }}
             >
-              <span style={{ color: '#4F46E5', fontWeight: 900 }}>{petName}</span>
-              <span style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '14px' }}>
-                ({petBreed}, {petAge}세)
+              {petName}
+              <span style={{ color: 'var(--text-light)', fontWeight: 500, fontSize: '13px', marginLeft: '6px' }}>
+                {petBreed} · {petAge}세
               </span>
-              를 위한 맞춤 추천
             </h1>
           </div>
         </div>
 
-        {/* Right side Premium Notification Icon */}
         <button
           type="button"
           aria-label="알림 수신함 열기"
           onClick={() => {
-            alert(`🔔 알림 수신함\n\n- ${petName}를 위한 맞춤 영양 리포트가 발급되었습니다.\n- 이번 달 사료 유해성분 모니터링이 완료되었습니다.`);
+            alert(`알림 수신함\n\n- ${petName}를 위한 맞춤 영양 리포트가 발급되었습니다.\n- 이번 달 사료 유해성분 모니터링이 완료되었습니다.`);
           }}
           style={{
-            background: '#F8FAFC',
-            border: '1px solid rgba(28, 25, 23, 0.08)',
+            background: 'transparent',
+            border: 'none',
             cursor: 'pointer',
-            width: '42px',
-            height: '42px',
-            borderRadius: '50%',
+            width: '36px',
+            height: '36px',
+            borderRadius: '12px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'var(--text-dark)',
-            position: 'relative',
-            transition: 'all 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
-            boxSizing: 'border-box',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-2px) scale(1.04)';
-            e.currentTarget.style.backgroundColor = '#FFFFFF';
-            e.currentTarget.style.borderColor = 'rgba(79, 70, 229, 0.15)';
-            e.currentTarget.style.boxShadow = '0 6px 14px rgba(0, 0, 0, 0.05)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'none';
-            e.currentTarget.style.backgroundColor = '#F8FAFC';
-            e.currentTarget.style.borderColor = 'rgba(28, 25, 23, 0.08)';
-            e.currentTarget.style.boxShadow = 'none';
+            color: 'var(--text-muted)',
+            padding: 0,
           }}
         >
-          <Bell size={20} strokeWidth={2.2} />
-          {/* Glowing Premium Red Alert dot */}
-          <span
-            style={{
-              position: 'absolute',
-              top: '9px',
-              right: '9px',
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              backgroundColor: 'var(--accent)',
-              border: '2px solid #FFFFFF',
-              boxShadow: '0 0 0 2px rgba(217, 48, 37, 0.2)',
-            }}
-          />
+          <Bell size={20} strokeWidth={1.8} />
         </button>
       </header>
 
-      {/* FDA / Korean Ministry of Agriculture Recent Recall Widget Banner */}
+      {/* Slim recall notice — inline single line */}
       {isRecallBannerVisible && (
         <section
           role="button"
           tabIndex={0}
           aria-label="FDA 및 농식품부 긴급 회수 공고 자세히 보기"
           style={{
-            margin: '12px 18px 0',
-            padding: '12px 16px',
-            borderRadius: '16px',
-            background: 'linear-gradient(135deg, #FEF2F2 0%, #FFF5F5 100%)',
-            border: '1.5px solid rgba(217, 48, 37, 0.22)',
+            margin: '12px 20px 0',
+            padding: '10px 14px',
+            borderRadius: '12px',
+            background: 'var(--surface-muted)',
+            border: '1px solid var(--border-subtle)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            boxShadow: '0 4px 14px rgba(217, 48, 37, 0.04)',
+            gap: '10px',
             cursor: 'pointer',
-            position: 'relative',
-            animation: 'fadeIn var(--transition-smooth) forwards',
             boxSizing: 'border-box',
-            transition: 'transform 0.2s, box-shadow 0.2s'
           }}
           onClick={() => setIsRecallModalOpen(true)}
           onKeyDown={(e) => {
@@ -364,125 +298,59 @@ export default function Home() {
               setIsRecallModalOpen(true);
             }
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 6px 20px rgba(217, 48, 37, 0.08)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'none';
-            e.currentTarget.style.boxShadow = '0 4px 14px rgba(217, 48, 37, 0.04)';
-          }}
         >
-          {/* Main Content Layout */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
-            {/* Blinking Glow Warning Icon */}
-            <div style={{ position: 'relative', display: 'flex', flexShrink: 0 }}>
-              <AlertTriangle size={20} color="var(--accent)" strokeWidth={2.4} />
-              {/* Blinking Dot animation */}
-              <span className="recall-ping-dot" style={{
-                position: 'absolute',
-                top: '-2px',
-                right: '-2px',
-                width: '7px',
-                height: '7px',
-                borderRadius: '50%',
-                backgroundColor: 'var(--accent)',
-                border: '1.5px solid #FEF2F2'
-              }} />
-            </div>
-
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
-                <span style={{
-                  fontSize: '11px',
-                  fontWeight: 800,
-                  color: 'var(--accent)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em'
-                }}>
-                  FDA & 농식품부 긴급 공고
-                </span>
-                <span style={{
-                  backgroundColor: 'rgba(217, 48, 37, 0.12)',
-                  color: 'var(--accent)',
-                  fontSize: '9px',
-                  fontWeight: 900,
-                  padding: '2px 6px',
-                  borderRadius: '6px',
-                  letterSpacing: '-0.02em'
-                }}>
-                  자진회수
-                </span>
-              </div>
-              <p className="line-clamp-1" style={{
-                margin: 0,
-                fontSize: '13px',
+          <AlertTriangle size={14} color="var(--accent)" strokeWidth={2} aria-hidden />
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'baseline', gap: '8px', overflow: 'hidden' }}>
+            <span
+              style={{
+                fontSize: '11px',
                 fontWeight: 700,
-                color: '#1E293B',
-                lineHeight: 1.35
-              }}>
-                살모넬라균 오염 의심 사료 건 및 수분함량 초과 회수 대상 안내
-              </p>
-            </div>
+                color: 'var(--accent)',
+                flexShrink: 0,
+                letterSpacing: '-0.005em',
+              }}
+            >
+              회수 공고
+            </span>
+            <span
+              className="line-clamp-1"
+              style={{
+                fontSize: '12px',
+                fontWeight: 500,
+                color: 'var(--text-muted)',
+                lineHeight: 1.4,
+                minWidth: 0,
+              }}
+            >
+              살모넬라균 오염 의심 사료 회수 대상 안내
+            </span>
           </div>
-
-          {/* Chevron with Micro-interaction */}
+          <ChevronRight size={14} color="var(--text-light)" strokeWidth={2} aria-hidden />
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              setIsRecallModalOpen(true);
-            }}
-            aria-label="긴급 회수 공고 자세히 보기"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              marginLeft: '10px',
-              padding: '6px 10px',
-              borderRadius: '999px',
-              background: 'rgba(217, 48, 37, 0.08)',
-              border: 'none',
-              cursor: 'pointer',
-              flexShrink: 0,
-            }}
-          >
-            <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent)' }}>보기</span>
-            <ChevronRight size={16} color="var(--accent)" strokeWidth={2.2} />
-          </button>
-
-          {/* Close/Dismiss Button with absolute positioning */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation(); // Stop opening the modal
               setIsRecallBannerVisible(false);
             }}
             aria-label="공고 배너 닫기"
             style={{
-              position: 'absolute',
-              top: '-8px',
-              right: '-8px',
-              background: '#FFFFFF',
-              border: '1.5px solid rgba(217, 48, 37, 0.2)',
+              background: 'transparent',
+              border: 'none',
               cursor: 'pointer',
-              width: '20px',
-              height: '20px',
-              borderRadius: '50%',
+              padding: '2px',
+              color: 'var(--text-light)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
-              color: '#94A3B8',
-              padding: 0
+              flexShrink: 0,
             }}
           >
-            <X size={12} strokeWidth={2.5} />
+            <X size={14} strokeWidth={2} />
           </button>
         </section>
       )}
 
-      <section className="ui-hero-panel" style={{ padding: '16px 18px', marginBottom: '16px' }}>
+      <section style={{ padding: '12px 20px 0', marginBottom: '4px' }}>
         <button
           type="button"
           style={{
@@ -491,15 +359,17 @@ export default function Home() {
             gap: '10px',
             width: '100%',
             background: 'var(--surface-elevated)',
-            border: '1.5px dashed rgba(0,0,0,0.12)',
-            borderRadius: '12px',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: '14px',
             padding: '14px 16px',
             cursor: 'pointer',
+            color: 'var(--text-muted)',
           }}
           onClick={() => navigate('/scanner')}
+          aria-label="바코드 스캔으로 성분 분석 시작하기"
         >
-          <ScanLine size={20} color="#9CA3AF" />
-          <span style={{ fontSize: '14px', fontWeight: 700, color: '#6B7280' }}>바코드 스캔 · AI 성분 분석</span>
+          <ScanLine size={18} color="var(--text-muted)" strokeWidth={1.8} />
+          <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-muted)' }}>바코드를 스캔해 성분을 분석해 보세요</span>
         </button>
       </section>
 
@@ -507,7 +377,6 @@ export default function Home() {
       <HorizontalProductSection
         title="급상승 랭킹"
         subtitle="리뷰가 빠르게 늘고 있는 제품"
-        icon={<Flame size={18} color="#EF4444" />}
         products={trendingProducts}
         onMore={() => navigate('/ranking')}
       />
@@ -520,90 +389,122 @@ export default function Home() {
               ? `${profile.healthConcerns.join(', ')} 고민 기준`
               : `${profile.name} 프로필 · 성분·리뷰 기반`
           }
-          icon={<Sparkles size={18} color="#F59E0B" />}
           products={personalRecs}
           onMore={() => navigate('/search')}
         />
       )}
 
-      {/* Sleek, Premium Compact Single-row Quick Actions for maximum vertical space optimization */}
-      <section style={{ marginBottom: '14px', padding: '0 4px' }}>
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(4, 1fr)', 
-          gap: '12px', 
-          background: '#FFFFFF',
-          borderRadius: '16px',
-          padding: '14px 10px',
-          border: '1px solid rgba(0,0,0,0.04)',
-          boxShadow: 'var(--shadow-sm)'
-        }}>
+      {/* Quick Actions — single neutral surface */}
+      <section style={{ marginBottom: '18px', padding: '0 20px' }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: '4px',
+            background: 'var(--surface-elevated)',
+            borderRadius: '16px',
+            padding: '8px',
+            border: '1px solid var(--border-subtle)',
+          }}
+        >
           {quickActions.map((item) => (
             <button
               key={item.title}
               type="button"
               onClick={item.onClick}
-              style={{ 
+              aria-label={item.title}
+              style={{
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
+                gap: '6px',
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
-                padding: '4px 0',
+                padding: '10px 4px',
+                borderRadius: '12px',
                 outline: 'none',
-                transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
             >
-              <span style={{ 
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '42px',
-                height: '42px',
-                borderRadius: '14px',
-                background: item.accent,
-                marginBottom: '6px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
-              }}>
+              <span
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '34px',
+                  height: '34px',
+                  color: 'var(--text-muted)',
+                }}
+                aria-hidden
+              >
                 {item.icon}
               </span>
-              <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-dark)' }}>{item.title}</div>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-dark)' }}>{item.title}</div>
             </button>
           ))}
         </div>
       </section>
 
       {featuredEvent && (
-        <section style={{ marginBottom: '20px' }}>
-          <TossSectionTitle
-            title="베로로 새로운 소식"
-            subtitle="놓치기 쉬운 이벤트와 쿠폰 소식을 한 번에"
-            style={{ marginBottom: '10px' }}
-          />
+        <section style={{ marginBottom: '24px', padding: '0 20px' }}>
+          <div style={{ marginBottom: '10px' }}>
+            <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-dark)', letterSpacing: '-0.01em', marginBottom: '2px' }}>
+              새로운 소식
+            </h2>
+            <p style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: 500, margin: 0 }}>
+              이벤트와 쿠폰 소식을 한 번에
+            </p>
+          </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {visibleEvents.map(ev => (
-              <div key={ev.id} className="ui-list-card" style={{ alignItems: 'flex-start', position: 'relative', padding: '12px 14px' }}>
-                <div className="ui-icon-pill" style={{ background: 'rgba(79, 70, 229, 0.1)', flexShrink: 0 }}>
-                  <Tag size={18} color="#4F46E5" />
+              <div
+                key={ev.id}
+                style={{
+                  position: 'relative',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px',
+                  padding: '12px 14px',
+                  background: 'var(--surface-elevated)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: '12px',
+                }}
+              >
+                <div
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '10px',
+                    background: 'var(--surface-muted)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--text-muted)',
+                    flexShrink: 0,
+                  }}
+                  aria-hidden
+                >
+                  <Tag size={16} strokeWidth={1.8} />
                 </div>
                 <div style={{ flex: 1, minWidth: 0, paddingRight: '16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', flexWrap: 'wrap' }}>
-                    <span className="ui-badge ui-badge-dark">{ev.badge}</span>
-                    {ev.code && <span className="ui-badge ui-badge-soft">{ev.code}</span>}
+                    <span className="ui-badge ui-badge-muted">{ev.badge}</span>
+                    {ev.code && <span className="ui-badge ui-badge-muted">{ev.code}</span>}
                   </div>
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '3px' }}>{ev.title}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500, lineHeight: 1.45 }}>{ev.desc}</div>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-dark)', marginBottom: '2px', letterSpacing: '-0.005em' }}>
+                    {ev.title}
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: 500, lineHeight: 1.5 }}>
+                    {ev.desc}
+                  </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setClosedEvents(prev => [...prev, ev.id])}
-                  style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF' }}
+                  style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-light)', padding: '2px' }}
                   aria-label="공지 닫기"
                 >
-                  <X size={14} />
+                  <X size={14} strokeWidth={2} />
                 </button>
               </div>
             ))}
@@ -618,7 +519,6 @@ export default function Home() {
             ? `${profile.name} 프로필 건강 고민 기반`
             : `${profile.name}을 위해 마이 펫에서 고민을 추가해 보세요`
         }
-        icon={<Stethoscope size={18} color="#2563EB" />}
         products={concernProducts}
         onMore={() => navigate('/search')}
       />
@@ -626,7 +526,6 @@ export default function Home() {
       <HorizontalProductSection
         title="가성비 추천"
         subtitle="3만원 이하 평점 우수 제품"
-        icon={<Wallet size={18} color="#059669" />}
         products={budgetProducts}
         onMore={() => navigate('/search')}
       />
@@ -652,34 +551,60 @@ export default function Home() {
         </section>
       )}
 
-      <section style={{ marginTop: '32px', marginBottom: '24px' }}>
-        <TossSectionTitle
-          title="카테고리별 탐색"
-          subtitle="원하는 상품군으로 바로 이동해 보세요"
-          right={(
-            <button type="button" className="ui-text-button" onClick={() => navigate('/search')}>
-              전체 탐색 <ChevronRight size={14} />
-            </button>
-          )}
-          style={{ marginBottom: '16px' }}
-        />
+      <section style={{ marginTop: '24px', marginBottom: '24px', padding: '0 20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '14px' }}>
+          <div>
+            <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-dark)', letterSpacing: '-0.01em', marginBottom: '2px' }}>
+              카테고리별 탐색
+            </h2>
+            <p style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: 500, margin: 0 }}>
+              원하는 상품군으로 이동해 보세요
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/search')}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontWeight: 500,
+              color: 'var(--text-muted)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '2px',
+              padding: '4px',
+            }}
+          >
+            전체 <ChevronRight size={14} />
+          </button>
+        </div>
         <div className="ui-category-grid">
           {HOME_CATEGORY_ITEMS.map(item => (
-            <div
-              key={item.name} 
+            <button
+              key={item.name}
+              type="button"
               onClick={() =>
                 navigate({
                   pathname: '/search',
                   search: `?category=${encodeURIComponent(item.name)}`,
                 })
               }
-              style={{ textAlign: 'center', cursor: 'pointer' }}
+              style={{
+                textAlign: 'center',
+                cursor: 'pointer',
+                background: 'none',
+                border: 'none',
+                padding: 0,
+              }}
+              aria-label={`${item.name} 카테고리로 이동`}
             >
               <div className="ui-category-card">
                 <div className="ui-category-icon">{item.emoji}</div>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-dark)' }}>{item.name}</span>
+                <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-dark)', letterSpacing: '-0.005em' }}>{item.name}</span>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </section>
@@ -925,29 +850,42 @@ export default function Home() {
 function HorizontalProductSection({
   title,
   subtitle,
-  icon,
   products,
   onMore,
 }: {
   title: string;
   subtitle: string;
-  icon: ReactNode;
+  icon?: ReactNode;
   products: Product[];
   onMore: () => void;
 }) {
   if (products.length === 0) return null;
 
   return (
-    <section style={{ marginBottom: '22px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', gap: '10px' }}>
-        <div>
-          <h2 style={{ fontSize: '16.5px', marginBottom: '3px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}>
-            {icon}
+    <section style={{ marginBottom: '24px', padding: '0 20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '10px', gap: '10px' }}>
+        <div style={{ minWidth: 0 }}>
+          <h2 style={{ fontSize: '16px', marginBottom: '2px', fontWeight: 700, color: 'var(--text-dark)', letterSpacing: '-0.01em' }}>
             {title}
           </h2>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500, margin: 0 }}>{subtitle}</p>
+          <p style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: 500, margin: 0 }}>{subtitle}</p>
         </div>
-        <button onClick={onMore} className="ui-text-button" style={{ flexShrink: 0, fontSize: '12.5px' }}>
+        <button
+          onClick={onMore}
+          style={{
+            flexShrink: 0,
+            fontSize: '12px',
+            fontWeight: 500,
+            color: 'var(--text-muted)',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '2px',
+            padding: '4px',
+          }}
+        >
           더보기 <ChevronRight size={14} />
         </button>
       </div>
@@ -969,18 +907,20 @@ function HorizontalProductSection({
         {products.map((product, idx) => (
           <div
             key={product.id}
-            style={{ flex: '0 0 172px', position: 'relative', scrollSnapAlign: 'start' }}
+            style={{ flex: '0 0 168px', position: 'relative', scrollSnapAlign: 'start' }}
           >
             <div style={{ position: 'absolute', top: '14px', left: '14px', zIndex: 2 }}>
-              <span style={{ 
-                background: 'rgba(79, 70, 229, 0.9)', 
-                color: '#ffffff', 
-                fontSize: '10.5px', 
-                fontWeight: 800, 
-                padding: '3px 7px', 
-                borderRadius: '6px',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
-              }}>
+              <span
+                style={{
+                  background: 'rgba(15, 23, 42, 0.88)',
+                  color: '#ffffff',
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  padding: '3px 7px',
+                  borderRadius: '6px',
+                  letterSpacing: '-0.01em',
+                }}
+              >
                 {idx + 1}
               </span>
             </div>

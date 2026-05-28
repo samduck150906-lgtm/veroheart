@@ -31,9 +31,9 @@ import { COUPANG_PARTNERS_DISCLOSURE } from '../constants/coupangPartners';
 import { REVIEW_QUICK_TAGS } from '../constants/reviewTags';
 
 const getVerificationMeta = (s: string) => {
-  if (s === 'verified') return { bg: '#E0F2FE', color: '#0369A1', label: '베로로 공식 인증' };
-  if (s === 'needs_review') return { bg: '#FEF3C7', color: '#B45309', label: '정보 재검토 중' };
-  return { bg: '#F3F4F6', color: '#4B5563', label: '영양 성분 검수 대기' };
+  if (s === 'verified') return { bg: 'var(--surface-muted)', color: 'var(--text-dark)', label: '베로로 공식 인증' };
+  if (s === 'needs_review') return { bg: 'var(--warning-soft)', color: 'var(--warning)', label: '정보 재검토 중' };
+  return { bg: 'var(--surface-muted)', color: 'var(--text-muted)', label: '영양 성분 검수 대기' };
 };
 
 interface Ingredient { id: string; riskLevel: string; nameKo: string; nameEn?: string; purpose?: string; description?: string; }
@@ -150,16 +150,19 @@ export default function Detail() {
         textAlign: 'center',
       }}
     >
-      <p style={{ color: '#6B7280', marginBottom: '16px' }}>제품을 찾을 수 없습니다.</p>
+      <p style={{ color: 'var(--text-muted)', marginBottom: '16px', fontSize: '14px' }}>
+        제품을 찾을 수 없습니다.
+      </p>
       <button
         onClick={() => navigate('/')}
         style={{
-          padding: '10px 20px',
-          borderRadius: '12px',
-          background: '#3B82F6',
+          padding: '12px 22px',
+          borderRadius: '14px',
+          background: 'var(--text-dark)',
           color: '#fff',
           border: 'none',
-          fontWeight: 700,
+          fontWeight: 600,
+          fontSize: '14px',
           cursor: 'pointer',
         }}
       >
@@ -205,20 +208,20 @@ export default function Detail() {
 
   // selectedIngredient state moved to top with other hooks
   
-  // Create Toss-style Headline Data
-  let headline = `${profile.name}가 안심하고 먹을 수 있어요!`;
-  let headlineColor = '#191F28';
+  // Headline with calm semantic colors
+  let headline = `${profile.name}가 안심하고 먹을 수 있어요`;
+  let headlineColor = 'var(--text-dark)';
   let dangerIngs = product.ingredients?.filter(i => i.riskLevel === 'danger') || [];
   let cautionIngs = product.ingredients?.filter(i => i.riskLevel === 'caution') || [];
   let allergyIngs = product.ingredients?.filter(ing => profile.allergies.some(a => ing.nameKo.includes(a) || (ing.nameEn && ing.nameEn.toLowerCase().includes(a.toLowerCase())))) || [];
-  
+
   if (allergyIngs.length > 0 || dangerIngs.length > 0) {
     const count = new Set([...allergyIngs, ...dangerIngs]).size;
     headline = `주의 성분이 ${count}개 발견됐어요`;
-    headlineColor = '#F04452'; // Toss Red
+    headlineColor = 'var(--danger)';
   } else if (cautionIngs.length > 0) {
     headline = `확인해야 할 성분이 ${cautionIngs.length}개 있어요`;
-    headlineColor = '#F59E0B';
+    headlineColor = 'var(--warning)';
   }
 
   return (
@@ -233,37 +236,33 @@ export default function Detail() {
           aria-label="맞춤 결론"
           style={{
             marginBottom: '20px',
-            padding: '22px 20px',
-            borderRadius: '22px',
-            background:
+            padding: '18px 20px',
+            borderRadius: '16px',
+            background: 'var(--surface-elevated)',
+            border: '1px solid var(--border-subtle)',
+            borderLeft: `3px solid ${
               conclusion.tone === 'alert'
-                ? 'linear-gradient(145deg, #FEF2F2 0%, #FFF 100%)'
+                ? 'var(--danger)'
                 : conclusion.tone === 'match'
-                  ? 'linear-gradient(145deg, #ECFDF5 0%, #FFF 100%)'
-                  : 'linear-gradient(145deg, #FFFBEB 0%, #FFF 100%)',
-            border:
-              conclusion.tone === 'alert'
-                ? '1px solid #FECACA'
-                : conclusion.tone === 'match'
-                  ? '1px solid #BBF7D0'
-                  : '1px solid #FDE68A',
-            boxShadow: '0 8px 28px rgba(15, 23, 42, 0.06)',
+                  ? 'var(--safe)'
+                  : 'var(--warning)'
+            }`,
           }}
         >
           <p
             style={{
-              margin: '0 0 8px',
-              fontSize: '20px',
-              fontWeight: 900,
-              color: '#0F172A',
-              lineHeight: 1.35,
-              letterSpacing: '-0.02em',
+              margin: '0 0 6px',
+              fontSize: '17px',
+              fontWeight: 700,
+              color: 'var(--text-dark)',
+              lineHeight: 1.4,
+              letterSpacing: '-0.015em',
             }}
           >
             {conclusion.headline}
           </p>
           {conclusion.subline ? (
-            <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#475569', lineHeight: 1.55 }}>
+            <p style={{ margin: 0, fontSize: '13px', fontWeight: 500, color: 'var(--text-muted)', lineHeight: 1.55 }}>
               {conclusion.subline}
             </p>
           ) : null}
@@ -342,69 +341,76 @@ export default function Detail() {
           alignItems: 'center',
           justifyContent: 'space-between',
           width: '100%',
-          padding: '16px 20px',
-          background: 'linear-gradient(135deg, #6366F1 0%, #3B82F6 100%)',
-          color: '#ffffff',
-          border: 'none',
-          borderRadius: '20px',
-          boxShadow: '0 8px 24px rgba(99, 102, 241, 0.22)',
+          padding: '14px 18px',
+          background: 'var(--surface-elevated)',
+          color: 'var(--text-dark)',
+          border: '1px solid var(--border-subtle)',
+          borderRadius: '14px',
           cursor: 'pointer',
-          marginBottom: '24px',
-          transition: 'all 0.2s ease',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'translateY(-2px)';
-          e.currentTarget.style.boxShadow = '0 12px 28px rgba(99, 102, 241, 0.32)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'none';
-          e.currentTarget.style.boxShadow = '0 8px 24px rgba(99, 102, 241, 0.22)';
+          marginBottom: '14px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ background: 'rgba(255,255,255,0.18)', padding: '8px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Sparkles size={20} color="#FFD700" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+          <div
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '10px',
+              background: 'var(--surface-muted)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--text-muted)',
+              flexShrink: 0,
+            }}
+          >
+            <Sparkles size={16} strokeWidth={1.8} />
           </div>
-          <div style={{ textAlign: 'left' }}>
-            <div style={{ fontSize: '15px', fontWeight: 800, letterSpacing: '-0.02em', color: '#ffffff' }}>AI 프리미엄 영양 리포트 보기</div>
-            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>DMB 건물기준 변환 · 급여량 계산기 · 유해성분 탐지</div>
+          <div style={{ textAlign: 'left', minWidth: 0 }}>
+            <div style={{ fontSize: '14px', fontWeight: 700, letterSpacing: '-0.01em', color: 'var(--text-dark)' }}>
+              AI 영양 리포트 보기
+            </div>
+            <div style={{ fontSize: '11px', color: 'var(--text-light)', fontWeight: 500, marginTop: '1px' }}>
+              건물기준 변환 · 급여량 · 유해성분 탐지
+            </div>
           </div>
         </div>
-        <ChevronRight size={20} color="#ffffff" />
+        <ChevronRight size={16} color="var(--text-light)" strokeWidth={2} />
       </button>
 
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '10px' }}>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
         <button
           className="btn btn-outline"
           aria-label={isComparing ? '비교함에서 빼기' : '비교함에 담기'}
-          style={{ flex: 1, height: '56px', borderRadius: 'var(--border-radius-md)' }}
+          style={{ flex: 1, height: '48px' }}
           onClick={() => {
             isComparing ? removeFromComparison(product.id) : addToComparison(product.id);
           }}
         >
-          <GitCompare size={20} />
-          <span style={{ marginLeft: '4px' }}>비교</span>
+          <GitCompare size={16} strokeWidth={1.8} />
+          <span>비교</span>
         </button>
 
         <button
           className="btn btn-primary"
           aria-label="쿠팡에서 최저가 구매하기 (외부 링크)"
-          style={{ flex: 2, borderRadius: 'var(--border-radius-md)', fontWeight: 800, fontSize: '17px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+          style={{ flex: 2, height: '48px', fontWeight: 600, fontSize: '15px' }}
           onClick={() => {
             openCoupangForProduct(product);
           }}
         >
-          🚀 쿠팡 최저가 구매 <ExternalLink size={18} />
+          쿠팡 최저가 구매
+          <ExternalLink size={14} strokeWidth={1.8} />
         </button>
       </div>
       <p
         style={{
-          margin: '0 0 24px',
+          margin: '0 0 28px',
           padding: '0 4px',
           fontSize: '10.5px',
           lineHeight: 1.5,
-          fontWeight: 600,
-          color: '#94A3B8',
+          fontWeight: 500,
+          color: 'var(--text-light)',
           textAlign: 'right',
           letterSpacing: '-0.01em',
         }}
@@ -461,67 +467,94 @@ export default function Detail() {
         )}
       </section>
 
-      {/* Toss-style Ingredient Analysis */}
+      {/* Ingredient Analysis — calm semantic colors */}
       <section style={{ marginBottom: '40px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: 900, color: headlineColor, lineHeight: 1.4, marginBottom: '24px', letterSpacing: '-0.02em' }}>
+        <h2
+          style={{
+            fontSize: '22px',
+            fontWeight: 700,
+            color: headlineColor,
+            lineHeight: 1.4,
+            marginBottom: '20px',
+            letterSpacing: '-0.02em',
+          }}
+        >
           {headline}
         </h2>
-        
+
         {/* Nutrition Summary */}
-        <div style={{ backgroundColor: 'var(--secondary)', padding: '20px', borderRadius: 'var(--border-radius-lg)', marginBottom: '32px' }}>
-          <p style={{ fontSize: '15px', color: 'var(--text-dark)', fontWeight: 600, lineHeight: 1.6 }}>
-            {profile.healthConcerns.includes('비만') 
-              ? "다이어트가 필요한 아이에겐 지방 수치가 다소 높으니 급여량을 10% 줄여주세요." 
-              : "조단백질이 풍부하여 근육 형성과 에너지 보충에 아주 좋습니다."}
+        <div
+          style={{
+            backgroundColor: 'var(--surface-muted)',
+            padding: '16px 18px',
+            borderRadius: '14px',
+            marginBottom: '28px',
+            border: '1px solid var(--border-subtle)',
+          }}
+        >
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500, lineHeight: 1.6, margin: 0 }}>
+            {profile.healthConcerns.includes('비만')
+              ? '다이어트가 필요한 아이에겐 지방 수치가 다소 높으니 급여량을 10% 줄여주세요.'
+              : '조단백질이 풍부하여 근육 형성과 에너지 보충에 도움이 됩니다.'}
           </p>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '16px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-dark)' }}>전성분 상세</h3>
-          <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 500 }}>총 {product.ingredients?.length}개</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '14px' }}>
+          <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-dark)' }}>전성분 상세</h3>
+          <div style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: 500 }}>
+            총 {product.ingredients?.length}개
+          </div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           {product.ingredients?.map(ing => {
-            const isAllergy = profile.allergies.some(a => 
+            const isAllergy = profile.allergies.some(a =>
               ing.nameKo.includes(a) || (ing.nameEn && ing.nameEn.toLowerCase().includes(a.toLowerCase()))
             );
             const isDanger = isAllergy || ing.riskLevel === 'danger';
             const isCaution = !isDanger && ing.riskLevel === 'caution';
+            const accentColor = isDanger ? 'var(--danger)' : isCaution ? 'var(--warning)' : 'var(--safe)';
 
             return (
-              <button 
-                key={ing.id} 
+              <button
+                key={ing.id}
                 onClick={() => setSelectedIngredient({ ...ing, isAllergy })}
                 style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '16px', borderRadius: 'var(--border-radius-md)', 
-                  background: 'var(--bg-color)', border: 'none', cursor: 'pointer', textAlign: 'left',
-                  transition: 'background-color 0.2s', width: '100%'
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '14px 16px',
+                  borderRadius: '12px',
+                  background: '#FFFFFF',
+                  border: '1px solid var(--border-subtle)',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  width: '100%',
                 }}
-                className="hover:bg-gray-50 active:bg-gray-100"
               >
-                <div>
-                  <div style={{ fontWeight: isDanger || isCaution ? 800 : 600, fontSize: '16px', color: isDanger ? '#F04452' : (isCaution ? '#F59E0B' : 'var(--text-dark)') }}>
-                    {ing.nameKo}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
+                  <span
+                    style={{
+                      width: '4px',
+                      height: '24px',
+                      borderRadius: '2px',
+                      background: accentColor,
+                      flexShrink: 0,
+                    }}
+                    aria-hidden
+                  />
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-dark)' }}>
+                      {ing.nameKo}
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-light)', marginTop: '2px', fontWeight: 500 }}>
+                      {ing.purpose}
+                    </div>
                   </div>
-                  <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px', fontWeight: 500 }}>{ing.purpose}</div>
                 </div>
-                {isDanger && (
-                  <div style={{ background: '#FEE2E2', color: '#F04452', padding: '6px 12px', borderRadius: '12px', fontSize: '13px', fontWeight: 800 }}>
-                    {isAllergy ? '알레르기 위험' : '주의 성분'}
-                  </div>
-                )}
-                {isCaution && (
-                  <div style={{ background: '#FEF3C7', color: '#D97706', padding: '6px 12px', borderRadius: '12px', fontSize: '13px', fontWeight: 800 }}>
-                    확인 필요
-                  </div>
-                )}
-                {!isDanger && !isCaution && (
-                  <div style={{ fontSize: '13px', color: 'var(--text-light)', fontWeight: 600 }}>
-                    안전
-                  </div>
-                )}
+                <span style={{ fontSize: '11px', color: accentColor, fontWeight: 600, marginLeft: '12px', flexShrink: 0 }}>
+                  {isDanger ? (isAllergy ? '알레르기' : '주의') : isCaution ? '확인 필요' : '안전'}
+                </span>
               </button>
             );
           })}

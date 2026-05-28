@@ -235,31 +235,29 @@ export default function Search() {
         <title>제품 검색 | 베로로</title>
         <meta name="description" content="반려동물 종류, 가격대, 건강 고민에 따라 사료를 정밀하게 탐색하세요." />
       </Helmet>
-      <section className="ui-hero-panel" style={{ marginBottom: '18px', padding: '18px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '14px' }}>
-          <div>
-            <span className="ui-badge ui-badge-soft" style={{ marginBottom: '10px', display: 'inline-flex' }}>
-              <Sparkles size={14} />
-              취향 기반 탐색
-            </span>
-            <h2 style={{ fontSize: '22px', fontWeight: 900, marginBottom: '6px' }}>조건을 조합해 정확하게 좁혀보세요</h2>
-            <p style={{ fontSize: '13px', lineHeight: 1.55, color: '#66707C' }}>{CORE_COPY.ocr}</p>
-          </div>
+      <section style={{ marginBottom: '18px', padding: '20px' }}>
+        <div style={{ marginBottom: '14px' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '4px', letterSpacing: '-0.02em', color: 'var(--text-dark)' }}>
+            조건을 조합해 좁혀보세요
+          </h2>
+          <p style={{ fontSize: '13px', lineHeight: 1.55, color: 'var(--text-light)', margin: 0 }}>
+            {CORE_COPY.ocr}
+          </p>
         </div>
 
         <div
           style={{
             marginBottom: '14px',
             padding: '12px 14px',
-            borderRadius: '16px',
-            background: '#FFFFFF',
-            border: '1px solid rgba(124, 111, 156, 0.16)',
+            borderRadius: '12px',
+            background: 'var(--surface-muted)',
+            border: '1px solid var(--border-subtle)',
           }}
         >
-          <div style={{ fontSize: '12px', fontWeight: 800, color: '#5B21B6', marginBottom: '4px' }}>
+          <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-dark)', marginBottom: '3px', letterSpacing: '-0.005em' }}>
             사람이 검수한 데이터 우선
           </div>
-          <p style={{ margin: 0, fontSize: '12px', lineHeight: 1.55, color: '#66707C', fontWeight: 600 }}>
+          <p style={{ margin: 0, fontSize: '12px', lineHeight: 1.55, color: 'var(--text-muted)', fontWeight: 500 }}>
             검색과 추천은 직접 정리한 제조사/성분 데이터와 프로필 기준으로 계산하며, AI는 해석 보조에만 사용됩니다.
           </p>
         </div>
@@ -288,14 +286,16 @@ export default function Search() {
                   type="button"
                   onClick={() => setPetFilter(key)}
                   style={{
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
-                    padding: '10px 6px', borderRadius: '14px', border: active ? '2px solid var(--primary)' : '1px solid rgba(0,0,0,0.08)',
-                    background: active ? 'rgba(250, 204, 21, 0.18)' : 'var(--surface-elevated)',
-                    color: active ? 'var(--primary-dark)' : 'var(--text-muted)',
-                    fontWeight: 700, fontSize: '12px', cursor: 'pointer',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
+                    padding: '12px 6px',
+                    borderRadius: '12px',
+                    border: active ? '1px solid var(--text-dark)' : '1px solid var(--border-subtle)',
+                    background: active ? 'var(--text-dark)' : 'var(--surface-elevated)',
+                    color: active ? '#FFFFFF' : 'var(--text-muted)',
+                    fontWeight: 600, fontSize: '12px', cursor: 'pointer',
                   }}
                 >
-                  <Icon size={20} strokeWidth={active ? 2.5 : 2} />
+                  <Icon size={18} strokeWidth={1.8} />
                   {label}
                 </button>
               );
@@ -314,10 +314,10 @@ export default function Search() {
                 onClick={() => setFilters(f => ({ ...f, priceBand: id }))}
                 style={{
                   flexShrink: 0,
-                  padding: '8px 12px', borderRadius: '999px', fontSize: '12px', fontWeight: 700,
-                  border: filters.priceBand === id ? 'none' : '1px solid #E5E7EB',
-                  backgroundColor: filters.priceBand === id ? 'var(--primary)' : '#fff',
-                  color: filters.priceBand === id ? '#fff' : '#4B5563',
+                  padding: '8px 14px', borderRadius: '999px', fontSize: '12px', fontWeight: 600,
+                  border: filters.priceBand === id ? '1px solid var(--text-dark)' : '1px solid var(--border-subtle)',
+                  backgroundColor: filters.priceBand === id ? 'var(--text-dark)' : 'var(--surface-elevated)',
+                  color: filters.priceBand === id ? '#FFFFFF' : 'var(--text-muted)',
                   cursor: 'pointer',
                 }}
               >
@@ -334,10 +334,10 @@ export default function Search() {
               type="button"
               onClick={() => setFilters(f => ({ ...f, dietPreset: !f.dietPreset }))}
               style={{
-                padding: '8px 14px', borderRadius: '999px', fontSize: '12px', fontWeight: 700,
-                border: filters.dietPreset ? 'none' : '1px solid #E5E7EB',
-                backgroundColor: filters.dietPreset ? 'var(--primary)' : '#fff',
-                color: filters.dietPreset ? '#fff' : '#4B5563', cursor: 'pointer',
+                padding: '8px 14px', borderRadius: '999px', fontSize: '12px', fontWeight: 600,
+                border: filters.dietPreset ? '1px solid var(--text-dark)' : '1px solid var(--border-subtle)',
+                backgroundColor: filters.dietPreset ? 'var(--text-dark)' : 'var(--surface-elevated)',
+                color: filters.dietPreset ? '#fff' : 'var(--text-muted)', cursor: 'pointer',
               }}
             >
               다이어트·체중
@@ -351,10 +351,10 @@ export default function Search() {
                 }))
               }
               style={{
-                padding: '8px 14px', borderRadius: '999px', fontSize: '12px', fontWeight: 700,
-                border: filters.targetLifeStage === '시니어' ? 'none' : '1px solid #E5E7EB',
-                backgroundColor: filters.targetLifeStage === '시니어' ? 'var(--primary)' : '#fff',
-                color: filters.targetLifeStage === '시니어' ? '#fff' : '#4B5563', cursor: 'pointer',
+                padding: '8px 14px', borderRadius: '999px', fontSize: '12px', fontWeight: 600,
+                border: filters.targetLifeStage === '시니어' ? '1px solid var(--text-dark)' : '1px solid var(--border-subtle)',
+                backgroundColor: filters.targetLifeStage === '시니어' ? 'var(--text-dark)' : 'var(--surface-elevated)',
+                color: filters.targetLifeStage === '시니어' ? '#fff' : 'var(--text-muted)', cursor: 'pointer',
               }}
             >
               노령(시니어)
@@ -402,11 +402,11 @@ export default function Search() {
                   setFilters(f => ({ ...f, subCategory: '' }));
                 }}
                 style={{
-                  padding: '10px 18px', borderRadius: '24px', fontSize: '14px', whiteSpace: 'nowrap',
-                  border: category === cat.name ? 'none' : '1px solid #E5E7EB',
-                  backgroundColor: category === cat.name ? 'var(--primary)' : '#fff',
-                  color: category === cat.name ? '#fff' : '#4B5563',
-                  cursor: 'pointer', fontWeight: 600, transition: 'all 0.2s',
+                  padding: '10px 16px', borderRadius: '999px', fontSize: '13px', whiteSpace: 'nowrap',
+                  border: category === cat.name ? '1px solid var(--text-dark)' : '1px solid var(--border-subtle)',
+                  backgroundColor: category === cat.name ? 'var(--text-dark)' : 'var(--surface-elevated)',
+                  color: category === cat.name ? '#fff' : 'var(--text-muted)',
+                  cursor: 'pointer', fontWeight: 500, transition: 'background-color 0.2s, color 0.2s',
                   display: 'flex', alignItems: 'center', gap: '8px'
                 }}
               >
@@ -533,9 +533,10 @@ export default function Search() {
                 type="button"
                 onClick={() => setFilters(f => ({ ...f, dietPreset: !f.dietPreset }))}
                 style={{
-                  width: '100%', textAlign: 'left', padding: '14px 16px', borderRadius: '14px',
-                  border: filters.dietPreset ? '2px solid var(--primary)' : '1px solid #E5E7EB',
-                  background: filters.dietPreset ? 'rgba(250, 204, 21, 0.16)' : '#fff', cursor: 'pointer', fontWeight: 700, color: '#374151',
+                  width: '100%', textAlign: 'left', padding: '12px 14px', borderRadius: '12px',
+                  border: filters.dietPreset ? '1px solid var(--text-dark)' : '1px solid var(--border-subtle)',
+                  background: filters.dietPreset ? 'var(--surface-muted)' : 'var(--surface-elevated)',
+                  cursor: 'pointer', fontWeight: 500, color: 'var(--text-dark)', fontSize: '13px',
                 }}
               >
                 {filters.dietPreset ? '✓ ' : ''}다이어트·저칼로리·체중 관련 상품 우선 (태그 일치)
@@ -620,9 +621,9 @@ export default function Search() {
               <p style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '6px' }}>선택한 성분이 포함된 제품은 검색에서 제외됩니다.</p>
             </TossFilterSection>
 
-            <div style={{ position: 'sticky', bottom: 0, paddingTop: '40px', paddingBottom: '24px', backgroundColor: '#fff', display: 'flex', gap: '12px' }}>
-              <button type="button" onClick={resetFilters} style={{ flex: 1, padding: '18px', borderRadius: '16px', border: '1px solid #E5E7EB', backgroundColor: '#fff', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}><Trash2 size={18} /> 초기화</button>
-              <button type="button" onClick={() => setIsFilterOpen(false)} style={{ flex: 2, padding: '18px', borderRadius: '16px', background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)', color: '#fff', fontWeight: 800, border: 'none', cursor: 'pointer' }}>결과 보기</button>
+            <div style={{ position: 'sticky', bottom: 0, paddingTop: '40px', paddingBottom: '24px', backgroundColor: '#fff', display: 'flex', gap: '10px' }}>
+              <button type="button" onClick={resetFilters} style={{ flex: 1, padding: '14px', borderRadius: '14px', border: '1px solid var(--border-strong)', backgroundColor: '#fff', fontWeight: 600, fontSize: '14px', color: 'var(--text-dark)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}><Trash2 size={16} strokeWidth={1.8} /> 초기화</button>
+              <button type="button" onClick={() => setIsFilterOpen(false)} style={{ flex: 2, padding: '14px', borderRadius: '14px', background: 'var(--text-dark)', color: '#fff', fontWeight: 600, fontSize: '14px', border: 'none', cursor: 'pointer' }}>결과 보기</button>
             </div>
           </div>
         </div>
@@ -706,14 +707,14 @@ function FilterChip({ label, selected, onClick }: { label: string, selected: boo
       type="button"
       onClick={onClick}
       style={{
-        padding: '10px 20px', borderRadius: '24px', fontSize: '14px', border: '1px solid',
-        borderColor: selected ? 'var(--primary)' : '#E5E7EB',
-        backgroundColor: selected ? 'var(--primary)' : 'transparent',
-        color: selected ? '#fff' : '#4B5563', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
+        padding: '8px 14px', borderRadius: '999px', fontSize: '13px', border: '1px solid',
+        borderColor: selected ? 'var(--text-dark)' : 'var(--border-subtle)',
+        backgroundColor: selected ? 'var(--text-dark)' : 'transparent',
+        color: selected ? '#fff' : 'var(--text-muted)', fontWeight: 500, cursor: 'pointer', transition: 'background-color 0.2s, color 0.2s',
         display: 'flex', alignItems: 'center', gap: '4px'
       }}
     >
-      {selected && <Check size={16} />}
+      {selected && <Check size={14} strokeWidth={2} />}
       {label}
     </button>
   );

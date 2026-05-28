@@ -141,64 +141,61 @@ export default function Community() {
         <title>집사 소통 커뮤니티 | 베로로</title>
       </Helmet>
 
-      {/* Header Banner */}
-      <div 
-        style={{ 
-          background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)', 
-          borderRadius: '24px', 
-          padding: '24px 20px', 
-          color: '#FFFFFF',
-          marginBottom: '24px',
-          boxShadow: '0 8px 30px rgba(79, 70, 229, 0.25)',
-          position: 'relative',
-          overflow: 'hidden',
+      {/* Header Banner — calm neutral */}
+      <div
+        style={{
+          background: 'var(--surface-elevated)',
+          border: '1px solid var(--border-subtle)',
+          borderRadius: '16px',
+          padding: '18px 20px',
+          color: 'var(--text-dark)',
+          marginBottom: '20px',
         }}
       >
-        {/* Dynamic micro-pattern circles */}
-        <div style={{ position: 'absolute', top: '-10%', right: '-10%', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.1)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: '-20%', left: '10%', width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.06)', pointerEvents: 'none' }} />
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-          <Sparkles size={16} color="#FAAC1B" className="animate-pulse" />
-          <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255, 255, 255, 0.9)' }}>
-            Pet Food Community
-          </span>
-        </div>
-        <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '6px' }}>
-          베로로 건강 소통 광장
+        <span
+          style={{
+            fontSize: '11px',
+            fontWeight: 500,
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
+            color: 'var(--text-light)',
+            display: 'inline-block',
+            marginBottom: '6px',
+          }}
+        >
+          Community
+        </span>
+        <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '4px', letterSpacing: '-0.015em' }}>
+          건강 소통 광장
         </h2>
-        <Text variant="caption" style={{ color: 'rgba(255, 255, 255, 0.85)', lineHeight: 1.45 }}>
-          영양 정보 공부부터 까다로운 입맛 해결법까지,<br />전문 수의사 및 꼼꼼한 보호자들과 함께 나누어 보세요.
+        <Text variant="caption" style={{ color: 'var(--text-muted)', lineHeight: 1.5 }}>
+          영양 정보부터 까다로운 입맛 해결법까지, 보호자·수의사와 함께 나누어 보세요.
         </Text>
       </div>
 
       {/* Write Post Trigger Button */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Filter size={14} color="var(--text-muted)" />
-          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>카테고리 필터</span>
+          <Filter size={14} color="var(--text-muted)" strokeWidth={1.8} />
+          <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)' }}>카테고리 필터</span>
         </div>
         <button
           onClick={() => setIsWriteOpen(!isWriteOpen)}
           style={{
-            background: 'var(--primary)',
+            background: 'var(--text-dark)',
             color: '#FFFFFF',
             border: 'none',
-            borderRadius: '12px',
+            borderRadius: '10px',
             padding: '8px 14px',
-            fontSize: '11px',
-            fontWeight: 800,
+            fontSize: '12px',
+            fontWeight: 600,
             display: 'flex',
             alignItems: 'center',
             gap: '4px',
             cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(129, 201, 149, 0.3)',
-            transition: 'all 0.2s',
           }}
-          onMouseDown={e => e.currentTarget.style.transform = 'scale(0.96)'}
-          onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
         >
-          <Plus size={14} strokeWidth={3} />
+          <Plus size={14} strokeWidth={2} />
           글쓰기
         </button>
       </div>
@@ -219,16 +216,16 @@ export default function Community() {
             key={cat}
             onClick={() => setSelectedCategory(cat)}
             style={{
-              padding: '8px 16px',
+              padding: '8px 14px',
               borderRadius: '999px',
-              border: selectedCategory === cat ? 'none' : '1px solid rgba(0, 0, 0, 0.08)',
-              background: selectedCategory === cat ? 'var(--primary-dark)' : '#F8FAFC',
+              border: selectedCategory === cat ? '1px solid var(--text-dark)' : '1px solid var(--border-subtle)',
+              background: selectedCategory === cat ? 'var(--text-dark)' : 'var(--surface-elevated)',
               color: selectedCategory === cat ? '#FFFFFF' : 'var(--text-muted)',
-              fontSize: '11px',
-              fontWeight: 700,
+              fontSize: '12px',
+              fontWeight: 500,
               whiteSpace: 'nowrap',
               cursor: 'pointer',
-              transition: 'all 0.15s ease',
+              transition: 'background-color 0.15s ease, color 0.15s ease',
             }}
           >
             {cat}

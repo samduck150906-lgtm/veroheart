@@ -281,7 +281,7 @@ export default function Login() {
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.55 }}>{HOME_HERO.sub}</p>
         </div>
 
-        <div style={{ display: 'flex', backgroundColor: 'var(--primary-light)', borderRadius: '16px', padding: '4px', marginBottom: '22px' }}>
+        <div style={{ display: 'flex', backgroundColor: 'var(--surface-muted)', borderRadius: '12px', padding: '4px', marginBottom: '22px' }}>
           {(['login', 'signup'] as const).map((m) => (
             <button
               key={m}
@@ -292,16 +292,16 @@ export default function Login() {
               }}
               style={{
                 flex: 1,
-                padding: '12px',
-                borderRadius: '12px',
+                padding: '10px',
+                borderRadius: '9px',
                 border: 'none',
                 cursor: 'pointer',
-                fontWeight: 700,
-                fontSize: '15px',
-                transition: 'all 0.2s',
+                fontWeight: 600,
+                fontSize: '14px',
+                transition: 'background-color 0.2s, color 0.2s',
                 background: mode === m ? '#FFFFFF' : 'transparent',
-                color: mode === m ? 'var(--primary-dark)' : 'var(--text-muted)',
-                boxShadow: mode === m ? '0 2px 8px rgba(102, 181, 125, 0.08)' : 'none',
+                color: mode === m ? 'var(--text-dark)' : 'var(--text-muted)',
+                boxShadow: 'none',
               }}
             >
               {m === 'login' ? '로그인' : '회원가입'}

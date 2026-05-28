@@ -25,19 +25,19 @@ export default function NotFound() {
 
       <div
         style={{
-          width: '88px',
-          height: '88px',
+          width: '72px',
+          height: '72px',
           borderRadius: '50%',
-          background: 'linear-gradient(135deg, #EEF2FF 0%, #FAF5FF 100%)',
+          background: 'var(--surface-muted)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           marginBottom: '20px',
-          boxShadow: '0 12px 32px rgba(99, 102, 241, 0.12)',
+          border: '1px solid var(--border-subtle)',
         }}
         aria-hidden="true"
       >
-        <span style={{ fontSize: '34px', fontWeight: 900, color: '#6366F1', letterSpacing: '-0.04em' }}>
+        <span style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '-0.02em' }}>
           404
         </span>
       </div>
@@ -78,15 +78,14 @@ export default function NotFound() {
             gap: '8px',
             padding: '14px 20px',
             borderRadius: '14px',
-            background: 'linear-gradient(135deg, #6366F1 0%, #3B82F6 100%)',
+            background: 'var(--text-dark)',
             color: '#FFFFFF',
-            fontSize: '15px',
-            fontWeight: 800,
+            fontSize: '14px',
+            fontWeight: 600,
             textDecoration: 'none',
-            boxShadow: '0 8px 20px rgba(99, 102, 241, 0.22)',
           }}
         >
-          <HomeIcon size={18} />
+          <HomeIcon size={16} strokeWidth={1.8} />
           홈으로 이동
         </Link>
         <Link
@@ -98,15 +97,15 @@ export default function NotFound() {
             gap: '8px',
             padding: '14px 20px',
             borderRadius: '14px',
-            background: '#F8FAFC',
-            color: '#1E293B',
-            fontSize: '14px',
-            fontWeight: 700,
+            background: 'var(--surface-elevated)',
+            color: 'var(--text-dark)',
+            fontSize: '13px',
+            fontWeight: 600,
             textDecoration: 'none',
-            border: '1px solid #E2E8F0',
+            border: '1px solid var(--border-subtle)',
           }}
         >
-          <Search size={16} />
+          <Search size={15} strokeWidth={1.8} />
           제품 검색하러 가기
         </Link>
         <button

@@ -6,12 +6,12 @@ function Footer() {
   return (
     <footer
       style={{
-        padding: '12px 20px 14px',
-        background: 'rgba(250, 250, 249, 0.96)',
-        borderTop: '1px solid rgba(28, 25, 23, 0.08)',
-        color: '#78716c',
-        fontSize: '9px',
-        lineHeight: 1.45,
+        padding: '14px 20px 16px',
+        background: 'var(--bg-color)',
+        borderTop: '1px solid var(--border-subtle)',
+        color: 'var(--text-light)',
+        fontSize: '10px',
+        lineHeight: 1.5,
         marginTop: 'auto',
       }}
     >

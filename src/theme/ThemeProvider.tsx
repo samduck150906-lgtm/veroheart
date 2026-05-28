@@ -53,12 +53,12 @@ export interface AppTheme {
 // ==========================================
 
 const defaultColors: ThemeColors = {
-  primary: '#81C995',
-  warning: '#D93025',
+  primary: '#0F172A',
+  warning: '#B5443B',
   background: '#FFFFFF',
-  textNearBlack: '#111111',
-  textGray: '#575B5F',
-  border: '#E5E8EB',
+  textNearBlack: '#0F172A',
+  textGray: '#475569',
+  border: '#ECECEA',
 };
 
 const defaultSpacing: ThemeSpacing = {

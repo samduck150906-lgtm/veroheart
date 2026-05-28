@@ -45,21 +45,15 @@ export default function Layout() {
             <div style={{ minWidth: 0 }}>
               <div
                 style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '4px 8px',
-                  borderRadius: '999px',
-                  background: 'rgba(120, 113, 108, 0.1)',
-                  color: 'var(--community-tint)',
                   fontSize: '10px',
-                  fontWeight: 600,
+                  fontWeight: 500,
                   letterSpacing: '0.04em',
+                  color: 'var(--text-light)',
+                  marginBottom: '3px',
                   textTransform: 'uppercase',
-                  marginBottom: '6px',
                 }}
               >
-                베로로(Veroro)
+                Veroro
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', minWidth: 0 }}>
                 <span
