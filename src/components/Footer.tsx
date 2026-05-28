@@ -6,7 +6,7 @@ function Footer() {
   return (
     <footer
       style={{
-        padding: '14px 20px 16px',
+        padding: '14px 20px calc(100px + env(safe-area-inset-bottom, 0px))',
         background: 'var(--bg-color)',
         borderTop: '1px solid var(--border-subtle)',
         color: 'var(--text-light)',

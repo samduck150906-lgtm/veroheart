@@ -253,14 +253,14 @@ h1, h2, h3, h4, h5, h6 {
   top: 0;
   left: 0;
   right: 0;
-  min-height: 56px;
+  min-height: 52px;
   z-index: 50;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 10px 20px;
+  padding: 8px 18px;
   font-weight: 600;
-  font-size: 17px;
+  font-size: 16px;
   max-width: 520px;
   margin: 0 auto;
   background: var(--bg-color);
@@ -274,8 +274,8 @@ h1, h2, h3, h4, h5, h6 {
 
 .app-main {
   flex: 1;
-  padding-top: 84px;
-  padding-bottom: 100px;
+  padding-top: 68px;
+  padding-bottom: 20px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
@@ -448,51 +448,44 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--primary-dark);
 }
 
-/* 제품 상세: 하단 네비 바로 위 고정 FAB 묶음 */
+/* 제품 상세: 좌상단 고정 뒤로가기 (스크롤탑 제거) */
 .detail-fab-stack {
   position: fixed;
   z-index: 55;
+  top: calc(12px + env(safe-area-inset-top, 0px));
   left: max(16px, calc(50% - 240px + 16px));
-  bottom: calc(12px + 64px + 14px + env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .detail-back-fab,
 .detail-scroll-top-fab {
-  width: 52px;
-  height: 52px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  border: 1px solid rgba(17, 24, 39, 0.08);
-  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12), 0 2px 8px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
   color: var(--text-dark);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  transition: background-color var(--transition-fast);
 }
 
 .detail-back-fab:focus-visible,
 .detail-scroll-top-fab:focus-visible {
-  outline: 2px solid var(--primary-dark);
-  outline-offset: 3px;
+  outline: 2px solid var(--text-dark);
+  outline-offset: 2px;
 }
 
 .detail-back-fab:active,
 .detail-scroll-top-fab:active {
-  transform: scale(0.96);
-}
-
-.detail-scroll-top-fab {
-  width: 46px;
-  height: 46px;
-  margin-left: 3px;
-  background: rgba(255, 251, 235, 0.98);
+  background: var(--surface-muted);
 }
 
 /* Buttons — flat, single neutral CTA */

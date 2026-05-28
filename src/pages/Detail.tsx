@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
-  ChevronUp,
   GitCompare,
   Loader2,
   AlertCircle,
@@ -41,7 +40,6 @@ import { Helmet } from 'react-helmet-async';
 import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
 import { openCoupangForProduct } from '../utils/externalPurchase';
-import Analyzer from '../components/Analyzer';
 import BottomSheet from '../components/BottomSheet';
 import { TossCard } from '../components/TossUI';
 import ProductImage from '../components/ProductImage';
@@ -112,10 +110,6 @@ export default function Detail() {
     if (!userId) return;
     await deleteReview(reviewId, userId);
     setReviews(prev => prev.filter(r => r.id !== reviewId));
-  };
-
-  const handleScrollTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   if (isLoadingProducts) {
@@ -269,22 +263,14 @@ export default function Detail() {
         </section>
       )}
 
-      <div className="detail-fab-stack" aria-label="빠른 이동 버튼">
+      <div className="detail-fab-stack" aria-label="빠른 이동">
         <button
           type="button"
           className="detail-back-fab"
           onClick={() => navigate(-1)}
           aria-label="뒤로 가기"
         >
-          <ArrowLeft size={24} strokeWidth={2.25} aria-hidden />
-        </button>
-        <button
-          type="button"
-          className="detail-scroll-top-fab"
-          onClick={handleScrollTop}
-          aria-label="맨 위로 이동"
-        >
-          <ChevronUp size={22} strokeWidth={2.4} aria-hidden />
+          <ArrowLeft size={18} strokeWidth={1.8} aria-hidden />
         </button>
       </div>
 
@@ -716,8 +702,6 @@ export default function Detail() {
       >
         {COUPANG_PARTNERS_DISCLOSURE}
       </p>
-
-      <Analyzer />
     </div>
   );
 }

@@ -185,93 +185,45 @@ export default function Home() {
         <meta name="description" content="베로로 — 사료 성분 분석과 집사들의 찐 리뷰. 의심 대신 베로로 하세요." />
       </Helmet>
 
-      {/* Quiet pet header — minimal photo + name */}
-      <header
+      {/* Pet context card — quiet inline introduction */}
+      <section
         style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '14px 20px',
-          borderBottom: '1px solid var(--border-subtle)',
-          background: 'var(--bg-color)',
-          position: 'sticky',
-          top: 0,
-          zIndex: 40,
+          gap: '12px',
+          padding: '16px 20px 8px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div
-            style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '50%',
-              overflow: 'hidden',
-              background: 'var(--surface-muted)',
-              flexShrink: 0,
-            }}
-          >
-            <img
-              src={profile.species === 'Cat'
-                ? 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=120&auto=format&fit=crop&q=80'
-                : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=120&auto=format&fit=crop&q=80'}
-              alt={`${petName} 프로필`}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-            <span
-              style={{
-                fontSize: '11px',
-                fontWeight: 600,
-                color: 'var(--text-light)',
-                letterSpacing: '0.04em',
-                marginBottom: '2px',
-              }}
-            >
-              맞춤 추천
-            </span>
-            <h1
-              style={{
-                fontSize: '15px',
-                fontWeight: 700,
-                color: 'var(--text-dark)',
-                margin: 0,
-                letterSpacing: '-0.01em',
-                lineHeight: 1.25,
-              }}
-            >
-              {petName}
-              <span style={{ color: 'var(--text-light)', fontWeight: 500, fontSize: '13px', marginLeft: '6px' }}>
-                {petBreed} · {petAge}세
-              </span>
-            </h1>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          aria-label="알림 수신함 열기"
-          onClick={() => {
-            alert(`알림 수신함\n\n- ${petName}를 위한 맞춤 영양 리포트가 발급되었습니다.\n- 이번 달 사료 유해성분 모니터링이 완료되었습니다.`);
-          }}
+        <div
           style={{
-            background: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
             width: '36px',
             height: '36px',
-            borderRadius: '12px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--text-muted)',
-            padding: 0,
+            borderRadius: '50%',
+            overflow: 'hidden',
+            background: 'var(--surface-muted)',
+            flexShrink: 0,
           }}
         >
-          <Bell size={20} strokeWidth={1.8} />
-        </button>
-      </header>
+          <img
+            src={profile.species === 'Cat'
+              ? 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=120&auto=format&fit=crop&q=80'
+              : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=120&auto=format&fit=crop&q=80'}
+            alt={`${petName} 프로필`}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-dark)', letterSpacing: '-0.01em' }}>
+            {petName}
+            <span style={{ color: 'var(--text-light)', fontWeight: 500, fontSize: '12px', marginLeft: '6px' }}>
+              {petBreed} · {petAge}세
+            </span>
+          </span>
+          <span style={{ fontSize: '11px', color: 'var(--text-light)', fontWeight: 500, marginTop: '2px' }}>
+            맞춤 추천이 준비됐어요
+          </span>
+        </div>
+      </section>
 
       {/* Slim recall notice — inline single line */}
       {isRecallBannerVisible && (
