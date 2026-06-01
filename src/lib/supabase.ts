@@ -430,7 +430,7 @@ export async function getAnalysisReports(userId: string) {
 export async function getReviews(productId: string) {
   const { data, error } = await supabase
     .from('reviews')
-    .select('*, users(email)')
+    .select('*, users(nickname)')
     .eq('product_id', productId)
     .order('created_at', { ascending: false });
   if (error) console.error('getReviews error:', error);

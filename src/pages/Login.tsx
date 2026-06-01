@@ -1,5 +1,6 @@
 import { useMemo, useState, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, RefreshCw, Check, X } from 'lucide-react';
 import { supabase, ensurePublicUserExists } from '../lib/supabase';
 import { useStore } from '../store/useStore';
@@ -249,6 +250,10 @@ export default function Login() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-gradient)', display: 'flex', flexDirection: 'column' }}>
+      <Helmet>
+        <title>{mode === 'login' ? '로그인' : '회원가입'} | 베로로</title>
+        <meta name="description" content="베로로 이메일 로그인 및 회원가입" />
+      </Helmet>
       <div style={{ padding: '16px 20px' }}>
         <button
           type="button"

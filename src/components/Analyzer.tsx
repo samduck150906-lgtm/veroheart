@@ -4,6 +4,7 @@ import { Loader2, Zap, ShieldCheck, AlertTriangle, ChevronRight, ChevronDown, Bo
 import type { AnalysisResponse, IngredientAnalysisItem, RiskLevel } from '../types/analyzer';
 import { useStore } from '../store/useStore';
 import { saveAnalysisReport } from '../lib/supabase';
+import { notify } from '../store/useNotification';
 import { CORE_COPY } from '../copy/marketing';
 import { PetFoodScorer } from '../utils/petFoodScorer';
 import ProductImage from './ProductImage';
@@ -212,13 +213,14 @@ export default function Analyzer({ initialMode = 'text' }: AnalyzerProps) {
   }, [result, animal, petWeight, activityFactor]);
 
   const handleAnalyze = async () => {
-    if (!ingredientText.trim()) {
-      setError('전성분 텍스트를 입력해주세요.');
+    if (!isLoggedIn || !userId) {
+      notify.info('AI 정밀 분석은 로그인 후 이용할 수 있어요. 로그인 화면으로 이동합니다.');
+      navigate('/login', { state: { from: window.location.pathname } });
       return;
     }
 
-    if (!isLoggedIn || !userId) {
-      setError('AI 정밀 분석은 로그인 후 이용할 수 있습니다.');
+    if (!ingredientText.trim()) {
+      setError('전성분 텍스트를 입력해주세요.');
       return;
     }
 
@@ -521,10 +523,10 @@ export default function Analyzer({ initialMode = 'text' }: AnalyzerProps) {
         {error && <div className="text-rose-500 text-xs font-bold bg-rose-50/80 px-4 py-2.5 rounded-2xl border border-rose-100">{error}</div>}
 
         <Button
-          title="🚀 즉시 분석하기"
+          title={isLoggedIn ? '🚀 즉시 분석하기' : '🔒 로그인하고 분석하기'}
           onClick={handleAnalyze}
           loading={isLoading}
-          disabled={!isLoggedIn || isScanningOverlay}
+          disabled={isScanningOverlay}
         />
       </div>
 

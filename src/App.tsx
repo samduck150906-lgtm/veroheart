@@ -32,6 +32,7 @@ import { isAdminExperience, toggleAdminDesktopMode } from './utils/adminHost';
 import { ThemeProvider } from './theme/ThemeProvider';
 import PersonalityQuiz from './pages/Test';
 import ViralEvent from './pages/ViralEvent';
+import NotFound from './pages/NotFound';
 
 function App() {
   const { initApp, isInitializing, isLoggedIn } = useStore();
@@ -138,6 +139,7 @@ function App() {
               <Route path="terms" element={<Terms />} />
               <Route path="privacy" element={<Privacy />} />
               <Route path="refund" element={<Refund />} />
+              <Route path="*" element={<NotFound />} />
             </Route>
           
           {/* Admin CMS Routes — Protected */}

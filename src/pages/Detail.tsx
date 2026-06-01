@@ -70,7 +70,7 @@ export default function Detail() {
     rating: number;
     content: string;
     created_at: string;
-    users?: { email?: string | null };
+    users?: { nickname?: string | null };
   };
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
   const [reviewRating, setReviewRating] = useState(5);
@@ -101,7 +101,7 @@ export default function Detail() {
     const review = await createReview(userId, id!, reviewRating, body);
     if (review) {
       setReviewTags([]);
-      setReviews(prev => [{ ...review, users: { email: 'me' } }, ...prev]);
+      setReviews(prev => [{ ...review, users: { nickname: '나' } }, ...prev]);
       setReviewContent('');
       setReviewRating(5);
     }
@@ -121,6 +121,7 @@ export default function Detail() {
   if (isLoadingProducts) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <Helmet><title>제품 정보를 불러오는 중 | 베로로</title></Helmet>
         <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
         <p className="mt-4 text-gray-500 font-medium">제품 정보를 불러오는 중입니다...</p>
       </div>
@@ -129,6 +130,7 @@ export default function Detail() {
 
   if (!product) return (
     <div className="text-center p-12">
+      <Helmet><title>제품을 찾을 수 없어요 | 베로로</title></Helmet>
       <p className="text-gray-500">제품을 찾을 수 없습니다.</p>
       <button onClick={() => navigate('/')} className="mt-4 text-primary font-bold">홈으로 이동</button>
     </div>
@@ -599,7 +601,7 @@ export default function Detail() {
                     ))}
                   </div>
                   <div style={{ fontSize: '12px', color: '#9CA3AF' }}>
-                    {review.users?.email?.split('@')[0] || '익명'} · {new Date(review.created_at).toLocaleDateString()}
+                    {review.users?.nickname || '익명'} · {new Date(review.created_at).toLocaleDateString()}
                   </div>
                 </div>
                 {review.user_id === userId && (
