@@ -10,7 +10,7 @@
  * 진행률 표시줄 포함, 완료 시 Zustand updateProfile 호출
  */
 import { useState } from 'react';
-import { Dog, Cat, ChevronRight, ChevronLeft, Check, Heart } from 'lucide-react';
+import { Dog, Cat, ChevronRight, ChevronLeft, Check } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import type { UserPetProfile } from '../types';
 
@@ -250,7 +250,7 @@ const DEFAULT_FORM: FormData = {
 export default function PetProfileForm({ onComplete }: PetProfileFormProps) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormData>(DEFAULT_FORM);
-  const [done, setDone] = useState(false);
+  const [saving, setSaving] = useState(false);
   const updateProfile   = useStore((s) => s.updateProfile);
 
   const patch = (d: Partial<FormData>) => setForm((f) => ({ ...f, ...d }));
@@ -260,34 +260,29 @@ export default function PetProfileForm({ onComplete }: PetProfileFormProps) {
     return true;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step < TOTAL_STEPS - 1) {
       setStep((s) => s + 1);
     } else {
-      // Save
-      updateProfile({
-        name:           form.name,
-        species:        form.species,
-        age:            form.age,
-        healthConcerns: form.healthConcerns,
-        allergies:      form.allergies,
-      });
-      setDone(true);
-      onComplete?.();
+      setSaving(true);
+      try {
+        await updateProfile({
+          name:           form.name,
+          species:        form.species,
+          age:            form.age,
+          healthConcerns: form.healthConcerns,
+          allergies:      form.allergies,
+        });
+      } catch (err) {
+        console.error('프로필 저장 실패:', err);
+      } finally {
+        setSaving(false);
+        onComplete?.();
+      }
     }
   };
 
   const progress = ((step) / TOTAL_STEPS) * 100;
-
-  if (done) {
-    return (
-      <div className="pet-done">
-        <div className="pet-done-icon"><Heart size={48} color="#ef4444" fill="#ef4444" /></div>
-        <h2 className="pet-done-title">{form.name}의 프로필이 저장됐어요!</h2>
-        <p className="pet-done-sub">이제 맞춤 사료 분석을 시작해 보세요.</p>
-      </div>
-    );
-  }
 
   return (
     <div className="pet-form-wrap">
@@ -307,17 +302,17 @@ export default function PetProfileForm({ onComplete }: PetProfileFormProps) {
       {/* Nav buttons */}
       <div className="pet-nav">
         {step > 0 && (
-          <button className="pet-btn-back" onClick={() => setStep((s) => s - 1)}>
+          <button className="pet-btn-back" onClick={() => setStep((s) => s - 1)} disabled={saving}>
             <ChevronLeft size={18} /> 이전
           </button>
         )}
         <button
           className="pet-btn-next"
           onClick={handleNext}
-          disabled={!canNext()}
+          disabled={!canNext() || saving}
         >
           {step === TOTAL_STEPS - 1 ? (
-            <><Check size={18} style={{ marginRight: 6 }} />저장하기</>
+            <><Check size={18} style={{ marginRight: 6 }} />{saving ? '저장 중...' : '저장하기'}</>
           ) : (
             <>다음 <ChevronRight size={18} /></>
           )}

@@ -94,6 +94,8 @@ export default function Profile() {
   const step = PROFILE_STEP_META[profileStep];
   const favoriteProducts = products.filter(p => favorites.includes(p.id));
 
+  const allergyOptions = ['닭고기', '소고기', '연어', '곡물', '인공색소'];
+
   const profileStepBody = (() => {
     switch (profileStep) {
       case 0:
@@ -227,8 +229,6 @@ export default function Profile() {
         return null;
     }
   })();
-
-  const allergyOptions = ['닭고기', '소고기', '연어', '곡물', '인공색소'];
 
   const handleLogout = async () => {
     await logout();

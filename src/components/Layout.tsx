@@ -109,7 +109,7 @@ export default function Layout() {
             <span className="ui-badge ui-badge-soft">
               {profile.species === 'Cat' ? '고양이 보호자' : '강아지 보호자'}
             </span>
-            {profile.healthConcerns.length > 0 ? (
+            {(profile.healthConcerns?.length ?? 0) > 0 ? (
               <span className="ui-badge ui-badge-muted">
                 {profile.healthConcerns.slice(0, 2).join(' · ')}
                 {profile.healthConcerns.length > 2 ? '…' : ''}
