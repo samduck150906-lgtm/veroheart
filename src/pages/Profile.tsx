@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
-import { User, ChevronRight, Calendar, ShoppingBag, FileText, Activity, LogOut, LogIn, Heart } from 'lucide-react';
+import { User, ChevronRight, Calendar, ShoppingBag, FileText, Activity, LogOut, Heart } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { TossCard, TossInput, TossButton, TossChip, TossSectionTitle } from '../components/TossUI';
@@ -260,19 +260,6 @@ export default function Profile() {
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '40px' }}>
       <Helmet><title>마이 펫 | 베로로</title></Helmet>
-      {/* 로그인/로그아웃 버튼 */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
-        {isLoggedIn ? (
-          <TossButton variant="outline" onClick={handleSignOut} style={{ width: 'auto', height: '38px', padding: '0 14px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <LogOut size={15} /> 로그아웃
-          </TossButton>
-        ) : (
-          <Link to="/login" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--primary-dark)', borderRadius: '10px', padding: '8px 14px', fontSize: '13px', fontWeight: 700, color: '#fff', textDecoration: 'none' }}>
-            <LogIn size={15} /> 로그인 / 회원가입
-          </Link>
-        )}
-      </div>
-
       {/* 탭 네비게이션 */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', padding: '0 2px', overflowX: 'auto' }}>
         {([
@@ -393,8 +380,6 @@ export default function Profile() {
                   ))}
                 </div>
 
-                {/* 배송 타임라인 */}
-                <DeliveryTimeline status={order.status} />
 
                 <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #F3F4F6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>총 결제 금액</span>
@@ -479,13 +464,6 @@ export default function Profile() {
   );
 }
 
-const DELIVERY_STEPS = [
-  { key: 'pending', label: '주문 확인' },
-  { key: 'paid', label: '결제 완료' },
-  { key: 'shipped', label: '배송 중' },
-  { key: 'completed', label: '배송 완료' },
-];
-
 function DeliveryStatus({ status }: { status: string }) {
   const colors: Record<string, { bg: string; text: string; label: string }> = {
     pending: { bg: '#FEF3C7', text: '#92400E', label: '주문 확인 중' },
@@ -502,30 +480,3 @@ function DeliveryStatus({ status }: { status: string }) {
   );
 }
 
-function DeliveryTimeline({ status }: { status: string }) {
-  const currentIdx = DELIVERY_STEPS.findIndex(s => s.key === status);
-  const activeIdx = currentIdx === -1 ? 0 : currentIdx;
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0', marginTop: '20px', padding: '16px', background: '#F9FAFB', borderRadius: '14px' }}>
-      {DELIVERY_STEPS.map((step, idx) => (
-        <div key={step.key} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 'none' }}>
-            <div style={{
-              width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              backgroundColor: idx <= activeIdx ? 'var(--primary-dark)' : '#E5E7EB',
-              color: idx <= activeIdx ? '#fff' : '#9CA3AF', fontSize: '12px', fontWeight: 800
-            }}>
-              {idx < activeIdx ? '✓' : idx + 1}
-            </div>
-            <span style={{ fontSize: '10px', fontWeight: 600, marginTop: '4px', color: idx <= activeIdx ? 'var(--primary-dark)' : '#9CA3AF', whiteSpace: 'nowrap' }}>
-              {step.label}
-            </span>
-          </div>
-          {idx < DELIVERY_STEPS.length - 1 && (
-            <div style={{ flex: 1, height: '2px', backgroundColor: idx < activeIdx ? 'var(--primary-dark)' : '#E5E7EB', margin: '0 2px', marginBottom: '14px' }} />
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}

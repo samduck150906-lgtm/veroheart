@@ -21,9 +21,8 @@ export default function Scanner() {
       setCaptureMode(mode);
       setStep('crop');
     } else {
-      // Barcode mode → simulate decode & navigate
-      notify.info('바코드를 인식 중입니다…');
-      setTimeout(() => notify.success('바코드 인식 완료! 상품을 찾는 중…'), 1200);
+      // Barcode mode is not yet implemented
+      notify.info('바코드 스캔 기능은 준비 중입니다. 성분표 촬영 모드를 이용해 주세요.');
     }
   };
 

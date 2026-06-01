@@ -200,6 +200,7 @@ export default function Detail() {
         <section
           aria-label="맞춤 결론"
           style={{
+            marginTop: '16px',
             marginBottom: '20px',
             padding: '22px 20px',
             borderRadius: '22px',
@@ -341,17 +342,17 @@ export default function Detail() {
         <ChevronRight size={20} color="#ffffff" />
       </button>
 
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '8px' }}>
         <button className="btn btn-outline" style={{ flex: 1, height: '56px', borderRadius: 'var(--border-radius-md)' }} onClick={() => {
           isComparing ? removeFromComparison(product.id) : addToComparison(product.id);
         }}>
           <GitCompare size={20} />
           <span style={{ marginLeft: '4px' }}>비교</span>
         </button>
-        
-        <button 
-          className="btn btn-primary" 
-          style={{ flex: 2, borderRadius: 'var(--border-radius-md)', fontWeight: 800, fontSize: '17px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }} 
+
+        <button
+          className="btn btn-primary"
+          style={{ flex: 2, borderRadius: 'var(--border-radius-md)', fontWeight: 800, fontSize: '17px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
           onClick={() => {
             openCoupangForProduct(product);
           }}
@@ -359,6 +360,10 @@ export default function Detail() {
           🚀 쿠팡 최저가 구매 <ExternalLink size={18} />
         </button>
       </div>
+
+      <p style={{ margin: '0 0 24px', padding: '10px 14px', fontSize: '11px', lineHeight: 1.55, fontWeight: 600, color: '#64748B', background: '#F1F5F9', borderRadius: '12px' }}>
+        {COUPANG_PARTNERS_DISCLOSURE}
+      </p>
 
       {alternativeProduct && (
         <div className="card" style={{ backgroundColor: 'var(--bg-color)', marginBottom: '40px' }}>
@@ -517,13 +522,17 @@ export default function Detail() {
 
       {/* 브랜드 바로가기 */}
       <div style={{ marginBottom: '32px' }}>
-        <Link to={`/brand/${encodeURIComponent(product.brand)}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: '#F9FAFB', borderRadius: '16px', textDecoration: 'none', color: '#111827', border: '1px solid #F3F4F6' }}>
+        <button
+          type="button"
+          onClick={() => navigate(`/search?query=${encodeURIComponent(product.brand)}`)}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '16px 20px', background: '#F9FAFB', borderRadius: '16px', textDecoration: 'none', color: '#111827', border: '1px solid #F3F4F6', cursor: 'pointer' }}
+        >
           <div>
             <div style={{ fontSize: '12px', color: '#6B7280', fontWeight: 600, marginBottom: '2px' }}>브랜드</div>
             <div style={{ fontSize: '16px', fontWeight: 800 }}>{product.brand}의 다른 제품 보기</div>
           </div>
           <ArrowLeft size={18} style={{ transform: 'rotate(180deg)', color: '#9CA3AF' }} />
-        </Link>
+        </button>
       </div>
 
       {/* 리뷰 섹션 */}
@@ -591,28 +600,42 @@ export default function Detail() {
             <div style={{ textAlign: 'center', padding: '48px 20px', color: '#9CA3AF', background: '#F9FAFB', borderRadius: '16px' }}>
               아직 리뷰가 없습니다. 첫 리뷰를 작성해보세요!
             </div>
-          ) : reviews.map(review => (
-            <div key={review.id} style={{ padding: '16px 20px', background: '#fff', border: '1px solid #F3F4F6', borderRadius: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                <div>
-                  <div style={{ display: 'flex', gap: '2px', marginBottom: '4px' }}>
-                    {[1, 2, 3, 4, 5].map(s => (
-                      <Star key={s} size={14} fill={s <= review.rating ? '#FCD34D' : 'none'} color={s <= review.rating ? '#FCD34D' : '#E5E7EB'} />
+          ) : reviews.map(review => {
+            const tagMatch = review.content.match(/^#\s*(.+?)(\n\n|\n|$)/);
+            const tags = tagMatch ? tagMatch[1].split(' · ').map(t => t.trim()).filter(Boolean) : [];
+            const text = tagMatch ? review.content.slice(tagMatch[0].length).trim() : review.content;
+            return (
+              <div key={review.id} style={{ padding: '16px 20px', background: '#fff', border: '1px solid #F3F4F6', borderRadius: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                  <div>
+                    <div style={{ display: 'flex', gap: '2px', marginBottom: '4px' }}>
+                      {[1, 2, 3, 4, 5].map(s => (
+                        <Star key={s} size={14} fill={s <= review.rating ? '#FCD34D' : 'none'} color={s <= review.rating ? '#FCD34D' : '#E5E7EB'} />
+                      ))}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#9CA3AF' }}>
+                      {review.users?.nickname || '익명'} · {new Date(review.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                  {review.user_id === userId && (
+                    <button onClick={() => handleDeleteReview(review.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#D1D5DB' }}>
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
+                {text ? <p style={{ fontSize: '14px', color: '#374151', lineHeight: 1.6, margin: '0 0 10px' }}>{text}</p> : null}
+                {tags.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {tags.map(tag => (
+                      <span key={tag} style={{ padding: '4px 10px', background: '#F3F4F6', borderRadius: '999px', fontSize: '12px', fontWeight: 700, color: '#374151' }}>
+                        {tag}
+                      </span>
                     ))}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#9CA3AF' }}>
-                    {review.users?.nickname || '익명'} · {new Date(review.created_at).toLocaleDateString()}
-                  </div>
-                </div>
-                {review.user_id === userId && (
-                  <button onClick={() => handleDeleteReview(review.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#D1D5DB' }}>
-                    <Trash2 size={16} />
-                  </button>
                 )}
               </div>
-              <p style={{ fontSize: '14px', color: '#374151', lineHeight: 1.6, margin: 0 }}>{review.content}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 

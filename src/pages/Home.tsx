@@ -57,66 +57,49 @@ export default function Home() {
   // 1. Identify expected pet type from profile
   const expectedPetType = profile.species === 'Cat' ? 'cat' : 'dog';
 
-  // 2. Strict Curation Filter for personalRecs (Hero)
-  const personalRecs = products
-    // STAGE A: Enforce Species Match Across ALL categories (no just dry feed)
+  // 2. Build trending first so personalRecs can exclude them
+  const trendingProducts = [...products]
     .filter(p => p.targetPetType === expectedPetType || p.targetPetType === 'all')
-    // STAGE B: Filter Out Allergens
-    .filter(p => {
-      if (!profile.allergies || profile.allergies.length === 0) return true;
-      const hasAllergenInIngredients = p.ingredients?.some(ing => 
-        profile.allergies.some(allergen => 
-          ing.nameKo?.includes(allergen) || ing.nameEn?.toLowerCase().includes(allergen.toLowerCase())
-        )
-      );
-      const hasAllergenInList = p.allergens?.some(a => 
-        profile.allergies.some(allergen => a.includes(allergen))
-      );
-      return !hasAllergenInIngredients && !hasAllergenInList;
-    })
-    // STAGE C: Prioritize Health Concerns (e.g. skin, kidney, joints, digestion, etc.)
+    .sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
+    .slice(0, 5);
+  const trendingIds = new Set(trendingProducts.map(p => p.id));
+
+  const allergenFilter = (p: (typeof products)[0]) => {
+    if (!profile.allergies || profile.allergies.length === 0) return true;
+    const hasAllergenInIngredients = p.ingredients?.some(ing =>
+      profile.allergies.some(allergen =>
+        ing.nameKo?.includes(allergen) || ing.nameEn?.toLowerCase().includes(allergen.toLowerCase())
+      )
+    );
+    const hasAllergenInList = p.allergens?.some(a =>
+      profile.allergies.some(allergen => a.includes(allergen))
+    );
+    return !hasAllergenInIngredients && !hasAllergenInList;
+  };
+
+  // 3. Strict Curation Filter for personalRecs (Hero) — exclude trending products
+  const personalRecs = products
+    .filter(p => (p.targetPetType === expectedPetType || p.targetPetType === 'all') && !trendingIds.has(p.id))
+    .filter(allergenFilter)
     .sort((a, b) => {
       const aMatches = a.healthConcerns?.filter(c => profile.healthConcerns.includes(c)).length || 0;
       const bMatches = b.healthConcerns?.filter(c => profile.healthConcerns.includes(c)).length || 0;
-      
-      if (aMatches !== bMatches) {
-        return bMatches - aMatches; // Prioritize more health concern matches
-      }
-      
-      // Secondary: Sort by high rating
+      if (aMatches !== bMatches) return bMatches - aMatches;
       return (b.averageRating ?? 0) - (a.averageRating ?? 0);
     })
     .slice(0, 4);
 
-  // 3. Populated Backfill for personalRecs to ensure it's never empty
+  // 4. Backfill personalRecs (also excluding trending)
   if (personalRecs.length < 4) {
     const backfillCount = 4 - personalRecs.length;
     const existingIds = new Set(personalRecs.map(p => p.id));
     const backfill = products
-      .filter(p => (p.targetPetType === expectedPetType || p.targetPetType === 'all') && !existingIds.has(p.id))
-      .filter(p => {
-        if (!profile.allergies || profile.allergies.length === 0) return true;
-        const hasAllergenInIngredients = p.ingredients?.some(ing => 
-          profile.allergies.some(allergen => 
-            ing.nameKo?.includes(allergen) || ing.nameEn?.toLowerCase().includes(allergen.toLowerCase())
-          )
-        );
-        const hasAllergenInList = p.allergens?.some(a => 
-          profile.allergies.some(allergen => a.includes(allergen))
-        );
-        return !hasAllergenInIngredients && !hasAllergenInList;
-      })
+      .filter(p => (p.targetPetType === expectedPetType || p.targetPetType === 'all') && !existingIds.has(p.id) && !trendingIds.has(p.id))
+      .filter(allergenFilter)
       .sort((a, b) => (b.averageRating ?? 0) - (a.averageRating ?? 0))
       .slice(0, backfillCount);
-    
     personalRecs.push(...backfill);
   }
-
-  // 4. Strict Species-Matching Trending Feed
-  const trendingProducts = [...products]
-    .filter(p => p.targetPetType === expectedPetType || p.targetPetType === 'all')
-    .sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
-    .slice(0, 5); // condensed down to 5 to save scroll length
 
   // 5. Strict Species-Matching Concern Feed
   const concernProducts = [...products]

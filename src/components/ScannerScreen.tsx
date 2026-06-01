@@ -89,14 +89,13 @@ export default function ScannerScreen({ onCapture }: ScannerScreenProps) {
       {/* ── Hidden canvas for capture ── */}
       <canvas ref={canvasRef} style={{ display: 'none' }} />
 
-      {/* ── Camera feed ── */}
-      {hasPermission && (
-        <video
-          ref={videoRef}
-          className="scanner-video"
-          muted autoPlay playsInline
-        />
-      )}
+      {/* ── Camera feed ── always rendered so srcObject can be set before hasPermission state updates */}
+      <video
+        ref={videoRef}
+        className="scanner-video"
+        muted autoPlay playsInline
+        style={{ visibility: hasPermission ? 'visible' : 'hidden' }}
+      />
 
       {/* ── Camera permission error ── */}
       {error && (
