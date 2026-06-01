@@ -19,40 +19,26 @@ import ToxicAlertList        from '../components/ToxicAlertList';
 import IngredientList        from '../components/IngredientList';
 import FeedingGuideCalculator from '../components/FeedingGuideCalculator';
 
-// ── Default Fallback Demo Data ──────────────────────────────────────
-const DEMO_FALLBACK = {
-  id: 'demo-feed',
-  imageUrl: 'https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=300&q=80',
-  name: '오리진 오리지널 어덜트',
-  brand: 'Orijen',
-  category: '건식사료',
-  ingredients: [
-    { nameKo: '생닭고기', riskLevel: 'safe' as const,    purpose: '주단백질 원료' },
-    { nameKo: '생칠면조', riskLevel: 'safe' as const,    purpose: '부단백질 원료' },
-    { nameKo: '닭 부산물', riskLevel: 'caution' as const, purpose: '부산물' },
-    { nameKo: '완두콩',   riskLevel: 'safe' as const,    purpose: '탄수화물·식이섬유' },
-    { nameKo: '렌틸콩',  riskLevel: 'safe' as const,    purpose: '탄수화물' },
-    { nameKo: '생청어',  riskLevel: 'safe' as const,    purpose: 'DHA 공급원' },
-    { nameKo: '어분',    riskLevel: 'caution' as const,  purpose: '어류박', description: '품질 편차가 큰 원료입니다.' },
-    { nameKo: '카라기난',riskLevel: 'caution' as const,  purpose: '증점·안정제' },
-    { nameKo: '에톡시퀸',riskLevel: 'danger' as const,   purpose: '산화방지제', description: '발암 가능성이 있는 보존제입니다.' },
-  ],
-};
-
 export default function AnalysisResult() {
   const location = useLocation();
   const navigate = useNavigate();
   const { profile, products } = useStore();
 
-  // 1. Resolve product: state passed > store selected > fallback to database product > fallback to DEMO
   let product = location.state?.product || useStore.getState().selectedProduct;
-  
   if (!product && products.length > 0) {
-    product = products[0]; // Fallback to first database product
+    product = products[0];
   }
-  
+
   if (!product) {
-    product = DEMO_FALLBACK;
+    return (
+      <div style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', textAlign: 'center' }}>
+        <p style={{ fontSize: '16px', fontWeight: 700, color: '#374151', marginBottom: '8px' }}>분석할 제품이 없습니다</p>
+        <p style={{ fontSize: '13px', color: '#9CA3AF', marginBottom: '24px' }}>상품 상세 페이지에서 'AI 정밀 분석'을 눌러 주세요.</p>
+        <button type="button" onClick={() => navigate('/search')} style={{ padding: '12px 24px', borderRadius: '14px', border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 700, cursor: 'pointer' }}>
+          상품 탐색하기
+        </button>
+      </div>
+    );
   }
 
   // 2. Generate Report dynamically using score algorithm

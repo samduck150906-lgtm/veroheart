@@ -1,7 +1,8 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Heart, Star } from 'lucide-react';
 import type { Product } from '../types';
 import { useStore } from '../store/useStore';
+import { notify } from '../store/useNotification';
 import { calculateCompatibilityScore } from '../utils/score';
 import ProductImage from './ProductImage';
 
@@ -18,11 +19,23 @@ export default function ProductCard({
   showHealthTags = true,
   variant = 'horizontal'
 }: ProductCardProps) {
-  const { profile, favorites, toggleFavorite } = useStore();
+  const { profile, favorites, toggleFavorite, isLoggedIn } = useStore();
+  const navigate = useNavigate();
   const score = calculateCompatibilityScore(product, profile);
   const isFav = favorites.includes(product.id);
   const healthTags = (product.healthConcerns ?? []).slice(0, compact ? 2 : 3);
   const imageSize = compact ? 86 : 100;
+
+  const handleToggleFav = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isLoggedIn) {
+      notify.info('로그인하면 찜한 제품을 저장하고 다시 볼 수 있어요.');
+      navigate('/login');
+      return;
+    }
+    toggleFavorite(product.id);
+  };
 
   const getScoreColor = (s: number) => {
     if (s >= 80) return '#10B981'; // Premium Emerald Green
@@ -139,10 +152,10 @@ export default function ProductCard({
         {/* Favorite Button (Premium glowing circle) */}
         <button
           type="button"
-          onClick={e => { e.preventDefault(); e.stopPropagation(); toggleFavorite(product.id); }}
+          onClick={handleToggleFav}
           style={{
             position: 'absolute', top: '16px', right: '16px',
-            background: 'rgba(255, 255, 255, 0.9)', border: 'none', cursor: 'pointer', 
+            background: 'rgba(255, 255, 255, 0.9)', border: 'none', cursor: 'pointer',
             width: '28px', height: '28px', borderRadius: '50%',
             display: 'flex', alignItems: 'center',
             justifyContent: 'center',
@@ -258,7 +271,7 @@ export default function ProductCard({
 
       <button
         type="button"
-        onClick={e => { e.preventDefault(); toggleFavorite(product.id); }}
+        onClick={handleToggleFav}
         style={{
           position: 'absolute', top: '12px', right: '12px',
           background: 'none', border: 'none', cursor: 'pointer', padding: '6px',

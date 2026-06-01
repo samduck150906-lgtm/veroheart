@@ -430,7 +430,7 @@ export async function getAnalysisReports(userId: string) {
 export async function getReviews(productId: string) {
   const { data, error } = await supabase
     .from('reviews')
-    .select('*, users(email)')
+    .select('*, users(nickname)')
     .eq('product_id', productId)
     .order('created_at', { ascending: false });
   if (error) console.error('getReviews error:', error);
@@ -524,10 +524,4 @@ export async function getProductsByBrand(brandName: string): Promise<Product[]> 
   return (data as SupabaseProductRow[]).map(mapProductFromSupabaseRow);
 }
 
-/** 홈 이벤트/쿠폰 배너용 (정적) */
-export const MOCK_EVENTS = [
-  { id: 'ev1', title: '신규 회원 첫 구매 10% 할인', code: 'WELCOME10', discount: 10, type: 'percent', desc: '첫 주문 한정 쿠폰', expires: '2026-12-31', color: '#FEF3C7', badge: '신규' },
-  { id: 'ev2', title: '사료 정품 5,000원 할인', code: 'FOOD5000', discount: 5000, type: 'fixed', desc: '30,000원 이상 주문 시', expires: '2026-06-30', color: '#EFF6FF', badge: '기간한정' },
-  { id: 'ev3', title: '봄맞이 케어 기획전', code: null as string | null, discount: 0, type: 'event', desc: '7일 한정 케어 제품 모음', expires: '2026-07-31', color: '#F0FDF4', badge: '이벤트' },
-] as const;
 

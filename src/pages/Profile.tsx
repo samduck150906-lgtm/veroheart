@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
 import { User, ChevronRight, Calendar, ShoppingBag, FileText, Activity, LogOut, LogIn, Heart } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { TossCard, TossInput, TossButton, TossChip, TossSectionTitle } from '../components/TossUI';
 import { Button } from '../components/Button';
 import ProductCard from '../components/ProductCard';
@@ -237,6 +238,7 @@ export default function Profile() {
   if (!userId) {
     return (
       <div className="animate-fade-in" style={{ padding: '40px 20px', minHeight: '80vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+        <Helmet><title>마이 펫 | 베로로</title></Helmet>
         <div style={{ width: '80px', height: '80px', borderRadius: '24px', backgroundColor: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
           <User size={40} color="#D1D5DB" />
         </div>
@@ -257,6 +259,7 @@ export default function Profile() {
 
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '40px' }}>
+      <Helmet><title>마이 펫 | 베로로</title></Helmet>
       {/* 로그인/로그아웃 버튼 */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
         {isLoggedIn ? (
