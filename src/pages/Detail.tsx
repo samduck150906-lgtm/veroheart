@@ -158,8 +158,8 @@ export default function Detail() {
   const getFeedingAmount = () => {
     if (!profile.weight) return null;
     const rer = 70 * Math.pow(profile.weight, 0.75);
-    const der = rer * 1.6; // Average adult multiplier
-    const kcalPerKg = 3500; // Mock average
+    const der = rer * 1.6; // 일반 성견·성묘 평균 활동계수
+    const kcalPerKg = 3500; // 건식 사료 평균 대사에너지(ME) 밀도 추정치 (kcal/kg)
     const grams = (der / kcalPerKg) * 1000;
     return Math.round(grams);
   };

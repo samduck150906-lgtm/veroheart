@@ -22,6 +22,7 @@ import ProductCard from '../components/ProductCard';
 import type { Product } from '../types';
 import { TossFilterSection, TossChip, TossButton } from '../components/TossUI';
 import { searchProducts, getAllIngredients } from '../lib/supabase';
+import { getRecommendationBreakdown } from '../utils/score';
 import { useStore } from '../store/useStore';
 import standardFeedData from '../data/standard_feed_data.json';
 import { 
@@ -37,7 +38,6 @@ import {
   type PriceBand
 } from '../constants/searchFilters';
 
-const rankProductsForProfile = (res: any, pro: any) => res.map((r: any) => ({ product: r, breakdown: { reasons: [] }, score: 100 }));
 const CORE_COPY = { ocr: '반려동물의 체질과 알레르기, 건강 고민을 조합하여 딱 맞는 완벽한 한 끼를 찾아보세요.' };
 
 const TossSearchBar = ({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) => (
@@ -177,11 +177,12 @@ export default function Search() {
 
   const displayResults = useMemo(() => {
     if (sortBy === 'default') {
-      return rankProductsForProfile(searchResults, profile).map(({ product, breakdown, score }) => ({
-        product,
-        breakdown,
-        score,
-      }));
+      return [...searchResults]
+        .map((product) => {
+          const breakdown = getRecommendationBreakdown(product, profile);
+          return { product, breakdown, score: breakdown.total };
+        })
+        .sort((a, b) => b.score - a.score);
     }
 
     const arr = [...searchResults];
