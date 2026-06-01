@@ -8,32 +8,7 @@ import { CORE_COPY } from '../copy/marketing';
 import { PetFoodScorer } from '../utils/petFoodScorer';
 import ProductImage from './ProductImage';
 import BottomSheet from './BottomSheet';
-import { Button } from './Button';const SCAN_SAMPLES = [
-  {
-    id: 'sample-premium',
-    name: '👑 최고급 생육 사료 (A+ 등급)',
-    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200" style="background:%23F0FAF4;border-radius:20px;"><rect width="300" height="200" rx="20" fill="%23F0FAF4"/><circle cx="150" cy="80" r="40" fill="%2381C995" opacity="0.2"/><path d="M150 55 C135 75, 165 75, 150 95" stroke="%2381C995" stroke-width="4" fill="none"/><text x="50%25" y="145" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="14" fill="%23111111">Vero Premium Salmon %26 Dog</text><text x="50%25" y="165" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="700" fill="%23575B5F">RAW INGREDIENTS ACTIVE SCRAPE</text></svg>',
-    ingredients: '닭고기, 연어, 현미, 연어 오일, 글루코사민, 콘드로이친, 혼합 토코페롤, 완두콩, 당근, 블루베리, 비타민 E, 칼슘, 인',
-    petType: 'dog' as const,
-    productType: 'food'
-  },
-  {
-    id: 'sample-allergy',
-    name: '⚠️ 알레르기 유발 곡물 사료 (D 등급)',
-    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200" style="background:%23FFFBEB;border-radius:20px;"><rect width="300" height="200" rx="20" fill="%23FFFBEB"/><circle cx="150" cy="80" r="40" fill="%23F5A623" opacity="0.2"/><path d="M140 70 L160 90 M160 70 L140 90" stroke="%23F5A623" stroke-width="4"/><text x="50%25" y="145" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="14" fill="%23111111">Standard Wheat %26 Corn Mix</text><text x="50%25" y="165" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="700" fill="%23575B5F">GRAIN CORN WHEAT FLOUR SCAN</text></svg>',
-    ingredients: '옥수수, 밀가루, 대두, 육분, 가금류 부산물, 동물성 지방, 프로필렌 글리콜, 멘아디온, 합성 보존제, 수분',
-    petType: 'dog' as const,
-    productType: 'food'
-  },
-  {
-    id: 'sample-toxic',
-    name: '☠️ 독성 자일리톨 검출 사료 (F 등급)',
-    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200" style="background:%23FEF2F2;border-radius:20px;"><rect width="300" height="200" rx="20" fill="%23FEF2F2"/><circle cx="150" cy="80" r="40" fill="%23D93025" opacity="0.15"/><text x="150" y="90" dominant-baseline="middle" text-anchor="middle" font-size="36">☠️</text><text x="50%25" y="145" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="14" fill="%23D93025">CRITICAL DANGER FEED</text><text x="50%25" y="165" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="700" fill="%23B91C1C">XYLITOL GRAPE DETECTED</text></svg>',
-    ingredients: '자일리톨, 초콜릿, 포도, 건포도, 마늘, 양파, 가금류 부산물, 동물성 지방, BHA, BHT, 에톡시퀸, 카라기난',
-    petType: 'dog' as const,
-    productType: 'food'
-  }
-];
+import { Button } from './Button';
 
 function CaloricDonutChart({ protein, fat, carbs }: { protein: number; fat: number; carbs: number }) {
   const total = protein + fat + carbs;
@@ -235,20 +210,6 @@ export default function Analyzer({ initialMode = 'text' }: AnalyzerProps) {
       cups: parseFloat(dailyCups.toFixed(1))
     };
   }, [result, animal, petWeight, activityFactor]);
-
-  const triggerScanSample = (sample: typeof SCAN_SAMPLES[0]) => {
-    setScannedImage(sample.image);
-    setIsScanningOverlay(true);
-    setError('');
-    
-    setTimeout(() => {
-      setIsScanningOverlay(false);
-      setIngredientText(sample.ingredients);
-      setAnimal(sample.petType);
-      setPetWeight((sample.petType as string) === 'cat' ? 4 : 5);
-      setProductType(sample.productType);
-    }, 1500);
-  };
 
   const handleAnalyze = async () => {
     if (!ingredientText.trim()) {
@@ -513,24 +474,6 @@ export default function Analyzer({ initialMode = 'text' }: AnalyzerProps) {
               <div className="absolute bottom-6 right-6 w-5 h-5 border-b-4 border-r-4 border-emerald-400 pointer-events-none" />
             </div>
             
-            {/* Click to scan samples */}
-            <div className="space-y-2">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1">테스트용 라벨 성분 샘플 선택</span>
-              <div className="grid grid-cols-3 gap-2">
-                {SCAN_SAMPLES.map((sample) => (
-                  <button
-                    key={sample.id}
-                    onClick={() => triggerScanSample(sample)}
-                    disabled={isScanningOverlay || isLoading}
-                    className="flex flex-col items-center p-2.5 rounded-2xl border border-slate-100 hover:border-slate-200 bg-white hover:bg-slate-50 transition-all text-center cursor-pointer active:scale-95 disabled:opacity-50"
-                  >
-                    <span className="text-lg mb-1">{sample.id === 'sample-premium' ? '🍗' : sample.id === 'sample-allergy' ? '🌾' : '☠️'}</span>
-                    <span className="text-[9px] font-black text-slate-700 leading-tight">{sample.name.split(' (')[0]}</span>
-                    <span className="text-[7px] text-slate-400 font-semibold mt-0.5">{sample.id === 'sample-premium' ? 'A+ 등급' : sample.id === 'sample-allergy' ? 'D 등급' : 'F 등급'}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
 
             {/* Populate Text area check */}
             {ingredientText && (

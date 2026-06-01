@@ -9,7 +9,6 @@ import {
   Clock3,
   ChevronRight,
   X,
-  Tag,
   Flame,
   Stethoscope,
   Wallet,
@@ -18,12 +17,8 @@ import {
   MessageCircle,
   ScanLine,
   Bell,
-  AlertTriangle,
-  ExternalLink,
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
-import { MOCK_EVENTS } from '../lib/supabase';
-import { VIRAL_LANDING_COPY } from '../copy/marketing';
 import { HOME_CATEGORY_ITEMS } from '../constants/productCategories';
 import type { Product } from '../types';
 import { TossChip, TossSectionTitle } from '../components/TossUI';
@@ -37,14 +32,7 @@ import BottomSheetFilters from '../components/BottomSheetFilters';
 export default function Home() {
   const { products, profile, recentViews, isLoggedIn } = useStore();
   const navigate = useNavigate();
-  const petName = profile.name === '우리 아이' ? '베로' : profile.name;
-  const petBreed = profile.name === '우리 아이' ? '말티즈' : (profile.species === 'Dog' ? '말티즈' : '러시안블루');
-  const petAge = profile.name === '우리 아이' ? 3 : profile.age;
-  const [closedEvents, setClosedEvents] = useState<string[]>([]);
-  const [isRecallBannerVisible, setIsRecallBannerVisible] = useState(true);
-  const [isRecallModalOpen, setIsRecallModalOpen] = useState(false);
-  const visibleEvents = MOCK_EVENTS.filter(e => !closedEvents.includes(e.id));
-  const featuredEvent = visibleEvents[0];
+  const petName = profile.name !== '우리 아이' ? profile.name : null;
   // New filter & search state
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({ ages: [], ingredients: [], allergens: [] });
@@ -273,10 +261,14 @@ export default function Home() {
                 lineHeight: 1.2,
               }}
             >
-              <span style={{ color: '#4F46E5', fontWeight: 900 }}>{petName}</span>
-              <span style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '14px' }}>
-                ({petBreed}, {petAge}세)
+              <span style={{ color: '#4F46E5', fontWeight: 900 }}>
+                {petName ?? profile.name}
               </span>
+              {profile.species && profile.age > 0 && (
+                <span style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '14px' }}>
+                  ({profile.species === 'Dog' ? '강아지' : '고양이'}, {profile.age}세)
+                </span>
+              )}
               를 위한 맞춤 추천
             </h1>
           </div>
@@ -286,7 +278,7 @@ export default function Home() {
         <button
           type="button"
           onClick={() => {
-            alert(`🔔 알림 수신함\n\n- ${petName}를 위한 맞춤 영양 리포트가 발급되었습니다.\n- 이번 달 사료 유해성분 모니터링이 완료되었습니다.`);
+            alert('🔔 알림 기능이 곧 제공될 예정입니다.');
           }}
           style={{
             background: '#F8FAFC',
@@ -334,123 +326,6 @@ export default function Home() {
         </button>
       </header>
 
-      {/* FDA / Korean Ministry of Agriculture Recent Recall Widget Banner */}
-      {isRecallBannerVisible && (
-        <section
-          style={{
-            margin: '12px 18px 0',
-            padding: '12px 16px',
-            borderRadius: '16px',
-            background: 'linear-gradient(135deg, #FEF2F2 0%, #FFF5F5 100%)',
-            border: '1.5px solid rgba(217, 48, 37, 0.22)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            boxShadow: '0 4px 14px rgba(217, 48, 37, 0.04)',
-            cursor: 'pointer',
-            position: 'relative',
-            animation: 'fadeIn var(--transition-smooth) forwards',
-            boxSizing: 'border-box',
-            transition: 'transform 0.2s, box-shadow 0.2s'
-          }}
-          onClick={() => setIsRecallModalOpen(true)}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 6px 20px rgba(217, 48, 37, 0.08)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'none';
-            e.currentTarget.style.boxShadow = '0 4px 14px rgba(217, 48, 37, 0.04)';
-          }}
-        >
-          {/* Main Content Layout */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
-            {/* Blinking Glow Warning Icon */}
-            <div style={{ position: 'relative', display: 'flex', flexShrink: 0 }}>
-              <AlertTriangle size={20} color="var(--accent)" strokeWidth={2.4} />
-              {/* Blinking Dot animation */}
-              <span className="recall-ping-dot" style={{
-                position: 'absolute',
-                top: '-2px',
-                right: '-2px',
-                width: '7px',
-                height: '7px',
-                borderRadius: '50%',
-                backgroundColor: 'var(--accent)',
-                border: '1.5px solid #FEF2F2'
-              }} />
-            </div>
-
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
-                <span style={{
-                  fontSize: '11px',
-                  fontWeight: 800,
-                  color: 'var(--accent)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em'
-                }}>
-                  FDA & 농식품부 긴급 공고
-                </span>
-                <span style={{
-                  backgroundColor: 'rgba(217, 48, 37, 0.12)',
-                  color: 'var(--accent)',
-                  fontSize: '9px',
-                  fontWeight: 900,
-                  padding: '2px 6px',
-                  borderRadius: '6px',
-                  letterSpacing: '-0.02em'
-                }}>
-                  자진회수
-                </span>
-              </div>
-              <p className="line-clamp-1" style={{
-                margin: 0,
-                fontSize: '13px',
-                fontWeight: 700,
-                color: '#1E293B',
-                lineHeight: 1.35
-              }}>
-                살모넬라균 오염 의심 사료 건 및 수분함량 초과 회수 대상 안내
-              </p>
-            </div>
-          </div>
-
-          {/* Chevron with Micro-interaction */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '10px' }}>
-            <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent)' }}>보기</span>
-            <ChevronRight size={16} color="var(--accent)" strokeWidth={2.2} />
-          </div>
-
-          {/* Close/Dismiss Button with absolute positioning */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation(); // Stop opening the modal
-              setIsRecallBannerVisible(false);
-            }}
-            style={{
-              position: 'absolute',
-              top: '-8px',
-              right: '-8px',
-              background: '#FFFFFF',
-              border: '1.5px solid rgba(217, 48, 37, 0.2)',
-              cursor: 'pointer',
-              width: '20px',
-              height: '20px',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
-              color: '#94A3B8',
-              padding: 0
-            }}
-          >
-            <X size={12} strokeWidth={2.5} />
-          </button>
-        </section>
-      )}
 
       <section className="ui-hero-panel" style={{ padding: '16px 18px', marginBottom: '16px' }}>
         <button
@@ -546,40 +421,6 @@ export default function Home() {
         </div>
       </section>
 
-      {featuredEvent && (
-        <section style={{ marginBottom: '20px' }}>
-          <TossSectionTitle
-            title="베로로 새로운 소식"
-            subtitle="놓치기 쉬운 이벤트와 쿠폰 소식을 한 번에"
-            style={{ marginBottom: '10px' }}
-          />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {visibleEvents.map(ev => (
-              <div key={ev.id} className="ui-list-card" style={{ alignItems: 'flex-start', position: 'relative', padding: '12px 14px' }}>
-                <div className="ui-icon-pill" style={{ background: 'rgba(79, 70, 229, 0.1)', flexShrink: 0 }}>
-                  <Tag size={18} color="#4F46E5" />
-                </div>
-                <div style={{ flex: 1, minWidth: 0, paddingRight: '16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', flexWrap: 'wrap' }}>
-                    <span className="ui-badge ui-badge-dark">{ev.badge}</span>
-                    {ev.code && <span className="ui-badge ui-badge-soft">{ev.code}</span>}
-                  </div>
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '3px' }}>{ev.title}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500, lineHeight: 1.45 }}>{ev.desc}</div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setClosedEvents(prev => [...prev, ev.id])}
-                  style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF' }}
-                  aria-label="공지 닫기"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
 
       <HorizontalProductSection
         title="질병 · 부위별 추천"
@@ -654,240 +495,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Safety Recall & Safety Information Detailed Modal Overlay */}
-      {isRecallModalOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(15, 23, 42, 0.4)',
-            backdropFilter: 'blur(6px)',
-            WebkitBackdropFilter: 'blur(6px)',
-            zIndex: 9999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px',
-            animation: 'fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-          }}
-          onClick={() => setIsRecallModalOpen(false)}
-        >
-          <div
-            style={{
-              backgroundColor: '#FFFFFF',
-              width: '100%',
-              maxWidth: '460px',
-              borderRadius: '24px',
-              border: '1.5px solid rgba(217, 48, 37, 0.12)',
-              boxShadow: '0 20px 25px -5px rgba(217, 48, 37, 0.05), 0 10px 10px -5px rgba(217, 48, 37, 0.02), 0 30px 60px rgba(0, 0, 0, 0.15)',
-              padding: '24px',
-              position: 'relative',
-              animation: 'scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
-              display: 'flex',
-              flexDirection: 'column',
-              maxHeight: '85vh',
-              boxSizing: 'border-box',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <AlertTriangle size={22} color="var(--accent)" strokeWidth={2.5} />
-                <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-dark)', letterSpacing: '-0.02em' }}>
-                  긴급 사료 리콜 및 안전 공고
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsRecallModalOpen(false)}
-                style={{
-                  background: '#F8FAFC',
-                  border: '1px solid rgba(0, 0, 0, 0.06)',
-                  cursor: 'pointer',
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#64748B',
-                  transition: 'all 0.2s',
-                  padding: 0,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'scale(1.08)';
-                  e.currentTarget.style.backgroundColor = '#FEF2F2';
-                  e.currentTarget.style.color = 'var(--accent)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'none';
-                  e.currentTarget.style.backgroundColor = '#F8FAFC';
-                  e.currentTarget.style.color = '#64748B';
-                }}
-              >
-                <X size={16} strokeWidth={2.5} />
-              </button>
-            </div>
-
-            {/* Subtitle / Source Info */}
-            <div
-              style={{
-                backgroundColor: '#FEF2F2',
-                border: '1.5px solid rgba(217, 48, 37, 0.1)',
-                padding: '12px 14px',
-                borderRadius: '14px',
-                fontSize: '13px',
-                color: '#7F1D1D',
-                fontWeight: 600,
-                lineHeight: 1.5,
-                marginBottom: '20px',
-              }}
-            >
-              미국 식품의약국(FDA) 및 대한민국 농림축산식품부에서 발표한 최근 자진회수 및 강제 리콜 사료 정보입니다. 해당 제품을 급여 중이신 보호자께서는 즉시 급여를 중단하시고 공식 조치 요령에 따라 반품 또는 교환을 받으시길 권장합니다.
-            </div>
-
-            {/* Scrollable Content */}
-            <div
-              style={{
-                flex: 1,
-                overflowY: 'auto',
-                paddingRight: '4px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '16px',
-                msOverflowStyle: 'none',
-                scrollbarWidth: 'none',
-              }}
-              className="no-scrollbar"
-            >
-              {/* Alert 1 (FDA) */}
-              <div
-                style={{
-                  border: '1px solid rgba(217, 48, 37, 0.08)',
-                  backgroundColor: '#FFFFFF',
-                  borderRadius: '16px',
-                  padding: '16px',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.02)',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.04em', backgroundColor: 'rgba(217, 48, 37, 0.08)', padding: '2px 8px', borderRadius: '6px' }}>
-                    미국 FDA 공고
-                  </span>
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: '#94A3B8' }}>2026.05.12</span>
-                </div>
-                <h4 style={{ fontSize: '14.5px', fontWeight: 800, color: '#1E293B', marginBottom: '8px', lineHeight: 1.35 }}>
-                  Raw & Green 브랜드 프리미엄 캣푸드 살모넬라균(Salmonella) 오염 우려 자진회수
-                </h4>
-                <p style={{ fontSize: '13px', color: '#64748B', lineHeight: 1.5, margin: '0 0 10px 0' }}>
-                  미국 FDA 동물의약품센터(CVM)는 특정 유통기한 배치(생산 번호: Lot 202605A) 제품의 원료 검사 도중 살모넬라균 검출 의심으로 수입·유통사의 유통 물량 전체에 대한 자진회수를 권고했습니다. 살모넬라균은 반려묘뿐만 아니라 사료를 직접 만지는 집사의 피부나 호흡기 교차 오염을 유발할 수 있으므로, 해당 배치의 사료는 즉시 밀봉하여 폐기하거나 구매처에서 전액 환불을 받으시기 바랍니다.
-                </p>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 700, backgroundColor: '#F1F5F9', color: '#475569', padding: '3px 8px', borderRadius: '6px' }}>대상: 고양이 건식 1.8kg / 4kg</span>
-                  <span style={{ fontSize: '11px', fontWeight: 700, backgroundColor: '#F8FAFC', color: 'var(--accent)', border: '1px solid rgba(217, 48, 37, 0.15)', padding: '2px 8px', borderRadius: '6px' }}>조치: 급여 중단 & 환불</span>
-                </div>
-                <a
-                  href="https://www.fda.gov/safety/recalls-market-withdrawals-safety-alerts"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    color: '#4F46E5',
-                    textDecoration: 'none',
-                    marginTop: '12px',
-                    transition: 'opacity 0.2s',
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
-                  onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-                >
-                  <span>FDA 공식 리콜 페이지 바로가기</span>
-                  <ExternalLink size={12} strokeWidth={2.5} />
-                </a>
-              </div>
-
-              {/* Alert 2 (Korean Ministry) */}
-              <div
-                style={{
-                  border: '1px solid rgba(217, 48, 37, 0.08)',
-                  backgroundColor: '#FFFFFF',
-                  borderRadius: '16px',
-                  padding: '16px',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.02)',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#EA580C', textTransform: 'uppercase', letterSpacing: '0.04em', backgroundColor: 'rgba(234, 88, 12, 0.08)', padding: '2px 8px', borderRadius: '6px' }}>
-                    농림축산식품부 명령
-                  </span>
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: '#94A3B8' }}>2026.05.18</span>
-                </div>
-                <h4 style={{ fontSize: '14.5px', fontWeight: 800, color: '#1E293B', marginBottom: '8px', lineHeight: 1.35 }}>
-                  해피퍼피 오가닉 국산 건식 사료 조수분(Moisture) 함량 기준치 초과 회수 조치
-                </h4>
-                <p style={{ fontSize: '13px', color: '#64748B', lineHeight: 1.5, margin: '0 0 10px 0' }}>
-                  국내 농림축산식품부 정기 검사에서 해피퍼피 오가닉 사료 2종에 대해 법적 허용 수분 함량 상한(14.0% 이하)을 초과한 실측 15.6%가 검출되었습니다. 과도한 수분량은 고온다습한 계절에 눈에 보이지 않는 곰팡이 포자 번식 및 부패 속도를 과도하게 앞당겨 급여 시 설사와 구토 등 장염 증세를 일으킬 우려가 있습니다. 유통 판매는 중단되었으며, 기구매 보호자께서는 제조업체(080-123-4567)를 통해 무료 교환 및 환불 절차를 진행하십시오.
-                </p>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 700, backgroundColor: '#F1F5F9', color: '#475569', padding: '3px 8px', borderRadius: '6px' }}>대상: 강아지 오가닉 연어/소고기</span>
-                  <span style={{ fontSize: '11px', fontWeight: 700, backgroundColor: '#F8FAFC', color: '#EA580C', border: '1px solid rgba(234, 88, 12, 0.15)', padding: '2px 8px', borderRadius: '6px' }}>조치: 회수/폐기 & 무상교환</span>
-                </div>
-                <a
-                  href="https://www.epis.or.kr"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    color: '#4F46E5',
-                    textDecoration: 'none',
-                    marginTop: '12px',
-                    transition: 'opacity 0.2s',
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
-                  onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-                >
-                  <span>농식품부 사료정보 관리시스템 바로가기</span>
-                  <ExternalLink size={12} strokeWidth={2.5} />
-                </a>
-              </div>
-            </div>
-
-            {/* Footer Alert Close Action */}
-            <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
-              <button
-                type="button"
-                className="btn btn-outline"
-                onClick={() => setIsRecallModalOpen(false)}
-                style={{ flex: 1, borderRadius: '14px', height: '48px', fontSize: '14px', fontWeight: 700, padding: 0 }}
-              >
-                닫기
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={() => {
-                  setIsRecallBannerVisible(false);
-                  setIsRecallModalOpen(false);
-                }}
-                style={{ flex: 1.3, borderRadius: '14px', height: '48px', fontSize: '14px', fontWeight: 700, padding: 0, background: 'linear-gradient(135deg, var(--accent) 0%, #B91C1C 100%)', boxShadow: '0 4px 14px rgba(217, 48, 37, 0.2)' }}
-              >
-                공고 확인 완료 (배너 끄기)
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
