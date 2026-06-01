@@ -1,0 +1,5 @@
+name_ko,brand_name,min_price,image_url,main_category,sub_category,target_pet_type,target_life_stage,formulation,health_concerns,ingredients_csv
+"로얄캐닌 인도어 어덜트 고양이 사료","로얄캐닌",25000,"https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&q=80","사료","건식사료","cat","성체","Dry","체중,소화","탈수 가금육 단백질,쌀,동물성 지방"
+"오리젠 오리지널 캣","오리젠",45000,"https://images.unsplash.com/photo-1548685913-fe6678babe8d?w=400&q=80","사료","건식사료","cat","전연령","Dry","피부,관절","신선한 닭고기,생 칠면조 고기,통달걀"
+"퓨리나 원 관절 건강 반려견 사료","퓨리나",22000,"https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&q=80","사료","건식사료","dog","성체,시니어","Dry","관절","순살 닭고기,밀,글루텐"
+"그리니즈 덴탈껌 티니","그리니즈",15000,"https://images.unsplash.com/photo-1548685913-fe6678babe8d?w=400&q=80","구강관리","덴탈껌","dog","성체","Chew","구강","밀가루,글리세린,천연향료"

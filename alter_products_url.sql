@@ -1,0 +1,3 @@
+ALTER TABLE public.products 
+ADD COLUMN IF NOT EXISTS product_url TEXT,
+ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'internal';
