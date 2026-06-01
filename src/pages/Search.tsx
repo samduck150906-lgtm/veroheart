@@ -1,5 +1,6 @@
 // @ts-nocheck
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useSearchParams } from 'react-router-dom';
 import {
   Filter,
@@ -119,6 +120,8 @@ export default function Search() {
   
   const [isStandardFeedModalOpen, setIsStandardFeedModalOpen] = useState(false);
   const [standardFeedSearch, setStandardFeedSearch] = useState('');
+  const PAGE_SIZE = 20;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   // Load all ingredients for auto-completion
   useEffect(() => {
@@ -192,6 +195,8 @@ export default function Search() {
     }));
   }, [searchResults, sortBy, profile]);
 
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [searchResults, sortBy]);
+
   const toggleHealthConcern = (concern: string) => {
     setFilters(prev => ({
       ...prev,
@@ -228,8 +233,15 @@ export default function Search() {
     filters.priceBand !== 'any' ||
     excludedIngredients.length > 0;
 
+  const pagedResults = displayResults.slice(0, visibleCount);
+  const hasMore = visibleCount < displayResults.length;
+
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '100px' }}>
+      <Helmet>
+        <title>상품 검색 | 베로로</title>
+        <meta name="description" content="반려동물 맞춤 사료·간식을 성분, 가격, 건강 고민으로 검색하고 비교해 보세요." />
+      </Helmet>
       <section className="ui-hero-panel" style={{ marginBottom: '18px', padding: '18px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '14px' }}>
           <div>
@@ -453,20 +465,37 @@ export default function Search() {
         )}
 
         <div className="ui-grid-2">
-          {displayResults.map(({ product, breakdown, score }) => (
+          {pagedResults.map(({ product, breakdown, score }) => (
             <div key={product.id}>
               <ProductCard product={product} />
               {breakdown && score != null && (
                 <div style={{ marginTop: '8px', padding: '0 4px', fontSize: '12px', color: '#66707C', lineHeight: 1.55 }}>
                   <strong style={{ color: '#111827' }}>{score}점 추천</strong>
-                  {' · '}
-                  {breakdown.reasons.slice(0, 2).join(' · ')}
+                  {breakdown.reasons && breakdown.reasons.length > 0 && (
+                    <>{' · '}{breakdown.reasons.slice(0, 2).join(' · ')}</>
+                  )}
                 </div>
               )}
             </div>
           ))}
         </div>
-        
+
+        {hasMore && (
+          <button
+            type="button"
+            onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
+            style={{
+              display: 'block', width: '100%', marginTop: '20px',
+              padding: '14px', borderRadius: '16px',
+              border: '1.5px solid rgba(129, 201, 149, 0.4)',
+              background: '#FFFFFF', color: 'var(--primary-dark)',
+              fontWeight: 800, fontSize: '14px', cursor: 'pointer',
+            }}
+          >
+            더 보기 ({visibleCount} / {displayResults.length}개)
+          </button>
+        )}
+
         {displayResults.length === 0 && !isLoading && (
           <div className="ui-info-card" style={{ textAlign: 'center', padding: '56px 18px', color: '#9CA3AF' }}>
             검색 결과가 없습니다.<br />

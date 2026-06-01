@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { VIRAL_TEST_CAMPAIGN, KAKAO_SHARE_MESSAGES } from '../copy/marketing';
 import { isKakaoShareConfigured, kakaoShareTextWithLink } from '../lib/kakaoShare';
 import { notify } from '../store/useNotification';
@@ -130,6 +131,10 @@ export default function Test() {
 
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '120px' }}>
+      <Helmet>
+        <title>반려동물 성향 테스트 | 베로로</title>
+        <meta name="description" content="우리 아이의 성향을 알아보고 맞춤 사료를 추천받아보세요." />
+      </Helmet>
       <section style={{ marginBottom: '14px' }}>
         <button
           type="button"

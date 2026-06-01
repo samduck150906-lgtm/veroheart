@@ -30,6 +30,8 @@ import EntryGate from './components/EntryGate';
 import { markEntryGateDone, readEntryGateDone } from './lib/entryGateStorage';
 import { isAdminExperience, toggleAdminDesktopMode } from './utils/adminHost';
 import { ThemeProvider } from './theme/ThemeProvider';
+import PersonalityQuiz from './pages/Test';
+import ViralEvent from './pages/ViralEvent';
 
 function App() {
   const { initApp, isInitializing, isLoggedIn } = useStore();
@@ -131,6 +133,8 @@ function App() {
               <Route path="product/:id" element={<Detail />} />
               <Route path="analysis" element={<AnalysisResult />} />
               <Route path="pet-profile" element={<PetProfilePage />} />
+              <Route path="event/personality-quiz" element={<PersonalityQuiz />} />
+              <Route path="event/viral" element={<ViralEvent />} />
               <Route path="terms" element={<Terms />} />
               <Route path="privacy" element={<Privacy />} />
               <Route path="refund" element={<Refund />} />

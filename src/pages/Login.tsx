@@ -6,7 +6,7 @@ import { useStore } from '../store/useStore';
 import { notify } from '../store/useNotification';
 import { HOME_HERO } from '../copy/marketing';
 import { VERORO_LOGO_SRC } from '../constants/assets';
-import { TossButton, TossCard, TossChip, TossInput, TossField, TossSectionBlock } from '../components/TossUI';
+import { TossButton, TossCard, TossChip, TossSectionBlock } from '../components/TossUI';
 
 const PASSWORD_RULES = [
   {
@@ -51,6 +51,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [resendLoading, setResendLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [pendingVerification, setPendingVerification] = useState(false);
@@ -120,18 +121,16 @@ export default function Login() {
 
   const handleSubmit = async () => {
     const addr = email.trim();
-    if (!addr || !password) {
-      notify.error('이메일과 비밀번호를 입력해주세요.');
+    const errors: { email?: string; password?: string } = {};
+    if (!addr) errors.email = '이메일을 입력해 주세요.';
+    else if (!isValidEmail(addr)) errors.email = '올바른 이메일 형식을 입력해 주세요.';
+    if (!password) errors.password = '비밀번호를 입력해 주세요.';
+    else if (mode === 'signup' && !passwordPolicyOk(password)) errors.password = '비밀번호 정책을 모두 충족해 주세요.';
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
-    if (!isValidEmail(addr)) {
-      notify.error('올바른 이메일 형식인지 확인해 주세요.');
-      return;
-    }
-    if (mode === 'signup' && !passwordPolicyOk(password)) {
-      notify.error('비밀번호 정책을 모두 충족해 주세요.');
-      return;
-    }
+    setFieldErrors({});
 
     setIsLoading(true);
     try {
@@ -302,66 +301,63 @@ export default function Login() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '16px' }}>
-          <TossField icon={<Mail size={18} color="#9CA3AF" />}>
-            <TossInput
-              type="email"
-              placeholder="이메일 주소"
-              value={email}
-              onChange={setEmail}
-              style={{ border: 'none', padding: '0', background: 'transparent', fontSize: '16px' }}
-            />
-          </TossField>
-          <TossField icon={<Lock size={18} color="#9CA3AF" />}>
-            <TossInput
-              type={showPw ? 'text' : 'password'}
-              placeholder="비밀번호"
-              value={password}
-              onChange={setPassword}
-              style={{ border: 'none', padding: '0', background: 'transparent', fontSize: '16px' }}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPw(!showPw)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', display: 'inline-flex' }}
-            >
-              {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
-          </TossField>
+          <div>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '10px',
+              border: fieldErrors.email ? '1.5px solid #EF4444' : '1.5px solid #E5E7EB',
+              borderRadius: '14px', background: '#FFFFFF',
+              padding: '0 16px', height: '54px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+              transition: 'border-color 0.2s',
+            }}>
+              <Mail size={18} color="#9CA3AF" style={{ flexShrink: 0 }} />
+              <input
+                type="email"
+                placeholder="이메일 주소"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); setFieldErrors(prev => ({ ...prev, email: undefined })); }}
+                onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+                style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: '16px', color: '#111827' }}
+              />
+            </div>
+            {fieldErrors.email && (
+              <p style={{ margin: '5px 0 0 4px', fontSize: '12px', color: '#EF4444', fontWeight: 600 }}>{fieldErrors.email}</p>
+            )}
+          </div>
+          <div>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '10px',
+              border: fieldErrors.password ? '1.5px solid #EF4444' : '1.5px solid #E5E7EB',
+              borderRadius: '14px', background: '#FFFFFF',
+              padding: '0 16px', height: '54px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+              transition: 'border-color 0.2s',
+            }}>
+              <Lock size={18} color="#9CA3AF" style={{ flexShrink: 0 }} />
+              <input
+                type={showPw ? 'text' : 'password'}
+                placeholder="비밀번호"
+                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); setFieldErrors(prev => ({ ...prev, password: undefined })); }}
+                onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+                style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: '16px', color: '#111827' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPw(!showPw)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', display: 'inline-flex', flexShrink: 0 }}
+              >
+                {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            {fieldErrors.password && (
+              <p style={{ margin: '5px 0 0 4px', fontSize: '12px', color: '#EF4444', fontWeight: 600 }}>{fieldErrors.password}</p>
+            )}
+          </div>
         </div>
 
-        <div style={{ display: 'none' }}>
-          <div style={{ position: 'relative' }}>
-            <Mail size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
-            <input
-              type="email"
-              placeholder="이메일 주소"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-              style={{ width: '100%', padding: '16px 16px 16px 46px', borderRadius: '14px', border: '1px solid #E5E7EB', fontSize: '16px', outline: 'none', boxSizing: 'border-box' }}
-            />
-          </div>
-          <div style={{ position: 'relative' }}>
-            <Lock size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
-            <input
-              type={showPw ? 'text' : 'password'}
-              placeholder="비밀번호"
-              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-              style={{ width: '100%', padding: '16px 46px 16px 46px', borderRadius: '14px', border: '1px solid #E5E7EB', fontSize: '16px', outline: 'none', boxSizing: 'border-box' }}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPw(!showPw)}
-              style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF' }}
-            >
-              {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
-          </div>
-        </div>
 
         {mode === 'signup' && (
           <TossCard style={{ marginBottom: '18px', padding: '12px 14px', borderRadius: '12px' }}>
