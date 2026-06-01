@@ -9,7 +9,7 @@
  *
  * 진행률 표시줄 포함, 완료 시 Zustand updateProfile 호출
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dog, Cat, ChevronRight, ChevronLeft, Check, Heart } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import type { UserPetProfile } from '../types';
@@ -122,6 +122,22 @@ function Step1({ data, set }: { data: FormData; set: (d: Partial<FormData>) => v
 }
 
 function Step2({ data, set }: { data: FormData; set: (d: Partial<FormData>) => void }) {
+  const [weightStr, setWeightStr] = useState(String(data.weight));
+
+  useEffect(() => {
+    if (parseFloat(weightStr) !== data.weight) {
+      setWeightStr(String(data.weight));
+    }
+  }, [data.weight]);
+
+  const handleWeightChange = (val: string) => {
+    setWeightStr(val);
+    const parsed = parseFloat(val);
+    if (!isNaN(parsed) && parsed >= 0) {
+      set({ weight: parsed });
+    }
+  };
+
   return (
     <div className="pet-step">
       <h2 className="pet-step-title">나이와 체중을 알려주세요</h2>
@@ -152,7 +168,7 @@ function Step2({ data, set }: { data: FormData; set: (d: Partial<FormData>) => v
       <input
         type="range" min={0.5} max={60} step={0.5}
         value={data.weight}
-        onChange={(e) => set({ weight: Number(e.target.value) })}
+        onChange={(e) => handleWeightChange(e.target.value)}
         className="pet-slider"
       />
       <div className="pet-slider-marks">
@@ -165,10 +181,11 @@ function Step2({ data, set }: { data: FormData; set: (d: Partial<FormData>) => v
       <div className="pet-manual-row">
         <span>직접 입력</span>
         <input
-          type="number" min={0.5} max={100} step={0.1}
-          value={data.weight}
-          onChange={(e) => set({ weight: Number(e.target.value) })}
+          type="text"
+          value={weightStr}
+          onChange={(e) => handleWeightChange(e.target.value.replace(/[^0-9.]/g, ''))}
           className="pet-number-input"
+          placeholder="예: 5.2"
         />
         <span>kg</span>
       </div>
@@ -251,6 +268,7 @@ export default function PetProfileForm({ onComplete }: PetProfileFormProps) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormData>(DEFAULT_FORM);
   const [done, setDone] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const updateProfile   = useStore((s) => s.updateProfile);
 
   const patch = (d: Partial<FormData>) => setForm((f) => ({ ...f, ...d }));
@@ -260,20 +278,28 @@ export default function PetProfileForm({ onComplete }: PetProfileFormProps) {
     return true;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step < TOTAL_STEPS - 1) {
       setStep((s) => s + 1);
     } else {
-      // Save
-      updateProfile({
-        name:           form.name,
-        species:        form.species,
-        age:            form.age,
-        healthConcerns: form.healthConcerns,
-        allergies:      form.allergies,
-      });
-      setDone(true);
-      onComplete?.();
+      setIsSaving(true);
+      try {
+        // Save
+        await updateProfile({
+          name:           form.name,
+          species:        form.species,
+          age:            form.age,
+          weightKg:       form.weight,
+          healthConcerns: form.healthConcerns,
+          allergies:      form.allergies,
+        });
+        setDone(true);
+        onComplete?.();
+      } catch (err) {
+        console.error('Failed to save pet profile:', err);
+      } finally {
+        setIsSaving(false);
+      }
     }
   };
 
@@ -307,16 +333,18 @@ export default function PetProfileForm({ onComplete }: PetProfileFormProps) {
       {/* Nav buttons */}
       <div className="pet-nav">
         {step > 0 && (
-          <button className="pet-btn-back" onClick={() => setStep((s) => s - 1)}>
+          <button className="pet-btn-back" onClick={() => setStep((s) => s - 1)} disabled={isSaving}>
             <ChevronLeft size={18} /> 이전
           </button>
         )}
         <button
           className="pet-btn-next"
           onClick={handleNext}
-          disabled={!canNext()}
+          disabled={!canNext() || isSaving}
         >
-          {step === TOTAL_STEPS - 1 ? (
+          {isSaving ? (
+            '저장 중...'
+          ) : step === TOTAL_STEPS - 1 ? (
             <><Check size={18} style={{ marginRight: 6 }} />저장하기</>
           ) : (
             <>다음 <ChevronRight size={18} /></>

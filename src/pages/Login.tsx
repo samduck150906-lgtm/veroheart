@@ -1,7 +1,7 @@
 import { useMemo, useState, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, RefreshCw, Check, X } from 'lucide-react';
-import { supabase, ensurePublicUserExists } from '../lib/supabase';
+import { supabase, ensurePublicUserExists, signUpWithEmail, signInWithEmail } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import { notify } from '../store/useNotification';
 import { HOME_HERO } from '../copy/marketing';
@@ -49,6 +49,7 @@ export default function Login() {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
@@ -128,9 +129,19 @@ export default function Login() {
       notify.error('올바른 이메일 형식인지 확인해 주세요.');
       return;
     }
-    if (mode === 'signup' && !passwordPolicyOk(password)) {
-      notify.error('비밀번호 정책을 모두 충족해 주세요.');
-      return;
+    if (mode === 'signup') {
+      if (!confirmPassword) {
+        notify.error('비밀번호 확인을 입력해주세요.');
+        return;
+      }
+      if (password !== confirmPassword) {
+        notify.error('비밀번호가 일치하지 않습니다.');
+        return;
+      }
+      if (!passwordPolicyOk(password)) {
+        notify.error('비밀번호 정책을 모두 충족해 주세요.');
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -170,61 +181,25 @@ export default function Login() {
         await initApp();
         navigate(redirectTo, { replace: true });
       } else {
-        let signUpSuccess = false;
-        let createdUser = null;
-
-        try {
-          if (supabase.auth.admin) {
-            const { data: adminData, error: adminError } = await supabase.auth.admin.createUser({
-              email: addr,
-              password,
-              email_confirm: true
-            });
-            if (!adminError && adminData.user) {
-              createdUser = adminData.user;
-              signUpSuccess = true;
-            }
-          }
-        } catch (err) {
-          console.warn('Admin user creation failed, falling back to standard signup:', err);
+        const user = await signUpWithEmail(addr, password);
+        if (!user) {
+          return;
         }
 
-        if (signUpSuccess && createdUser) {
-          const { error: signInErr } = await supabase.auth.signInWithPassword({
-            email: addr,
-            password
-          });
-          if (signInErr) throw signInErr;
-
-          // Ensure public.users entry exists defensively
-          await ensurePublicUserExists(createdUser.id, addr);
-
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
           notify.success('회원가입이 완료되었습니다!');
           setPendingVerification(false);
           await initApp();
           navigate(redirectTo, { replace: true });
         } else {
-          const { data, error } = await supabase.auth.signUp({
-            email: addr,
-            password,
-            options: {
-              emailRedirectTo: `${window.location.origin}/login`,
-            },
-          });
-          if (error) throw error;
-
-          if (data.session) {
-            if (data.user) {
-              await ensurePublicUserExists(data.user.id, addr);
-            }
+          const loggedInUser = await signInWithEmail(addr, password);
+          if (loggedInUser) {
             notify.success('회원가입이 완료되었습니다!');
             setPendingVerification(false);
             await initApp();
             navigate(redirectTo, { replace: true });
           } else {
-            if (data.user) {
-              await ensurePublicUserExists(data.user.id, addr);
-            }
             notify.success('가입 확인 메일을 보냈어요. 메일의 링크를 눌러 인증을 마쳐 주세요.');
             setPendingVerification(true);
           }
@@ -281,6 +256,8 @@ export default function Login() {
               onClick={() => {
                 setMode(m);
                 setPendingVerification(false);
+                setPassword('');
+                setConfirmPassword('');
               }}
               style={{
                 flex: 1,
@@ -302,31 +279,74 @@ export default function Login() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '16px' }}>
-          <TossField icon={<Mail size={18} color="#9CA3AF" />}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '2px 16px',
+            borderRadius: '16px',
+            background: '#F9FAFB',
+            border: '1.5px solid #E5E8EB',
+            transition: 'all 0.2s',
+          }}>
+            <Mail size={18} color="#9CA3AF" style={{ flexShrink: 0 }} />
             <TossInput
               type="email"
               placeholder="이메일 주소"
               value={email}
               onChange={setEmail}
-              style={{ border: 'none', padding: '0', background: 'transparent', fontSize: '16px' }}
+              style={{ border: 'none', padding: '12px 0', background: 'transparent', fontSize: '15px' }}
             />
-          </TossField>
-          <TossField icon={<Lock size={18} color="#9CA3AF" />}>
+          </div>
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '2px 16px',
+            borderRadius: '16px',
+            background: '#F9FAFB',
+            border: '1.5px solid #E5E8EB',
+            transition: 'all 0.2s',
+          }}>
+            <Lock size={18} color="#9CA3AF" style={{ flexShrink: 0 }} />
             <TossInput
               type={showPw ? 'text' : 'password'}
               placeholder="비밀번호"
               value={password}
               onChange={setPassword}
-              style={{ border: 'none', padding: '0', background: 'transparent', fontSize: '16px' }}
+              style={{ border: 'none', padding: '12px 0', background: 'transparent', fontSize: '15px' }}
             />
             <button
               type="button"
               onClick={() => setShowPw(!showPw)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', display: 'inline-flex' }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', display: 'inline-flex', padding: 0 }}
             >
               {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
-          </TossField>
+          </div>
+
+          {mode === 'signup' && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '2px 16px',
+              borderRadius: '16px',
+              background: '#F9FAFB',
+              border: '1.5px solid #E5E8EB',
+              transition: 'all 0.2s',
+            }}>
+              <Lock size={18} color="#9CA3AF" style={{ flexShrink: 0 }} />
+              <TossInput
+                type={showPw ? 'text' : 'password'}
+                placeholder="비밀번호 확인"
+                value={confirmPassword}
+                onChange={setConfirmPassword}
+                style={{ border: 'none', padding: '12px 0', background: 'transparent', fontSize: '15px' }}
+              />
+            </div>
+          )}
         </div>
 
         <div style={{ display: 'none' }}>
@@ -391,48 +411,6 @@ export default function Login() {
         >
           {isLoading ? '처리 중...' : mode === 'login' ? '로그인' : '회원가입'}
         </TossButton>
-
-        <TossSectionBlock title="이메일 인증이 필요하신가요?" style={{ marginBottom: '14px', borderRadius: '20px', background: 'var(--primary-light)', border: '1px solid rgba(129, 201, 149, 0.2)' }}>
-          <p style={{ margin: '0 0 12px', fontSize: '12px', color: 'var(--primary-dark)', lineHeight: 1.55, fontWeight: 700 }}>
-            가입 직후 또는 로그인이 안 될 때, 아래 버튼으로 인증 메일을 다시 보낼 수 있어요. 스팸함도 꼭 확인해 주세요.
-          </p>
-          <button
-            type="button"
-            onClick={() => void handleResendVerification()}
-            disabled={resendLoading || resendCooldown > 0}
-            style={{
-              width: '100%',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              padding: '12px',
-              borderRadius: '12px',
-              border: '1px solid rgba(129, 201, 149, 0.3)',
-              background: '#FFFFFF',
-              color: 'var(--primary-dark)',
-              fontWeight: 800,
-              fontSize: '13px',
-              cursor: resendLoading || resendCooldown > 0 ? 'not-allowed' : 'pointer',
-              opacity: resendLoading || resendCooldown > 0 ? 0.65 : 1,
-              transition: 'all 0.2s',
-            }}
-          >
-            <RefreshCw size={16} style={{ animation: resendLoading ? 'spin 0.85s linear infinite' : undefined }} />
-            {resendCooldown > 0 ? `${resendCooldown}초 후 다시 보내기` : '인증 메일 다시 보내기'}
-          </button>
-        </TossSectionBlock>
-
-        {(pendingVerification || mode === 'signup') && (
-          <div style={{ marginBottom: '12px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-            <TossChip active>{pendingVerification ? '인증 대기' : '가입 안내'}</TossChip>
-            <p style={{ margin: 0, fontSize: '11px', color: 'var(--primary-dark)', lineHeight: 1.5, fontWeight: 600, width: '100%' }}>
-              {pendingVerification
-                ? '인증이 끝나면 로그인 탭에서 같은 이메일로 로그인해 주세요.'
-                : '회원가입 후 메일 인증이 필요할 수 있어요. 메일이 안 오면 재전송 버튼을 눌러 주세요.'}
-            </p>
-          </div>
-        )}
 
         <p style={{ margin: 0, textAlign: 'center', fontSize: '12px', color: '#9CA3AF', lineHeight: 1.5 }}>
           소셜 로그인 없이 이메일과 비밀번호만 사용합니다.
