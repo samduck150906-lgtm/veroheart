@@ -126,16 +126,52 @@ export default function Home() {
       return { emoji: '🛡️', title: '슬개골 수호 버프', desc: '연골 보호막 가동 (콘드로이친 & 글루코사민 필요)' };
     }
     if (norm.includes('비만') || norm.includes('체중')) {
-      return { emoji: '⚡', title: '체중 관리 민첩 버프', desc: '체중 조절 가속화 (저지방 L-카르니틴 처방)' };
+      return { emoji: '⚡', title: '체중 조절 민첩 버프', desc: '체중 관리 가속화 (저지방 L-카르니틴 처방)' };
     }
-    if (norm.includes('피부') || norm.includes('모질')) {
-      return { emoji: '💦', title: '피부 장벽 배리어 버프', desc: '모질 광택 상승 (오메가3 & 아연 공급)' };
+    if (norm.includes('피부') || norm.includes('모질') || norm.includes('아토피')) {
+      return { emoji: '💦', title: '피부 장벽 배리어 버프', desc: '피부 보호 및 모질 상승 (오메가3 & 아연 공급)' };
     }
-    if (norm.includes('소화') || norm.includes('예민') || norm.includes('장')) {
+    if (norm.includes('소화') || norm.includes('예민') || norm.includes('장') || norm.includes('변비')) {
       return { emoji: '🌱', title: '장 건강 힐링 버프', desc: '장내 미생물 활성화 (가수분해 유산균)' };
     }
-    if (norm.includes('신장') || norm.includes('요로')) {
+    if (norm.includes('신장') || norm.includes('요로') || norm.includes('결석')) {
       return { emoji: '💧', title: '신장 순환 정화 버프', desc: '체액 순환 보조 (저나트륨 수분 공급)' };
+    }
+    if (norm.includes('당뇨')) {
+      return { emoji: '🩸', title: '당뇨 안정화 버프', desc: '혈당 완화 포뮬러 (고식이섬유 & 저탄수화물)' };
+    }
+    if (norm.includes('심장')) {
+      return { emoji: '❤️', title: '심장 수호 버프', desc: '심근 수축력 보조 (L-카르니틴 & 타우린 처방)' };
+    }
+    if (norm.includes('구강') || norm.includes('치석') || norm.includes('치아')) {
+      return { emoji: '🦷', title: '백옥 치아 구강 버프', desc: '구강 유해균 차단 (플라그 억제 원료 배합)' };
+    }
+    if (norm.includes('눈') || norm.includes('눈물')) {
+      return { emoji: '👁️', title: '초롱초롱 안구 버프', desc: '시력 보호 및 눈물痕 케어 (루테인 & 아스타잔틴)' };
+    }
+    if (norm.includes('귀') || norm.includes('귓병') || norm.includes('외이도')) {
+      return { emoji: '👂', title: '보송보송 귓속 버프', desc: '귓속 곰팡이 억제 (면역 향상 및 안심 단백질)' };
+    }
+    if (norm.includes('췌장')) {
+      return { emoji: '🔋', title: '췌장 활력 안정 버프', desc: '소화 효소 보조 및 극단적 저지방(Low Fat) 식이' };
+    }
+    if (norm.includes('종양') || norm.includes('암')) {
+      return { emoji: '🎗️', title: '항암 면역 강화 버프', desc: '면역 세포 활성화 및 세포 손상 억제 (항산화 컴플렉스)' };
+    }
+    if (norm.includes('디스크') || norm.includes('허니아')) {
+      return { emoji: '🛹', title: '디스크 지지대 버프', desc: '척추 지지력 보충 (소염 작용 천연 성분)' };
+    }
+    if (norm.includes('간') || norm.includes('간경화')) {
+      return { emoji: '🧪', title: '간 해독 정화 버프', desc: '간 기능 향상 및 세포 재생 (실리마린 밀크씨슬)' };
+    }
+    if (norm.includes('스트레스') || norm.includes('불안')) {
+      return { emoji: '🧘', title: '마인드 릴렉스 버프', desc: '스트레스/불안 경감 (L-테아닌 릴렉서 배합)' };
+    }
+    if (norm.includes('갑상선') || norm.includes('호르몬')) {
+      return { emoji: '⚖️', title: '호르몬 밸런스 버프', desc: '내분비계 활력 조절 (갑상선 상태 맞춤 배합)' };
+    }
+    if (norm.includes('부신피질') || norm.includes('쿠싱')) {
+      return { emoji: '🧬', title: '부신피질 안정화 버프', desc: '스테로이드 수치 안정 (저나트륨 처방)' };
     }
     return { emoji: '✨', title: `${norm} 집중 케어 버프`, desc: `${norm} 전용 포뮬러 및 기능성 원료 케어` };
   };

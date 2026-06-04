@@ -13,19 +13,56 @@ const PROFILE_STEP_META = [
   { title: '이름', prompt: '반려동물의 이름을 알려주세요.' },
   { title: '종류', prompt: '반려동물의 종류를 알려주세요.' },
   { title: '크기 구분', prompt: '강아지의 크기 구분을 선택해 주세요.' },
-  { title: '나이', prompt: '반려동물의 나이를 알려주세요.' },
-  { title: '체중', prompt: '반려동물의 체중을 알려주세요.' },
+  { title: '나이', prompt: '반려동물의 나이를 선택해 주세요.' },
+  { title: '체중', prompt: '반려동물의 체중을 선택해 주세요.' },
   { title: '알레르기', prompt: '피해야 할 알레르기 성분이 있나요?' },
-  { title: '건강 고민', prompt: '어떤 건강 고민이 있나요?' }
+  { title: '건강 고민', prompt: '어떤 건강 고민이 있나요?' },
+  { title: '기존 질병', prompt: '앓고 있는 기존 질병이 있나요?' }
 ];
 
 const BREED_LIST_DOG = ['소형견', '중형견', '대형견'];
 const BREED_LIST_CAT = [];
 
-const concernOptions = [
-  '비만', '관절 질환', '신장 질환', '당뇨', '심장 질환',
-  '피부 민감', '소화 예민', '구강 질환', '암/종양', '눈/귀 질환'
+const WEIGHT_OPTIONS = [
+  { label: '1kg 미만', value: 0.5 },
+  ...Array.from({ length: 49 }, (_, i) => {
+    const val = i + 1;
+    return { label: `${val}kg`, value: val };
+  }),
+  { label: '50kg 이상', value: 50 }
 ];
+
+const AGE_OPTIONS = [
+  { label: '1년 미만 (0세)', value: 0 },
+  ...Array.from({ length: 20 }, (_, i) => {
+    const val = i + 1;
+    return { label: `${val}세`, value: val };
+  }),
+  { label: '20세 이상', value: 20 }
+];
+
+const allergyOptions = [
+  '닭고기', '소고기', '돼지고기', '오리고기', '양고기', '칠면조',
+  '연어', '생선/흰살생선', '계란/달걀', '유제품(우유/치즈)',
+  '곡물/글루텐', '밀가루', '대두/콩', '옥수수', '감자/고구마',
+  '인공색소/향료', '화학방부제'
+];
+
+const healthConcernOptions = [
+  '체중 관리 / 비만', '모질 개선 / 탈모', '소화 / 장 건강', '변비 예방',
+  '활력 증진 / 면역력', '구강 건강 / 치석', '눈 건강 / 눈물 흔적',
+  '귀 건강 / 귓병 예방', '성장기 발달 / 뼈 강화', '요로 건강 / 결석 예방',
+  '스트레스 / 불안 완화'
+];
+
+const diseaseOptions = [
+  '슬개골 탈구 / 관절염', '만성 신장 질환', '당뇨병', '심장 판막 질환 / 심부전',
+  '아토피 / 알레르기성 피부염', '췌장염', '갑상선 기능 항진/저하증',
+  '부신피질 기능 항진증 (쿠싱)', '요로 결석증', '간 질환 / 간경화',
+  '인지기능 장애 증후군 (치매)', '백내장 / 녹내장', '외이도염',
+  '종양 / 암', '허니아 (디스크)'
+];
+
 
 function getBreedAvatar(breed?: string, species?: 'Dog' | 'Cat') {
   const normalized = breed?.trim() || '';
@@ -147,8 +184,6 @@ export default function Profile() {
   const progressPercent = (stepIndexLabel / stepCount) * 100;
   const step = PROFILE_STEP_META[profileStep];
   const favoriteProducts = products.filter(p => favorites.includes(p.id));
-
-  const allergyOptions = ['닭고기', '소고기', '연어', '곡물', '인공색소'];
 
   const Pill = ({ on, children, onClick }: { on: boolean; children: React.ReactNode; onClick: () => void }) => (
     <button
@@ -351,46 +386,42 @@ export default function Profile() {
                   {/* Age */}
                   <div>
                     <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>나이</label>
-                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                      {[
-                        { label: '아기', age: 1 },
-                        { label: '성견', age: 4 },
-                        { label: '시니어', age: 10 },
-                      ].map(({ label, age }) => (
-                        <Pill key={label} on={editForm.age === age} onClick={() => setEditForm({ ...editForm, age })}>
-                          {label}
-                        </Pill>
+                    <select
+                      value={editForm.age != null ? editForm.age : ''}
+                      onChange={(e) => setEditForm({ ...editForm, age: parseInt(e.target.value) })}
+                      style={{
+                        width: '100%', boxSizing: 'border-box', padding: '12px 14px', borderRadius: 12, fontSize: 15,
+                        border: '1px solid var(--hairline)', outline: 'none', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'inherit'
+                      }}
+                    >
+                      <option value="">나이 선택</option>
+                      {AGE_OPTIONS.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
                       ))}
-                    </div>
+                    </select>
                   </div>
 
                   {/* Weight */}
                   <div>
                     <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>체중</label>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                      <input
-                        type="number"
-                        value={editForm.weightKg != null ? editForm.weightKg : ''}
-                        onChange={(e) => {
-                          const n = parseFloat(e.target.value);
-                          setEditForm({
-                            ...editForm,
-                            weightKg: Number.isFinite(n) && n > 0 ? n : undefined,
-                          });
-                        }}
-                        style={{
-                          width: 120, boxSizing: 'border-box', padding: '12px 14px', borderRadius: 12, fontSize: 15,
-                          border: '1px solid var(--hairline)', outline: 'none', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'inherit'
-                        }}
-                        placeholder="6.2"
-                      />
-                      <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink-soft)' }}>kg</span>
-                    </div>
+                    <select
+                      value={editForm.weightKg != null ? editForm.weightKg : ''}
+                      onChange={(e) => setEditForm({ ...editForm, weightKg: parseFloat(e.target.value) })}
+                      style={{
+                        width: '100%', boxSizing: 'border-box', padding: '12px 14px', borderRadius: 12, fontSize: 15,
+                        border: '1px solid var(--hairline)', outline: 'none', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'inherit'
+                      }}
+                    >
+                      <option value="">체중 선택</option>
+                      {WEIGHT_OPTIONS.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
                   </div>
 
                   {/* Allergies */}
                   <div>
-                    <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>알레르기 성분</label>
+                    <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>알레르기 성분 (복수 선택)</label>
                     <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap' }}>
                       {allergyOptions.map((opt) => {
                         const on = editForm.allergies?.includes(opt);
@@ -413,9 +444,32 @@ export default function Profile() {
 
                   {/* Health Concerns */}
                   <div>
-                    <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>건강 고민</label>
+                    <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>건강 고민 (복수 선택)</label>
                     <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap' }}>
-                      {concernOptions.map((opt) => {
+                      {healthConcernOptions.map((opt) => {
+                        const on = editForm.healthConcerns?.includes(opt);
+                        return (
+                          <Pill
+                            key={opt}
+                            on={on}
+                            onClick={() => {
+                              const list = editForm.healthConcerns || [];
+                              const nextList = list.includes(opt) ? list.filter(i => i !== opt) : [...list, opt];
+                              setEditForm({ ...editForm, healthConcerns: nextList });
+                            }}
+                          >
+                            {opt}
+                          </Pill>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Existing Diseases */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>기존 질병 (복수 선택)</label>
+                    <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap' }}>
+                      {diseaseOptions.map((opt) => {
                         const on = editForm.healthConcerns?.includes(opt);
                         return (
                           <Pill
@@ -650,38 +704,38 @@ export default function Profile() {
                     )}
 
                     {profileStep === 3 && (
-                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                        {[
-                          { label: '아기', age: 1 },
-                          { label: '성견', age: 4 },
-                          { label: '시니어', age: 10 },
-                        ].map(({ label, age }) => (
-                          <Pill key={label} on={formData.age === age} onClick={() => setFormData({ ...formData, age })}>
-                            {label}
-                          </Pill>
-                        ))}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <select
+                          value={formData.age != null ? formData.age : ''}
+                          onChange={(e) => setFormData({ ...formData, age: parseInt(e.target.value) })}
+                          style={{
+                            width: '100%', boxSizing: 'border-box', padding: '14px 16px', borderRadius: 13, fontSize: 16,
+                            border: '1px solid var(--hairline)', outline: 'none', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'inherit',
+                          }}
+                        >
+                          <option value="">나이를 선택해 주세요</option>
+                          {AGE_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
                       </div>
                     )}
 
                     {profileStep === 4 && (
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                        <input
-                          type="number"
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <select
                           value={formData.weightKg != null ? formData.weightKg : ''}
-                          onChange={(e) => {
-                            const n = parseFloat(e.target.value);
-                            setFormData({
-                              ...formData,
-                              weightKg: Number.isFinite(n) && n > 0 ? n : undefined,
-                            });
-                          }}
+                          onChange={(e) => setFormData({ ...formData, weightKg: parseFloat(e.target.value) })}
                           style={{
-                            width: 120, boxSizing: 'border-box', padding: '14px 16px', borderRadius: 13, fontSize: 16,
+                            width: '100%', boxSizing: 'border-box', padding: '14px 16px', borderRadius: 13, fontSize: 16,
                             border: '1px solid var(--hairline)', outline: 'none', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'inherit',
                           }}
-                          placeholder="6.2"
-                        />
-                        <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink-soft)' }}>kg</span>
+                        >
+                          <option value="">체중을 선택해 주세요</option>
+                          {WEIGHT_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
                       </div>
                     )}
 
@@ -697,7 +751,17 @@ export default function Profile() {
 
                     {profileStep === 6 && (
                       <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap' }}>
-                        {concernOptions.map((opt) => (
+                        {healthConcernOptions.map((opt) => (
+                          <Pill key={opt} on={formData.healthConcerns?.includes(opt)} onClick={() => toggleArrayItem('healthConcerns', opt)}>
+                            {opt}
+                          </Pill>
+                        ))}
+                      </div>
+                    )}
+
+                    {profileStep === 7 && (
+                      <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap' }}>
+                        {diseaseOptions.map((opt) => (
                           <Pill key={opt} on={formData.healthConcerns?.includes(opt)} onClick={() => toggleArrayItem('healthConcerns', opt)}>
                             {opt}
                           </Pill>
@@ -726,7 +790,7 @@ export default function Profile() {
                       fontSize: 15, fontWeight: 700, border: 'none', boxShadow: 'var(--shadow-sm)'
                     }}
                   >
-                    {profileStep === stepCount - 1 ? '변경 사항 저장' : '다음'}
+                    {profileStep === PROFILE_STEP_META.length - 1 ? '변경 사항 저장' : '다음'}
                   </button>
                 </div>
 
