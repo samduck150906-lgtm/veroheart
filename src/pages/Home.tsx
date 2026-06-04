@@ -50,86 +50,98 @@ export default function Home() {
   const currentExp = totalExp % 100;
   const hp = Math.max(20, 100 - (profile?.healthConcerns?.length || 0) * 20);
 
+  const getHearts = (hpValue: number) => {
+    const fullHearts = Math.round(hpValue / 20);
+    let heartsStr = '';
+    for (let i = 0; i < 5; i++) {
+      if (i < fullHearts) {
+        heartsStr += '❤️';
+      } else {
+        heartsStr += '🖤';
+      }
+    }
+    return heartsStr;
+  };
+
   const getAllergyDebuff = (allergy: string) => {
     const norm = allergy.trim();
+    let targetEmoji = '🚫';
+    let title = `${norm} 디버프`;
+    let desc = `${norm} 성분 배제 식단 필요`;
+    let color = '#E53E3E';
+    let bgColor = '#FFF5F5';
+    let borderColor = '#FEB2B2';
+
     if (norm.includes('소고기') || norm.includes('소')) {
-      return {
-        emoji: '🐮 😣',
-        title: '소고기 알레르기 디버프',
-        desc: '소고기 급여 시 알레르기 반응 (소 보며 찡그림)',
-        color: '#E53E3E',
-        bgColor: '#FFF5F5',
-        borderColor: '#FEB2B2',
-      };
+      targetEmoji = '🐮';
+      title = '소고기 알레르기 디버프';
+      desc = '소고기 냄새만 맡아도 찡그려요!';
+    } else if (norm.includes('닭고기') || norm.includes('닭')) {
+      targetEmoji = '🐔';
+      title = '닭고기 알레르기 디버프';
+      desc = '닭고기를 보면 바로 찡그려요!';
+    } else if (norm.includes('연어') || norm.includes('생선') || norm.includes('물고기')) {
+      targetEmoji = '🐟';
+      title = '연어 알레르기 디버프';
+      desc = '연어 급여 시 눈가 붉어짐 및 찡그림!';
+    } else if (norm.includes('곡물') || norm.includes('밀') || norm.includes('글루텐')) {
+      targetEmoji = '🌾';
+      title = '곡물/글루텐 디버프';
+      desc = '곡물 성분 섭취 시 소화기 찡그림!';
+    } else if (norm.includes('색소') || norm.includes('인공') || norm.includes('첨가물')) {
+      targetEmoji = '🎨';
+      title = '인공합성원료 디버프';
+      desc = '인공향료/색소를 멀리하며 찡그려요!';
+    } else if (norm.includes('돼지') || norm.includes('돼지고기')) {
+      targetEmoji = '🐷';
+      title = '돼지고기 알레르기 디버프';
+      desc = '돼지고기를 보면 찡그려요!';
+    } else if (norm.includes('오리') || norm.includes('오리고기')) {
+      targetEmoji = '🦆';
+      title = '오리고기 알레르기 디버프';
+      desc = '오리고기를 만나면 찡그려요!';
+    } else if (norm.includes('양고기') || norm.includes('양')) {
+      targetEmoji = '🐑';
+      title = '양고기 알레르기 디버프';
+      desc = '양고기 단백질에 예민하게 반응!';
+    } else if (norm.includes('계란') || norm.includes('달걀')) {
+      targetEmoji = '🥚';
+      title = '계란 알레르기 디버프';
+      desc = '달걀 성분 급여 시 가려움증 반응!';
+    } else if (norm.includes('우유') || norm.includes('치즈')) {
+      targetEmoji = '🥛';
+      title = '유제품 알레르기 디버프';
+      desc = '락토스 성분에 민감한 디버프!';
     }
-    if (norm.includes('닭고기') || norm.includes('닭')) {
-      return {
-        emoji: '🐔 😣',
-        title: '닭고기 알레르기 디버프',
-        desc: '닭고기 급여 시 피부 발진 및 눈물흔 유발',
-        color: '#DD6B20',
-        bgColor: '#FFFAF0',
-        borderColor: '#FEEBC8',
-      };
-    }
-    if (norm.includes('연어') || norm.includes('생선')) {
-      return {
-        emoji: '🐟 😣',
-        title: '연어 알레르기 디버프',
-        desc: '연어 및 어류 단백질원 차단 상태',
-        color: '#3182CE',
-        bgColor: '#EBF8FF',
-        borderColor: '#BEE3F8',
-      };
-    }
-    if (norm.includes('곡물')) {
-      return {
-        emoji: '🌾 😣',
-        title: '글루텐 곡물 디버프',
-        desc: '밀, 보리 등 밀가루/곡류 차단 상태',
-        color: '#805AD5',
-        bgColor: '#F5F3FF',
-        borderColor: '#E9D8FD',
-      };
-    }
-    if (norm.includes('색소') || norm.includes('인공')) {
-      return {
-        emoji: '🎨 😣',
-        title: '합성 색소 디버프',
-        desc: '인공향료 및 방부제 성분 차단 상태',
-        color: '#718096',
-        bgColor: '#F7FAFC',
-        borderColor: '#E2E8F0',
-      };
-    }
+
     return {
-      emoji: '🚫 😣',
-      title: `${norm} 알레르기 디버프`,
-      desc: `${norm} 성분 배제 식단 필요`,
-      color: '#E53E3E',
-      bgColor: '#FFF5F5',
-      borderColor: '#FEB2B2',
+      targetEmoji,
+      title,
+      desc,
+      color,
+      bgColor,
+      borderColor,
     };
   };
 
   const getConcernBuff = (concern: string) => {
     const norm = concern.trim();
     if (norm.includes('관절') || norm.includes('슬개골')) {
-      return { emoji: '🛡️', title: '슬개골 수호 버프', desc: '칼슘 및 글루코사민 집중 케어' };
+      return { emoji: '🛡️', title: '슬개골 수호 버프', desc: '연골 보호막 가동 (콘드로이친 & 글루코사민 필요)' };
     }
     if (norm.includes('비만') || norm.includes('체중')) {
-      return { emoji: '⚡', title: '체중 관리 민첩 버프', desc: '저지방 포뮬러 L-카르니틴 집중 공급' };
+      return { emoji: '⚡', title: '체중 관리 민첩 버프', desc: '체중 조절 가속화 (저지방 L-카르니틴 처방)' };
     }
     if (norm.includes('피부') || norm.includes('모질')) {
-      return { emoji: '💦', title: '피부 면역 배리어 버프', desc: '오메가3 및 히알루론산 집중 공급' };
+      return { emoji: '💦', title: '피부 장벽 배리어 버프', desc: '모질 광택 상승 (오메가3 & 아연 공급)' };
     }
-    if (norm.includes('소화') || norm.includes('예민')) {
-      return { emoji: '🌱', title: '장 건강 힐링 버프', desc: '프로바이오틱스 및 가수분해 락토' };
+    if (norm.includes('소화') || norm.includes('예민') || norm.includes('장')) {
+      return { emoji: '🌱', title: '장 건강 힐링 버프', desc: '장내 미생물 활성화 (가수분해 유산균)' };
     }
     if (norm.includes('신장') || norm.includes('요로')) {
-      return { emoji: '💧', title: '신장 순환 정화 버프', desc: '저나트륨 수분 밸런스 설계' };
+      return { emoji: '💧', title: '신장 순환 정화 버프', desc: '체액 순환 보조 (저나트륨 수분 공급)' };
     }
-    return { emoji: '✨', title: `${norm} 집중 케어 버프`, desc: `${norm} 맞춤형 영양소 배합 가이드` };
+    return { emoji: '✨', title: `${norm} 집중 케어 버프`, desc: `${norm} 전용 포뮬러 및 기능성 원료 케어` };
   };
 
   useEffect(() => {
@@ -152,6 +164,23 @@ export default function Home() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '30px', paddingBottom: '40px' }}>
+      <style>{`
+        @keyframes game-bounce {
+          0% { transform: translateY(0); }
+          100% { transform: translateY(-6px); }
+        }
+        @keyframes game-shake {
+          0%, 100% { transform: rotate(0deg); }
+          20% { transform: rotate(-6deg); }
+          40% { transform: rotate(5deg); }
+          60% { transform: rotate(-4deg); }
+          80% { transform: rotate(3deg); }
+        }
+        @keyframes game-pulse {
+          0% { opacity: 0.6; }
+          100% { opacity: 1; }
+        }
+      `}</style>
       <Helmet>
         <title>
           {hasPetProfile
@@ -282,287 +311,465 @@ export default function Home() {
         </div>
       )}
 
-      {/* Pet Profile & Details Card (Tamagotchi / Pixel Game Status Screen Style) */}
+      {/* Pet Profile & Details Card (Handheld Retro Game Console Style) */}
       {hasPetProfile ? (
         <div style={{ padding: '0 20px' }}>
+          {/* Game Boy/Tamagotchi Outer Shell */}
           <div style={{
-            padding: '24px 20px',
-            borderRadius: '24px',
-            background: '#FAF8F5',
-            border: '3px solid #1E293B',
+            padding: '8px 8px 12px',
+            borderRadius: '28px',
+            background: 'linear-gradient(180deg, #D1D5DB 0%, #9CA3AF 100%)', // Atomic console gray
+            border: '4px solid #1E293B',
             boxShadow: '6px 6px 0px #1E293B',
             display: 'flex',
             flexDirection: 'column',
-            gap: '18px',
-            boxSizing: 'border-box'
+            gap: '8px',
+            boxSizing: 'border-box',
+            position: 'relative'
           }}>
-            {/* Header arcade tag */}
+            {/* Top Game Console Details (Screen Bezel Logo / Buttons) */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              borderBottom: '2.5px solid #1E293B',
-              paddingBottom: '10px'
+              padding: '2px 12px 0px',
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '15px' }}>👾</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                 <span style={{
-                  fontFamily: 'monospace, Courier New, Courier',
-                  fontSize: '13px',
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  backgroundColor: '#22C55E',
+                  boxShadow: '0 0 4px #22C55E'
+                }} />
+                <span style={{
+                  fontFamily: 'monospace',
+                  fontSize: '9px',
                   fontWeight: 900,
-                  color: '#1E293B',
-                  letterSpacing: '0.05em'
+                  color: '#4B5563',
+                  letterSpacing: '0.1em'
                 }}>
-                  MY PET STATUS WINDOW
+                  VERO GAME SYSTEM
                 </span>
               </div>
-              <button 
-                onClick={() => navigate('/profile')}
-                style={{
-                  padding: '5px 12px',
-                  borderRadius: '10px',
-                  background: '#FCD34D',
-                  color: '#1E293B',
-                  border: '2px solid #1E293B',
-                  boxShadow: '2px 2px 0px #1E293B',
-                  fontSize: '11.5px',
-                  fontWeight: 900,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  transition: 'all 0.1s ease'
-                }}
-                onMouseDown={(e) => {
-                  e.currentTarget.style.transform = 'translate(1px, 1px)';
-                  e.currentTarget.style.boxShadow = '1px 1px 0px #1E293B';
-                }}
-                onMouseUp={(e) => {
-                  e.currentTarget.style.transform = 'none';
-                  e.currentTarget.style.boxShadow = '2px 2px 0px #1E293B';
-                }}
-              >
-                EDIT ✏️
-              </button>
+              <span style={{
+                fontFamily: 'monospace',
+                fontSize: '9px',
+                fontWeight: 900,
+                color: '#4B5563'
+              }}>
+                DOT MATRIX LCD
+              </span>
             </div>
 
-            {/* Main Stats Row */}
-            <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '18px', alignItems: 'start' }}>
-              {/* Left Column: Avatar + LV. */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                {/* Retro Avatar Frame */}
-                <div style={{
-                  width: '76px',
-                  height: '76px',
-                  borderRadius: '16px',
-                  background: getBreedAvatar(profile.breed, profile.species).bg,
-                  border: '3px solid #1E293B',
-                  boxShadow: '3px 3px 0px rgba(0,0,0,0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '36px',
-                  flexShrink: 0
-                }}>
-                  {getBreedAvatar(profile.breed, profile.species).emoji}
-                </div>
-                
-                {/* LV Label */}
-                <div style={{
-                  fontFamily: 'monospace, Courier New, Courier',
-                  fontSize: '13px',
-                  fontWeight: 900,
-                  color: '#1E293B',
-                  background: '#FEF3C7',
-                  border: '1.5px solid #1E293B',
-                  padding: '2px 8px',
-                  borderRadius: '6px',
-                  textAlign: 'center',
-                  whiteSpace: 'nowrap'
-                }}>
-                  LV. {level}
-                </div>
-              </div>
-
-              {/* Right Column: Key Details */}
+            {/* Inner Game Screen */}
+            <div style={{
+              padding: '20px 16px',
+              borderRadius: '20px',
+              background: '#FAF8F5', // retro paper/cream screen
+              border: '3px solid #1E293B',
+              boxShadow: 'inset 2px 2px 5px rgba(0,0,0,0.15)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              boxSizing: 'border-box'
+            }}>
+              {/* Header inside screen */}
               <div style={{
-                fontFamily: 'monospace, Courier New, Courier',
-                fontSize: '13px',
-                fontWeight: 700,
-                color: '#334155',
                 display: 'flex',
-                flexDirection: 'column',
-                gap: '5px'
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                borderBottom: '3px double #1E293B',
+                paddingBottom: '8px'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                  <span style={{ fontSize: '18px', fontWeight: 900, color: '#1E293B' }}>{profile.name}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '16px', animation: 'game-pulse 1s infinite alternate' }}>👾</span>
                   <span style={{
-                    fontSize: '11px',
-                    fontWeight: 800,
-                    color: profile.gender === '여아' ? '#E11D48' : '#2563EB',
-                    background: profile.gender === '여아' ? '#FFE4E6' : '#DBEAFE',
-                    border: `1.5px solid ${profile.gender === '여아' ? '#FDA4AF' : '#93C5FD'}`,
-                    padding: '2px 7px',
-                    borderRadius: '6px'
+                    fontFamily: 'monospace',
+                    fontSize: '13px',
+                    fontWeight: 900,
+                    color: '#1E293B',
+                    letterSpacing: '0.05em'
                   }}>
-                    {profile.gender === '여아' ? ' 여아 ♀' : ' 남아 ♂'}
+                    PET STATUS WINDOW
                   </span>
                 </div>
-                <div style={{ height: '1.5px', background: 'rgba(30, 41, 59, 0.1)', margin: '2px 0 4px' }} />
-                <div>• <b>종족:</b> {profile.species === 'Cat' ? '🐱 고양이' : '🐶 강아지'} ({getBreedAvatar(profile.breed, profile.species).label})</div>
-                <div>• <b>나이:</b> {profile.age}세 (성견)</div>
-                <div>• <b>성향:</b> {profile.personality || '활발함 ⚡'}</div>
-                <div>• <b>체중:</b> {profile.weightKg ? `${profile.weightKg}kg` : '미등록 ⚖️'}</div>
-              </div>
-            </div>
-
-            {/* Progress Bars (EXP & HP) */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '4px' }}>
-              {/* EXP Bar */}
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', fontFamily: 'monospace' }}>
-                  <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#1E293B' }}>⭐ EXP (경험치)</span>
-                  <span style={{ fontSize: '11.5px', fontWeight: 900, color: '#475569' }}>{currentExp}/100</span>
-                </div>
-                <div style={{
-                  height: '14px',
-                  background: '#E2E8F0',
-                  border: '2px solid #1E293B',
-                  borderRadius: '6px',
-                  overflow: 'hidden',
-                  position: 'relative'
-                }}>
-                  <div style={{
-                    width: `${currentExp}%`,
-                    height: '100%',
-                    background: '#10B981',
-                    transition: 'width 0.4s ease-out',
-                    boxShadow: 'inset 0 -3px 0 rgba(0,0,0,0.15)'
-                  }} />
-                </div>
+                <button 
+                  onClick={() => navigate('/profile')}
+                  style={{
+                    padding: '4px 10px',
+                    borderRadius: '8px',
+                    background: '#FCD34D',
+                    color: '#1E293B',
+                    border: '2px solid #1E293B',
+                    boxShadow: '2px 2px 0px #1E293B',
+                    fontSize: '11px',
+                    fontWeight: 900,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    transition: 'all 0.1s ease'
+                  }}
+                  onMouseDown={(e) => {
+                    e.currentTarget.style.transform = 'translate(1px, 1px)';
+                    e.currentTarget.style.boxShadow = '1px 1px 0px #1E293B';
+                  }}
+                  onMouseUp={(e) => {
+                    e.currentTarget.style.transform = 'none';
+                    e.currentTarget.style.boxShadow = '2px 2px 0px #1E293B';
+                  }}
+                >
+                  EDIT ✏️
+                </button>
               </div>
 
-              {/* HP Bar */}
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', fontFamily: 'monospace' }}>
-                  <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#E11D48' }}>❤️ HP (건강도)</span>
-                  <span style={{ fontSize: '11.5px', fontWeight: 900, color: '#E11D48' }}>{hp}/100</span>
-                </div>
-                <div style={{
-                  height: '14px',
-                  background: '#E2E8F0',
-                  border: '2px solid #1E293B',
-                  borderRadius: '6px',
-                  overflow: 'hidden'
-                }}>
+              {/* Main Stats Row */}
+              <div style={{ display: 'grid', gridTemplateColumns: '84px 1fr', gap: '16px', alignItems: 'start' }}>
+                {/* Left Column: Avatar + LV. */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                  {/* Retro Avatar Frame */}
                   <div style={{
-                    width: `${hp}%`,
-                    height: '100%',
-                    background: '#E11D48',
-                    transition: 'width 0.4s ease-out',
-                    boxShadow: 'inset 0 -3px 0 rgba(0,0,0,0.15)'
-                  }} />
-                </div>
-                <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 700, marginTop: '4px', textAlign: 'right' }}>
-                  {hp >= 80 ? '상태: 매우 건강함! (최고 컨디션) ✨' : hp >= 50 ? '상태: 주의 (케어가 필요해요) 💤' : '상태: 위험 (디버프 해제가 필요해요) ⚠️'}
-                </div>
-              </div>
-            </div>
-
-            {/* Debuffs Section (Allergies with Emojis & Frowning) */}
-            <div style={{ borderTop: '2px dotted #1E293B', paddingTop: '12px' }}>
-              <span style={{ display: 'block', fontSize: '12px', fontWeight: 900, color: '#E11D48', marginBottom: '8px', fontFamily: 'monospace' }}>
-                ⚠️ 보유 디버프 (알레르기 성분)
-              </span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {profile.allergies && profile.allergies.length > 0 ? (
-                  profile.allergies.map(allergy => {
-                    const dbf = getAllergyDebuff(allergy);
-                    return (
-                      <div 
-                        key={allergy} 
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '10px',
-                          padding: '10px 14px',
-                          borderRadius: '12px',
-                          background: dbf.bgColor,
-                          border: `1.5px solid ${dbf.borderColor}`,
-                          boxSizing: 'border-box'
-                        }}
-                      >
-                        <span style={{ fontSize: '22px', display: 'flex', alignItems: 'center' }}>
-                          {dbf.emoji}
-                        </span>
-                        <div>
-                          <div style={{ fontSize: '12.5px', fontWeight: 800, color: dbf.color }}>{dbf.title}</div>
-                          <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 500, marginTop: '1px' }}>{dbf.desc}</div>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div style={{
-                    padding: '10px 14px',
-                    borderRadius: '12px',
-                    background: '#F0FDF4',
-                    border: '1.5px solid #BBF7D0',
-                    color: '#15803D',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    textAlign: 'center'
+                    width: '80px',
+                    height: '80px',
+                    borderRadius: '16px',
+                    background: getBreedAvatar(profile.breed, profile.species).bg,
+                    border: '3px solid #1E293B',
+                    boxShadow: '3px 3px 0px rgba(0,0,0,0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '40px',
+                    flexShrink: 0
                   }}>
-                    ✨ 활성화된 알레르기 디버프가 없습니다.
+                    <span style={{ display: 'inline-block', animation: 'game-bounce 1s infinite alternate' }}>
+                      {getBreedAvatar(profile.breed, profile.species).emoji}
+                    </span>
                   </div>
-                )}
-              </div>
-            </div>
-
-            {/* Synergy Buffs Section (Health Concerns as Buffs) */}
-            <div style={{ borderTop: '2px dotted #1E293B', paddingTop: '12px' }}>
-              <span style={{ display: 'block', fontSize: '12px', fontWeight: 900, color: '#0F766E', marginBottom: '8px', fontFamily: 'monospace' }}>
-                🛡️ 활성 케어 시너지 버프 (건강 고민)
-              </span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {profile.healthConcerns && profile.healthConcerns.length > 0 ? (
-                  profile.healthConcerns.map(concern => {
-                    const buf = getConcernBuff(concern);
-                    return (
-                      <div 
-                        key={concern} 
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '10px',
-                          padding: '10px 14px',
-                          borderRadius: '12px',
-                          background: '#ECFDF5',
-                          border: '1.5px solid #A7F3D0',
-                          boxSizing: 'border-box'
-                        }}
-                      >
-                        <span style={{ fontSize: '16px', color: '#0F766E' }}>{buf.emoji}</span>
-                        <div>
-                          <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#0F766E' }}>{buf.title}</div>
-                          <div style={{ fontSize: '11px', color: '#475569', fontWeight: 500, marginTop: '1px' }}>{buf.desc}</div>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
+                  
+                  {/* LV Label */}
                   <div style={{
-                    padding: '10px 14px',
-                    borderRadius: '12px',
-                    background: '#F8FAFC',
-                    border: '1.5px solid #E2E8F0',
-                    color: '#475569',
+                    fontFamily: 'monospace',
                     fontSize: '12px',
-                    fontWeight: 700,
+                    fontWeight: 900,
+                    color: '#1E293B',
+                    background: '#FEF3C7',
+                    border: '2px solid #1E293B',
+                    padding: '3px 10px',
+                    borderRadius: '8px',
                     textAlign: 'center',
-                    fontStyle: 'italic'
+                    boxShadow: '1.5px 1.5px 0px #1E293B',
+                    whiteSpace: 'nowrap'
                   }}>
-                    활성 버프가 없습니다. 건강 관리를 등록해보세요!
+                    LV. {level}
                   </div>
-                )}
+                </div>
+
+                {/* Right Column: Key RPG Stats */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px'
+                }}>
+                  {/* Pet Name & Gender Tag */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                    <span style={{ fontSize: '19px', fontWeight: 900, color: '#1E293B' }}>{profile.name}</span>
+                    <span style={{
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      color: profile.gender === '여아' ? '#E11D48' : '#2563EB',
+                      background: profile.gender === '여아' ? '#FFE4E6' : '#DBEAFE',
+                      border: `1.5px solid ${profile.gender === '여아' ? '#FDA4AF' : '#93C5FD'}`,
+                      padding: '1.5px 6px',
+                      borderRadius: '6px'
+                    }}>
+                      {profile.gender === '여아' ? ' 여아 ♀' : ' 남아 ♂'}
+                    </span>
+                  </div>
+                  
+                  <div style={{ height: '2px', borderBottom: '1.5px dashed #1E293B', margin: '2px 0 4px' }} />
+                  
+                  {/* RPG Stat lines */}
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                    fontFamily: 'monospace',
+                    fontSize: '12.5px',
+                    fontWeight: 700,
+                    color: '#334155'
+                  }}>
+                    <div style={{ display: 'flex' }}>
+                      <span style={{ width: '64px', color: '#64748B', fontWeight: 900 }}>CLASS :</span>
+                      <span style={{ color: '#1E293B', fontWeight: 900 }}>
+                        {profile.species === 'Cat' ? '🐱 고양이' : '🐶 강아지'} ({getBreedAvatar(profile.breed, profile.species).label})
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex' }}>
+                      <span style={{ width: '64px', color: '#64748B', fontWeight: 900 }}>AGE   :</span>
+                      <span style={{ color: '#1E293B', fontWeight: 900 }}>
+                        {profile.age}세 ({profile.age < 2 ? '성장기 🍼' : profile.age > 7 ? '시니어 👑' : '청년기 ⚡'})
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex' }}>
+                      <span style={{ width: '64px', color: '#64748B', fontWeight: 900 }}>TRAIT :</span>
+                      <span style={{ color: '#1E293B', fontWeight: 900 }}>{profile.personality || '기본 성향 🧸'}</span>
+                    </div>
+                    <div style={{ display: 'flex' }}>
+                      <span style={{ width: '64px', color: '#64748B', fontWeight: 900 }}>WEIGHT:</span>
+                      <span style={{ color: '#1E293B', fontWeight: 900 }}>{profile.weightKg ? `${profile.weightKg} kg` : '미측정 ⚖️'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Progress Bars (EXP & HP) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '4px' }}>
+                {/* EXP Bar */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', fontFamily: 'monospace' }}>
+                    <span style={{ fontSize: '11.5px', fontWeight: 900, color: '#1E293B' }}>⭐ EXP (경험치 게이지)</span>
+                    <span style={{ fontSize: '11.5px', fontWeight: 900, color: '#475569' }}>{currentExp} / 100 XP</span>
+                  </div>
+                  <div style={{
+                    height: '18px',
+                    background: '#E2E8F0',
+                    border: '3px solid #1E293B',
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                    position: 'relative',
+                    boxShadow: '1px 1px 0px rgba(0,0,0,0.05)'
+                  }}>
+                    <div style={{
+                      width: `${currentExp}%`,
+                      height: '100%',
+                      background: 'repeating-linear-gradient(45deg, #10B981, #10B981 8px, #059669 8px, #059669 16px)',
+                      transition: 'width 0.4s ease-out',
+                      boxShadow: 'inset 0 -3px 0 rgba(0,0,0,0.15)'
+                    }} />
+                  </div>
+                </div>
+
+                {/* HP Bar */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', fontFamily: 'monospace' }}>
+                    <span style={{ fontSize: '11.5px', fontWeight: 900, color: '#E11D48', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      ❤️ HP (건강도) 
+                      <span style={{ color: '#EF4444', letterSpacing: '1px', fontWeight: 'normal' }}>
+                        {getHearts(hp)}
+                      </span>
+                    </span>
+                    <span style={{ fontSize: '11.5px', fontWeight: 900, color: '#E11D48' }}>{hp} / 100 HP</span>
+                  </div>
+                  <div style={{
+                    height: '18px',
+                    background: '#E2E8F0',
+                    border: '3px solid #1E293B',
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                    boxShadow: '1px 1px 0px rgba(0,0,0,0.05)'
+                  }}>
+                    <div style={{
+                      width: `${hp}%`,
+                      height: '100%',
+                      background: 'repeating-linear-gradient(45deg, #EF4444, #EF4444 8px, #DC2626 8px, #DC2626 16px)',
+                      transition: 'width 0.4s ease-out',
+                      boxShadow: 'inset 0 -3px 0 rgba(0,0,0,0.15)'
+                    }} />
+                  </div>
+                  <div style={{ fontSize: '10.5px', color: '#64748B', fontWeight: 800, marginTop: '5px', textAlign: 'right', fontFamily: 'monospace' }}>
+                    {hp >= 80 ? 'STATUS: 최고 상태! 컨디션 짱짱 🌟' : hp >= 50 ? 'STATUS: 주의 요망! 맞춤 케어가 필요해요 💤' : 'STATUS: 위험! 전용 처방 식단 필요 ⚠️'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Debuffs Section (Allergies with Emojis & Frowning) */}
+              <div style={{ borderTop: '2px dashed #1E293B', paddingTop: '12px' }}>
+                <span style={{ display: 'block', fontSize: '12px', fontWeight: 900, color: '#E11D48', marginBottom: '8px', fontFamily: 'monospace' }}>
+                  ⚠️ 활성화된 디버프 (알레르기 성분)
+                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {profile.allergies && profile.allergies.length > 0 ? (
+                    profile.allergies.map(allergy => {
+                      const dbf = getAllergyDebuff(allergy);
+                      const petEmoji = getBreedAvatar(profile.breed, profile.species).emoji;
+                      return (
+                        <div 
+                          key={allergy} 
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '8px',
+                            padding: '12px 14px',
+                            borderRadius: '16px',
+                            background: dbf.bgColor,
+                            border: `3px solid ${dbf.borderColor}`,
+                            boxShadow: `3px 3px 0px ${dbf.borderColor}`,
+                            boxSizing: 'border-box'
+                          }}
+                        >
+                          <div style={{ fontSize: '13px', fontWeight: 900, color: dbf.color, fontFamily: 'monospace' }}>
+                            🚫 {dbf.title}
+                          </div>
+
+                          {/* Retro style Frowning visual */}
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            backgroundColor: 'rgba(255, 255, 255, 0.85)',
+                            border: '2px solid #1E293B',
+                            borderRadius: '12px',
+                            padding: '10px 14px',
+                            boxSizing: 'border-box'
+                          }}>
+                            {/* Pet sprite */}
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '56px' }}>
+                              <span style={{ fontSize: '28px', display: 'inline-block', animation: 'game-bounce 1s infinite alternate' }}>
+                                {petEmoji}
+                              </span>
+                              <span style={{ fontSize: '10px', fontWeight: 800, color: '#475569', textAlign: 'center', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', width: '100%' }}>
+                                {profile.name}
+                              </span>
+                            </div>
+
+                            {/* Arrow with Frowning text and icon */}
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, margin: '0 8px' }}>
+                              <span style={{ fontSize: '11px', fontWeight: 900, color: '#E11D48', animation: 'game-pulse 0.8s infinite alternate', marginBottom: '2px' }}>
+                                찡그림! 😣 💦
+                              </span>
+                              <div style={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'center', position: 'relative' }}>
+                                {/* Dotted link line */}
+                                <div style={{
+                                  width: '100%',
+                                  height: '2px',
+                                  borderTop: '2px dashed #E11D48',
+                                  position: 'relative'
+                                }}>
+                                  {/* Arrow head */}
+                                  <div style={{
+                                    position: 'absolute',
+                                    right: '-2px',
+                                    top: '-4px',
+                                    width: '0',
+                                    height: '0',
+                                    borderTop: '5px solid transparent',
+                                    borderBottom: '5px solid transparent',
+                                    borderLeft: '7px solid #E11D48'
+                                  }} />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Target allergy emoji */}
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '56px' }}>
+                              <span style={{ fontSize: '28px', display: 'inline-block', animation: 'game-shake 1.5s infinite' }}>
+                                {dbf.targetEmoji}
+                              </span>
+                              <span style={{ fontSize: '10px', fontWeight: 800, color: '#E11D48', whiteSpace: 'nowrap' }}>
+                                {allergy}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div style={{ fontSize: '11px', color: '#475569', fontWeight: 700, lineHeight: 1.45 }}>
+                            {profile.name}(은)는 {allergy} 성분이 들어간 사료나 간식을 먹으면 안 돼요! ({allergy} 보며 찡그림 발동)
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div style={{
+                      padding: '12px 14px',
+                      borderRadius: '12px',
+                      background: '#F0FDF4',
+                      border: '2px solid #BBF7D0',
+                      color: '#15803D',
+                      fontSize: '12.5px',
+                      fontWeight: 900,
+                      textAlign: 'center',
+                      fontFamily: 'monospace'
+                    }}>
+                      ✨ 디버프 없음 (알레르기로부터 안전함)
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Synergy Buffs Section (Health Concerns as Buffs) */}
+              <div style={{ borderTop: '2px dashed #1E293B', paddingTop: '12px' }}>
+                <span style={{ display: 'block', fontSize: '12px', fontWeight: 900, color: '#0F766E', marginBottom: '8px', fontFamily: 'monospace' }}>
+                  🛡️ 활성화된 패시브 버프 (건강 관리)
+                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {profile.healthConcerns && profile.healthConcerns.length > 0 ? (
+                    profile.healthConcerns.map(concern => {
+                      const buf = getConcernBuff(concern);
+                      return (
+                        <div 
+                          key={concern} 
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px',
+                            padding: '11px 14px',
+                            borderRadius: '14px',
+                            background: '#ECFDF5',
+                            border: '2px solid #A7F3D0',
+                            boxShadow: '2px 2px 0px #A7F3D0',
+                            boxSizing: 'border-box'
+                          }}
+                        >
+                          <span style={{ fontSize: '18px', display: 'flex', alignItems: 'center' }}>{buf.emoji}</span>
+                          <div>
+                            <div style={{ fontSize: '12.5px', fontWeight: 900, color: '#0F766E' }}>{buf.title}</div>
+                            <div style={{ fontSize: '11px', color: '#374151', fontWeight: 600, marginTop: '2px' }}>{buf.desc}</div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div style={{
+                      padding: '12px 14px',
+                      borderRadius: '12px',
+                      background: '#F8FAFC',
+                      border: '2px dashed #E2E8F0',
+                      color: '#475569',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      textAlign: 'center',
+                      fontStyle: 'italic'
+                    }}>
+                      활성화된 케어 버프가 없습니다. 건강 고민을 등록해 보세요!
+                    </div>
+                  )}
+                </div>
+              </div>
+
+            </div>
+
+            {/* Bottom Game Console Details (Tamagotchi Buttons / Power LED indicator / Speaker Grill) */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '6px 12px 2px',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  backgroundColor: '#EF4444',
+                  boxShadow: '0 0 6px #EF4444',
+                  animation: 'game-pulse 1.5s infinite alternate'
+                }} />
+                <span style={{ fontSize: '9px', fontWeight: 900, color: '#4B5563', fontFamily: 'monospace' }}>POWER</span>
+              </div>
+              
+              {/* Speaker Grill lines */}
+              <div style={{ display: 'flex', gap: '3.5px' }}>
+                <div style={{ width: '4px', height: '15px', background: '#9CA3AF', transform: 'skewX(-25deg)', borderRadius: '2px', border: '1px solid #4B5563' }} />
+                <div style={{ width: '4px', height: '15px', background: '#9CA3AF', transform: 'skewX(-25deg)', borderRadius: '2px', border: '1px solid #4B5563' }} />
+                <div style={{ width: '4px', height: '15px', background: '#9CA3AF', transform: 'skewX(-25deg)', borderRadius: '2px', border: '1px solid #4B5563' }} />
               </div>
             </div>
 
