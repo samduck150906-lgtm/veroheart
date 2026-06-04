@@ -37,6 +37,14 @@ const DEFAULT_BANNERS: Banner[] = [
     bgColor: 'linear-gradient(135deg, #FFF3C4 0%, #FFE066 100%)'
   },
   {
+    id: 'default-quiz',
+    title: '우리 아이 맞춤 사료 찾기\n3초 성향테스트 시작하기 ⚡',
+    subtitle: '간단한 질문으로 알아보는 우리 아이 사료 성향',
+    imageUrl: '✨',
+    linkUrl: '/event/personality-quiz',
+    bgColor: 'linear-gradient(135deg, #FFFDEB 0%, #FDE68A 100%)'
+  },
+  {
     id: 'default-2',
     title: '우리아이 맞춤 성분 분석\n간편하게 성분 검색하기',
     subtitle: '알레르기/위험 성분을 1초만에 감지',

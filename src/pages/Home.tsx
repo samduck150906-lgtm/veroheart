@@ -192,7 +192,7 @@ export default function Home() {
 
       {/* Hero Banner Carousel (Hwahae Style) */}
       {banners && banners.length > 0 && (
-        <div style={{ padding: '0 20px', marginTop: '-32px' }}>
+        <div style={{ padding: '0 20px', marginTop: '-44px' }}>
           <div 
             onClick={() => {
               const activeBanner = banners[bannerIndex];
@@ -837,15 +837,9 @@ export default function Home() {
       {/* 3 Curated Care Cards (주제별 건강 맞춤 큐레이션) */}
       <section style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '0 20px' }}>
         <div>
-          <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--brand-deep)', background: 'var(--brand-tint)', padding: '2px 8px', borderRadius: '6px' }}>
-            SPECIAL DIAGNOSTIC CURATION
-          </span>
-          <h3 style={{ margin: '6px 0 2px', fontSize: '19px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
+          <h3 style={{ margin: 0, fontSize: '19px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
             우리아이 맞춤 건강 케어
           </h3>
-          <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--ink-soft)', fontWeight: 500 }}>
-            사료 판매가 아닌, 성분과 펫 특성에 맞춘 전문 정보 제공
-          </p>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -853,11 +847,11 @@ export default function Home() {
           <article 
             onClick={() => navigate('/search?category=사료&concern=관절 질환')}
             style={{
-              padding: '20px 22px',
-              borderRadius: '24px',
-              background: 'linear-gradient(135deg, #FFF0F6 0%, #FFD8E6 100%)',
-              border: '1px solid rgba(219, 39, 119, 0.08)',
-              boxShadow: 'var(--shadow-sm)',
+              padding: '18px 20px',
+              borderRadius: '20px',
+              background: '#FFFFFF',
+              border: '1px solid #F1F5F9',
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.04)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -867,36 +861,57 @@ export default function Home() {
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 6px 16px rgba(219, 39, 119, 0.1)';
+              e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.08)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'none';
-              e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+              e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.04)';
             }}
           >
             <div style={{ flex: 1 }}>
-              <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#DB2777', background: 'rgba(255, 255, 255, 0.6)', padding: '2px 8px', borderRadius: '6px' }}>
+              <span style={{ 
+                fontSize: '11px', 
+                fontWeight: 800, 
+                color: '#DB2777', 
+                background: '#FCE7F3', 
+                padding: '3px 8px', 
+                borderRadius: '6px',
+                display: 'inline-block',
+                marginBottom: '8px'
+              }}>
                 관절 & 슬개골 케어
               </span>
-              <h4 style={{ margin: '8px 0 4px', fontSize: '16px', fontWeight: 800, color: 'var(--ink)', lineHeight: 1.35 }}>
-                슬개골 · 관절이 약한 아이들을 위한 특별 영양 식단 🦴
+              <h4 style={{ margin: '0 0 6px', fontSize: '15px', fontWeight: 800, color: '#1E293B', lineHeight: 1.4 }}>
+                슬개골 · 관절이 약한 아이들을 위한 특별 영양 식단
               </h4>
-              <p style={{ margin: 0, fontSize: '12px', color: '#4D0E2B', fontWeight: 500, opacity: 0.85 }}>
+              <p style={{ margin: 0, fontSize: '12px', color: '#64748B', fontWeight: 500 }}>
                 연골 성분(콘드로이친, 글루코사민)과 천연 칼슘 안심 배합 사료 분석
               </p>
             </div>
-            <span style={{ fontSize: '18px', color: '#DB2777', fontWeight: 800 }}>➔</span>
+            <div style={{
+              width: '52px',
+              height: '52px',
+              borderRadius: '16px',
+              background: 'linear-gradient(135deg, #FFF0F6 0%, #FFD8E6 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '26px',
+              flexShrink: 0
+            }}>
+              Bone 🦴
+            </div>
           </article>
 
           {/* Card 2: Tears & Weight Care */}
           <article 
             onClick={() => navigate('/search?category=사료&concern=비만')}
             style={{
-              padding: '20px 22px',
-              borderRadius: '24px',
-              background: 'linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%)',
-              border: '1px solid rgba(37, 99, 235, 0.08)',
-              boxShadow: 'var(--shadow-sm)',
+              padding: '18px 20px',
+              borderRadius: '20px',
+              background: '#FFFFFF',
+              border: '1px solid #F1F5F9',
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.04)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -906,36 +921,57 @@ export default function Home() {
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 6px 16px rgba(37, 99, 235, 0.1)';
+              e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.08)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'none';
-              e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+              e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.04)';
             }}
           >
             <div style={{ flex: 1 }}>
-              <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#2563EB', background: 'rgba(255, 255, 255, 0.6)', padding: '2px 8px', borderRadius: '6px' }}>
+              <span style={{ 
+                fontSize: '11px', 
+                fontWeight: 800, 
+                color: '#2563EB', 
+                background: '#E0F2FE', 
+                padding: '3px 8px', 
+                borderRadius: '6px',
+                display: 'inline-block',
+                marginBottom: '8px'
+              }}>
                 체중 관리 & 눈물痕
               </span>
-              <h4 style={{ margin: '8px 0 4px', fontSize: '16px', fontWeight: 800, color: 'var(--ink)', lineHeight: 1.35 }}>
-                눈물 흔적과 체중 관리를 동시에 해결하는 건강 식단 💧
+              <h4 style={{ margin: '0 0 6px', fontSize: '15px', fontWeight: 800, color: '#1E293B', lineHeight: 1.4 }}>
+                눈물 흔적과 체중 관리를 동시에 해결하는 건강 식단
               </h4>
-              <p style={{ margin: 0, fontSize: '12px', color: '#0E2E5B', fontWeight: 500, opacity: 0.85 }}>
+              <p style={{ margin: 0, fontSize: '12px', color: '#64748B', fontWeight: 500 }}>
                 L-카르니틴 배합 저칼로리 포뮬러 및 고정 단백질 가수분해 사료
               </p>
             </div>
-            <span style={{ fontSize: '18px', color: '#2563EB', fontWeight: 800 }}>➔</span>
+            <div style={{
+              width: '52px',
+              height: '52px',
+              borderRadius: '16px',
+              background: 'linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '26px',
+              flexShrink: 0
+            }}>
+              Scale ⚖️
+            </div>
           </article>
 
           {/* Card 3: Skin & Allergies */}
           <article 
             onClick={() => navigate('/search?query=가수분해')}
             style={{
-              padding: '20px 22px',
-              borderRadius: '24px',
-              background: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)',
-              border: '1px solid rgba(5, 150, 105, 0.08)',
-              boxShadow: 'var(--shadow-sm)',
+              padding: '18px 20px',
+              borderRadius: '20px',
+              background: '#FFFFFF',
+              border: '1px solid #F1F5F9',
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.04)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -945,116 +981,49 @@ export default function Home() {
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 6px 16px rgba(5, 150, 105, 0.1)';
+              e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.08)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'none';
-              e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+              e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.04)';
             }}
           >
             <div style={{ flex: 1 }}>
-              <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#059669', background: 'rgba(255, 255, 255, 0.6)', padding: '2px 8px', borderRadius: '6px' }}>
+              <span style={{ 
+                fontSize: '11px', 
+                fontWeight: 800, 
+                color: '#059669', 
+                background: '#ECFDF5', 
+                padding: '3px 8px', 
+                borderRadius: '6px',
+                display: 'inline-block',
+                marginBottom: '8px'
+              }}>
                 민감성 피부 & 알레르기
               </span>
-              <h4 style={{ margin: '8px 0 4px', fontSize: '16px', fontWeight: 800, color: 'var(--ink)', lineHeight: 1.35 }}>
-                피부 가려움과 알레르기 걱정 없는 저자극 안심 큐레이션 🌱
+              <h4 style={{ margin: '0 0 6px', fontSize: '15px', fontWeight: 800, color: '#1E293B', lineHeight: 1.4 }}>
+                피부 가려움과 알레르기 걱정 없는 저자극 안심 큐레이션
               </h4>
-              <p style={{ margin: 0, fontSize: '12px', color: '#04422E', fontWeight: 500, opacity: 0.85 }}>
+              <p style={{ margin: 0, fontSize: '12px', color: '#64748B', fontWeight: 500 }}>
                 알레르기 식이 차단용 가수분해 단백질과 유기농 유산균 포뮬러 분석
               </p>
             </div>
-            <span style={{ fontSize: '18px', color: '#059669', fontWeight: 800 }}>➔</span>
+            <div style={{
+              width: '52px',
+              height: '52px',
+              borderRadius: '16px',
+              background: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '26px',
+              flexShrink: 0
+            }}>
+              Sprout 🌱
+            </div>
           </article>
         </div>
       </section>
-
-      {/* Dual Quick Actions Card Grid */}
-      <div style={{ padding: '0 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-        <button
-          onClick={() => navigate('/event/personality-quiz')}
-          style={{
-            cursor: 'pointer', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 10, padding: '16px', borderRadius: 20,
-            background: 'var(--surface)', border: '1px solid var(--hairline)', boxShadow: 'var(--shadow-sm)'
-          }}
-        >
-          <span style={{ width: 44, height: 44, borderRadius: 13, background: 'var(--brand-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Sparkles size={20} color="var(--brand-deep)" />
-          </span>
-          <span>
-            <span style={{ display: 'block', fontSize: 15, fontWeight: 700, color: 'var(--ink)' }}>성향 테스트</span>
-            <span style={{ display: 'block', fontSize: 12, color: 'var(--ink-soft)', marginTop: 2, lineHeight: 1.35 }}>우리 아이 사료 찾기</span>
-          </span>
-        </button>
-
-        <button
-          onClick={() => navigate('/profile')}
-          style={{
-            cursor: 'pointer', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 10, padding: '16px', borderRadius: 20,
-            background: 'var(--surface)', border: '1px solid var(--hairline)', boxShadow: 'var(--shadow-sm)'
-          }}
-        >
-          <span style={{ width: 44, height: 44, borderRadius: 13, background: 'var(--brand-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <User size={20} color="var(--brand-deep)" />
-          </span>
-          <span>
-            <span style={{ display: 'block', fontSize: 15, fontWeight: 700, color: 'var(--ink)' }}>마이 펫</span>
-            <span style={{ display: 'block', fontSize: 12, color: 'var(--ink-soft)', marginTop: 2, lineHeight: 1.35 }}>프로필 및 건강 관리</span>
-          </span>
-        </button>
-      </div>
-
-      {/* Favorites (내 찜 목록 - Toss-style Horizontal Scroll) */}
-      {isLoggedIn && (
-        <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, padding: '0 20px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <h3 style={{ margin: 0, fontSize: 19, fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
-                내가 찜한 상품
-              </h3>
-              <span style={{ fontSize: '12.5px', color: 'var(--ink-soft)' }}>
-                우리 아이를 위해 눈여겨본 관심 사료
-              </span>
-            </div>
-            <button onClick={() => navigate('/profile')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 13, fontWeight: 700, color: 'var(--ink-soft)' }}>
-              전체보기 <ChevronRight size={15} />
-            </button>
-          </div>
-          {favoriteProducts.length > 0 ? (
-            <div className="rail" style={{ display: 'flex', gap: 14, overflowX: 'auto', padding: '2px 20px 4px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-              {favoriteProducts.slice(0, 8).map((p) => (
-                <div key={p.id} onClick={() => navigate(`/product/${p.id}`)} style={{ flexShrink: 0, width: 124, cursor: 'pointer' }}>
-                  <div style={{ width: 124, height: 124, borderRadius: 18, overflow: 'hidden', border: '1px solid var(--hairline)', marginBottom: 8, position: 'relative' }}>
-                    <ProductImage src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    <div style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 2 }}>
-                      ❤️
-                    </div>
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--ink-faint)', fontWeight: 700 }}>{p.brand}</div>
-                  <div className="line-clamp-2" style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.4, height: '34px', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                    {p.name}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ padding: '0 20px' }}>
-              <div style={{
-                padding: '24px 20px',
-                borderRadius: '20px',
-                background: 'var(--surface)',
-                border: '1px dashed var(--hairline)',
-                textAlign: 'center',
-                color: 'var(--ink-soft)',
-                fontSize: '13.5px',
-                fontWeight: 500,
-                lineHeight: 1.5
-              }}>
-                아직 찜한 제품이 없습니다.<br/>마음에 드는 사료에 찜(하트)을 눌러보세요!
-              </div>
-            </div>
-          )}
-        </section>
-      )}
 
       {/* Recently Viewed Products (내가 주로 봤던 상품 - Toss-style Horizontal Scroll) */}
       {recentViews.length > 0 && (

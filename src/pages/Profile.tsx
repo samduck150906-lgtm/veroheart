@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
 import { User, ChevronRight, Calendar, ShoppingBag, FileText, Activity, LogOut, Heart } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { TossCard, TossInput, TossButton, TossChip, TossSectionTitle } from '../components/TossUI';
 import { Button } from '../components/Button';
@@ -66,7 +66,16 @@ export default function Profile() {
     products
   } = useStore();
 
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState<'info' | 'orders' | 'reports' | 'favorites'>('info');
+
+  useEffect(() => {
+    if (tabParam === 'favorites' || tabParam === 'orders' || tabParam === 'reports' || tabParam === 'info') {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
+
   const [formData, setFormData] = useState(profile);
   const [editForm, setEditForm] = useState(profile);
   const [profileStep, setProfileStep] = useState(0);

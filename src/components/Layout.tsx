@@ -66,6 +66,36 @@ export default function Layout() {
                 />
               </Link>
             </div>
+            
+            {/* Pink dog paw print jelly icon button for Favorites */}
+            <button
+              onClick={() => navigate('/profile?tab=favorites')}
+              style={{
+                background: '#FFF2F5',
+                border: '2px solid #FFCCD5',
+                cursor: 'pointer',
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(255, 75, 110, 0.15)',
+                transition: 'all 0.2s ease',
+                padding: 0
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.08)';
+                e.currentTarget.style.background = '#FFE5EC';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.background = '#FFF2F5';
+              }}
+              title="내가 찜한 상품"
+            >
+              <span style={{ fontSize: '20px', lineHeight: 1 }}>🐾</span>
+            </button>
           </div>
 
           {/* Search Row like Hwahae */}
