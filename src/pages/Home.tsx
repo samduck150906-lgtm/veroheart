@@ -1,33 +1,17 @@
 // @ts-nocheck
-import { useState, type ReactNode } from 'react';
+import { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
-import ProductCard from '../components/ProductCard';
-import TargetedAd from '../components/TargetedAd';
 import { Helmet } from 'react-helmet-async';
 import {
   Sparkles,
-  Clock3,
   ChevronRight,
-  X,
-  Flame,
-  Stethoscope,
-  Wallet,
-  Search,
-  Heart,
-  MessageCircle,
-  ScanLine,
-  Bell,
   Shield,
   User,
+  Heart,
 } from 'lucide-react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { HOME_CATEGORY_ITEMS } from '../constants/productCategories';
-import type { Product } from '../types';
-import { TossChip, TossSectionTitle } from '../components/TossUI';
 import ProductImage from '../components/ProductImage';
-import { Text } from '../components/Text';
-import SearchBar from '../components/SearchBar';
-import BottomSheetFilters from '../components/BottomSheetFilters';
 
 function getBreedAvatar(breed?: string, species?: 'Dog' | 'Cat') {
   const normalized = breed?.trim() || '';
@@ -52,125 +36,20 @@ function getBreedAvatar(breed?: string, species?: 'Dog' | 'Cat') {
 }
 
 export default function Home() {
-  const { products, profile, recentViews, isLoggedIn } = useStore();
+  const { products, profile, recentViews, isLoggedIn, banners, favorites } = useStore();
   const navigate = useNavigate();
-  const hasPetProfile = isLoggedIn && profile && profile.id !== 'local-profile' && profile.name !== '우리 아이';
-  const petName = hasPetProfile ? profile.name : null;
-  // New filter & search state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filters, setFilters] = useState({ ages: [], ingredients: [], allergens: [] });
-  const [filterOpen, setFilterOpen] = useState(false);
-  // Compute filtered products
-  const filteredProducts = products.filter(p => {
-    const matchesQuery = searchQuery
-      ? p.name?.toLowerCase().includes(searchQuery.toLowerCase())
-      : true;
-    const matchesAge = filters.ages.length
-      ? filters.ages.includes(p.ageGroup)
-      : true;
-    const matchesIngredient = filters.ingredients.length
-      ? filters.ingredients.includes(p.mainIngredient)
-      : true;
-    const matchesAllergen = filters.allergens.length
-      ? !p.allergens?.some(a => filters.allergens.includes(a))
-      : true;
-    return matchesQuery && matchesAge && matchesIngredient && matchesAllergen;
-  });
+  const [bannerIndex, setBannerIndex] = useState(0);
 
-  // 1. Identify expected pet type from profile
-  const expectedPetType = profile.species === 'Cat' ? 'cat' : 'dog';
+  const hasPetProfile = isLoggedIn && profile && profile.id && profile.id !== 'local-profile' && profile.name && profile.name !== '우리 아이';
+  const favoriteProducts = products.filter(p => favorites.includes(p.id));
 
-  // 2. Build trending first so personalRecs can exclude them
-  const trendingProducts = [...products]
-    .filter(p => p.targetPetType === expectedPetType || p.targetPetType === 'all')
-    .sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
-    .slice(0, 5);
-  const trendingIds = new Set(trendingProducts.map(p => p.id));
-
-  const allergenFilter = (p: (typeof products)[0]) => {
-    if (!profile.allergies || profile.allergies.length === 0) return true;
-    const hasAllergenInIngredients = p.ingredients?.some(ing =>
-      profile.allergies.some(allergen =>
-        ing.nameKo?.includes(allergen) || ing.nameEn?.toLowerCase().includes(allergen.toLowerCase())
-      )
-    );
-    const hasAllergenInList = p.allergens?.some(a =>
-      profile.allergies.some(allergen => a.includes(allergen))
-    );
-    return !hasAllergenInIngredients && !hasAllergenInList;
-  };
-
-  // 3. Strict Curation Filter for personalRecs (Hero) — exclude trending products
-  const personalRecs = products
-    .filter(p => (p.targetPetType === expectedPetType || p.targetPetType === 'all') && !trendingIds.has(p.id))
-    .filter(allergenFilter)
-    .sort((a, b) => {
-      const aMatches = a.healthConcerns?.filter(c => profile.healthConcerns.includes(c)).length || 0;
-      const bMatches = b.healthConcerns?.filter(c => profile.healthConcerns.includes(c)).length || 0;
-      if (aMatches !== bMatches) return bMatches - aMatches;
-      return (b.averageRating ?? 0) - (a.averageRating ?? 0);
-    })
-    .slice(0, 4);
-
-  // 4. Backfill personalRecs (also excluding trending)
-  if (personalRecs.length < 4) {
-    const backfillCount = 4 - personalRecs.length;
-    const existingIds = new Set(personalRecs.map(p => p.id));
-    const backfill = products
-      .filter(p => (p.targetPetType === expectedPetType || p.targetPetType === 'all') && !existingIds.has(p.id) && !trendingIds.has(p.id))
-      .filter(allergenFilter)
-      .sort((a, b) => (b.averageRating ?? 0) - (a.averageRating ?? 0))
-      .slice(0, backfillCount);
-    personalRecs.push(...backfill);
-  }
-
-  // 5. Strict Species-Matching Concern Feed
-  const concernProducts = [...products]
-    .filter(p => p.targetPetType === expectedPetType || p.targetPetType === 'all')
-    .filter(p => (p.healthConcerns ?? []).some(c => profile.healthConcerns.includes(c)))
-    .sort((a, b) => (b.averageRating ?? 0) - (a.averageRating ?? 0))
-    .slice(0, 5); // condensed down to 5
-
-  // 6. Strict Species-Matching Budget Feed
-  const budgetProducts = [...products]
-    .filter(p => p.targetPetType === expectedPetType || p.targetPetType === 'all')
-    .filter(p => (p.price ?? 0) <= 30000)
-    .sort((a, b) => (b.averageRating ?? 0) - (a.averageRating ?? 0))
-    .slice(0, 5); // condensed down to 5
-
-  const topCommunityPicks = []; // Removed for vertical space optimization
-
-
-  const quickActions = [
-    {
-      title: '탐색',
-      description: '',
-      icon: <Search size={18} color="#7C3AED" />,
-      accent: 'rgba(124, 58, 237, 0.12)',
-      onClick: () => navigate('/search'),
-    },
-    {
-      title: '랭킹',
-      description: '',
-      icon: <Flame size={18} color="#DC2626" />,
-      accent: 'rgba(239, 68, 68, 0.12)',
-      onClick: () => navigate('/ranking'),
-    },
-    {
-      title: '성향 테스트',
-      description: '',
-      icon: <MessageCircle size={18} color="#2563EB" />,
-      accent: 'rgba(37, 99, 235, 0.12)',
-      onClick: () => navigate('/event/personality-quiz'),
-    },
-    {
-      title: '마이 펫',
-      description: '',
-      icon: <Heart size={18} color="#DB2777" />,
-      accent: 'rgba(219, 39, 119, 0.12)',
-      onClick: () => navigate('/profile'),
-    },
-  ];
+  useEffect(() => {
+    if (!banners || banners.length <= 1) return;
+    const timer = setInterval(() => {
+      setBannerIndex((prev) => (prev + 1) % banners.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [banners]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '30px', paddingBottom: '40px' }}>
@@ -182,120 +61,167 @@ export default function Home() {
         </title>
         <meta name="description" content="베로로 — 사료 성분 분석과 집사들의 찐 리뷰. 의심 대신 베로로 하세요." />
       </Helmet>
- 
-      {/* Hero Banner Carousel (Hwahae Style) */}
-      <div style={{ padding: '0 20px', marginTop: '10px' }}>
-        <div style={{ 
-          position: 'relative', 
-          borderRadius: '20px', 
-          overflow: 'hidden', 
-          height: '160px', 
-          boxShadow: 'var(--shadow-sm)',
-          background: 'linear-gradient(135deg, #FFF3C4 0%, #FFE066 100%)'
-        }}>
-          <div style={{ 
-            width: '100%', 
-            height: '100%', 
-            display: 'flex', 
-            alignItems: 'center', 
-            padding: '20px 24px',
-            boxSizing: 'border-box'
-          }}>
-            <div style={{ flex: 1, zIndex: 2 }}>
-              <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--brand-deep)', background: 'rgba(255,255,255,0.7)', padding: '2px 7px', borderRadius: '6px' }}>
-                RECOMMENDED
-              </span>
-              <h2 style={{ margin: '6px 0 2px', fontSize: '18px', fontWeight: 900, color: 'var(--ink)', lineHeight: 1.3, letterSpacing: '-0.02em' }}>
-                지금 꼭 챙겨야 할<br/>영양 맞춤 사료 라인업
-              </h2>
-              <p style={{ margin: 0, fontSize: '11px', color: 'var(--ink-soft)', fontWeight: 600 }}>
-                수의 영양학 추천 BEST 모아보기
-              </p>
-            </div>
-            <div style={{
-              fontSize: '72px',
-              lineHeight: 1,
-              zIndex: 1,
-              transform: 'rotate(12deg)',
-              filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.06))'
-            }}>
-              🥫
-            </div>
-          </div>
-          <div style={{ position: 'absolute', top: '12px', left: '12px', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: '9px', fontWeight: 700, padding: '2px 6px', borderRadius: '99px' }}>
-            5/7
-          </div>
-        </div>
-      </div>
 
-      {/* Pet Profile Card on Home Main (if configured) */}
-      {hasPetProfile && (
-        <div style={{ padding: '0 20px' }}>
-          <div style={{
-            padding: '20px 18px',
-            borderRadius: '20px',
-            background: 'var(--surface)',
-            border: '1px solid var(--brand-line)',
-            boxShadow: 'var(--shadow-sm)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '14px',
-          }}>
-            <div style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: '50%',
-              background: getBreedAvatar(profile.breed, profile.species).bg,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)',
-              fontSize: '26px',
-              flexShrink: 0
+      {/* Hero Banner Carousel (Hwahae Style) */}
+      {banners && banners.length > 0 && (
+        <div style={{ padding: '0 20px', marginTop: '-15px' }}>
+          <div 
+            onClick={() => {
+              const activeBanner = banners[bannerIndex];
+              if (activeBanner?.linkUrl) navigate(activeBanner.linkUrl);
+            }}
+            style={{ 
+              position: 'relative', 
+              borderRadius: '20px', 
+              overflow: 'hidden', 
+              height: '160px', 
+              boxShadow: 'var(--shadow-sm)',
+              background: banners[bannerIndex]?.bgColor || 'linear-gradient(135deg, #FFF3C4 0%, #FFE066 100%)',
+              cursor: 'pointer',
+              transition: 'background 0.3s ease'
+            }}
+          >
+            <div style={{ 
+              width: '100%', 
+              height: '100%', 
+              display: 'flex', 
+              alignItems: 'center', 
+              padding: '20px 24px',
+              boxSizing: 'border-box'
             }}>
-              {getBreedAvatar(profile.breed, profile.species).emoji}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '17px', fontWeight: 800, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile.name}</span>
-                <span style={{ fontSize: '10.5px', color: 'var(--brand-deep)', background: 'var(--brand-tint)', padding: '2px 6px', borderRadius: '6px', fontWeight: 700, flexShrink: 0 }}>
-                  {getBreedAvatar(profile.breed, profile.species).label}
+              <div style={{ flex: 1, zIndex: 2 }}>
+                <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--brand-deep)', background: 'rgba(255,255,255,0.7)', padding: '2px 7px', borderRadius: '6px' }}>
+                  RECOMMENDED
                 </span>
+                <h2 style={{ margin: '6px 0 2px', fontSize: '18px', fontWeight: 900, color: 'var(--ink)', lineHeight: 1.3, letterSpacing: '-0.02em', whiteSpace: 'pre-wrap' }}>
+                  {banners[bannerIndex]?.title}
+                </h2>
+                {banners[bannerIndex]?.subtitle && (
+                  <p style={{ margin: 0, fontSize: '11px', color: 'var(--ink-soft)', fontWeight: 600 }}>
+                    {banners[bannerIndex]?.subtitle}
+                  </p>
+                )}
               </div>
-              <div style={{ fontSize: '12.5px', color: 'var(--ink-soft)', marginTop: '4px', display: 'flex', gap: '6px', fontWeight: 500 }}>
-                <span>{profile.species === 'Cat' ? '고양이' : '강아지'}</span>
-                <span>•</span>
-                <span>{profile.age}세</span>
-                {profile.weightKg && (
-                  <>
-                    <span>•</span>
-                    <span>{profile.weightKg}kg</span>
-                  </>
+              <div style={{
+                fontSize: '72px',
+                lineHeight: 1,
+                zIndex: 1,
+                transform: 'rotate(12deg)',
+                filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.06))',
+                flexShrink: 0
+              }}>
+                {banners[bannerIndex]?.imageUrl?.startsWith('http') || banners[bannerIndex]?.imageUrl?.startsWith('/') ? (
+                  <img 
+                    src={banners[bannerIndex]?.imageUrl} 
+                    alt="" 
+                    style={{ width: '80px', height: '80px', objectFit: 'contain' }} 
+                  />
+                ) : (
+                  banners[bannerIndex]?.imageUrl || '🥫'
                 )}
               </div>
             </div>
-            <button 
-              onClick={() => navigate('/profile')}
-              style={{
-                padding: '8px 12px',
-                borderRadius: '10px',
-                background: 'var(--ink)',
-                color: 'var(--surface)',
-                border: 'none',
-                fontSize: '12px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                flexShrink: 0
-              }}
-            >
-              관리
-            </button>
+            <div style={{ position: 'absolute', top: '12px', left: '12px', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: '9px', fontWeight: 700, padding: '2px 6px', borderRadius: '99px' }}>
+              {bannerIndex + 1}/{banners.length}
+            </div>
           </div>
         </div>
       )}
 
-      {/* Pet Registration CTA Banner (if unconfigured) */}
-      {!hasPetProfile && (
+      {/* Pet Profile & Details Card (Toss-style Dashboard for Configured Users) */}
+      {hasPetProfile ? (
+        <div style={{ padding: '0 20px' }}>
+          <div style={{
+            padding: '24px 20px',
+            borderRadius: '24px',
+            background: 'var(--surface)',
+            border: '1px solid var(--hairline)',
+            boxShadow: 'var(--shadow-sm)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{
+                width: '60px',
+                height: '60px',
+                borderRadius: '50%',
+                background: getBreedAvatar(profile.breed, profile.species).bg,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '28px',
+                boxShadow: '0 4px 10px rgba(0,0,0,0.05)',
+                flexShrink: 0
+              }}>
+                {getBreedAvatar(profile.breed, profile.species).emoji}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile.name}</span>
+                  <span style={{ fontSize: '11px', color: 'var(--brand-deep)', background: 'var(--brand-tint)', padding: '2px 8px', borderRadius: '8px', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                    {getBreedAvatar(profile.breed, profile.species).label}
+                  </span>
+                </div>
+                <div style={{ fontSize: '13px', color: 'var(--ink-soft)', marginTop: '4px', fontWeight: 500 }}>
+                  {profile.species === 'Cat' ? '고양이' : '강아지'} · {profile.age}세 {profile.weightKg ? `· ${profile.weightKg}kg` : ''}
+                </div>
+              </div>
+              <button 
+                onClick={() => navigate('/profile')}
+                style={{
+                  padding: '8px 14px',
+                  borderRadius: '12px',
+                  background: 'var(--brand-tint)',
+                  color: 'var(--brand-deep)',
+                  border: '1.5px solid var(--brand-line)',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  flexShrink: 0
+                }}
+              >
+                수정
+              </button>
+            </div>
+
+            <div style={{ width: '100%', height: '1px', background: 'var(--hairline)' }} />
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <span style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--ink-faint)', marginBottom: '6px' }}>알레르기 정보</span>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {profile.allergies && profile.allergies.length > 0 ? (
+                    profile.allergies.map(allergy => (
+                      <span key={allergy} style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--danger)', background: 'var(--danger-tint)', padding: '4px 10px', borderRadius: '8px' }}>
+                        🚫 {allergy}
+                      </span>
+                    ))
+                  ) : (
+                    <span style={{ fontSize: '12.5px', color: 'var(--ink-soft)', fontStyle: 'italic' }}>피해야 할 알레르기 성분이 없습니다.</span>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <span style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--ink-faint)', marginBottom: '6px' }}>건강 고민 및 관리</span>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {profile.healthConcerns && profile.healthConcerns.length > 0 ? (
+                    profile.healthConcerns.map(concern => (
+                      <span key={concern} style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--brand-deep)', background: 'var(--brand-tint)', padding: '4px 10px', borderRadius: '8px' }}>
+                        ✨ {concern}
+                      </span>
+                    ))
+                  ) : (
+                    <span style={{ fontSize: '12.5px', color: 'var(--ink-soft)', fontStyle: 'italic' }}>설정된 건강 고민이 없습니다.</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* Pet Registration CTA Banner (if unconfigured or guest) */
         <div style={{ padding: '0 20px' }}>
           <div style={{
             padding: '24px 20px',
@@ -352,31 +278,6 @@ export default function Home() {
           </div>
         </div>
       )}
- 
-      {/* Personalized Recommendation (Hero Slider) */}
-      {hasPetProfile && personalRecs.length > 0 && (
-        <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, padding: '0 20px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <span style={{ fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: 15, color: 'var(--brand-deep)' }}>Curated for</span>
-              <h3 style={{ margin: 0, fontSize: 19, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
-                {profile.name} 맞춤 추천
-              </h3>
-              <span style={{ fontSize: 12.5, color: 'var(--ink-soft)', lineHeight: 1.4 }}>
-                프로필 · 성분 · 리뷰를 종합한 사람 검수 추천
-              </span>
-            </div>
-            <button onClick={() => navigate('/search')} style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 13, fontWeight: 600, color: 'var(--ink-soft)', paddingBottom: 2 }}>
-              더보기 <ChevronRight size={15} />
-            </button>
-          </div>
-          <div className="rail" style={{ display: 'flex', gap: 14, overflowX: 'auto', padding: '2px 20px 4px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-            {personalRecs.slice(0, 4).map((p, idx) => (
-              <ProductCard key={p.id} product={p} variant="vertical" rank={idx + 1} />
-            ))}
-          </div>
-        </section>
-      )}
 
       {/* Dual Quick Actions Card Grid */}
       <div style={{ padding: '0 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -413,139 +314,83 @@ export default function Home() {
         </button>
       </div>
 
-      {/* Trending Products (Hwahae Style) */}
-      {trendingProducts.length > 0 && (
+      {/* Favorites (내 찜 목록 - Toss-style Horizontal Scroll) */}
+      {isLoggedIn && (
         <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ padding: '0 20px' }}>
-            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-soft)' }}>
-              6월 4일 목요일
-            </span>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 }}>
-              <h3 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
-                급상승 랭킹
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, padding: '0 20px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <h3 style={{ margin: 0, fontSize: 19, fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
+                내가 찜한 상품
               </h3>
-              <button onClick={() => navigate('/ranking')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 13.5, fontWeight: 700, color: 'var(--ink-soft)' }}>
-                전체보기 <ChevronRight size={15} />
-              </button>
+              <span style={{ fontSize: '12.5px', color: 'var(--ink-soft)' }}>
+                우리 아이를 위해 눈여겨본 관심 사료
+              </span>
             </div>
+            <button onClick={() => navigate('/profile')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 13, fontWeight: 700, color: 'var(--ink-soft)' }}>
+              전체보기 <ChevronRight size={15} />
+            </button>
           </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', padding: '0 20px', gap: '16px' }}>
-            {trendingProducts.slice(0, 3).map((p, idx) => {
-              // Mock rank change details
-              const changes = [
-                { icon: '▲', color: '#F04452', val: '4' },
-                { icon: '▼', color: '#3182F6', val: '2' },
-                { icon: '-', color: 'var(--ink-faint)', val: '' }
-              ];
-              const change = changes[idx % 3];
-
-              return (
-                <div 
-                  key={p.id}
-                  onClick={() => navigate(`/product/${p.id}`)}
-                  style={{ display: 'flex', alignItems: 'center', gap: '16px', cursor: 'pointer' }}
-                >
-                  {/* Rank Column */}
-                  <div style={{ width: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
-                    <span style={{ fontSize: '18px', fontWeight: 900, color: 'var(--ink)' }}>{idx + 1}</span>
-                    <span style={{ fontSize: '10px', fontWeight: 700, color: change.color, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '1px' }}>
-                      {change.icon} {change.val}
-                    </span>
-                  </div>
-
-                  {/* Product Image */}
-                  <div style={{ width: '80px', height: '80px', borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--hairline)', flexShrink: 0 }}>
+          {favoriteProducts.length > 0 ? (
+            <div className="rail" style={{ display: 'flex', gap: 14, overflowX: 'auto', padding: '2px 20px 4px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+              {favoriteProducts.slice(0, 8).map((p) => (
+                <div key={p.id} onClick={() => navigate(`/product/${p.id}`)} style={{ flexShrink: 0, width: 124, cursor: 'pointer' }}>
+                  <div style={{ width: 124, height: 124, borderRadius: 18, overflow: 'hidden', border: '1px solid var(--hairline)', marginBottom: 8, position: 'relative' }}>
                     <ProductImage src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  </div>
-
-                  {/* Info details */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{ fontSize: '11px', color: 'var(--ink-faint)', fontWeight: 700 }}>{p.brand}</span>
-                    <h4 className="line-clamp-2" style={{ margin: '2px 0 6px', fontSize: '14.5px', fontWeight: 700, color: 'var(--ink)', lineHeight: 1.35 }}>
-                      {p.name}
-                    </h4>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px', fontSize: '11.5px', fontWeight: 700, color: 'var(--ink-soft)' }}>
-                      <span style={{ color: '#F5C518', fontSize: '13px' }}>★</span> {p.averageRating} <span style={{ color: 'var(--ink-faint)', fontWeight: 500 }}>({p.reviewsCount})</span>
+                    <div style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 2 }}>
+                      ❤️
                     </div>
                   </div>
+                  <div style={{ fontSize: '11px', color: 'var(--ink-faint)', fontWeight: 700 }}>{p.brand}</div>
+                  <div className="line-clamp-2" style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.4, height: '34px', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                    {p.name}
+                  </div>
                 </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* Concern-based Recommendations */}
-      {isLoggedIn && concernProducts.length > 0 && (
-        <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, padding: '0 20px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <span style={{ fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: 15, color: 'var(--brand-deep)' }}>Health concern</span>
-              <h3 style={{ margin: 0, fontSize: 19, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
-                질병 · 부위별 추천
-              </h3>
-              <span style={{ fontSize: 12.5, color: 'var(--ink-soft)', lineHeight: 1.4 }}>
-                {profile.healthConcerns.length > 0 ? `${profile.healthConcerns.join(' · ')} 고민 기준` : '반려동물 건강 맞춤 사료'}
-              </span>
+              ))}
             </div>
-            <button onClick={() => navigate('/search')} style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 13, fontWeight: 600, color: 'var(--ink-soft)', paddingBottom: 2 }}>
-              더보기 <ChevronRight size={15} />
-            </button>
-          </div>
-          <div className="rail" style={{ display: 'flex', gap: 14, overflowX: 'auto', padding: '2px 20px 4px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-            {concernProducts.slice(0, 5).map((p, idx) => (
-              <ProductCard key={p.id} product={p} variant="vertical" rank={idx + 1} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Budget-friendly Recommendations */}
-      {isLoggedIn && budgetProducts.length > 0 && (
-        <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, padding: '0 20px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <span style={{ fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: 15, color: 'var(--brand-deep)' }}>Budget picks</span>
-              <h3 style={{ margin: 0, fontSize: 19, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
-                가성비 추천 사료
-              </h3>
-              <span style={{ fontSize: 12.5, color: 'var(--ink-soft)', lineHeight: 1.4 }}>
-                3만원 이하 실속형 안심 사료
-              </span>
+          ) : (
+            <div style={{ padding: '0 20px' }}>
+              <div style={{
+                padding: '24px 20px',
+                borderRadius: '20px',
+                background: 'var(--surface)',
+                border: '1px dashed var(--hairline)',
+                textAlign: 'center',
+                color: 'var(--ink-soft)',
+                fontSize: '13.5px',
+                fontWeight: 500,
+                lineHeight: 1.5
+              }}>
+                아직 찜한 제품이 없습니다.<br/>마음에 드는 사료에 찜(하트)을 눌러보세요!
+              </div>
             </div>
-            <button onClick={() => navigate('/search')} style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 13, fontWeight: 600, color: 'var(--ink-soft)', paddingBottom: 2 }}>
-              더보기 <ChevronRight size={15} />
-            </button>
-          </div>
-          <div className="rail" style={{ display: 'flex', gap: 14, overflowX: 'auto', padding: '2px 20px 4px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-            {budgetProducts.slice(0, 5).map((p, idx) => (
-              <ProductCard key={p.id} product={p} variant="vertical" rank={idx + 1} />
-            ))}
-          </div>
+          )}
         </section>
       )}
 
-      {/* Recently Viewed Products */}
+      {/* Recently Viewed Products (내가 주로 봤던 상품 - Toss-style Horizontal Scroll) */}
       {recentViews.length > 0 && (
         <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, padding: '0 20px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <h3 style={{ margin: 0, fontSize: 19, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
-                최근 본 제품
+                내가 최근 본 상품
               </h3>
+              <span style={{ fontSize: '12.5px', color: 'var(--ink-soft)' }}>
+                가장 최근에 확인했던 사료 상세 리포트
+              </span>
             </div>
-            <button onClick={() => navigate('/search')} style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 13, fontWeight: 600, color: 'var(--ink-soft)', paddingBottom: 2 }}>
-              더보기 <ChevronRight size={15} />
+            <button onClick={() => navigate('/search')} style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 13, fontWeight: 600, color: 'var(--ink-soft)' }}>
+              검색하기 <ChevronRight size={15} />
             </button>
           </div>
           <div className="rail" style={{ display: 'flex', gap: 14, overflowX: 'auto', padding: '2px 20px 4px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-            {recentViews.slice(0, 6).map((p) => (
+            {recentViews.slice(0, 8).map((p) => (
               <div key={p.id} onClick={() => navigate(`/product/${p.id}`)} style={{ flexShrink: 0, width: 124, cursor: 'pointer' }}>
                 <div style={{ width: 124, height: 124, borderRadius: 18, overflow: 'hidden', border: '1px solid var(--hairline)', marginBottom: 8 }}>
                   <ProductImage src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
-                <div className="line-clamp-2" style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.4 }}>
+                <div style={{ fontSize: '11px', color: 'var(--ink-faint)', fontWeight: 700 }}>{p.brand}</div>
+                <div className="line-clamp-2" style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.4, height: '34px', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                   {p.name}
                 </div>
               </div>
@@ -565,7 +410,7 @@ export default function Home() {
               원하는 사료/간식 종류를 선택해보세요
             </span>
           </div>
-          <button onClick={() => navigate('/search')} style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 13, fontWeight: 600, color: 'var(--ink-soft)', paddingBottom: 2 }}>
+          <button onClick={() => navigate('/search')} style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 13, fontWeight: 600, color: 'var(--ink-soft)' }}>
             전체 탐색 <ChevronRight size={15} />
           </button>
         </div>
@@ -601,58 +446,5 @@ export default function Home() {
         </div>
       </div>
     </div>
-  );
-}
-
-function HorizontalProductSection({
-  title,
-  subtitle,
-  icon,
-  products,
-  onMore,
-}: {
-  title: string;
-  subtitle: string;
-  icon: ReactNode;
-  products: Product[];
-  onMore: () => void;
-}) {
-  if (products.length === 0) return null;
-
-  return (
-    <section style={{ marginBottom: '22px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', gap: '10px' }}>
-        <div>
-          <h2 style={{ fontSize: '16.5px', marginBottom: '3px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}>
-            {icon}
-            {title}
-          </h2>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500, margin: 0 }}>{subtitle}</p>
-        </div>
-        <button onClick={onMore} className="ui-text-button" style={{ flexShrink: 0, fontSize: '12.5px' }}>
-          더보기 <ChevronRight size={14} />
-        </button>
-      </div>
-      <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-        {products.map((product, idx) => (
-          <div key={product.id} style={{ flex: '0 0 172px', position: 'relative' }}>
-            <div style={{ position: 'absolute', top: '14px', left: '14px', zIndex: 2 }}>
-              <span style={{ 
-                background: 'rgba(79, 70, 229, 0.9)', 
-                color: '#ffffff', 
-                fontSize: '10.5px', 
-                fontWeight: 800, 
-                padding: '3px 7px', 
-                borderRadius: '6px',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
-              }}>
-                {idx + 1}
-              </span>
-            </div>
-            <ProductCard product={product} variant="vertical" />
-          </div>
-        ))}
-      </div>
-    </section>
   );
 }

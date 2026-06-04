@@ -65,7 +65,7 @@ export default function Detail() {
     trackRecentView,
   } = useStore();
 
-  const hasPetProfile = isLoggedIn && profile && profile.id !== 'local-profile' && profile.name !== '우리 아이';
+  const hasPetProfile = isLoggedIn && profile && profile.id && profile.id !== 'local-profile' && profile.name && profile.name !== '우리 아이';
 
   type ReviewRow = {
     id: string;

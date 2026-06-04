@@ -524,4 +524,43 @@ export async function getProductsByBrand(brandName: string): Promise<Product[]> 
   return (data as SupabaseProductRow[]).map(mapProductFromSupabaseRow);
 }
 
+// ─── Banners ──────────────────────────────────────────────────────────────────
+
+export async function getBanners(): Promise<any[]> {
+  if (!isSupabaseConfigured) return [];
+  try {
+    const { data, error } = await supabase
+      .from('banners')
+      .select('*')
+      .order('created_at', { ascending: true });
+    if (error) {
+      console.warn('banners table query failed or not found, falling back');
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    return [];
+  }
+}
+
+export async function saveBanner(banner: any) {
+  if (!isSupabaseConfigured) return null;
+  const { data, error } = await supabase
+    .from('banners')
+    .upsert(banner)
+    .select()
+    .single();
+  if (error) {
+    console.error('saveBanner error:', error);
+    return null;
+  }
+  return data;
+}
+
+export async function deleteBannerFromDB(bannerId: string) {
+  if (!isSupabaseConfigured) return;
+  await supabase.from('banners').delete().eq('id', bannerId);
+}
+
+
 

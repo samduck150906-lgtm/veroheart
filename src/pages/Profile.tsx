@@ -92,6 +92,7 @@ export default function Profile() {
     await logout();
     navigate('/');
   };
+  const handleLogout = handleSignOut;
 
   const handleSave = async () => {
     await updateProfile(formData);
@@ -147,7 +148,7 @@ export default function Profile() {
     </button>
   );
 
-  const hasPetProfile = isLoggedIn && profile && profile.id !== 'local-profile' && profile.name !== '우리 아이';
+  const hasPetProfile = isLoggedIn && profile && profile.id && profile.id !== 'local-profile' && profile.name && profile.name !== '우리 아이';
 
   if (!userId) {
     return (

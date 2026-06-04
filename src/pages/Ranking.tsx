@@ -14,6 +14,8 @@ const TABS = [
   { key: 'rating', label: '평점 높은순', icon: '⭐' },
   { key: 'reviews', label: '리뷰 많은순', icon: '💬' },
   { key: 'safe', label: '성분 안전', icon: '🛡️' },
+  { key: 'concern', label: '건강 고민별', icon: '🩺' },
+  { key: 'budget', label: '가성비 사료', icon: '🪙' },
 ];
 
 const PET_TABS = [
@@ -25,16 +27,32 @@ const PET_TABS = [
 export default function Ranking() {
   const { products, profile, isLoggedIn } = useStore();
   const navigate = useNavigate();
-  const hasPetProfile = isLoggedIn && profile && profile.id !== 'local-profile' && profile.name !== '우리 아이';
-  const [sortBy, setSortBy] = useState<'compatibility' | 'rating' | 'reviews' | 'safe'>(
+  const hasPetProfile = isLoggedIn && profile && profile.id && profile.id !== 'local-profile' && profile.name && profile.name !== '우리 아이';
+  const [sortBy, setSortBy] = useState<'compatibility' | 'rating' | 'reviews' | 'safe' | 'concern' | 'budget'>(
     hasPetProfile ? 'compatibility' : 'rating'
   );
   const activeTabs = TABS.filter(tab => tab.key !== 'compatibility' || hasPetProfile);
   const [petFilter, setPetFilter] = useState<'all' | 'dog' | 'cat'>('all');
 
-  const filtered = products.filter((p) =>
-    petFilter === 'all' || p.targetPetType === petFilter || p.targetPetType === 'all'
-  );
+  const filtered = products.filter((p) => {
+    const matchesPet = petFilter === 'all' || p.targetPetType === petFilter || p.targetPetType === 'all';
+    if (!matchesPet) return false;
+    
+    if (sortBy === 'budget') {
+      return (p.price ?? 0) <= 30000;
+    }
+    
+    if (sortBy === 'concern') {
+      const hasConcerns = profile.healthConcerns && profile.healthConcerns.length > 0;
+      if (hasConcerns) {
+        return (p.healthConcerns ?? []).some(c => profile.healthConcerns.includes(c));
+      } else {
+        return (p.healthConcerns ?? []).length > 0;
+      }
+    }
+    
+    return true;
+  });
 
   const safeScore = (p: Product) => {
     const total = p.ingredients?.length || 1;
@@ -58,6 +76,18 @@ export default function Ranking() {
       if (sortBy === 'reviews') return (b.reviewsCount || 0) - (a.reviewsCount || 0);
       if (sortBy === 'safe') {
         return safeScore(b) - safeScore(a);
+      }
+      if (sortBy === 'concern') {
+        const hasConcerns = profile.healthConcerns && profile.healthConcerns.length > 0;
+        if (hasConcerns) {
+          const aMatches = a.healthConcerns?.filter(c => profile.healthConcerns.includes(c)).length || 0;
+          const bMatches = b.healthConcerns?.filter(c => profile.healthConcerns.includes(c)).length || 0;
+          if (aMatches !== bMatches) return bMatches - aMatches;
+        }
+        return (b.averageRating || 0) - (a.averageRating || 0);
+      }
+      if (sortBy === 'budget') {
+        return (b.averageRating || 0) - (a.averageRating || 0);
       }
       return 0;
     })
@@ -121,7 +151,7 @@ export default function Ranking() {
           <TossChip
             key={tab.key}
             active={sortBy === tab.key}
-            onClick={() => setSortBy(tab.key as 'compatibility' | 'rating' | 'reviews' | 'safe')}
+            onClick={() => setSortBy(tab.key as any)}
             style={{ whiteSpace: 'nowrap' }}
           >
             <span>{tab.icon}</span> {tab.label}
@@ -141,7 +171,11 @@ export default function Ranking() {
                     ? '평점 높은 순'
                     : sortBy === 'reviews'
                       ? '리뷰 많은 순'
-                      : '안전 성분 비율 순'
+                      : sortBy === 'safe'
+                        ? '안전 성분 비율 순'
+                        : sortBy === 'concern'
+                          ? (hasPetProfile ? `${profile.name}의 건강 고민 맞춤 순` : '건강 고민 맞춤 사료')
+                          : '3만원 이하 가성비 사료'
               }
             />
           </div>
@@ -216,8 +250,14 @@ export default function Ranking() {
                 {sortBy === 'safe' && (
                   <div style={{ fontSize: '20px', fontWeight: 900, color: '#10B981' }}>{safeRatio}%</div>
                 )}
+                {sortBy === 'concern' && (
+                  <div style={{ fontSize: '20px', fontWeight: 900, color: '#10B981' }}>{hasPetProfile ? `${score}점` : `${product.averageRating}`}</div>
+                )}
+                {sortBy === 'budget' && (
+                  <div style={{ fontSize: '20px', fontWeight: 900, color: 'var(--brand-deep)' }}>★ {product.averageRating}</div>
+                )}
                 <div style={{ fontSize: '11px', color: '#9CA3AF' }}>{product.price?.toLocaleString()}원</div>
-                {sortBy === 'compatibility' && (
+                {(sortBy === 'compatibility' || sortBy === 'concern') && (
                   <div style={{ marginTop: '6px', fontSize: '10px', color: '#667085', maxWidth: '120px', lineHeight: 1.35 }}>
                     {getProductRecommendationInsights(product, profile).reasons[0] || '프로필 기준 추천'}
                   </div>

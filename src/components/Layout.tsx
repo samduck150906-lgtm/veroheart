@@ -62,26 +62,9 @@ export default function Layout() {
                 <img
                   src={VERORO_LOGO_SRC}
                   alt="VeRoRo"
-                  style={{ height: '38px', width: 'auto', objectFit: 'contain', display: 'block' }}
+                  style={{ height: '60px', width: 'auto', objectFit: 'contain', display: 'block' }}
                 />
               </Link>
-            </div>
-
-            {/* Hwahae Style Language & Cart icons */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <div 
-                style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', fontWeight: 600, color: 'var(--ink-soft)', cursor: 'pointer' }}
-                onClick={() => navigate('/profile')}
-              >
-                <span style={{ fontSize: '14px' }}>🌐</span> 한국어 ▾
-              </div>
-              <button
-                onClick={() => navigate('/profile')}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', color: 'var(--ink-soft)' }}
-                aria-label="장바구니"
-              >
-                <span style={{ fontSize: '20px' }}>👜</span>
-              </button>
             </div>
           </div>
 

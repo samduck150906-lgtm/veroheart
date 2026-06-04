@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { create } from 'zustand';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
-import type { UserPetProfile, Product, SupabaseOrderWithItems, AnalysisReportRow } from '../types';
+import type { UserPetProfile, Product, SupabaseOrderWithItems, AnalysisReportRow, Banner } from '../types';
 import { DEFAULT_USER_PET_PROFILE } from '../types';
 import {
   supabase,
@@ -18,11 +18,41 @@ import {
   removeFavorite,
   addRecentView,
   getRecentViews,
-  signOut as supabaseSignOut
+  signOut as supabaseSignOut,
+  getBanners,
+  saveBanner as dbSaveBanner,
+  deleteBannerFromDB
 } from '../lib/supabase';
 
 let adminDataSyncChannel: any = null;
 let adminDataSyncTimer: ReturnType<typeof setTimeout> | null = null;
+
+const DEFAULT_BANNERS: Banner[] = [
+  {
+    id: 'default-1',
+    title: '지금 꼭 챙겨야 할\n영양 맞춤 사료 라인업',
+    subtitle: '수의 영양학 추천 BEST 모아보기',
+    imageUrl: '🥫',
+    linkUrl: '/ranking',
+    bgColor: 'linear-gradient(135deg, #FFF3C4 0%, #FFE066 100%)'
+  },
+  {
+    id: 'default-2',
+    title: '우리아이 맞춤 성분 분석\n간편하게 성분 검색하기',
+    subtitle: '알레르기/위험 성분을 1초만에 감지',
+    imageUrl: '🔍',
+    linkUrl: '/search',
+    bgColor: 'linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%)'
+  },
+  {
+    id: 'default-3',
+    title: '동반자 펫 등록하고\n맞춤형 궁합 정보 받기',
+    subtitle: '마이펫 정보 입력하러 가기',
+    imageUrl: '🐶',
+    linkUrl: '/profile',
+    bgColor: 'linear-gradient(135deg, #FCE7F3 0%, #FBCFE8 100%)'
+  }
+];
 
 interface StoreState {
   userId: string | null;
@@ -57,6 +87,11 @@ interface StoreState {
   // New scanner mode state
   scannerMode: 'barcode' | 'text';
   setScannerMode: (mode: 'barcode' | 'text') => void;
+  // Banner management
+  banners: Banner[];
+  fetchBanners: () => Promise<void>;
+  saveBanner: (banner: Partial<Banner>) => Promise<void>;
+  deleteBanner: (bannerId: string) => Promise<void>;
 }
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -72,6 +107,7 @@ export const useStore = create<StoreState>((set, get) => ({
   isInitializing: true,
   scannerMode: 'barcode' as 'barcode' | 'text',
   setScannerMode: (mode: 'barcode' | 'text') => set({ scannerMode: mode }),
+  banners: DEFAULT_BANNERS,
 
   signOut: async () => {
     await supabaseSignOut();
@@ -132,6 +168,7 @@ export const useStore = create<StoreState>((set, get) => ({
           isLoggedIn: false,
         });
         get().fetchProducts();
+        get().fetchBanners();
         return;
       }
 
@@ -181,13 +218,14 @@ export const useStore = create<StoreState>((set, get) => ({
         set({ recentViews: recentData as any[] });
       }
 
-      const { fetchProducts, fetchOrders, fetchReports } = get();
-      await Promise.all([fetchProducts(), fetchOrders(), fetchReports()]);
+      const { fetchProducts, fetchOrders, fetchReports, fetchBanners } = get();
+      await Promise.all([fetchProducts(), fetchOrders(), fetchReports(), fetchBanners()]);
       set({ isInitializing: false });
     } catch (err) {
       console.error('initApp err:', err);
       set({ isInitializing: false });
       get().fetchProducts();
+      get().fetchBanners();
     }
   },
 
@@ -360,10 +398,84 @@ export const useStore = create<StoreState>((set, get) => ({
     try {
       const { signOut } = await import('../lib/supabase');
       await signOut();
-      set({ userId: null, profile: {} as any, orders: [], reports: [], cart: [], favorites: [] });
+      set({ userId: null, profile: DEFAULT_USER_PET_PROFILE, orders: [], reports: [], cart: [], favorites: [] });
     } catch (err) {
       console.error(err);
     }
+  },
+
+  fetchBanners: async () => {
+    let list: any[] = [];
+    try {
+      const dbBanners = await getBanners();
+      list = dbBanners;
+    } catch (err) {
+      console.warn('getBanners error, falling back:', err);
+    }
+    
+    const localBannersStr = localStorage.getItem('vh_local_banners');
+    const localBanners = localBannersStr ? JSON.parse(localBannersStr) : [];
+    
+    const merged = [...list, ...localBanners];
+    if (merged.length === 0) {
+      set({ banners: DEFAULT_BANNERS });
+    } else {
+      // De-duplicate by id
+      const unique = [];
+      const ids = new Set();
+      merged.forEach(b => {
+        if (!ids.has(b.id)) {
+          ids.add(b.id);
+          unique.push(b);
+        }
+      });
+      set({ banners: unique });
+    }
+  },
+
+  saveBanner: async (bannerData) => {
+    const banner = {
+      id: bannerData.id || crypto.randomUUID(),
+      title: bannerData.title || '',
+      subtitle: bannerData.subtitle || '',
+      imageUrl: bannerData.imageUrl || '',
+      linkUrl: bannerData.linkUrl || '',
+      bgColor: bannerData.bgColor || 'linear-gradient(135deg, #FFF3C4 0%, #FFE066 100%)',
+    };
+    
+    try {
+      await dbSaveBanner(banner);
+    } catch (err) {
+      console.warn('Could not save banner to DB, saving locally');
+    }
+    
+    const localBannersStr = localStorage.getItem('vh_local_banners');
+    let localBanners = localBannersStr ? JSON.parse(localBannersStr) : [];
+    if (localBanners.some((b: any) => b.id === banner.id)) {
+      localBanners = localBanners.map((b: any) => b.id === banner.id ? banner : b);
+    } else {
+      localBanners.push(banner);
+    }
+    localStorage.setItem('vh_local_banners', JSON.stringify(localBanners));
+    
+    await get().fetchBanners();
+  },
+
+  deleteBanner: async (bannerId) => {
+    try {
+      await deleteBannerFromDB(bannerId);
+    } catch (err) {
+      console.warn(err);
+    }
+    
+    const localBannersStr = localStorage.getItem('vh_local_banners');
+    if (localBannersStr) {
+      let localBanners = JSON.parse(localBannersStr);
+      localBanners = localBanners.filter((b: any) => b.id !== bannerId);
+      localStorage.setItem('vh_local_banners', JSON.stringify(localBanners));
+    }
+    
+    await get().fetchBanners();
   }
 }));
 

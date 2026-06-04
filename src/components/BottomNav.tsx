@@ -9,6 +9,7 @@ export default function BottomNav() {
 
   const profileTabLabel =
     isLoggedIn &&
+    profile?.name &&
     profile.name.trim() &&
     profile.name !== DEFAULT_USER_PET_PROFILE.name
       ? profile.name.length > 5

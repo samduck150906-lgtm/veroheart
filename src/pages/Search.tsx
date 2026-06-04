@@ -83,7 +83,7 @@ function defaultPetFromProfile(profile: { species?: string } | undefined): '' | 
 
 export default function Search() {
   const { profile, isLoggedIn } = useStore();
-  const hasPetProfile = isLoggedIn && profile && profile.id !== 'local-profile' && profile.name !== '우리 아이';
+  const hasPetProfile = isLoggedIn && profile && profile.id && profile.id !== 'local-profile' && profile.name && profile.name !== '우리 아이';
   const [searchParams, setSearchParams] = useSearchParams();
   const category = resolveCategoryFromSearchParams(searchParams.get('category'));
 

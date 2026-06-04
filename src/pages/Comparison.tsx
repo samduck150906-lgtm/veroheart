@@ -7,7 +7,7 @@ import ProductImage from '../components/ProductImage';
 export default function Comparison() {
   const navigate = useNavigate();
   const { profile, isLoggedIn, products: storeProducts, comparisonList, removeFromComparison } = useStore();
-  const hasPetProfile = isLoggedIn && profile && profile.id !== 'local-profile' && profile.name !== '우리 아이';
+  const hasPetProfile = isLoggedIn && profile && profile.id && profile.id !== 'local-profile' && profile.name && profile.name !== '우리 아이';
   
   const products = comparisonList.map(id => storeProducts.find(p => p.id === id)).filter(Boolean) as typeof storeProducts;
 

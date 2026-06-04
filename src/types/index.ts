@@ -149,3 +149,13 @@ export type AnalysisReportRow = {
     brand_name: string;
   } | null;
 };
+
+export interface Banner {
+  id: string;
+  title: string;
+  subtitle?: string;
+  imageUrl?: string;
+  linkUrl?: string;
+  bgColor?: string;
+}
+
