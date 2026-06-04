@@ -8,15 +8,9 @@ import {
   Sparkles,
   Clock3,
   ChevronRight,
-  X,
-  Flame,
   Stethoscope,
-  Wallet,
-  Search,
   Heart,
   MessageCircle,
-  ScanLine,
-  Bell,
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { HOME_CATEGORY_ITEMS } from '../constants/productCategories';
@@ -119,20 +113,6 @@ export default function Home() {
 
 
   const quickActions = [
-    {
-      title: '탐색',
-      description: '',
-      icon: <Search size={18} color="#7C3AED" />,
-      accent: 'rgba(124, 58, 237, 0.12)',
-      onClick: () => navigate('/search'),
-    },
-    {
-      title: '랭킹',
-      description: '',
-      icon: <Flame size={18} color="#DC2626" />,
-      accent: 'rgba(239, 68, 68, 0.12)',
-      onClick: () => navigate('/ranking'),
-    },
     {
       title: '성향 테스트',
       description: '',
@@ -310,35 +290,6 @@ export default function Home() {
       </header>
 
 
-      <section className="ui-hero-panel" style={{ padding: '16px 18px', marginBottom: '16px' }}>
-        <button
-          type="button"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            width: '100%',
-            background: 'var(--surface-elevated)',
-            border: '1.5px dashed rgba(0,0,0,0.12)',
-            borderRadius: '12px',
-            padding: '14px 16px',
-            cursor: 'pointer',
-          }}
-          onClick={() => navigate('/scanner')}
-        >
-          <ScanLine size={20} color="#9CA3AF" />
-          <span style={{ fontSize: '14px', fontWeight: 700, color: '#6B7280' }}>바코드 스캔 · AI 성분 분석</span>
-        </button>
-      </section>
-
-      {/* Trending Products - SHOW FIRST */}
-      <HorizontalProductSection
-        title="급상승 랭킹"
-        subtitle="리뷰가 빠르게 늘고 있는 제품"
-        icon={<Flame size={18} color="#EF4444" />}
-        products={trendingProducts}
-        onMore={() => navigate('/ranking')}
-      />
 
       {personalRecs.length > 0 && (
         <HorizontalProductSection
@@ -417,15 +368,6 @@ export default function Home() {
         onMore={() => navigate('/search')}
       />
 
-      <HorizontalProductSection
-        title="가성비 추천"
-        subtitle="3만원 이하 평점 우수 제품"
-        icon={<Wallet size={18} color="#059669" />}
-        products={budgetProducts}
-        onMore={() => navigate('/search')}
-      />
-
-      <TargetedAd />
 
       {recentViews.length > 0 && (
         <section style={{ marginBottom: '38px' }}>

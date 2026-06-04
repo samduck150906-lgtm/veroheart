@@ -60,7 +60,7 @@ export default function Profile() {
 
   const handleSignOut = async () => {
     await logout();
-    navigate('/');
+    navigate('/login');
   };
 
   const handleSave = async () => {

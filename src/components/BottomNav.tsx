@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, Scan, MessageSquare, User } from 'lucide-react';
+import { Home, Search, User } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { DEFAULT_USER_PET_PROFILE } from '../types';
 
@@ -19,8 +19,6 @@ export default function BottomNav() {
   const navItems = [
     { path: '/', label: '홈', icon: Home, badge: 0, isFab: false },
     { path: '/search', label: '검색', icon: Search, badge: 0, isFab: false },
-    { path: '/scanner', label: '스캐너', icon: Scan, badge: 0, isFab: true },
-    { path: '/community', label: '커뮤니티', icon: MessageSquare, badge: 0, isFab: false },
     { path: '/profile', label: profileTabLabel, icon: User, badge: 0, isFab: false },
   ];
 
