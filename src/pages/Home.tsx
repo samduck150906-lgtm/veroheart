@@ -17,22 +17,18 @@ import ProductImage from '../components/ProductImage';
 function getBreedAvatar(breed?: string, species?: 'Dog' | 'Cat') {
   const normalized = breed?.trim() || '';
   if (species === 'Cat') {
-    if (normalized.includes('페르시안')) return { emoji: '🐱', label: '페르시안', bg: 'linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%)' };
-    if (normalized.includes('스코티시')) return { emoji: '😸', label: '스코티시폴드', bg: 'linear-gradient(135deg, #FFE4E6 0%, #FECDD3 100%)' };
-    if (normalized.includes('러시안')) return { emoji: '🐈', label: '러시안블루', bg: 'linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%)' };
-    if (normalized.includes('아비시니안')) return { emoji: '🐅', label: '아비시니안', bg: 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)' };
-    if (normalized.includes('메인쿤')) return { emoji: '🦁', label: '메인쿤', bg: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)' };
-    return { emoji: '🐱', label: breed || '믹스묘', bg: 'linear-gradient(135deg, #F1F3F5 0%, #CFD8DC 100%)' };
+    return { emoji: '🐈', label: '고양이', bg: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)' };
   } else {
-    if (normalized.includes('말티즈')) return { emoji: '🐩', label: '말티즈', bg: 'linear-gradient(135deg, #FFF5F5 0%, #FFE3E3 100%)' };
-    if (normalized.includes('포메라니안')) return { emoji: '🦊', label: '포메라니안', bg: 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)' };
-    if (normalized.includes('비숑')) return { emoji: '🐩', label: '비숑', bg: 'linear-gradient(135deg, #FFF0F6 0%, #FFD8E6 100%)' };
-    if (normalized.includes('푸들')) return { emoji: '🐩', label: '푸들', bg: 'linear-gradient(135deg, #FAF0E6 0%, #EEDC82 100%)' };
-    if (normalized.includes('시츄')) return { emoji: '🐶', label: '시츄', bg: 'linear-gradient(135deg, #FFF9DB 0%, #FFF3B0 100%)' };
-    if (normalized.includes('골든')) return { emoji: '🐕', label: '골든리트리버', bg: 'linear-gradient(135deg, #FEF9C3 0%, #FEF08A 100%)' };
-    if (normalized.includes('래브라도')) return { emoji: '🐕', label: '래브라도', bg: 'linear-gradient(135deg, #F0FDFA 0%, #CCFBF1 100%)' };
-    if (normalized.includes('진도')) return { emoji: '🐕', label: '진도견', bg: 'linear-gradient(135deg, #FFFBEB 0%, #FDE68A 100%)' };
-    return { emoji: '🐶', label: breed || '믹스견', bg: 'linear-gradient(135deg, #FFF5F5 0%, #FFE3E3 100%)' };
+    if (normalized.includes('소형견')) {
+      return { emoji: '🐩', label: '소형견', bg: 'linear-gradient(135deg, #FFF5F5 0%, #FFE3E3 100%)' };
+    }
+    if (normalized.includes('중형견')) {
+      return { emoji: '🐕', label: '중형견', bg: 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)' };
+    }
+    if (normalized.includes('대형견')) {
+      return { emoji: '🦮', label: '대형견', bg: 'linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%)' };
+    }
+    return { emoji: '🐶', label: breed || '강아지', bg: 'linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%)' };
   }
 }
 
@@ -311,468 +307,251 @@ export default function Home() {
         </div>
       )}
 
-      {/* Pet Profile & Details Card (Handheld Retro Game Console Style) */}
+      {/* Pet Profile & Details Card (Clean Premium Card Style) */}
       {hasPetProfile ? (
         <div style={{ padding: '0 20px' }}>
-          {/* Game Boy/Tamagotchi Outer Shell */}
           <div style={{
-            padding: '8px 8px 12px',
-            borderRadius: '28px',
-            background: 'linear-gradient(180deg, #D1D5DB 0%, #9CA3AF 100%)', // Atomic console gray
-            border: '4px solid #1E293B',
-            boxShadow: '6px 6px 0px #1E293B',
+            padding: '20px',
+            borderRadius: '24px',
+            background: '#FFFFFF',
+            border: '1px solid var(--hairline)',
+            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.04)',
             display: 'flex',
             flexDirection: 'column',
-            gap: '8px',
-            boxSizing: 'border-box',
-            position: 'relative'
+            gap: '14px',
+            boxSizing: 'border-box'
           }}>
-            {/* Top Game Console Details (Screen Bezel Logo / Buttons) */}
+            {/* Header */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '2px 12px 0px',
+              borderBottom: '1px solid var(--hairline)',
+              paddingBottom: '10px'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '14px' }}>📊</span>
                 <span style={{
-                  width: '6px',
-                  height: '6px',
-                  borderRadius: '50%',
-                  backgroundColor: '#22C55E',
-                  boxShadow: '0 0 4px #22C55E'
-                }} />
-                <span style={{
-                  fontFamily: 'monospace',
-                  fontSize: '9px',
-                  fontWeight: 900,
-                  color: '#4B5563',
-                  letterSpacing: '0.1em'
+                  fontSize: '13.5px',
+                  fontWeight: 800,
+                  color: 'var(--ink)',
+                  letterSpacing: '-0.02em'
                 }}>
-                  VERO GAME SYSTEM
+                  PET STATUS WINDOW
                 </span>
               </div>
-              <span style={{
-                fontFamily: 'monospace',
-                fontSize: '9px',
-                fontWeight: 900,
-                color: '#4B5563'
-              }}>
-                DOT MATRIX LCD
-              </span>
+              <button 
+                onClick={() => navigate('/profile')}
+                style={{
+                  padding: '4px 10px',
+                  borderRadius: '8px',
+                  background: 'var(--brand-tint)',
+                  color: 'var(--brand-deep)',
+                  border: 'none',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                편집 ✏️
+              </button>
             </div>
 
-            {/* Inner Game Screen */}
-            <div style={{
-              padding: '20px 16px',
-              borderRadius: '20px',
-              background: '#FAF8F5', // retro paper/cream screen
-              border: '3px solid #1E293B',
-              boxShadow: 'inset 2px 2px 5px rgba(0,0,0,0.15)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '16px',
-              boxSizing: 'border-box'
-            }}>
-              {/* Header inside screen */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                borderBottom: '3px double #1E293B',
-                paddingBottom: '8px'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '16px', animation: 'game-pulse 1s infinite alternate' }}>👾</span>
-                  <span style={{
-                    fontFamily: 'monospace',
-                    fontSize: '13px',
-                    fontWeight: 900,
-                    color: '#1E293B',
-                    letterSpacing: '0.05em'
-                  }}>
-                    PET STATUS WINDOW
+            {/* Main Stats Row */}
+            <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+              {/* Avatar + LV. */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                <div style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '50%',
+                  background: getBreedAvatar(profile.breed, profile.species).bg,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '30px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                }}>
+                  <span style={{ display: 'inline-block' }}>
+                    {getBreedAvatar(profile.breed, profile.species).emoji}
                   </span>
                 </div>
-                <button 
-                  onClick={() => navigate('/profile')}
-                  style={{
-                    padding: '4px 10px',
-                    borderRadius: '8px',
-                    background: '#FCD34D',
-                    color: '#1E293B',
-                    border: '2px solid #1E293B',
-                    boxShadow: '2px 2px 0px #1E293B',
-                    fontSize: '11px',
-                    fontWeight: 900,
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                    transition: 'all 0.1s ease'
-                  }}
-                  onMouseDown={(e) => {
-                    e.currentTarget.style.transform = 'translate(1px, 1px)';
-                    e.currentTarget.style.boxShadow = '1px 1px 0px #1E293B';
-                  }}
-                  onMouseUp={(e) => {
-                    e.currentTarget.style.transform = 'none';
-                    e.currentTarget.style.boxShadow = '2px 2px 0px #1E293B';
-                  }}
-                >
-                  EDIT ✏️
-                </button>
-              </div>
-
-              {/* Main Stats Row */}
-              <div style={{ display: 'grid', gridTemplateColumns: '84px 1fr', gap: '16px', alignItems: 'start' }}>
-                {/* Left Column: Avatar + LV. */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                  {/* Retro Avatar Frame */}
-                  <div style={{
-                    width: '80px',
-                    height: '80px',
-                    borderRadius: '16px',
-                    background: getBreedAvatar(profile.breed, profile.species).bg,
-                    border: '3px solid #1E293B',
-                    boxShadow: '3px 3px 0px rgba(0,0,0,0.1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '40px',
-                    flexShrink: 0
-                  }}>
-                    <span style={{ display: 'inline-block', animation: 'game-bounce 1s infinite alternate' }}>
-                      {getBreedAvatar(profile.breed, profile.species).emoji}
-                    </span>
-                  </div>
-                  
-                  {/* LV Label */}
-                  <div style={{
-                    fontFamily: 'monospace',
-                    fontSize: '12px',
-                    fontWeight: 900,
-                    color: '#1E293B',
-                    background: '#FEF3C7',
-                    border: '2px solid #1E293B',
-                    padding: '3px 10px',
-                    borderRadius: '8px',
-                    textAlign: 'center',
-                    boxShadow: '1.5px 1.5px 0px #1E293B',
-                    whiteSpace: 'nowrap'
-                  }}>
-                    LV. {level}
-                  </div>
-                </div>
-
-                {/* Right Column: Key RPG Stats */}
+                
+                {/* LV Label */}
                 <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '4px'
+                  fontSize: '10px',
+                  fontWeight: 800,
+                  color: 'var(--brand-deep)',
+                  background: 'var(--brand-tint)',
+                  padding: '2px 6px',
+                  borderRadius: '6px',
+                  textAlign: 'center',
+                  whiteSpace: 'nowrap'
                 }}>
-                  {/* Pet Name & Gender Tag */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
-                    <span style={{ fontSize: '19px', fontWeight: 900, color: '#1E293B' }}>{profile.name}</span>
-                    <span style={{
-                      fontSize: '11px',
-                      fontWeight: 800,
-                      color: profile.gender === '여아' ? '#E11D48' : '#2563EB',
-                      background: profile.gender === '여아' ? '#FFE4E6' : '#DBEAFE',
-                      border: `1.5px solid ${profile.gender === '여아' ? '#FDA4AF' : '#93C5FD'}`,
-                      padding: '1.5px 6px',
-                      borderRadius: '6px'
-                    }}>
-                      {profile.gender === '여아' ? ' 여아 ♀' : ' 남아 ♂'}
-                    </span>
-                  </div>
-                  
-                  <div style={{ height: '2px', borderBottom: '1.5px dashed #1E293B', margin: '2px 0 4px' }} />
-                  
-                  {/* RPG Stat lines */}
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '4px',
-                    fontFamily: 'monospace',
-                    fontSize: '12.5px',
+                  LV. {level}
+                </div>
+              </div>
+
+              {/* RPG Stats */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: 0 }}>
+                {/* Pet Name & Gender Tag */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ink)' }}>{profile.name}</span>
+                  <span style={{
+                    fontSize: '10px',
                     fontWeight: 700,
-                    color: '#334155'
+                    color: profile.gender === '여아' ? '#E11D48' : '#2563EB',
+                    background: profile.gender === '여아' ? '#FFE4E6' : '#DBEAFE',
+                    padding: '1.5px 6px',
+                    borderRadius: '6px'
                   }}>
-                    <div style={{ display: 'flex' }}>
-                      <span style={{ width: '64px', color: '#64748B', fontWeight: 900 }}>CLASS :</span>
-                      <span style={{ color: '#1E293B', fontWeight: 900 }}>
-                        {profile.species === 'Cat' ? '🐱 고양이' : '🐶 강아지'} ({getBreedAvatar(profile.breed, profile.species).label})
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex' }}>
-                      <span style={{ width: '64px', color: '#64748B', fontWeight: 900 }}>AGE   :</span>
-                      <span style={{ color: '#1E293B', fontWeight: 900 }}>
-                        {profile.age}세 ({profile.age < 2 ? '성장기 🍼' : profile.age > 7 ? '시니어 👑' : '청년기 ⚡'})
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex' }}>
-                      <span style={{ width: '64px', color: '#64748B', fontWeight: 900 }}>TRAIT :</span>
-                      <span style={{ color: '#1E293B', fontWeight: 900 }}>{profile.personality || '기본 성향 🧸'}</span>
-                    </div>
-                    <div style={{ display: 'flex' }}>
-                      <span style={{ width: '64px', color: '#64748B', fontWeight: 900 }}>WEIGHT:</span>
-                      <span style={{ color: '#1E293B', fontWeight: 900 }}>{profile.weightKg ? `${profile.weightKg} kg` : '미측정 ⚖️'}</span>
-                    </div>
-                  </div>
+                    {profile.gender === '여아' ? '♀ 여아' : '♂ 남아'}
+                  </span>
+                </div>
+                
+                {/* Info Text */}
+                <div style={{
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: 'var(--ink-soft)',
+                  lineHeight: '1.4',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}>
+                  {profile.species === 'Cat' ? '🐱 고양이' : `🐩 강아지 (${getBreedAvatar(profile.breed, profile.species).label})`} · {profile.age}세 · {profile.weightKg ? `${profile.weightKg}kg` : '체중 미입력'}
+                </div>
+                <div style={{
+                  fontSize: '11px',
+                  fontWeight: 500,
+                  color: 'var(--ink-faint)',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}>
+                  성향: {profile.personality || '기본 성향 🧸'}
+                </div>
+              </div>
+            </div>
+
+            {/* Thin Progress Bars (EXP & HP) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid var(--hairline)', paddingTop: '10px' }}>
+              {/* EXP Bar */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px', fontSize: '11px', fontWeight: 700, color: 'var(--ink-soft)' }}>
+                  <span>⭐ EXP</span>
+                  <span>{currentExp}/100 XP</span>
+                </div>
+                <div style={{
+                  height: '6px',
+                  background: '#F1F5F9',
+                  borderRadius: '99px',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    width: `${currentExp}%`,
+                    height: '100%',
+                    background: '#10B981',
+                    borderRadius: '99px',
+                    transition: 'width 0.4s ease-out'
+                  }} />
                 </div>
               </div>
 
-              {/* Progress Bars (EXP & HP) */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '4px' }}>
-                {/* EXP Bar */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', fontFamily: 'monospace' }}>
-                    <span style={{ fontSize: '11.5px', fontWeight: 900, color: '#1E293B' }}>⭐ EXP (경험치 게이지)</span>
-                    <span style={{ fontSize: '11.5px', fontWeight: 900, color: '#475569' }}>{currentExp} / 100 XP</span>
-                  </div>
-                  <div style={{
-                    height: '18px',
-                    background: '#E2E8F0',
-                    border: '3px solid #1E293B',
-                    borderRadius: '8px',
-                    overflow: 'hidden',
-                    position: 'relative',
-                    boxShadow: '1px 1px 0px rgba(0,0,0,0.05)'
-                  }}>
-                    <div style={{
-                      width: `${currentExp}%`,
-                      height: '100%',
-                      background: 'repeating-linear-gradient(45deg, #10B981, #10B981 8px, #059669 8px, #059669 16px)',
-                      transition: 'width 0.4s ease-out',
-                      boxShadow: 'inset 0 -3px 0 rgba(0,0,0,0.15)'
-                    }} />
-                  </div>
+              {/* HP Bar */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px', fontSize: '11px', fontWeight: 700, color: 'var(--ink-soft)' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    ❤️ HP <span style={{ fontSize: '10px' }}>{getHearts(hp)}</span>
+                  </span>
+                  <span>{hp}/100 HP</span>
                 </div>
-
-                {/* HP Bar */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', fontFamily: 'monospace' }}>
-                    <span style={{ fontSize: '11.5px', fontWeight: 900, color: '#E11D48', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      ❤️ HP (건강도) 
-                      <span style={{ color: '#EF4444', letterSpacing: '1px', fontWeight: 'normal' }}>
-                        {getHearts(hp)}
-                      </span>
-                    </span>
-                    <span style={{ fontSize: '11.5px', fontWeight: 900, color: '#E11D48' }}>{hp} / 100 HP</span>
-                  </div>
+                <div style={{
+                  height: '6px',
+                  background: '#F1F5F9',
+                  borderRadius: '99px',
+                  overflow: 'hidden'
+                }}>
                   <div style={{
-                    height: '18px',
-                    background: '#E2E8F0',
-                    border: '3px solid #1E293B',
-                    borderRadius: '8px',
-                    overflow: 'hidden',
-                    boxShadow: '1px 1px 0px rgba(0,0,0,0.05)'
-                  }}>
-                    <div style={{
-                      width: `${hp}%`,
-                      height: '100%',
-                      background: 'repeating-linear-gradient(45deg, #EF4444, #EF4444 8px, #DC2626 8px, #DC2626 16px)',
-                      transition: 'width 0.4s ease-out',
-                      boxShadow: 'inset 0 -3px 0 rgba(0,0,0,0.15)'
-                    }} />
-                  </div>
-                  <div style={{ fontSize: '10.5px', color: '#64748B', fontWeight: 800, marginTop: '5px', textAlign: 'right', fontFamily: 'monospace' }}>
-                    {hp >= 80 ? 'STATUS: 최고 상태! 컨디션 짱짱 🌟' : hp >= 50 ? 'STATUS: 주의 요망! 맞춤 케어가 필요해요 💤' : 'STATUS: 위험! 전용 처방 식단 필요 ⚠️'}
-                  </div>
+                    width: `${hp}%`,
+                    height: '100%',
+                    background: '#EF4444',
+                    borderRadius: '99px',
+                    transition: 'width 0.4s ease-out'
+                  }} />
                 </div>
               </div>
+            </div>
 
-              {/* Debuffs Section (Allergies with Emojis & Frowning) */}
-              <div style={{ borderTop: '2px dashed #1E293B', paddingTop: '12px' }}>
-                <span style={{ display: 'block', fontSize: '12px', fontWeight: 900, color: '#E11D48', marginBottom: '8px', fontFamily: 'monospace' }}>
-                  ⚠️ 활성화된 디버프 (알레르기 성분)
-                </span>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {profile.allergies && profile.allergies.length > 0 ? (
-                    profile.allergies.map(allergy => {
+            {/* Allergies (Debuffs) & Concerns (Buffs) Section */}
+            {((profile.allergies && profile.allergies.length > 0) || (profile.healthConcerns && profile.healthConcerns.length > 0)) && (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                borderTop: '1px solid var(--hairline)',
+                paddingTop: '10px'
+              }}>
+                {/* Allergies (Debuffs) */}
+                {profile.allergies && profile.allergies.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#E11D48', marginRight: '4px' }}>디버프 🚫</span>
+                    {profile.allergies.map(allergy => {
                       const dbf = getAllergyDebuff(allergy);
-                      const petEmoji = getBreedAvatar(profile.breed, profile.species).emoji;
                       return (
-                        <div 
-                          key={allergy} 
+                        <span 
+                          key={allergy}
                           style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '8px',
-                            padding: '12px 14px',
-                            borderRadius: '16px',
-                            background: dbf.bgColor,
-                            border: `3px solid ${dbf.borderColor}`,
-                            boxShadow: `3px 3px 0px ${dbf.borderColor}`,
-                            boxSizing: 'border-box'
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            color: '#E11D48',
+                            background: '#FFF5F5',
+                            border: '1px solid #FEE2E2',
+                            padding: '3px 8px',
+                            borderRadius: '8px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '3px'
                           }}
                         >
-                          <div style={{ fontSize: '13px', fontWeight: 900, color: dbf.color, fontFamily: 'monospace' }}>
-                            🚫 {dbf.title}
-                          </div>
-
-                          {/* Retro style Frowning visual */}
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            backgroundColor: 'rgba(255, 255, 255, 0.85)',
-                            border: '2px solid #1E293B',
-                            borderRadius: '12px',
-                            padding: '10px 14px',
-                            boxSizing: 'border-box'
-                          }}>
-                            {/* Pet sprite */}
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '56px' }}>
-                              <span style={{ fontSize: '28px', display: 'inline-block', animation: 'game-bounce 1s infinite alternate' }}>
-                                {petEmoji}
-                              </span>
-                              <span style={{ fontSize: '10px', fontWeight: 800, color: '#475569', textAlign: 'center', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', width: '100%' }}>
-                                {profile.name}
-                              </span>
-                            </div>
-
-                            {/* Arrow with Frowning text and icon */}
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, margin: '0 8px' }}>
-                              <span style={{ fontSize: '11px', fontWeight: 900, color: '#E11D48', animation: 'game-pulse 0.8s infinite alternate', marginBottom: '2px' }}>
-                                찡그림! 😣 💦
-                              </span>
-                              <div style={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'center', position: 'relative' }}>
-                                {/* Dotted link line */}
-                                <div style={{
-                                  width: '100%',
-                                  height: '2px',
-                                  borderTop: '2px dashed #E11D48',
-                                  position: 'relative'
-                                }}>
-                                  {/* Arrow head */}
-                                  <div style={{
-                                    position: 'absolute',
-                                    right: '-2px',
-                                    top: '-4px',
-                                    width: '0',
-                                    height: '0',
-                                    borderTop: '5px solid transparent',
-                                    borderBottom: '5px solid transparent',
-                                    borderLeft: '7px solid #E11D48'
-                                  }} />
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Target allergy emoji */}
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '56px' }}>
-                              <span style={{ fontSize: '28px', display: 'inline-block', animation: 'game-shake 1.5s infinite' }}>
-                                {dbf.targetEmoji}
-                              </span>
-                              <span style={{ fontSize: '10px', fontWeight: 800, color: '#E11D48', whiteSpace: 'nowrap' }}>
-                                {allergy}
-                              </span>
-                            </div>
-                          </div>
-
-                          <div style={{ fontSize: '11px', color: '#475569', fontWeight: 700, lineHeight: 1.45 }}>
-                            {profile.name}(은)는 {allergy} 성분이 들어간 사료나 간식을 먹으면 안 돼요! ({allergy} 보며 찡그림 발동)
-                          </div>
-                        </div>
+                          {dbf.targetEmoji} {allergy} (찡그림 😣)
+                        </span>
                       );
-                    })
-                  ) : (
-                    <div style={{
-                      padding: '12px 14px',
-                      borderRadius: '12px',
-                      background: '#F0FDF4',
-                      border: '2px solid #BBF7D0',
-                      color: '#15803D',
-                      fontSize: '12.5px',
-                      fontWeight: 900,
-                      textAlign: 'center',
-                      fontFamily: 'monospace'
-                    }}>
-                      ✨ 디버프 없음 (알레르기로부터 안전함)
-                    </div>
-                  )}
-                </div>
-              </div>
+                    })}
+                  </div>
+                )}
 
-              {/* Synergy Buffs Section (Health Concerns as Buffs) */}
-              <div style={{ borderTop: '2px dashed #1E293B', paddingTop: '12px' }}>
-                <span style={{ display: 'block', fontSize: '12px', fontWeight: 900, color: '#0F766E', marginBottom: '8px', fontFamily: 'monospace' }}>
-                  🛡️ 활성화된 패시브 버프 (건강 관리)
-                </span>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {profile.healthConcerns && profile.healthConcerns.length > 0 ? (
-                    profile.healthConcerns.map(concern => {
+                {/* Concerns (Buffs) */}
+                {profile.healthConcerns && profile.healthConcerns.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#0F766E', marginRight: '4px' }}>버프 🛡️</span>
+                    {profile.healthConcerns.map(concern => {
                       const buf = getConcernBuff(concern);
                       return (
-                        <div 
-                          key={concern} 
+                        <span 
+                          key={concern}
                           style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '10px',
-                            padding: '11px 14px',
-                            borderRadius: '14px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            color: '#0F766E',
                             background: '#ECFDF5',
-                            border: '2px solid #A7F3D0',
-                            boxShadow: '2px 2px 0px #A7F3D0',
-                            boxSizing: 'border-box'
+                            border: '1px solid #D1FAE5',
+                            padding: '3px 8px',
+                            borderRadius: '8px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '3px'
                           }}
                         >
-                          <span style={{ fontSize: '18px', display: 'flex', alignItems: 'center' }}>{buf.emoji}</span>
-                          <div>
-                            <div style={{ fontSize: '12.5px', fontWeight: 900, color: '#0F766E' }}>{buf.title}</div>
-                            <div style={{ fontSize: '11px', color: '#374151', fontWeight: 600, marginTop: '2px' }}>{buf.desc}</div>
-                          </div>
-                        </div>
+                          {buf.emoji} {concern}
+                        </span>
                       );
-                    })
-                  ) : (
-                    <div style={{
-                      padding: '12px 14px',
-                      borderRadius: '12px',
-                      background: '#F8FAFC',
-                      border: '2px dashed #E2E8F0',
-                      color: '#475569',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      textAlign: 'center',
-                      fontStyle: 'italic'
-                    }}>
-                      활성화된 케어 버프가 없습니다. 건강 고민을 등록해 보세요!
-                    </div>
-                  )}
-                </div>
+                    })}
+                  </div>
+                )}
               </div>
-
-            </div>
-
-            {/* Bottom Game Console Details (Tamagotchi Buttons / Power LED indicator / Speaker Grill) */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '6px 12px 2px',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  backgroundColor: '#EF4444',
-                  boxShadow: '0 0 6px #EF4444',
-                  animation: 'game-pulse 1.5s infinite alternate'
-                }} />
-                <span style={{ fontSize: '9px', fontWeight: 900, color: '#4B5563', fontFamily: 'monospace' }}>POWER</span>
-              </div>
-              
-              {/* Speaker Grill lines */}
-              <div style={{ display: 'flex', gap: '3.5px' }}>
-                <div style={{ width: '4px', height: '15px', background: '#9CA3AF', transform: 'skewX(-25deg)', borderRadius: '2px', border: '1px solid #4B5563' }} />
-                <div style={{ width: '4px', height: '15px', background: '#9CA3AF', transform: 'skewX(-25deg)', borderRadius: '2px', border: '1px solid #4B5563' }} />
-                <div style={{ width: '4px', height: '15px', background: '#9CA3AF', transform: 'skewX(-25deg)', borderRadius: '2px', border: '1px solid #4B5563' }} />
-              </div>
-            </div>
-
+            )}
           </div>
         </div>
       ) : (

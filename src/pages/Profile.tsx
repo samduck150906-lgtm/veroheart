@@ -12,15 +12,15 @@ import { notify } from '../store/useNotification';
 const PROFILE_STEP_META = [
   { title: '이름', prompt: '반려동물의 이름을 알려주세요.' },
   { title: '종류', prompt: '반려동물의 종류를 알려주세요.' },
-  { title: '품종', prompt: '반려동물의 품종을 알려주세요.' },
+  { title: '크기 구분', prompt: '강아지의 크기 구분을 선택해 주세요.' },
   { title: '나이', prompt: '반려동물의 나이를 알려주세요.' },
   { title: '체중', prompt: '반려동물의 체중을 알려주세요.' },
   { title: '알레르기', prompt: '피해야 할 알레르기 성분이 있나요?' },
   { title: '건강 고민', prompt: '어떤 건강 고민이 있나요?' }
 ];
 
-const BREED_LIST_DOG = ['믹스견', '말티즈', '포메라니안', '비숑', '푸들', '시츄', '골든리트리버', '래브라도', '리트리버', '진도', '기타'];
-const BREED_LIST_CAT = ['믹스묘', '페르시안', '스코티시폴드', '러시안블루', '아비시니안', '메인쿤', '기타'];
+const BREED_LIST_DOG = ['소형견', '중형견', '대형견'];
+const BREED_LIST_CAT = [];
 
 const concernOptions = [
   '비만', '관절 질환', '신장 질환', '당뇨', '심장 질환',
@@ -30,22 +30,18 @@ const concernOptions = [
 function getBreedAvatar(breed?: string, species?: 'Dog' | 'Cat') {
   const normalized = breed?.trim() || '';
   if (species === 'Cat') {
-    if (normalized.includes('페르시안')) return { emoji: '🐱', label: '페르시안', bg: 'linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%)' };
-    if (normalized.includes('스코티시')) return { emoji: '😸', label: '스코티시폴드', bg: 'linear-gradient(135deg, #FFE4E6 0%, #FECDD3 100%)' };
-    if (normalized.includes('러시안')) return { emoji: '🐈', label: '러시안블루', bg: 'linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%)' };
-    if (normalized.includes('아비시니안')) return { emoji: '🐅', label: '아비시니안', bg: 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)' };
-    if (normalized.includes('메인쿤')) return { emoji: '🦁', label: '메인쿤', bg: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)' };
-    return { emoji: '🐱', label: breed || '믹스묘', bg: 'linear-gradient(135deg, #F1F3F5 0%, #CFD8DC 100%)' };
+    return { emoji: '🐈', label: '고양이', bg: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)' };
   } else {
-    if (normalized.includes('말티즈')) return { emoji: '🐩', label: '말티즈', bg: 'linear-gradient(135deg, #FFF5F5 0%, #FFE3E3 100%)' };
-    if (normalized.includes('포메라니안')) return { emoji: '🦊', label: '포메라니안', bg: 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)' };
-    if (normalized.includes('비숑')) return { emoji: '🐩', label: '비숑', bg: 'linear-gradient(135deg, #FFF0F6 0%, #FFD8E6 100%)' };
-    if (normalized.includes('푸들')) return { emoji: '🐩', label: '푸들', bg: 'linear-gradient(135deg, #FAF0E6 0%, #EEDC82 100%)' };
-    if (normalized.includes('시츄')) return { emoji: '🐶', label: '시츄', bg: 'linear-gradient(135deg, #FFF9DB 0%, #FFF3B0 100%)' };
-    if (normalized.includes('골든')) return { emoji: '🐕', label: '골든리트리버', bg: 'linear-gradient(135deg, #FEF9C3 0%, #FEF08A 100%)' };
-    if (normalized.includes('래브라도')) return { emoji: '🐕', label: '래브라도', bg: 'linear-gradient(135deg, #F0FDFA 0%, #CCFBF1 100%)' };
-    if (normalized.includes('진도')) return { emoji: '🐕', label: '진도견', bg: 'linear-gradient(135deg, #FFFBEB 0%, #FDE68A 100%)' };
-    return { emoji: '🐶', label: breed || '믹스견', bg: 'linear-gradient(135deg, #FFF5F5 0%, #FFE3E3 100%)' };
+    if (normalized.includes('소형견')) {
+      return { emoji: '🐩', label: '소형견', bg: 'linear-gradient(135deg, #FFF5F5 0%, #FFE3E3 100%)' };
+    }
+    if (normalized.includes('중형견')) {
+      return { emoji: '🐕', label: '중형견', bg: 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)' };
+    }
+    if (normalized.includes('대형견')) {
+      return { emoji: '🦮', label: '대형견', bg: 'linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%)' };
+    }
+    return { emoji: '🐶', label: breed || '강아지', bg: 'linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%)' };
   }
 }
 
@@ -109,6 +105,11 @@ export default function Profile() {
   };
 
   const handleNext = () => {
+    if (profileStep === 1 && formData.species === 'Cat') {
+      setFormData(prev => ({ ...prev, breed: '고양이' }));
+      setProfileStep(3); // skip step 2 (breed selection)
+      return;
+    }
     if (profileStep < PROFILE_STEP_META.length - 1) {
       setProfileStep(prev => prev + 1);
     } else {
@@ -117,6 +118,10 @@ export default function Profile() {
   };
 
   const handlePrev = () => {
+    if (profileStep === 3 && formData.species === 'Cat') {
+      setProfileStep(1); // skip back to step 1
+      return;
+    }
     if (profileStep > 0) {
       setProfileStep(prev => prev - 1);
     }
@@ -131,7 +136,15 @@ export default function Profile() {
     }
   };
 
-  const stepCount = PROFILE_STEP_META.length;
+  const isCat = formData.species === 'Cat';
+  const stepCount = isCat ? PROFILE_STEP_META.length - 1 : PROFILE_STEP_META.length;
+  
+  let stepIndexLabel = profileStep + 1;
+  if (isCat && profileStep >= 3) {
+    stepIndexLabel = profileStep;
+  }
+  
+  const progressPercent = (stepIndexLabel / stepCount) * 100;
   const step = PROFILE_STEP_META[profileStep];
   const favoriteProducts = products.filter(p => favorites.includes(p.id));
 
@@ -147,9 +160,10 @@ export default function Profile() {
         borderRadius: 12,
         fontSize: 14,
         fontWeight: on ? 700 : 500,
-        color: on ? 'var(--ink-on-brand)' : 'var(--ink-soft)',
-        background: on ? 'var(--ink)' : 'var(--surface)',
-        border: `1px solid ${on ? 'var(--ink)' : 'var(--hairline)'}`,
+        color: on ? '#1E293B' : 'var(--ink-soft)',
+        background: on ? '#FCD34D' : 'var(--surface)',
+        border: `1px solid ${on ? '#CA8A04' : 'var(--hairline)'}`,
+        boxShadow: on ? '0 2px 6px rgba(245, 197, 24, 0.2)' : 'none',
         transition: 'all .15s ease',
       }}
     >
@@ -198,7 +212,7 @@ export default function Profile() {
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 19, fontWeight: 700, color: 'var(--ink)' }}>{profile.name || '우리 아이'}</div>
           <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 2 }}>
-            {profile.breed || '믹스견'} · {profile.species === 'Cat' ? '고양이' : '강아지'} · {profile.age || 0}세 · {profile.weightKg || 0}kg
+            {profile.species === 'Cat' ? '고양이' : profile.breed || '소형견'} · {profile.age || 0}세 · {profile.weightKg || 0}kg
           </div>
         </div>
       </div>
@@ -315,22 +329,24 @@ export default function Profile() {
                   </div>
 
                   {/* Breed */}
-                  <div>
-                    <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>품종</label>
-                    <select
-                      value={editForm.breed || ''}
-                      onChange={(e) => setEditForm({ ...editForm, breed: e.target.value })}
-                      style={{
-                        width: '100%', boxSizing: 'border-box', padding: '12px 14px', borderRadius: 12, fontSize: 15,
-                        border: '1px solid var(--hairline)', outline: 'none', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'inherit'
-                      }}
-                    >
-                      <option value="">품종 선택</option>
-                      {(editForm.species === 'Cat' ? BREED_LIST_CAT : BREED_LIST_DOG).map(b => (
-                        <option key={b} value={b}>{b}</option>
-                      ))}
-                    </select>
-                  </div>
+                  {editForm.species === 'Dog' && (
+                    <div>
+                      <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>크기 구분</label>
+                      <select
+                        value={editForm.breed || ''}
+                        onChange={(e) => setEditForm({ ...editForm, breed: e.target.value })}
+                        style={{
+                          width: '100%', boxSizing: 'border-box', padding: '12px 14px', borderRadius: 12, fontSize: 15,
+                          border: '1px solid var(--hairline)', outline: 'none', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'inherit'
+                        }}
+                      >
+                        <option value="">크기 구분 선택</option>
+                        {BREED_LIST_DOG.map(b => (
+                          <option key={b} value={b}>{b}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
                   {/* Age */}
                   <div>
@@ -481,7 +497,7 @@ export default function Profile() {
                         {profile.name}
                       </h3>
                       <p style={{ margin: '4px 0 0', fontSize: '13.5px', color: 'var(--ink-soft)', fontWeight: 500 }}>
-                        {getBreedAvatar(profile.breed, profile.species).label} · {profile.species === 'Cat' ? '고양이' : '강아지'}
+                        {profile.species === 'Cat' ? '고양이' : `${getBreedAvatar(profile.breed, profile.species).label} · 강아지`}
                       </p>
                     </div>
 
@@ -564,11 +580,11 @@ export default function Profile() {
               <div>
                 {/* progress */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                  <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--brand-deep)' }}>STEP {profileStep + 1} / {stepCount}</span>
+                  <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--brand-deep)' }}>STEP {stepIndexLabel} / {stepCount}</span>
                   <span style={{ fontSize: 12.5, color: 'var(--ink-soft)' }}>{step.title}</span>
                 </div>
                 <div style={{ height: 6, borderRadius: 99, background: 'var(--hairline)', overflow: 'hidden', marginBottom: 22 }}>
-                  <div style={{ width: `${((profileStep + 1) / stepCount) * 100}%`, height: '100%', background: 'var(--brand)', transition: 'width .25s ease' }} />
+                  <div style={{ width: `${progressPercent}%`, height: '100%', background: 'var(--brand)', transition: 'width .25s ease' }} />
                 </div>
 
                 <div style={{ minHeight: 168 }}>
@@ -625,8 +641,8 @@ export default function Profile() {
                             border: '1px solid var(--hairline)', outline: 'none', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'inherit',
                           }}
                         >
-                          <option value="">품종을 선택해주세요</option>
-                          {(formData.species === 'Cat' ? BREED_LIST_CAT : BREED_LIST_DOG).map((b) => (
+                          <option value="">크기 구분을 선택해 주세요</option>
+                          {BREED_LIST_DOG.map((b) => (
                             <option key={b} value={b}>{b}</option>
                           ))}
                         </select>
