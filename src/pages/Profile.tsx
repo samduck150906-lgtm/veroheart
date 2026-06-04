@@ -12,16 +12,42 @@ import { notify } from '../store/useNotification';
 const PROFILE_STEP_META = [
   { title: '이름', prompt: '반려동물의 이름을 알려주세요.' },
   { title: '종류', prompt: '반려동물의 종류를 알려주세요.' },
+  { title: '품종', prompt: '반려동물의 품종을 알려주세요.' },
   { title: '나이', prompt: '반려동물의 나이를 알려주세요.' },
   { title: '체중', prompt: '반려동물의 체중을 알려주세요.' },
   { title: '알레르기', prompt: '피해야 할 알레르기 성분이 있나요?' },
   { title: '건강 고민', prompt: '어떤 건강 고민이 있나요?' }
 ];
 
+const BREED_LIST_DOG = ['믹스견', '말티즈', '포메라니안', '비숑', '푸들', '시츄', '골든리트리버', '래브라도', '리트리버', '진도', '기타'];
+const BREED_LIST_CAT = ['믹스묘', '페르시안', '스코티시폴드', '러시안블루', '아비시니안', '메인쿤', '기타'];
+
 const concernOptions = [
   '비만', '관절 질환', '신장 질환', '당뇨', '심장 질환',
   '피부 민감', '소화 예민', '구강 질환', '암/종양', '눈/귀 질환'
 ];
+
+function getBreedAvatar(breed?: string, species?: 'Dog' | 'Cat') {
+  const normalized = breed?.trim() || '';
+  if (species === 'Cat') {
+    if (normalized.includes('페르시안')) return { emoji: '🐱', label: '페르시안', bg: 'linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%)' };
+    if (normalized.includes('스코티시')) return { emoji: '😸', label: '스코티시폴드', bg: 'linear-gradient(135deg, #FFE4E6 0%, #FECDD3 100%)' };
+    if (normalized.includes('러시안')) return { emoji: '🐈', label: '러시안블루', bg: 'linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%)' };
+    if (normalized.includes('아비시니안')) return { emoji: '🐅', label: '아비시니안', bg: 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)' };
+    if (normalized.includes('메인쿤')) return { emoji: '🦁', label: '메인쿤', bg: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)' };
+    return { emoji: '🐱', label: breed || '믹스묘', bg: 'linear-gradient(135deg, #F1F3F5 0%, #CFD8DC 100%)' };
+  } else {
+    if (normalized.includes('말티즈')) return { emoji: '🐩', label: '말티즈', bg: 'linear-gradient(135deg, #FFF5F5 0%, #FFE3E3 100%)' };
+    if (normalized.includes('포메라니안')) return { emoji: '🦊', label: '포메라니안', bg: 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)' };
+    if (normalized.includes('비숑')) return { emoji: '🐩', label: '비숑', bg: 'linear-gradient(135deg, #FFF0F6 0%, #FFD8E6 100%)' };
+    if (normalized.includes('푸들')) return { emoji: '🐩', label: '푸들', bg: 'linear-gradient(135deg, #FAF0E6 0%, #EEDC82 100%)' };
+    if (normalized.includes('시츄')) return { emoji: '🐶', label: '시츄', bg: 'linear-gradient(135deg, #FFF9DB 0%, #FFF3B0 100%)' };
+    if (normalized.includes('골든')) return { emoji: '🐕', label: '골든리트리버', bg: 'linear-gradient(135deg, #FEF9C3 0%, #FEF08A 100%)' };
+    if (normalized.includes('래브라도')) return { emoji: '🐕', label: '래브라도', bg: 'linear-gradient(135deg, #F0FDFA 0%, #CCFBF1 100%)' };
+    if (normalized.includes('진도')) return { emoji: '🐕', label: '진도견', bg: 'linear-gradient(135deg, #FFFBEB 0%, #FDE68A 100%)' };
+    return { emoji: '🐶', label: breed || '믹스견', bg: 'linear-gradient(135deg, #FFF5F5 0%, #FFE3E3 100%)' };
+  }
+}
 
 type SupabaseOrderItem = any;
 
@@ -42,13 +68,17 @@ export default function Profile() {
 
   const [activeTab, setActiveTab] = useState<'info' | 'orders' | 'reports' | 'favorites'>('info');
   const [formData, setFormData] = useState(profile);
+  const [editForm, setEditForm] = useState(profile);
   const [profileStep, setProfileStep] = useState(0);
+  const [isEditing, setIsEditing] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
   const navigate = useNavigate();
   
   // Sync state if profile changes
   useEffect(() => {
     if (profile) {
       setFormData(profile);
+      setEditForm(profile);
     }
   }, [profile]);
 
@@ -65,6 +95,7 @@ export default function Profile() {
 
   const handleSave = async () => {
     await updateProfile(formData);
+    setJustSaved(true);
   };
 
   const handleNext = () => {
@@ -96,145 +127,6 @@ export default function Profile() {
 
   const allergyOptions = ['닭고기', '소고기', '연어', '곡물', '인공색소'];
 
-  const profileStepBody = (() => {
-    switch (profileStep) {
-      case 0:
-        return (
-          <TossInput
-            value={formData.name}
-            onChange={(value) => setFormData({ ...formData, name: value })}
-            placeholder="예: 로니"
-          />
-        );
-      case 1:
-        return (
-          <div style={{ display: 'flex', gap: '10px' }}>
-            {(['Dog', 'Cat'] as const).map((sp) => (
-              <button
-                key={sp}
-                type="button"
-                onClick={() => setFormData({ ...formData, species: sp })}
-                style={{
-                  flex: 1,
-                  padding: '16px 14px',
-                  borderRadius: '16px',
-                  fontSize: '15px',
-                  fontWeight: 800,
-                  border: formData.species === sp ? 'none' : '1px solid #E5E7EB',
-                  backgroundColor: formData.species === sp ? 'var(--primary-dark)' : '#fff',
-                  color: formData.species === sp ? '#fff' : 'var(--text-dark)',
-                  cursor: 'pointer',
-                }}
-              >
-                {sp === 'Dog' ? '강아지' : '고양이'}
-              </button>
-            ))}
-          </div>
-        );
-      case 2:
-        return (
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            {[
-              { label: '아기', age: 1 },
-              { label: '성인', age: 4 },
-              { label: '시니어', age: 10 },
-            ].map(({ label, age }) => (
-              <button
-                key={label}
-                type="button"
-                onClick={() => setFormData({ ...formData, age })}
-                style={{
-                  padding: '12px 20px',
-                  borderRadius: '999px',
-                  fontSize: '14px',
-                  fontWeight: 700,
-                  border: formData.age === age ? 'none' : '1px solid #E2E8F0',
-                  backgroundColor: formData.age === age ? 'var(--primary-dark)' : '#FFFFFF',
-                  color: formData.age === age ? '#FFFFFF' : 'var(--text-dark)',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        );
-      case 3:
-        return (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <TossInput
-              value={formData.weightKg != null ? String(formData.weightKg) : ''}
-              onChange={(v) => {
-                const n = parseFloat(v.replace(/[^0-9.]/g, ''));
-                setFormData({
-                  ...formData,
-                  weightKg: Number.isFinite(n) && n > 0 ? n : undefined,
-                });
-              }}
-              placeholder="예: 5.2"
-            />
-            <span style={{ fontSize: '14px', fontWeight: 700, color: '#64748B' }}>kg</span>
-          </div>
-        );
-      case 4:
-        return (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-            {allergyOptions.map((opt) => (
-              <button
-                key={opt}
-                type="button"
-                onClick={() => toggleArrayItem('allergies', opt)}
-                style={{
-                  padding: '10px 18px',
-                  borderRadius: '999px',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  border: formData.allergies.includes(opt) ? 'none' : '1px solid #E5E7EB',
-                  backgroundColor: formData.allergies.includes(opt) ? 'var(--danger)' : '#fff',
-                  color: formData.allergies.includes(opt) ? '#fff' : 'var(--text-dark)',
-                  cursor: 'pointer',
-                }}
-              >
-                {opt}
-              </button>
-            ))}
-          </div>
-        );
-      case 5:
-        return (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-            {concernOptions.map((opt) => (
-              <button
-                key={opt}
-                type="button"
-                onClick={() => toggleArrayItem('healthConcerns', opt)}
-                style={{
-                  padding: '10px 18px',
-                  borderRadius: '999px',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  border: formData.healthConcerns.includes(opt) ? 'none' : '1px solid #E5E7EB',
-                  backgroundColor: formData.healthConcerns.includes(opt) ? 'var(--primary-dark)' : '#fff',
-                  color: formData.healthConcerns.includes(opt) ? '#fff' : 'var(--text-dark)',
-                  cursor: 'pointer',
-                }}
-              >
-                {opt}
-              </button>
-            ))}
-          </div>
-        );
-      default:
-        return null;
-    }
-  })();
-
-  const handleLogout = async () => {
-    await logout();
-    navigate('/');
-  };
-
   const Pill = ({ on, children, onClick }: { on: boolean; children: React.ReactNode; onClick: () => void }) => (
     <button
       type="button"
@@ -254,6 +146,8 @@ export default function Profile() {
       {children}
     </button>
   );
+
+  const hasPetProfile = isLoggedIn && profile && profile.id !== 'local-profile' && profile.name !== '우리 아이';
 
   if (!userId) {
     return (
@@ -327,132 +221,463 @@ export default function Profile() {
       <div style={{ paddingTop: '8px' }}>
         {activeTab === 'info' && (
           <div style={{ padding: '6px 20px 24px' }}>
-            {/* progress */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--brand-deep)' }}>STEP {profileStep + 1} / {stepCount}</span>
-              <span style={{ fontSize: 12.5, color: 'var(--ink-soft)' }}>{step.title}</span>
-            </div>
-            <div style={{ height: 6, borderRadius: 99, background: 'var(--hairline)', overflow: 'hidden', marginBottom: 22 }}>
-              <div style={{ width: `${((profileStep + 1) / stepCount) * 100}%`, height: '100%', background: 'var(--brand)', transition: 'width .25s ease' }} />
-            </div>
-
-            <div style={{ minHeight: 168 }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em' }}>{step.prompt}</h3>
-                </div>
-
-                {profileStep === 0 && (
-                  <input
-                    value={formData.name || ''}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="예: 체다"
+            {justSaved && (
+              <div style={{
+                marginBottom: '20px',
+                padding: '16px',
+                borderRadius: '16px',
+                backgroundColor: 'var(--safe-tint)',
+                border: '1.5px solid var(--safe)',
+                color: 'var(--ink)',
+                boxShadow: 'var(--shadow-sm)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontWeight: 800, color: 'var(--safe)', fontSize: '15px' }}>🎉 프로필 저장 완료!</span>
+                  <button
+                    onClick={() => setJustSaved(false)}
                     style={{
-                      width: '100%', boxSizing: 'border-box', padding: '14px 16px', borderRadius: 13, fontSize: 16,
-                      border: '1px solid var(--hairline)', outline: 'none', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'inherit',
+                      border: 'none', background: 'none', color: 'var(--ink-soft)', cursor: 'pointer', fontSize: '13px', fontWeight: 700
                     }}
-                  />
-                )}
+                  >
+                    닫기
+                  </button>
+                </div>
+                <p style={{ fontSize: '13.5px', margin: 0, lineHeight: 1.5, fontWeight: 500 }}>
+                  다음과 같이 저장되었습니다:
+                </p>
+                <div style={{ marginTop: '8px', fontSize: '13px', color: 'var(--ink-soft)', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                  <div>• <b>이름:</b> {profile.name}</div>
+                  <div>• <b>종류:</b> {profile.species === 'Cat' ? '고양이' : '강아지'} ({profile.breed || '품종 없음'})</div>
+                  <div>• <b>나이:</b> {profile.age}세</div>
+                  <div>• <b>체중:</b> {profile.weightKg ? `${profile.weightKg}kg` : '입력 없음'}</div>
+                  <div>• <b>알레르기 성분:</b> {profile.allergies && profile.allergies.length > 0 ? profile.allergies.join(', ') : '없음'}</div>
+                  <div>• <b>건강 고민:</b> {profile.healthConcerns && profile.healthConcerns.length > 0 ? profile.healthConcerns.join(', ') : '없음'}</div>
+                </div>
+              </div>
+            )}
 
-                {profileStep === 1 && (
-                  <div style={{ display: 'flex', gap: 10 }}>
-                    <Pill on={formData.species === 'Dog'} onClick={() => setFormData({ ...formData, species: 'Dog' })}>강아지</Pill>
-                    <Pill on={formData.species === 'Cat'} onClick={() => setFormData({ ...formData, species: 'Cat' })}>고양이</Pill>
-                  </div>
-                )}
-
-                {profileStep === 2 && (
-                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                    {[
-                      { label: '아기', age: 1 },
-                      { label: '성견', age: 4 },
-                      { label: '시니어', age: 10 },
-                    ].map(({ label, age }) => (
-                      <Pill key={label} on={formData.age === age} onClick={() => setFormData({ ...formData, age })}>
-                        {label}
-                      </Pill>
-                    ))}
-                  </div>
-                )}
-
-                {profileStep === 3 && (
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+            {hasPetProfile ? (
+              isEditing ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: 'var(--ink)' }}>프로필 수정</h3>
+                  
+                  {/* Name */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>이름</label>
                     <input
-                      type="number"
-                      value={formData.weightKg != null ? formData.weightKg : ''}
-                      onChange={(e) => {
-                        const n = parseFloat(e.target.value);
-                        setFormData({
-                          ...formData,
-                          weightKg: Number.isFinite(n) && n > 0 ? n : undefined,
-                        });
+                      value={editForm.name || ''}
+                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                      style={{
+                        width: '100%', boxSizing: 'border-box', padding: '12px 14px', borderRadius: 12, fontSize: 15,
+                        border: '1px solid var(--hairline)', outline: 'none', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'inherit'
+                      }}
+                      placeholder="이름을 입력해주세요"
+                    />
+                  </div>
+
+                  {/* Species */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>종류</label>
+                    <div style={{ display: 'flex', gap: 10 }}>
+                      <Pill on={editForm.species === 'Dog'} onClick={() => setEditForm({ ...editForm, species: 'Dog', breed: '' })}>강아지</Pill>
+                      <Pill on={editForm.species === 'Cat'} onClick={() => setEditForm({ ...editForm, species: 'Cat', breed: '' })}>고양이</Pill>
+                    </div>
+                  </div>
+
+                  {/* Breed */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>품종</label>
+                    <select
+                      value={editForm.breed || ''}
+                      onChange={(e) => setEditForm({ ...editForm, breed: e.target.value })}
+                      style={{
+                        width: '100%', boxSizing: 'border-box', padding: '12px 14px', borderRadius: 12, fontSize: 15,
+                        border: '1px solid var(--hairline)', outline: 'none', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'inherit'
+                      }}
+                    >
+                      <option value="">품종 선택</option>
+                      {(editForm.species === 'Cat' ? BREED_LIST_CAT : BREED_LIST_DOG).map(b => (
+                        <option key={b} value={b}>{b}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Age */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>나이</label>
+                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                      {[
+                        { label: '아기', age: 1 },
+                        { label: '성견', age: 4 },
+                        { label: '시니어', age: 10 },
+                      ].map(({ label, age }) => (
+                        <Pill key={label} on={editForm.age === age} onClick={() => setEditForm({ ...editForm, age })}>
+                          {label}
+                        </Pill>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Weight */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>체중</label>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                      <input
+                        type="number"
+                        value={editForm.weightKg != null ? editForm.weightKg : ''}
+                        onChange={(e) => {
+                          const n = parseFloat(e.target.value);
+                          setEditForm({
+                            ...editForm,
+                            weightKg: Number.isFinite(n) && n > 0 ? n : undefined,
+                          });
+                        }}
+                        style={{
+                          width: 120, boxSizing: 'border-box', padding: '12px 14px', borderRadius: 12, fontSize: 15,
+                          border: '1px solid var(--hairline)', outline: 'none', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'inherit'
+                        }}
+                        placeholder="6.2"
+                      />
+                      <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink-soft)' }}>kg</span>
+                    </div>
+                  </div>
+
+                  {/* Allergies */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>알레르기 성분</label>
+                    <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap' }}>
+                      {allergyOptions.map((opt) => {
+                        const on = editForm.allergies?.includes(opt);
+                        return (
+                          <Pill
+                            key={opt}
+                            on={on}
+                            onClick={() => {
+                              const list = editForm.allergies || [];
+                              const nextList = list.includes(opt) ? list.filter(i => i !== opt) : [...list, opt];
+                              setEditForm({ ...editForm, allergies: nextList });
+                            }}
+                          >
+                            {opt}
+                          </Pill>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Health Concerns */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>건강 고민</label>
+                    <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap' }}>
+                      {concernOptions.map((opt) => {
+                        const on = editForm.healthConcerns?.includes(opt);
+                        return (
+                          <Pill
+                            key={opt}
+                            on={on}
+                            onClick={() => {
+                              const list = editForm.healthConcerns || [];
+                              const nextList = list.includes(opt) ? list.filter(i => i !== opt) : [...list, opt];
+                              setEditForm({ ...editForm, healthConcerns: nextList });
+                            }}
+                          >
+                            {opt}
+                          </Pill>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Edit Buttons */}
+                  <div style={{ display: 'flex', gap: 10, marginTop: '10px' }}>
+                    <button
+                      onClick={() => {
+                        setEditForm(profile);
+                        setIsEditing(false);
                       }}
                       style={{
-                        width: 120, boxSizing: 'border-box', padding: '14px 16px', borderRadius: 13, fontSize: 16,
-                        border: '1px solid var(--hairline)', outline: 'none', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'inherit',
+                        cursor: 'pointer', flex: 1, padding: '14px', borderRadius: 12,
+                        background: 'var(--surface)', border: '1px solid var(--hairline)', fontSize: 15, fontWeight: 600, color: 'var(--ink-soft)'
                       }}
-                      placeholder="6.2"
-                    />
-                    <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink-soft)' }}>kg</span>
+                    >
+                      취소
+                    </button>
+                    <button
+                      onClick={async () => {
+                        await updateProfile(editForm);
+                        setJustSaved(true);
+                        setIsEditing(false);
+                      }}
+                      style={{
+                        cursor: 'pointer', flex: 1, padding: '14px', borderRadius: 12,
+                        background: 'var(--brand)', color: 'var(--ink-on-brand)', fontSize: 15, fontWeight: 700, border: 'none', boxShadow: 'var(--shadow-sm)'
+                      }}
+                    >
+                      저장하기
+                    </button>
                   </div>
-                )}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  <div style={{
+                    padding: '24px 20px',
+                    borderRadius: '24px',
+                    background: 'var(--surface)',
+                    border: '1px solid var(--brand-line)',
+                    boxShadow: 'var(--shadow-sm)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    textAlign: 'center',
+                    gap: '16px',
+                  }}>
+                    {/* Breed Avatar Circle */}
+                    <div style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '50%',
+                      background: getBreedAvatar(profile.breed, profile.species).bg,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '36px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.06)'
+                    }}>
+                      {getBreedAvatar(profile.breed, profile.species).emoji}
+                    </div>
 
-                {profileStep === 4 && (
-                  <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap' }}>
-                    {allergyOptions.map((opt) => (
-                      <Pill key={opt} on={formData.allergies?.includes(opt)} onClick={() => toggleArrayItem('allergies', opt)}>
-                        {opt}
-                      </Pill>
-                    ))}
-                  </div>
-                )}
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: 'var(--ink)' }}>
+                        {profile.name}
+                      </h3>
+                      <p style={{ margin: '4px 0 0', fontSize: '13.5px', color: 'var(--ink-soft)', fontWeight: 500 }}>
+                        {getBreedAvatar(profile.breed, profile.species).label} · {profile.species === 'Cat' ? '고양이' : '강아지'}
+                      </p>
+                    </div>
 
-                {profileStep === 5 && (
-                  <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap' }}>
-                    {concernOptions.map((opt) => (
-                      <Pill key={opt} on={formData.healthConcerns?.includes(opt)} onClick={() => toggleArrayItem('healthConcerns', opt)}>
-                        {opt}
-                      </Pill>
-                    ))}
+                    {/* Specs Pills */}
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                      <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--ink-soft)', background: 'var(--surface-trans)', padding: '5px 12px', borderRadius: '10px', border: '1px solid var(--hairline)' }}>
+                        나이: {profile.age}세
+                      </span>
+                      {profile.weightKg && (
+                        <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--ink-soft)', background: 'var(--surface-trans)', padding: '5px 12px', borderRadius: '10px', border: '1px solid var(--hairline)' }}>
+                          체중: {profile.weightKg}kg
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ width: '100%', height: '1px', background: 'var(--hairline)', margin: '4px 0' }} />
+
+                    {/* Allergies / Health concerns lists */}
+                    <div style={{ width: '100%', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div>
+                        <span style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: 'var(--ink-faint)', marginBottom: '6px' }}>알레르기 성분</span>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                          {profile.allergies && profile.allergies.length > 0 ? (
+                            profile.allergies.map(allergy => (
+                              <span key={allergy} style={{ fontSize: '12px', fontWeight: 700, color: 'var(--danger)', background: 'var(--danger-tint)', padding: '4px 10px', borderRadius: '8px' }}>
+                                {allergy}
+                              </span>
+                            ))
+                          ) : (
+                            <span style={{ fontSize: '12.5px', color: 'var(--ink-soft)', fontStyle: 'italic' }}>설정된 알레르기가 없습니다.</span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div>
+                        <span style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: 'var(--ink-faint)', marginBottom: '6px' }}>건강 고민</span>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                          {profile.healthConcerns && profile.healthConcerns.length > 0 ? (
+                            profile.healthConcerns.map(concern => (
+                              <span key={concern} style={{ fontSize: '12px', fontWeight: 700, color: 'var(--brand-deep)', background: 'var(--brand-tint)', padding: '4px 10px', borderRadius: '8px' }}>
+                                {concern}
+                              </span>
+                            ))
+                          ) : (
+                            <span style={{ fontSize: '12.5px', color: 'var(--ink-soft)', fontStyle: 'italic' }}>설정된 건강 고민이 없습니다.</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                )}
+
+                  {/* Action Buttons */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <button
+                      onClick={() => {
+                        setEditForm(profile);
+                        setIsEditing(true);
+                      }}
+                      style={{
+                        cursor: 'pointer', width: '100%', padding: '14px', borderRadius: 14,
+                        background: 'var(--brand)', color: 'var(--ink-on-brand)', fontSize: 15, fontWeight: 700, border: 'none', boxShadow: 'var(--shadow-sm)'
+                      }}
+                    >
+                      ✏️ 정보 수정하기
+                    </button>
+                    
+                    <button
+                      onClick={handleLogout}
+                      style={{
+                        cursor: 'pointer', width: '100%', padding: '14px', borderRadius: 14,
+                        background: 'none', border: '1px solid var(--hairline)', fontSize: 14, fontWeight: 600, color: 'var(--ink-soft)'
+                      }}
+                    >
+                      로그아웃
+                    </button>
+                  </div>
+                </div>
+              )
+            ) : (
+              <div>
+                {/* progress */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--brand-deep)' }}>STEP {profileStep + 1} / {stepCount}</span>
+                  <span style={{ fontSize: 12.5, color: 'var(--ink-soft)' }}>{step.title}</span>
+                </div>
+                <div style={{ height: 6, borderRadius: 99, background: 'var(--hairline)', overflow: 'hidden', marginBottom: 22 }}>
+                  <div style={{ width: `${((profileStep + 1) / stepCount) * 100}%`, height: '100%', background: 'var(--brand)', transition: 'width .25s ease' }} />
+                </div>
+
+                <div style={{ minHeight: 168 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em' }}>{step.prompt}</h3>
+                    </div>
+
+                    {profileStep === 0 && (
+                      <input
+                        value={formData.name || ''}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder="예: 체다"
+                        style={{
+                          width: '100%', boxSizing: 'border-box', padding: '14px 16px', borderRadius: 13, fontSize: 16,
+                          border: '1px solid var(--hairline)', outline: 'none', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'inherit',
+                        }}
+                      />
+                    )}
+
+                    {profileStep === 1 && (
+                      <div style={{ display: 'flex', gap: 10 }}>
+                        <Pill on={formData.species === 'Dog'} onClick={() => setFormData({ ...formData, species: 'Dog', breed: '' })}>강아지</Pill>
+                        <Pill on={formData.species === 'Cat'} onClick={() => setFormData({ ...formData, species: 'Cat', breed: '' })}>고양이</Pill>
+                      </div>
+                    )}
+
+                    {profileStep === 2 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <select
+                          value={formData.breed || ''}
+                          onChange={(e) => setFormData({ ...formData, breed: e.target.value })}
+                          style={{
+                            width: '100%', boxSizing: 'border-box', padding: '14px 16px', borderRadius: 13, fontSize: 16,
+                            border: '1px solid var(--hairline)', outline: 'none', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'inherit',
+                          }}
+                        >
+                          <option value="">품종을 선택해주세요</option>
+                          {(formData.species === 'Cat' ? BREED_LIST_CAT : BREED_LIST_DOG).map((b) => (
+                            <option key={b} value={b}>{b}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {profileStep === 3 && (
+                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                        {[
+                          { label: '아기', age: 1 },
+                          { label: '성견', age: 4 },
+                          { label: '시니어', age: 10 },
+                        ].map(({ label, age }) => (
+                          <Pill key={label} on={formData.age === age} onClick={() => setFormData({ ...formData, age })}>
+                            {label}
+                          </Pill>
+                        ))}
+                      </div>
+                    )}
+
+                    {profileStep === 4 && (
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                        <input
+                          type="number"
+                          value={formData.weightKg != null ? formData.weightKg : ''}
+                          onChange={(e) => {
+                            const n = parseFloat(e.target.value);
+                            setFormData({
+                              ...formData,
+                              weightKg: Number.isFinite(n) && n > 0 ? n : undefined,
+                            });
+                          }}
+                          style={{
+                            width: 120, boxSizing: 'border-box', padding: '14px 16px', borderRadius: 13, fontSize: 16,
+                            border: '1px solid var(--hairline)', outline: 'none', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'inherit',
+                          }}
+                          placeholder="6.2"
+                        />
+                        <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink-soft)' }}>kg</span>
+                      </div>
+                    )}
+
+                    {profileStep === 5 && (
+                      <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap' }}>
+                        {allergyOptions.map((opt) => (
+                          <Pill key={opt} on={formData.allergies?.includes(opt)} onClick={() => toggleArrayItem('allergies', opt)}>
+                            {opt}
+                          </Pill>
+                        ))}
+                      </div>
+                    )}
+
+                    {profileStep === 6 && (
+                      <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap' }}>
+                        {concernOptions.map((opt) => (
+                          <Pill key={opt} on={formData.healthConcerns?.includes(opt)} onClick={() => toggleArrayItem('healthConcerns', opt)}>
+                            {opt}
+                          </Pill>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
+                  {profileStep > 0 && (
+                    <button
+                      onClick={handlePrev}
+                      style={{
+                        cursor: 'pointer', flex: '0 0 auto', padding: '15px 22px', borderRadius: 14,
+                        background: 'var(--surface)', border: '1px solid var(--hairline)', fontSize: 15, fontWeight: 600, color: 'var(--ink-soft)'
+                      }}
+                    >
+                      이전
+                    </button>
+                  )}
+                  <button
+                    onClick={handleNext}
+                    style={{
+                      cursor: 'pointer', flex: 1, padding: '15px', borderRadius: 14, background: 'var(--brand)', color: 'var(--ink-on-brand)',
+                      fontSize: 15, fontWeight: 700, border: 'none', boxShadow: 'var(--shadow-sm)'
+                    }}
+                  >
+                    {profileStep === stepCount - 1 ? '변경 사항 저장' : '다음'}
+                  </button>
+                </div>
+
+                <div style={{ padding: '32px 0 0' }}>
+                  <button
+                    onClick={handleLogout}
+                    style={{
+                      width: '100%', cursor: 'pointer', padding: '14px', borderRadius: 13,
+                      background: 'none', border: '1px solid var(--hairline)', fontSize: 14, fontWeight: 600, color: 'var(--ink-soft)'
+                    }}
+                  >
+                    로그아웃
+                  </button>
+                </div>
               </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
-              {profileStep > 0 && (
-                <button
-                  onClick={handlePrev}
-                  style={{
-                    cursor: 'pointer', flex: '0 0 auto', padding: '15px 22px', borderRadius: 14,
-                    background: 'var(--surface)', border: '1px solid var(--hairline)', fontSize: 15, fontWeight: 600, color: 'var(--ink-soft)'
-                  }}
-                >
-                  이전
-                </button>
-              )}
-              <button
-                onClick={handleNext}
-                style={{
-                  cursor: 'pointer', flex: 1, padding: '15px', borderRadius: 14, background: 'var(--brand)', color: 'var(--ink-on-brand)',
-                  fontSize: 15, fontWeight: 700, border: 'none', boxShadow: 'var(--shadow-sm)'
-                }}
-              >
-                {profileStep === stepCount - 1 ? '변경 사항 저장' : '다음'}
-              </button>
-            </div>
-
-            <div style={{ padding: '32px 0 0' }}>
-              <button
-                onClick={handleLogout}
-                style={{
-                  width: '100%', cursor: 'pointer', padding: '14px', borderRadius: 13,
-                  background: 'none', border: '1px solid var(--hairline)', fontSize: 14, fontWeight: 600, color: 'var(--ink-soft)'
-                }}
-              >
-                로그아웃
-              </button>
-            </div>
+            )}
           </div>
         )}
 
