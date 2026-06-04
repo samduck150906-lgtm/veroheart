@@ -118,7 +118,7 @@ function App() {
         <Notification />
           <Routes>
             <Route path="/" element={<Layout />}>
-              <Route index element={<Home />} />
+              <Route index element={<Search />} />
               <Route path="search" element={<Search />} />
               <Route path="scanner" element={<Scanner />} />
               <Route path="community" element={<Community />} />

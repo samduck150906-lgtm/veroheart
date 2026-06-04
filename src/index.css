@@ -1,42 +1,61 @@
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
 
 :root {
-  /* Premium Soft HSL Palette (베로로 민트 & 레드) */
-  --primary: #81C995; /* Soft Mint Green */
-  --primary-dark: #66B57D;
-  --primary-light: #F0FAF4;
-  --secondary: #F7F9F8;
-  --accent: #D93025; /* Soft Red */
+  /* Redesigned Warm Brick Orange Design System */
+  --primary: #D97757; /* Warm Brick Orange */
+  --primary-dark: #B55737; /* Brand Deep */
+  --primary-light: #FAF2EA; /* Brand Tint */
+  --secondary: #FAF8F5; /* Warm Surface Tint */
+  --accent: #D93A30; /* Danger Red */
   
-  --text-dark: #111111; /* Near Black */
-  --text-muted: #575B5F; /* Muted Slate */
-  --text-light: #8A9099;
+  --text-dark: #29261B; /* Ink (Charcoal Slate Brown) */
+  --text-muted: #59564B; /* Ink Soft */
+  --text-light: #8F8B7D; /* Ink Faint */
   
-  --bg-color: #FFFFFF;
-  --bg-gradient: linear-gradient(135deg, #F0FAF4 0%, #FFFFFF 50%, #FCFDFB 100%);
-  --surface-elevated: #F4F6F5;
+  --bg-color: #FAF8F5;
+  --bg-gradient: linear-gradient(135deg, #FAF2EA 0%, #FFFFFF 50%, #FAF8F5 100%);
+  --surface-elevated: #FFFFFF;
   
-  /* Traffic Light Colors (Hwahae/ToxiPets-inspired) */
-  --safe: #81C995;     /* Soft Mint Green */
-  --warning: #F5A623;  /* Soft Warm Amber */
-  --danger: #D93025;   /* Soft Red */
+  /* Traffic Light Colors (Veroro New Specs) */
+  --safe: #4F9B72;      /* Safe Green */
+  --warning: #D9943B;   /* Caution Yellow */
+  --danger: #D93A30;    /* Danger Red */
+
+  /* Additional Custom Redesign Tokens */
+  --brand: var(--primary);
+  --brand-deep: var(--primary-dark);
+  --brand-tint: var(--primary-light);
+  --brand-tint-2: #FAF8F5;
+  --brand-line: rgba(217, 119, 87, 0.12);
+  --ink: var(--text-dark);
+  --ink-soft: var(--text-muted);
+  --ink-faint: var(--text-light);
+  --ink-on-brand: #FFFFFF;
+  --hairline: rgba(41, 38, 27, 0.08);
+  --chip-bg: #FAF8F5;
+  --surface: #FFFFFF;
+  --surface-trans: rgba(255, 255, 255, 0.8);
+  --caution: var(--warning);
+  --safe-tint: rgba(79, 155, 114, 0.08);
+  --caution-tint: rgba(217, 148, 59, 0.08);
+  --danger-tint: rgba(217, 58, 48, 0.08);
 
   /* Borders & Shadows */
   --border-radius-sm: 12px;
   --border-radius-md: 20px;
   --border-radius-lg: 28px;
   
-  --shadow-sm: 0 1px 3px rgba(15,23,42,0.04), 0 1px 2px rgba(15,23,42,0.02);
-  --shadow-md: 0 4px 16px rgba(15,23,42,0.06), 0 2px 4px rgba(15,23,42,0.03);
-  --shadow-lg: 0 12px 40px rgba(15,23,42,0.1);
-  --shadow-card: 0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04);
-  --nav-shadow: 0 -2px 20px rgba(15,23,42,0.06);
+  --shadow-sm: 0 1px 3px rgba(41,38,27,0.04), 0 1px 2px rgba(41,38,27,0.02);
+  --shadow-md: 0 4px 16px rgba(41,38,27,0.06), 0 2px 4px rgba(41,38,27,0.03);
+  --shadow-lg: 0 12px 40px rgba(41,38,27,0.15);
+  --shadow-card: 0 1px 3px rgba(41,38,27,0.06), 0 1px 2px rgba(41,38,27,0.04);
+  --nav-shadow: 0 -2px 20px rgba(41,38,27,0.06);
 
   /* Transitions */
   --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-smooth: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   
-  --community-tint: #4F46E5;
+  --community-tint: var(--primary-dark);
 }
 
 * {

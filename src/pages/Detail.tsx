@@ -31,9 +31,9 @@ import { COUPANG_PARTNERS_DISCLOSURE } from '../constants/coupangPartners';
 import { REVIEW_QUICK_TAGS } from '../constants/reviewTags';
 
 const getVerificationMeta = (s: string) => {
-  if (s === 'verified') return { bg: '#E0F2FE', color: '#0369A1', label: '베로로 공식 인증' };
-  if (s === 'needs_review') return { bg: '#FEF3C7', color: '#B45309', label: '정보 재검토 중' };
-  return { bg: '#F3F4F6', color: '#4B5563', label: '영양 성분 검수 대기' };
+  if (s === 'verified') return { bg: 'var(--brand-tint)', color: 'var(--brand-deep)', border: 'var(--brand-line)', label: '공식 인증' };
+  if (s === 'needs_review') return { bg: 'var(--chip-bg)', color: 'var(--ink-soft)', border: 'var(--hairline)', label: '재검토 중' };
+  return { bg: 'var(--chip-bg)', color: 'var(--ink-soft)', border: 'var(--hairline)', label: '검수 대기' };
 };
 
 interface Ingredient { id: string; riskLevel: string; nameKo: string; nameEn?: string; purpose?: string; description?: string; }
@@ -278,6 +278,7 @@ export default function Detail() {
               borderRadius: '999px',
               background: verificationMeta.bg,
               color: verificationMeta.color,
+              border: `1px solid ${verificationMeta.border}`,
             }}
           >
             <Shield size={14} />

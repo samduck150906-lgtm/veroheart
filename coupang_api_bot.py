@@ -1,3 +1,6 @@
+# DEPRECATED: Coupang Partners API has rate limits blocked. Do not use.
+raise RuntimeError("This API bot is deprecated and disabled due to Coupang API rate limits.")
+
 import hmac
 import hashlib
 import datetime

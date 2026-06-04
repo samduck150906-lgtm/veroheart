@@ -243,238 +243,187 @@ export default function Search() {
         <title>상품 검색 | 베로로</title>
         <meta name="description" content="반려동물 맞춤 사료·간식을 성분, 가격, 건강 고민으로 검색하고 비교해 보세요." />
       </Helmet>
-      <section className="ui-hero-panel" style={{ marginBottom: '18px', padding: '18px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '14px' }}>
-          <div>
-            <span className="ui-badge ui-badge-soft" style={{ marginBottom: '10px', display: 'inline-flex' }}>
-              <Sparkles size={14} />
-              취향 기반 탐색
-            </span>
-            <h2 style={{ fontSize: '22px', fontWeight: 900, marginBottom: '6px' }}>조건을 조합해 정확하게 좁혀보세요</h2>
-            <p style={{ fontSize: '13px', lineHeight: 1.55, color: '#66707C' }}>{CORE_COPY.ocr}</p>
-          </div>
-        </div>
+      
+      {/* Title Header */}
+      <div style={{ padding: '6px 20px 0' }}>
+        <span style={{ fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: 15, color: 'var(--brand-deep)' }}>Find the right bowl</span>
+        <h2 style={{ margin: '2px 0 0', fontSize: 24, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--ink)' }}>취향 기반 탐색</h2>
+        <p style={{ margin: '6px 0 0', fontSize: 12.5, color: 'var(--ink-soft)' }}>조건을 조합해 정확하게 좁혀보세요</p>
+      </div>
 
-        <div
+      {/* Search Box */}
+      <div style={{ padding: '14px 20px 0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '12px 15px', borderRadius: 14,
+          background: 'var(--surface)', border: '1px solid var(--hairline)' }}>
+          <SearchIcon size={18} stroke="var(--ink-faint)" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="상품명, 브랜드, 성분명으로 검색"
+            style={{ flex: 1, border: 'none', outline: 'none', background: 'none', fontSize: 14.5, color: 'var(--ink)', fontFamily: 'inherit' }}
+          />
+          {query && <X size={16} stroke="var(--ink-faint)" style={{ cursor: 'pointer' }} onClick={() => setQuery('')} />}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 9 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 999, color: 'var(--brand-deep)', background: 'var(--brand-tint)', border: '1px solid var(--brand-line)' }}>
+            <Sparkles size={11} /> 공식 검수 데이터
+          </div>
+          <span style={{ fontSize: 11.5, color: 'var(--ink-soft)' }}>사람이 검수한 데이터를 우선 노출해요</span>
+        </div>
+      </div>
+
+      {/* Species filter row */}
+      <div style={{ display: 'flex', gap: 8, padding: '16px 20px 0' }}>
+        {([
+          { key: '' as const, label: '전체' },
+          { key: 'dog' as const, label: '강아지' },
+          { key: 'cat' as const, label: '고양이' },
+          { key: 'all' as const, label: '공용' },
+        ]).map(({ key, label }) => (
+          <FilterChip
+            key={key}
+            label={label}
+            selected={filters.targetPetType === key}
+            onClick={() => setPetFilter(key)}
+            style={{ flex: 1, textAlign: 'center', justifyContent: 'center' }}
+          />
+        ))}
+      </div>
+
+      {/* Price band chips scroll */}
+      <div className="rail" style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '12px 20px 0', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+        {PRICE_BAND_LABELS.map(({ id, label }) => (
+          <FilterChip
+            key={id}
+            label={label}
+            selected={filters.priceBand === id}
+            onClick={() => setFilters(f => ({ ...f, priceBand: id }))}
+          />
+        ))}
+      </div>
+
+      {/* Diet preset, life stage & reset buttons scroll */}
+      <div className="rail" style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '10px 20px 0', alignItems: 'center', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+        <FilterChip
+          label="다이어트·체중"
+          selected={filters.dietPreset}
+          onClick={() => setFilters(f => ({ ...f, dietPreset: !f.dietPreset }))}
+        />
+        <FilterChip
+          label="시니어"
+          selected={filters.targetLifeStage === '시니어'}
+          onClick={() => setFilters(f => ({ ...f, targetLifeStage: f.targetLifeStage === '시니어' ? '' : '시니어' }))}
+        />
+        
+        {/* Action Button: Detail Filter */}
+        <button
+          type="button"
+          onClick={() => setIsFilterOpen(true)}
           style={{
-            marginBottom: '14px',
-            padding: '12px 14px',
-            borderRadius: '16px',
-            background: '#FFFFFF',
-            border: '1px solid rgba(124, 111, 156, 0.16)',
+            flexShrink: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5,
+            fontSize: 13.5, fontWeight: 700, padding: '8px 14px', borderRadius: 999,
+            color: filterButtonActive ? 'var(--brand-deep)' : 'var(--ink-soft)',
+            background: filterButtonActive ? 'var(--brand-tint)' : 'var(--surface)',
+            border: `1px solid ${filterButtonActive ? 'var(--brand-line)' : 'var(--hairline)'}`,
+            transition: 'all .15s ease'
           }}
         >
-          <div style={{ fontSize: '12px', fontWeight: 800, color: '#5B21B6', marginBottom: '4px' }}>
-            사람이 검수한 데이터 우선
-          </div>
-          <p style={{ margin: 0, fontSize: '12px', lineHeight: 1.55, color: '#66707C', fontWeight: 600 }}>
-            검색과 추천은 직접 정리한 제조사/성분 데이터와 프로필 기준으로 계산하며, AI는 해석 보조에만 사용됩니다.
-          </p>
-        </div>
+          <SlidersHorizontal size={14} />상세 필터
+        </button>
 
-        <div style={{ marginBottom: '14px' }}>
-          <TossSearchBar
-            value={query}
-            onChange={setQuery}
-            placeholder="상품명, 브랜드, 성분명으로 검색"
-          />
-        </div>
+        <span style={{ width: 1, background: 'var(--hairline)', margin: '4px 2px', alignSelf: 'stretch' }} />
 
-        <div style={{ marginBottom: '14px' }}>
-          <p style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '0.04em' }}>반려동물</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
-            {([
-              { key: '' as const, label: '전체', Icon: LayoutGrid },
-              { key: 'dog' as const, label: '강아지', Icon: Dog },
-              { key: 'cat' as const, label: '고양이', Icon: Cat },
-              { key: 'all' as const, label: '공용', Icon: Package },
-            ]).map(({ key, label, Icon }) => {
-              const active = filters.targetPetType === key;
-              return (
-                <button
-                  key={key || 'any'}
-                  type="button"
-                  onClick={() => setPetFilter(key)}
-                  style={{
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
-                    padding: '10px 6px', borderRadius: '14px', border: active ? '2px solid var(--primary)' : '1px solid rgba(0,0,0,0.08)',
-                    background: active ? 'rgba(250, 204, 21, 0.18)' : 'var(--surface-elevated)',
-                    color: active ? 'var(--primary-dark)' : 'var(--text-muted)',
-                    fontWeight: 700, fontSize: '12px', cursor: 'pointer',
-                  }}
-                >
-                  <Icon size={20} strokeWidth={active ? 2.5 : 2} />
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-          <p style={{ fontSize: '10px', color: '#9CA3AF', marginTop: '6px' }}>공용은 강아지·고양이 모두에게 맞는 상품만 보여줍니다.</p>
-        </div>
+        <button
+          onClick={resetFilters}
+          style={{ flexShrink: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5,
+            fontSize: 13, fontWeight: 600, color: 'var(--ink-soft)', background: 'none', border: 'none', padding: '8px 6px' }}
+        >
+          <X size={14} />초기화
+        </button>
+      </div>
 
-        <div style={{ marginBottom: '14px' }}>
-          <p style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '0.04em' }}>가격대</p>
-          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-            {PRICE_BAND_LABELS.map(({ id, label }) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setFilters(f => ({ ...f, priceBand: id }))}
-                style={{
-                  flexShrink: 0,
-                  padding: '8px 12px', borderRadius: '999px', fontSize: '12px', fontWeight: 700,
-                  border: filters.priceBand === id ? 'none' : '1px solid #E5E7EB',
-                  backgroundColor: filters.priceBand === id ? 'var(--primary)' : '#fff',
-                  color: filters.priceBand === id ? '#fff' : '#4B5563',
-                  cursor: 'pointer',
-                }}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
+      {/* Standard Feed Database button */}
+      <div style={{ padding: '8px 20px 0' }}>
+        <button
+          onClick={() => setIsStandardFeedModalOpen(true)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700,
+            color: 'var(--safe)', background: 'var(--safe-tint)', padding: '10px 16px', borderRadius: '14px', border: '1px solid var(--hairline)', cursor: 'pointer', width: '100%', justifyContent: 'center'
+          }}
+        >
+          <Database size={14} /> 한국표준사료 성분사전 검색
+        </button>
+      </div>
 
-        <div style={{ marginBottom: '14px' }}>
-          <p style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '0.04em' }}>빠른 목적</p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+      {/* Category scroll tabs */}
+      <div className="rail" style={{ display: 'flex', gap: 18, overflowX: 'auto', padding: '16px 20px 0',
+        borderBottom: '1px solid var(--hairline)', marginTop: 14, msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+        {['전체', ...SEARCH_MAIN_CATEGORIES.map(c => c.name)].map((c) => {
+          const on = (c === '전체' && !category) || (category === c);
+          return (
             <button
-              type="button"
-              onClick={() => setFilters(f => ({ ...f, dietPreset: !f.dietPreset }))}
-              style={{
-                padding: '8px 14px', borderRadius: '999px', fontSize: '12px', fontWeight: 700,
-                border: filters.dietPreset ? 'none' : '1px solid #E5E7EB',
-                backgroundColor: filters.dietPreset ? 'var(--primary)' : '#fff',
-                color: filters.dietPreset ? '#fff' : '#4B5563', cursor: 'pointer',
+              key={c}
+              onClick={() => {
+                setCategory(c);
+                setFilters(f => ({ ...f, subCategory: '' }));
               }}
+              style={{ flexShrink: 0, cursor: 'pointer', background: 'none', border: 'none',
+                padding: '0 0 10px', position: 'relative', fontSize: 14, fontWeight: on ? 700 : 500,
+                color: on ? 'var(--ink)' : 'var(--ink-faint)' }}
             >
-              다이어트·체중
+              {c}
+              {on && <span style={{ position: 'absolute', left: 0, right: 0, bottom: -1, height: 2.5, borderRadius: 2, background: 'var(--ink)' }} />}
             </button>
-            <button
-              type="button"
-              onClick={() =>
-                setFilters(f => ({
-                  ...f,
-                  targetLifeStage: f.targetLifeStage === '시니어' ? '' : '시니어',
-                }))
-              }
-              style={{
-                padding: '8px 14px', borderRadius: '999px', fontSize: '12px', fontWeight: 700,
-                border: filters.targetLifeStage === '시니어' ? 'none' : '1px solid #E5E7EB',
-                backgroundColor: filters.targetLifeStage === '시니어' ? 'var(--primary)' : '#fff',
-                color: filters.targetLifeStage === '시니어' ? '#fff' : '#4B5563', cursor: 'pointer',
-              }}
-            >
-              노령(시니어)
-            </button>
-          </div>
-        </div>
+          );
+        })}
+      </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)' }}>정렬</span>
+      {/* Result Count and Sort choices */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px 0' }}>
+        <span style={{ fontSize: 13, color: 'var(--ink-soft)' }}>
+          총 <b style={{ color: 'var(--ink)' }}>{displayResults.length}</b>개
+          {isLoading && <span style={{ marginLeft: '8px', fontSize: '11px', color: 'var(--ink-faint)' }}>불러오는 중…</span>}
+        </span>
+        <div style={{ display: 'flex', gap: 8 }}>
           {([
             { id: 'default' as const, label: '추천순' },
             { id: 'price_asc' as const, label: '가격 낮은순' },
             { id: 'price_desc' as const, label: '가격 높은순' },
             { id: 'rating' as const, label: '평점순' },
           ]).map(({ id, label }) => (
-            <TossChip key={id} label={label} active={sortBy === id} onClick={() => setSortBy(id)} />
+            <button
+              key={id}
+              onClick={() => setSortBy(id)}
+              style={{ flexShrink: 0, cursor: 'pointer', background: 'none', border: 'none', padding: 0,
+                fontSize: 12.5, fontWeight: sortBy === id ? 700 : 500, color: sortBy === id ? 'var(--brand-deep)' : 'var(--ink-faint)' }}
+            >
+              {label}
+            </button>
           ))}
         </div>
+      </div>
 
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
-          <TossButton variant={filterButtonActive ? 'soft' : 'outline'} onClick={() => setIsFilterOpen(true)} style={{ width: 'auto', height: '40px', padding: '0 14px' }}>
-            <SlidersHorizontal size={16} />
-            상세 필터
-          </TossButton>
-          <button
-            type="button"
-            onClick={resetFilters}
-            className="ui-text-button"
-            style={{ padding: 0 }}
-          >
-            <Trash2 size={14} />
-            초기화
-          </button>
-        </div>
-
-        <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '4px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-          {SEARCH_MAIN_CATEGORIES.map(cat => {
-            const CatIcon = cat.icon;
-            return (
-              <button
-                key={cat.name}
-                type="button"
-                onClick={() => {
-                  setCategory(cat.name);
-                  setFilters(f => ({ ...f, subCategory: '' }));
-                }}
-                style={{
-                  padding: '10px 18px', borderRadius: '24px', fontSize: '14px', whiteSpace: 'nowrap',
-                  border: category === cat.name ? 'none' : '1px solid #E5E7EB',
-                  backgroundColor: category === cat.name ? 'var(--primary)' : '#fff',
-                  color: category === cat.name ? '#fff' : '#4B5563',
-                  cursor: 'pointer', fontWeight: 600, transition: 'all 0.2s',
-                  display: 'flex', alignItems: 'center', gap: '8px'
-                }}
-              >
-                {CatIcon && <CatIcon size={16} />}
-                {cat.name}
-              </button>
-            );
-          })}
-        </div>
-        
-        {/* Standard Feed DB Button */}
-        <div style={{ marginTop: '8px', padding: '0 4px' }}>
-          <button 
-            onClick={() => setIsStandardFeedModalOpen(true)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 700,
-              color: '#059669', background: '#ecfdf5', padding: '8px 16px', borderRadius: '12px', border: 'none', cursor: 'pointer'
-            }}
-          >
-            <Database size={14} /> 한국표준사료 성분사전 검색
-          </button>
-        </div>
-      </section>
-
-      <div style={{ marginTop: '12px' }}>
-        <div className="ui-list-card" style={{ marginBottom: '16px', padding: '16px 18px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '14px', color: '#6B7280' }}>
-            총 <strong style={{ color: '#111827' }}>{displayResults.length}</strong>개의 상품
-            {isLoading && <span style={{ marginLeft: '8px', fontSize: '12px' }}>불러오는 중…</span>}
-            </span>
-            <span className="ui-badge ui-badge-soft">
-              <Filter size={12} />
-              {sortBy === 'default' ? '프로필 추천순' : filterButtonActive ? '필터 적용 중' : '정렬 적용 중'}
-            </span>
-          </div>
-        </div>
-
+      {/* Result list container */}
+      <div style={{ padding: '4px 20px 0' }}>
         {sortBy === 'default' && displayResults.length > 0 && (
-          <div className="ui-info-card" style={{ marginBottom: '16px', padding: '16px 18px' }}>
-            <div className="ui-section-kicker">recommendation logic</div>
-            <div style={{ fontSize: '16px', fontWeight: 900, color: 'var(--text-dark)', marginBottom: '6px' }}>
-              {profile.name} 프로필 기반 추천순
+          <div style={{ margin: '10px 0 16px', padding: '12px 14px', borderRadius: '18px', background: 'var(--brand-tint)', border: '1px solid var(--brand-line)' }}>
+            <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--brand-deep)', letterSpacing: 0.2 }}>Pet Nutrition Curation</div>
+            <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ink)', marginTop: 1 }}>
+              {profile.name} 맞춤 최적 순서
             </div>
-            <div style={{ fontSize: '13px', color: '#66707C', lineHeight: 1.6 }}>
-              검수 완료 여부, 알레르기 회피, 건강 고민 매칭, 리뷰 신뢰도, 가격 적정성, 종/연령 적합도를 함께 반영해 정렬합니다.
+            <div style={{ fontSize: '12.5px', color: 'var(--ink-soft)', lineHeight: 1.4, marginTop: 4 }}>
+              제조사 성분 실측치와 알레르기 유발 유무, 질병 고민 해결 적합도 및 수의 분석 점수를 매칭해 추천합니다.
             </div>
           </div>
         )}
 
-        <div className="ui-grid-2">
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
           {pagedResults.map(({ product, breakdown, score }) => (
             <div key={product.id}>
               <ProductCard product={product} />
-              {breakdown && score != null && (
-                <div style={{ marginTop: '8px', padding: '0 4px', fontSize: '12px', color: '#66707C', lineHeight: 1.55 }}>
-                  <strong style={{ color: '#111827' }}>{score}점 추천</strong>
-                  {breakdown.reasons && breakdown.reasons.length > 0 && (
-                    <>{' · '}{breakdown.reasons.slice(0, 2).join(' · ')}</>
-                  )}
+              {breakdown && score != null && breakdown.reasons && breakdown.reasons.length > 0 && (
+                <div style={{ marginTop: '-10px', marginBottom: '14px', padding: '0 4px', fontSize: '11.5px', color: 'var(--brand-deep)', fontWeight: 600 }}>
+                  궁합 상세: {breakdown.reasons.slice(0, 2).join(' · ')}
                 </div>
               )}
             </div>
@@ -487,10 +436,10 @@ export default function Search() {
             onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
             style={{
               display: 'block', width: '100%', marginTop: '20px',
-              padding: '14px', borderRadius: '16px',
-              border: '1.5px solid rgba(129, 201, 149, 0.4)',
-              background: '#FFFFFF', color: 'var(--primary-dark)',
-              fontWeight: 800, fontSize: '14px', cursor: 'pointer',
+              padding: '14px', borderRadius: '14px',
+              border: '1px solid var(--hairline)',
+              background: 'var(--surface)', color: 'var(--ink-soft)',
+              fontWeight: 700, fontSize: '14px', cursor: 'pointer',
             }}
           >
             더 보기 ({visibleCount} / {displayResults.length}개)
@@ -498,9 +447,9 @@ export default function Search() {
         )}
 
         {displayResults.length === 0 && !isLoading && (
-          <div className="ui-info-card" style={{ textAlign: 'center', padding: '56px 18px', color: '#9CA3AF' }}>
-            검색 결과가 없습니다.<br />
-            검색어를 바꾸거나 상세 필터를 넓혀 보세요.
+          <div style={{ padding: '54px 28px', textAlign: 'center' }}>
+            <SearchIcon size={30} stroke="var(--ink-faint)" style={{ margin: '0 auto 12px' }} />
+            <div style={{ fontSize: 14, color: 'var(--ink-soft)' }}>조건에 맞는 제품이 없어요</div>
           </div>
         )}
       </div>
@@ -725,20 +674,30 @@ export default function Search() {
   );
 }
 
-function FilterChip({ label, selected, onClick }: { label: string, selected: boolean, onClick: () => void }) {
+function FilterChip({ label, selected, onClick, style }: { label: string, selected: boolean, onClick: () => void, style?: React.CSSProperties }) {
   return (
     <button
       type="button"
       onClick={onClick}
       style={{
-        padding: '10px 20px', borderRadius: '24px', fontSize: '14px', border: '1px solid',
-        borderColor: selected ? 'var(--primary)' : '#E5E7EB',
-        backgroundColor: selected ? 'var(--primary)' : 'transparent',
-        color: selected ? '#fff' : '#4B5563', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
-        display: 'flex', alignItems: 'center', gap: '4px'
+        flexShrink: 0,
+        cursor: 'pointer',
+        whiteSpace: 'nowrap',
+        fontSize: 13.5,
+        fontWeight: selected ? 700 : 500,
+        padding: '8px 14px',
+        borderRadius: 999,
+        color: selected ? 'var(--ink-on-brand)' : 'var(--ink-soft)',
+        background: selected ? 'var(--ink)' : 'var(--surface)',
+        border: `1px solid ${selected ? 'var(--ink)' : 'var(--hairline)'}`,
+        transition: 'all .15s ease',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '4px',
+        ...style,
       }}
     >
-      {selected && <Check size={16} />}
+      {selected && <Check size={14} />}
       {label}
     </button>
   );

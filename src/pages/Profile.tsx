@@ -235,24 +235,49 @@ export default function Profile() {
     navigate('/');
   };
 
+  const Pill = ({ on, children, onClick }: { on: boolean; children: React.ReactNode; onClick: () => void }) => (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        cursor: 'pointer',
+        padding: '11px 16px',
+        borderRadius: 12,
+        fontSize: 14,
+        fontWeight: on ? 700 : 500,
+        color: on ? 'var(--ink-on-brand)' : 'var(--ink-soft)',
+        background: on ? 'var(--ink)' : 'var(--surface)',
+        border: `1px solid ${on ? 'var(--ink)' : 'var(--hairline)'}`,
+        transition: 'all .15s ease',
+      }}
+    >
+      {children}
+    </button>
+  );
+
   if (!userId) {
     return (
-      <div className="animate-fade-in" style={{ padding: '40px 20px', minHeight: '80vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+      <div className="animate-fade-in" style={{ padding: '60px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 4 }}>
         <Helmet><title>마이 펫 | 베로로</title></Helmet>
-        <div style={{ width: '80px', height: '80px', borderRadius: '24px', backgroundColor: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
-          <User size={40} color="#D1D5DB" />
+        <div style={{
+          width: 76, height: 76, borderRadius: 999, background: 'var(--brand-tint)', border: '1px solid var(--brand-line)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14
+        }}>
+          <User size={34} color="var(--brand-deep)" />
         </div>
-        <h2 style={{ fontSize: '24px', fontWeight: 900, color: 'var(--text-dark)', marginBottom: '12px' }}>
-          로그인이 필요해요
-        </h2>
-        <p style={{ fontSize: '15px', color: 'var(--text-muted)', marginBottom: '32px', textAlign: 'center', lineHeight: 1.5 }}>
-          프로필을 설정하고 아이의 건강 맞춤<br/>사료 분석을 시작해보세요!
+        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--ink)' }}>로그인이 필요해요</h2>
+        <p style={{ margin: '8px 0 22px', fontSize: 13.5, color: 'var(--ink-soft)', lineHeight: 1.5, maxWidth: 260 }}>
+          프로필을 설정하면 우리 아이 건강에 맞춘<br />사료 분석과 큐레이션을 시작할 수 있어요
         </p>
-        <Button 
-          title="로그인 / 회원가입 하기"
-          style={{ width: '100%', maxWidth: '320px', borderRadius: '20px', fontSize: '16px' }}
+        <button
           onClick={() => navigate('/auth')}
-        />
+          style={{
+            cursor: 'pointer', padding: '15px 28px', borderRadius: 14,
+            background: 'var(--brand)', color: 'var(--ink-on-brand)', fontSize: 15, fontWeight: 700, border: 'none', boxShadow: 'var(--shadow-sm)'
+          }}
+        >
+          로그인 / 회원가입 하기
+        </button>
       </div>
     );
   }
@@ -260,206 +285,309 @@ export default function Profile() {
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '40px' }}>
       <Helmet><title>마이 펫 | 베로로</title></Helmet>
-      {/* 탭 네비게이션 */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', padding: '0 2px', overflowX: 'auto' }}>
-        {([
-          { key: 'info', label: '프로필 설정' },
-          { key: 'favorites', label: `찜 목록 ${favorites.length > 0 ? `(${favorites.length})` : ''}` },
-          { key: 'orders', label: '주문 내역' },
-          { key: 'reports', label: '분석 리포트' },
-        ] as const).map(tab => (
-          <TossChip key={tab.key} label={tab.label} active={activeTab === tab.key} onClick={() => setActiveTab(tab.key)} />
-        ))}
+      
+      {/* Pet Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 20px 16px' }}>
+        <div style={{ width: 58, height: 58, borderRadius: 999, overflow: 'hidden', border: '2px solid var(--brand-line)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--brand-tint)', fontSize: '28px' }}>
+          {profile.species === 'Cat' ? '🐱' : '🐶'}
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 19, fontWeight: 700, color: 'var(--ink)' }}>{profile.name || '우리 아이'}</div>
+          <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 2 }}>
+            {profile.breed || '믹스견'} · {profile.species === 'Cat' ? '고양이' : '강아지'} · {profile.age || 0}세 · {profile.weightKg || 0}kg
+          </div>
+        </div>
       </div>
 
-      {activeTab === 'favorites' ? (
-        <div>
-          {favoriteProducts.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              {favoriteProducts.map(p => <ProductCard key={p.id} product={p} />)}
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '100px 20px', backgroundColor: '#F9FAFB', borderRadius: '24px' }}>
-              <Heart color="#D1D5DB" size={40} style={{ margin: '0 auto 16px' }} />
-              <p style={{ color: '#9CA3AF', fontSize: '15px' }}>찜한 제품이 없습니다.</p>
-              <Link to="/search" style={{ color: 'var(--primary)', fontWeight: 700, marginTop: '12px', display: 'inline-block', textDecoration: 'none' }}>제품 탐색하기</Link>
-            </div>
-          )}
-        </div>
-      ) : activeTab === 'info' ? (
-        <TossCard style={{ padding: '28px 22px 24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-            <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <User color="#fff" size={22} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '11px', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.06em', marginBottom: '4px' }}>
-                마이 펫 · {profileStep + 1} / {stepCount}
-              </div>
-              <TossSectionTitle title={step.title} style={{ marginBottom: '0' }} />
-            </div>
-          </div>
-
-          <div
-            style={{
-              height: '4px',
-              borderRadius: '999px',
-              background: '#EEF2F6',
-              marginBottom: '24px',
-              overflow: 'hidden',
-            }}
-          >
-            <div
+      {/* Tabs */}
+      <div className="rail" style={{ display: 'flex', gap: 20, overflowX: 'auto', padding: '0 20px', borderBottom: '1px solid var(--hairline)', msOverflowStyle: 'none', scrollbarWidth: 'none', marginBottom: '20px' }}>
+        {([
+          { key: 'info' as const, label: '프로필 설정' },
+          { key: 'favorites' as const, label: `찜 목록 ${favorites.length}` },
+          { key: 'orders' as const, label: '주문 내역' },
+          { key: 'reports' as const, label: '분석 리포트' },
+        ]).map((t) => {
+          const on = activeTab === t.key;
+          return (
+            <button
+              key={t.key}
+              onClick={() => setActiveTab(t.key)}
               style={{
-                height: '100%',
-                width: `${((profileStep + 1) / stepCount) * 100}%`,
-                borderRadius: '999px',
-                background: 'linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%)',
-                transition: 'width 0.25s ease',
+                flexShrink: 0, cursor: 'pointer', background: 'none', border: 'none',
+                padding: '0 0 11px', position: 'relative', fontSize: 14, fontWeight: on ? 700 : 500, color: on ? 'var(--ink)' : 'var(--ink-faint)'
               }}
-            />
-          </div>
-
-          <p style={{ margin: '0 0 22px', fontSize: '16px', fontWeight: 700, color: '#334155', lineHeight: 1.5 }}>
-            {step.prompt}
-          </p>
-
-          <div style={{ marginBottom: '28px' }}>{profileStepBody}</div>
-
-          <div style={{ display: 'flex', gap: '10px' }}>
-            {profileStep > 0 && (
-              <TossButton 
-                variant="outline" 
-                onClick={handlePrev}
-                style={{ flex: 1, height: '48px', fontSize: '15px' }}
-              >
-                이전
-              </TossButton>
-            )}
-            <TossButton 
-              onClick={handleNext}
-              style={{ flex: 2, height: '48px', fontSize: '15px' }}
             >
-              {profileStep === stepCount - 1 ? '변경 사항 저장' : '다음'}
-            </TossButton>
-          </div>
-          
-          <div style={{ marginTop: '32px', borderTop: '1px solid #E5E8EB', paddingTop: '24px' }}>
-            <button 
-              onClick={handleLogout}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}
-            >
-              <LogOut size={16} /> 로그아웃
+              {t.label}
+              {on && <span style={{ position: 'absolute', left: 0, right: 0, bottom: -1, height: 2.5, borderRadius: 2, background: 'var(--ink)' }} />}
             </button>
+          );
+        })}
+      </div>
+
+      <div style={{ paddingTop: '8px' }}>
+        {activeTab === 'info' && (
+          <div style={{ padding: '6px 20px 24px' }}>
+            {/* progress */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--brand-deep)' }}>STEP {profileStep + 1} / {stepCount}</span>
+              <span style={{ fontSize: 12.5, color: 'var(--ink-soft)' }}>{step.title}</span>
+            </div>
+            <div style={{ height: 6, borderRadius: 99, background: 'var(--hairline)', overflow: 'hidden', marginBottom: 22 }}>
+              <div style={{ width: `${((profileStep + 1) / stepCount) * 100}%`, height: '100%', background: 'var(--brand)', transition: 'width .25s ease' }} />
+            </div>
+
+            <div style={{ minHeight: 168 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em' }}>{step.prompt}</h3>
+                </div>
+
+                {profileStep === 0 && (
+                  <input
+                    value={formData.name || ''}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="예: 체다"
+                    style={{
+                      width: '100%', boxSizing: 'border-box', padding: '14px 16px', borderRadius: 13, fontSize: 16,
+                      border: '1px solid var(--hairline)', outline: 'none', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'inherit',
+                    }}
+                  />
+                )}
+
+                {profileStep === 1 && (
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <Pill on={formData.species === 'Dog'} onClick={() => setFormData({ ...formData, species: 'Dog' })}>강아지</Pill>
+                    <Pill on={formData.species === 'Cat'} onClick={() => setFormData({ ...formData, species: 'Cat' })}>고양이</Pill>
+                  </div>
+                )}
+
+                {profileStep === 2 && (
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    {[
+                      { label: '아기', age: 1 },
+                      { label: '성견', age: 4 },
+                      { label: '시니어', age: 10 },
+                    ].map(({ label, age }) => (
+                      <Pill key={label} on={formData.age === age} onClick={() => setFormData({ ...formData, age })}>
+                        {label}
+                      </Pill>
+                    ))}
+                  </div>
+                )}
+
+                {profileStep === 3 && (
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                    <input
+                      type="number"
+                      value={formData.weightKg != null ? formData.weightKg : ''}
+                      onChange={(e) => {
+                        const n = parseFloat(e.target.value);
+                        setFormData({
+                          ...formData,
+                          weightKg: Number.isFinite(n) && n > 0 ? n : undefined,
+                        });
+                      }}
+                      style={{
+                        width: 120, boxSizing: 'border-box', padding: '14px 16px', borderRadius: 13, fontSize: 16,
+                        border: '1px solid var(--hairline)', outline: 'none', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'inherit',
+                      }}
+                      placeholder="6.2"
+                    />
+                    <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink-soft)' }}>kg</span>
+                  </div>
+                )}
+
+                {profileStep === 4 && (
+                  <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap' }}>
+                    {allergyOptions.map((opt) => (
+                      <Pill key={opt} on={formData.allergies?.includes(opt)} onClick={() => toggleArrayItem('allergies', opt)}>
+                        {opt}
+                      </Pill>
+                    ))}
+                  </div>
+                )}
+
+                {profileStep === 5 && (
+                  <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap' }}>
+                    {concernOptions.map((opt) => (
+                      <Pill key={opt} on={formData.healthConcerns?.includes(opt)} onClick={() => toggleArrayItem('healthConcerns', opt)}>
+                        {opt}
+                      </Pill>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
+              {profileStep > 0 && (
+                <button
+                  onClick={handlePrev}
+                  style={{
+                    cursor: 'pointer', flex: '0 0 auto', padding: '15px 22px', borderRadius: 14,
+                    background: 'var(--surface)', border: '1px solid var(--hairline)', fontSize: 15, fontWeight: 600, color: 'var(--ink-soft)'
+                  }}
+                >
+                  이전
+                </button>
+              )}
+              <button
+                onClick={handleNext}
+                style={{
+                  cursor: 'pointer', flex: 1, padding: '15px', borderRadius: 14, background: 'var(--brand)', color: 'var(--ink-on-brand)',
+                  fontSize: 15, fontWeight: 700, border: 'none', boxShadow: 'var(--shadow-sm)'
+                }}
+              >
+                {profileStep === stepCount - 1 ? '변경 사항 저장' : '다음'}
+              </button>
+            </div>
+
+            <div style={{ padding: '32px 0 0' }}>
+              <button
+                onClick={handleLogout}
+                style={{
+                  width: '100%', cursor: 'pointer', padding: '14px', borderRadius: 13,
+                  background: 'none', border: '1px solid var(--hairline)', fontSize: 14, fontWeight: 600, color: 'var(--ink-soft)'
+                }}
+              >
+                로그아웃
+              </button>
+            </div>
           </div>
-        </TossCard>
-      ) : activeTab === 'orders' ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {orders.length > 0 ? (
-            orders.map(order => (
-              <div key={order.id} className="card" style={{ padding: '20px', border: '1px solid #EEF0F3' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px dashed #E5E7EB' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Calendar size={16} color="var(--text-muted)" />
-                    <span style={{ fontSize: '14px', color: 'var(--text-dark)', fontWeight: 600 }}>{new Date(order.created_at).toLocaleDateString()}</span>
+        )}
+
+        {activeTab === 'favorites' && (
+          <div style={{ padding: '4px 20px 20px' }}>
+            {favoriteProducts.length > 0 ? (
+              favoriteProducts.map(p => <ProductCard key={p.id} product={p} />)
+            ) : (
+              <div style={{ padding: '54px 28px', textAlign: 'center' }}>
+                <Heart size={30} stroke="var(--ink-faint)" style={{ margin: '0 auto 12px' }} />
+                <div style={{ fontSize: 14, color: 'var(--ink-soft)', marginBottom: 16 }}>아직 찜한 제품이 없어요</div>
+                <button
+                  onClick={() => navigate('/')}
+                  style={{
+                    cursor: 'pointer', fontSize: 14, fontWeight: 700, color: 'var(--brand-deep)',
+                    background: 'var(--brand-tint)', border: '1px solid var(--brand-line)', padding: '11px 20px', borderRadius: 12
+                  }}
+                >
+                  제품 탐색하기
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'orders' && (
+          <div style={{ padding: '8px 20px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {orders.length > 0 ? (
+              orders.map(order => (
+                <div key={order.id} style={{ padding: 16, borderRadius: 16, background: 'var(--surface)', border: '1px solid var(--hairline)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--hairline)', paddingBottom: 10 }}>
+                    <div style={{ fontSize: 12, color: 'var(--ink-faint)' }}>
+                      {new Date(order.created_at).toLocaleDateString()}
+                    </div>
+                    <DeliveryStatus status={order.status} />
                   </div>
-                  <DeliveryStatus status={order.status} />
-                </div>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {order.order_items.map((item: SupabaseOrderItem) => (
-                    <Link key={item.id} to={`/product/${item.product_id}`} style={{ display: 'flex', gap: '12px', textDecoration: 'none', color: 'inherit' }}>
-                      <img src={item.products.image_url} alt={item.products.name} style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover' }} />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{item.products.brand_name}</div>
-                        <div style={{ fontSize: '14px', fontWeight: 700, margin: '2px 0' }}>{item.products.name}</div>
-                        <div style={{ fontSize: '13px', fontWeight: 600 }}>{item.price_at_purchase.toLocaleString()}원 · {item.quantity}개</div>
+                    <div key={item.id} onClick={() => navigate(`/product/${item.product_id}`)} style={{ display: 'flex', gap: 13, alignItems: 'center', cursor: 'pointer' }}>
+                      <img src={item.products.image_url} alt={item.products.name} style={{ width: 60, height: 60, borderRadius: 12, objectFit: 'cover', border: '1px solid var(--hairline)' }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 11, color: 'var(--ink-faint)' }}>{item.products.brand_name}</div>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.products.name}</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginTop: 2 }}>{item.price_at_purchase.toLocaleString()}원 · {item.quantity}개</div>
                       </div>
-                      <ChevronRight size={20} color="#9CA3AF" style={{ alignSelf: 'center' }} />
-                    </Link>
+                    </div>
                   ))}
-                </div>
-
-
-                <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #F3F4F6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>총 결제 금액</span>
-                  <span style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-dark)' }}>{order.total_amount.toLocaleString()}원</span>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div style={{ textAlign: 'center', padding: '100px 20px', backgroundColor: '#F9FAFB', borderRadius: '24px' }}>
-              <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                <ShoppingBag color="#D1D5DB" size={32} />
-              </div>
-              <p style={{ color: '#9CA3AF', fontSize: '15px' }}>아직 주문 내역이 없습니다.</p>
-              <Link to="/" style={{ color: 'var(--primary)', fontWeight: 700, marginTop: '12px', display: 'inline-block', textDecoration: 'none' }}>첫 쇼핑 시작하기</Link>
-            </div>
-          )}
-        </div>
-      ) : activeTab === 'reports' ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {reports && reports.length > 0 ? (
-            reports.map(report => {
-              const result = report.analysis_json;
-              const product = report.products; // linked product
-              const scoreColor = result.scores?.final >= 80 ? '#10B981' : (result.scores?.final >= 60 ? '#F59E0B' : '#EF4444');
-
-              return (
-                <div key={report.id} className="card" style={{ padding: '20px', border: '1px solid #EEF0F3', borderRadius: '20px', backgroundColor: '#fff' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px dashed #E5E7EB' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Calendar size={16} color="var(--text-muted)" />
-                      <span style={{ fontSize: '14px', color: 'var(--text-dark)', fontWeight: 600 }}>{new Date(report.created_at).toLocaleDateString()}</span>
-                    </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--hairline)', paddingTop: 10, marginTop: 4 }}>
+                    <span style={{ fontSize: 13, color: 'var(--ink-soft)' }}>총 결제 금액</span>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--ink)' }}>{order.total_amount.toLocaleString()}원</span>
                   </div>
-                  
-                  <div style={{ display: 'flex', gap: '16px' }}>
-                    {product ? (
-                      <img src={product.image_url} alt={product.name} style={{ width: '80px', height: '80px', borderRadius: '12px', objectFit: 'cover', border: '1px solid #F3F4F6' }} />
-                    ) : (
-                      <div style={{ width: '80px', height: '80px', borderRadius: '12px', backgroundColor: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <FileText color="#9CA3AF" />
+                </div>
+              ))
+            ) : (
+              <div style={{ padding: '54px 28px', textAlign: 'center' }}>
+                <ShoppingBag size={30} stroke="var(--ink-faint)" style={{ margin: '0 auto 12px' }} />
+                <div style={{ fontSize: 14, color: 'var(--ink-soft)', marginBottom: 16 }}>아직 주문 내역이 없어요</div>
+                <button
+                  onClick={() => navigate('/')}
+                  style={{
+                    cursor: 'pointer', fontSize: 14, fontWeight: 700, color: 'var(--brand-deep)',
+                    background: 'var(--brand-tint)', border: '1px solid var(--brand-line)', padding: '11px 20px', borderRadius: 12
+                  }}
+                >
+                  제품 보러 가기
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'reports' && (
+          <div style={{ padding: '8px 20px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {reports && reports.length > 0 ? (
+              reports.map(report => {
+                const result = report.analysis_json;
+                const product = report.products;
+                const finalScore = result.scores?.final || 0;
+                const scoreGrade = finalScore >= 80 ? '안전' : (finalScore >= 60 ? '주의' : '경고');
+                const gradeColor = scoreGrade === '안전' ? 'var(--safe)' : (scoreGrade === '주의' ? 'var(--warning)' : 'var(--danger)');
+                const gradeBg = scoreGrade === '안전' ? 'var(--safe-tint)' : (scoreGrade === '주의' ? 'var(--caution-tint)' : 'var(--danger-tint)');
+
+                return (
+                  <div key={report.id} style={{ padding: 16, borderRadius: 16, background: 'var(--surface)', border: '1px solid var(--hairline)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 11, color: 'var(--ink-faint)' }}>{new Date(report.created_at).toLocaleDateString()}</div>
+                        <div style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--ink)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{product ? product.name : 'OCR 추출 성분 분석'}</div>
                       </div>
+                      <span style={{ fontSize: 11.5, fontWeight: 700, color: gradeColor, padding: '4px 10px', borderRadius: 999, background: gradeBg }}>{scoreGrade}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                      {product?.image_url && (
+                        <img src={product.image_url} alt={product.name} style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover', border: '1px solid var(--hairline)' }} />
+                      )}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ height: 8, borderRadius: 99, background: 'var(--hairline)', overflow: 'hidden' }}>
+                          <div style={{ width: `${finalScore}%`, height: '100%', background: gradeColor }} />
+                        </div>
+                        <div style={{ marginTop: 6, fontSize: 12, color: 'var(--ink-soft)' }}>
+                          성분 안전 점수 <b style={{ color: 'var(--ink)' }}>{finalScore.toFixed(0)}</b>/100
+                        </div>
+                      </div>
+                    </div>
+                    {product && (
+                      <button
+                        onClick={() => navigate(`/product/${report.product_id}`)}
+                        style={{
+                          width: '100%', cursor: 'pointer', padding: '10px', borderRadius: 10,
+                          background: 'none', border: '1px solid var(--hairline)', fontSize: 12.5, fontWeight: 600, color: 'var(--ink-soft)'
+                        }}
+                      >
+                        상세 리포트 보기
+                      </button>
                     )}
-                    
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>{product ? product.brand_name : '임의 분석'}</div>
-                      <div style={{ fontSize: '16px', fontWeight: 800, margin: '4px 0', color: '#1F2937' }}>{product ? product.name : 'OCR 추출 성분 분석'}</div>
-                      <div style={{ fontSize: '13px', color: '#6B7280', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                        {result.summary}
-                      </div>
-                    </div>
-                    
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                      <div style={{ 
-                        width: '50px', height: '50px', borderRadius: '50%', border: `3px solid ${scoreColor}`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', color: scoreColor, fontWeight: 900, fontSize: '16px'
-                      }}>
-                        {result.scores?.final?.toFixed(0) || 0}
-                      </div>
-                    </div>
                   </div>
-
-                  {product && (
-                    <Link to={`/product/${report.product_id}`} style={{ display: 'block', marginTop: '16px', padding: '12px', textAlign: 'center', backgroundColor: '#F9FAFB', borderRadius: '12px', fontSize: '14px', fontWeight: 700, color: '#4B5563', textDecoration: 'none' }}>
-                      해당 제품 상세보기
-                    </Link>
-                  )}
-                </div>
-              );
-            })
-          ) : (
-            <div style={{ textAlign: 'center', padding: '100px 20px', backgroundColor: '#F9FAFB', borderRadius: '24px' }}>
-              <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                <Activity color="#D1D5DB" size={32} />
+                );
+              })
+            ) : (
+              <div style={{ padding: '54px 28px', textAlign: 'center' }}>
+                <Activity size={30} stroke="var(--ink-faint)" style={{ margin: '0 auto 12px' }} />
+                <div style={{ fontSize: 14, color: 'var(--ink-soft)', marginBottom: 16 }}>저장된 분석 리포트가 없어요</div>
+                <button
+                  onClick={() => navigate('/')}
+                  style={{
+                    cursor: 'pointer', fontSize: 14, fontWeight: 700, color: 'var(--brand-deep)',
+                    background: 'var(--brand-tint)', border: '1px solid var(--brand-line)', padding: '11px 20px', borderRadius: 12
+                  }}
+                >
+                  사료 분석하러 가기
+                </button>
               </div>
-              <p style={{ color: '#9CA3AF', fontSize: '15px' }}>저장된 분석 리포트가 없습니다.</p>
-              <Link to="/search" style={{ color: 'var(--primary)', fontWeight: 700, marginTop: '12px', display: 'inline-block', textDecoration: 'none' }}>사료 검색 및 분석하기</Link>
-            </div>
-          )}
-        </div>
-      ) : null}
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

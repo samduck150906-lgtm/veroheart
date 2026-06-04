@@ -1,3 +1,6 @@
+# DEPRECATED: Coupang has blocked/rate-limited this scraper. Do not use.
+raise RuntimeError("This crawler is deprecated and disabled due to Coupang rate limits.")
+
 import os
 import time
 import uuid

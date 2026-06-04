@@ -137,6 +137,46 @@ export default function Login() {
             await initApp();
             navigate(redirectTo, { replace: true });
           } else {
+            let autoConfirmed = false;
+            try {
+              const url = import.meta.env.VITE_SUPABASE_URL;
+              const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+              if (url && anonKey) {
+                const response = await fetch(`${url}/functions/v1/admin-auth`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${anonKey}`
+                  },
+                  body: JSON.stringify({
+                    action: 'confirm',
+                    email: addr
+                  }),
+                });
+                if (response.ok) {
+                  autoConfirmed = true;
+                }
+              }
+            } catch (err) {
+              console.warn('Signup auto-confirm edge function failed:', err);
+            }
+
+            if (autoConfirmed) {
+              const signInResult = await supabase.auth.signInWithPassword({
+                email: addr,
+                password
+              });
+              if (!signInResult.error && signInResult.data.session) {
+                if (signInResult.data.user) {
+                  await ensurePublicUserExists(signInResult.data.user.id, addr);
+                }
+                notify.success('회원가입이 완료되었습니다!');
+                await initApp();
+                navigate(redirectTo, { replace: true });
+                return;
+              }
+            }
+
             if (data.user) {
               await ensurePublicUserExists(data.user.id, addr);
             }
