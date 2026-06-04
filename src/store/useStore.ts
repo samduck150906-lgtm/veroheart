@@ -161,9 +161,11 @@ export const useStore = create<StoreState>((set, get) => ({
       const user = await getInitialSessionUser();
       if (!user) {
         const localBreed = localStorage.getItem('vh_pet_breed_local') || '';
+        const localGender = localStorage.getItem('vh_pet_gender_local') || '남아';
+        const localPersonality = localStorage.getItem('vh_pet_personality_local') || '활발함 ⚡';
         set({
           isInitializing: false,
-          profile: { ...DEFAULT_USER_PET_PROFILE, breed: localBreed },
+          profile: { ...DEFAULT_USER_PET_PROFILE, breed: localBreed, gender: localGender, personality: localPersonality },
           userId: null,
           isLoggedIn: false,
         });
@@ -189,6 +191,8 @@ export const useStore = create<StoreState>((set, get) => ({
       if (pets && pets.length > 0) {
         const p = pets[0];
         const localBreed = localStorage.getItem('vh_pet_breed_' + user.id) || '';
+        const localGender = localStorage.getItem('vh_pet_gender_' + user.id) || '남아';
+        const localPersonality = localStorage.getItem('vh_pet_personality_' + user.id) || '활발함 ⚡';
         set({
           profile: {
             id: p.id,
@@ -197,7 +201,9 @@ export const useStore = create<StoreState>((set, get) => ({
             age: p.age_group === 'baby' ? 1 : p.age_group === 'senior' ? 10 : 4,
             breed: localBreed || '',
             healthConcerns: p.conditions || [],
-            allergies: p.allergies || []
+            allergies: p.allergies || [],
+            gender: localGender,
+            personality: localPersonality
           }
         });
       }
@@ -234,8 +240,14 @@ export const useStore = create<StoreState>((set, get) => ({
     const newProfile = { ...profile, ...updates };
     set({ profile: newProfile });
 
-    if (newProfile.breed) {
+    if (newProfile.breed != null) {
       localStorage.setItem('vh_pet_breed_' + (userId || 'local'), newProfile.breed);
+    }
+    if (newProfile.gender != null) {
+      localStorage.setItem('vh_pet_gender_' + (userId || 'local'), newProfile.gender);
+    }
+    if (newProfile.personality != null) {
+      localStorage.setItem('vh_pet_personality_' + (userId || 'local'), newProfile.personality);
     }
 
     if (!userId) return;

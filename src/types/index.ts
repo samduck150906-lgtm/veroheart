@@ -8,6 +8,8 @@ export interface UserPetProfile {
   breed?: string;
   healthConcerns: string[];
   allergies: string[];
+  gender?: '남아' | '여아';
+  personality?: string;
 }
 
 export interface Ingredient {
@@ -50,6 +52,8 @@ export const DEFAULT_USER_PET_PROFILE: UserPetProfile = {
   age: 4,
   healthConcerns: [],
   allergies: [],
+  gender: '남아',
+  personality: '활발함 ⚡',
 };
 
 export interface SupabaseProduct {

@@ -44,6 +44,94 @@ export default function Home() {
   const hasPetProfile = isLoggedIn && profile && profile.id && profile.id !== 'local-profile' && profile.name && profile.name !== '우리 아이';
   const favoriteProducts = products.filter(p => favorites.includes(p.id));
 
+  // Retro game calculations
+  const totalExp = (favorites?.length || 0) * 15 + (recentViews?.length || 0) * 10 + (hasPetProfile ? 120 : 0);
+  const level = Math.floor(totalExp / 100) + 1;
+  const currentExp = totalExp % 100;
+  const hp = Math.max(20, 100 - (profile?.healthConcerns?.length || 0) * 20);
+
+  const getAllergyDebuff = (allergy: string) => {
+    const norm = allergy.trim();
+    if (norm.includes('소고기') || norm.includes('소')) {
+      return {
+        emoji: '🐮 😣',
+        title: '소고기 알레르기 디버프',
+        desc: '소고기 급여 시 알레르기 반응 (소 보며 찡그림)',
+        color: '#E53E3E',
+        bgColor: '#FFF5F5',
+        borderColor: '#FEB2B2',
+      };
+    }
+    if (norm.includes('닭고기') || norm.includes('닭')) {
+      return {
+        emoji: '🐔 😣',
+        title: '닭고기 알레르기 디버프',
+        desc: '닭고기 급여 시 피부 발진 및 눈물흔 유발',
+        color: '#DD6B20',
+        bgColor: '#FFFAF0',
+        borderColor: '#FEEBC8',
+      };
+    }
+    if (norm.includes('연어') || norm.includes('생선')) {
+      return {
+        emoji: '🐟 😣',
+        title: '연어 알레르기 디버프',
+        desc: '연어 및 어류 단백질원 차단 상태',
+        color: '#3182CE',
+        bgColor: '#EBF8FF',
+        borderColor: '#BEE3F8',
+      };
+    }
+    if (norm.includes('곡물')) {
+      return {
+        emoji: '🌾 😣',
+        title: '글루텐 곡물 디버프',
+        desc: '밀, 보리 등 밀가루/곡류 차단 상태',
+        color: '#805AD5',
+        bgColor: '#F5F3FF',
+        borderColor: '#E9D8FD',
+      };
+    }
+    if (norm.includes('색소') || norm.includes('인공')) {
+      return {
+        emoji: '🎨 😣',
+        title: '합성 색소 디버프',
+        desc: '인공향료 및 방부제 성분 차단 상태',
+        color: '#718096',
+        bgColor: '#F7FAFC',
+        borderColor: '#E2E8F0',
+      };
+    }
+    return {
+      emoji: '🚫 😣',
+      title: `${norm} 알레르기 디버프`,
+      desc: `${norm} 성분 배제 식단 필요`,
+      color: '#E53E3E',
+      bgColor: '#FFF5F5',
+      borderColor: '#FEB2B2',
+    };
+  };
+
+  const getConcernBuff = (concern: string) => {
+    const norm = concern.trim();
+    if (norm.includes('관절') || norm.includes('슬개골')) {
+      return { emoji: '🛡️', title: '슬개골 수호 버프', desc: '칼슘 및 글루코사민 집중 케어' };
+    }
+    if (norm.includes('비만') || norm.includes('체중')) {
+      return { emoji: '⚡', title: '체중 관리 민첩 버프', desc: '저지방 포뮬러 L-카르니틴 집중 공급' };
+    }
+    if (norm.includes('피부') || norm.includes('모질')) {
+      return { emoji: '💦', title: '피부 면역 배리어 버프', desc: '오메가3 및 히알루론산 집중 공급' };
+    }
+    if (norm.includes('소화') || norm.includes('예민')) {
+      return { emoji: '🌱', title: '장 건강 힐링 버프', desc: '프로바이오틱스 및 가수분해 락토' };
+    }
+    if (norm.includes('신장') || norm.includes('요로')) {
+      return { emoji: '💧', title: '신장 순환 정화 버프', desc: '저나트륨 수분 밸런스 설계' };
+    }
+    return { emoji: '✨', title: `${norm} 집중 케어 버프`, desc: `${norm} 맞춤형 영양소 배합 가이드` };
+  };
+
   useEffect(() => {
     if (!banners || banners.length <= 1) return;
     const timer = setInterval(() => {
@@ -194,96 +282,290 @@ export default function Home() {
         </div>
       )}
 
-      {/* Pet Profile & Details Card (Toss-style Dashboard for Configured Users) */}
+      {/* Pet Profile & Details Card (Tamagotchi / Pixel Game Status Screen Style) */}
       {hasPetProfile ? (
         <div style={{ padding: '0 20px' }}>
           <div style={{
             padding: '24px 20px',
             borderRadius: '24px',
-            background: 'var(--surface)',
-            border: '1px solid var(--hairline)',
-            boxShadow: 'var(--shadow-sm)',
+            background: '#FAF8F5',
+            border: '3px solid #1E293B',
+            boxShadow: '6px 6px 0px #1E293B',
             display: 'flex',
             flexDirection: 'column',
-            gap: '16px'
+            gap: '18px',
+            boxSizing: 'border-box'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <div style={{
-                width: '60px',
-                height: '60px',
-                borderRadius: '50%',
-                background: getBreedAvatar(profile.breed, profile.species).bg,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '28px',
-                boxShadow: '0 4px 10px rgba(0,0,0,0.05)',
-                flexShrink: 0
-              }}>
-                {getBreedAvatar(profile.breed, profile.species).emoji}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile.name}</span>
-                  <span style={{ fontSize: '11px', color: 'var(--brand-deep)', background: 'var(--brand-tint)', padding: '2px 8px', borderRadius: '8px', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                    {getBreedAvatar(profile.breed, profile.species).label}
-                  </span>
-                </div>
-                <div style={{ fontSize: '13px', color: 'var(--ink-soft)', marginTop: '4px', fontWeight: 500 }}>
-                  {profile.species === 'Cat' ? '고양이' : '강아지'} · {profile.age}세 {profile.weightKg ? `· ${profile.weightKg}kg` : ''}
-                </div>
+            {/* Header arcade tag */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              borderBottom: '2.5px solid #1E293B',
+              paddingBottom: '10px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '15px' }}>👾</span>
+                <span style={{
+                  fontFamily: 'monospace, Courier New, Courier',
+                  fontSize: '13px',
+                  fontWeight: 900,
+                  color: '#1E293B',
+                  letterSpacing: '0.05em'
+                }}>
+                  MY PET STATUS WINDOW
+                </span>
               </div>
               <button 
                 onClick={() => navigate('/profile')}
                 style={{
-                  padding: '8px 14px',
-                  borderRadius: '12px',
-                  background: 'var(--brand-tint)',
-                  color: 'var(--brand-deep)',
-                  border: '1.5px solid var(--brand-line)',
-                  fontSize: '12px',
-                  fontWeight: 700,
+                  padding: '5px 12px',
+                  borderRadius: '10px',
+                  background: '#FCD34D',
+                  color: '#1E293B',
+                  border: '2px solid #1E293B',
+                  boxShadow: '2px 2px 0px #1E293B',
+                  fontSize: '11.5px',
+                  fontWeight: 900,
                   cursor: 'pointer',
-                  flexShrink: 0
+                  fontFamily: 'inherit',
+                  transition: 'all 0.1s ease'
+                }}
+                onMouseDown={(e) => {
+                  e.currentTarget.style.transform = 'translate(1px, 1px)';
+                  e.currentTarget.style.boxShadow = '1px 1px 0px #1E293B';
+                }}
+                onMouseUp={(e) => {
+                  e.currentTarget.style.transform = 'none';
+                  e.currentTarget.style.boxShadow = '2px 2px 0px #1E293B';
                 }}
               >
-                수정
+                EDIT ✏️
               </button>
             </div>
 
-            <div style={{ width: '100%', height: '1px', background: 'var(--hairline)' }} />
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div>
-                <span style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--ink-faint)', marginBottom: '6px' }}>알레르기 정보</span>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {profile.allergies && profile.allergies.length > 0 ? (
-                    profile.allergies.map(allergy => (
-                      <span key={allergy} style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--danger)', background: 'var(--danger-tint)', padding: '4px 10px', borderRadius: '8px' }}>
-                        🚫 {allergy}
-                      </span>
-                    ))
-                  ) : (
-                    <span style={{ fontSize: '12.5px', color: 'var(--ink-soft)', fontStyle: 'italic' }}>피해야 할 알레르기 성분이 없습니다.</span>
-                  )}
+            {/* Main Stats Row */}
+            <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '18px', alignItems: 'start' }}>
+              {/* Left Column: Avatar + LV. */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                {/* Retro Avatar Frame */}
+                <div style={{
+                  width: '76px',
+                  height: '76px',
+                  borderRadius: '16px',
+                  background: getBreedAvatar(profile.breed, profile.species).bg,
+                  border: '3px solid #1E293B',
+                  boxShadow: '3px 3px 0px rgba(0,0,0,0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '36px',
+                  flexShrink: 0
+                }}>
+                  {getBreedAvatar(profile.breed, profile.species).emoji}
+                </div>
+                
+                {/* LV Label */}
+                <div style={{
+                  fontFamily: 'monospace, Courier New, Courier',
+                  fontSize: '13px',
+                  fontWeight: 900,
+                  color: '#1E293B',
+                  background: '#FEF3C7',
+                  border: '1.5px solid #1E293B',
+                  padding: '2px 8px',
+                  borderRadius: '6px',
+                  textAlign: 'center',
+                  whiteSpace: 'nowrap'
+                }}>
+                  LV. {level}
                 </div>
               </div>
 
+              {/* Right Column: Key Details */}
+              <div style={{
+                fontFamily: 'monospace, Courier New, Courier',
+                fontSize: '13px',
+                fontWeight: 700,
+                color: '#334155',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '5px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '18px', fontWeight: 900, color: '#1E293B' }}>{profile.name}</span>
+                  <span style={{
+                    fontSize: '11px',
+                    fontWeight: 800,
+                    color: profile.gender === '여아' ? '#E11D48' : '#2563EB',
+                    background: profile.gender === '여아' ? '#FFE4E6' : '#DBEAFE',
+                    border: `1.5px solid ${profile.gender === '여아' ? '#FDA4AF' : '#93C5FD'}`,
+                    padding: '2px 7px',
+                    borderRadius: '6px'
+                  }}>
+                    {profile.gender === '여아' ? ' 여아 ♀' : ' 남아 ♂'}
+                  </span>
+                </div>
+                <div style={{ height: '1.5px', background: 'rgba(30, 41, 59, 0.1)', margin: '2px 0 4px' }} />
+                <div>• <b>종족:</b> {profile.species === 'Cat' ? '🐱 고양이' : '🐶 강아지'} ({getBreedAvatar(profile.breed, profile.species).label})</div>
+                <div>• <b>나이:</b> {profile.age}세 (성견)</div>
+                <div>• <b>성향:</b> {profile.personality || '활발함 ⚡'}</div>
+                <div>• <b>체중:</b> {profile.weightKg ? `${profile.weightKg}kg` : '미등록 ⚖️'}</div>
+              </div>
+            </div>
+
+            {/* Progress Bars (EXP & HP) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '4px' }}>
+              {/* EXP Bar */}
               <div>
-                <span style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--ink-faint)', marginBottom: '6px' }}>건강 고민 및 관리</span>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {profile.healthConcerns && profile.healthConcerns.length > 0 ? (
-                    profile.healthConcerns.map(concern => (
-                      <span key={concern} style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--brand-deep)', background: 'var(--brand-tint)', padding: '4px 10px', borderRadius: '8px' }}>
-                        ✨ {concern}
-                      </span>
-                    ))
-                  ) : (
-                    <span style={{ fontSize: '12.5px', color: 'var(--ink-soft)', fontStyle: 'italic' }}>설정된 건강 고민이 없습니다.</span>
-                  )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', fontFamily: 'monospace' }}>
+                  <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#1E293B' }}>⭐ EXP (경험치)</span>
+                  <span style={{ fontSize: '11.5px', fontWeight: 900, color: '#475569' }}>{currentExp}/100</span>
+                </div>
+                <div style={{
+                  height: '14px',
+                  background: '#E2E8F0',
+                  border: '2px solid #1E293B',
+                  borderRadius: '6px',
+                  overflow: 'hidden',
+                  position: 'relative'
+                }}>
+                  <div style={{
+                    width: `${currentExp}%`,
+                    height: '100%',
+                    background: '#10B981',
+                    transition: 'width 0.4s ease-out',
+                    boxShadow: 'inset 0 -3px 0 rgba(0,0,0,0.15)'
+                  }} />
+                </div>
+              </div>
+
+              {/* HP Bar */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', fontFamily: 'monospace' }}>
+                  <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#E11D48' }}>❤️ HP (건강도)</span>
+                  <span style={{ fontSize: '11.5px', fontWeight: 900, color: '#E11D48' }}>{hp}/100</span>
+                </div>
+                <div style={{
+                  height: '14px',
+                  background: '#E2E8F0',
+                  border: '2px solid #1E293B',
+                  borderRadius: '6px',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    width: `${hp}%`,
+                    height: '100%',
+                    background: '#E11D48',
+                    transition: 'width 0.4s ease-out',
+                    boxShadow: 'inset 0 -3px 0 rgba(0,0,0,0.15)'
+                  }} />
+                </div>
+                <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 700, marginTop: '4px', textAlign: 'right' }}>
+                  {hp >= 80 ? '상태: 매우 건강함! (최고 컨디션) ✨' : hp >= 50 ? '상태: 주의 (케어가 필요해요) 💤' : '상태: 위험 (디버프 해제가 필요해요) ⚠️'}
                 </div>
               </div>
             </div>
+
+            {/* Debuffs Section (Allergies with Emojis & Frowning) */}
+            <div style={{ borderTop: '2px dotted #1E293B', paddingTop: '12px' }}>
+              <span style={{ display: 'block', fontSize: '12px', fontWeight: 900, color: '#E11D48', marginBottom: '8px', fontFamily: 'monospace' }}>
+                ⚠️ 보유 디버프 (알레르기 성분)
+              </span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {profile.allergies && profile.allergies.length > 0 ? (
+                  profile.allergies.map(allergy => {
+                    const dbf = getAllergyDebuff(allergy);
+                    return (
+                      <div 
+                        key={allergy} 
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          padding: '10px 14px',
+                          borderRadius: '12px',
+                          background: dbf.bgColor,
+                          border: `1.5px solid ${dbf.borderColor}`,
+                          boxSizing: 'border-box'
+                        }}
+                      >
+                        <span style={{ fontSize: '22px', display: 'flex', alignItems: 'center' }}>
+                          {dbf.emoji}
+                        </span>
+                        <div>
+                          <div style={{ fontSize: '12.5px', fontWeight: 800, color: dbf.color }}>{dbf.title}</div>
+                          <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 500, marginTop: '1px' }}>{dbf.desc}</div>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div style={{
+                    padding: '10px 14px',
+                    borderRadius: '12px',
+                    background: '#F0FDF4',
+                    border: '1.5px solid #BBF7D0',
+                    color: '#15803D',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    textAlign: 'center'
+                  }}>
+                    ✨ 활성화된 알레르기 디버프가 없습니다.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Synergy Buffs Section (Health Concerns as Buffs) */}
+            <div style={{ borderTop: '2px dotted #1E293B', paddingTop: '12px' }}>
+              <span style={{ display: 'block', fontSize: '12px', fontWeight: 900, color: '#0F766E', marginBottom: '8px', fontFamily: 'monospace' }}>
+                🛡️ 활성 케어 시너지 버프 (건강 고민)
+              </span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {profile.healthConcerns && profile.healthConcerns.length > 0 ? (
+                  profile.healthConcerns.map(concern => {
+                    const buf = getConcernBuff(concern);
+                    return (
+                      <div 
+                        key={concern} 
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          padding: '10px 14px',
+                          borderRadius: '12px',
+                          background: '#ECFDF5',
+                          border: '1.5px solid #A7F3D0',
+                          boxSizing: 'border-box'
+                        }}
+                      >
+                        <span style={{ fontSize: '16px', color: '#0F766E' }}>{buf.emoji}</span>
+                        <div>
+                          <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#0F766E' }}>{buf.title}</div>
+                          <div style={{ fontSize: '11px', color: '#475569', fontWeight: 500, marginTop: '1px' }}>{buf.desc}</div>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div style={{
+                    padding: '10px 14px',
+                    borderRadius: '12px',
+                    background: '#F8FAFC',
+                    border: '1.5px solid #E2E8F0',
+                    color: '#475569',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    textAlign: 'center',
+                    fontStyle: 'italic'
+                  }}>
+                    활성 버프가 없습니다. 건강 관리를 등록해보세요!
+                  </div>
+                )}
+              </div>
+            </div>
+
           </div>
         </div>
       ) : (
@@ -343,91 +625,6 @@ export default function Home() {
             </div>
           </div>
         </div>
-      )}
-
-      {/* Favorites (내 찜 목록 - Toss-style Horizontal Scroll) */}
-      {isLoggedIn && (
-        <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, padding: '0 20px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <h3 style={{ margin: 0, fontSize: 19, fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
-                내가 찜한 상품
-              </h3>
-              <span style={{ fontSize: '12.5px', color: 'var(--ink-soft)' }}>
-                우리 아이를 위해 눈여겨본 관심 사료
-              </span>
-            </div>
-            <button onClick={() => navigate('/profile')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 13, fontWeight: 700, color: 'var(--ink-soft)' }}>
-              전체보기 <ChevronRight size={15} />
-            </button>
-          </div>
-          {favoriteProducts.length > 0 ? (
-            <div className="rail" style={{ display: 'flex', gap: 14, overflowX: 'auto', padding: '2px 20px 4px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-              {favoriteProducts.slice(0, 8).map((p) => (
-                <div key={p.id} onClick={() => navigate(`/product/${p.id}`)} style={{ flexShrink: 0, width: 124, cursor: 'pointer' }}>
-                  <div style={{ width: 124, height: 124, borderRadius: 18, overflow: 'hidden', border: '1px solid var(--hairline)', marginBottom: 8, position: 'relative' }}>
-                    <ProductImage src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    <div style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 2 }}>
-                      ❤️
-                    </div>
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--ink-faint)', fontWeight: 700 }}>{p.brand}</div>
-                  <div className="line-clamp-2" style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.4, height: '34px', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                    {p.name}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ padding: '0 20px' }}>
-              <div style={{
-                padding: '24px 20px',
-                borderRadius: '20px',
-                background: 'var(--surface)',
-                border: '1px dashed var(--hairline)',
-                textAlign: 'center',
-                color: 'var(--ink-soft)',
-                fontSize: '13.5px',
-                fontWeight: 500,
-                lineHeight: 1.5
-              }}>
-                아직 찜한 제품이 없습니다.<br/>마음에 드는 사료에 찜(하트)을 눌러보세요!
-              </div>
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* Recently Viewed Products (내가 주로 봤던 상품 - Toss-style Horizontal Scroll) */}
-      {recentViews.length > 0 && (
-        <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, padding: '0 20px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <h3 style={{ margin: 0, fontSize: 19, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
-                내가 최근 본 상품
-              </h3>
-              <span style={{ fontSize: '12.5px', color: 'var(--ink-soft)' }}>
-                가장 최근에 확인했던 사료 상세 리포트
-              </span>
-            </div>
-            <button onClick={() => navigate('/search')} style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 13, fontWeight: 600, color: 'var(--ink-soft)' }}>
-              검색하기 <ChevronRight size={15} />
-            </button>
-          </div>
-          <div className="rail" style={{ display: 'flex', gap: 14, overflowX: 'auto', padding: '2px 20px 4px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-            {recentViews.slice(0, 8).map((p) => (
-              <div key={p.id} onClick={() => navigate(`/product/${p.id}`)} style={{ flexShrink: 0, width: 124, cursor: 'pointer' }}>
-                <div style={{ width: 124, height: 124, borderRadius: 18, overflow: 'hidden', border: '1px solid var(--hairline)', marginBottom: 8 }}>
-                  <ProductImage src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                </div>
-                <div style={{ fontSize: '11px', color: 'var(--ink-faint)', fontWeight: 700 }}>{p.brand}</div>
-                <div className="line-clamp-2" style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.4, height: '34px', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                  {p.name}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
       )}
 
       {/* 3 Curated Care Cards (주제별 건강 맞춤 큐레이션) */}
@@ -598,6 +795,91 @@ export default function Home() {
           </span>
         </button>
       </div>
+
+      {/* Favorites (내 찜 목록 - Toss-style Horizontal Scroll) */}
+      {isLoggedIn && (
+        <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, padding: '0 20px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <h3 style={{ margin: 0, fontSize: 19, fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
+                내가 찜한 상품
+              </h3>
+              <span style={{ fontSize: '12.5px', color: 'var(--ink-soft)' }}>
+                우리 아이를 위해 눈여겨본 관심 사료
+              </span>
+            </div>
+            <button onClick={() => navigate('/profile')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 13, fontWeight: 700, color: 'var(--ink-soft)' }}>
+              전체보기 <ChevronRight size={15} />
+            </button>
+          </div>
+          {favoriteProducts.length > 0 ? (
+            <div className="rail" style={{ display: 'flex', gap: 14, overflowX: 'auto', padding: '2px 20px 4px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+              {favoriteProducts.slice(0, 8).map((p) => (
+                <div key={p.id} onClick={() => navigate(`/product/${p.id}`)} style={{ flexShrink: 0, width: 124, cursor: 'pointer' }}>
+                  <div style={{ width: 124, height: 124, borderRadius: 18, overflow: 'hidden', border: '1px solid var(--hairline)', marginBottom: 8, position: 'relative' }}>
+                    <ProductImage src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 2 }}>
+                      ❤️
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--ink-faint)', fontWeight: 700 }}>{p.brand}</div>
+                  <div className="line-clamp-2" style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.4, height: '34px', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                    {p.name}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ padding: '0 20px' }}>
+              <div style={{
+                padding: '24px 20px',
+                borderRadius: '20px',
+                background: 'var(--surface)',
+                border: '1px dashed var(--hairline)',
+                textAlign: 'center',
+                color: 'var(--ink-soft)',
+                fontSize: '13.5px',
+                fontWeight: 500,
+                lineHeight: 1.5
+              }}>
+                아직 찜한 제품이 없습니다.<br/>마음에 드는 사료에 찜(하트)을 눌러보세요!
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Recently Viewed Products (내가 주로 봤던 상품 - Toss-style Horizontal Scroll) */}
+      {recentViews.length > 0 && (
+        <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, padding: '0 20px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <h3 style={{ margin: 0, fontSize: 19, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
+                내가 최근 본 상품
+              </h3>
+              <span style={{ fontSize: '12.5px', color: 'var(--ink-soft)' }}>
+                가장 최근에 확인했던 사료 상세 리포트
+              </span>
+            </div>
+            <button onClick={() => navigate('/search')} style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 13, fontWeight: 600, color: 'var(--ink-soft)' }}>
+              검색하기 <ChevronRight size={15} />
+            </button>
+          </div>
+          <div className="rail" style={{ display: 'flex', gap: 14, overflowX: 'auto', padding: '2px 20px 4px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+            {recentViews.slice(0, 8).map((p) => (
+              <div key={p.id} onClick={() => navigate(`/product/${p.id}`)} style={{ flexShrink: 0, width: 124, cursor: 'pointer' }}>
+                <div style={{ width: 124, height: 124, borderRadius: 18, overflow: 'hidden', border: '1px solid var(--hairline)', marginBottom: 8 }}>
+                  <ProductImage src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--ink-faint)', fontWeight: 700 }}>{p.brand}</div>
+                <div className="line-clamp-2" style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.4, height: '34px', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                  {p.name}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Categories Search grid */}
       <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

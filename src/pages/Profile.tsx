@@ -247,8 +247,9 @@ export default function Profile() {
                   다음과 같이 저장되었습니다:
                 </p>
                 <div style={{ marginTop: '8px', fontSize: '13px', color: 'var(--ink-soft)', display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                  <div>• <b>이름:</b> {profile.name}</div>
+                  <div>• <b>이름:</b> {profile.name} ({profile.gender || '남아'})</div>
                   <div>• <b>종류:</b> {profile.species === 'Cat' ? '고양이' : '강아지'} ({profile.breed || '품종 없음'})</div>
+                  <div>• <b>성향:</b> {profile.personality || '활발함 ⚡'}</div>
                   <div>• <b>나이:</b> {profile.age}세</div>
                   <div>• <b>체중:</b> {profile.weightKg ? `${profile.weightKg}kg` : '입력 없음'}</div>
                   <div>• <b>알레르기 성분:</b> {profile.allergies && profile.allergies.length > 0 ? profile.allergies.join(', ') : '없음'}</div>
@@ -276,12 +277,31 @@ export default function Profile() {
                     />
                   </div>
 
+                  {/* Gender */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>성별</label>
+                    <div style={{ display: 'flex', gap: 10 }}>
+                      <Pill on={editForm.gender === '남아'} onClick={() => setEditForm({ ...editForm, gender: '남아' })}>남아 ♂</Pill>
+                      <Pill on={editForm.gender === '여아'} onClick={() => setEditForm({ ...editForm, gender: '여아' })}>여아 ♀</Pill>
+                    </div>
+                  </div>
+
                   {/* Species */}
                   <div>
                     <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>종류</label>
                     <div style={{ display: 'flex', gap: 10 }}>
                       <Pill on={editForm.species === 'Dog'} onClick={() => setEditForm({ ...editForm, species: 'Dog', breed: '' })}>강아지</Pill>
                       <Pill on={editForm.species === 'Cat'} onClick={() => setEditForm({ ...editForm, species: 'Cat', breed: '' })}>고양이</Pill>
+                    </div>
+                  </div>
+
+                  {/* Personality */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>성향</label>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {['활발함 ⚡', '온순함 🧸', '애교많음 🥰', '소심함 🥺', '도도함 👑'].map(p => (
+                        <Pill key={p} on={editForm.personality === p} onClick={() => setEditForm({ ...editForm, personality: p })}>{p}</Pill>
+                      ))}
                     </div>
                   </div>
 
@@ -549,21 +569,40 @@ export default function Profile() {
                     </div>
 
                     {profileStep === 0 && (
-                      <input
-                        value={formData.name || ''}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        placeholder="예: 체다"
-                        style={{
-                          width: '100%', boxSizing: 'border-box', padding: '14px 16px', borderRadius: 13, fontSize: 16,
-                          border: '1px solid var(--hairline)', outline: 'none', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'inherit',
-                        }}
-                      />
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                        <input
+                          value={formData.name || ''}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          placeholder="예: 체다"
+                          style={{
+                            width: '100%', boxSizing: 'border-box', padding: '14px 16px', borderRadius: 13, fontSize: 16,
+                            border: '1px solid var(--hairline)', outline: 'none', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'inherit',
+                          }}
+                        />
+                        <div>
+                          <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '8px' }}>성별</label>
+                          <div style={{ display: 'flex', gap: 10 }}>
+                            <Pill on={formData.gender === '남아'} onClick={() => setFormData({ ...formData, gender: '남아' })}>남아 ♂</Pill>
+                            <Pill on={formData.gender === '여아'} onClick={() => setFormData({ ...formData, gender: '여아' })}>여아 ♀</Pill>
+                          </div>
+                        </div>
+                      </div>
                     )}
 
                     {profileStep === 1 && (
-                      <div style={{ display: 'flex', gap: 10 }}>
-                        <Pill on={formData.species === 'Dog'} onClick={() => setFormData({ ...formData, species: 'Dog', breed: '' })}>강아지</Pill>
-                        <Pill on={formData.species === 'Cat'} onClick={() => setFormData({ ...formData, species: 'Cat', breed: '' })}>고양이</Pill>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                        <div style={{ display: 'flex', gap: 10 }}>
+                          <Pill on={formData.species === 'Dog'} onClick={() => setFormData({ ...formData, species: 'Dog', breed: '' })}>강아지</Pill>
+                          <Pill on={formData.species === 'Cat'} onClick={() => setFormData({ ...formData, species: 'Cat', breed: '' })}>고양이</Pill>
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '8px' }}>성향</label>
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                            {['활발함 ⚡', '온순함 🧸', '애교많음 🥰', '소심함 🥺', '도도함 👑'].map(p => (
+                              <Pill key={p} on={formData.personality === p} onClick={() => setFormData({ ...formData, personality: p })}>{p}</Pill>
+                            ))}
+                          </div>
+                        </div>
                       </div>
                     )}
 
