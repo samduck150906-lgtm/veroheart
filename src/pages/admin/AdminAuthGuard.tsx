@@ -20,10 +20,6 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
   const [adminPassword, setAdminPassword] = useState('');
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
   const checkAuth = () => {
     // 관리자 3계정 외 로그인 금지: 세션스토리지 토큰만 검증
     const stored = sessionStorage.getItem('vh_admin_auth');
@@ -32,6 +28,10 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
     }
     setIsLoading(false);
   };
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
 
   const handleAdminLogin = () => {
     const id = adminId.trim();
