@@ -118,6 +118,28 @@ export default function Search() {
   const [allIngredients, setAllIngredients] = useState<any[]>([]);
   const [ingredientSearch, setIngredientSearch] = useState('');
   const [excludedIngredients, setExcludedIngredients] = useState<string[]>([]);
+
+  // Synchronize URL search params (query, concern) with states
+  useEffect(() => {
+    const urlQuery = searchParams.get('query');
+    if (urlQuery != null) {
+      setQuery(urlQuery);
+    }
+    const urlConcern = searchParams.get('concern');
+    if (urlConcern != null) {
+      setFilters(prev => {
+        if (prev.healthConcerns.includes(urlConcern)) return prev;
+        return {
+          ...prev,
+          healthConcerns: [urlConcern]
+        };
+      });
+    }
+    const urlDiet = searchParams.get('diet');
+    if (urlDiet === 'true') {
+      setFilters(prev => ({ ...prev, dietPreset: true }));
+    }
+  }, [searchParams]);
   
   const [isStandardFeedModalOpen, setIsStandardFeedModalOpen] = useState(false);
   const [standardFeedSearch, setStandardFeedSearch] = useState('');

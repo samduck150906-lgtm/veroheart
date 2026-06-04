@@ -5,6 +5,7 @@ import { Helmet } from 'react-helmet-async';
 import {
   Sparkles,
   ChevronRight,
+  ChevronLeft,
   Shield,
   User,
   Heart,
@@ -47,9 +48,19 @@ export default function Home() {
     if (!banners || banners.length <= 1) return;
     const timer = setInterval(() => {
       setBannerIndex((prev) => (prev + 1) % banners.length);
-    }, 4000);
+    }, 4500);
     return () => clearInterval(timer);
   }, [banners]);
+
+  const handlePrevBanner = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setBannerIndex((prev) => (prev - 1 + banners.length) % banners.length);
+  };
+
+  const handleNextBanner = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setBannerIndex((prev) => (prev + 1) % banners.length);
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '30px', paddingBottom: '40px' }}>
@@ -64,7 +75,7 @@ export default function Home() {
 
       {/* Hero Banner Carousel (Hwahae Style) */}
       {banners && banners.length > 0 && (
-        <div style={{ padding: '0 20px', marginTop: '-15px' }}>
+        <div style={{ padding: '0 20px', marginTop: '-32px' }}>
           <div 
             onClick={() => {
               const activeBanner = banners[bannerIndex];
@@ -89,7 +100,7 @@ export default function Home() {
               padding: '20px 24px',
               boxSizing: 'border-box'
             }}>
-              <div style={{ flex: 1, zIndex: 2 }}>
+              <div style={{ flex: 1, zIndex: 2, paddingRight: '36px' }}>
                 <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--brand-deep)', background: 'rgba(255,255,255,0.7)', padding: '2px 7px', borderRadius: '6px' }}>
                   RECOMMENDED
                 </span>
@@ -121,6 +132,61 @@ export default function Home() {
                 )}
               </div>
             </div>
+            
+            {/* Left/Right Navigation Chevrons */}
+            {banners.length > 1 && (
+              <>
+                <button
+                  onClick={handlePrevBanner}
+                  style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    background: 'rgba(255, 255, 255, 0.5)',
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--ink)',
+                    cursor: 'pointer',
+                    zIndex: 10,
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <ChevronLeft size={18} strokeWidth={2.5} />
+                </button>
+                <button
+                  onClick={handleNextBanner}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    background: 'rgba(255, 255, 255, 0.5)',
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--ink)',
+                    cursor: 'pointer',
+                    zIndex: 10,
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <ChevronRight size={18} strokeWidth={2.5} />
+                </button>
+              </>
+            )}
+
             <div style={{ position: 'absolute', top: '12px', left: '12px', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: '9px', fontWeight: 700, padding: '2px 6px', borderRadius: '99px' }}>
               {bannerIndex + 1}/{banners.length}
             </div>
@@ -279,41 +345,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* Dual Quick Actions Card Grid */}
-      <div style={{ padding: '0 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-        <button
-          onClick={() => navigate('/event/personality-quiz')}
-          style={{
-            cursor: 'pointer', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 10, padding: '16px', borderRadius: 20,
-            background: 'var(--surface)', border: '1px solid var(--hairline)', boxShadow: 'var(--shadow-sm)'
-          }}
-        >
-          <span style={{ width: 44, height: 44, borderRadius: 13, background: 'var(--brand-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Sparkles size={20} color="var(--brand-deep)" />
-          </span>
-          <span>
-            <span style={{ display: 'block', fontSize: 15, fontWeight: 700, color: 'var(--ink)' }}>성향 테스트</span>
-            <span style={{ display: 'block', fontSize: 12, color: 'var(--ink-soft)', marginTop: 2, lineHeight: 1.35 }}>우리 아이 사료 찾기</span>
-          </span>
-        </button>
-
-        <button
-          onClick={() => navigate('/profile')}
-          style={{
-            cursor: 'pointer', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 10, padding: '16px', borderRadius: 20,
-            background: 'var(--surface)', border: '1px solid var(--hairline)', boxShadow: 'var(--shadow-sm)'
-          }}
-        >
-          <span style={{ width: 44, height: 44, borderRadius: 13, background: 'var(--brand-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <User size={20} color="var(--brand-deep)" />
-          </span>
-          <span>
-            <span style={{ display: 'block', fontSize: 15, fontWeight: 700, color: 'var(--ink)' }}>마이 펫</span>
-            <span style={{ display: 'block', fontSize: 12, color: 'var(--ink-soft)', marginTop: 2, lineHeight: 1.35 }}>프로필 및 건강 관리</span>
-          </span>
-        </button>
-      </div>
-
       {/* Favorites (내 찜 목록 - Toss-style Horizontal Scroll) */}
       {isLoggedIn && (
         <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -398,6 +429,175 @@ export default function Home() {
           </div>
         </section>
       )}
+
+      {/* 3 Curated Care Cards (주제별 건강 맞춤 큐레이션) */}
+      <section style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '0 20px' }}>
+        <div>
+          <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--brand-deep)', background: 'var(--brand-tint)', padding: '2px 8px', borderRadius: '6px' }}>
+            SPECIAL DIAGNOSTIC CURATION
+          </span>
+          <h3 style={{ margin: '6px 0 2px', fontSize: '19px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
+            우리아이 맞춤 건강 케어
+          </h3>
+          <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--ink-soft)', fontWeight: 500 }}>
+            사료 판매가 아닌, 성분과 펫 특성에 맞춘 전문 정보 제공
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* Card 1: Joint Care */}
+          <article 
+            onClick={() => navigate('/search?category=사료&concern=관절 질환')}
+            style={{
+              padding: '20px 22px',
+              borderRadius: '24px',
+              background: 'linear-gradient(135deg, #FFF0F6 0%, #FFD8E6 100%)',
+              border: '1px solid rgba(219, 39, 119, 0.08)',
+              boxShadow: 'var(--shadow-sm)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '14px',
+              transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(219, 39, 119, 0.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'none';
+              e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+            }}
+          >
+            <div style={{ flex: 1 }}>
+              <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#DB2777', background: 'rgba(255, 255, 255, 0.6)', padding: '2px 8px', borderRadius: '6px' }}>
+                관절 & 슬개골 케어
+              </span>
+              <h4 style={{ margin: '8px 0 4px', fontSize: '16px', fontWeight: 800, color: 'var(--ink)', lineHeight: 1.35 }}>
+                슬개골 · 관절이 약한 아이들을 위한 특별 영양 식단 🦴
+              </h4>
+              <p style={{ margin: 0, fontSize: '12px', color: '#4D0E2B', fontWeight: 500, opacity: 0.85 }}>
+                연골 성분(콘드로이친, 글루코사민)과 천연 칼슘 안심 배합 사료 분석
+              </p>
+            </div>
+            <span style={{ fontSize: '18px', color: '#DB2777', fontWeight: 800 }}>➔</span>
+          </article>
+
+          {/* Card 2: Tears & Weight Care */}
+          <article 
+            onClick={() => navigate('/search?category=사료&concern=비만')}
+            style={{
+              padding: '20px 22px',
+              borderRadius: '24px',
+              background: 'linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%)',
+              border: '1px solid rgba(37, 99, 235, 0.08)',
+              boxShadow: 'var(--shadow-sm)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '14px',
+              transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(37, 99, 235, 0.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'none';
+              e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+            }}
+          >
+            <div style={{ flex: 1 }}>
+              <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#2563EB', background: 'rgba(255, 255, 255, 0.6)', padding: '2px 8px', borderRadius: '6px' }}>
+                체중 관리 & 눈물痕
+              </span>
+              <h4 style={{ margin: '8px 0 4px', fontSize: '16px', fontWeight: 800, color: 'var(--ink)', lineHeight: 1.35 }}>
+                눈물 흔적과 체중 관리를 동시에 해결하는 건강 식단 💧
+              </h4>
+              <p style={{ margin: 0, fontSize: '12px', color: '#0E2E5B', fontWeight: 500, opacity: 0.85 }}>
+                L-카르니틴 배합 저칼로리 포뮬러 및 고정 단백질 가수분해 사료
+              </p>
+            </div>
+            <span style={{ fontSize: '18px', color: '#2563EB', fontWeight: 800 }}>➔</span>
+          </article>
+
+          {/* Card 3: Skin & Allergies */}
+          <article 
+            onClick={() => navigate('/search?query=가수분해')}
+            style={{
+              padding: '20px 22px',
+              borderRadius: '24px',
+              background: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)',
+              border: '1px solid rgba(5, 150, 105, 0.08)',
+              boxShadow: 'var(--shadow-sm)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '14px',
+              transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(5, 150, 105, 0.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'none';
+              e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+            }}
+          >
+            <div style={{ flex: 1 }}>
+              <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#059669', background: 'rgba(255, 255, 255, 0.6)', padding: '2px 8px', borderRadius: '6px' }}>
+                민감성 피부 & 알레르기
+              </span>
+              <h4 style={{ margin: '8px 0 4px', fontSize: '16px', fontWeight: 800, color: 'var(--ink)', lineHeight: 1.35 }}>
+                피부 가려움과 알레르기 걱정 없는 저자극 안심 큐레이션 🌱
+              </h4>
+              <p style={{ margin: 0, fontSize: '12px', color: '#04422E', fontWeight: 500, opacity: 0.85 }}>
+                알레르기 식이 차단용 가수분해 단백질과 유기농 유산균 포뮬러 분석
+              </p>
+            </div>
+            <span style={{ fontSize: '18px', color: '#059669', fontWeight: 800 }}>➔</span>
+          </article>
+        </div>
+      </section>
+
+      {/* Dual Quick Actions Card Grid */}
+      <div style={{ padding: '0 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <button
+          onClick={() => navigate('/event/personality-quiz')}
+          style={{
+            cursor: 'pointer', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 10, padding: '16px', borderRadius: 20,
+            background: 'var(--surface)', border: '1px solid var(--hairline)', boxShadow: 'var(--shadow-sm)'
+          }}
+        >
+          <span style={{ width: 44, height: 44, borderRadius: 13, background: 'var(--brand-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Sparkles size={20} color="var(--brand-deep)" />
+          </span>
+          <span>
+            <span style={{ display: 'block', fontSize: 15, fontWeight: 700, color: 'var(--ink)' }}>성향 테스트</span>
+            <span style={{ display: 'block', fontSize: 12, color: 'var(--ink-soft)', marginTop: 2, lineHeight: 1.35 }}>우리 아이 사료 찾기</span>
+          </span>
+        </button>
+
+        <button
+          onClick={() => navigate('/profile')}
+          style={{
+            cursor: 'pointer', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 10, padding: '16px', borderRadius: 20,
+            background: 'var(--surface)', border: '1px solid var(--hairline)', boxShadow: 'var(--shadow-sm)'
+          }}
+        >
+          <span style={{ width: 44, height: 44, borderRadius: 13, background: 'var(--brand-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <User size={20} color="var(--brand-deep)" />
+          </span>
+          <span>
+            <span style={{ display: 'block', fontSize: 15, fontWeight: 700, color: 'var(--ink)' }}>마이 펫</span>
+            <span style={{ display: 'block', fontSize: 12, color: 'var(--ink-soft)', marginTop: 2, lineHeight: 1.35 }}>프로필 및 건강 관리</span>
+          </span>
+        </button>
+      </div>
 
       {/* Categories Search grid */}
       <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
