@@ -178,8 +178,63 @@ export default function Home() {
         )}
       </div>
 
+      {!isLoggedIn && (
+        <div style={{
+          margin: '0 20px',
+          padding: '24px 20px',
+          borderRadius: '24px',
+          background: 'linear-gradient(135deg, #FFFDEB 0%, #FFF5D1 100%)',
+          border: '1px solid var(--brand-line)',
+          boxShadow: 'var(--shadow-sm)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          <div style={{
+            position: 'absolute',
+            right: '-10px',
+            bottom: '-10px',
+            width: '80px',
+            height: '80px',
+            borderRadius: '50%',
+            background: 'var(--brand-tint)',
+            opacity: 0.5,
+            zIndex: 0
+          }} />
+          <div style={{ zIndex: 1 }}>
+            <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: 'var(--brand-deep)', letterSpacing: '-0.02em' }}>
+              우리 아이 맞춤 영양 진단 🐶🐱
+            </h3>
+            <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--ink-soft)', lineHeight: 1.45, fontWeight: 500 }}>
+              로그인 후 아이의 나이, 알레르기, 건강 고민을 입력하시면 수의 영양 학회 기준 맞춤 사료를 추천해 드려요.
+            </p>
+            <button
+              onClick={() => navigate('/login')}
+              style={{
+                width: '100%',
+                height: '46px',
+                borderRadius: '14px',
+                background: 'var(--ink)',
+                color: 'var(--surface)',
+                fontWeight: 700,
+                fontSize: 14,
+                border: 'none',
+                cursor: 'pointer',
+                marginTop: '14px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              3초만에 내 반려동물 등록하기
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Personalized Recommendation (Hero Slider) */}
-      {personalRecs.length > 0 && (
+      {isLoggedIn && personalRecs.length > 0 && (
         <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, padding: '0 20px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -264,7 +319,7 @@ export default function Home() {
       )}
 
       {/* Concern-based Recommendations */}
-      {concernProducts.length > 0 && (
+      {isLoggedIn && concernProducts.length > 0 && (
         <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, padding: '0 20px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -289,7 +344,7 @@ export default function Home() {
       )}
 
       {/* Budget-friendly Recommendations */}
-      {budgetProducts.length > 0 && (
+      {isLoggedIn && budgetProducts.length > 0 && (
         <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, padding: '0 20px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>

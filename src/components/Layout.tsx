@@ -31,7 +31,7 @@ export default function Layout() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            height: '64px',
+            height: '76px',
             padding: '0 16px',
             borderBottom: '1px solid var(--hairline)',
             background: 'var(--surface-trans)',
@@ -45,6 +45,8 @@ export default function Layout() {
               style={{
                 position: 'absolute',
                 left: '16px',
+                top: '50%',
+                transform: 'translateY(-50%)',
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
@@ -63,7 +65,7 @@ export default function Layout() {
             <img
               src={VERORO_LOGO_SRC}
               alt="VeRoRo"
-              style={{ height: '48px', width: 'auto', objectFit: 'contain', display: 'block', borderRadius: '12px' }}
+              style={{ height: '56px', width: 'auto', objectFit: 'contain', display: 'block', borderRadius: '12px' }}
             />
           </Link>
         </header>
