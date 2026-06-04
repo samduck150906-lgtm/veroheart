@@ -53,7 +53,7 @@ export interface AppTheme {
 // ==========================================
 
 const defaultColors: ThemeColors = {
-  primary: '#81C995',
+  primary: '#F5C518',
   warning: '#D93025',
   background: '#FFFFFF',
   textNearBlack: '#111111',
