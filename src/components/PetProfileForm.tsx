@@ -270,6 +270,7 @@ export default function PetProfileForm({ onComplete }: PetProfileFormProps) {
           name:           form.name,
           species:        form.species,
           age:            form.age,
+          breed:          form.breed,
           healthConcerns: form.healthConcerns,
           allergies:      form.allergies,
         });

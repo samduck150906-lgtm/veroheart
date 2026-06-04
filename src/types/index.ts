@@ -5,6 +5,7 @@ export interface UserPetProfile {
   age: number;
   /** kg, 선택 — DB 미연동 시에도 폼에만 반영 가능 */
   weightKg?: number;
+  breed?: string;
   healthConcerns: string[];
   allergies: string[];
 }

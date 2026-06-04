@@ -29,7 +29,27 @@ import { Text } from '../components/Text';
 import SearchBar from '../components/SearchBar';
 import BottomSheetFilters from '../components/BottomSheetFilters';
 
-
+function getBreedAvatar(breed?: string, species?: 'Dog' | 'Cat') {
+  const normalized = breed?.trim() || '';
+  if (species === 'Cat') {
+    if (normalized.includes('페르시안')) return { emoji: '🐱', label: '페르시안', bg: 'linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%)' };
+    if (normalized.includes('스코티시')) return { emoji: '😸', label: '스코티시폴드', bg: 'linear-gradient(135deg, #FFE4E6 0%, #FECDD3 100%)' };
+    if (normalized.includes('러시안')) return { emoji: '🐈', label: '러시안블루', bg: 'linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%)' };
+    if (normalized.includes('아비시니안')) return { emoji: '🐅', label: '아비시니안', bg: 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)' };
+    if (normalized.includes('메인쿤')) return { emoji: '🦁', label: '메인쿤', bg: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)' };
+    return { emoji: '🐱', label: breed || '믹스묘', bg: 'linear-gradient(135deg, #F1F3F5 0%, #CFD8DC 100%)' };
+  } else {
+    if (normalized.includes('말티즈')) return { emoji: '🐩', label: '말티즈', bg: 'linear-gradient(135deg, #FFF5F5 0%, #FFE3E3 100%)' };
+    if (normalized.includes('포메라니안')) return { emoji: '🦊', label: '포메라니안', bg: 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)' };
+    if (normalized.includes('비숑')) return { emoji: '🐩', label: '비숑', bg: 'linear-gradient(135deg, #FFF0F6 0%, #FFD8E6 100%)' };
+    if (normalized.includes('푸들')) return { emoji: '🐩', label: '푸들', bg: 'linear-gradient(135deg, #FAF0E6 0%, #EEDC82 100%)' };
+    if (normalized.includes('시츄')) return { emoji: '🐶', label: '시츄', bg: 'linear-gradient(135deg, #FFF9DB 0%, #FFF3B0 100%)' };
+    if (normalized.includes('골든')) return { emoji: '🐕', label: '골든리트리버', bg: 'linear-gradient(135deg, #FEF9C3 0%, #FEF08A 100%)' };
+    if (normalized.includes('래브라도')) return { emoji: '🐕', label: '래브라도', bg: 'linear-gradient(135deg, #F0FDFA 0%, #CCFBF1 100%)' };
+    if (normalized.includes('진도')) return { emoji: '🐕', label: '진도견', bg: 'linear-gradient(135deg, #FFFBEB 0%, #FDE68A 100%)' };
+    return { emoji: '🐶', label: breed || '믹스견', bg: 'linear-gradient(135deg, #FFF5F5 0%, #FFE3E3 100%)' };
+  }
+}
 
 export default function Home() {
   const { products, profile, recentViews, isLoggedIn } = useStore();
@@ -163,75 +183,172 @@ export default function Home() {
         <meta name="description" content="베로로 — 사료 성분 분석과 집사들의 찐 리뷰. 의심 대신 베로로 하세요." />
       </Helmet>
  
-      {/* Top Banner Message */}
-      <div style={{ padding: '8px 20px 0' }}>
-        <span style={{ fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: 15, color: 'var(--brand-deep)' }}>Pet Nutrition Curation</span>
-        <h2 style={{ margin: '2px 0 0', fontSize: 24, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--ink)' }}>
-          {hasPetProfile ? `${profile.name}를 위한 오늘의 큐레이션` : '오늘의 사료 큐레이션'}
-        </h2>
-        {hasPetProfile && (
-          <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
-            {[profile.species === 'Cat' ? '고양이' : '강아지', `${profile.age || 0}세`, `${profile.weightKg || 0}kg`].map((t) => (
-              <span key={t} style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--ink-soft)',
-                padding: '2px 8px', borderRadius: 999, background: 'var(--surface)', border: '1px solid var(--brand-line)' }}>{t}</span>
-            ))}
-          </div>
-        )}
-      </div>
- 
-      {!hasPetProfile && (
-        <div style={{
-          margin: '0 20px',
-          padding: '24px 20px',
-          borderRadius: '24px',
-          background: 'linear-gradient(135deg, #FFFDEB 0%, #FFF5D1 100%)',
-          border: '1px solid var(--brand-line)',
+      {/* Hero Banner Carousel (Hwahae Style) */}
+      <div style={{ padding: '0 20px', marginTop: '10px' }}>
+        <div style={{ 
+          position: 'relative', 
+          borderRadius: '20px', 
+          overflow: 'hidden', 
+          height: '160px', 
           boxShadow: 'var(--shadow-sm)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '12px',
-          position: 'relative',
-          overflow: 'hidden'
+          background: 'linear-gradient(135deg, #FFF3C4 0%, #FFE066 100%)'
         }}>
+          <div style={{ 
+            width: '100%', 
+            height: '100%', 
+            display: 'flex', 
+            alignItems: 'center', 
+            padding: '20px 24px',
+            boxSizing: 'border-box'
+          }}>
+            <div style={{ flex: 1, zIndex: 2 }}>
+              <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--brand-deep)', background: 'rgba(255,255,255,0.7)', padding: '2px 7px', borderRadius: '6px' }}>
+                RECOMMENDED
+              </span>
+              <h2 style={{ margin: '6px 0 2px', fontSize: '18px', fontWeight: 900, color: 'var(--ink)', lineHeight: 1.3, letterSpacing: '-0.02em' }}>
+                지금 꼭 챙겨야 할<br/>영양 맞춤 사료 라인업
+              </h2>
+              <p style={{ margin: 0, fontSize: '11px', color: 'var(--ink-soft)', fontWeight: 600 }}>
+                수의 영양학 추천 BEST 모아보기
+              </p>
+            </div>
+            <div style={{
+              fontSize: '72px',
+              lineHeight: 1,
+              zIndex: 1,
+              transform: 'rotate(12deg)',
+              filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.06))'
+            }}>
+              🥫
+            </div>
+          </div>
+          <div style={{ position: 'absolute', top: '12px', left: '12px', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: '9px', fontWeight: 700, padding: '2px 6px', borderRadius: '99px' }}>
+            5/7
+          </div>
+        </div>
+      </div>
+
+      {/* Pet Profile Card on Home Main (if configured) */}
+      {hasPetProfile && (
+        <div style={{ padding: '0 20px' }}>
           <div style={{
-            position: 'absolute',
-            right: '-10px',
-            bottom: '-10px',
-            width: '80px',
-            height: '80px',
-            borderRadius: '50%',
-            background: 'var(--brand-tint)',
-            opacity: 0.5,
-            zIndex: 0
-          }} />
-          <div style={{ zIndex: 1 }}>
-            <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: 'var(--brand-deep)', letterSpacing: '-0.02em' }}>
-              우리 아이 맞춤 영양 진단 🐶🐱
-            </h3>
-            <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--ink-soft)', lineHeight: 1.45, fontWeight: 500 }}>
-              {isLoggedIn 
-                ? '아이의 나이, 알레르기, 건강 고민을 입력하시면 수의 영양 학회 기준 맞춤 사료를 추천해 드려요.' 
-                : '로그인 후 아이의 나이, 알레르기, 건강 고민을 입력하시면 수의 영양 학회 기준 맞춤 사료를 추천해 드려요.'}
-            </p>
-            <button
-              onClick={() => navigate(isLoggedIn ? '/profile' : '/login')}
+            padding: '20px 18px',
+            borderRadius: '20px',
+            background: 'var(--surface)',
+            border: '1px solid var(--brand-line)',
+            boxShadow: 'var(--shadow-sm)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '14px',
+          }}>
+            <div style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '50%',
+              background: getBreedAvatar(profile.breed, profile.species).bg,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)',
+              fontSize: '26px',
+              flexShrink: 0
+            }}>
+              {getBreedAvatar(profile.breed, profile.species).emoji}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '17px', fontWeight: 800, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile.name}</span>
+                <span style={{ fontSize: '10.5px', color: 'var(--brand-deep)', background: 'var(--brand-tint)', padding: '2px 6px', borderRadius: '6px', fontWeight: 700, flexShrink: 0 }}>
+                  {getBreedAvatar(profile.breed, profile.species).label}
+                </span>
+              </div>
+              <div style={{ fontSize: '12.5px', color: 'var(--ink-soft)', marginTop: '4px', display: 'flex', gap: '6px', fontWeight: 500 }}>
+                <span>{profile.species === 'Cat' ? '고양이' : '강아지'}</span>
+                <span>•</span>
+                <span>{profile.age}세</span>
+                {profile.weightKg && (
+                  <>
+                    <span>•</span>
+                    <span>{profile.weightKg}kg</span>
+                  </>
+                )}
+              </div>
+            </div>
+            <button 
+              onClick={() => navigate('/profile')}
               style={{
-                width: '100%',
-                height: '46px',
-                borderRadius: '14px',
+                padding: '8px 12px',
+                borderRadius: '10px',
                 background: 'var(--ink)',
                 color: 'var(--surface)',
-                fontWeight: 700,
-                fontSize: 14,
                 border: 'none',
+                fontSize: '12px',
+                fontWeight: 700,
                 cursor: 'pointer',
-                marginTop: '14px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                transition: 'all 0.2s ease',
+                flexShrink: 0
               }}
             >
-              {isLoggedIn ? '3초만에 내 반려동물 등록하기' : '로그인하고 시작하기'}
+              관리
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Pet Registration CTA Banner (if unconfigured) */}
+      {!hasPetProfile && (
+        <div style={{ padding: '0 20px' }}>
+          <div style={{
+            padding: '24px 20px',
+            borderRadius: '20px',
+            background: 'linear-gradient(135deg, #FFFDEB 0%, #FFF5D1 100%)',
+            border: '1px solid var(--brand-line)',
+            boxShadow: 'var(--shadow-sm)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              position: 'absolute',
+              right: '-10px',
+              bottom: '-10px',
+              width: '80px',
+              height: '80px',
+              borderRadius: '50%',
+              background: 'var(--brand-tint)',
+              opacity: 0.5,
+              zIndex: 0
+            }} />
+            <div style={{ zIndex: 1 }}>
+              <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: 'var(--brand-deep)', letterSpacing: '-0.02em' }}>
+                우리 아이 맞춤 영양 진단 🐶🐱
+              </h3>
+              <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--ink-soft)', lineHeight: 1.45, fontWeight: 500 }}>
+                {isLoggedIn 
+                  ? '아이의 나이, 알레르기, 건강 고민을 입력하시면 수의 영양 학회 기준 맞춤 사료를 추천해 드려요.' 
+                  : '로그인 후 아이의 나이, 알레르기, 건강 고민을 입력하시면 수의 영양 학회 기준 맞춤 사료를 추천해 드려요.'}
+              </p>
+              <button
+                onClick={() => navigate(isLoggedIn ? '/profile' : '/login')}
+                style={{
+                  width: '100%',
+                  height: '46px',
+                  borderRadius: '14px',
+                  background: 'var(--ink)',
+                  color: 'var(--surface)',
+                  fontWeight: 700,
+                  fontSize: 14,
+                  border: 'none',
+                  cursor: 'pointer',
+                  marginTop: '14px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                {isLoggedIn ? '3초만에 내 반려동물 등록하기' : '로그인하고 시작하기'}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -296,27 +413,65 @@ export default function Home() {
         </button>
       </div>
 
-      {/* Trending Products (急上昇) */}
+      {/* Trending Products (Hwahae Style) */}
       {trendingProducts.length > 0 && (
         <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, padding: '0 20px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <span style={{ fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: 15, color: 'var(--brand-deep)' }}>Popularity ranking</span>
-              <h3 style={{ margin: 0, fontSize: 19, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
+          <div style={{ padding: '0 20px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-soft)' }}>
+              6월 4일 목요일
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 }}>
+              <h3 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
                 급상승 랭킹
               </h3>
-              <span style={{ fontSize: 12.5, color: 'var(--ink-soft)', lineHeight: 1.4 }}>
-                리뷰와 평점이 빠르게 늘고 있는 인기 제품
-              </span>
+              <button onClick={() => navigate('/ranking')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 13.5, fontWeight: 700, color: 'var(--ink-soft)' }}>
+                전체보기 <ChevronRight size={15} />
+              </button>
             </div>
-            <button onClick={() => navigate('/ranking')} style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 13, fontWeight: 600, color: 'var(--ink-soft)', paddingBottom: 2 }}>
-              더보기 <ChevronRight size={15} />
-            </button>
           </div>
-          <div className="rail" style={{ display: 'flex', gap: 14, overflowX: 'auto', padding: '2px 20px 4px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-            {trendingProducts.slice(0, 5).map((p, idx) => (
-              <ProductCard key={p.id} product={p} variant="vertical" rank={idx + 1} />
-            ))}
+
+          <div style={{ display: 'flex', flexDirection: 'column', padding: '0 20px', gap: '16px' }}>
+            {trendingProducts.slice(0, 3).map((p, idx) => {
+              // Mock rank change details
+              const changes = [
+                { icon: '▲', color: '#F04452', val: '4' },
+                { icon: '▼', color: '#3182F6', val: '2' },
+                { icon: '-', color: 'var(--ink-faint)', val: '' }
+              ];
+              const change = changes[idx % 3];
+
+              return (
+                <div 
+                  key={p.id}
+                  onClick={() => navigate(`/product/${p.id}`)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '16px', cursor: 'pointer' }}
+                >
+                  {/* Rank Column */}
+                  <div style={{ width: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                    <span style={{ fontSize: '18px', fontWeight: 900, color: 'var(--ink)' }}>{idx + 1}</span>
+                    <span style={{ fontSize: '10px', fontWeight: 700, color: change.color, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '1px' }}>
+                      {change.icon} {change.val}
+                    </span>
+                  </div>
+
+                  {/* Product Image */}
+                  <div style={{ width: '80px', height: '80px', borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--hairline)', flexShrink: 0 }}>
+                    <ProductImage src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+
+                  {/* Info details */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: '11px', color: 'var(--ink-faint)', fontWeight: 700 }}>{p.brand}</span>
+                    <h4 className="line-clamp-2" style={{ margin: '2px 0 6px', fontSize: '14.5px', fontWeight: 700, color: 'var(--ink)', lineHeight: 1.35 }}>
+                      {p.name}
+                    </h4>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px', fontSize: '11.5px', fontWeight: 700, color: 'var(--ink-soft)' }}>
+                      <span style={{ color: '#F5C518', fontSize: '13px' }}>★</span> {p.averageRating} <span style={{ color: 'var(--ink-faint)', fontWeight: 500 }}>({p.reviewsCount})</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
       )}

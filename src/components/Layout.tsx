@@ -17,7 +17,7 @@ export default function Layout() {
   return (
     <div className="app-shell" style={{ backgroundColor: 'var(--bg-color)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       
-      {/* Unified Brand Header - Centered Large Logo Only */}
+      {/* Unified Brand Header like Hwahae */}
       {isProfile ? (
         // Profile has its own built-in profile card and tabs, so we skip the global header
         null
@@ -29,45 +29,116 @@ export default function Layout() {
             top: 0,
             zIndex: 50,
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '76px',
-            padding: '0 16px',
+            flexDirection: 'column',
+            padding: '12px 20px',
             borderBottom: '1px solid var(--hairline)',
             background: 'var(--surface-trans)',
             backdropFilter: 'blur(12px)',
             WebkitBackdropFilter: 'blur(12px)',
+            gap: '12px'
           }}
         >
-          {!isHome && (
-            <button
-              onClick={() => navigate(-1)}
-              style={{
-                position: 'absolute',
-                left: '16px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: '6px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--ink)'
-              }}
-            >
-              <ArrowLeft size={22} />
-            </button>
-          )}
+          {/* Top Row: Left logo, Right language & cart */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {!isHome && (
+                <button
+                  onClick={() => navigate(-1)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--ink)'
+                  }}
+                >
+                  <ArrowLeft size={22} />
+                </button>
+              )}
+              <Link to="/" style={{ display: 'flex', alignItems: 'center', lineHeight: 0 }} aria-label="베로로 홈">
+                <img
+                  src={VERORO_LOGO_SRC}
+                  alt="VeRoRo"
+                  style={{ height: '38px', width: 'auto', objectFit: 'contain', display: 'block' }}
+                />
+              </Link>
+            </div>
 
-          <Link to="/" style={{ display: 'flex', alignItems: 'center', lineHeight: 0 }} aria-label="베로로 홈">
-            <img
-              src={VERORO_LOGO_SRC}
-              alt="VeRoRo"
-              style={{ height: '56px', width: 'auto', objectFit: 'contain', display: 'block', borderRadius: '12px' }}
-            />
-          </Link>
+            {/* Hwahae Style Language & Cart icons */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div 
+                style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', fontWeight: 600, color: 'var(--ink-soft)', cursor: 'pointer' }}
+                onClick={() => navigate('/profile')}
+              >
+                <span style={{ fontSize: '14px' }}>🌐</span> 한국어 ▾
+              </div>
+              <button
+                onClick={() => navigate('/profile')}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', color: 'var(--ink-soft)' }}
+                aria-label="장바구니"
+              >
+                <span style={{ fontSize: '20px' }}>👜</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Search Row like Hwahae */}
+          <div 
+            onClick={() => navigate('/search')}
+            style={{
+              width: '100%',
+              height: '42px',
+              borderRadius: '99px',
+              background: '#F3F4F6',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '0 16px',
+              cursor: 'pointer',
+              border: '1px solid transparent',
+              transition: 'all 0.2s ease',
+              boxSizing: 'border-box'
+            }}
+          >
+            <span style={{ color: 'var(--ink-faint)', fontSize: '13.5px', fontWeight: 500 }}>
+              궁금한 사료나 성분을 검색해 보세요
+            </span>
+            <span style={{ color: 'var(--ink-soft)', fontSize: '16px' }}>🔍</span>
+          </div>
+
+          {/* Navigation Sub-Tabs like Hwahae */}
+          {isHome && (
+            <div style={{ display: 'flex', gap: '20px', borderBottom: 'none', marginTop: '2px' }}>
+              <Link 
+                to="/" 
+                style={{ 
+                  fontSize: '15px', 
+                  fontWeight: 700, 
+                  color: 'var(--ink)', 
+                  paddingBottom: '4px', 
+                  borderBottom: '2.5px solid var(--brand-deep)',
+                  textDecoration: 'none'
+                }}
+              >
+                홈
+              </Link>
+              <Link 
+                to="/ranking" 
+                style={{ 
+                  fontSize: '15px', 
+                  fontWeight: 600, 
+                  color: 'var(--ink-soft)', 
+                  paddingBottom: '4px',
+                  textDecoration: 'none'
+                }}
+              >
+                랭킹
+              </Link>
+            </div>
+          )}
         </header>
       )}
 

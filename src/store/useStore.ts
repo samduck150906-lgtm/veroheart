@@ -124,9 +124,10 @@ export const useStore = create<StoreState>((set, get) => ({
 
       const user = await getInitialSessionUser();
       if (!user) {
+        const localBreed = localStorage.getItem('vh_pet_breed_local') || '';
         set({
           isInitializing: false,
-          profile: DEFAULT_USER_PET_PROFILE,
+          profile: { ...DEFAULT_USER_PET_PROFILE, breed: localBreed },
           userId: null,
           isLoggedIn: false,
         });
@@ -150,12 +151,14 @@ export const useStore = create<StoreState>((set, get) => ({
       const pets = await getUserPets(user.id);
       if (pets && pets.length > 0) {
         const p = pets[0];
+        const localBreed = localStorage.getItem('vh_pet_breed_' + user.id) || '';
         set({
           profile: {
             id: p.id,
             name: p.name,
             species: p.pet_type === 'cat' ? 'Cat' : 'Dog',
             age: p.age_group === 'baby' ? 1 : p.age_group === 'senior' ? 10 : 4,
+            breed: localBreed || '',
             healthConcerns: p.conditions || [],
             allergies: p.allergies || []
           }
@@ -192,6 +195,10 @@ export const useStore = create<StoreState>((set, get) => ({
     const { userId, profile } = get();
     const newProfile = { ...profile, ...updates };
     set({ profile: newProfile });
+
+    if (newProfile.breed) {
+      localStorage.setItem('vh_pet_breed_' + (userId || 'local'), newProfile.breed);
+    }
 
     if (!userId) return;
 
