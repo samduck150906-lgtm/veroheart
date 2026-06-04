@@ -6,7 +6,8 @@ import ProductImage from '../components/ProductImage';
 
 export default function Comparison() {
   const navigate = useNavigate();
-  const { profile, products: storeProducts, comparisonList, removeFromComparison } = useStore();
+  const { profile, isLoggedIn, products: storeProducts, comparisonList, removeFromComparison } = useStore();
+  const hasPetProfile = isLoggedIn && profile && profile.id !== 'local-profile' && profile.name !== '우리 아이';
   
   const products = comparisonList.map(id => storeProducts.find(p => p.id === id)).filter(Boolean) as typeof storeProducts;
 
@@ -56,7 +57,9 @@ export default function Comparison() {
         <div className="ui-info-card" style={{ padding: '16px' }}>
           <div className="ui-icon-pill" style={{ marginBottom: '10px' }}><ShoppingBag size={16} color="var(--primary-dark)" /></div>
           <div style={{ fontSize: '12px', color: '#8A9099', fontWeight: 700 }}>비교 기준</div>
-          <div style={{ fontSize: '14px', fontWeight: 800, marginTop: '4px' }}>{profile.name} 맞춤 궁합 점수</div>
+          <div style={{ fontSize: '14px', fontWeight: 800, marginTop: '4px' }}>
+            {hasPetProfile ? `${profile.name} 맞춤 궁합 점수` : '맞춤 궁합 점수'}
+          </div>
         </div>
       </div>
       
@@ -85,10 +88,20 @@ export default function Comparison() {
               <div style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: 700 }}>{p.brand}</div>
               <div style={{ fontSize: '16px', fontWeight: 800, margin: '4px 0 12px', lineHeight: 1.4, minHeight: '44px' }}>{p.name}</div>
               
-              <div style={{ padding: '14px', background: 'rgba(31,222,145,0.1)', borderRadius: '14px', textAlign: 'center', marginBottom: '14px' }}>
-                <div style={{ fontSize: '12px', color: 'var(--primary-dark)', fontWeight: 700 }}>{profile.name} 궁합 점수</div>
-                <div style={{ fontSize: '28px', fontWeight: 900, color: 'var(--primary-dark)' }}>{score}점</div>
-              </div>
+              {hasPetProfile ? (
+                <div style={{ padding: '14px', background: 'rgba(31,222,145,0.1)', borderRadius: '14px', textAlign: 'center', marginBottom: '14px' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--primary-dark)', fontWeight: 700 }}>{profile.name} 궁합 점수</div>
+                  <div style={{ fontSize: '28px', fontWeight: 900, color: 'var(--primary-dark)' }}>{score}점</div>
+                </div>
+              ) : (
+                <div 
+                  onClick={() => navigate('/profile')}
+                  style={{ padding: '14px', background: '#F3F4F6', borderRadius: '14px', textAlign: 'center', marginBottom: '14px', cursor: 'pointer', border: '1px dashed #D1D5DB' }}
+                >
+                  <div style={{ fontSize: '12px', color: '#6B7280', fontWeight: 700 }}>맞춤 궁합 점수</div>
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--brand-deep)', marginTop: '4px' }}>아이 정보 입력하기 ➔</div>
+                </div>
+              )}
               
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '14px' }}>
                 <span className="ui-badge ui-badge-muted">평점 {p.averageRating}</span>

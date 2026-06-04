@@ -82,7 +82,8 @@ function defaultPetFromProfile(profile: { species?: string } | undefined): '' | 
 }
 
 export default function Search() {
-  const { profile } = useStore();
+  const { profile, isLoggedIn } = useStore();
+  const hasPetProfile = isLoggedIn && profile && profile.id !== 'local-profile' && profile.name !== '우리 아이';
   const [searchParams, setSearchParams] = useSearchParams();
   const category = resolveCategoryFromSearchParams(searchParams.get('category'));
 
@@ -177,12 +178,24 @@ export default function Search() {
 
   const displayResults = useMemo(() => {
     if (sortBy === 'default') {
-      return [...searchResults]
-        .map((product) => {
-          const breakdown = getRecommendationBreakdown(product, profile);
-          return { product, breakdown, score: breakdown.total };
-        })
-        .sort((a, b) => b.score - a.score);
+      if (hasPetProfile) {
+        return [...searchResults]
+          .map((product) => {
+            const breakdown = getRecommendationBreakdown(product, profile);
+            return { product, breakdown, score: breakdown.total };
+          })
+          .sort((a, b) => b.score - a.score);
+      } else {
+        // default sorting for non-profile users: sort by reviewsCount and averageRating
+        return [...searchResults]
+          .map((product) => ({ product, breakdown: null, score: null }))
+          .sort((a, b) => {
+            if ((b.product.reviewsCount ?? 0) !== (a.product.reviewsCount ?? 0)) {
+              return (b.product.reviewsCount ?? 0) - (a.product.reviewsCount ?? 0);
+            }
+            return (b.product.averageRating ?? 0) - (a.product.averageRating ?? 0);
+          });
+      }
     }
 
     const arr = [...searchResults];
@@ -194,7 +207,7 @@ export default function Search() {
       breakdown: null,
       score: null,
     }));
-  }, [searchResults, sortBy, profile]);
+  }, [searchResults, sortBy, profile, hasPetProfile]);
 
   useEffect(() => { setVisibleCount(PAGE_SIZE); }, [searchResults, sortBy]);
 
@@ -386,7 +399,7 @@ export default function Search() {
         </span>
         <div style={{ display: 'flex', gap: 8 }}>
           {([
-            { id: 'default' as const, label: '추천순' },
+            { id: 'default' as const, label: hasPetProfile ? '맞춤 추천순' : '추천순' },
             { id: 'price_asc' as const, label: '가격 낮은순' },
             { id: 'price_desc' as const, label: '가격 높은순' },
             { id: 'rating' as const, label: '평점순' },
@@ -405,7 +418,7 @@ export default function Search() {
 
       {/* Result list container */}
       <div style={{ padding: '4px 20px 0' }}>
-        {sortBy === 'default' && displayResults.length > 0 && (
+        {hasPetProfile && sortBy === 'default' && displayResults.length > 0 && (
           <div style={{ margin: '10px 0 16px', padding: '12px 14px', borderRadius: '18px', background: 'var(--brand-tint)', border: '1px solid var(--brand-line)' }}>
             <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--brand-deep)', letterSpacing: 0.2 }}>Pet Nutrition Curation</div>
             <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ink)', marginTop: 1 }}>
@@ -421,7 +434,7 @@ export default function Search() {
           {pagedResults.map(({ product, breakdown, score }) => (
             <div key={product.id}>
               <ProductCard product={product} />
-              {breakdown && score != null && breakdown.reasons && breakdown.reasons.length > 0 && (
+              {hasPetProfile && breakdown && score != null && breakdown.reasons && breakdown.reasons.length > 0 && (
                 <div style={{ marginTop: '-10px', marginBottom: '14px', padding: '0 4px', fontSize: '11.5px', color: 'var(--brand-deep)', fontWeight: 600 }}>
                   궁합 상세: {breakdown.reasons.slice(0, 2).join(' · ')}
                 </div>

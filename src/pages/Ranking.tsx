@@ -23,9 +23,13 @@ const PET_TABS = [
 ];
 
 export default function Ranking() {
-  const { products, profile } = useStore();
+  const { products, profile, isLoggedIn } = useStore();
   const navigate = useNavigate();
-  const [sortBy, setSortBy] = useState<'compatibility' | 'rating' | 'reviews' | 'safe'>('compatibility');
+  const hasPetProfile = isLoggedIn && profile && profile.id !== 'local-profile' && profile.name !== '우리 아이';
+  const [sortBy, setSortBy] = useState<'compatibility' | 'rating' | 'reviews' | 'safe'>(
+    hasPetProfile ? 'compatibility' : 'rating'
+  );
+  const activeTabs = TABS.filter(tab => tab.key !== 'compatibility' || hasPetProfile);
   const [petFilter, setPetFilter] = useState<'all' | 'dog' | 'cat'>('all');
 
   const filtered = products.filter((p) =>
@@ -113,7 +117,7 @@ export default function Ranking() {
       </div>
 
       <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', marginBottom: '18px', paddingBottom: '4px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-        {TABS.map(tab => (
+        {activeTabs.map(tab => (
           <TossChip
             key={tab.key}
             active={sortBy === tab.key}

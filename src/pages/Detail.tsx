@@ -51,6 +51,7 @@ export default function Detail() {
   const navigate = useNavigate();
   const { 
     userId,
+    isLoggedIn,
     profile, 
     selectedProduct: product, 
     isLoadingProducts, 
@@ -63,6 +64,8 @@ export default function Detail() {
     favorites,
     trackRecentView,
   } = useStore();
+
+  const hasPetProfile = isLoggedIn && profile && profile.id !== 'local-profile' && profile.name !== '우리 아이';
 
   type ReviewRow = {
     id: string;
@@ -196,7 +199,7 @@ export default function Detail() {
         <meta name="description" content={`${product.brand}의 ${product.name} 전성분 분석 결과 및 구매`} />
       </Helmet>
 
-      {conclusion && (
+      {hasPetProfile && conclusion && (
         <section
           aria-label="맞춤 결론"
           style={{
@@ -366,7 +369,7 @@ export default function Detail() {
         {COUPANG_PARTNERS_DISCLOSURE}
       </p>
 
-      {alternativeProduct && (
+      {hasPetProfile && alternativeProduct && (
         <div className="card" style={{ backgroundColor: 'var(--bg-color)', marginBottom: '40px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--danger)', fontWeight: 800, marginBottom: '8px' }}>
             <AlertCircle size={20} /> 앗! 이 사료는 아이와 맞지 않을 수 있어요.

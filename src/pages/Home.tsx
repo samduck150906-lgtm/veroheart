@@ -34,7 +34,8 @@ import BottomSheetFilters from '../components/BottomSheetFilters';
 export default function Home() {
   const { products, profile, recentViews, isLoggedIn } = useStore();
   const navigate = useNavigate();
-  const petName = profile.name !== '우리 아이' ? profile.name : null;
+  const hasPetProfile = isLoggedIn && profile && profile.id !== 'local-profile' && profile.name !== '우리 아이';
+  const petName = hasPetProfile ? profile.name : null;
   // New filter & search state
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({ ages: [], ingredients: [], allergens: [] });
@@ -155,20 +156,20 @@ export default function Home() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '30px', paddingBottom: '40px' }}>
       <Helmet>
         <title>
-          {isLoggedIn
+          {hasPetProfile
             ? `${profile.name} 맞춤 홈 — 베로로`
             : '베로로 — 성분 분석 & 집사들의 찐 리뷰'}
         </title>
         <meta name="description" content="베로로 — 사료 성분 분석과 집사들의 찐 리뷰. 의심 대신 베로로 하세요." />
       </Helmet>
-
+ 
       {/* Top Banner Message */}
       <div style={{ padding: '8px 20px 0' }}>
         <span style={{ fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: 15, color: 'var(--brand-deep)' }}>Pet Nutrition Curation</span>
         <h2 style={{ margin: '2px 0 0', fontSize: 24, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--ink)' }}>
-          {isLoggedIn ? `${profile.name}를 위한 오늘의 큐레이션` : '오늘의 사료 큐레이션'}
+          {hasPetProfile ? `${profile.name}를 위한 오늘의 큐레이션` : '오늘의 사료 큐레이션'}
         </h2>
-        {isLoggedIn && (
+        {hasPetProfile && (
           <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
             {[profile.species === 'Cat' ? '고양이' : '강아지', `${profile.age || 0}세`, `${profile.weightKg || 0}kg`].map((t) => (
               <span key={t} style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--ink-soft)',
@@ -177,8 +178,8 @@ export default function Home() {
           </div>
         )}
       </div>
-
-      {!isLoggedIn && (
+ 
+      {!hasPetProfile && (
         <div style={{
           margin: '0 20px',
           padding: '24px 20px',
@@ -208,10 +209,12 @@ export default function Home() {
               우리 아이 맞춤 영양 진단 🐶🐱
             </h3>
             <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--ink-soft)', lineHeight: 1.45, fontWeight: 500 }}>
-              로그인 후 아이의 나이, 알레르기, 건강 고민을 입력하시면 수의 영양 학회 기준 맞춤 사료를 추천해 드려요.
+              {isLoggedIn 
+                ? '아이의 나이, 알레르기, 건강 고민을 입력하시면 수의 영양 학회 기준 맞춤 사료를 추천해 드려요.' 
+                : '로그인 후 아이의 나이, 알레르기, 건강 고민을 입력하시면 수의 영양 학회 기준 맞춤 사료를 추천해 드려요.'}
             </p>
             <button
-              onClick={() => navigate('/login')}
+              onClick={() => navigate(isLoggedIn ? '/profile' : '/login')}
               style={{
                 width: '100%',
                 height: '46px',
@@ -227,14 +230,14 @@ export default function Home() {
                 transition: 'all 0.2s ease',
               }}
             >
-              3초만에 내 반려동물 등록하기
+              {isLoggedIn ? '3초만에 내 반려동물 등록하기' : '로그인하고 시작하기'}
             </button>
           </div>
         </div>
       )}
-
+ 
       {/* Personalized Recommendation (Hero Slider) */}
-      {isLoggedIn && personalRecs.length > 0 && (
+      {hasPetProfile && personalRecs.length > 0 && (
         <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, padding: '0 20px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
