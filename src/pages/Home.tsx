@@ -11,6 +11,7 @@ import {
   Stethoscope,
   Heart,
   MessageCircle,
+  Bell,
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { HOME_CATEGORY_ITEMS } from '../constants/productCategories';

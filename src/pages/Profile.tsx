@@ -232,7 +232,7 @@ export default function Profile() {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/');
+    navigate('/login');
   };
 
   if (!userId) {
