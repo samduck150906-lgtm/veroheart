@@ -3,6 +3,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import {
   ShoppingBag,
   FlaskConical,
+  ShieldAlert,
   LayoutDashboard,
   Settings, 
   LogOut,
@@ -19,6 +20,7 @@ const AdminLayout: React.FC = () => {
       { path: '/admin', icon: <LayoutDashboard size={18} />, label: '대시보드' },
       { path: '/admin/products', icon: <ShoppingBag size={18} />, label: '제품 관리' },
       { path: '/admin/ingredients', icon: <FlaskConical size={18} />, label: '성분 관리' },
+      { path: '/admin/analysis', icon: <ShieldAlert size={18} />, label: '분석 엔진' },
       { path: '/admin/settings', icon: <Settings size={18} />, label: '시스템 설정' },
     ],
     []

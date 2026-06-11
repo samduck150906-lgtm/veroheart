@@ -564,3 +564,88 @@ export async function deleteBannerFromDB(bannerId: string) {
 
 
 
+
+// ─── 분석 엔진 관리자 (규칙 / 미매칭 원료 검수) ───────────────────────
+
+export interface AnalysisRuleRow {
+  id: string;
+  target: string;
+  species: string | null;
+  condition: Record<string, unknown>;
+  severity: string;
+  score_delta: number;
+  title: string;
+  message_template: string;
+  evidence_level: string;
+  is_active: boolean;
+}
+
+export async function getAnalysisRules(): Promise<AnalysisRuleRow[]> {
+  if (!isSupabaseConfigured) return [];
+  const { data, error } = await supabase
+    .from('analysis_rules')
+    .select('*')
+    .order('severity', { ascending: true })
+    .order('score_delta', { ascending: true });
+  if (error) {
+    console.error('getAnalysisRules error:', error);
+    return [];
+  }
+  return (data || []) as AnalysisRuleRow[];
+}
+
+export async function setAnalysisRuleActive(id: string, isActive: boolean) {
+  if (!isSupabaseConfigured) return;
+  const { error } = await supabase
+    .from('analysis_rules')
+    .update({ is_active: isActive, updated_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) console.error('setAnalysisRuleActive error:', error);
+}
+
+export interface UnmatchedIngredientRow {
+  id: string;
+  normalized_name: string;
+  raw_name: string;
+  occurrences: number;
+  status: 'pending' | 'resolved' | 'ignored';
+  last_seen_at: string;
+}
+
+export async function getUnmatchedIngredients(): Promise<UnmatchedIngredientRow[]> {
+  if (!isSupabaseConfigured) return [];
+  const { data, error } = await supabase
+    .from('unmatched_ingredients')
+    .select('*')
+    .order('occurrences', { ascending: false })
+    .limit(300);
+  if (error) {
+    console.error('getUnmatchedIngredients error:', error);
+    return [];
+  }
+  return (data || []) as UnmatchedIngredientRow[];
+}
+
+export async function setUnmatchedStatus(
+  id: string,
+  status: 'pending' | 'resolved' | 'ignored',
+) {
+  if (!isSupabaseConfigured) return;
+  const { error } = await supabase
+    .from('unmatched_ingredients')
+    .update({ status })
+    .eq('id', id);
+  if (error) console.error('setUnmatchedStatus error:', error);
+}
+
+/** 미매칭 원료를 검수 큐에 기록(있으면 카운트 증가). 분석 중 발견 시 호출. */
+export async function logUnmatchedIngredients(rawNames: string[]) {
+  if (!isSupabaseConfigured || rawNames.length === 0) return;
+  await Promise.all(
+    rawNames.map((raw) =>
+      supabase.rpc('log_unmatched_ingredient', { p_raw: raw }).then(({ error }) => {
+        if (error) console.error('logUnmatchedIngredient error:', error);
+      }),
+    ),
+  );
+}

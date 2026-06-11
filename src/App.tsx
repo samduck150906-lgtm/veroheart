@@ -13,6 +13,7 @@ import Community from './pages/Community';
 import Ranking from './pages/Ranking';
 import Comparison from './pages/Comparison';
 import AnalysisResult from './pages/AnalysisResult';
+import ScanResult from './pages/ScanResult';
 import PetProfilePage from './pages/PetProfile';
 // import Cart from './pages/Cart';
 import Terms from './pages/Terms';
@@ -24,6 +25,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminIngredients from './pages/admin/AdminIngredients';
 import AdminSettings from './pages/admin/AdminSettings';
+import AdminAnalysis from './pages/admin/AdminAnalysis';
 import Notification from './components/Notification';
 import AdminAuthGuard from './pages/admin/AdminAuthGuard';
 import EntryGate from './components/EntryGate';
@@ -133,6 +135,7 @@ function App() {
               {/* <Route path="fail" element={<Fail />} /> */}
               <Route path="product/:id" element={<Detail />} />
               <Route path="analysis" element={<AnalysisResult />} />
+              <Route path="scan-result" element={<ScanResult />} />
               <Route path="pet-profile" element={<PetProfilePage />} />
               <Route path="event/personality-quiz" element={<PersonalityQuiz />} />
               <Route path="event/viral" element={<ViralEvent />} />
@@ -147,6 +150,7 @@ function App() {
             <Route index element={<AdminDashboard />} />
             <Route path="products" element={<AdminProducts />} />
             <Route path="ingredients" element={<AdminIngredients />} />
+            <Route path="analysis" element={<AdminAnalysis />} />
             <Route path="settings" element={<AdminSettings />} />
           </Route>
         </Routes>
