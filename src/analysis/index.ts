@@ -39,3 +39,5 @@ export {
   defaultExplanationGenerator,
 } from './explanation';
 export type { UserExplanation, ExplanationGenerator } from './explanation';
+export { extractTextFromImage, preprocessImage, setOcrProvider } from './ocr';
+export type { OcrProvider, ExtractOptions } from './ocr';

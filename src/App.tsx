@@ -13,6 +13,7 @@ import Community from './pages/Community';
 import Ranking from './pages/Ranking';
 import Comparison from './pages/Comparison';
 import AnalysisResult from './pages/AnalysisResult';
+import ScanResult from './pages/ScanResult';
 import PetProfilePage from './pages/PetProfile';
 // import Cart from './pages/Cart';
 import Terms from './pages/Terms';
@@ -134,6 +135,7 @@ function App() {
               {/* <Route path="fail" element={<Fail />} /> */}
               <Route path="product/:id" element={<Detail />} />
               <Route path="analysis" element={<AnalysisResult />} />
+              <Route path="scan-result" element={<ScanResult />} />
               <Route path="pet-profile" element={<PetProfilePage />} />
               <Route path="event/personality-quiz" element={<PersonalityQuiz />} />
               <Route path="event/viral" element={<ViralEvent />} />

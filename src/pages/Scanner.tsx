@@ -26,13 +26,24 @@ export default function Scanner() {
     }
   };
 
-  const handleCropDone = (base64: string) => {
-    // In production: POST base64 to /api/analyze-ingredients
-    console.info('[Scanner] Crop complete, base64 length:', base64.length);
-    notify.success('이미지 처리 완료! 분석 결과로 이동합니다.');
-    // Navigate to analysis result (pass via sessionStorage for demo)
-    sessionStorage.setItem('pendingIngredientImage', base64);
-    navigate('/analysis');
+  const handleCropDone = async (base64: string) => {
+    notify.info('성분표 글자를 인식하는 중이에요…');
+    try {
+      const { extractTextFromImage } = await import('../analysis/ocr');
+      const text = await extractTextFromImage(base64, { langs: 'kor+eng' });
+
+      sessionStorage.setItem('pendingIngredientImage', base64);
+      if (text && text.trim().length >= 5) {
+        sessionStorage.setItem('pendingIngredientText', text);
+        notify.success('성분 인식 완료! 결과를 확인해 주세요.');
+      } else {
+        notify.info('글자 인식이 어려웠어요. 직접 입력하거나 다시 촬영해 주세요.');
+      }
+    } catch (err) {
+      console.error('[Scanner] OCR 실패:', err);
+      notify.error('글자 인식에 실패했어요. 직접 입력 화면으로 이동합니다.');
+    }
+    navigate('/scan-result');
   };
 
   return (

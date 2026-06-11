@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Zap, ShieldCheck, AlertTriangle, ChevronRight, ChevronDown, BookOpen, Camera } from 'lucide-react';
 import type { AnalysisResponse, IngredientAnalysisItem } from '../types/analyzer';
@@ -112,6 +112,16 @@ export default function Analyzer({ initialMode = 'text' }: AnalyzerProps) {
   const [isScanningOverlay] = useState(false);
   const [petWeight, setPetWeight] = useState<number>(5);
   const [activityFactor, setActivityFactor] = useState<'neutered' | 'intact' | 'senior'>('neutered');
+
+  // 스캐너 OCR 결과가 있으면 전성분 입력란을 채운다(검토/수정 후 분석).
+  useEffect(() => {
+    const scanned = sessionStorage.getItem('pendingIngredientText');
+    if (scanned) {
+      setIngredientText(scanned);
+      setInputMode('text');
+      sessionStorage.removeItem('pendingIngredientText');
+    }
+  }, []);
 
   const handleAnimalChange = (newAnimal: 'dog' | 'cat') => {
     setAnimal(newAnimal);
