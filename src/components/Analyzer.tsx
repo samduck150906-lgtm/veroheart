@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Zap, ShieldCheck, AlertTriangle, ChevronRight, ChevronDown, BookOpen, Camera } from 'lucide-react';
 import type { AnalysisResponse, IngredientAnalysisItem } from '../types/analyzer';
 import { useStore } from '../store/useStore';
-import { saveAnalysisReport } from '../lib/supabase';
+import { saveAnalysisReport, logUnmatchedIngredients } from '../lib/supabase';
 import { notify } from '../store/useNotification';
 import { CORE_COPY } from '../copy/marketing';
 import { buildAnalysisResponse } from '../analysis/analysisResponse';
@@ -278,6 +278,12 @@ export default function Analyzer({ initialMode = 'text' }: AnalyzerProps) {
         });
 
         setResult(mappedAnalysis);
+
+        // 사전 미매칭 원료를 관리자 검수 큐에 기록
+        const unmatched = mappedAnalysis.ingredient_analysis
+          .filter((i) => i.category === 'unknown')
+          .map((i) => i.name);
+        logUnmatchedIngredients(unmatched).catch(console.error);
 
         // Save report in background
         saveAnalysisReport(userId, selectedProduct?.id || null, ingredientText, mappedAnalysis).catch(console.error);
