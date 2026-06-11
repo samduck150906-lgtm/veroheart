@@ -1,60 +1,71 @@
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
 
 :root {
-  /* Premium Yellow-Gold Design System */
-  --primary: #F5C518; /* Saffron Yellow-Gold */
-  --primary-dark: #CA8A04; /* Brand Deep Amber */
-  --primary-light: #FEFCE8; /* Brand Tint Soft Yellow */
-  --secondary: #FCFBF7; /* Warm Surface Tint */
-  --accent: #D93A30; /* Danger Red */
-  
-  --text-dark: #1E293B; /* Slate Dark Ink */
-  --text-muted: #475569; /* Ink Soft */
-  --text-light: #64748B; /* Ink Faint */
-  
-  --bg-color: #FCFBF7;
-  --bg-gradient: linear-gradient(135deg, #FEFCE8 0%, #FFFFFF 50%, #FCFBF7 100%);
+  /* ===== 베로로 리디자인 토큰 — Saffron Gold + Toss 톤 (변수명 유지) ===== */
+  --primary: #F5C518; /* Saffron Gold */
+  --primary-dark: #CA8A04; /* Deep Amber */
+  --primary-deep: #A16207;
+  --primary-light: #FEFCE8; /* Tint */
+  --primary-tint-2: #FEF9C3;
+  --primary-soft: #FDE68A;
+  --secondary: #F2F4F6; /* Toss gray fill (카드 배경) */
+  --accent: #F04452; /* Danger Red */
+
+  /* Text — Toss ink tone */
+  --text-dark: #191F28; /* ink-900 */
+  --text-muted: #4E5968; /* ink-600 */
+  --text-light: #6B7684; /* ink-500 */
+  --ink-400: #8B95A1;
+  --ink-300: #B0B8C1;
+
+  /* Surfaces — white canvas + gray fill */
+  --bg-color: #FFFFFF;
+  --bg-gradient: #FFFFFF;
   --surface-elevated: #FFFFFF;
-  
-  /* Traffic Light Colors (Veroro New Specs) */
-  --safe: #4F9B72;      /* Safe Green */
-  --warning: #F5C518;   /* Caution Yellow */
-  --danger: #D93A30;    /* Danger Red */
+  --fill: #F2F4F6;
+  --fill-2: #F7F8FA;
+
+  /* Signal */
+  --safe: #15B36B;      /* Safe Green */
+  --warning: #F5C518;   /* Caution Yellow (brand) */
+  --danger: #F04452;    /* Danger Red */
 
   /* Additional Custom Redesign Tokens */
   --brand: var(--primary);
   --brand-deep: var(--primary-dark);
   --brand-tint: var(--primary-light);
-  --brand-tint-2: #FCFBF7;
-  --brand-line: rgba(245, 197, 24, 0.15);
+  --brand-tint-2: #FEF9C3;
+  --brand-line: rgba(245, 197, 24, 0.18);
   --ink: var(--text-dark);
   --ink-soft: var(--text-muted);
   --ink-faint: var(--text-light);
-  --ink-on-brand: #1E293B;
-  --hairline: rgba(30, 41, 59, 0.08);
-  --chip-bg: #FCFBF7;
+  --ink-on-brand: #241B00;
+  --hairline: #EAEDF0;
+  --hairline-strong: #E5E8EB;
+  --chip-bg: #F2F4F6;
   --surface: #FFFFFF;
-  --surface-trans: rgba(255, 255, 255, 0.8);
-  --caution: var(--warning);
-  --safe-tint: rgba(79, 155, 114, 0.08);
-  --caution-tint: rgba(245, 197, 24, 0.10);
-  --danger-tint: rgba(217, 58, 48, 0.08);
+  --surface-2: #F2F4F6;
+  --surface-trans: rgba(255, 255, 255, 0.82);
+  --caution: #E8A800;
+  --safe-tint: #E7F8F0;
+  --caution-tint: #FEF6E0;
+  --danger-tint: #FDECEE;
 
-  /* Borders & Shadows */
-  --border-radius-sm: 12px;
-  --border-radius-md: 20px;
-  --border-radius-lg: 28px;
-  
-  --shadow-sm: 0 1px 3px rgba(41,38,27,0.04), 0 1px 2px rgba(41,38,27,0.02);
-  --shadow-md: 0 4px 16px rgba(41,38,27,0.06), 0 2px 4px rgba(41,38,27,0.03);
-  --shadow-lg: 0 12px 40px rgba(41,38,27,0.15);
-  --shadow-card: 0 1px 3px rgba(41,38,27,0.06), 0 1px 2px rgba(41,38,27,0.04);
-  --nav-shadow: 0 -2px 20px rgba(41,38,27,0.06);
+  /* Borders & Shadows — 더 각진 라운드 + 낮은 그림자 (Toss 톤) */
+  --border-radius-sm: 6px;
+  --border-radius-md: 10px;
+  --border-radius-lg: 14px;
+
+  --shadow-sm: 0 1px 0 rgba(30,41,59,0.04);
+  --shadow-md: 0 1px 2px rgba(30,41,59,0.06);
+  --shadow-lg: 0 6px 20px rgba(30,41,59,0.10);
+  --shadow-card: 0 1px 2px rgba(30,41,59,0.06);
+  --nav-shadow: 0 -1px 0 rgba(30,41,59,0.08);
 
   /* Transitions */
   --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-smooth: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  
+
   --community-tint: var(--primary-dark);
 }
 
@@ -62,7 +73,7 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: 'Plus Jakarta Sans', 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Pretendard', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
