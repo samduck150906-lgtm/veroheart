@@ -32,3 +32,10 @@ export {
 } from './adapter';
 export { buildAnalysisResponse } from './analysisResponse';
 export type { BuildResponseInput } from './analysisResponse';
+export {
+  TemplateExplanationGenerator,
+  LlmExplanationGenerator,
+  buildExplanationPrompt,
+  defaultExplanationGenerator,
+} from './explanation';
+export type { UserExplanation, ExplanationGenerator } from './explanation';
