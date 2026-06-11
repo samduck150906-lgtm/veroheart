@@ -20,6 +20,17 @@ export interface Ingredient {
   riskLevel: 'safe' | 'caution' | 'danger';
 }
 
+/** 등록성분량(보증성분) — 라벨 표기 기준(as-fed) % */
+export interface GuaranteedAnalysis {
+  crudeProtein?: number;
+  crudeFat?: number;
+  crudeFiber?: number;
+  crudeAsh?: number;
+  moisture?: number;
+  calcium?: number;
+  phosphorus?: number;
+}
+
 export interface Product {
   id: string;
   brand: string;
@@ -36,6 +47,8 @@ export interface Product {
   price: number;
   imageUrl: string;
   ingredients: Ingredient[];
+  /** 등록성분량(보증성분) — DB nutritional_profiles. 없으면 undefined. */
+  guaranteedAnalysis?: GuaranteedAnalysis;
   reviewsCount: number;
   averageRating: number;
   verificationStatus?: 'pending' | 'verified' | 'needs_review';

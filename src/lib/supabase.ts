@@ -249,6 +249,9 @@ export async function getProductDetail(productId: string): Promise<Product | nul
       product_ingredients (
         ingredient_id,
         ingredients (*)
+      ),
+      nutritional_profiles (
+        crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus
       )
     `)
     .eq('id', productId)

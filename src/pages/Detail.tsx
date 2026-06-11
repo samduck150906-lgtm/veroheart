@@ -40,6 +40,7 @@ interface Ingredient { id: string; riskLevel: string; nameKo: string; nameEn?: s
 import { Helmet } from 'react-helmet-async';
 import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
+import { toDryMatter, calculateCalories } from '../analysis/nutrition';
 import { openCoupangForProduct } from '../utils/externalPurchase';
 import Analyzer from '../components/Analyzer';
 import BottomSheet from '../components/BottomSheet';
@@ -433,6 +434,8 @@ export default function Detail() {
           </p>
         </div>
 
+        <GuaranteedAnalysisSection ga={product.guaranteedAnalysis} />
+
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '16px' }}>
           <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-dark)' }}>전성분 상세</h3>
           <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 500 }}>총 {product.ingredients?.length}개</div>
@@ -684,4 +687,73 @@ function getVetComment(ingredients: Ingredient[]): string {
     return `전반적으로 안전한 성분 구성이나 ${cautionCount}개 성분은 개체에 따라 반응이 다를 수 있습니다. 처음 급여 시 소량부터 시작하고 이상 반응(구토, 설사, 피부 발진 등)이 있으면 즉시 중단하세요.`;
   }
   return `주요 성분 모두 안전 등급으로 분류되었습니다. 천연 단백질원 위주의 건강한 구성입니다. 다만 각 반려동물마다 체질이 다르므로 처음에는 소량씩 테스트하며 급여하는 것을 권장합니다.`;
+}
+
+/** 등록성분량(보증성분) 섹션 — 라벨 표기값 + 건물기준(DMB) 환산 + 추정 칼로리 */
+function GuaranteedAnalysisSection({ ga }: { ga?: Product['guaranteedAnalysis'] }) {
+  if (!ga) return null;
+
+  const moisture = ga.moisture ?? 0;
+  const rows: { label: string; value?: number; unit?: string; dmb?: boolean }[] = [
+    { label: '조단백질', value: ga.crudeProtein, dmb: true },
+    { label: '조지방', value: ga.crudeFat, dmb: true },
+    { label: '조섬유', value: ga.crudeFiber, dmb: true },
+    { label: '조회분', value: ga.crudeAsh, dmb: true },
+    { label: '수분', value: ga.moisture },
+    { label: '칼슘', value: ga.calcium, dmb: true },
+    { label: '인', value: ga.phosphorus, dmb: true },
+  ].filter((r) => r.value != null);
+
+  if (rows.length === 0) return null;
+
+  const cal = calculateCalories({
+    crudeProtein: ga.crudeProtein,
+    crudeFat: ga.crudeFat,
+    crudeFiber: ga.crudeFiber,
+    crudeAsh: ga.crudeAsh,
+    moisture: ga.moisture,
+  });
+
+  return (
+    <section style={{ marginBottom: '32px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '12px' }}>
+        <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-dark)' }}>등록성분량 (보증성분)</h3>
+        <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>표기 기준 · 건물기준(DMB)</span>
+      </div>
+
+      <div style={{ border: '1px solid var(--border-color, #EEF0F3)', borderRadius: 'var(--border-radius-md, 14px)', overflow: 'hidden' }}>
+        {rows.map((r, idx) => {
+          const dmb = r.dmb && r.value != null ? toDryMatter(r.value, moisture) : null;
+          return (
+            <div
+              key={r.label}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '12px 16px',
+                background: idx % 2 === 0 ? 'var(--bg-color, #fff)' : 'rgba(0,0,0,0.015)',
+              }}
+            >
+              <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-dark)' }}>{r.label}</span>
+              <span style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                <strong style={{ fontSize: '15px', color: 'var(--text-dark)' }}>{r.value}%</strong>
+                {dmb != null && (
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                    (건물기준 {dmb.toFixed(1)}%)
+                  </span>
+                )}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {cal.kcalPer100g > 0 && (
+        <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', fontWeight: 500, marginTop: '8px', lineHeight: 1.5 }}>
+          추정 열량 약 <strong>{cal.kcalPer100g} kcal/100g</strong> · 단백 {cal.distribution.protein}% / 지방 {cal.distribution.fat}% / 탄수 {cal.distribution.carbs}%
+          <br />
+          습식·건식은 수분 차이가 커서 <strong>건물기준(DMB)</strong> 비교가 더 정확해요. 표기 함량만으로 원료별 실제 비율은 알 수 없어요.
+        </p>
+      )}
+    </section>
+  );
 }
