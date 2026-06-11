@@ -15,3 +15,11 @@ export {
   checkCalciumPhosphorusRatio,
 } from './nutrition';
 export { analyzeProduct, matchIngredients } from './ruleEngine';
+export {
+  extractSection,
+  splitIngredients,
+  parseIngredientToken,
+  parseGuaranteedAnalysis,
+  parseLabel,
+} from './labelParser';
+export type { ParsedLabel } from './labelParser';
