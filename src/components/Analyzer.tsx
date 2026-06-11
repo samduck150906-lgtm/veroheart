@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Loader2, Zap, ShieldCheck, AlertTriangle, ChevronRight, ChevronDown, BookOpen, Camera } from 'lucide-react';
-import type { AnalysisResponse, IngredientAnalysisItem, RiskLevel } from '../types/analyzer';
+import { Zap, ShieldCheck, AlertTriangle, ChevronRight, ChevronDown, BookOpen, Camera } from 'lucide-react';
+import type { AnalysisResponse, IngredientAnalysisItem } from '../types/analyzer';
 import { useStore } from '../store/useStore';
 import { saveAnalysisReport } from '../lib/supabase';
 import { notify } from '../store/useNotification';
 import { CORE_COPY } from '../copy/marketing';
-import { PetFoodScorer } from '../utils/petFoodScorer';
+import { buildAnalysisResponse } from '../analysis/analysisResponse';
 import ProductImage from './ProductImage';
 import BottomSheet from './BottomSheet';
 import { Button } from './Button';
@@ -108,8 +108,8 @@ export default function Analyzer({ initialMode = 'text' }: AnalyzerProps) {
   const [showFediafInfo, setShowFediafInfo] = useState(false);
 
   const [inputMode, setInputMode] = useState<'text' | 'scanner'>(initialMode);
-  const [scannedImage, setScannedImage] = useState<string | null>(null);
-  const [isScanningOverlay, setIsScanningOverlay] = useState(false);
+  const [scannedImage] = useState<string | null>(null);
+  const [isScanningOverlay] = useState(false);
   const [petWeight, setPetWeight] = useState<number>(5);
   const [activityFactor, setActivityFactor] = useState<'neutered' | 'intact' | 'senior'>('neutered');
 
@@ -265,92 +265,17 @@ export default function Analyzer({ initialMode = 'text' }: AnalyzerProps) {
       saveAnalysisReport(userId, selectedProduct?.id || null, ingredientText, data).catch(console.error);
       useStore.getState().fetchReports(); // trigger refresh
     } catch (err: unknown) {
-      console.warn("Deno Edge Function error, falling back to PetFoodScorer engine locally:", err);
+      console.warn("Deno Edge Function error, falling back to local rule engine:", err);
       
-      // 2. 오프라인 또는 서버 실패 시 즉각적인 로컬 분석 엔진(PetFoodScorer) 실행으로 대체
+      // 2. Edge Function 실패/오프라인 시 로컬 규칙 엔진으로 대체 (성분 사전 + 규칙 엔진 단일 소스)
       try {
-        const ingredientsArray = ingredientText
-          .split(/[,\n]/)
-          .map(x => x.replace(/[*·•-]/g, '').trim())
-          .filter(x => x.length > 1);
-
-        // 정교한 100점 차감식 PetFoodScorer 실행
-        const dummyGA = {
-          crudeProtein: productType === 'snack' ? 15 : 26,
-          crudeFat: productType === 'snack' ? 5 : 12,
-          crudeFiber: 5,
-          crudeAsh: 8,
-          moisture: 10
-        };
-
-        const clientProfile = {
-          species: animal === 'cat' ? 'cat' as const : 'dog' as const,
+        const mappedAnalysis: AnalysisResponse = buildAnalysisResponse({
+          ingredientText,
+          animal: animal === 'cat' ? 'cat' : 'dog',
+          productType,
           allergies: profile.allergies,
-          healthConcerns: profile.healthConcerns
-        };
-
-        const scorer = new PetFoodScorer(ingredientsArray, dummyGA, clientProfile);
-        const localScore = scorer.execute();
-
-        // TypeORM schema와 클라이언트 PDP의 AnalysisResponse 형식을 완벽하게 매핑
-        const mappedAnalysis: AnalysisResponse = {
-          summary: localScore.grade === 'A+' || localScore.grade === 'A' 
-            ? "아주 훌륭해요! 안심하고 급여할 수 있는 프리미엄 성분 조화입니다."
-            : localScore.grade === 'B' || localScore.grade === 'C'
-            ? "급여 전에 꼼꼼히 확인해봐야 할 주의 성분들이 있습니다."
-            : "주의! 유해 화학 보존료나 치명적인 독성 성분이 관찰됩니다.",
-          risk_level: localScore.score >= 80 ? "safe" : localScore.score >= 60 ? "caution" : "danger",
-          scores: {
-            safety: localScore.score,
-            nutrition: localScore.aafco_passed ? 100 : 50,
-            final: localScore.score
-          },
-          ingredient_analysis: ingredientsArray.map(ing => {
-            const isToxic = ['자일리톨', 'xylitol', '초콜릿', 'chocolate', '포도', 'grape', '건포도', 'raisin', '마늘', 'garlic', '양파', 'onion'].some(t => ing.toLowerCase().includes(t));
-            const isCaution = ['옥수수', '밀가루', '밀 ', '대두', 'soybean', 'wheat', 'corn'].some(c => ing.toLowerCase().includes(c));
-            const isPreservative = ['bha', 'bht', '에톡시퀸', 'ethoxyquin', '프로필렌 글리콜', 'propylene glycol', '카라기난', 'carrageenan', '멘아디온', 'menadione'].some(p => ing.toLowerCase().includes(p));
-
-            let risk: RiskLevel = 'safe';
-            let reason = '일반적으로 널리 쓰이는 사료 안전 성분입니다.';
-            if (isToxic) {
-              risk = 'danger';
-              reason = '반려동물에게 매우 치명적인 급성 독성 반응을 유발할 수 있어 기피해야 하는 원료입니다.';
-            } else if (isPreservative) {
-              risk = 'danger';
-              reason = '알레르기 유발 및 장기 급여 시 간/신장 기능 장애 논란이 있는 합성 화학 첨가물입니다.';
-            } else if (isCaution) {
-              risk = 'caution';
-              reason = '피부 발진, 눈물, 소화 장애 등을 일으킬 가능성이 높은 대표적인 충전용 곡물 성분입니다.';
-            }
-
-            return {
-              name: ing,
-              category: isPreservative ? 'preservative' : isCaution ? 'carbohydrate' : 'protein_source',
-              risk,
-              reason
-            };
-          }),
-          alerts: [
-            ...localScore.penalties.map(p => p.reason),
-            ...localScore.fediaf_warnings
-          ],
-          combination_analysis: {
-            protein_quality: localScore.score >= 90 ? "생육 위주 양질 단백질" : "보통 수준의 배합 비율",
-            additive_level: localScore.penalties.some(p => p.reason.includes('합성')) ? "BHA/BHT 합성 방부제 주의" : "천연 보존제 사용 안전 구성",
-            risk_comment: `로컬 정밀 분석 완료. 총점은 ${localScore.score}점(등급: ${localScore.grade})이며, ${localScore.penalties.length}개의 주요 감점 요소가 발견되었습니다.`
-          },
-          recommended_for: profile.healthConcerns.map(c => c === '관절' ? 'joint' : c === '비만' ? 'obesity' : 'none' as any),
-          not_recommended_for: [],
-          estimated_calories_kcal_kg: localScore.estimated_calories_kcal_kg,
-          caloric_distribution: localScore.caloric_distribution,
-          contains_toxic: localScore.penalties.some(p => p.reason.includes('독성') || p.reason.includes('자일리톨') || p.reason.includes('초콜릿') || p.reason.includes('포도') || p.reason.includes('마늘') || p.reason.includes('양파')) || ingredientsArray.some(ing => ['자일리톨', 'xylitol', '초콜릿', 'chocolate', '포도', 'grape', '건포도', 'raisin', '마늘', 'garlic', '양파', 'onion'].some(t => ing.toLowerCase().includes(t))),
-          toxic_ingredients: ingredientsArray
-            .filter(ing => ['자일리톨', 'xylitol', '초콜릿', 'chocolate', '포도', 'grape', '건포도', 'raisin', '마늘', 'garlic', '양파', 'onion'].some(t => ing.toLowerCase().includes(t)))
-            .map(ing => ({
-              name: ing,
-              reason: '반려동물에게 매우 치명적인 급성 독성 반응을 유발하여 영구적 신부전/간부전이나 급사를 일으킬 수 있습니다.'
-            }))
-        };
+          healthConcerns: profile.healthConcerns,
+        });
 
         setResult(mappedAnalysis);
 

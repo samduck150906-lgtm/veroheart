@@ -23,3 +23,12 @@ export {
   parseLabel,
 } from './labelParser';
 export type { ParsedLabel } from './labelParser';
+export {
+  toPetProfile,
+  toProductForAnalysis,
+  toIngredientNames,
+  toAllergenTags,
+  inferProductType,
+} from './adapter';
+export { buildAnalysisResponse } from './analysisResponse';
+export type { BuildResponseInput } from './analysisResponse';
