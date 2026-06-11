@@ -18,13 +18,30 @@ export function setOcrProvider(provider: OcrProvider | null): void {
   customProvider = provider;
 }
 
+export interface OcrProgress {
+  /** 사용자에게 보여줄 한국어 단계 라벨 */
+  label: string;
+  /** 0~1 진행률 (단계에 따라 비결정적일 수 있음) */
+  ratio: number;
+  /** 원시 tesseract status */
+  status: string;
+}
+
 export interface ExtractOptions {
   /** 인식 언어 (tesseract). 기본 한글+영문 */
   langs?: string;
   /** 그레이스케일·대비 전처리 사용 여부 */
   preprocess?: boolean;
-  /** 진행률 콜백 (0~1) */
-  onProgress?: (ratio: number) => void;
+  /** 진행 상황 콜백 (단계 + 진행률) */
+  onProgress?: (p: OcrProgress) => void;
+}
+
+/** tesseract status → 사용자용 한국어 라벨 */
+function statusLabel(status: string): string {
+  if (status.includes('traineddata')) return '한글 인식 데이터 준비 중';
+  if (status.includes('loading') || status.includes('initiali')) return '인식 엔진 준비 중';
+  if (status.includes('recognizing')) return '성분표 글자 인식 중';
+  return '처리 중';
 }
 
 /** 브라우저 환경 여부 (canvas 사용 가능) */
@@ -78,13 +95,13 @@ export async function preprocessImage(dataUrl: string): Promise<string> {
 async function tesseractRecognize(
   image: string,
   langs: string,
-  onProgress?: (ratio: number) => void,
+  onProgress?: (p: OcrProgress) => void,
 ): Promise<string> {
   const { createWorker } = await import('tesseract.js');
   const worker = await createWorker(langs, undefined, {
     logger: onProgress
       ? (m: { status: string; progress: number }) => {
-          if (m.status === 'recognizing text') onProgress(m.progress);
+          onProgress({ label: statusLabel(m.status), ratio: m.progress, status: m.status });
         }
       : undefined,
   });
