@@ -36,6 +36,8 @@ import IngredientDictionary from './pages/IngredientDictionary';
 import PersonalityQuiz from './pages/Test';
 import ViralEvent from './pages/ViralEvent';
 import NotFound from './pages/NotFound';
+import KnowledgeIngredients from './pages/KnowledgeIngredients';
+import KnowledgeNutrients from './pages/KnowledgeNutrients';
 
 function App() {
   const { initApp, isInitializing, isLoggedIn } = useStore();
@@ -131,6 +133,8 @@ function App() {
               <Route path="comparison" element={<Comparison />} />
               <Route path="ranking" element={<Ranking />} />
               <Route path="dictionary" element={<IngredientDictionary />} />
+              <Route path="knowledge/ingredients" element={<KnowledgeIngredients />} />
+              <Route path="knowledge/nutrients" element={<KnowledgeNutrients />} />
               {/* <Route path="cart" element={<Cart />} /> */}
               {/* <Route path="checkout" element={<Checkout />} /> */}
               {/* <Route path="success" element={<Success />} /> */}
