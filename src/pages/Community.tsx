@@ -4,298 +4,162 @@ import { Helmet } from 'react-helmet-async';
 import { MessageSquare, MessageCircle, ThumbsUp, CheckCircle2, Pencil, ChevronDown, ChevronUp } from 'lucide-react';
 import { COMMUNITY_WRITE } from '../copy/ui';
 
-interface Post {
-  id: string;
-  author: {
-    name: string;
-    avatar: string;
-    badge?: string;
-    isVet?: boolean;
-    petType: 'dog' | 'cat';
-  };
-  category: string;
-  title: string;
-  content: string;
-  tags: string[];
-  likes: number;
-  commentsCount: number;
-  time: string;
-  hasLiked?: boolean;
-}
-
-const INITIAL_POSTS: Post[] = [
+const COMMUNITY_POSTS = [
   {
-    id: '1',
-    author: {
-      name: '초코엄마',
-      avatar: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=120',
-      badge: '파워집사 3기',
-      petType: 'dog',
-    },
-    category: '사료추천',
-    title: '눈물 자국 심했던 말티즈 사료 유목민 탈출한 후기',
-    content: '초코가 어릴 때부터 눈물이 너무 많아서 얼굴 털이 항상 젖어있고 냄새도 심했어요. 웬만한 가수분해 사료는 다 먹여봤는데도 그대로였는데, 베로로 성분 분석기로 보니까 이전에 먹이던 사료에 합성보존료가 듬뿍 들어있는 걸 발견했네요... 민트급 생육 원료 사료로 바꾸고 한 달 만에 눈물 흐름이 눈에 띄게 줄었어요! 역시 원재료를 꼭 분석해보고 골라야 하나봐요.',
-    tags: ['말티즈', '눈물사료', '내돈내산', '베로로성분분석'],
-    likes: 42,
-    commentsCount: 12,
-    time: '20분 전',
-    hasLiked: false,
+    id: 'post-1',
+    category: '정보공유',
+    title: '말티즈 눈물흔 개선에 도움된 사료 공유합니다 🐶',
+    content: '6개월 동안 여러 사료를 바꿔본 결과 오리 단백질 기반 사료로 바꾸고 나서 눈물흔이 많이 줄었어요!',
+    author: '말티맘',
+    authorBadge: null,
+    likes: 142,
+    comments: 38,
+    time: '2시간 전',
+    isLiked: false,
   },
   {
-    id: '2',
-    author: {
-      name: '이수연 수의사',
-      avatar: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=120',
-      badge: '베로로 파트너 수의사',
-      isVet: true,
-      petType: 'cat',
-    },
-    category: '수의사 Q&A',
-    title: '고양이 건식 사료 고를 때 탄수화물 비율(NFE)이 왜 중요한가요?',
-    content: '보호자분들이 가장 많이 놓치시는 부분이 바로 DM(건물기준) 탄수화물 비율입니다. 고양이는 육식동물로 탄수화물 대사 능력이 강아지나 사람에 비해 크게 제한적입니다. 건식 사료의 형태를 유지하기 위해 어쩔 수 없이 곡물이나 전분이 사용되는데, NFE 비율이 35%가 넘어가면 비만과 당뇨의 주요 원인이 됩니다. 사료 성분 등록증상 조회분과 수분을 뺀 실제 탄수화물 양을 꼭 확인하세요.',
-    tags: ['수의사칼럼', '고양이건강', '건물기준', 'NFE탄수화물'],
-    likes: 128,
-    commentsCount: 34,
-    time: '1시간 전',
-    hasLiked: true,
+    id: 'post-2',
+    category: '수의사칼럼',
+    title: '슬개골 탈구 예방을 위한 영양소 가이드',
+    content: '소형견에서 자주 발생하는 슬개골 탈구, 글루코사민과 콘드로이틴이 풍부한 사료 선택이 중요합니다.',
+    author: '김수의사',
+    authorBadge: '수의사',
+    likes: 312,
+    comments: 67,
+    time: '5시간 전',
+    isLiked: true,
   },
   {
-    id: '3',
-    author: {
-      name: '미유집사',
-      avatar: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&q=80&w=120',
-      badge: '냥덕후',
-      petType: 'cat',
-    },
-    category: '집사꿀팁',
-    title: '사료 성분표에 적힌 "가금류 분말(Poultry meal)"의 진실',
-    content: '닭고기 분말(Chicken meal)이나 칠면조 분말과 다르게 가금류 분말(Poultry meal)은 어떤 새가 들어갔는지 알 수 없습니다. 오리인지, 닭인지, 칠면조인지 불분명하면 알레르기가 있는 아이들에게 매우 위험해요! 알레르기 유발원이 불분명하게 적힌 사료는 가급적 피하시고 꼭 "닭고기", "연어" 등 구체적인 원료명이 첫 번째 성분으로 명시된 사료를 추천드립니다.',
-    tags: ['사료공부', '성분읽기', '가수분해', '알레르기피하기'],
-    likes: 87,
-    commentsCount: 23,
-    time: '3시간 전',
-    hasLiked: false,
+    id: 'post-3',
+    category: '성분분석',
+    title: 'BHA/BHT 정말 위험한가요? 팩트체크',
+    content: '많은 분들이 BHA를 무조건 피하라고 하는데, 실제 함량과 위험성에 대해 정확히 알아봤습니다.',
+    author: '성분연구소',
+    authorBadge: null,
+    likes: 89,
+    comments: 24,
+    time: '1일 전',
+    isLiked: false,
+  },
+  {
+    id: 'post-4',
+    category: '질문',
+    title: '4살 말티즈 관절 영양제 추천해주세요',
+    content: '최근 산책 후 다리를 살짝 드는 모습이 보여서 관절 영양제를 찾고 있어요. 추천 부탁드려요!',
+    author: '베로파파',
+    authorBadge: null,
+    likes: 23,
+    comments: 15,
+    time: '1일 전',
+    isLiked: false,
+  },
+  {
+    id: 'post-5',
+    category: '정보공유',
+    title: '그레인프리 vs 일반 사료, 실제 차이는?',
+    content: '그레인프리가 무조건 좋은 건 아니에요. 품종과 건강 상태에 따라 맞는 사료가 다릅니다.',
+    author: '사료박사',
+    authorBadge: null,
+    likes: 201,
+    comments: 44,
+    time: '2일 전',
+    isLiked: false,
   },
 ];
 
-const CATEGORIES = ['전체', '사료추천', '집사꿀팁', '수의사 Q&A', '잡담'];
+const CATS = ['전체', '정보공유', '수의사칼럼', '성분분석', '질문'];
 
-const CATEGORY_STYLE: Record<string, { bg: string; color: string }> = {
-  '수의사 Q&A': { bg: 'rgba(49,130,246,0.10)', color: '#1D4ED8' },
-  '사료추천':   { bg: 'var(--brand-tint)',      color: 'var(--brand-deep)' },
-  '집사꿀팁':   { bg: '#F0FDE8',               color: '#3A7D1C' },
-  '잡담':       { bg: 'var(--fill)',             color: 'var(--ink-soft)' },
+const catColors = {
+  '정보공유': { bg: '#E7F8F0', color: '#15B36B' },
+  '수의사칼럼': { bg: '#EEF2FF', color: '#6366F1' },
+  '성분분석': { bg: '#FEF6E0', color: '#E8A800' },
+  '질문': { bg: '#F0EDE8', color: '#6B7684' },
 };
 
-function PostCard({ post, onLike }: { post: Post; onLike: (id: string) => void }) {
-  const [expanded, setExpanded] = useState(false);
+export default function Community() {
+  const [activeTab, setActiveTab] = useState('전체');
+  const [likes, setLikes] = useState({});
 
-  const CLAMP_CHARS = 120;
-  const needsClamp = post.content.length > CLAMP_CHARS;
-  const displayContent = needsClamp && !expanded
-    ? post.content.slice(0, CLAMP_CHARS) + '…'
-    : post.content;
+  const filtered = activeTab === '전체' ? COMMUNITY_POSTS : COMMUNITY_POSTS.filter(p => p.category === activeTab);
 
-  const cs = CATEGORY_STYLE[post.category] ?? { bg: 'var(--fill)', color: 'var(--ink-soft)' };
+  const toggleLike = (id) => {
+    setLikes(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   return (
-    <article style={{
-      background: '#fff',
-      borderRadius: '20px',
-      border: '1px solid var(--hairline)',
-      padding: '18px',
-    }}>
-      {/* Author row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <img
-            src={post.author.avatar}
-            alt={post.author.name}
-            style={{
-              width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover',
-              border: post.author.isVet ? '2px solid var(--brand)' : '1px solid var(--hairline)',
-            }}
-          />
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ink)' }}>
-                {post.author.name}
-              </span>
-              {post.author.isVet && (
-                <CheckCircle2 size={13} fill="var(--brand-deep)" color="#fff" />
-              )}
-              <span style={{
-                fontSize: '9px', fontWeight: 700, padding: '2px 5px', borderRadius: '5px',
-                background: post.author.petType === 'cat' ? '#EFF6FF' : '#FEF3C7',
-                color: post.author.petType === 'cat' ? '#1D4ED8' : '#D97706',
-              }}>
-                {post.author.petType === 'cat' ? '묘주' : '견주'}
-              </span>
-            </div>
-            {post.author.badge && (
-              <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--ink-faint)', marginTop: '1px' }}>
-                {post.author.badge}
-              </div>
-            )}
-          </div>
-        </div>
-        <span style={{ fontSize: '11px', color: 'var(--ink-faint)', fontWeight: 500 }}>{post.time}</span>
-      </div>
+    <div style={{ paddingBottom: 90, position: 'relative' }}>
+      <div style={{ padding: '16px 16px 0' }}>
+        <h1 style={{ fontSize: 22, fontWeight: 900, color: '#191F28', letterSpacing: '-0.03em', marginBottom: 4 }}>커뮤니티</h1>
+        <p style={{ fontSize: 14, color: '#8B95A1', marginBottom: 14 }}>반려동물 식단 정보를 함께 나눠요</p>
 
-      {/* Category badge */}
-      <span style={{
-        display: 'inline-block', fontSize: '10px', fontWeight: 800,
-        padding: '3px 8px', borderRadius: '6px', marginBottom: '10px',
-        background: cs.bg, color: cs.color,
-      }}>
-        {post.category}
-      </span>
-
-      {/* Title */}
-      <div style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--ink)', lineHeight: 1.4, marginBottom: '8px' }}>
-        {post.title}
-      </div>
-
-      {/* Content with expand/collapse */}
-      <div>
-        <p style={{ fontSize: '12.5px', fontWeight: 500, color: 'var(--ink-soft)', lineHeight: 1.65, margin: 0 }}>
-          {displayContent}
-        </p>
-        {needsClamp && (
-          <button
-            onClick={() => setExpanded(e => !e)}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: '3px',
-              marginTop: '6px', background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: '12px', fontWeight: 700, color: 'var(--brand-deep)', padding: 0,
-            }}
-          >
-            {expanded ? <><ChevronUp size={13} /> 접기</> : <><ChevronDown size={13} /> 더 보기</>}
-          </button>
-        )}
-      </div>
-
-      {/* Tags */}
-      {post.tags.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '12px' }}>
-          {post.tags.map(tag => (
-            <span key={tag} style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ink-faint)' }}>
-              #{tag}
-            </span>
+        {/* Category tabs */}
+        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', marginBottom: 20, paddingBottom: 2 }}>
+          {CATS.map(cat => (
+            <button key={cat} onClick={() => setActiveTab(cat)}
+              style={{
+                flexShrink: 0, padding: '7px 16px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                fontSize: 13, fontWeight: 700,
+                background: activeTab === cat ? '#191F28' : '#fff',
+                color: activeTab === cat ? '#fff' : '#6B7684',
+                boxShadow: '0 1px 3px rgba(30,41,59,0.06)',
+              }}
+            >{cat}</button>
           ))}
         </div>
-      )}
 
-      {/* Divider */}
-      <div style={{ height: '1px', background: 'var(--hairline)', margin: '14px 0 12px' }} />
-
-      {/* Actions */}
-      <div style={{ display: 'flex', gap: '18px' }}>
-        <button
-          onClick={() => onLike(post.id)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '5px',
-            background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-            fontSize: '12px', fontWeight: 700,
-            color: post.hasLiked ? '#E04452' : 'var(--ink-faint)',
-            transition: 'color 0.15s',
-          }}
-        >
-          <ThumbsUp size={14} fill={post.hasLiked ? '#E04452' : 'none'} color={post.hasLiked ? '#E04452' : 'var(--ink-faint)'} strokeWidth={2.2} />
-          {post.likes}
-        </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 700, color: 'var(--ink-faint)' }}>
-          <MessageSquare size={14} strokeWidth={2.2} />
-          {post.commentsCount}
+        {/* Posts */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {filtered.map(post => {
+            const cc = catColors[post.category] || { bg: '#F0EDE8', color: '#6B7684' };
+            const isLiked = likes[post.id] ?? post.isLiked;
+            return (
+              <div key={post.id}
+                style={{ background: '#fff', borderRadius: 18, padding: '18px', boxShadow: '0 2px 10px rgba(30,41,59,0.06)', cursor: 'pointer' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                  <span style={{ background: cc.bg, color: cc.color, fontSize: 11, fontWeight: 800, borderRadius: 8, padding: '3px 8px' }}>{post.category}</span>
+                </div>
+                <h3 style={{ fontSize: 15, fontWeight: 800, color: '#191F28', marginBottom: 6, lineHeight: 1.4 }}>{post.title}</h3>
+                <p style={{ fontSize: 13, color: '#6B7684', lineHeight: 1.5, marginBottom: 12, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  {post.content}
+                </p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#4E5968' }}>{post.author}</span>
+                    {post.authorBadge && (
+                      <span style={{ background: '#E7F8F0', color: '#15B36B', fontSize: 10, fontWeight: 800, borderRadius: 6, padding: '2px 6px' }}>{post.authorBadge}</span>
+                    )}
+                    <span style={{ fontSize: 12, color: '#B0B8C1' }}>· {post.time}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                    <button onClick={() => toggleLike(post.id)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
+                      <ThumbsUp size={14} fill={isLiked ? '#4E5968' : 'none'} color={isLiked ? '#191F28' : '#B0B8C1'} />
+                      <span style={{ fontSize: 12, color: isLiked ? '#191F28' : '#B0B8C1', fontWeight: 700 }}>
+                        {post.likes + (isLiked !== post.isLiked ? (isLiked ? 1 : -1) : 0)}
+                      </span>
+                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <MessageCircle size={14} color="#B0B8C1" />
+                      <span style={{ fontSize: 12, color: '#B0B8C1', fontWeight: 700 }}>{post.comments}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
-    </article>
-  );
-}
 
-export default function Community() {
-  const [posts, setPosts] = useState<Post[]>(INITIAL_POSTS);
-  const [selectedCategory, setSelectedCategory] = useState('전체');
-  const [isWriteOpen, setIsWriteOpen] = useState(false);
-  const [newTitle, setNewTitle] = useState('');
-  const [newContent, setNewContent] = useState('');
-  const [newCategory, setNewCategory] = useState('집사꿀팁');
-
-  const handleLike = (id: string) => {
-    setPosts(prev => prev.map(p =>
-      p.id === id ? { ...p, likes: p.hasLiked ? p.likes - 1 : p.likes + 1, hasLiked: !p.hasLiked } : p
-    ));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTitle.trim() || !newContent.trim()) return;
-    const post: Post = {
-      id: Date.now().toString(),
-      author: { name: '행복한 집사', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=120', badge: '뉴비집사', petType: 'dog' },
-      category: newCategory,
-      title: newTitle,
-      content: newContent,
-      tags: ['베로로커뮤니티'],
-      likes: 1,
-      commentsCount: 0,
-      time: '방금 전',
-      hasLiked: true,
-    };
-    setPosts(prev => [post, ...prev]);
-    setNewTitle('');
-    setNewContent('');
-    setIsWriteOpen(false);
-  };
-
-  const filtered = selectedCategory === '전체' ? posts : posts.filter(p => p.category === selectedCategory);
-
-  return (
-    <div style={{ paddingBottom: '96px' }}>
-      <Helmet>
-        <title>랜선애카 — 베로로</title>
-        <meta name="description" content="집사들의 사료 이야기, 수의사 Q&A, 키우기 꿀팁을 나눠요." />
-      </Helmet>
-
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 0 16px' }}>
-        <div>
-          <div style={{ fontSize: '22px', fontWeight: 900, color: 'var(--ink)', letterSpacing: '-0.03em' }}>랜선애카</div>
-          <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--ink-faint)', marginTop: '2px' }}>먹이고, 키우고, 나누는 이야기</div>
-        </div>
-        <span style={{ width: '44px', height: '44px', borderRadius: '13px', background: 'var(--brand-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <MessageCircle size={22} strokeWidth={2.2} color="var(--brand-deep)" />
-        </span>
-      </div>
-
-      {/* Category tabs */}
-      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '14px', scrollbarWidth: 'none', marginBottom: '4px' }}>
-        {CATEGORIES.map(cat => (
-          <button
-            key={cat}
-            onClick={() => setSelectedCategory(cat)}
-            style={{
-              flexShrink: 0, padding: '8px 16px', borderRadius: '99px', border: 'none', cursor: 'pointer',
-              fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap',
-              background: selectedCategory === cat ? 'var(--ink)' : 'var(--fill)',
-              color: selectedCategory === cat ? '#fff' : 'var(--ink-soft)',
-              transition: 'background 0.15s, color 0.15s',
-            }}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
-
-      {/* Write CTA */}
+      {/* FAB */}
       <button
-        onClick={() => setIsWriteOpen(o => !o)}
+        onClick={() => alert('새 글 작성')}
         style={{
-          width: '100%', height: '50px', margin: '8px 0 16px',
-          borderRadius: '14px', background: 'var(--brand)', color: 'var(--ink-on-brand)',
-          border: 'none', cursor: 'pointer', fontSize: '15px', fontWeight: 800,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
-          boxShadow: '0 6px 16px rgba(255, 201, 40, 0.28)',
+          position: 'fixed', bottom: 90, right: '50%', transform: 'translateX(calc(50% - 200px + 16px + 200px))',
+          width: 54, height: 54, borderRadius: '50%',
+          background: '#F5C518', border: 'none', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: '0 4px 16px rgba(245,197,24,0.4)',
+          zIndex: 40,
         }}
       >
         <Pencil size={17} strokeWidth={2.4} /> {COMMUNITY_WRITE.submit}

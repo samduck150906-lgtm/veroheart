@@ -1,46 +1,42 @@
 // @ts-nocheck
-import { Helmet } from 'react-helmet-async';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ScanLine, AlertCircle } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import Analyzer from '../components/Analyzer';
 import { SIGNUP_PROMPT } from '../copy/ui';
 
-/**
- * 스캐너 OCR 결과 화면.
- * Scanner가 이미지에서 추출한 전성분 텍스트(sessionStorage: pendingIngredientText)를
- * Analyzer가 자동으로 불러와 채운다. 사용자는 OCR 결과를 검토·수정한 뒤 분석한다.
- */
 export default function ScanResult() {
   const navigate = useNavigate();
-  const { profile, isLoggedIn } = useStore();
+  const { products } = useStore();
+  const [loading, setLoading] = useState(true);
 
-  const hasPetProfile =
-    isLoggedIn && profile?.id && profile.id !== 'local-profile' &&
-    profile.name && profile.name !== '우리 아이';
+  useEffect(() => {
+    const t = setTimeout(() => setLoading(false), 1800);
+    return () => clearTimeout(t);
+  }, []);
 
-  const allergyCount = profile?.allergies?.length ?? 0;
-  const concernCount = profile?.healthConcerns?.length ?? 0;
+  const messages = ['성분표 인식 중...', '데이터베이스 조회 중...', '분석 완료!'];
+  const [msgIdx, setMsgIdx] = useState(0);
 
-  return (
-    <div style={{ paddingBottom: '96px' }}>
-      <Helmet>
-        <title>스캔 성분 분석 | 베로로</title>
-        <meta name="description" content="촬영한 사료 성분표를 OCR로 인식해 분석합니다." />
-      </Helmet>
+  useEffect(() => {
+    if (!loading) return;
+    const t = setInterval(() => {
+      setMsgIdx(prev => Math.min(prev + 1, messages.length - 1));
+    }, 600);
+    return () => clearInterval(t);
+  }, [loading]);
 
-      {/* ─── 페이지 헤더 ─── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '16px 0 12px' }}>
-        <span style={{ width: '36px', height: '36px', borderRadius: '11px', background: 'var(--brand-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <ScanLine size={18} color="var(--brand-deep)" strokeWidth={2.2} />
-        </span>
-        <div>
-          <div style={{ fontSize: '19px', fontWeight: 900, color: 'var(--ink)', letterSpacing: '-0.02em' }}>성분표 스캔 분석</div>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', marginTop: '1px' }}>
-            OCR 인식 결과를 확인·수정 후 분석
-          </div>
-        </div>
+  if (loading) {
+    return (
+      <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#F7F4EE' }}>
+        <div style={{ fontSize: 56, marginBottom: 20 }}>🔍</div>
+        <div style={{ width: 48, height: 48, border: '4px solid rgba(245,197,24,0.3)', borderTopColor: '#F5C518', borderRadius: '50%', animation: 'spin 0.85s linear infinite', marginBottom: 20 }} />
+        <p style={{ fontSize: 16, fontWeight: 700, color: '#191F28' }}>{messages[msgIdx]}</p>
+        <p style={{ fontSize: 13, color: '#8B95A1', marginTop: 6 }}>AI가 성분을 분석하고 있어요</p>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
+    );
+  }
 
       {/* ─── 반려동물 프로필 컨텍스트 배너 ─── */}
       {hasPetProfile ? (

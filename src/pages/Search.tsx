@@ -1,617 +1,200 @@
 // @ts-nocheck
-import { useEffect, useMemo, useState, useCallback } from 'react';
-import { Helmet } from 'react-helmet-async';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import {
-  Filter,
-  X,
-  Check,
-  Trash2,
-  Plus,
-  FlaskConical,
-  Dog,
-  Cat,
-  LayoutGrid,
-  Package,
-  SlidersHorizontal,
-  Sparkles,
-  Search as SearchIcon,
-  Database,
-  BookOpen
-} from 'lucide-react';
-import ProductCard from '../components/ProductCard';
-import type { Product } from '../types';
-import { TossFilterSection, TossChip, TossButton } from '../components/TossUI';
-import { searchProducts, getAllIngredients } from '../lib/supabase';
-import { getRecommendationBreakdown } from '../utils/score';
+import { useState, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Search as SearchIcon, Heart } from 'lucide-react';
 import { useStore } from '../store/useStore';
-import standardFeedData from '../data/standard_feed_data.json';
-import { 
-  SEARCH_MAIN_CATEGORIES, 
-  resolveCategoryFromSearchParams 
-} from '../constants/productCategories';
-import { 
-  PRICE_BAND_LABELS, 
-  FORMULATION_OPTIONS, 
-  HEALTH_CONCERN_OPTIONS, 
-  LIFE_STAGE_OPTIONS, 
-  priceBandToMinMax,
-  type PriceBand
-} from '../constants/searchFilters';
+import { calculateCompatibilityScore, gradeFromScore } from '../utils/score';
+import ProductImage from '../components/ProductImage';
 
 import { SEARCH_EMPTY, SEARCH_NO_RESULTS, INGREDIENT_DICT } from '../copy/ui';
 
 const CORE_COPY = { ocr: '반려동물의 체질과 알레르기, 건강 고민을 조합하여 딱 맞는 완벽한 한 끼를 찾아보세요.' };
 
-const TossSearchBar = ({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) => (
-  <div style={{ position: 'relative' }}>
-    <input
-      type="text"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder || '검색'}
-      style={{
-        width: '100%',
-        padding: '14px 16px 14px 44px',
-        borderRadius: '14px',
-        border: '1.5px solid var(--hairline)',
-        fontSize: '15px',
-        fontWeight: 500,
-        outline: 'none',
-        background: 'var(--fill)',
-        color: 'var(--ink)',
-        boxSizing: 'border-box',
-        transition: 'border-color 0.2s, box-shadow 0.2s',
-      }}
-      onFocus={(e) => {
-        e.currentTarget.style.borderColor = 'var(--brand)';
-        e.currentTarget.style.boxShadow = '0 0 0 3px var(--brand-tint)';
-      }}
-      onBlur={(e) => {
-        e.currentTarget.style.borderColor = 'var(--hairline)';
-        e.currentTarget.style.boxShadow = 'none';
-      }}
-    />
-    <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8', pointerEvents: 'none', display: 'flex' }}>
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-    </span>
-  </div>
-);
+const GRADE_COLORS = {
+  A: { bg: '#E7F8F0', color: '#15B36B' },
+  B: { bg: '#FEF6E0', color: '#E8A800' },
+  C: { bg: '#FFF0ED', color: '#F04452' },
+  D: { bg: '#FFF0ED', color: '#F04452' },
+  F: { bg: '#F2F4F6', color: '#8B95A1' },
+};
 
-function defaultPetFromProfile(profile: { species?: string } | undefined): '' | 'dog' | 'cat' | 'all' {
-  if (profile?.species === 'Cat') return 'cat';
-  if (profile?.species === 'Dog') return 'dog';
-  return '';
+function GradeTag({ grade }) {
+  const c = GRADE_COLORS[grade] || GRADE_COLORS.B;
+  return (
+    <span style={{ background: c.bg, color: c.color, fontWeight: 800, fontSize: 11, borderRadius: 6, padding: '2px 6px' }}>
+      {grade}등급
+    </span>
+  );
 }
 
 export default function Search() {
-  const { profile, isLoggedIn } = useStore();
-  const hasPetProfile = isLoggedIn && profile && profile.id && profile.id !== 'local-profile' && profile.name && profile.name !== '우리 아이';
-  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const category = resolveCategoryFromSearchParams(searchParams.get('category'));
+  const [searchParams] = useSearchParams();
+  const { products, profile, isLoggedIn, favorites, toggleFavorite, addToComparison } = useStore();
 
-  const setCategory = (name: string) => {
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev);
-        if (name === '전체') next.delete('category');
-        else next.set('category', name);
-        return next;
-      },
-      { replace: false }
-    );
-  };
+  const [query, setQuery] = useState(searchParams.get('query') || '');
+  const [speciesFilter, setSpeciesFilter] = useState('전체');
+  const [detailFilter, setDetailFilter] = useState<string | null>(null);
+  const [sort, setSort] = useState('평점순');
+  const [inCompare, setInCompare] = useState<Record<string, boolean>>({});
 
-  const [query, setQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [sortBy, setSortBy] = useState<'default' | 'price_asc' | 'price_desc' | 'rating'>('default');
+  const favoriteSet = new Set(favorites || []);
 
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [filters, setFilters] = useState({
-    targetPetType: defaultPetFromProfile(profile) as '' | 'dog' | 'cat' | 'all',
-    targetLifeStage: '',
-    formulation: '',
-    subCategory: '',
-    healthConcerns: [] as string[],
-    dietPreset: false,
-    priceBand: 'any' as PriceBand,
-  });
-
-  const [allIngredients, setAllIngredients] = useState<any[]>([]);
-  const [ingredientSearch, setIngredientSearch] = useState('');
-  const [excludedIngredients, setExcludedIngredients] = useState<string[]>([]);
-
-  // Synchronize URL search params (query, concern) with states
-  useEffect(() => {
-    const urlQuery = searchParams.get('query');
-    if (urlQuery != null) {
-      setQuery(urlQuery);
+  const filtered = useMemo(() => {
+    let list = products;
+    if (speciesFilter === '강아지') list = list.filter(p => p.targetPetType === 'dog' || p.targetPetType === 'all');
+    if (speciesFilter === '고양이') list = list.filter(p => p.targetPetType === 'cat' || p.targetPetType === 'all');
+    if (query.trim()) {
+      const q = query.trim().toLowerCase();
+      list = list.filter(p =>
+        p.name.toLowerCase().includes(q) ||
+        p.brand.toLowerCase().includes(q) ||
+        (p.mainCategory || '').toLowerCase().includes(q)
+      );
     }
-    const urlConcern = searchParams.get('concern');
-    if (urlConcern != null) {
-      setFilters(prev => {
-        if (prev.healthConcerns.includes(urlConcern)) return prev;
-        return {
-          ...prev,
-          healthConcerns: [urlConcern]
-        };
-      });
+    if (detailFilter) {
+      list = list.filter(p =>
+        (p.mainCategory || '').includes(detailFilter) ||
+        (p.category || '').includes(detailFilter) ||
+        (p.name || '').includes(detailFilter)
+      );
     }
-    const urlDiet = searchParams.get('diet');
-    if (urlDiet === 'true') {
-      setFilters(prev => ({ ...prev, dietPreset: true }));
-    }
-  }, [searchParams]);
-  
-  const [isStandardFeedModalOpen, setIsStandardFeedModalOpen] = useState(false);
-  const [standardFeedSearch, setStandardFeedSearch] = useState('');
-  const PAGE_SIZE = 20;
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-
-  // Load all ingredients for auto-completion
-  useEffect(() => {
-    async function loadIngs() {
-      try {
-        const ings = await getAllIngredients();
-        setAllIngredients(ings || []);
-      } catch (err) {
-        console.error('Failed to load ingredients', err);
-      }
-    }
-    loadIngs();
-  }, []);
-
-  const filteredIngList = useMemo(() => {
-    if (!ingredientSearch.trim()) return [];
-    return allIngredients.filter(ing => 
-      ing.name_ko.toLowerCase().includes(ingredientSearch.toLowerCase())
-    );
-  }, [ingredientSearch, allIngredients]);
-
-  const filteredStandardFeed = standardFeedData.filter((item: any) => 
-    item.name_ko.toLowerCase().includes(standardFeedSearch.toLowerCase()) ||
-    item.name_en.toLowerCase().includes(standardFeedSearch.toLowerCase())
-  );
-
-  useEffect(() => {
-    const timer = setTimeout(async () => {
-      setIsLoading(true);
-      try {
-        const pet = filters.targetPetType;
-        const { priceMin, priceMax } = priceBandToMinMax(filters.priceBand);
-        
-        const results = await searchProducts(query, category, excludedIngredients, {
-          targetPetType: pet === '' ? undefined : pet,
-          targetLifeStage: filters.targetLifeStage || undefined,
-          formulation: filters.formulation || undefined,
-          subCategory: filters.subCategory || undefined,
-          healthConcerns: filters.healthConcerns,
-          dietPreset: filters.dietPreset,
-          priceMin: priceMin ?? 0,
-          priceMax: priceMax ?? 999999,
-        });
-        setSearchResults(results);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [query, category, filters, excludedIngredients]);
-
-  const displayResults = useMemo(() => {
-    if (sortBy === 'default') {
-      if (hasPetProfile) {
-        return [...searchResults]
-          .map((product) => {
-            const breakdown = getRecommendationBreakdown(product, profile);
-            return { product, breakdown, score: breakdown.total };
-          })
-          .sort((a, b) => b.score - a.score);
-      } else {
-        // default sorting for non-profile users: sort by reviewsCount and averageRating
-        return [...searchResults]
-          .map((product) => ({ product, breakdown: null, score: null }))
-          .sort((a, b) => {
-            if ((b.product.reviewsCount ?? 0) !== (a.product.reviewsCount ?? 0)) {
-              return (b.product.reviewsCount ?? 0) - (a.product.reviewsCount ?? 0);
-            }
-            return (b.product.averageRating ?? 0) - (a.product.averageRating ?? 0);
-          });
-      }
-    }
-
-    const arr = [...searchResults];
-    if (sortBy === 'price_asc') arr.sort((a, b) => a.price - b.price);
-    else if (sortBy === 'price_desc') arr.sort((a, b) => b.price - a.price);
-    else if (sortBy === 'rating') arr.sort((a, b) => b.averageRating - a.averageRating);
-    return arr.map((product) => ({
-      product,
-      breakdown: null,
-      score: null,
-    }));
-  }, [searchResults, sortBy, profile, hasPetProfile]);
-
-  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [searchResults, sortBy]);
-
-  const toggleHealthConcern = (concern: string) => {
-    setFilters(prev => ({
-      ...prev,
-      healthConcerns: prev.healthConcerns.includes(concern)
-        ? prev.healthConcerns.filter(c => c !== concern)
-        : [...prev.healthConcerns, concern]
-    }));
-  };
-
-  const resetFilters = () => {
-    setFilters({
-      targetPetType: defaultPetFromProfile(profile),
-      targetLifeStage: '',
-      formulation: '',
-      subCategory: '',
-      healthConcerns: [],
-      dietPreset: false,
-      priceBand: 'any',
+    return [...list].sort((a, b) => {
+      if (sort === '평점순') return (b.averageRating || 0) - (a.averageRating || 0);
+      if (sort === '가격순') return (a.price || 0) - (b.price || 0);
+      if (sort === '이름순') return a.name.localeCompare(b.name);
+      return 0;
     });
-    setExcludedIngredients([]);
-    setSortBy('default');
-  };
-
-  const setPetFilter = (p: '' | 'dog' | 'cat' | 'all') => {
-    setFilters(f => ({ ...f, targetPetType: p }));
-  };
-
-  const filterButtonActive = 
-    filters.targetPetType !== defaultPetFromProfile(profile) ||
-    filters.targetLifeStage !== '' ||
-    filters.formulation !== '' ||
-    filters.healthConcerns.length > 0 ||
-    filters.dietPreset ||
-    filters.priceBand !== 'any' ||
-    excludedIngredients.length > 0;
-
-  const pagedResults = displayResults.slice(0, visibleCount);
-  const hasMore = visibleCount < displayResults.length;
+  }, [products, speciesFilter, query, detailFilter, sort]);
 
   return (
-    <div className="animate-fade-in" style={{ paddingBottom: '100px' }}>
-      <Helmet>
-        <title>상품 검색 | 베로로</title>
-        <meta name="description" content="반려동물 맞춤 사료·간식을 성분, 가격, 건강 고민으로 검색하고 비교해 보세요." />
-      </Helmet>
-      
-      {/* Search Box */}
-      <div style={{ padding: '14px 20px 0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '13px 16px', borderRadius: 12,
-          background: 'var(--fill)', border: '1px solid transparent' }}>
-          <SearchIcon size={18} stroke="var(--ink-faint)" />
+    <div style={{ paddingBottom: 90 }}>
+      <div style={{ padding: '12px 16px 8px', position: 'sticky', top: 0, background: '#F7F4EE', zIndex: 10 }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          background: '#fff', borderRadius: 14, padding: '0 16px',
+          boxShadow: '0 1px 4px rgba(30,41,59,0.08)',
+        }}>
+          <SearchIcon size={18} color="#8B95A1" strokeWidth={2.2} />
           <input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="상품명, 브랜드, 성분명으로 검색"
-            style={{ flex: 1, border: 'none', outline: 'none', background: 'none', fontSize: 14.5, color: 'var(--ink)', fontFamily: 'inherit' }}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="사료, 브랜드명 검색..."
+            style={{ flex: 1, height: 46, border: 'none', outline: 'none', fontSize: 15, color: '#191F28', background: 'transparent' }}
           />
-          {query && <X size={16} stroke="var(--ink-faint)" style={{ cursor: 'pointer' }} onClick={() => setQuery('')} />}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 9 }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 999, color: 'var(--brand-deep)', background: 'var(--brand-tint)', border: '1px solid var(--brand-line)' }}>
-            <Sparkles size={11} /> 공식 검수 데이터
-          </div>
-          <span style={{ fontSize: 11.5, color: 'var(--ink-soft)' }}>사람이 검수한 데이터를 우선 노출해요</span>
+          {query && (
+            <button onClick={() => setQuery('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8B95A1', fontSize: 18 }}>✕</button>
+          )}
         </div>
       </div>
 
-      {/* Species filter row */}
-      <div style={{ display: 'flex', gap: 8, padding: '16px 20px 0' }}>
-        {([
-          { key: '' as const, label: '전체' },
-          { key: 'dog' as const, label: '강아지' },
-          { key: 'cat' as const, label: '고양이' },
-          { key: 'all' as const, label: '공용' },
-        ]).map(({ key, label }) => (
-          <FilterChip
-            key={key}
-            label={label}
-            selected={filters.targetPetType === key}
-            onClick={() => setPetFilter(key)}
-            style={{ flex: 1, textAlign: 'center', justifyContent: 'center' }}
-          />
-        ))}
-      </div>
-
-      {/* Price band chips scroll */}
-      <div className="rail" style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '12px 20px 0', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-        {PRICE_BAND_LABELS.map(({ id, label }) => (
-          <FilterChip
-            key={id}
-            label={label}
-            selected={filters.priceBand === id}
-            onClick={() => setFilters(f => ({ ...f, priceBand: id }))}
-          />
-        ))}
-      </div>
-
-      {/* Diet preset, life stage & reset buttons scroll */}
-      <div className="rail" style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '10px 20px 0', alignItems: 'center', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-        <FilterChip
-          label="다이어트·체중"
-          selected={filters.dietPreset}
-          onClick={() => setFilters(f => ({ ...f, dietPreset: !f.dietPreset }))}
-        />
-        <FilterChip
-          label="시니어"
-          selected={filters.targetLifeStage === '시니어'}
-          onClick={() => setFilters(f => ({ ...f, targetLifeStage: f.targetLifeStage === '시니어' ? '' : '시니어' }))}
-        />
-        
-        {/* Action Button: Detail Filter */}
-        <button
-          type="button"
-          onClick={() => setIsFilterOpen(true)}
-          style={{
-            flexShrink: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5,
-            fontSize: 13.5, fontWeight: 700, padding: '8px 14px', borderRadius: 999,
-            color: filterButtonActive ? 'var(--brand-deep)' : 'var(--ink-soft)',
-            background: filterButtonActive ? 'var(--brand-tint)' : 'var(--surface)',
-            border: `1px solid ${filterButtonActive ? 'var(--brand-line)' : 'var(--hairline)'}`,
-            transition: 'all .15s ease'
-          }}
-        >
-          <SlidersHorizontal size={14} />상세 필터
-        </button>
-
-        <span style={{ width: 1, background: 'var(--hairline)', margin: '4px 2px', alignSelf: 'stretch' }} />
-
-        <button
-          onClick={resetFilters}
-          style={{ flexShrink: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5,
-            fontSize: 13, fontWeight: 600, color: 'var(--ink-soft)', background: 'none', border: 'none', padding: '8px 6px' }}
-        >
-          <X size={14} />초기화
-        </button>
-      </div>
-
-      {/* Dictionary entry buttons */}
-      <div style={{ padding: '8px 20px 0', display: 'flex', gap: 8 }}>
-        <button
-          onClick={() => navigate('/dictionary')}
-          style={{
-            flex: 1, display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700,
-            color: 'var(--brand-deep)', background: 'var(--brand-tint)', padding: '11px 14px', borderRadius: '14px', border: '1px solid var(--brand-line)', cursor: 'pointer', justifyContent: 'center'
-          }}
-        >
-          <BookOpen size={14} /> 성분사전
-        </button>
-        <button
-          onClick={() => setIsStandardFeedModalOpen(true)}
-          style={{
-            flex: 1, display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700,
-            color: 'var(--safe)', background: 'var(--safe-tint)', padding: '11px 14px', borderRadius: '14px', border: '1px solid var(--hairline)', cursor: 'pointer', justifyContent: 'center'
-          }}
-        >
-          <Database size={14} /> 표준사료 사전
-        </button>
-      </div>
-
-      {/* Category scroll tabs */}
-      <div className="rail" style={{ display: 'flex', gap: 18, overflowX: 'auto', padding: '16px 20px 0',
-        borderBottom: '1px solid var(--hairline)', marginTop: 14, msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-        {['전체', ...SEARCH_MAIN_CATEGORIES.map(c => c.name)].map((c) => {
-          const on = (c === '전체' && !category) || (category === c);
-          return (
-            <button
-              key={c}
-              onClick={() => {
-                setCategory(c);
-                setFilters(f => ({ ...f, subCategory: '' }));
-              }}
-              style={{ flexShrink: 0, cursor: 'pointer', background: 'none', border: 'none',
-                padding: '0 0 10px', position: 'relative', fontSize: 14, fontWeight: on ? 700 : 500,
-                color: on ? 'var(--ink)' : 'var(--ink-faint)' }}
-            >
-              {c}
-              {on && <span style={{ position: 'absolute', left: 0, right: 0, bottom: -1, height: 2.5, borderRadius: 2, background: 'var(--ink)' }} />}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Result Count and Sort choices */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px 0' }}>
-        <span style={{ fontSize: 13, color: 'var(--ink-soft)' }}>
-          총 <b style={{ color: 'var(--ink)' }}>{displayResults.length}</b>개
-          {isLoading && <span style={{ marginLeft: '8px', fontSize: '11px', color: 'var(--ink-faint)' }}>불러오는 중…</span>}
-        </span>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {([
-            { id: 'default' as const, label: hasPetProfile ? '맞춤 추천순' : '추천순' },
-            { id: 'price_asc' as const, label: '가격 낮은순' },
-            { id: 'price_desc' as const, label: '가격 높은순' },
-            { id: 'rating' as const, label: '평점순' },
-          ]).map(({ id, label }) => (
-            <button
-              key={id}
-              onClick={() => setSortBy(id)}
-              style={{ flexShrink: 0, cursor: 'pointer', background: 'none', border: 'none', padding: 0,
-                fontSize: 12.5, fontWeight: sortBy === id ? 700 : 500, color: sortBy === id ? 'var(--brand-deep)' : 'var(--ink-faint)' }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Result list container */}
-      <div style={{ padding: '4px 20px 0' }}>
-        {hasPetProfile && sortBy === 'default' && displayResults.length > 0 && (
-          <div style={{ margin: '10px 0 16px', padding: '11px 14px', borderRadius: '14px', background: 'var(--brand-tint)', border: '1px solid var(--brand-line)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '20px', lineHeight: 1, flexShrink: 0 }}>
-              {profile.species === 'Cat' ? '🐱' : '🐾'}
-            </span>
-            <div>
-              <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ink)' }}>
-                {profile.name} 맞춤 순으로 정렬됐어요
-              </div>
-              <div style={{ fontSize: '11.5px', color: 'var(--brand-deep)', fontWeight: 600, marginTop: '2px' }}>
-                알레르기·건강고민·성분 안전 점수 반영
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          {pagedResults.map(({ product, breakdown, score }) => (
-            <div key={product.id}>
-              <ProductCard product={product} />
-              {hasPetProfile && breakdown && breakdown.allergyHits?.length > 0 && (
-                <div style={{ marginTop: '-8px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#BE123C', background: '#FFF1F2', padding: '3px 9px', borderRadius: '6px', border: '1px solid #FECDD3' }}>
-                    ⚠ {breakdown.allergyHits.join(', ')} 포함 — 안전 점수 상한 적용
-                  </span>
-                </div>
-              )}
-              {hasPetProfile && breakdown && !breakdown.allergyHits?.length && breakdown.matchedConcerns?.length > 0 && (
-                <div style={{ marginTop: '-8px', marginBottom: '12px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--brand-deep)', background: 'var(--brand-tint)', padding: '3px 9px', borderRadius: '6px' }}>
-                    ✓ {breakdown.matchedConcerns.join(', ')} 고민 연관
-                  </span>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {hasMore && (
-          <button
-            type="button"
-            onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
+      <div style={{ display: 'flex', gap: 8, padding: '8px 16px', overflowX: 'auto' }}>
+        {SPECIES_FILTERS.map(f => (
+          <button key={f} onClick={() => setSpeciesFilter(f)}
             style={{
-              display: 'block', width: '100%', marginTop: '20px',
-              padding: '14px', borderRadius: '14px',
-              border: '1px solid var(--hairline)',
-              background: 'var(--surface)', color: 'var(--ink-soft)',
-              fontWeight: 700, fontSize: '14px', cursor: 'pointer',
+              flexShrink: 0, padding: '7px 16px', borderRadius: 20, border: 'none', cursor: 'pointer',
+              fontSize: 13, fontWeight: 700,
+              background: speciesFilter === f ? '#191F28' : '#fff',
+              color: speciesFilter === f ? '#fff' : '#4E5968',
+              boxShadow: '0 1px 3px rgba(30,41,59,0.06)',
             }}
-          >
-            더 보기 ({visibleCount} / {displayResults.length}개)
-          </button>
-        )}
-
-        {displayResults.length === 0 && !isLoading && (
-          <div style={{ padding: '54px 28px', textAlign: 'center' }}>
-            <SearchIcon size={30} stroke="var(--ink-faint)" style={{ margin: '0 auto 12px' }} />
-            <div style={{ fontSize: 14, color: 'var(--ink-soft)' }}>조건에 맞는 제품이 없어요</div>
-          </div>
-        )}
+          >{f}</button>
+        ))}
       </div>
 
-      {isFilterOpen && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', justifyContent: 'flex-end' }}>
-          <div className="animate-slide-in-right" style={{ width: '85%', maxWidth: '400px', backgroundColor: '#fff', height: '100%', overflowY: 'auto', padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-              <h2 style={{ fontSize: '22px', fontWeight: 800 }}>상세 필터</h2>
-              <button type="button" onClick={() => setIsFilterOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
-            </div>
+      <div style={{ display: 'flex', gap: 8, padding: '0 16px 8px', overflowX: 'auto' }}>
+        {DETAIL_FILTERS.map(f => (
+          <button key={f} onClick={() => setDetailFilter(detailFilter === f ? null : f)}
+            style={{
+              flexShrink: 0, padding: '6px 14px', borderRadius: 20,
+              border: `1.5px solid ${detailFilter === f ? '#F5C518' : '#E5E8EB'}`,
+              cursor: 'pointer', fontSize: 12, fontWeight: 700,
+              background: detailFilter === f ? '#FEF6E0' : '#fff',
+              color: detailFilter === f ? '#CA8A04' : '#6B7684',
+            }}
+          >{f}</button>
+        ))}
+      </div>
 
-            <TossFilterSection title="반려동물">
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                <FilterChip label="전체" selected={filters.targetPetType === ''} onClick={() => setFilters({ ...filters, targetPetType: '' })} />
-                <FilterChip label="강아지" selected={filters.targetPetType === 'dog'} onClick={() => setFilters({ ...filters, targetPetType: 'dog' })} />
-                <FilterChip label="고양이" selected={filters.targetPetType === 'cat'} onClick={() => setFilters({ ...filters, targetPetType: 'cat' })} />
-                <FilterChip label="공용 제품만" selected={filters.targetPetType === 'all'} onClick={() => setFilters({ ...filters, targetPetType: 'all' })} />
-              </div>
-            </TossFilterSection>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px 12px' }}>
+        <span style={{ fontSize: 13, color: '#8B95A1', fontWeight: 600 }}>총 {filtered.length}개</span>
+        <div style={{ display: 'flex', gap: 4 }}>
+          {SORT_OPTIONS.map(s => (
+            <button key={s} onClick={() => setSort(s)}
+              style={{
+                padding: '5px 10px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                fontSize: 12, fontWeight: 700,
+                background: sort === s ? '#F5C518' : 'transparent',
+                color: sort === s ? '#191F28' : '#8B95A1',
+              }}
+            >{s}</button>
+          ))}
+        </div>
+      </div>
 
-            <TossFilterSection title="가격대">
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {PRICE_BAND_LABELS.map(({ id, label }) => (
-                  <FilterChip
-                    key={id}
-                    label={label}
-                    selected={filters.priceBand === id}
-                    onClick={() => setFilters({ ...filters, priceBand: id })}
-                  />
-                ))}
-              </div>
-            </TossFilterSection>
+      {filtered.length === 0 ? (
+        <div style={{ padding: '40px 16px', textAlign: 'center', color: '#B0B8C1' }}>
+          <div style={{ fontSize: 36, marginBottom: 12 }}>🔍</div>
+          <p style={{ fontWeight: 700, fontSize: 16, color: '#4E5968', marginBottom: 6 }}>검색 결과가 없어요</p>
+          <p style={{ fontSize: 13 }}>다른 검색어나 필터를 시도해 보세요</p>
+        </div>
+      ) : (
+        <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {filtered.map(product => {
+            const score = (isLoggedIn && profile?.name && profile.name !== '우리 아이')
+              ? calculateCompatibilityScore(product, profile)
+              : null;
+            const grade = score != null ? gradeFromScore(score) : null;
+            const isFav = favoriteSet.has(product.id);
 
-            <TossFilterSection title="생애 단계">
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {LIFE_STAGE_OPTIONS.map(({ value, label }) => (
-                  <FilterChip
-                    key={value}
-                    label={label}
-                    selected={filters.targetLifeStage === value}
-                    onClick={() =>
-                      setFilters({
-                        ...filters,
-                        targetLifeStage: filters.targetLifeStage === value ? '' : value,
-                      })
-                    }
-                  />
-                ))}
-              </div>
-            </TossFilterSection>
-
-            <TossFilterSection title="특화 · 다이어트">
-              <button
-                type="button"
-                onClick={() => setFilters(f => ({ ...f, dietPreset: !f.dietPreset }))}
+            return (
+              <div key={product.id} onClick={() => navigate(`/product/${product.id}`)}
                 style={{
-                  width: '100%', textAlign: 'left', padding: '14px 16px', borderRadius: '14px',
-                  border: filters.dietPreset ? '2px solid var(--brand)' : '1px solid var(--hairline)',
-                  background: filters.dietPreset ? 'rgba(250, 204, 21, 0.16)' : '#fff', cursor: 'pointer', fontWeight: 700, color: '#374151',
+                  background: '#fff', borderRadius: 18, padding: '16px',
+                  boxShadow: '0 2px 10px rgba(30,41,59,0.06)', cursor: 'pointer',
+                  display: 'flex', gap: 14, alignItems: 'flex-start',
                 }}
               >
-                {filters.dietPreset ? '✓ ' : ''}다이어트·저칼로리·체중 관련 상품 우선 (태그 일치)
-              </button>
-              <p style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '8px', lineHeight: 1.5 }}>
-                상품에 등록된 건강 태그(비만, 다이어트, 체중 등) 중 하나라도 있으면 표시됩니다. DB에 태그가 없으면 결과가 비어 있을 수 있습니다.
-              </p>
-            </TossFilterSection>
-
-            <TossFilterSection title="급여 형태">
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {FORMULATION_OPTIONS.map(form => (
-                  <FilterChip
-                    key={form}
-                    label={form}
-                    selected={filters.formulation === form}
-                    onClick={() =>
-                      setFilters({
-                        ...filters,
-                        formulation: filters.formulation === form ? '' : form,
-                      })
-                    }
-                  />
-                ))}
-              </div>
-            </TossFilterSection>
-
-            <TossFilterSection title="건강 고민 (복수 선택 · OR)">
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {HEALTH_CONCERN_OPTIONS.map(concern => (
-                  <FilterChip
-                    key={concern}
-                    label={concern}
-                    selected={filters.healthConcerns.includes(concern)}
-                    onClick={() => toggleHealthConcern(concern)}
-                  />
-                ))}
-              </div>
-            </TossFilterSection>
-
-            <TossFilterSection title="성분 제외 필터">
-              {excludedIngredients.length > 0 && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
-                  {excludedIngredients.map(name => (
-                    <div key={name} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#FEF2F2', borderRadius: '20px', border: '1px solid #FECACA' }}>
-                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#991B1B' }}>{name}</span>
-                      <button type="button" onClick={() => setExcludedIngredients(prev => prev.filter(i => i !== name))} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#EF4444', display: 'flex' }}>
-                        <X size={14} />
+                <div style={{
+                  width: 72, height: 72, borderRadius: 14,
+                  background: '#F7F4EE', overflow: 'hidden', flexShrink: 0,
+                }}>
+                  <ProductImage src={product.imageUrl} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', gap: 6, marginBottom: 5, flexWrap: 'wrap' }}>
+                    {grade && <GradeTag grade={grade} />}
+                    {score != null && (
+                      <span style={{ background: '#F0EDE8', color: '#4E5968', fontWeight: 700, fontSize: 11, borderRadius: 6, padding: '2px 6px' }}>
+                        궁합 {score}%
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#8B95A1', marginBottom: 2 }}>{product.brand}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#191F28', lineHeight: 1.4, marginBottom: 4 }}>
+                    {product.name.length > 30 ? product.name.slice(0, 30) + '…' : product.name}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {product.averageRating > 0 && <span style={{ fontSize: 12, color: '#6B7684' }}>⭐ {Number(product.averageRating).toFixed(1)}</span>}
+                    {product.reviewsCount > 0 && <>
+                      <span style={{ fontSize: 12, color: '#B0B8C1' }}>·</span>
+                      <span style={{ fontSize: 12, color: '#6B7684' }}>{product.reviewsCount.toLocaleString()}개 리뷰</span>
+                    </>}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
+                    <span style={{ fontSize: 16, fontWeight: 800, color: '#191F28' }}>
+                      {product.price ? `${product.price.toLocaleString()}원` : '가격 미정'}
+                    </span>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        onClick={e => { e.stopPropagation(); toggleFavorite(product.id); }}
+                        style={{
+                          width: 34, height: 34, borderRadius: 10, border: '1.5px solid #E5E8EB',
+                          background: isFav ? '#FFF0ED' : '#fff',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                        }}
+                      >
+                        <Heart size={15} fill={isFav ? '#F04452' : 'none'} color={isFav ? '#F04452' : '#B0B8C1'} strokeWidth={2} />
                       </button>
                     </div>
                   ))}
@@ -718,41 +301,12 @@ export default function Search() {
                       </div>
                     </div>
                   </div>
-                ))
-              )}
-            </div>
-          </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
-  );
-}
-
-function FilterChip({ label, selected, onClick, style }: { label: string, selected: boolean, onClick: () => void, style?: React.CSSProperties }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        flexShrink: 0,
-        cursor: 'pointer',
-        whiteSpace: 'nowrap',
-        fontSize: 13.5,
-        fontWeight: selected ? 700 : 500,
-        padding: '8px 14px',
-        borderRadius: 999,
-        color: selected ? 'var(--ink-on-brand)' : 'var(--ink-soft)',
-        background: selected ? 'var(--ink)' : 'var(--surface)',
-        border: `1px solid ${selected ? 'var(--ink)' : 'var(--hairline)'}`,
-        transition: 'all .15s ease',
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '4px',
-        ...style,
-      }}
-    >
-      {selected && <Check size={14} />}
-      {label}
-    </button>
   );
 }

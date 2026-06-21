@@ -19,11 +19,11 @@
   --ink-300: #B0B8C1;
 
   /* Surfaces — white canvas + gray fill */
-  --bg-color: #FFFFFF;
-  --bg-gradient: #FFFFFF;
+  --bg-color: #F7F4EE;
+  --bg-gradient: #F7F4EE;
   --surface-elevated: #FFFFFF;
   --fill: #F2F4F6;
-  --fill-2: #F7F8FA;
+  --fill-2: #F0EDE8;
 
   /* Signal */
   --safe: #15B36B;      /* Safe Green */
@@ -3055,4 +3055,17 @@ button:active {
   from { transform: scale(0.85); opacity: 0; }
   to   { transform: scale(1); opacity: 1; }
 }
+
+/* MVP warm gray background override */
+body { background-color: #F7F4EE; }
+.app-shell { background-color: #F7F4EE; }
+#root { background-color: #F7F4EE; }
+
+/* Grade badge styles */
+.grade-badge-A { background: #E7F8F0; color: #15B36B; }
+.grade-badge-B { background: #FEF6E0; color: #E8A800; }
+.grade-badge-C { background: #FFF0ED; color: #F04452; }
+
+/* Compatibility score ring */
+.compat-ring { display: inline-flex; align-items: center; gap: 4px; }
 

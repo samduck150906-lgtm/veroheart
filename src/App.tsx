@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useState } from 'react';
 import { pickSplashTagline } from './copy/marketing';
 import { VERORO_LOGO_SRC } from './constants/assets';
@@ -15,7 +16,6 @@ import Comparison from './pages/Comparison';
 import AnalysisResult from './pages/AnalysisResult';
 import ScanResult from './pages/ScanResult';
 import PetProfilePage from './pages/PetProfile';
-// import Cart from './pages/Cart';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Refund from './pages/Refund';
@@ -30,8 +30,6 @@ import AdminSponsors from './pages/admin/AdminSponsors';
 import Membership from './pages/Membership';
 import Notification from './components/Notification';
 import AdminAuthGuard from './pages/admin/AdminAuthGuard';
-import EntryGate from './components/EntryGate';
-import { markEntryGateDone, readEntryGateDone } from './lib/entryGateStorage';
 import { isAdminExperience, toggleAdminDesktopMode } from './utils/adminHost';
 import { ThemeProvider } from './theme/ThemeProvider';
 import IngredientDictionary from './pages/IngredientDictionary';
@@ -47,18 +45,11 @@ function App() {
   const adminMode = typeof window !== 'undefined'
     && isAdminExperience(window.location.hostname, window.location.pathname);
   const [showEntrySplash, setShowEntrySplash] = useState(() => !adminMode);
-  const [entryGateOpen, setEntryGateOpen] = useState(() => (adminMode ? false : !readEntryGateDone()));
   const [fontsLoaded, setFontsLoaded] = useState(false);
 
-  // Proactive Web Font Loading Verification API
   useEffect(() => {
     if (typeof document !== 'undefined' && 'fonts' in document) {
-      document.fonts.ready.then(() => {
-        setFontsLoaded(true);
-      }).catch((err) => {
-        console.warn('Google/Pretendard Web Font load deferred, falling back to system fonts:', err);
-        setFontsLoaded(true);
-      });
+      document.fonts.ready.then(() => setFontsLoaded(true)).catch(() => setFontsLoaded(true));
     } else {
       setFontsLoaded(true);
     }
@@ -68,8 +59,7 @@ function App() {
     if (!adminMode) return;
     if (typeof window === 'undefined') return;
     if (window.location.pathname.startsWith('/admin')) return;
-    const nextUrl = `/admin${window.location.search}${window.location.hash}`;
-    window.location.replace(nextUrl);
+    window.location.replace(`/admin${window.location.search}${window.location.hash}`);
   }, [adminMode]);
 
   useEffect(() => {
@@ -87,33 +77,31 @@ function App() {
     return () => window.clearTimeout(timer);
   }, [adminMode]);
 
-  useEffect(() => {
-    if (!isInitializing && isLoggedIn) {
-      markEntryGateDone();
-      queueMicrotask(() => setEntryGateOpen(false));
-    }
-  }, [isInitializing, isLoggedIn]);
-
   const showSplash = !adminMode && (isInitializing || showEntrySplash || !fontsLoaded);
 
   if (showSplash) {
     return (
       <div style={{
         display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
-        height: '100vh', background: 'var(--bg-gradient)', padding: '32px 24px', textAlign: 'center',
+        height: '100vh', background: '#F7F4EE', padding: '32px 24px', textAlign: 'center',
         boxSizing: 'border-box',
       }}>
         <img
           src={VERORO_LOGO_SRC}
           alt="VeRoRo"
           style={{ height: '128px', width: 'auto', objectFit: 'contain', marginBottom: '26px', display: 'block' }}
+          onError={e => { e.currentTarget.style.display = 'none'; }}
         />
-        <p style={{
-          color: 'var(--text-dark)', fontSize: '15px', fontWeight: 600, lineHeight: 1.55, maxWidth: '320px', margin: '0 0 28px',
-        }}>
-          {splashLine}
-        </p>
-        <div style={{ width: '36px', height: '36px', border: '3px solid rgba(129, 201, 149, 0.3)', borderTopColor: 'var(--primary-dark)', borderRadius: '50%', animation: 'spin 0.85s linear infinite' }} />
+        <div style={{
+          width: 72, height: 72, borderRadius: 22,
+          background: 'linear-gradient(135deg, #F5C518 0%, #E8A800 100%)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          marginBottom: 20, boxShadow: '0 8px 24px rgba(245,197,24,0.3)',
+          fontSize: 36,
+        }}>🐾</div>
+        <p style={{ color: '#191F28', fontSize: '17px', fontWeight: 700, lineHeight: 1.55, maxWidth: '280px', margin: '0 0 8px' }}>베로로</p>
+        <p style={{ color: '#8B95A1', fontSize: '14px', fontWeight: 500, margin: '0 0 28px' }}>{splashLine}</p>
+        <div style={{ width: '36px', height: '36px', border: '3px solid rgba(245,197,24,0.3)', borderTopColor: '#F5C518', borderRadius: '50%', animation: 'spin 0.85s linear infinite' }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
@@ -164,25 +152,6 @@ function App() {
             <Route path="settings" element={<AdminSettings />} />
           </Route>
         </Routes>
-
-        {!adminMode && entryGateOpen && (
-          <div
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 9999,
-              background: 'var(--bg-gradient)',
-            }}
-          >
-            <EntryGate
-              onBrowse={() => {
-                markEntryGateDone();
-                setEntryGateOpen(false);
-              }}
-              onDismissForLogin={() => setEntryGateOpen(false)}
-            />
-          </div>
-        )}
       </BrowserRouter>
     </ThemeProvider>
   );

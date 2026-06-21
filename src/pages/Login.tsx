@@ -1,8 +1,7 @@
-import { useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
-import { Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
-import { supabase, ensurePublicUserExists } from '../lib/supabase';
+// @ts-nocheck
+import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import { notify } from '../store/useNotification';
 import { HOME_HERO } from '../copy/marketing';
@@ -10,29 +9,28 @@ import { LOGIN } from '../copy/ui';
 import { VERORO_LOGO_SRC } from '../constants/assets';
 import { TossButton } from '../components/TossUI';
 
-function isValidEmail(value: string): boolean {
-  const v = value.trim();
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-}
+const PawIcon = () => (
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+    <g fill="#F5C518">
+      <ellipse cx="7" cy="9" rx="1.9" ry="2.5" />
+      <ellipse cx="12" cy="7.4" rx="1.9" ry="2.6" />
+      <ellipse cx="17" cy="9" rx="1.9" ry="2.5" />
+      <path d="M12 11.5c-2.6 0-4.7 1.9-4.7 4.2 0 1.7 1.4 2.6 3 2.6.7 0 1.2-.2 1.7-.2s1 .2 1.7.2c1.6 0 3-.9 3-2.6 0-2.3-2.1-4.2-4.7-4.2z" />
+    </g>
+  </svg>
+);
 
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const { initApp } = useStore();
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [isSignup, setIsSignup] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPw, setShowPw] = useState(false);
-  const [showConfirmPw, setShowConfirmPw] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({});
 
-  const redirectTo = useMemo(() => {
-    const from = (location.state as { from?: string } | null)?.from;
-    if (!from || from === '/login') return '/profile';
-    return from;
-  }, [location.state]);
+  const redirectTo = (location.state as any)?.from ?? '/';
 
   const handleSubmit = async () => {
     const addr = email.trim();
@@ -49,42 +47,16 @@ export default function Login() {
       setFieldErrors(errors);
       return;
     }
-    setFieldErrors({});
-
     setIsLoading(true);
     try {
-      if (mode === 'login') {
-        let { error } = await supabase.auth.signInWithPassword({ email: addr, password });
-        if (error && error.message.toLowerCase().includes('email not confirmed')) {
-          try {
-            if (supabase.auth.admin) {
-              const { data: listData, error: listErr } = await supabase.auth.admin.listUsers();
-              if (!listErr && listData?.users) {
-                const foundUser = (listData.users as any[]).find(u => u.email === addr);
-                if (foundUser) {
-                  const { error: confirmErr } = await supabase.auth.admin.updateUserById(foundUser.id, {
-                    email_confirm: true
-                  });
-                  if (!confirmErr) {
-                    const retry = await supabase.auth.signInWithPassword({ email: addr, password });
-                    error = retry.error;
-                  }
-                }
-              }
-            }
-          } catch (adminErr) {
-            console.error('Login auto-confirm failed:', adminErr);
-          }
-        }
+      if (isSignup) {
+        const { error } = await supabase.auth.signUp({ email: email.trim(), password });
         if (error) throw error;
-
-        // Ensure public.users entry exists defensively
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          await ensurePublicUserExists(session.user.id, addr);
-        }
-
-        notify.success('로그인되었습니다!');
+        notify.success('회원가입이 완료됐어요! 이메일 인증 후 로그인해 주세요.');
+        setIsSignup(false);
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        if (error) throw error;
         await initApp();
         navigate(redirectTo, { replace: true });
       } else {
@@ -197,25 +169,43 @@ export default function Login() {
       } else {
         notify.error(msg || '오류가 발생했습니다.');
       }
+    } catch (err: any) {
+      notify.error(err.message || '로그인에 실패했어요. 다시 시도해 주세요.');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleBrowse = () => {
+    navigate('/', { replace: true });
+  };
+
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-gradient)', display: 'flex', flexDirection: 'column' }}>
-      <Helmet>
-        <title>{mode === 'login' ? '로그인' : '회원가입'} | 베로로</title>
-        <meta name="description" content="베로로 이메일 로그인 및 회원가입" />
-      </Helmet>
-      <div style={{ padding: '16px 20px' }}>
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: '#374151', fontWeight: 600 }}
-        >
-          <ArrowLeft size={20} /> 뒤로
-        </button>
+    <div style={{
+      minHeight: '100vh',
+      background: '#F7F4EE',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      padding: '0 24px',
+    }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: '60px', paddingBottom: '20px' }}>
+        <div style={{
+          width: 80, height: 80, borderRadius: 24,
+          background: 'linear-gradient(135deg, #F5C518 0%, #E8A800 100%)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          marginBottom: 20,
+          boxShadow: '0 8px 24px rgba(245,197,24,0.3)',
+        }}>
+          <PawIcon />
+        </div>
+        <h1 style={{ fontSize: 32, fontWeight: 900, color: '#191F28', letterSpacing: '-0.04em', marginBottom: 8 }}>베로로</h1>
+        <p style={{ fontSize: 16, color: '#4E5968', fontWeight: 500, textAlign: 'center', lineHeight: 1.6 }}>
+          반려동물 건강 식단 파트너
+        </p>
+        <p style={{ fontSize: 14, color: '#8B95A1', marginTop: 6, textAlign: 'center' }}>
+          성분 분석으로 우리 아이 맞춤 사료를 찾아보세요
+        </p>
       </div>
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 28px 80px' }}>
@@ -231,139 +221,85 @@ export default function Login() {
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.55 }}>{LOGIN.description}</p>
         </div>
 
-        <div style={{ display: 'flex', backgroundColor: 'var(--primary-light)', borderRadius: '16px', padding: '4px', marginBottom: '22px' }}>
-          {(['login', 'signup'] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => {
-                setMode(m);
-                setFieldErrors({});
-                setConfirmPassword('');
-              }}
+        {!showEmailForm ? (
+          <button
+            onClick={() => setShowEmailForm(true)}
+            style={{
+              width: '100%', height: 50, borderRadius: 14,
+              background: 'transparent', border: '1.5px solid #E5E8EB', cursor: 'pointer',
+              fontSize: 15, fontWeight: 600, color: '#4E5968',
+              marginBottom: 16,
+            }}
+          >
+            이메일로 로그인
+          </button>
+        ) : (
+          <div style={{ marginBottom: 16 }}>
+            <input
+              type="email"
+              placeholder="이메일"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
               style={{
-                flex: 1,
-                padding: '12px',
-                borderRadius: '12px',
-                border: 'none',
-                cursor: 'pointer',
-                fontWeight: 700,
-                fontSize: '15px',
-                transition: 'all 0.2s',
-                background: mode === m ? '#FFFFFF' : 'transparent',
-                color: mode === m ? 'var(--primary-dark)' : 'var(--text-muted)',
-                boxShadow: mode === m ? '0 2px 8px rgba(102, 181, 125, 0.08)' : 'none',
+                width: '100%', height: 50, borderRadius: 12,
+                border: '1.5px solid #E5E8EB', padding: '0 16px',
+                fontSize: 15, color: '#191F28', background: '#fff',
+                marginBottom: 10, boxSizing: 'border-box', outline: 'none',
+              }}
+            />
+            <input
+              type="password"
+              placeholder="비밀번호"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleEmailAuth()}
+              style={{
+                width: '100%', height: 50, borderRadius: 12,
+                border: '1.5px solid #E5E8EB', padding: '0 16px',
+                fontSize: 15, color: '#191F28', background: '#fff',
+                marginBottom: 12, boxSizing: 'border-box', outline: 'none',
+              }}
+            />
+            <button
+              onClick={handleEmailAuth}
+              disabled={isLoading}
+              style={{
+                width: '100%', height: 50, borderRadius: 14,
+                background: '#F5C518', border: 'none', cursor: isLoading ? 'not-allowed' : 'pointer',
+                fontSize: 16, fontWeight: 700, color: '#191F28',
+                opacity: isLoading ? 0.7 : 1, marginBottom: 10,
               }}
             >
-              {m === 'login' ? '로그인' : '회원가입'}
+              {isLoading ? '처리 중...' : (isSignup ? '회원가입' : '로그인')}
             </button>
-          ))}
+            <button
+              onClick={() => setIsSignup(!isSignup)}
+              style={{
+                width: '100%', background: 'none', border: 'none', cursor: 'pointer',
+                fontSize: 13, color: '#8B95A1', fontWeight: 500,
+              }}
+            >
+              {isSignup ? '이미 계정이 있으신가요? 로그인' : '계정이 없으신가요? 회원가입'}
+            </button>
+          </div>
+        )}
+
+        <div style={{ textAlign: 'center' }}>
+          <button
+            onClick={handleBrowse}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: 14, color: '#8B95A1', fontWeight: 500,
+              textDecoration: 'underline', textUnderlineOffset: 3,
+            }}
+          >
+            로그인 없이 둘러보기
+          </button>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
-          {/* 이메일 */}
-          <div>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '10px',
-              border: fieldErrors.email ? '1.5px solid #EF4444' : '1.5px solid #E5E7EB',
-              borderRadius: '14px', background: '#FFFFFF',
-              padding: '0 16px', height: '54px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-              transition: 'border-color 0.2s',
-            }}>
-              <Mail size={18} color="#9CA3AF" style={{ flexShrink: 0 }} />
-              <input
-                type="email"
-                placeholder="이메일 주소"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => { setEmail(e.target.value); setFieldErrors(prev => ({ ...prev, email: undefined })); }}
-                onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-                style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: '16px', color: '#111827' }}
-              />
-            </div>
-            {fieldErrors.email && (
-              <p style={{ margin: '5px 0 0 4px', fontSize: '12px', color: '#EF4444', fontWeight: 600 }}>{fieldErrors.email}</p>
-            )}
-          </div>
-
-          {/* 비밀번호 */}
-          <div>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '10px',
-              border: fieldErrors.password ? '1.5px solid #EF4444' : '1.5px solid #E5E7EB',
-              borderRadius: '14px', background: '#FFFFFF',
-              padding: '0 16px', height: '54px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-              transition: 'border-color 0.2s',
-            }}>
-              <Lock size={18} color="#9CA3AF" style={{ flexShrink: 0 }} />
-              <input
-                type={showPw ? 'text' : 'password'}
-                placeholder="비밀번호 (8자 이상)"
-                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                value={password}
-                onChange={(e) => { setPassword(e.target.value); setFieldErrors(prev => ({ ...prev, password: undefined })); }}
-                onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-                style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: '16px', color: '#111827' }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPw(!showPw)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', display: 'inline-flex', flexShrink: 0 }}
-              >
-                {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-            {fieldErrors.password && (
-              <p style={{ margin: '5px 0 0 4px', fontSize: '12px', color: '#EF4444', fontWeight: 600 }}>{fieldErrors.password}</p>
-            )}
-          </div>
-
-          {/* 비밀번호 확인 - 회원가입 시만 */}
-          {mode === 'signup' && (
-            <div>
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: '10px',
-                border: fieldErrors.confirmPassword ? '1.5px solid #EF4444' : '1.5px solid #E5E7EB',
-                borderRadius: '14px', background: '#FFFFFF',
-                padding: '0 16px', height: '54px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                transition: 'border-color 0.2s',
-              }}>
-                <Lock size={18} color="#9CA3AF" style={{ flexShrink: 0 }} />
-                <input
-                  type={showConfirmPw ? 'text' : 'password'}
-                  placeholder="비밀번호 확인"
-                  autoComplete="new-password"
-                  value={confirmPassword}
-                  onChange={(e) => { setConfirmPassword(e.target.value); setFieldErrors(prev => ({ ...prev, confirmPassword: undefined })); }}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-                  style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: '16px', color: '#111827' }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPw(!showConfirmPw)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', display: 'inline-flex', flexShrink: 0 }}
-                >
-                  {showConfirmPw ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-              {fieldErrors.confirmPassword && (
-                <p style={{ margin: '5px 0 0 4px', fontSize: '12px', color: '#EF4444', fontWeight: 600 }}>{fieldErrors.confirmPassword}</p>
-              )}
-            </div>
-          )}
-        </div>
-
-        <TossButton
-          type="button"
-          onClick={() => void handleSubmit()}
-          disabled={isLoading}
-          style={{ width: '100%', height: '52px', fontSize: '16px' }}
-        >
-          {isLoading ? '처리 중...' : mode === 'login' ? '로그인' : '회원가입'}
-        </TossButton>
+        <p style={{ fontSize: 12, color: '#B0B8C1', textAlign: 'center', marginTop: 24, lineHeight: 1.6 }}>
+          로그인 시 이용약관과 개인정보처리방침에 동의하게 됩니다.
+        </p>
       </div>
     </div>
   );

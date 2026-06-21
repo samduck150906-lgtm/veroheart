@@ -53,87 +53,59 @@ import ProductImage from '../components/ProductImage';
 import BreedNutritionPanel from '../components/BreedNutritionPanel';
 import { CAUTION_INGREDIENT, ALLERGY_CONFLICT, MEDICAL_DISCLAIMER, PRE_PURCHASE } from '../copy/ui';
 
+const GRADE_COLORS = {
+  A: '#15B36B', B: '#E8A800', C: '#F04452', D: '#F04452', F: '#8B95A1',
+};
+
+const RISK_COLORS = { safe: '#15B36B', caution: '#E8A800', danger: '#F04452' };
+const RISK_BG = { safe: '#E7F8F0', caution: '#FEF6E0', danger: '#FFF0ED' };
+const RISK_LABEL = { safe: '안전', caution: '주의', danger: '위험' };
+
+function GradeCircle({ grade }) {
+  return (
+    <div style={{
+      width: 44, height: 44, borderRadius: '50%',
+      background: GRADE_COLORS[grade] || '#8B95A1',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      color: '#fff', fontSize: 18, fontWeight: 900,
+    }}>{grade}</div>
+  );
+}
+
 export default function Detail() {
-  const { id } = useParams();
   const navigate = useNavigate();
-  const { 
-    userId,
-    isLoggedIn,
-    profile, 
-    selectedProduct: product, 
-    isLoadingProducts, 
-    fetchProductDetail, 
-    comparisonList, 
-    addToComparison, 
-    removeFromComparison, 
-    addToCart,
-    products,
-    favorites,
-    trackRecentView,
-  } = useStore();
+  const { id } = useParams();
+  const { products, selectedProduct, profile, isLoggedIn, favorites, toggleFavorite, addToComparison, trackRecentView } = useStore();
 
-  const hasPetProfile = isLoggedIn && profile && profile.id && profile.id !== 'local-profile' && profile.name && profile.name !== '우리 아이';
+  const product = useMemo(() => {
+    const found = id ? products.find(p => p.id === id) : null;
+    return found || selectedProduct || products[0];
+  }, [id, products, selectedProduct]);
 
-  type ReviewRow = {
-    id: string;
-    user_id: string;
-    rating: number;
-    content: string;
-    created_at: string;
-    users?: { nickname?: string | null };
-  };
-  const [reviews, setReviews] = useState<ReviewRow[]>([]);
-  const [reviewRating, setReviewRating] = useState(5);
-  const [reviewContent, setReviewContent] = useState('');
-  const [reviewTags, setReviewTags] = useState<string[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedIngredient, setSelectedIngredient] = useState<any>(null);
-  const isFav = favorites.includes(id || '');
+  const [inCompare, setInCompare] = useState(false);
 
-  useEffect(() => {
-    if (id) {
-      fetchProductDetail(id);
-      trackRecentView(id);
-      getReviews(id).then(setReviews);
-    }
-  }, [id, fetchProductDetail, trackRecentView]);
+  const hasPetProfile = isLoggedIn && profile?.name && profile.name !== '우리 아이';
+  const isFav = favorites?.includes(product?.id);
 
-  const toggleReviewTag = (tag: string) => {
-    setReviewTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
-  };
+  const compatScore = useMemo(() => {
+    if (!product || !hasPetProfile) return null;
+    return calculateCompatibilityScore(product, profile);
+  }, [product, profile, hasPetProfile]);
 
-  const handleSubmitReview = async () => {
-    if (!userId) { navigate('/login'); return; }
-    const tagLine = reviewTags.length > 0 ? `# ${reviewTags.join(' · ')}` : '';
-    const body = [tagLine, reviewContent.trim()].filter(Boolean).join('\n\n');
-    if (!body) return;
-    setIsSubmitting(true);
-    const review = await createReview(userId, id!, reviewRating, body);
-    if (review) {
-      setReviewTags([]);
-      setReviews(prev => [{ ...review, users: { nickname: '나' } }, ...prev]);
-      setReviewContent('');
-      setReviewRating(5);
-    }
-    setIsSubmitting(false);
-  };
+  const grade = compatScore != null ? gradeFromScore(compatScore) : null;
 
-  const handleDeleteReview = async (reviewId: string) => {
-    if (!userId) return;
-    await deleteReview(reviewId, userId);
-    setReviews(prev => prev.filter(r => r.id !== reviewId));
-  };
+  const ga = product?.guaranteedAnalysis;
 
-  const handleScrollTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  const cautionList = (product?.ingredients || []).filter(i => i.riskLevel === 'caution' || i.riskLevel === 'danger');
 
-  if (isLoadingProducts) {
+  if (!product) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <Helmet><title>제품 정보를 불러오는 중 | 베로로</title></Helmet>
-        <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
-        <p className="mt-4 text-gray-500 font-medium">제품 정보를 불러오는 중입니다...</p>
+      <div style={{ padding: '60px 24px', textAlign: 'center', color: '#B0B8C1' }}>
+        <div style={{ fontSize: 36, marginBottom: 12 }}>🔍</div>
+        <p style={{ fontWeight: 600 }}>상품을 찾을 수 없어요</p>
+        <button onClick={() => navigate('/search')} style={{ marginTop: 16, background: '#F5C518', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 14, fontWeight: 700, color: '#191F28', cursor: 'pointer' }}>
+          검색으로 돌아가기
+        </button>
       </div>
     );
   }
@@ -197,36 +169,21 @@ export default function Detail() {
   }
 
   return (
-    <div className="animate-stack-push detail-page-root" style={{ paddingBottom: '40px' }}>
-      <Helmet>
-        <title>{product.name} - 베로로</title>
-        <meta name="description" content={`${product.brand}의 ${product.name} 전성분 분석 결과 및 구매`} />
-      </Helmet>
-
-      {hasPetProfile && conclusion && (
-        <section
-          aria-label="맞춤 결론"
-          style={{
-            marginTop: '16px',
-            marginBottom: '20px',
-            padding: '22px 20px',
-            borderRadius: '22px',
-            background:
-              conclusion.tone === 'alert'
-                ? 'linear-gradient(145deg, #FEF2F2 0%, #FFF 100%)'
-                : conclusion.tone === 'match'
-                  ? 'linear-gradient(145deg, #ECFDF5 0%, #FFF 100%)'
-                  : 'linear-gradient(145deg, #FFFBEB 0%, #FFF 100%)',
-            border:
-              conclusion.tone === 'alert'
-                ? '1px solid #FECACA'
-                : conclusion.tone === 'match'
-                  ? '1px solid #BBF7D0'
-                  : '1px solid #FDE68A',
-            boxShadow: '0 8px 28px rgba(15, 23, 42, 0.06)',
-          }}
-        >
-          <p
+    <div style={{ paddingBottom: 120 }}>
+      {/* Product image */}
+      <div style={{
+        height: 220, background: 'linear-gradient(135deg, #FEF9C3, #FDE68A)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative',
+        overflow: 'hidden',
+      }}>
+        {product.imageUrl ? (
+          <ProductImage src={product.imageUrl} alt={product.name}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        ) : (
+          <span style={{ fontSize: 72 }}>🥫</span>
+        )}
+        <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: 8 }}>
+          <button onClick={() => toggleFavorite(product.id)}
             style={{
               margin: '0 0 8px',
               fontSize: '20px',
@@ -703,7 +660,7 @@ export default function Detail() {
             {alternativeProduct.p.brand} {alternativeProduct.p.name} 보러가기
           </button>
         </div>
-      )}
+      </div>
 
       {/* 일일 급여량 계산기 (활동량·중성화·체형 보정 + 지방 위험 평가) */}
       <section className="card" style={{ marginBottom: '40px' }}>
@@ -894,187 +851,107 @@ export default function Detail() {
                 <span style={{ flexShrink: 0, marginLeft: '8px', padding: '3px 10px', borderRadius: '99px', background: badgeBg, color: badgeColor, fontSize: '11.5px', fontWeight: 700 }}>
                   {badgeLabel}
                 </span>
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* Bottom Sheet for Ingredient Details */}
-      <BottomSheet 
-        isOpen={!!selectedIngredient} 
-        onClose={() => setSelectedIngredient(null)}
-        title={selectedIngredient?.nameKo || ''}
-      >
-        {selectedIngredient && (
-          <div>
-            <div style={{ fontSize: '15px', color: 'var(--text-muted)', marginBottom: '24px', fontWeight: 500 }}>
-              {selectedIngredient.nameEn} · {selectedIngredient.purpose}
+              ))}
+              {product.ingredients.length > 12 && (
+                <button onClick={() => navigate('/analysis', { state: { productId: product.id } })}
+                  style={{ background: '#E5E8EB', border: 'none', borderRadius: 20, padding: '5px 12px', fontSize: 12, fontWeight: 700, color: '#6B7684', cursor: 'pointer' }}>
+                  +{product.ingredients.length - 12}개 더보기
+                </button>
+              )}
             </div>
-            
-            {selectedIngredient.isAllergy ? (
-              <div style={{ backgroundColor: '#FEE2E2', padding: '20px', borderRadius: '16px', color: '#F04452', fontWeight: 700, fontSize: '16px', lineHeight: 1.5 }}>
-                {profile.name}의 알레르기 유발 성분입니다. 절대 급여하지 마세요!
-              </div>
-            ) : selectedIngredient.riskLevel === 'danger' ? (
-              <div style={{ backgroundColor: '#FEE2E2', padding: '20px', borderRadius: '16px', color: '#F04452', fontWeight: 700, fontSize: '16px', lineHeight: 1.5 }}>
-                지속적인 급여 시 간이나 신장에 무리를 줄 수 있는 성분입니다.
-              </div>
-            ) : selectedIngredient.riskLevel === 'caution' ? (
-              <div style={{ backgroundColor: '#FEF3C7', padding: '20px', borderRadius: '16px', color: '#D97706', fontWeight: 700, fontSize: '16px', lineHeight: 1.5 }}>
-                특정 질환이 있는 아이에게는 조심해서 급여해야 하는 성분입니다.
-              </div>
-            ) : (
-              <div style={{ backgroundColor: 'var(--secondary)', padding: '20px', borderRadius: '16px', color: 'var(--text-dark)', fontWeight: 700, fontSize: '16px', lineHeight: 1.5 }}>
-                안심하고 먹일 수 있는 좋은 원료입니다.
-              </div>
-            )}
-            
-            {selectedIngredient.description && (
-              <p style={{ marginTop: '24px', fontSize: '15px', color: 'var(--text-dark)', lineHeight: 1.6, fontWeight: 500 }}>
-                {selectedIngredient.description}
-              </p>
-            )}
           </div>
         )}
-      </BottomSheet>
 
-      {/* 브랜드 바로가기 */}
-      <div style={{ marginBottom: '32px' }}>
-        <button
-          type="button"
-          onClick={() => navigate(`/search?query=${encodeURIComponent(product.brand)}`)}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '16px 20px', background: '#F9FAFB', borderRadius: '16px', textDecoration: 'none', color: '#111827', border: '1px solid #F3F4F6', cursor: 'pointer' }}
-        >
-          <div>
-            <div style={{ fontSize: '12px', color: '#6B7280', fontWeight: 600, marginBottom: '2px' }}>브랜드</div>
-            <div style={{ fontSize: '16px', fontWeight: 800 }}>{product.brand}의 다른 제품 보기</div>
+        {/* Caution ingredients */}
+        {cautionList.length > 0 && (
+          <div style={{ background: '#FEF6E0', borderRadius: 14, padding: '14px', marginBottom: 14, border: '1px solid rgba(232,168,0,0.2)' }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: '#E8A800', marginBottom: 6 }}>⚠️ 주의 성분</div>
+            <p style={{ fontSize: 13, color: '#4E5968', lineHeight: 1.5 }}>
+              {cautionList.map(i => i.nameKo).join(', ')} 성분이 포함되어 있습니다.
+            </p>
           </div>
-          <ArrowLeft size={18} style={{ transform: 'rotate(180deg)', color: '#9CA3AF' }} />
-        </button>
+        )}
+
+        {/* Guaranteed Analysis */}
+        {ga && (
+          <div style={{ background: '#fff', borderRadius: 14, padding: '14px', marginBottom: 14, boxShadow: '0 1px 4px rgba(30,41,59,0.06)' }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: '#191F28', marginBottom: 12 }}>등록 성분량</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+              {[
+                { label: '단백질', value: ga.crudeProtein },
+                { label: '지방', value: ga.crudeFat },
+                { label: '섬유', value: ga.crudeFiber },
+                { label: '수분', value: ga.moisture },
+                { label: '칼슘', value: ga.calcium },
+                { label: '인', value: ga.phosphorus },
+              ].filter(n => n.value != null && n.value > 0).map(n => (
+                <div key={n.label} style={{ textAlign: 'center', background: '#F7F4EE', borderRadius: 10, padding: '10px 6px' }}>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: '#191F28' }}>{n.value}%</div>
+                  <div style={{ fontSize: 11, color: '#8B95A1', fontWeight: 600, marginTop: 2 }}>{n.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Price */}
+        {product.price > 0 && (
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 20 }}>
+            <span style={{ fontSize: 26, fontWeight: 900, color: '#191F28' }}>{product.price.toLocaleString()}원</span>
+            <span style={{ fontSize: 13, color: '#8B95A1' }}>최저가 기준</span>
+          </div>
+        )}
       </div>
 
-      {/* 리뷰 섹션 */}
-      <section style={{ marginBottom: '40px' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 900, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px', color: '#0F172A' }}>
-          <MessageSquare size={20} /> 후기 <span style={{ color: '#94A3B8', fontWeight: 700 }}>{reviews.length}</span>
-        </h2>
-        <p style={{ fontSize: '12px', color: '#94A3B8', marginBottom: '16px', fontWeight: 600 }}>
-          키워드만 골라도 돼요. {profile.name}와 비슷한 아이 집사의 글을 모아보려면 태그를 활용해 보세요.
-        </p>
-
-        {/* 리뷰 작성 */}
-        <div style={{ background: '#F9FAFB', borderRadius: '20px', padding: '20px', marginBottom: '24px', border: '1px solid #F3F4F6' }}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
-            {REVIEW_QUICK_TAGS.map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => toggleReviewTag(tag)}
-                style={{
-                  padding: '8px 14px',
-                  borderRadius: '999px',
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  border: reviewTags.includes(tag) ? 'none' : '1px solid #E5E7EB',
-                  background: reviewTags.includes(tag) ? '#111827' : '#fff',
-                  color: reviewTags.includes(tag) ? '#fff' : '#374151',
-                  cursor: 'pointer',
-                }}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
-          <div style={{ display: 'flex', gap: '4px', marginBottom: '12px' }}>
-            {[1, 2, 3, 4, 5].map(star => (
-              <button key={star} onClick={() => setReviewRating(star)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}>
-                <Star size={24} fill={star <= reviewRating ? '#FCD34D' : 'none'} color={star <= reviewRating ? '#FCD34D' : '#D1D5DB'} />
-              </button>
-            ))}
-          </div>
-          <textarea
-            value={reviewContent}
-            onChange={e => setReviewContent(e.target.value)}
-            placeholder={userId ? '한 줄 덧붙이기 (선택)' : '로그인 후 작성'}
-            disabled={!userId}
-            style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid #E5E7EB', fontSize: '14px', outline: 'none', resize: 'none', height: '80px', boxSizing: 'border-box', background: userId ? '#fff' : '#F3F4F6' }}
-          />
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-            {userId ? (
-              <button onClick={handleSubmitReview} disabled={isSubmitting || !reviewContent.trim()} style={{ padding: '12px 24px', background: '#111827', color: '#fff', borderRadius: '12px', fontWeight: 700, fontSize: '14px', border: 'none', cursor: 'pointer', opacity: isSubmitting || !reviewContent.trim() ? 0.5 : 1 }}>
-                {isSubmitting ? '등록 중...' : '리뷰 등록'}
-              </button>
-            ) : (
-              <Link to="/login" style={{ padding: '12px 24px', background: '#111827', color: '#fff', borderRadius: '12px', fontWeight: 700, fontSize: '14px', textDecoration: 'none' }}>
-                로그인하고 리뷰 쓰기
-              </Link>
-            )}
-          </div>
+      {/* Fixed bottom CTA */}
+      <div style={{
+        position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+        width: '100%', maxWidth: 520,
+        background: 'rgba(247,244,238,0.95)', backdropFilter: 'blur(12px)',
+        padding: '12px 16px 32px', borderTop: '1px solid #E5E8EB',
+        display: 'flex', flexDirection: 'column', gap: 10, zIndex: 50,
+      }}>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={() => navigate('/analysis', { state: { productId: product.id } })}
+            style={{
+              flex: 1, height: 46, borderRadius: 12,
+              background: '#fff', border: '1.5px solid #E5E8EB',
+              fontSize: 14, fontWeight: 700, color: '#4E5968', cursor: 'pointer',
+            }}>
+            분석 리포트
+          </button>
+          <button
+            onClick={() => {
+              addToComparison(product.id);
+              setInCompare(true);
+              navigate('/comparison');
+            }}
+            style={{
+              flex: 1, height: 46, borderRadius: 12,
+              background: inCompare ? '#FEF6E0' : '#fff',
+              border: `1.5px solid ${inCompare ? '#F5C518' : '#E5E8EB'}`,
+              fontSize: 14, fontWeight: 700,
+              color: inCompare ? '#CA8A04' : '#4E5968', cursor: 'pointer',
+            }}>
+            {inCompare ? '비교함 ✓' : '비교함 추가'}
+          </button>
         </div>
-
-        {/* 리뷰 목록 */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {reviews.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '48px 20px', color: '#9CA3AF', background: '#F9FAFB', borderRadius: '16px' }}>
-              아직 리뷰가 없습니다. 첫 리뷰를 작성해보세요!
-            </div>
-          ) : reviews.map(review => {
-            const tagMatch = review.content.match(/^#\s*(.+?)(\n\n|\n|$)/);
-            const tags = tagMatch ? tagMatch[1].split(' · ').map(t => t.trim()).filter(Boolean) : [];
-            const text = tagMatch ? review.content.slice(tagMatch[0].length).trim() : review.content;
-            return (
-              <div key={review.id} style={{ padding: '16px 20px', background: '#fff', border: '1px solid #F3F4F6', borderRadius: '16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                  <div>
-                    <div style={{ display: 'flex', gap: '2px', marginBottom: '4px' }}>
-                      {[1, 2, 3, 4, 5].map(s => (
-                        <Star key={s} size={14} fill={s <= review.rating ? '#FCD34D' : 'none'} color={s <= review.rating ? '#FCD34D' : '#E5E7EB'} />
-                      ))}
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#9CA3AF' }}>
-                      {review.users?.nickname || '익명'} · {new Date(review.created_at).toLocaleDateString()}
-                    </div>
-                  </div>
-                  {review.user_id === userId && (
-                    <button onClick={() => handleDeleteReview(review.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#D1D5DB' }}>
-                      <Trash2 size={16} />
-                    </button>
-                  )}
-                </div>
-                {text ? <p style={{ fontSize: '14px', color: '#374151', lineHeight: 1.6, margin: '0 0 10px' }}>{text}</p> : null}
-                {tags.length > 0 && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                    {tags.map(tag => (
-                      <span key={tag} style={{ padding: '4px 10px', background: '#F3F4F6', borderRadius: '999px', fontSize: '12px', fontWeight: 700, color: '#374151' }}>
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      <p
-        style={{
-          margin: '32px 0 0',
-          padding: '14px 16px',
-          fontSize: '11px',
-          lineHeight: 1.55,
-          fontWeight: 600,
-          color: '#64748B',
-          textAlign: 'center',
-          background: '#F1F5F9',
-          borderRadius: '14px',
-        }}
-      >
-        {COUPANG_PARTNERS_DISCLOSURE}
-      </p>
-
-      <Analyzer />
+        <button
+          onClick={() => {
+            if (product.coupangLink) {
+              window.open(product.coupangLink, '_blank', 'noopener');
+            } else {
+              navigate('/search');
+            }
+          }}
+          style={{
+            width: '100%', height: 52, borderRadius: 14,
+            background: '#F5C518', border: 'none', cursor: 'pointer',
+            fontSize: 16, fontWeight: 800, color: '#191F28',
+          }}>
+          최저가로 구매하기
+        </button>
+      </div>
     </div>
   );
 }
