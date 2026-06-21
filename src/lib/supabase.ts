@@ -158,6 +158,18 @@ export async function signInWithEmail(email: string, password: string) {
 }
 
 
+export async function signInWithKakao() {
+  const redirectTo = `${window.location.origin}/auth/callback`;
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'kakao',
+    options: { redirectTo },
+  });
+  if (error) {
+    notify.error('카카오 로그인에 실패했습니다. 잠시 후 다시 시도해주세요.');
+    throw error;
+  }
+}
+
 export async function signOut() {
   const { error } = await supabase.auth.signOut();
   if (error) notify.error(error.message);

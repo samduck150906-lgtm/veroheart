@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
-import { supabase, ensurePublicUserExists } from '../lib/supabase';
+import { supabase, ensurePublicUserExists, signInWithKakao } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import { notify } from '../store/useNotification';
 import { HOME_HERO } from '../copy/marketing';
@@ -363,6 +363,33 @@ export default function Login() {
         >
           {isLoading ? '처리 중...' : mode === 'login' ? '로그인' : '회원가입'}
         </TossButton>
+
+        {/* 소셜 로그인 구분선 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '20px 0 0' }}>
+          <div style={{ flex: 1, height: '1px', background: '#E5E8EB' }} />
+          <span style={{ fontSize: '13px', color: '#B0B8C1', fontWeight: 600 }}>또는</span>
+          <div style={{ flex: 1, height: '1px', background: '#E5E8EB' }} />
+        </div>
+
+        {/* 카카오 로그인 */}
+        <button
+          type="button"
+          onClick={() => void signInWithKakao()}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+            width: '100%', height: '52px', borderRadius: '14px', border: 'none',
+            background: '#FEE500', color: '#191919',
+            fontSize: '16px', fontWeight: 800, cursor: 'pointer', marginTop: '12px',
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path fillRule="evenodd" clipRule="evenodd"
+              d="M10 2C5.582 2 2 4.91 2 8.5c0 2.296 1.518 4.313 3.817 5.468l-.974 3.62a.25.25 0 0 0 .378.277L9.43 15.52A10.14 10.14 0 0 0 10 15.5c4.418 0 8-2.91 8-6.5S14.418 2 10 2Z"
+              fill="#191919"
+            />
+          </svg>
+          카카오로 계속하기
+        </button>
       </div>
     </div>
   );
