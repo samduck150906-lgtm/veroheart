@@ -1,13 +1,36 @@
 import type { Product, UserPetProfile } from '../types';
+import { toDryMatter, checkCalciumPhosphorusRatio } from '../analysis/nutrition';
+
+/** 회피(알레르기) 성분 포함 시 궁합 점수 상한 — 추천 등급(C 이상) 불가 */
+export const ALLERGEN_SCORE_CAP = 55;
+/** 위험 성분 포함 시 궁합 점수 상한 — A 등급 불가 */
+export const DANGER_SCORE_CAP = 69;
+
+export type CompatibilityGrade = 'A' | 'B' | 'C' | 'D';
+
+/** 단일 진실 공급원: 궁합 점수 → 등급 */
+export function gradeFromScore(score: number): CompatibilityGrade {
+  if (score >= 85) return 'A';
+  if (score >= 70) return 'B';
+  if (score >= 55) return 'C';
+  return 'D';
+}
 
 export interface RecommendationBreakdown {
   total: number;
+  /** 하드캡 적용 전 가중 합산 원점수 */
+  rawTotal: number;
+  /** 안전 하드캡(알레르기/위험)으로 점수가 깎였는지 */
+  capped: boolean;
+  grade: CompatibilityGrade;
   safety: number;
   concern: number;
   socialProof: number;
   value: number;
   petFit: number;
   verification: number;
+  /** AAFCO/Ca:P 영양 버킷 (0–10). guaranteedAnalysis 없으면 0 */
+  nutrition: number;
   allergyHits: string[];
   matchedConcerns: string[];
   dangerCount: number;
@@ -118,7 +141,37 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
     verification = 0;
   }
 
-  const total = Math.max(0, Math.min(100, Math.round(safety + concern + socialProof + value + petFit + verification)));
+  // ── 영양 버킷 (AAFCO DMB + Ca:P) ──────────────────────────────────
+  // guaranteedAnalysis가 없으면 버킷 자체를 0으로 두어 기존 점수에 영향 없음.
+  let nutrition = 0;
+  const ga = product.guaranteedAnalysis;
+  if (ga && ga.crudeProtein != null && ga.crudeFat != null) {
+    const moisture = ga.moisture ?? 10;
+    const species = profile.species === 'Cat' ? 'cat' : 'dog';
+    const minProtein = species === 'cat' ? 26 : 18;
+    const minFat = species === 'cat' ? 9 : 5.5;
+    const proteinDMB = toDryMatter(ga.crudeProtein, moisture) ?? 0;
+    const fatDMB = toDryMatter(ga.crudeFat, moisture) ?? 0;
+
+    nutrition = 5;
+    nutrition += proteinDMB >= minProtein ? 2 : -2;
+    nutrition += fatDMB >= minFat ? 2 : -1;
+    const caRatioWarning = checkCalciumPhosphorusRatio(ga);
+    nutrition += caRatioWarning === null ? 1 : -1;
+    nutrition = Math.max(0, Math.min(10, nutrition));
+  }
+
+  const rawTotal = Math.max(0, Math.min(100, Math.round(safety + concern + socialProof + value + petFit + verification + nutrition)));
+
+  // ── 안전 하드캡 (신뢰 보호) ──────────────────────────────────────
+  // 회피(알레르기) 성분이나 위험 성분이 있으면 가중 합산이 아무리 높아도
+  // 추천 등급(A/B)에 오르지 못하도록 점수 상한을 강제한다.
+  let cap = 100;
+  if (allergyHits.length > 0) cap = Math.min(cap, ALLERGEN_SCORE_CAP);
+  if (dangerCount > 0) cap = Math.min(cap, DANGER_SCORE_CAP);
+  const total = Math.min(rawTotal, cap);
+  const capped = total < rawTotal;
+
   const reasons: string[] = [];
 
   if (allergyHits.length > 0) {
@@ -144,15 +197,22 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
   } else if (product.verificationStatus === 'pending') {
     reasons.push('검수 대기 데이터');
   }
+  if (ga && ga.crudeProtein != null && ga.crudeFat != null) {
+    reasons.push(nutrition >= 8 ? 'AAFCO 영양 기준 충족' : nutrition >= 5 ? 'AAFCO 영양 기준 일부 충족' : 'AAFCO 영양 기준 미달 항목 있음');
+  }
 
   return {
     total,
+    rawTotal,
+    capped,
+    grade: gradeFromScore(total),
     safety,
     concern,
     socialProof,
     value,
     petFit,
     verification,
+    nutrition,
     allergyHits,
     matchedConcerns,
     dangerCount,

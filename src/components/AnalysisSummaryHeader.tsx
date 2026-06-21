@@ -6,25 +6,25 @@
  * - 우측: 등급 배지 (A/B/C/D/F), 브랜드명, 제품명, 적합성 배지
  */
 import { ShieldCheck, ShieldAlert, ShieldX, Award } from 'lucide-react';
+import type { CompatibilityGrade } from '../utils/score';
 
-export type AnalysisGrade = 'A' | 'B' | 'C' | 'D' | 'F';
+export type AnalysisGrade = CompatibilityGrade;
 
 export interface SummaryHeaderProps {
   productImage: string;
   productName: string;
   brand: string;
   grade: AnalysisGrade;
-  score: number;          // 0-100
-  compliant: boolean;     // AAFCO / NRC 충족 여부
-  lifeStage: string;      // e.g. "성견용 (All Life Stages)"
+  score: number;
+  compliant: boolean;
+  lifeStage: string;
 }
 
 const GRADE_META: Record<AnalysisGrade, { color: string; bg: string; label: string }> = {
-  A: { color: '#22c55e', bg: 'rgba(34,197,94,0.15)',  label: 'A등급' },
-  B: { color: '#84cc16', bg: 'rgba(132,204,22,0.15)', label: 'B등급' },
-  C: { color: '#eab308', bg: 'rgba(234,179,8,0.15)',  label: 'C등급' },
-  D: { color: '#f97316', bg: 'rgba(249,115,22,0.15)', label: 'D등급' },
-  F: { color: '#ef4444', bg: 'rgba(239,68,68,0.15)',  label: 'F등급' },
+  A: { color: '#15B36B', bg: 'rgba(21,179,107,0.12)', label: 'A등급' },
+  B: { color: '#6BB04E', bg: 'rgba(107,176,78,0.12)', label: 'B등급' },
+  C: { color: '#E8A800', bg: 'rgba(232,168,0,0.12)',  label: 'C등급' },
+  D: { color: '#F04452', bg: 'rgba(240,68,82,0.12)',  label: 'D등급' },
 };
 
 export default function AnalysisSummaryHeader({
