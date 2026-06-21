@@ -1146,7 +1146,6 @@ export default function Detail() {
         >
           🛒 구매하기
           {product.price ? <span style={{ fontSize: '14px', fontWeight: 700, opacity: 0.8 }}>{product.price.toLocaleString()}원~</span> : null}
->>>>>>> 23a86d7 (feat: add VERORO score, feature tags, key ingredient summary, and sticky CTA to product detail)
         </button>
       </div>
     </div>
