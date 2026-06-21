@@ -279,17 +279,10 @@ export default function Search() {
         <meta name="description" content="반려동물 맞춤 사료·간식을 성분, 가격, 건강 고민으로 검색하고 비교해 보세요." />
       </Helmet>
       
-      {/* Title Header */}
-      <div style={{ padding: '6px 20px 0' }}>
-        <span style={{ fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: 15, color: 'var(--brand-deep)' }}>Find the right bowl</span>
-        <h2 style={{ margin: '2px 0 0', fontSize: 24, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--ink)' }}>취향 기반 탐색</h2>
-        <p style={{ margin: '6px 0 0', fontSize: 12.5, color: 'var(--ink-soft)' }}>조건을 조합해 정확하게 좁혀보세요</p>
-      </div>
-
       {/* Search Box */}
       <div style={{ padding: '14px 20px 0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '12px 15px', borderRadius: 14,
-          background: 'var(--surface)', border: '1px solid var(--hairline)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '13px 16px', borderRadius: 12,
+          background: 'var(--fill)', border: '1px solid transparent' }}>
           <SearchIcon size={18} stroke="var(--ink-faint)" />
           <input
             value={query}
