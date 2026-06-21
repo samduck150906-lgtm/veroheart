@@ -1,9 +1,29 @@
 // @ts-nocheck
-import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useMemo, useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
+import { Helmet } from 'react-helmet-async';
+import {
+  ChevronRight,
+  Pencil,
+  Bone,
+  Droplet,
+  ShieldCheck,
+  Heart,
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { rankProductsForProfile, gradeFromScore, calculateCompatibilityScore } from '../utils/score';
 import { HOME } from '../copy/ui';
+
+const CATEGORY_GRID = [
+  { name: '사료', label: '사료', emoji: '🐾' },
+  { name: '간식', label: '간식', emoji: '🦴' },
+  { name: '영양제', label: '영양제', emoji: '💊' },
+  { name: '구강관리', label: '구강', emoji: '🦷' },
+  { name: '피부·목욕·위생', label: '피부·목욕', emoji: '🛁' },
+  { name: '눈·귀·민감부위 케어', label: '눈·귀', emoji: '👁' },
+  { name: '배변/모래/패드', label: '배변', emoji: '🪣' },
+  { name: '생활용품·환경안전', label: '생활용품', emoji: '🏠' },
+];
 
 const CATEGORIES = [
   { icon: '🥣', label: '사료', query: '사료' },
@@ -79,6 +99,18 @@ export default function Home() {
     return Math.max(60, Math.min(98, s));
   }, [profile]);
 
+  // 게이지 채워지는 애니메이션 (온보딩 완료 직후의 보상 모션)
+  const [scoreFill, setScoreFill] = useState(0);
+  useEffect(() => {
+    const t = setTimeout(() => setScoreFill(healthScore), 150);
+    return () => clearTimeout(t);
+  }, [healthScore]);
+
+  const [scoreExpanded, setScoreExpanded] = useState(false);
+
+  const recent = (recentViews?.length ? recentViews : products).slice(0, 8);
+  const favoriteSet = new Set(favorites || []);
+
   const topRanked = useMemo(() => {
     if (!products.length) return products.slice(0, 6);
     if (hasPetProfile) {
@@ -127,7 +159,20 @@ export default function Home() {
             </div>
             <AnimatedScore target={healthScore} />
           </div>
-          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', fontWeight: 600, marginBottom: 8 }}>식단 건강 점수</div>
+
+          <div style={{ height: '1px', background: 'var(--hairline-strong)', margin: '16px 0 12px' }} />
+
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--ink-soft)' }}>현재 식단 적합도</span>
+            <span style={{ fontSize: '22px', fontWeight: 900, color: 'var(--ink)' }}>
+              {healthScore}<span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink-400)' }}>/100</span>
+            </span>
+          </div>
+          <div style={{ height: '8px', background: '#E5E8EB', borderRadius: '99px', overflow: 'hidden', marginTop: '8px' }}>
+            <div style={{ width: `${scoreFill}%`, height: '100%', background: 'var(--brand)', borderRadius: '99px', transition: 'width 0.9s cubic-bezier(0.16, 1, 0.3, 1)' }} />
+          </div>
+
+          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', fontWeight: 600, marginBottom: 8, marginTop: 12 }}>식단 건강 점수</div>
           {profile?.allergies?.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
               {profile.allergies.map(a => (
@@ -155,6 +200,38 @@ export default function Home() {
               }}
             >정보 수정</button>
           </div>
+
+          <button
+            onClick={() => setScoreExpanded(v => !v)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '10px 0 0', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)' }}
+          >
+            점수 산정 근거 보기 {scoreExpanded ? '▲' : '▼'}
+          </button>
+
+          {scoreExpanded && (
+            <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {(profile?.allergies?.length > 0
+                ? [{ label: `${profile.allergies[0]} 알러지 회피`, pts: '+30', color: 'var(--safe)' }]
+                : [{ label: '알러지 성분 없음', pts: '+30', color: 'var(--safe)' }]
+              ).concat(
+                profile?.healthConcerns?.length > 0
+                  ? [{ label: `${profile.healthConcerns[0]} 적합 성분 포함`, pts: '+25', color: 'var(--safe)' }]
+                  : [],
+                [{ label: '체중·활동량 적합', pts: '+20', color: 'var(--safe)' }],
+                profile?.allergies?.length > 1
+                  ? [{ label: '복합 알러지 감점', pts: `-${(profile.allergies.length - 1) * 4}`, color: 'var(--danger)' }]
+                  : []
+              ).map(({ label, pts, color }) => (
+                <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: '10px', background: 'var(--surface)' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--ink-soft)' }}>{label}</span>
+                  <span style={{ fontSize: '13px', fontWeight: 800, color }}>{pts}</span>
+                </div>
+              ))}
+              <p style={{ fontSize: '10.5px', color: 'var(--ink-faint)', fontWeight: 500, lineHeight: 1.5, marginTop: '2px' }}>
+                * 현재 급여 중인 사료를 등록하면 더 정확한 점수를 제공해요.
+              </p>
+            </div>
+          )}
         </div>
       ) : (
         <div style={{
@@ -182,7 +259,23 @@ export default function Home() {
         </div>
       )}
 
-      {/* Category Grid */}
+      {/* ===== Category Grid ===== */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', rowGap: '16px', columnGap: '8px' }}>
+        {CATEGORY_GRID.map(({ name, label, emoji }) => (
+          <button
+            key={name}
+            onClick={() => navigate(`/search?category=${encodeURIComponent(name)}`)}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+          >
+            <span style={{ width: '54px', height: '54px', borderRadius: '18px', background: 'var(--fill)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
+              {emoji}
+            </span>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink)' }}>{label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Category Grid (alternative layout) */}
       <div style={{ padding: '20px 16px 0' }}>
         <h2 style={{ fontSize: 17, fontWeight: 800, color: '#191F28', marginBottom: 14, letterSpacing: '-0.02em' }}>카테고리</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
@@ -215,24 +308,6 @@ export default function Home() {
               전체보기 <ChevronRight size={15} />
             </button>
           </div>
-          <div className="rail" style={{ display: 'flex', gap: '12px', overflowX: 'auto', margin: '0 -20px', padding: '0 20px 4px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-            {topRanked.map(({ product: p, score: s }) => (
-              <ProductCard key={p.id} product={p} variant="vertical" showHealthTags={false} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* ===== 최근 본 상품 ===== */}
-      {recent.length > 0 && (
-        <section style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.02em' }}>{HOME.sectionRecent}</h3>
-            <button onClick={() => navigate('/search')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '2px', fontSize: '13px', fontWeight: 600, color: 'var(--ink-faint)' }}>
-              더보기 <ChevronRight size={15} />
-            </button>
-          </div>
-        ) : (
           <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4 }}>
             {topRanked.slice(0, 6).map(product => {
               const score = hasPetProfile ? calculateCompatibilityScore(product, profile) : null;
@@ -277,9 +352,10 @@ export default function Home() {
               );
             })}
           </div>
-        )}
-      </div>
+        </section>
+      )}
 
+      {/* ===== 최근 본 상품 ===== */}
       {/* Recently Viewed */}
       <div style={{ padding: '22px 16px 0' }}>
         <h2 style={{ fontSize: 17, fontWeight: 800, color: '#191F28', letterSpacing: '-0.02em', marginBottom: 14 }}>최근 본 상품</h2>

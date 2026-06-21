@@ -50,7 +50,7 @@ export default function ProductCard({
     toggleFavorite(product.id);
   };
 
-  const formattedPrice = product.price.toLocaleString('ko-KR') + '원';
+  const formattedPrice = product.price ? `${product.price.toLocaleString('ko-KR')}원~` : '';
 
   if (variant === 'vertical') {
     return (
@@ -129,7 +129,12 @@ export default function ProductCard({
               {product.healthConcerns.join(' · ')}
             </span>
           )}
-          <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginTop: 2 }}>{formattedPrice}</span>
+          {formattedPrice && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginTop: 2 }}>
+              <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--ink-faint)' }}>최저가</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-soft)' }}>{formattedPrice}</span>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -170,17 +175,26 @@ export default function ProductCard({
           fontSize: 14.5, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.3,
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
         }}>{product.name}</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {score != null && (
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 1 }}>
+            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--brand-deep)', background: 'var(--brand-tint)', padding: '3px 9px', borderRadius: '8px' }}>
+              궁합 {score}점
+            </span>
+          </div>
+        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
             <Star size={13} fill="var(--brand)" stroke="var(--brand)" strokeWidth={1.2} />
-            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>{product.averageRating.toFixed(1)}</span>
+            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-soft)' }}>{product.averageRating.toFixed(1)}</span>
           </span>
           <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}>리뷰 {product.reviewsCount}</span>
-          {score != null && (
-            <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--brand-deep)' }}>· 궁합 {score}점</span>
-          )}
         </div>
-        <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)', marginTop: 1 }}>{formattedPrice}</span>
+        {formattedPrice && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 1 }}>
+            <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--ink-faint)' }}>최저가</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-soft)' }}>{formattedPrice}</span>
+          </div>
+        )}
       </div>
       <span
         onClick={handleToggleFav}
