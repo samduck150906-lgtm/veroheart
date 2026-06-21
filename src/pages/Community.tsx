@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { MessageSquare, Heart, Share2, Award, Sparkles, Filter, Plus, CheckCircle2, ThumbsUp, Send } from 'lucide-react';
+import { MessageSquare, MessageCircle, Heart, Share2, Award, Sparkles, Filter, Plus, Pencil, CheckCircle2, ThumbsUp, Send } from 'lucide-react';
 import { Text } from '../components/Text';
 import { Button } from '../components/Button';
 
@@ -141,77 +141,24 @@ export default function Community() {
         <title>집사 소통 커뮤니티 | 베로로</title>
       </Helmet>
 
-      {/* Header Banner */}
-      <div 
-        style={{ 
-          background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)', 
-          borderRadius: '24px', 
-          padding: '24px 20px', 
-          color: '#FFFFFF',
-          marginBottom: '24px',
-          boxShadow: '0 8px 30px rgba(79, 70, 229, 0.25)',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        {/* Dynamic micro-pattern circles */}
-        <div style={{ position: 'absolute', top: '-10%', right: '-10%', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.1)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: '-20%', left: '10%', width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.06)', pointerEvents: 'none' }} />
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-          <Sparkles size={16} color="#FAAC1B" className="animate-pulse" />
-          <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255, 255, 255, 0.9)' }}>
-            Pet Food Community
-          </span>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '18px 0 16px' }}>
+        <div>
+          <h2 style={{ fontSize: '24px', fontWeight: 900, color: 'var(--ink)', letterSpacing: '-0.03em', margin: 0 }}>
+            랜선애카
+          </h2>
+          <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--ink-soft)', margin: '4px 0 0' }}>
+            먹이고, 키우고, 나누는 이야기
+          </p>
         </div>
-        <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '6px' }}>
-          베로로 건강 소통 광장
-        </h2>
-        <Text variant="caption" style={{ color: 'rgba(255, 255, 255, 0.85)', lineHeight: 1.45 }}>
-          영양 정보 공부부터 까다로운 입맛 해결법까지,<br />전문 수의사 및 꼼꼼한 보호자들과 함께 나누어 보세요.
-        </Text>
-      </div>
-
-      {/* Write Post Trigger Button */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Filter size={14} color="var(--text-muted)" />
-          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>카테고리 필터</span>
+        <div style={{ width: '46px', height: '46px', borderRadius: '14px', background: 'var(--brand-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <MessageCircle size={22} strokeWidth={2.2} color="var(--brand-deep)" />
         </div>
-        <button
-          onClick={() => setIsWriteOpen(!isWriteOpen)}
-          style={{
-            background: 'var(--primary)',
-            color: '#FFFFFF',
-            border: 'none',
-            borderRadius: '12px',
-            padding: '8px 14px',
-            fontSize: '11px',
-            fontWeight: 800,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(129, 201, 149, 0.3)',
-            transition: 'all 0.2s',
-          }}
-          onMouseDown={e => e.currentTarget.style.transform = 'scale(0.96)'}
-          onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
-        >
-          <Plus size={14} strokeWidth={3} />
-          글쓰기
-        </button>
       </div>
 
       {/* Category Horizontal scroll */}
-      <div 
-        style={{ 
-          display: 'flex', 
-          gap: '8px', 
-          overflowX: 'auto', 
-          paddingBottom: '16px',
-          WebkitOverflowScrolling: 'touch',
-        }}
+      <div
+        style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '14px', WebkitOverflowScrolling: 'touch' }}
         className="no-scrollbar"
       >
         {categories.map(cat => (
@@ -219,12 +166,12 @@ export default function Community() {
             key={cat}
             onClick={() => setSelectedCategory(cat)}
             style={{
-              padding: '8px 16px',
+              padding: '9px 16px',
               borderRadius: '999px',
-              border: selectedCategory === cat ? 'none' : '1px solid rgba(0, 0, 0, 0.08)',
-              background: selectedCategory === cat ? 'var(--primary-dark)' : '#F8FAFC',
-              color: selectedCategory === cat ? '#FFFFFF' : 'var(--text-muted)',
-              fontSize: '11px',
+              border: 'none',
+              background: selectedCategory === cat ? 'var(--ink)' : 'var(--fill)',
+              color: selectedCategory === cat ? '#FFFFFF' : 'var(--ink-soft)',
+              fontSize: '12.5px',
               fontWeight: 700,
               whiteSpace: 'nowrap',
               cursor: 'pointer',
@@ -235,6 +182,19 @@ export default function Community() {
           </button>
         ))}
       </div>
+
+      {/* Write Post — full-width CTA */}
+      <button
+        onClick={() => setIsWriteOpen(!isWriteOpen)}
+        style={{
+          width: '100%', height: '50px', margin: '4px 0 18px', borderRadius: '14px',
+          background: 'var(--brand)', color: 'var(--ink-on-brand)', border: 'none', cursor: 'pointer',
+          fontSize: '15px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
+          boxShadow: '0 6px 16px rgba(245, 197, 24, 0.3)',
+        }}
+      >
+        <Pencil size={17} strokeWidth={2.4} /> 글쓰기
+      </button>
 
       {/* Write Post Modal/Form Overlay */}
       {isWriteOpen && (
