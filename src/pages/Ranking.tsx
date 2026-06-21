@@ -119,6 +119,7 @@ export default function Ranking() {
         </div>
       </div>
 
+<<<<<<< HEAD
       {/* Ranking List */}
       <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {ranked.length === 0 ? (
@@ -128,6 +129,96 @@ export default function Ranking() {
           </div>
         ) : ranked.map((product, idx) => {
           const score = hasPetProfile ? calculateCompatibilityScore(product, profile) : null;
+=======
+      {/* ─── 종류 탭 ─── */}
+      <div style={{ display: 'flex', gap: '6px', margin: '16px 0 10px' }}>
+        {PET_TABS.map(({ key, label, Icon }) => (
+          <button
+            key={key}
+            onClick={() => setPetFilter(key as any)}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '5px',
+              padding: '7px 14px', borderRadius: '99px', border: 'none', cursor: 'pointer',
+              fontSize: '13px', fontWeight: 700,
+              background: petFilter === key ? 'var(--ink)' : 'var(--fill)',
+              color: petFilter === key ? '#fff' : 'var(--ink-soft)',
+            }}
+          >
+            {Icon && <Icon size={13} />}{label}
+          </button>
+        ))}
+      </div>
+
+      {/* ─── 통계 배너 ─── */}
+      <div style={{ display: 'flex', gap: '10px', margin: '0 0 16px' }}>
+        {[
+          {
+            label: '평균 궁합 점수',
+            value: hasPetProfile && ranked.length > 0
+              ? Math.round(ranked.reduce((s, p) => s + calculateCompatibilityScore(p, profile), 0) / Math.min(ranked.length, 20))
+              : '-',
+            unit: '점',
+            color: 'var(--brand-deep)',
+            bg: 'var(--brand-tint)',
+          },
+          {
+            label: '알러지 적합',
+            value: hasPetProfile && ranked.length > 0
+              ? ranked.filter(p => {
+                  const allergies = profile?.allergies || [];
+                  return !p.ingredients?.some(i => allergies.some(a => i.nameKo?.includes(a)));
+                }).length
+              : '-',
+            unit: '개',
+            color: 'var(--safe)',
+            bg: 'var(--safe-tint)',
+          },
+          {
+            label: '안전 성분',
+            value: ranked.length > 0
+              ? Math.round(ranked.slice(0, 10).reduce((s, p) => {
+                  const t = p.ingredients?.length || 1;
+                  const safe = p.ingredients?.filter(i => i.riskLevel === 'safe').length || 0;
+                  return s + (safe / t) * 100;
+                }, 0) / Math.min(ranked.slice(0, 10).length, 1))
+              : '-',
+            unit: '%',
+            color: '#3182F6',
+            bg: '#EFF6FF',
+          },
+        ].map(({ label, value, unit, color, bg }) => (
+          <div key={label} style={{ flex: 1, padding: '12px 10px', borderRadius: '14px', background: bg, textAlign: 'center' }}>
+            <div style={{ fontSize: '20px', fontWeight: 900, color, letterSpacing: '-0.02em' }}>
+              {value}<span style={{ fontSize: '12px', fontWeight: 700 }}>{unit}</span>
+            </div>
+            <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ink-faint)', marginTop: '3px' }}>{label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* ─── 정렬 탭 ─── */}
+      <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px', marginBottom: '18px', scrollbarWidth: 'none' }}>
+        {activeSortTabs.map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => setSortBy(key)}
+            style={{
+              flexShrink: 0, padding: '7px 14px', borderRadius: '99px', border: 'none', cursor: 'pointer',
+              fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap',
+              background: sortBy === key ? 'var(--brand)' : 'var(--fill)',
+              color: sortBy === key ? 'var(--ink-on-brand)' : 'var(--ink-soft)',
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* ─── 상품 목록 ─── */}
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {ranked.map((p, idx) => {
+          const score = hasPetProfile ? calculateCompatibilityScore(p, profile) : null;
+>>>>>>> cb8669b (feat: add ranking stats header, score differentiation, AI recommendation card and trophy highlights in comparison)
           const grade = score != null ? gradeFromScore(score) : null;
           return (
             <div
@@ -171,16 +262,31 @@ export default function Ranking() {
                 )}
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
+<<<<<<< HEAD
                 <div style={{ fontSize: 14, fontWeight: 800, color: '#191F28', marginBottom: 4 }}>
                   {product.price ? `${product.price.toLocaleString()}원` : ''}
                 </div>
                 <ChevronRight size={16} color="#B0B8C1" />
+=======
+                <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ink-faint)', marginBottom: '2px' }}>제품 평가</div>
+                <div style={{ fontSize: '20px', fontWeight: 900, color: m.color, letterSpacing: '-0.02em' }}>
+                  {m.value}<span style={{ fontSize: '11px', fontWeight: 700 }}>{m.unit}</span>
+                </div>
+                {hasPetProfile && sortBy !== 'compatibility' && (
+                  <div style={{ marginTop: '4px', padding: '2px 7px', borderRadius: '6px', background: 'var(--brand-tint)', display: 'inline-block' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--brand-deep)' }}>
+                      궁합 {calculateCompatibilityScore(p, profile)}점
+                    </span>
+                  </div>
+                )}
+>>>>>>> cb8669b (feat: add ranking stats header, score differentiation, AI recommendation card and trophy highlights in comparison)
               </div>
             </div>
           );
         })}
       </div>
 
+<<<<<<< HEAD
       {/* ─── 스폰서 섹션 (추천 알고리즘과 완전 분리) ─── */}
       {sponsored.length > 0 && (
         <div style={{ marginTop: 32, paddingTop: 24, borderTop: '2px dashed var(--hairline)' }}>
@@ -249,6 +355,15 @@ export default function Ranking() {
           </div>
         </div>
       )}
+=======
+      {/* ─── 랭킹 기준 설명 ─── */}
+      <div style={{ marginTop: '24px', padding: '14px 16px', borderRadius: '14px', background: 'var(--fill)' }}>
+        <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ink-soft)', marginBottom: '6px' }}>📊 랭킹 산출 기준</div>
+        <div style={{ fontSize: '11.5px', color: 'var(--ink-faint)', lineHeight: 1.6, fontWeight: 500 }}>
+          {hasPetProfile ? `${profile.name} 프로필(종·나이·알러지·건강고민)을 기반으로 산출된 궁합 점수입니다.` : '평점·리뷰·성분 안전도·가성비를 종합한 점수입니다.'} 랭킹은 주간 단위로 갱신됩니다.
+        </div>
+      </div>
+>>>>>>> cb8669b (feat: add ranking stats header, score differentiation, AI recommendation card and trophy highlights in comparison)
     </div>
   );
 }

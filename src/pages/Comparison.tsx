@@ -120,6 +120,7 @@ export default function Comparison() {
         <h1 style={{ fontSize: 22, fontWeight: 900, color: '#191F28', letterSpacing: '-0.03em', marginBottom: 4 }}>비교함</h1>
         <p style={{ fontSize: 14, color: '#8B95A1', marginBottom: 20 }}>최대 4개 상품을 비교할 수 있어요</p>
 
+<<<<<<< HEAD
         {compareProducts.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 0', color: '#B0B8C1' }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>📊</div>
@@ -167,6 +168,71 @@ export default function Comparison() {
                   >
                     <X size={11} color="#fff" strokeWidth={3} />
                   </button>
+=======
+      {/* ─── AI 추천 ─── */}
+      {hasPetProfile && products.length >= 2 && (() => {
+        const scored = products.map((p, i) => ({ p, bd: breakdowns[i], total: breakdowns[i]?.total ?? 0 }));
+        const best = scored.reduce((a, b) => a.total >= b.total ? a : b);
+        const reasons = [];
+        if (best.bd) {
+          if (best.bd.safety >= 28) reasons.push('성분 안전도 우수');
+          if (best.bd.concern >= 18) reasons.push('건강 고민 적합');
+          if (best.bd.value >= 7) reasons.push('가성비 좋음');
+          if (reasons.length === 0) reasons.push('종합 점수 최고');
+        }
+        return (
+          <div style={{ marginBottom: '20px', padding: '18px 16px', borderRadius: '18px', background: 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)', border: '1px solid #FDE68A' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+              <span style={{ fontSize: '18px' }}>🤖</span>
+              <span style={{ fontSize: '13px', fontWeight: 800, color: '#A16207' }}>AI 추천</span>
+            </div>
+            <div style={{ fontSize: '16px', fontWeight: 900, color: '#1C1917', lineHeight: 1.35, marginBottom: '12px' }}>
+              <span style={{ color: 'var(--brand-deep)' }}>{best.p.brand} {best.p.name.length > 18 ? best.p.name.slice(0, 18) + '…' : best.p.name}</span>을(를) 추천합니다
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {reasons.map(r => (
+                <div key={r} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600, color: '#78716C' }}>
+                  <span style={{ color: 'var(--safe)', fontWeight: 900 }}>✔</span> {r}
+                </div>
+              ))}
+            </div>
+            {best.bd && (
+              <div style={{ marginTop: '12px', padding: '8px 12px', borderRadius: '10px', background: 'rgba(255,255,255,0.7)', display: 'inline-flex', alignItems: 'baseline', gap: '4px' }}>
+                <span style={{ fontSize: '22px', fontWeight: 900, color: 'var(--brand-deep)' }}>{best.bd.total}</span>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink-faint)' }}>점 / 100</span>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* ─── 상품 헤더 카드들 (가로 스크롤) ─── */}
+      <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px', marginBottom: '24px', scrollbarWidth: 'none' }}>
+        {products.map((p, i) => {
+          const bd = breakdowns[i];
+          const grade = bd ? gradeFromScore(bd.total) : null;
+          return (
+            <div key={p.id} style={{ flexShrink: 0, width: '160px', background: 'var(--fill)', borderRadius: '18px', padding: '14px', position: 'relative' }}>
+              <button
+                onClick={() => removeFromComparison(p.id)}
+                style={{ position: 'absolute', top: '8px', right: '8px', background: '#fff', border: 'none', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
+              >
+                <X size={12} />
+              </button>
+              <div style={{ width: '100%', height: '100px', borderRadius: '12px', overflow: 'hidden', marginBottom: '10px' }}>
+                <ProductImage src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+              <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--ink-faint)', marginBottom: '2px' }}>{p.brand}</div>
+              <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ink)', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: '10px' }}>
+                {p.name}
+              </div>
+              {grade && bd ? (
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                  <span style={{ padding: '3px 8px', borderRadius: '7px', background: GRADE_BG[grade], color: GRADE_COLOR[grade], fontSize: '13px', fontWeight: 800 }}>
+                    {grade}등급
+                  </span>
+                  <span style={{ fontSize: '18px', fontWeight: 900, color: GRADE_COLOR[grade] }}>{bd.total}</span>
+>>>>>>> cb8669b (feat: add ranking stats header, score differentiation, AI recommendation card and trophy highlights in comparison)
                 </div>
               ))}
               {compareProducts.length < 4 && (
@@ -262,26 +328,83 @@ export default function Comparison() {
       {/* ─── 기본 정보 비교 테이블 ─── */}
       <section style={{ marginBottom: '28px' }}>
         <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ink)', marginBottom: '14px', letterSpacing: '-0.02em' }}>
-          기본 정보
+          항목별 비교
         </div>
-        {[
-          { label: '가격', vals: products.map(p => `${p.price?.toLocaleString()}원`), highlight: (vs) => vs.indexOf(Math.min(...products.map(p => p.price || 999999)).toString() + '원') },
-          { label: '평점', vals: products.map(p => `★ ${p.averageRating?.toFixed(1)}`), best: true },
-          { label: '리뷰', vals: products.map(p => `${p.reviewsCount?.toLocaleString()}개`) },
-          { label: '주의 성분', vals: products.map(p => `${p.ingredients?.filter(i => i.riskLevel === 'danger').length || 0}개`) },
-          { label: '안전 성분 %', vals: products.map(p => {
+        {(() => {
+          const safeRatio = (p) => {
             const t = p.ingredients?.length || 1;
             const s = p.ingredients?.filter(i => i.riskLevel === 'safe').length || 0;
-            return `${Math.round((s / t) * 100)}%`;
-          }) },
-        ].map(({ label, vals }) => (
-          <div key={label} style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid var(--hairline)', padding: '11px 0' }}>
-            <div style={{ width: '80px', flexShrink: 0, fontSize: '12.5px', fontWeight: 700, color: 'var(--ink-faint)' }}>{label}</div>
-            {vals.map((v, i) => (
-              <div key={i} style={{ flex: 1, textAlign: 'center', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink)' }}>{v}</div>
-            ))}
-          </div>
-        ))}
+            return Math.round((s / t) * 100);
+          };
+          const dangerCount = (p) => p.ingredients?.filter(i => i.riskLevel === 'danger').length || 0;
+          const rows = [
+            {
+              label: '궁합 점수',
+              vals: products.map(p => breakdowns[products.indexOf(p)]?.total ?? '-'),
+              winner: hasPetProfile ? products.reduce((bi, p, i) => (breakdowns[i]?.total ?? 0) > (breakdowns[bi]?.total ?? 0) ? i : bi, 0) : -1,
+              fmt: (v) => v !== '-' ? `${v}점` : '-',
+            },
+            {
+              label: '성분 안전',
+              vals: products.map(p => safeRatio(p)),
+              winner: products.reduce((bi, p, i) => safeRatio(p) > safeRatio(products[bi]) ? i : bi, 0),
+              fmt: (v) => `${v}%`,
+            },
+            {
+              label: '주의 성분',
+              vals: products.map(p => dangerCount(p)),
+              winner: products.reduce((bi, p, i) => dangerCount(p) < dangerCount(products[bi]) ? i : bi, 0),
+              fmt: (v) => `${v}개`,
+            },
+            {
+              label: '등급',
+              vals: products.map(p => breakdowns[products.indexOf(p)] ? gradeFromScore(breakdowns[products.indexOf(p)].total) : '-'),
+              winner: hasPetProfile ? products.reduce((bi, p, i) => (breakdowns[i]?.total ?? 0) > (breakdowns[bi]?.total ?? 0) ? i : bi, 0) : -1,
+              fmt: (v) => v !== '-' ? `${v}등급` : '-',
+            },
+            {
+              label: '가격',
+              vals: products.map(p => p.price || 0),
+              winner: products.reduce((bi, p, i) => (p.price || 999999) < (products[bi].price || 999999) ? i : bi, 0),
+              fmt: (v) => v ? `${v.toLocaleString()}원~` : '-',
+            },
+            {
+              label: '평점',
+              vals: products.map(p => p.averageRating ?? 0),
+              winner: products.reduce((bi, p, i) => (p.averageRating ?? 0) > (products[bi].averageRating ?? 0) ? i : bi, 0),
+              fmt: (v) => `★ ${v.toFixed(1)}`,
+            },
+            {
+              label: '리뷰',
+              vals: products.map(p => p.reviewsCount ?? 0),
+              winner: products.reduce((bi, p, i) => (p.reviewsCount ?? 0) > (products[bi].reviewsCount ?? 0) ? i : bi, 0),
+              fmt: (v) => `${v.toLocaleString()}개`,
+            },
+          ];
+
+          return rows.map(({ label, vals, winner, fmt }) => (
+            <div key={label} style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid var(--hairline)', padding: '12px 0' }}>
+              <div style={{ width: '72px', flexShrink: 0, fontSize: '12px', fontWeight: 700, color: 'var(--ink-faint)' }}>{label}</div>
+              {vals.map((v, i) => {
+                const isWinner = products.length > 1 && i === winner;
+                return (
+                  <div key={i} style={{ flex: 1, textAlign: 'center' }}>
+                    <span style={{
+                      fontSize: '13.5px', fontWeight: isWinner ? 900 : 600,
+                      color: isWinner ? 'var(--brand-deep)' : 'var(--ink)',
+                      background: isWinner ? 'var(--brand-tint)' : 'transparent',
+                      padding: isWinner ? '3px 8px' : '0',
+                      borderRadius: isWinner ? '8px' : '0',
+                      display: 'inline-block',
+                    }}>
+                      {fmt(v)}{isWinner ? ' 🏆' : ''}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ));
+        })()}
       </section>
 
       {/* ─── CTA 버튼 ─── */}
