@@ -77,6 +77,19 @@ export interface Product {
   coupangProductId?: string | null;
   /** 파트너스 등 수동 발급 전체 URL — 있으면 구매 버튼이 이 주소로 이동 */
   coupangLink?: string | null;
+  /** 스폰서 상품 여부 — 추천 알고리즘과 완전 분리된 광고 슬롯에만 노출 */
+  isSponsored?: boolean;
+  /** 스폰서 표기 문구 — 기본값 "광고" */
+  sponsorLabel?: string;
+  /** 스폰서 노출 순서 */
+  sponsorOrder?: number;
+}
+
+export type MembershipTier = 'free' | 'plus' | 'pro';
+
+export interface MembershipInfo {
+  tier: MembershipTier;
+  expiresAt?: string | null;
 }
 
 export const DEFAULT_USER_PET_PROFILE: UserPetProfile = {

@@ -12,14 +12,27 @@ type ProductCardProps = {
   showHealthTags?: boolean;
   variant?: 'horizontal' | 'vertical';
   rank?: number;
+  /** 스폰서 슬롯에서 렌더링될 때 true — 추천 영역과 구분되는 광고 배지를 표시 */
+  isSponsorSlot?: boolean;
 };
+
+const SponsorBadge = ({ label }: { label: string }) => (
+  <span style={{
+    display: 'inline-flex', alignItems: 'center',
+    padding: '2px 7px', borderRadius: 5,
+    fontSize: 10, fontWeight: 700, letterSpacing: 0.3,
+    background: '#F3F4F6', color: '#6B7280', border: '1px solid #E5E7EB',
+    flexShrink: 0,
+  }}>{label}</span>
+);
 
 export default function ProductCard({
   product,
   compact = false,
   showHealthTags = true,
   variant = 'horizontal',
-  rank
+  rank,
+  isSponsorSlot = false,
 }: ProductCardProps) {
   const { profile, favorites, toggleFavorite, isLoggedIn } = useStore();
   const navigate = useNavigate();
@@ -100,7 +113,10 @@ export default function ProductCard({
           </span>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.4, color: 'var(--ink-faint)' }}>{product.brand}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.4, color: 'var(--ink-faint)' }}>{product.brand}</span>
+            {isSponsorSlot && <SponsorBadge label={product.sponsorLabel || '광고'} />}
+          </div>
           <span style={{
             fontSize: 14, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.35,
             display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
@@ -146,7 +162,10 @@ export default function ProductCard({
         <ProductImage src={product.imageUrl} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </div>
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.3, color: 'var(--ink-faint)' }}>{product.brand}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.3, color: 'var(--ink-faint)' }}>{product.brand}</span>
+          {isSponsorSlot && <SponsorBadge label={product.sponsorLabel || '광고'} />}
+        </div>
         <span style={{
           fontSize: 14.5, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.3,
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'

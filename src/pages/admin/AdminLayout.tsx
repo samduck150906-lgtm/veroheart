@@ -5,7 +5,8 @@ import {
   FlaskConical,
   ShieldAlert,
   LayoutDashboard,
-  Settings, 
+  Settings,
+  Megaphone,
   LogOut,
   Home,
 } from 'lucide-react';
@@ -21,6 +22,7 @@ const AdminLayout: React.FC = () => {
       { path: '/admin/products', icon: <ShoppingBag size={18} />, label: '제품 관리' },
       { path: '/admin/ingredients', icon: <FlaskConical size={18} />, label: '성분 관리' },
       { path: '/admin/analysis', icon: <ShieldAlert size={18} />, label: '분석 엔진' },
+      { path: '/admin/sponsors', icon: <Megaphone size={18} />, label: '스폰서 관리' },
       { path: '/admin/settings', icon: <Settings size={18} />, label: '시스템 설정' },
     ],
     []
