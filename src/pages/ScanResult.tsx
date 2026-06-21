@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ScanLine, AlertCircle } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import Analyzer from '../components/Analyzer';
+import { SIGNUP_PROMPT } from '../copy/ui';
 
 /**
  * 스캐너 OCR 결과 화면.
@@ -78,15 +79,15 @@ export default function ScanResult() {
           <AlertCircle size={16} color="#D97706" style={{ flexShrink: 0, marginTop: '1px' }} />
           <div>
             <div style={{ fontSize: '13px', fontWeight: 700, color: '#92400E' }}>
-              반려동물 프로필이 없어요
+              {SIGNUP_PROMPT.analysisGate.title}
             </div>
             <div style={{ fontSize: '12px', fontWeight: 600, color: '#92400E', opacity: 0.8, marginTop: '2px', lineHeight: 1.5 }}>
-              프로필을 등록하면 알레르기·고민 기반 맞춤 분석이 가능해요.{' '}
+              {SIGNUP_PROMPT.analysisGate.description}{' '}
               <button
                 onClick={() => navigate('/login')}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#D97706', fontWeight: 800, padding: 0, textDecoration: 'underline' }}
               >
-                로그인하기
+                {SIGNUP_PROMPT.analysisGate.cta}
               </button>
             </div>
           </div>
