@@ -47,6 +47,7 @@ import Analyzer from '../components/Analyzer';
 import BottomSheet from '../components/BottomSheet';
 import { TossCard } from '../components/TossUI';
 import ProductImage from '../components/ProductImage';
+import BreedNutritionPanel from '../components/BreedNutritionPanel';
 
 export default function Detail() {
   const { id } = useParams();
@@ -310,6 +311,10 @@ export default function Detail() {
           )}
         </div>
       </TossCard>
+
+      {hasPetProfile && product && (
+        <BreedNutritionPanel product={product} profile={profile} />
+      )}
 
       <button
         onClick={() => navigate('/analysis', { state: { product } })}

@@ -29,6 +29,17 @@ export interface GuaranteedAnalysis {
   moisture?: number;
   calcium?: number;
   phosphorus?: number;
+  /** 기능성 영양소 (mg/kg) — 견종별 규칙 엔진 전용 */
+  glucosamineMgKg?: number;
+  chondroitinMgKg?: number;
+  /** EPA+DHA 합산 % (라벨 표기) */
+  epaDhaPercent?: number;
+  sodiumMgKg?: number;
+  taurineMgKg?: number;
+  lcarnitineMgKg?: number;
+  msmMgKg?: number;
+  /** 칼로리 밀도 (kcal/kg) — 1000kcal 기준 환산에 사용 */
+  caloriesKcalKg?: number;
 }
 
 export interface Product {
