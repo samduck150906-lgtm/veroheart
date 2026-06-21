@@ -3,7 +3,7 @@ import type { UserPetProfile, Product } from './index';
 // ── 확장 펫 프로필 ─────────────────────────────────────────────────────────
 export interface CompatibilityPetProfile extends UserPetProfile {
   isNeutered?: boolean;
-  activityLevel?: 'low' | 'moderate' | 'high';
+  activityLevel?: 'low' | 'normal' | 'high' | 'very_high';
   currentFood?: { brand: string; name: string };
   monthlyBudget?: number; // 원(KRW)
 }
