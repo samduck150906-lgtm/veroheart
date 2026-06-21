@@ -10,9 +10,10 @@
  */
 import { Helmet } from 'react-helmet-async';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Shield } from 'lucide-react';
+import { ArrowLeft, AlertCircle } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
+import { getRecommendationBreakdown, gradeFromScore } from '../utils/score';
 import AnalysisSummaryHeader from '../components/AnalysisSummaryHeader';
 import NutritionDonutChart   from '../components/NutritionDonutChart';
 import ToxicAlertList        from '../components/ToxicAlertList';
@@ -96,14 +97,12 @@ export default function AnalysisResult() {
     kcalPer100g = 390;
   }
 
-  // 4. Map score to grade
+  // 4. Map score to grade (single source of truth: gradeFromScore)
   const score = report.score;
-  let grade: 'A' | 'B' | 'C' | 'D' | 'F' = 'B';
-  if (score >= 85) grade = 'A';
-  else if (score >= 70) grade = 'B';
-  else if (score >= 55) grade = 'C';
-  else if (score >= 45) grade = 'D';
-  else grade = 'F';
+  const grade = gradeFromScore(score);
+
+  const hasPetProfile = profile && profile.id && profile.id !== 'local-profile' && profile.name && profile.name !== '우리 아이';
+  const breakdown = hasPetProfile ? getRecommendationBreakdown(product, profile) : null;
 
   // 5. Build dynamic ingredients array for list
   const displayIngredients = (product.ingredients || []).map((ing) => ({
@@ -172,6 +171,30 @@ export default function AnalysisResult() {
         compliant={score >= 50}
         lifeStage={lifeStageString}
       />
+
+      {/* Hard-cap warning banner — shown when allergen or danger ingredient triggers score cap */}
+      {breakdown?.capped && (
+        <div style={{
+          display: 'flex', gap: '12px', alignItems: 'flex-start',
+          padding: '16px', borderRadius: '16px', margin: '16px 0 0',
+          background: breakdown.allergyHits.length > 0 ? '#FFF1F2' : '#FFFBEB',
+          border: `1px solid ${breakdown.allergyHits.length > 0 ? '#FECDD3' : '#FDE68A'}`,
+        }}>
+          <AlertCircle size={20} color={breakdown.allergyHits.length > 0 ? '#F43F5E' : '#D97706'} style={{ flexShrink: 0, marginTop: '1px' }} />
+          <div>
+            <div style={{ fontSize: '14px', fontWeight: 800, color: breakdown.allergyHits.length > 0 ? '#BE123C' : '#92400E', marginBottom: '4px' }}>
+              {breakdown.allergyHits.length > 0
+                ? `${breakdown.allergyHits.join(', ')}이(가) 들어 있어요`
+                : `주의 성분 ${breakdown.dangerCount}개가 포함돼 있어요`}
+            </div>
+            <div style={{ fontSize: '12.5px', fontWeight: 600, color: breakdown.allergyHits.length > 0 ? '#BE123C' : '#92400E', opacity: 0.85, lineHeight: 1.5 }}>
+              {breakdown.allergyHits.length > 0
+                ? `${profile.name}는 ${breakdown.allergyHits.join(', ')}을(를) 피하는 게 좋아요. 안전을 위해 점수 상한이 적용됐어요.`
+                : `이 성분은 장기 급여 시 주의가 필요해요. 수의사와 상담해 보세요.`}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Section divider */}
       <div className="analysis-section-gap" />
