@@ -5,6 +5,15 @@ import { Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { supabase, ensurePublicUserExists } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import { notify } from '../store/useNotification';
+
+// 카카오 로고 SVG (공식 색상)
+function KakaoIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path fillRule="evenodd" clipRule="evenodd" d="M10 2C5.582 2 2 4.895 2 8.455c0 2.267 1.446 4.254 3.624 5.393l-.922 3.37a.25.25 0 0 0 .376.274L9.19 15.1A9.48 9.48 0 0 0 10 15.91c4.418 0 8-2.895 8-6.455C18 4.895 14.418 2 10 2z" fill="#191919"/>
+    </svg>
+  );
+}
 import { HOME_HERO } from '../copy/marketing';
 import { VERORO_LOGO_SRC } from '../constants/assets';
 import { TossButton } from '../components/TossUI';
@@ -25,6 +34,7 @@ export default function Login() {
   const [showPw, setShowPw] = useState(false);
   const [showConfirmPw, setShowConfirmPw] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isKakaoLoading, setIsKakaoLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({});
 
   const redirectTo = useMemo(() => {
@@ -32,6 +42,21 @@ export default function Login() {
     if (!from || from === '/login') return '/profile';
     return from;
   }, [location.state]);
+
+  const handleKakaoLogin = async () => {
+    setIsKakaoLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'kakao',
+        options: { redirectTo: `${window.location.origin}/profile` },
+      });
+      if (error) throw error;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '카카오 로그인에 실패했습니다.';
+      notify.error(msg);
+      setIsKakaoLoading(false);
+    }
+  };
 
   const handleSubmit = async () => {
     const addr = email.trim();
@@ -358,11 +383,37 @@ export default function Login() {
         <TossButton
           type="button"
           onClick={() => void handleSubmit()}
-          disabled={isLoading}
+          disabled={isLoading || isKakaoLoading}
           style={{ width: '100%', height: '52px', fontSize: '16px' }}
         >
           {isLoading ? '처리 중...' : mode === 'login' ? '로그인' : '회원가입'}
         </TossButton>
+
+        {/* 소셜 로그인 구분선 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '18px 0' }}>
+          <div style={{ flex: 1, height: '1px', background: '#E5E7EB' }} />
+          <span style={{ fontSize: '12px', color: '#9CA3AF', fontWeight: 600 }}>또는</span>
+          <div style={{ flex: 1, height: '1px', background: '#E5E7EB' }} />
+        </div>
+
+        {/* 카카오 로그인 */}
+        <button
+          type="button"
+          onClick={() => void handleKakaoLogin()}
+          disabled={isLoading || isKakaoLoading}
+          style={{
+            width: '100%', height: '52px', borderRadius: '14px',
+            background: '#FEE500', border: 'none',
+            cursor: isLoading || isKakaoLoading ? 'not-allowed' : 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+            fontSize: '15px', fontWeight: 800, color: '#191919',
+            opacity: isKakaoLoading ? 0.7 : 1,
+            transition: 'opacity 0.15s',
+          }}
+        >
+          <KakaoIcon />
+          {isKakaoLoading ? '카카오 로그인 중...' : '카카오로 시작하기'}
+        </button>
       </div>
     </div>
   );

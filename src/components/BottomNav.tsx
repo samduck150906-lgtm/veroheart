@@ -1,59 +1,72 @@
-import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, User } from 'lucide-react';
-import { useStore } from '../store/useStore';
-import { DEFAULT_USER_PET_PROFILE } from '../types';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Home, Search, MessageCircle, ScanLine } from 'lucide-react';
+
+const PawIcon = ({ active }: { active: boolean }) => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <g fill={active ? 'var(--brand-deep)' : 'currentColor'}>
+      <ellipse cx="7" cy="9" rx="1.9" ry="2.5" />
+      <ellipse cx="12" cy="7.4" rx="1.9" ry="2.6" />
+      <ellipse cx="17" cy="9" rx="1.9" ry="2.5" />
+      <path d="M12 11.5c-2.6 0-4.7 1.9-4.7 4.2 0 1.7 1.4 2.6 3 2.6.7 0 1.2-.2 1.7-.2s1 .2 1.7.2c1.6 0 3-.9 3-2.6 0-2.3-2.1-4.2-4.7-4.2z" />
+    </g>
+  </svg>
+);
 
 export default function BottomNav() {
   const location = useLocation();
-  const { profile, isLoggedIn } = useStore();
+  const navigate = useNavigate();
 
-  const profileTabLabel =
-    isLoggedIn &&
-    profile?.name &&
-    profile.name.trim() &&
-    profile.name !== DEFAULT_USER_PET_PROFILE.name
-      ? profile.name.length > 5
-        ? `${profile.name.slice(0, 4)}…`
-        : profile.name
-      : '마이펫';
+  const hideOn = ['/login', '/auth', '/scanner'];
+  if (hideOn.some((p) => location.pathname === p || location.pathname.startsWith(p + '/'))) {
+    return null;
+  }
 
-  const navItems = [
-    { path: '/', label: '홈', icon: Home, badge: 0 },
-    { path: '/search', label: '검색', icon: Search, badge: 0 },
-    { path: '/profile', label: profileTabLabel, icon: User, badge: 0 },
+  const isActive = (path: string) =>
+    path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
+
+  const sideItems = [
+    { path: '/', label: '홈', Icon: Home },
+    { path: '/search', label: '검색', Icon: Search },
+  ];
+  const rightItems = [
+    { path: '/community', label: '커뮤니티', Icon: MessageCircle },
+    { path: '/profile', label: '마이', Icon: null as null },
   ];
 
   return (
-    <nav className="glass-nav bottom-nav bottom-nav-community">
-      {navItems.map(item => {
-        const Icon = item.icon;
-        const isActive = 
-          item.path === '/' 
-            ? location.pathname === '/' 
-            : location.pathname.startsWith(item.path);
-
+    <nav className="bottom-nav-bar">
+      {sideItems.map(({ path, label, Icon }) => {
+        const active = isActive(path);
         return (
-          <Link
-            key={item.path}
-            to={item.path}
-            className={isActive ? 'bottom-nav-item bottom-nav-item-active' : 'bottom-nav-item'}
-            aria-label={item.label}
-          >
-            <div className="bottom-nav-icon-wrap">
-              <Icon
-                size={22}
-                strokeWidth={isActive ? 2.25 : 2}
-                style={{ transition: 'color 0.15s ease' }}
-              />
-              {item.badge > 0 && (
-                <span className="bottom-nav-badge">
-                  {item.badge > 9 ? '9+' : item.badge}
-                </span>
-              )}
-            </div>
-            <span className="bottom-nav-label">
-              {item.label}
-            </span>
+          <Link key={path} to={path} className="tab-item" aria-label={label}>
+            <Icon size={22} strokeWidth={active ? 2.4 : 2} color={active ? 'var(--brand-deep)' : 'var(--ink-400)'} />
+            <span className="tab-label" style={{ color: active ? 'var(--brand-deep)' : 'var(--ink-400)' }}>{label}</span>
+          </Link>
+        );
+      })}
+
+      {/* Center Scanner FAB */}
+      <button
+        type="button"
+        className="tab-fab"
+        aria-label="성분 스캔"
+        onClick={() => navigate('/scanner')}
+      >
+        <span className="tab-fab-btn" style={{ background: isActive('/scanner') ? 'var(--brand-deep)' : 'var(--brand)' }}>
+          <ScanLine size={26} strokeWidth={2.4} color="#241B00" />
+        </span>
+      </button>
+
+      {rightItems.map(({ path, label, Icon }) => {
+        const active = isActive(path);
+        return (
+          <Link key={path} to={path} className="tab-item" aria-label={label}>
+            {Icon ? (
+              <Icon size={22} strokeWidth={active ? 2.4 : 2} color={active ? 'var(--brand-deep)' : 'var(--ink-400)'} />
+            ) : (
+              <span style={{ color: active ? 'var(--brand-deep)' : 'var(--ink-400)' }}><PawIcon active={active} /></span>
+            )}
+            <span className="tab-label" style={{ color: active ? 'var(--brand-deep)' : 'var(--ink-400)' }}>{label}</span>
           </Link>
         );
       })}

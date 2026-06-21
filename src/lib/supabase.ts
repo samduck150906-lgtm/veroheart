@@ -652,3 +652,177 @@ export async function logUnmatchedIngredients(rawNames: string[]) {
     ),
   );
 }
+
+// ─── Community Posts ──────────────────────────────────────────────────────────
+
+export interface CommunityPostRow {
+  id: string;
+  user_id: string;
+  category: string;
+  title: string;
+  content: string;
+  tags: string[];
+  likes_count: number;
+  comments_count: number;
+  created_at: string;
+  users?: { nickname?: string | null };
+  has_liked?: boolean;
+}
+
+export async function getCommunityPosts(category?: string, userId?: string): Promise<CommunityPostRow[]> {
+  if (!isSupabaseConfigured) return [];
+  let builder = supabase
+    .from('community_posts')
+    .select('*, users(nickname)')
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  if (category && category !== '전체') {
+    builder = builder.eq('category', category);
+  }
+
+  const { data, error } = await builder;
+  if (error) {
+    console.error('getCommunityPosts error:', error);
+    return [];
+  }
+
+  const posts = (data || []) as CommunityPostRow[];
+
+  if (userId && posts.length > 0) {
+    const postIds = posts.map(p => p.id);
+    const { data: likedData } = await supabase
+      .from('community_post_likes')
+      .select('post_id')
+      .eq('user_id', userId)
+      .in('post_id', postIds);
+    const likedSet = new Set((likedData || []).map((l: any) => l.post_id as string));
+    return posts.map(p => ({ ...p, has_liked: likedSet.has(p.id) }));
+  }
+
+  return posts;
+}
+
+export async function createCommunityPost(
+  userId: string,
+  category: string,
+  title: string,
+  content: string,
+  tags: string[] = [],
+): Promise<CommunityPostRow | null> {
+  const { data, error } = await supabase
+    .from('community_posts')
+    .insert({ user_id: userId, category, title, content, tags })
+    .select('*, users(nickname)')
+    .single();
+  if (error) {
+    notify.error('글 등록에 실패했습니다.');
+    return null;
+  }
+  notify.success('글이 등록되었습니다!');
+  return data as CommunityPostRow;
+}
+
+export async function toggleCommunityPostLike(
+  userId: string,
+  postId: string,
+  hasLiked: boolean,
+): Promise<boolean> {
+  if (hasLiked) {
+    const { error } = await supabase
+      .from('community_post_likes')
+      .delete()
+      .match({ user_id: userId, post_id: postId });
+    return error ? hasLiked : false;
+  } else {
+    const { error } = await supabase
+      .from('community_post_likes')
+      .insert({ user_id: userId, post_id: postId });
+    return error ? hasLiked : true;
+  }
+}
+
+export async function deleteCommunityPost(userId: string, postId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('community_posts')
+    .delete()
+    .match({ id: postId, user_id: userId });
+  if (error) {
+    notify.error('글 삭제에 실패했습니다.');
+    return false;
+  }
+  notify.success('글이 삭제되었습니다.');
+  return true;
+}
+
+export async function getCommunityPost(postId: string, userId?: string): Promise<CommunityPostRow | null> {
+  if (!isSupabaseConfigured) return null;
+  const { data, error } = await supabase
+    .from('community_posts')
+    .select('*, users(nickname)')
+    .eq('id', postId)
+    .single();
+  if (error) return null;
+  const post = data as CommunityPostRow;
+  if (userId) {
+    const { data: liked } = await supabase
+      .from('community_post_likes')
+      .select('post_id')
+      .eq('user_id', userId)
+      .eq('post_id', postId)
+      .maybeSingle();
+    post.has_liked = Boolean(liked);
+  }
+  return post;
+}
+
+// ─── Community Comments ───────────────────────────────────────────────────────
+
+export interface CommunityCommentRow {
+  id: string;
+  post_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  users?: { nickname?: string | null };
+}
+
+export async function getCommunityComments(postId: string): Promise<CommunityCommentRow[]> {
+  if (!isSupabaseConfigured) return [];
+  const { data, error } = await supabase
+    .from('community_comments')
+    .select('*, users(nickname)')
+    .eq('post_id', postId)
+    .order('created_at', { ascending: true });
+  if (error) return [];
+  return (data || []) as CommunityCommentRow[];
+}
+
+export async function createCommunityComment(
+  userId: string,
+  postId: string,
+  content: string,
+): Promise<CommunityCommentRow | null> {
+  const { data, error } = await supabase
+    .from('community_comments')
+    .insert({ user_id: userId, post_id: postId, content })
+    .select('*, users(nickname)')
+    .single();
+  if (error) {
+    notify.error('댓글 등록에 실패했습니다.');
+    return null;
+  }
+  return data as CommunityCommentRow;
+}
+
+export async function deleteCommunityComment(userId: string, commentId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('community_comments')
+    .delete()
+    .match({ id: commentId, user_id: userId });
+  if (error) {
+    notify.error('댓글 삭제에 실패했습니다.');
+    return false;
+  }
+  return true;
+}

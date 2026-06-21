@@ -32,9 +32,12 @@ import EntryGate from './components/EntryGate';
 import { markEntryGateDone, readEntryGateDone } from './lib/entryGateStorage';
 import { isAdminExperience, toggleAdminDesktopMode } from './utils/adminHost';
 import { ThemeProvider } from './theme/ThemeProvider';
+import IngredientDictionary from './pages/IngredientDictionary';
 import PersonalityQuiz from './pages/Test';
 import ViralEvent from './pages/ViralEvent';
 import NotFound from './pages/NotFound';
+import Brand from './pages/Brand';
+import CommunityPost from './pages/CommunityPost';
 
 function App() {
   const { initApp, isInitializing, isLoggedIn } = useStore();
@@ -124,11 +127,13 @@ function App() {
               <Route path="search" element={<Search />} />
               <Route path="scanner" element={<Scanner />} />
               <Route path="community" element={<Community />} />
+              <Route path="community/:postId" element={<CommunityPost />} />
               <Route path="auth" element={<Login />} />
               <Route path="login" element={<Login />} />
               <Route path="profile" element={<Profile />} />
               <Route path="comparison" element={<Comparison />} />
               <Route path="ranking" element={<Ranking />} />
+              <Route path="dictionary" element={<IngredientDictionary />} />
               {/* <Route path="cart" element={<Cart />} /> */}
               {/* <Route path="checkout" element={<Checkout />} /> */}
               {/* <Route path="success" element={<Success />} /> */}
@@ -137,6 +142,7 @@ function App() {
               <Route path="analysis" element={<AnalysisResult />} />
               <Route path="scan-result" element={<ScanResult />} />
               <Route path="pet-profile" element={<PetProfilePage />} />
+              <Route path="brand/:brandName" element={<Brand />} />
               <Route path="event/personality-quiz" element={<PersonalityQuiz />} />
               <Route path="event/viral" element={<ViralEvent />} />
               <Route path="terms" element={<Terms />} />
