@@ -1,7 +1,27 @@
 import type { Product, UserPetProfile } from '../types';
 
+/** 회피(알레르기) 성분 포함 시 궁합 점수 상한 — 추천 등급(C 이상) 불가 */
+export const ALLERGEN_SCORE_CAP = 55;
+/** 위험 성분 포함 시 궁합 점수 상한 — A 등급 불가 */
+export const DANGER_SCORE_CAP = 69;
+
+export type CompatibilityGrade = 'A' | 'B' | 'C' | 'D';
+
+/** 단일 진실 공급원: 궁합 점수 → 등급 */
+export function gradeFromScore(score: number): CompatibilityGrade {
+  if (score >= 85) return 'A';
+  if (score >= 70) return 'B';
+  if (score >= 55) return 'C';
+  return 'D';
+}
+
 export interface RecommendationBreakdown {
   total: number;
+  /** 하드캡 적용 전 가중 합산 원점수 */
+  rawTotal: number;
+  /** 안전 하드캡(알레르기/위험)으로 점수가 깎였는지 */
+  capped: boolean;
+  grade: CompatibilityGrade;
   safety: number;
   concern: number;
   socialProof: number;
@@ -118,7 +138,17 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
     verification = 0;
   }
 
-  const total = Math.max(0, Math.min(100, Math.round(safety + concern + socialProof + value + petFit + verification)));
+  const rawTotal = Math.max(0, Math.min(100, Math.round(safety + concern + socialProof + value + petFit + verification)));
+
+  // ── 안전 하드캡 (신뢰 보호) ──────────────────────────────────────
+  // 회피(알레르기) 성분이나 위험 성분이 있으면 가중 합산이 아무리 높아도
+  // 추천 등급(A/B)에 오르지 못하도록 점수 상한을 강제한다.
+  let cap = 100;
+  if (allergyHits.length > 0) cap = Math.min(cap, ALLERGEN_SCORE_CAP);
+  if (dangerCount > 0) cap = Math.min(cap, DANGER_SCORE_CAP);
+  const total = Math.min(rawTotal, cap);
+  const capped = total < rawTotal;
+
   const reasons: string[] = [];
 
   if (allergyHits.length > 0) {
@@ -147,6 +177,9 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
 
   return {
     total,
+    rawTotal,
+    capped,
+    grade: gradeFromScore(total),
     safety,
     concern,
     socialProof,
