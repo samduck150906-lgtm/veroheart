@@ -1,3 +1,6 @@
+export type ActivityLevel = 'low' | 'normal' | 'high' | 'very_high';
+export type BodyCondition = 'thin' | 'normal' | 'overweight';
+
 export interface UserPetProfile {
   id: string;
   name: string;
@@ -5,11 +8,18 @@ export interface UserPetProfile {
   age: number;
   /** kg, 선택 — DB 미연동 시에도 폼에만 반영 가능 */
   weightKg?: number;
+  weight?: number;
   breed?: string;
   healthConcerns: string[];
   allergies: string[];
   gender?: '남아' | '여아';
   personality?: string;
+  /** 활동량 단계: 급여량 및 체중관리 점수 보정에 사용 */
+  activityLevel?: ActivityLevel;
+  /** 중성화 여부: MER 보정계수에 영향 */
+  isNeutered?: boolean;
+  /** 체형 상태: 과체중/저체중 시 급여량 조정 */
+  bodyCondition?: BodyCondition;
 }
 
 export interface Ingredient {
