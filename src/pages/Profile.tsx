@@ -7,6 +7,8 @@ import { Helmet } from 'react-helmet-async';
 import { TossCard, TossInput, TossButton, TossChip, TossSectionTitle } from '../components/TossUI';
 import { Button } from '../components/Button';
 import ProductCard from '../components/ProductCard';
+import ProductImage from '../components/ProductImage';
+import { getRecommendationBreakdown, gradeFromScore } from '../utils/score';
 import { notify } from '../store/useNotification';
 
 const PROFILE_STEP_META = [
@@ -825,7 +827,72 @@ export default function Profile() {
         {activeTab === 'favorites' && (
           <div style={{ padding: '4px 20px 20px' }}>
             {favoriteProducts.length > 0 ? (
-              favoriteProducts.map(p => <ProductCard key={p.id} product={p} />)
+              (() => {
+                const GRADE_COLOR = { A: '#15B36B', B: '#6BB04E', C: '#E8A800', D: '#F04452' };
+                const GRADE_BG    = { A: '#ECFDF5', B: '#F0FDE8', C: '#FFFBEB', D: '#FFF1F2' };
+
+                const scored = favoriteProducts.map(p => ({
+                  p,
+                  bd: hasPetProfile ? getRecommendationBreakdown(p, profile) : null,
+                })).sort((a, b) => (b.bd?.total ?? 0) - (a.bd?.total ?? 0));
+
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    {scored.map(({ p, bd }) => {
+                      const grade = bd ? gradeFromScore(bd.total) : null;
+                      return (
+                        <button
+                          key={p.id}
+                          onClick={() => navigate(`/product/${p.id}`)}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 13,
+                            padding: '13px 0', borderBottom: '1px solid var(--hairline)',
+                            background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%',
+                            borderBottomColor: 'var(--hairline)',
+                          }}
+                        >
+                          {/* thumbnail */}
+                          <div style={{ width: 68, height: 68, borderRadius: 14, overflow: 'hidden', flexShrink: 0, background: 'var(--fill)', position: 'relative' }}>
+                            <ProductImage src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            {grade && (
+                              <span style={{
+                                position: 'absolute', bottom: 4, left: 4,
+                                padding: '1px 6px', borderRadius: 5, fontSize: 10, fontWeight: 800,
+                                background: GRADE_BG[grade], color: GRADE_COLOR[grade],
+                              }}>{grade}</span>
+                            )}
+                          </div>
+
+                          {/* info */}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-faint)', marginBottom: 2 }}>{p.brand}</div>
+                            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.35, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                              {p.name}
+                            </div>
+                            {bd?.allergyHits?.length > 0 && (
+                              <span style={{ display: 'inline-block', marginTop: 5, fontSize: 11, fontWeight: 700, color: '#BE123C', background: '#FFF1F2', padding: '2px 7px', borderRadius: 5 }}>
+                                ⚠ {bd.allergyHits.join(', ')} 포함
+                              </span>
+                            )}
+                          </div>
+
+                          {/* score */}
+                          {bd && (
+                            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                              <div style={{ fontSize: 20, fontWeight: 900, color: grade ? GRADE_COLOR[grade] : 'var(--ink)', letterSpacing: '-0.02em' }}>
+                                {bd.total}<span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-faint)' }}>점</span>
+                              </div>
+                              <div style={{ fontSize: 11.5, color: 'var(--ink-faint)', fontWeight: 600, marginTop: 2 }}>
+                                {p.price?.toLocaleString()}원
+                              </div>
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })()
             ) : (
               <div style={{ padding: '54px 28px', textAlign: 'center' }}>
                 <Heart size={30} stroke="var(--ink-faint)" style={{ margin: '0 auto 12px' }} />
