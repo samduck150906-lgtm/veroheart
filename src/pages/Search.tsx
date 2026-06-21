@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Filter,
   X,
@@ -16,7 +16,8 @@ import {
   SlidersHorizontal,
   Sparkles,
   Search as SearchIcon,
-  Database
+  Database,
+  BookOpen
 } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import type { Product } from '../types';
@@ -51,21 +52,21 @@ const TossSearchBar = ({ value, onChange, placeholder }: { value: string; onChan
         width: '100%',
         padding: '14px 16px 14px 44px',
         borderRadius: '14px',
-        border: '1.5px solid rgba(79, 70, 229, 0.15)',
+        border: '1.5px solid var(--hairline)',
         fontSize: '15px',
         fontWeight: 500,
         outline: 'none',
-        background: '#F8FAFC',
-        color: '#0F172A',
+        background: 'var(--fill)',
+        color: 'var(--ink)',
         boxSizing: 'border-box',
         transition: 'border-color 0.2s, box-shadow 0.2s',
       }}
       onFocus={(e) => {
-        e.currentTarget.style.borderColor = '#4F46E5';
-        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(79, 70, 229, 0.1)';
+        e.currentTarget.style.borderColor = 'var(--brand)';
+        e.currentTarget.style.boxShadow = '0 0 0 3px var(--brand-tint)';
       }}
       onBlur={(e) => {
-        e.currentTarget.style.borderColor = 'rgba(79, 70, 229, 0.15)';
+        e.currentTarget.style.borderColor = 'var(--hairline)';
         e.currentTarget.style.boxShadow = 'none';
       }}
     />
@@ -85,6 +86,7 @@ export default function Search() {
   const { profile, isLoggedIn } = useStore();
   const hasPetProfile = isLoggedIn && profile && profile.id && profile.id !== 'local-profile' && profile.name && profile.name !== '우리 아이';
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const category = resolveCategoryFromSearchParams(searchParams.get('category'));
 
   const setCategory = (name: string) => {
@@ -279,17 +281,10 @@ export default function Search() {
         <meta name="description" content="반려동물 맞춤 사료·간식을 성분, 가격, 건강 고민으로 검색하고 비교해 보세요." />
       </Helmet>
       
-      {/* Title Header */}
-      <div style={{ padding: '6px 20px 0' }}>
-        <span style={{ fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: 15, color: 'var(--brand-deep)' }}>Find the right bowl</span>
-        <h2 style={{ margin: '2px 0 0', fontSize: 24, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--ink)' }}>취향 기반 탐색</h2>
-        <p style={{ margin: '6px 0 0', fontSize: 12.5, color: 'var(--ink-soft)' }}>조건을 조합해 정확하게 좁혀보세요</p>
-      </div>
-
       {/* Search Box */}
       <div style={{ padding: '14px 20px 0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '12px 15px', borderRadius: 14,
-          background: 'var(--surface)', border: '1px solid var(--hairline)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '13px 16px', borderRadius: 12,
+          background: 'var(--fill)', border: '1px solid transparent' }}>
           <SearchIcon size={18} stroke="var(--ink-faint)" />
           <input
             value={query}
@@ -377,16 +372,25 @@ export default function Search() {
         </button>
       </div>
 
-      {/* Standard Feed Database button */}
-      <div style={{ padding: '8px 20px 0' }}>
+      {/* Dictionary entry buttons */}
+      <div style={{ padding: '8px 20px 0', display: 'flex', gap: 8 }}>
+        <button
+          onClick={() => navigate('/dictionary')}
+          style={{
+            flex: 1, display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700,
+            color: 'var(--brand-deep)', background: 'var(--brand-tint)', padding: '11px 14px', borderRadius: '14px', border: '1px solid var(--brand-line)', cursor: 'pointer', justifyContent: 'center'
+          }}
+        >
+          <BookOpen size={14} /> 성분사전
+        </button>
         <button
           onClick={() => setIsStandardFeedModalOpen(true)}
           style={{
-            display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700,
-            color: 'var(--safe)', background: 'var(--safe-tint)', padding: '10px 16px', borderRadius: '14px', border: '1px solid var(--hairline)', cursor: 'pointer', width: '100%', justifyContent: 'center'
+            flex: 1, display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700,
+            color: 'var(--safe)', background: 'var(--safe-tint)', padding: '11px 14px', borderRadius: '14px', border: '1px solid var(--hairline)', cursor: 'pointer', justifyContent: 'center'
           }}
         >
-          <Database size={14} /> 한국표준사료 성분사전 검색
+          <Database size={14} /> 표준사료 사전
         </button>
       </div>
 
@@ -441,13 +445,17 @@ export default function Search() {
       {/* Result list container */}
       <div style={{ padding: '4px 20px 0' }}>
         {hasPetProfile && sortBy === 'default' && displayResults.length > 0 && (
-          <div style={{ margin: '10px 0 16px', padding: '12px 14px', borderRadius: '18px', background: 'var(--brand-tint)', border: '1px solid var(--brand-line)' }}>
-            <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--brand-deep)', letterSpacing: 0.2 }}>Pet Nutrition Curation</div>
-            <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ink)', marginTop: 1 }}>
-              {profile.name} 맞춤 최적 순서
-            </div>
-            <div style={{ fontSize: '12.5px', color: 'var(--ink-soft)', lineHeight: 1.4, marginTop: 4 }}>
-              제조사 성분 실측치와 알레르기 유발 유무, 질병 고민 해결 적합도 및 수의 분석 점수를 매칭해 추천합니다.
+          <div style={{ margin: '10px 0 16px', padding: '11px 14px', borderRadius: '14px', background: 'var(--brand-tint)', border: '1px solid var(--brand-line)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '20px', lineHeight: 1, flexShrink: 0 }}>
+              {profile.species === 'Cat' ? '🐱' : '🐾'}
+            </span>
+            <div>
+              <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ink)' }}>
+                {profile.name} 맞춤 순으로 정렬됐어요
+              </div>
+              <div style={{ fontSize: '11.5px', color: 'var(--brand-deep)', fontWeight: 600, marginTop: '2px' }}>
+                알레르기·건강고민·성분 안전 점수 반영
+              </div>
             </div>
           </div>
         )}
@@ -456,9 +464,18 @@ export default function Search() {
           {pagedResults.map(({ product, breakdown, score }) => (
             <div key={product.id}>
               <ProductCard product={product} />
-              {hasPetProfile && breakdown && score != null && breakdown.reasons && breakdown.reasons.length > 0 && (
-                <div style={{ marginTop: '-10px', marginBottom: '14px', padding: '0 4px', fontSize: '11.5px', color: 'var(--brand-deep)', fontWeight: 600 }}>
-                  궁합 상세: {breakdown.reasons.slice(0, 2).join(' · ')}
+              {hasPetProfile && breakdown && breakdown.allergyHits?.length > 0 && (
+                <div style={{ marginTop: '-8px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#BE123C', background: '#FFF1F2', padding: '3px 9px', borderRadius: '6px', border: '1px solid #FECDD3' }}>
+                    ⚠ {breakdown.allergyHits.join(', ')} 포함 — 안전 점수 상한 적용
+                  </span>
+                </div>
+              )}
+              {hasPetProfile && breakdown && !breakdown.allergyHits?.length && breakdown.matchedConcerns?.length > 0 && (
+                <div style={{ marginTop: '-8px', marginBottom: '12px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--brand-deep)', background: 'var(--brand-tint)', padding: '3px 9px', borderRadius: '6px' }}>
+                    ✓ {breakdown.matchedConcerns.join(', ')} 고민 연관
+                  </span>
                 </div>
               )}
             </div>
@@ -543,7 +560,7 @@ export default function Search() {
                 onClick={() => setFilters(f => ({ ...f, dietPreset: !f.dietPreset }))}
                 style={{
                   width: '100%', textAlign: 'left', padding: '14px 16px', borderRadius: '14px',
-                  border: filters.dietPreset ? '2px solid var(--primary)' : '1px solid #E5E7EB',
+                  border: filters.dietPreset ? '2px solid var(--brand)' : '1px solid var(--hairline)',
                   background: filters.dietPreset ? 'rgba(250, 204, 21, 0.16)' : '#fff', cursor: 'pointer', fontWeight: 700, color: '#374151',
                 }}
               >
@@ -631,7 +648,7 @@ export default function Search() {
 
             <div style={{ position: 'sticky', bottom: 0, paddingTop: '40px', paddingBottom: '24px', backgroundColor: '#fff', display: 'flex', gap: '12px' }}>
               <button type="button" onClick={resetFilters} style={{ flex: 1, padding: '18px', borderRadius: '16px', border: '1px solid #E5E7EB', backgroundColor: '#fff', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}><Trash2 size={18} /> 초기화</button>
-              <button type="button" onClick={() => setIsFilterOpen(false)} style={{ flex: 2, padding: '18px', borderRadius: '16px', background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)', color: '#fff', fontWeight: 800, border: 'none', cursor: 'pointer' }}>결과 보기</button>
+              <button type="button" onClick={() => setIsFilterOpen(false)} style={{ flex: 2, padding: '18px', borderRadius: '16px', background: 'var(--brand)', color: 'var(--ink-on-brand)', fontWeight: 800, border: 'none', cursor: 'pointer' }}>결과 보기</button>
             </div>
           </div>
         </div>
