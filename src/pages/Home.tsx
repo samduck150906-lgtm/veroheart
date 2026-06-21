@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ProductImage from '../components/ProductImage';
+import ProductCard from '../components/ProductCard';
+import { rankProductsForProfile, gradeFromScore, calculateCompatibilityScore } from '../utils/score';
 
 const CATEGORY_GRID = [
   { name: '사료', label: '사료', Icon: Utensils },
@@ -38,11 +40,9 @@ const CARE_CARDS = [
   { Icon: ShieldCheck, tint: '#FEFCE8', color: '#A16207', title: '민감성 피부', desc: '저알러지 식단', to: '/search?query=가수분해' },
 ];
 
-function gradeOf(rating?: number): { letter: string; color: string } {
-  if ((rating ?? 0) >= 4.7) return { letter: 'A', color: '#15B36B' };
-  if ((rating ?? 0) >= 4.3) return { letter: 'B', color: '#6BB04E' };
-  return { letter: 'C', color: '#E8A800' };
-}
+const GRADE_COLOR: Record<string, string> = {
+  A: '#15B36B', B: '#6BB04E', C: '#E8A800', D: '#F04452',
+};
 
 export default function Home() {
   const { products, profile, recentViews, isLoggedIn, favorites } = useStore();
@@ -68,6 +68,11 @@ export default function Home() {
 
   const recent = (recentViews?.length ? recentViews : products).slice(0, 8);
   const favoriteSet = new Set(favorites || []);
+
+  const topRanked = useMemo(() => {
+    if (!hasPetProfile || !products.length) return [];
+    return rankProductsForProfile(products, profile, { limit: 8 });
+  }, [hasPetProfile, products, profile]);
 
   const petName = hasPetProfile ? profile.name : '베로';
   const speciesLabel = profile?.species === 'Cat' ? '고양이' : (profile?.breed || '말티즈');
@@ -173,6 +178,25 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ===== 베로 맞춤 추천 ===== */}
+      {topRanked.length > 0 && (
+        <section style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
+              {petName} 맞춤 추천
+            </h3>
+            <button onClick={() => navigate('/search')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '2px', fontSize: '13px', fontWeight: 600, color: 'var(--ink-faint)' }}>
+              전체보기 <ChevronRight size={15} />
+            </button>
+          </div>
+          <div className="rail" style={{ display: 'flex', gap: '12px', overflowX: 'auto', margin: '0 -20px', padding: '0 20px 4px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            {topRanked.map(({ product: p, score: s }) => (
+              <ProductCard key={p.id} product={p} variant="vertical" showHealthTags={false} />
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* ===== 최근 본 상품 ===== */}
       {recent.length > 0 && (
         <section style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -184,15 +208,19 @@ export default function Home() {
           </div>
           <div className="rail" style={{ display: 'flex', gap: '12px', overflowX: 'auto', margin: '0 -20px', padding: '0 20px 4px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             {recent.map((p) => {
-              const g = gradeOf(p.averageRating);
+              const score = hasPetProfile ? calculateCompatibilityScore(p, profile) : null;
+              const gradeLetter = score != null ? gradeFromScore(score) : null;
+              const gradeColor = gradeLetter ? GRADE_COLOR[gradeLetter] : '#6BB04E';
               const liked = favoriteSet.has(p.id);
               return (
                 <div key={p.id} onClick={() => navigate(`/product/${p.id}`)} style={{ flexShrink: 0, width: '132px', cursor: 'pointer' }}>
                   <div style={{ position: 'relative', width: '132px', height: '132px', borderRadius: '16px', overflow: 'hidden', background: 'var(--fill)' }}>
                     <ProductImage src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    <span style={{ position: 'absolute', top: '8px', left: '8px', width: '22px', height: '22px', borderRadius: '7px', background: g.color, color: '#fff', fontSize: '12px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {g.letter}
-                    </span>
+                    {gradeLetter && (
+                      <span style={{ position: 'absolute', top: '8px', left: '8px', width: '22px', height: '22px', borderRadius: '7px', background: gradeColor, color: '#fff', fontSize: '12px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {gradeLetter}
+                      </span>
+                    )}
                     <span style={{ position: 'absolute', top: '8px', right: '8px', width: '26px', height: '26px', borderRadius: '8px', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
                       <Heart size={15} strokeWidth={2} fill={liked ? '#FF4D6D' : 'none'} color={liked ? '#FF4D6D' : 'var(--ink-300)'} />
                     </span>
