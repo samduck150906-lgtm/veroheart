@@ -8,14 +8,6 @@ import {
   Bone,
   Droplet,
   ShieldCheck,
-  Utensils,
-  Cookie,
-  Pill,
-  Sparkles,
-  Droplets,
-  Eye,
-  Trash2,
-  Home as HomeIcon,
   Heart,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -24,14 +16,14 @@ import ProductCard from '../components/ProductCard';
 import { rankProductsForProfile, gradeFromScore, calculateCompatibilityScore } from '../utils/score';
 
 const CATEGORY_GRID = [
-  { name: '사료', label: '사료', Icon: Utensils },
-  { name: '간식', label: '간식', Icon: Cookie },
-  { name: '영양제', label: '영양제', Icon: Pill },
-  { name: '구강관리', label: '구강', Icon: Sparkles },
-  { name: '피부·목욕·위생', label: '피부·목욕', Icon: Droplets },
-  { name: '눈·귀·민감부위 케어', label: '눈·귀', Icon: Eye },
-  { name: '배변/모래/패드', label: '배변', Icon: Trash2 },
-  { name: '생활용품·환경안전', label: '생활용품', Icon: HomeIcon },
+  { name: '사료', label: '사료', emoji: '🐾' },
+  { name: '간식', label: '간식', emoji: '🦴' },
+  { name: '영양제', label: '영양제', emoji: '💊' },
+  { name: '구강관리', label: '구강', emoji: '🦷' },
+  { name: '피부·목욕·위생', label: '피부·목욕', emoji: '🛁' },
+  { name: '눈·귀·민감부위 케어', label: '눈·귀', emoji: '👁' },
+  { name: '배변/모래/패드', label: '배변', emoji: '🪣' },
+  { name: '생활용품·환경안전', label: '생활용품', emoji: '🏠' },
 ];
 
 const CARE_CARDS = [
@@ -65,6 +57,8 @@ export default function Home() {
     const t = setTimeout(() => setScoreFill(healthScore), 150);
     return () => clearTimeout(t);
   }, [healthScore]);
+
+  const [scoreExpanded, setScoreExpanded] = useState(false);
 
   const recent = (recentViews?.length ? recentViews : products).slice(0, 8);
   const favoriteSet = new Set(favorites || []);
@@ -126,7 +120,7 @@ export default function Home() {
           <div style={{ height: '1px', background: 'var(--hairline-strong)', margin: '16px 0 12px' }} />
 
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--ink-soft)' }}>식단 건강 점수</span>
+            <span style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--ink-soft)' }}>현재 식단 적합도</span>
             <span style={{ fontSize: '22px', fontWeight: 900, color: 'var(--ink)' }}>
               {healthScore}<span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink-400)' }}>/100</span>
             </span>
@@ -134,19 +128,51 @@ export default function Home() {
           <div style={{ height: '8px', background: '#E5E8EB', borderRadius: '99px', overflow: 'hidden', marginTop: '8px' }}>
             <div style={{ width: `${scoreFill}%`, height: '100%', background: 'var(--brand)', borderRadius: '99px', transition: 'width 0.9s cubic-bezier(0.16, 1, 0.3, 1)' }} />
           </div>
+
+          <button
+            onClick={() => setScoreExpanded(v => !v)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '10px 0 0', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)' }}
+          >
+            점수 산정 근거 보기 {scoreExpanded ? '▲' : '▼'}
+          </button>
+
+          {scoreExpanded && (
+            <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {(profile?.allergies?.length > 0
+                ? [{ label: `${profile.allergies[0]} 알러지 회피`, pts: '+30', color: 'var(--safe)' }]
+                : [{ label: '알러지 성분 없음', pts: '+30', color: 'var(--safe)' }]
+              ).concat(
+                profile?.healthConcerns?.length > 0
+                  ? [{ label: `${profile.healthConcerns[0]} 적합 성분 포함`, pts: '+25', color: 'var(--safe)' }]
+                  : [],
+                [{ label: '체중·활동량 적합', pts: '+20', color: 'var(--safe)' }],
+                profile?.allergies?.length > 1
+                  ? [{ label: '복합 알러지 감점', pts: `-${(profile.allergies.length - 1) * 4}`, color: 'var(--danger)' }]
+                  : []
+              ).map(({ label, pts, color }) => (
+                <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: '10px', background: 'var(--surface)' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--ink-soft)' }}>{label}</span>
+                  <span style={{ fontSize: '13px', fontWeight: 800, color }}>{pts}</span>
+                </div>
+              ))}
+              <p style={{ fontSize: '10.5px', color: 'var(--ink-faint)', fontWeight: 500, lineHeight: 1.5, marginTop: '2px' }}>
+                * 현재 급여 중인 사료를 등록하면 더 정확한 점수를 제공해요.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
       {/* ===== Category Grid ===== */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', rowGap: '16px', columnGap: '8px' }}>
-        {CATEGORY_GRID.map(({ name, label, Icon }) => (
+        {CATEGORY_GRID.map(({ name, label, emoji }) => (
           <button
             key={name}
             onClick={() => navigate(`/search?category=${encodeURIComponent(name)}`)}
             style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
           >
-            <span style={{ width: '54px', height: '54px', borderRadius: '16px', background: 'var(--fill)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Icon size={24} strokeWidth={1.8} color="var(--ink-soft)" />
+            <span style={{ width: '54px', height: '54px', borderRadius: '18px', background: 'var(--fill)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
+              {emoji}
             </span>
             <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink)' }}>{label}</span>
           </button>
