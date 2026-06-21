@@ -677,6 +677,114 @@ export async function setUnmatchedStatus(
   if (error) console.error('setUnmatchedStatus error:', error);
 }
 
+// ─────────────────────────────────────────────────────────────
+// 커뮤니티 API
+// ─────────────────────────────────────────────────────────────
+
+export interface CommunityPost {
+  id: string;
+  user_id: string;
+  category: string;
+  title: string;
+  body: string;
+  like_count: number;
+  comment_count: number;
+  author_nickname: string;
+  created_at: string;
+  hasLiked?: boolean;
+}
+
+export interface CommunityComment {
+  id: string;
+  post_id: string;
+  user_id: string;
+  body: string;
+  created_at: string;
+  users: { nickname: string };
+}
+
+export async function getCommunityPosts(
+  category?: string,
+  page = 0,
+  pageSize = 20,
+): Promise<CommunityPost[]> {
+  if (!isSupabaseConfigured) return [];
+  let query = supabase
+    .from('community_posts_with_counts')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .range(page * pageSize, (page + 1) * pageSize - 1);
+
+  if (category && category !== '전체') {
+    query = query.eq('category', category);
+  }
+
+  const { data, error } = await query;
+  if (error) { console.error('getCommunityPosts error:', error); return []; }
+  return (data ?? []) as CommunityPost[];
+}
+
+export async function createCommunityPost(
+  userId: string,
+  title: string,
+  body: string,
+  category: string,
+): Promise<CommunityPost | null> {
+  const { data, error } = await supabase
+    .from('community_posts')
+    .insert({ user_id: userId, title, body, category })
+    .select()
+    .single();
+  if (error) { notify.error('글 등록에 실패했습니다.'); console.error(error); return null; }
+  return data as CommunityPost;
+}
+
+export async function getPostComments(postId: string): Promise<CommunityComment[]> {
+  if (!isSupabaseConfigured) return [];
+  const { data, error } = await supabase
+    .from('community_comments')
+    .select('*, users(nickname)')
+    .eq('post_id', postId)
+    .order('created_at', { ascending: true });
+  if (error) { console.error('getPostComments error:', error); return []; }
+  return (data ?? []) as CommunityComment[];
+}
+
+export async function createComment(
+  postId: string,
+  userId: string,
+  body: string,
+): Promise<CommunityComment | null> {
+  const { data, error } = await supabase
+    .from('community_comments')
+    .insert({ post_id: postId, user_id: userId, body })
+    .select('*, users(nickname)')
+    .single();
+  if (error) { notify.error('댓글 등록에 실패했습니다.'); return null; }
+  return data as CommunityComment;
+}
+
+export async function togglePostLike(
+  userId: string,
+  postId: string,
+  hasLiked: boolean,
+): Promise<void> {
+  if (hasLiked) {
+    await supabase.from('post_likes').delete().match({ user_id: userId, post_id: postId });
+  } else {
+    await supabase.from('post_likes').upsert({ user_id: userId, post_id: postId });
+  }
+}
+
+export async function getMyLikedPostIds(userId: string): Promise<string[]> {
+  if (!isSupabaseConfigured || !userId) return [];
+  const { data } = await supabase
+    .from('post_likes')
+    .select('post_id')
+    .eq('user_id', userId);
+  return (data ?? []).map((r: any) => r.post_id);
+}
+
 /** 미매칭 원료를 검수 큐에 기록(있으면 카운트 증가). 분석 중 발견 시 호출. */
 export async function logUnmatchedIngredients(rawNames: string[]) {
   if (!isSupabaseConfigured || rawNames.length === 0) return;
