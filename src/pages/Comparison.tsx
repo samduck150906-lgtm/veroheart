@@ -1,50 +1,38 @@
 // @ts-nocheck
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Plus, X } from 'lucide-react';
 import { useStore } from '../store/useStore';
-import { getRecommendationBreakdown, gradeFromScore } from '../utils/score';
-import { X, GitCompare, ExternalLink } from 'lucide-react';
+import { calculateCompatibilityScore, gradeFromScore } from '../utils/score';
 import ProductImage from '../components/ProductImage';
 import { openCoupangForProduct } from '../utils/externalPurchase';
 import { COMPARE_EMPTY, PRE_PURCHASE } from '../copy/ui';
 
-const GRADE_COLOR: Record<string, string> = {
-  A: '#15B36B', B: '#6BB04E', C: '#E8A800', D: '#F04452',
-};
-const GRADE_BG: Record<string, string> = {
-  A: '#ECFDF5', B: '#F0FDE8', C: '#FFFBEB', D: '#FFF1F2',
+const GRADE_COLORS = {
+  A: { bg: '#E7F8F0', color: '#15B36B' },
+  B: { bg: '#FEF6E0', color: '#E8A800' },
+  C: { bg: '#FFF0ED', color: '#F04452' },
+  D: { bg: '#FFF0ED', color: '#F04452' },
+  F: { bg: '#F2F4F6', color: '#8B95A1' },
 };
 
-const BUCKETS = [
-  { key: 'safety',      label: '성분 안전',  max: 35 },
-  { key: 'concern',     label: '건강 고민',  max: 25 },
-  { key: 'socialProof', label: '신뢰도',     max: 20 },
-  { key: 'petFit',      label: '종/연령 적합', max: 10 },
-  { key: 'value',       label: '가성비',     max: 10 },
-  { key: 'nutrition',   label: 'AAFCO 영양', max: 10 },
-];
-
-// 각 버킷의 만점 대비 퍼센트
-function pct(value: number, max: number) {
-  return Math.round(Math.min(100, (value / max) * 100));
+function GradeCell({ grade }) {
+  const c = GRADE_COLORS[grade] || { bg: '#F2F4F6', color: '#8B95A1' };
+  return <span style={{ background: c.bg, color: c.color, fontWeight: 800, fontSize: 13, borderRadius: 8, padding: '4px 10px' }}>{grade}등급</span>;
 }
-
-const BAR_COLORS = ['#FFC928', '#3182F6', '#15B36B', '#A855F7'];
 
 export default function Comparison() {
   const navigate = useNavigate();
-  const {
-    profile, isLoggedIn,
-    products: storeProducts,
-    comparisonList, removeFromComparison,
-  } = useStore();
+  const { products, comparisonList, removeFromComparison, profile, isLoggedIn } = useStore();
 
-  const hasPetProfile =
-    isLoggedIn && profile?.id && profile.id !== 'local-profile' &&
-    profile.name && profile.name !== '우리 아이';
+  const hasPetProfile = isLoggedIn && profile?.name && profile.name !== '우리 아이';
 
-  const products = comparisonList
-    .map(id => storeProducts.find(p => p.id === id))
-    .filter(Boolean) as typeof storeProducts;
+  const compareProducts = useMemo(() => {
+    return comparisonList
+      .map(id => products.find(p => p.id === id))
+      .filter(Boolean)
+      .slice(0, 4);
+  }, [comparisonList, products]);
 
   if (products.length === 0) {
     return (
@@ -67,94 +55,170 @@ export default function Comparison() {
         </button>
       </div>
     );
-  }
+  }, [compareProducts, profile, hasPetProfile]);
 
-  const breakdowns = products.map(p =>
-    hasPetProfile ? getRecommendationBreakdown(p, profile) : null
-  );
+  const grades = useMemo(() => {
+    return Object.fromEntries(
+      compareProducts.map(p => {
+        const s = scores[p.id];
+        return [p.id, s != null ? gradeFromScore(s) : null];
+      })
+    );
+  }, [compareProducts, scores]);
 
-  // 각 버킷에서 최고 점수 인덱스 (하이라이트용)
-  const winnerOf = (key: string) => {
-    if (!hasPetProfile) return -1;
-    let best = -1, bestVal = -1;
-    breakdowns.forEach((bd, i) => {
-      const v = bd?.[key] ?? 0;
-      if (v > bestVal) { bestVal = v; best = i; }
-    });
-    return best;
-  };
+  const cautionCounts = useMemo(() => {
+    return Object.fromEntries(
+      compareProducts.map(p => [
+        p.id,
+        (p.ingredients || []).filter(i => i.riskLevel === 'caution' || i.riskLevel === 'danger').length
+      ])
+    );
+  }, [compareProducts]);
+
+  const rows = [
+    {
+      label: '궁합 점수',
+      render: (p) => hasPetProfile ? `${scores[p.id] ?? '-'}%` : '-',
+      winFn: (a, b) => (scores[a.id] || 0) > (scores[b.id] || 0),
+    },
+    {
+      label: '가격',
+      render: (p) => p.price ? `${p.price.toLocaleString()}원` : '-',
+      winFn: (a, b) => (a.price || 999999) < (b.price || 999999),
+    },
+    {
+      label: '평점',
+      render: (p) => p.averageRating > 0 ? `⭐ ${Number(p.averageRating).toFixed(1)}` : '-',
+      winFn: (a, b) => (a.averageRating || 0) > (b.averageRating || 0),
+    },
+    {
+      label: '등급',
+      render: (p) => grades[p.id] ? <GradeCell grade={grades[p.id]} /> : '-',
+      winFn: (a, b) => {
+        const order = ['A', 'B', 'C', 'D', 'F'];
+        return order.indexOf(grades[a.id] || 'F') < order.indexOf(grades[b.id] || 'F');
+      },
+    },
+    {
+      label: '주의 성분',
+      render: (p) => {
+        const cnt = cautionCounts[p.id];
+        return cnt === 0 ? '없음 ✓' : `${cnt}개`;
+      },
+      winFn: (a, b) => (cautionCounts[a.id] || 0) < (cautionCounts[b.id] || 0),
+    },
+    {
+      label: '리뷰 수',
+      render: (p) => p.reviewsCount > 0 ? `${p.reviewsCount.toLocaleString()}개` : '-',
+      winFn: (a, b) => (a.reviewsCount || 0) > (b.reviewsCount || 0),
+    },
+  ];
 
   return (
-    <div style={{ paddingBottom: '80px' }}>
-      {/* ─── 헤더 ─── */}
-      <div style={{ padding: '20px 0 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <span style={{ width: '36px', height: '36px', borderRadius: '11px', background: 'var(--fill)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <GitCompare size={18} color="var(--ink-soft)" strokeWidth={2.2} />
-        </span>
-        <div>
-          <div style={{ fontSize: '20px', fontWeight: 900, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
-            제품 비교 <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ink-faint)' }}>{products.length}/4</span>
-          </div>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', marginTop: '1px' }}>
-            {hasPetProfile ? `${profile.name} 맞춤 점수 기준` : '성분 · 평점 · 가격 비교'}
-          </div>
-        </div>
-      </div>
+    <div style={{ paddingBottom: 90 }}>
+      <div style={{ padding: '16px 16px 0' }}>
+        <h1 style={{ fontSize: 22, fontWeight: 900, color: '#191F28', letterSpacing: '-0.03em', marginBottom: 4 }}>비교함</h1>
+        <p style={{ fontSize: 14, color: '#8B95A1', marginBottom: 20 }}>최대 4개 상품을 비교할 수 있어요</p>
 
-      {/* ─── 상품 헤더 카드들 (가로 스크롤) ─── */}
-      <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px', marginBottom: '24px', scrollbarWidth: 'none' }}>
-        {products.map((p, i) => {
-          const bd = breakdowns[i];
-          const grade = bd ? gradeFromScore(bd.total) : null;
-          return (
-            <div key={p.id} style={{ flexShrink: 0, width: '160px', background: 'var(--fill)', borderRadius: '18px', padding: '14px', position: 'relative' }}>
-              <button
-                onClick={() => removeFromComparison(p.id)}
-                style={{ position: 'absolute', top: '8px', right: '8px', background: '#fff', border: 'none', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
-              >
-                <X size={12} />
-              </button>
-              <div style={{ width: '100%', height: '100px', borderRadius: '12px', overflow: 'hidden', marginBottom: '10px' }}>
-                <ProductImage src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              </div>
-              <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--ink-faint)', marginBottom: '2px' }}>{p.brand}</div>
-              <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ink)', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: '10px' }}>
-                {p.name}
-              </div>
-              {grade && bd ? (
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                  <span style={{ padding: '3px 8px', borderRadius: '7px', background: GRADE_BG[grade], color: GRADE_COLOR[grade], fontSize: '13px', fontWeight: 800 }}>
-                    {grade}등급
-                  </span>
-                  <span style={{ fontSize: '18px', fontWeight: 900, color: GRADE_COLOR[grade] }}>{bd.total}</span>
+        {compareProducts.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '60px 0', color: '#B0B8C1' }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>📊</div>
+            <p style={{ fontWeight: 700, fontSize: 16, color: '#4E5968', marginBottom: 6 }}>비교할 상품을 추가해보세요</p>
+            <p style={{ fontSize: 13, marginBottom: 24 }}>검색이나 상품 상세 페이지에서 추가할 수 있어요</p>
+            <button onClick={() => navigate('/search')}
+              style={{ background: '#F5C518', border: 'none', borderRadius: 12, padding: '12px 24px', fontSize: 15, fontWeight: 700, color: '#191F28', cursor: 'pointer' }}>
+              상품 검색하기
+            </button>
+          </div>
+        ) : (
+          <>
+            {/* Product Headers */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+              <div style={{ width: 82, flexShrink: 0 }} />
+              {compareProducts.map(p => (
+                <div key={p.id} style={{ flex: 1, position: 'relative' }}>
+                  <div
+                    onClick={() => navigate(`/product/${p.id}`)}
+                    style={{
+                      background: '#fff', borderRadius: 16, padding: '12px 8px',
+                      textAlign: 'center', boxShadow: '0 2px 10px rgba(30,41,59,0.08)', cursor: 'pointer',
+                    }}>
+                    <div style={{ width: 44, height: 44, borderRadius: 10, overflow: 'hidden', margin: '0 auto 8px', background: '#F7F4EE' }}>
+                      <ProductImage src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                    <div style={{ fontSize: 10, color: '#8B95A1', marginBottom: 2 }}>{p.brand}</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#191F28', lineHeight: 1.3 }}>
+                      {p.name.length > 16 ? p.name.slice(0, 16) + '…' : p.name}
+                    </div>
+                    {grades[p.id] && (
+                      <div style={{ marginTop: 6 }}>
+                        <GradeCell grade={grades[p.id]} />
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => removeFromComparison(p.id)}
+                    style={{
+                      position: 'absolute', top: -6, right: -6,
+                      width: 20, height: 20, borderRadius: '50%',
+                      background: '#F04452', border: 'none', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}
+                  >
+                    <X size={11} color="#fff" strokeWidth={3} />
+                  </button>
                 </div>
-              ) : (
-                <button
-                  onClick={() => navigate('/login')}
-                  style={{ width: '100%', padding: '6px', borderRadius: '8px', background: 'var(--brand-tint)', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: 'var(--brand-deep)' }}
+              ))}
+              {compareProducts.length < 4 && (
+                <div
+                  onClick={() => navigate('/search')}
+                  style={{
+                    flex: 1, borderRadius: 16, border: '2px dashed #E5E8EB',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    padding: '20px 8px', cursor: 'pointer', minHeight: 120,
+                  }}
                 >
-                  점수 보기
-                </button>
+                  <Plus size={20} color="#B0B8C1" />
+                  <span style={{ fontSize: 10, color: '#B0B8C1', fontWeight: 600, marginTop: 6, textAlign: 'center' }}>상품 추가</span>
+                </div>
               )}
             </div>
-          );
-        })}
-      </div>
 
-      {/* ─── 버킷별 점수 바 ─── */}
-      {hasPetProfile && (
-        <section style={{ marginBottom: '28px' }}>
-          <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ink)', marginBottom: '14px', letterSpacing: '-0.02em' }}>
-            항목별 점수 비교
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-            {BUCKETS.map(({ key, label, max }) => {
-              const winner = winnerOf(key);
-              return (
-                <div key={key}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink-soft)' }}>{label}</span>
-                    <span style={{ fontSize: '11px', color: 'var(--ink-faint)', fontWeight: 600 }}>만점 {max}점</span>
+            {/* Comparison Table */}
+            <div style={{ background: '#fff', borderRadius: 18, overflow: 'hidden', boxShadow: '0 2px 12px rgba(30,41,59,0.06)' }}>
+              {rows.map((row, rowIdx) => {
+                const wins = compareProducts.map((_, i) =>
+                  compareProducts.every((other, j) => i === j || row.winFn(compareProducts[i], other))
+                );
+                return (
+                  <div key={row.label} style={{
+                    display: 'flex', alignItems: 'center',
+                    borderBottom: rowIdx < rows.length - 1 ? '1px solid #F2F4F6' : 'none',
+                  }}>
+                    <div style={{
+                      width: 82, flexShrink: 0, padding: '14px 12px',
+                      fontSize: 12, fontWeight: 700, color: '#6B7684',
+                    }}>
+                      {row.label}
+                    </div>
+                    {compareProducts.map((p, i) => (
+                      <div key={p.id} style={{
+                        flex: 1, padding: '14px 8px', textAlign: 'center',
+                        background: wins[i] ? 'rgba(245,197,24,0.08)' : 'transparent',
+                        fontSize: 13, fontWeight: wins[i] ? 800 : 600,
+                        color: wins[i] ? '#CA8A04' : '#191F28',
+                        position: 'relative',
+                      }}>
+                        {wins[i] && compareProducts.length > 1 && (
+                          <span style={{ position: 'absolute', top: 4, right: 4, fontSize: 10 }}>🏆</span>
+                        )}
+                        {typeof row.render(p) === 'string'
+                          ? row.render(p)
+                          : row.render(p)
+                        }
+                      </div>
+                    ))}
+                    {compareProducts.length < 4 && <div style={{ flex: 1 }} />}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {products.map((p, i) => {

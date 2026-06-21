@@ -1,16 +1,7 @@
 // @ts-nocheck
-/**
- * AnalysisResult page
- * 사료 분석 결과 전체 페이지 (AI 프리미엄 영양 리포트)
- * - SummaryHeader
- * - NutritionDonutChart
- * - ToxicAlertList
- * - IngredientList
- * - FeedingGuideCalculator
- */
-import { Helmet } from 'react-helmet-async';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, AlertCircle } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from 'recharts';
 import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
 import { getRecommendationBreakdown, gradeFromScore } from '../utils/score';
@@ -22,109 +13,73 @@ import FeedingGuideCalculator from '../components/FeedingGuideCalculator';
 import { CAUTION_INGREDIENT, ALLERGY_CONFLICT, MEDICAL_DISCLAIMER, FEEDING_GUIDE } from '../copy/ui';
 
 export default function AnalysisResult() {
-  const location = useLocation();
   const navigate = useNavigate();
-  const { profile, products } = useStore();
+  const location = useLocation();
+  const { products, selectedProduct, profile, isLoggedIn } = useStore();
 
-  let product = location.state?.product || useStore.getState().selectedProduct;
-  if (!product && products.length > 0) {
-    product = products[0];
-  }
+  const [activeTab, setActiveTab] = useState('종합');
+
+  const productId = location.state?.productId || selectedProduct?.id;
+  const product = useMemo(() => {
+    if (productId) return products.find(p => p.id === productId) || selectedProduct;
+    return selectedProduct || products[0];
+  }, [productId, products, selectedProduct]);
+
+  const hasPetProfile = isLoggedIn && profile?.name && profile.name !== '우리 아이';
+
+  const compatScore = useMemo(() => {
+    if (!product) return 75;
+    if (hasPetProfile) return calculateCompatibilityScore(product, profile);
+    return 75;
+  }, [product, profile, hasPetProfile]);
+
+  const grade = gradeFromScore(compatScore);
+
+  const safeIngredients = (product?.ingredients || []).filter(i => i.riskLevel === 'safe');
+  const cautionIngredients = (product?.ingredients || []).filter(i => i.riskLevel === 'caution');
+  const dangerIngredients = (product?.ingredients || []).filter(i => i.riskLevel === 'danger');
+
+  const allergyConflicts = useMemo(() => {
+    if (!hasPetProfile || !profile?.allergies?.length || !product?.ingredients) return [];
+    const allergies = profile.allergies.map(a => a.toLowerCase());
+    return product.ingredients.filter(ing =>
+      allergies.some(a => (ing.nameKo || '').toLowerCase().includes(a) || (ing.nameEn || '').toLowerCase().includes(a))
+    );
+  }, [product, profile, hasPetProfile]);
+
+  const ga = product?.guaranteedAnalysis;
+  const radarData = ga ? [
+    { subject: '단백질', value: Math.min(100, (ga.crudeProtein || 0) * 2.5) },
+    { subject: '지방', value: Math.min(100, (ga.crudeFat || 0) * 5) },
+    { subject: '섬유', value: Math.min(100, (ga.crudeFiber || 0) * 10) },
+    { subject: '수분', value: Math.min(100, (ga.moisture || 0) * 10) },
+    { subject: '칼슘', value: Math.min(100, (ga.calcium || 0) * 50) },
+  ] : [];
+
+  const positives = [
+    safeIngredients.length > 5 ? `안전 성분 ${safeIngredients.length}가지 확인` : null,
+    cautionIngredients.length === 0 && dangerIngredients.length === 0 ? '주의/위험 성분 없음 ✓' : null,
+    allergyConflicts.length === 0 && hasPetProfile ? '알러지 성분 미포함 ✓' : null,
+    ga?.crudeProtein && ga.crudeProtein > 25 ? `고단백 사료 (단백질 ${ga.crudeProtein}%)` : null,
+  ].filter(Boolean);
+
+  const cautions = [
+    cautionIngredients.length > 0 ? `주의 성분 ${cautionIngredients.length}가지: ${cautionIngredients.map(i => i.nameKo).slice(0, 3).join(', ')}` : null,
+    dangerIngredients.length > 0 ? `위험 성분 ${dangerIngredients.length}가지: ${dangerIngredients.map(i => i.nameKo).slice(0, 2).join(', ')}` : null,
+    allergyConflicts.length > 0 ? `알러지 의심 성분: ${allergyConflicts.map(i => i.nameKo).join(', ')}` : null,
+  ].filter(Boolean);
 
   if (!product) {
     return (
-      <div style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', textAlign: 'center' }}>
-        <p style={{ fontSize: '16px', fontWeight: 700, color: '#374151', marginBottom: '8px' }}>분석할 제품이 없습니다</p>
-        <p style={{ fontSize: '13px', color: '#9CA3AF', marginBottom: '24px' }}>상품 상세 페이지에서 'AI 정밀 분석'을 눌러 주세요.</p>
-        <button type="button" onClick={() => navigate('/search')} style={{ padding: '12px 24px', borderRadius: '14px', border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 700, cursor: 'pointer' }}>
-          상품 탐색하기
+      <div style={{ padding: '60px 24px', textAlign: 'center', color: '#B0B8C1' }}>
+        <div style={{ fontSize: 36, marginBottom: 12 }}>📊</div>
+        <p style={{ fontWeight: 600 }}>분석할 상품이 없어요</p>
+        <button onClick={() => navigate('/search')} style={{ marginTop: 16, background: '#F5C518', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 14, fontWeight: 700, color: '#191F28', cursor: 'pointer' }}>
+          상품 검색하기
         </button>
       </div>
     );
   }
-
-  // 2. Generate Report dynamically using score algorithm
-  const report = generateAnalysisReport(product, profile);
-
-  // 3. Dynamic Nutrition values (Guaranteed Analysis) based on product type
-  let nutrition = {
-    protein: 28,
-    fat: 14,
-    carbs: 35,
-    ash: 8,
-    moisture: 15,
-  };
-  let kcalPer100g = 380;
-
-  const isWet = 
-    product.formulation?.includes('습식') || 
-    product.name?.includes('캔') || 
-    product.name?.includes('수프') || 
-    product.category?.includes('습식');
-
-  const isSnack = 
-    product.category?.includes('간식') || 
-    product.name?.includes('져키') || 
-    product.name?.includes('껌') || 
-    product.name?.includes('츄');
-
-  if (isWet) {
-    nutrition = {
-      protein: 10,
-      fat: 5,
-      carbs: 2,
-      ash: 3,
-      moisture: 80,
-    };
-    kcalPer100g = 95;
-  } else if (isSnack) {
-    nutrition = {
-      protein: 15,
-      fat: 5,
-      carbs: 54,
-      ash: 8,
-      moisture: 18,
-    };
-    kcalPer100g = 320;
-  } else {
-    // Dry food default
-    nutrition = {
-      protein: 30,
-      fat: 16,
-      carbs: 31,
-      ash: 8,
-      moisture: 15,
-    };
-    kcalPer100g = 390;
-  }
-
-  // 4. Map score to grade (single source of truth: gradeFromScore)
-  const score = report.score;
-  const grade = gradeFromScore(score);
-
-  const hasPetProfile = profile && profile.id && profile.id !== 'local-profile' && profile.name && profile.name !== '우리 아이';
-  const breakdown = hasPetProfile ? getRecommendationBreakdown(product, profile) : null;
-
-  // 5. Build dynamic ingredients array for list
-  const displayIngredients = (product.ingredients || []).map((ing) => ({
-    name: ing.nameKo || ing.name,
-    safety: ing.riskLevel || 'safe',
-    role: ing.purpose || '원료',
-    description: ing.description || ing.purpose || '',
-  }));
-
-  // 6. Build dynamic toxic items
-  const dynamicToxicItems = (product.ingredients || [])
-    .filter((ing) => ing.riskLevel === 'danger' || ing.riskLevel === 'caution')
-    .map((ing) => ({
-      name: ing.nameKo || ing.name,
-      severity: ing.riskLevel === 'danger' ? ('critical' as const) : ('caution' as const),
-      reason: ing.purpose || '원료',
-      detail: ing.description || ing.purpose || `${ing.nameKo} 성분은 아이의 건강 고민에 따라 주의가 필요할 수 있습니다.`,
-      source: ing.riskLevel === 'danger' ? 'https://efsa.europa.eu' : undefined,
-    }));
-
-  const lifeStageString = product.targetLifeStage?.join(', ') || '전연령용';
 
   return (
     <div className="analysis-page" style={{ padding: '0 16px 40px' }}>
@@ -195,20 +150,139 @@ export default function AnalysisResult() {
             </div>
           </div>
         </div>
-      )}
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 12, color: '#8B95A1', marginBottom: 3 }}>{product.brand}</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: '#191F28', lineHeight: 1.4 }}>{product.name}</div>
+        </div>
+      </div>
 
-      {/* Section divider */}
-      <div className="analysis-section-gap" />
+      {/* Score Gauge */}
+      <div style={{ background: '#fff', margin: '16px 16px 0', borderRadius: 20, boxShadow: '0 2px 12px rgba(30,41,59,0.06)' }}>
+        <ScoreGauge score={compatScore} grade={grade} />
+      </div>
 
-      {/* 2. Nutrition donut */}
-      <NutritionDonutChart nutrition={nutrition} />
+      {/* Tabs */}
+      <div style={{ display: 'flex', borderBottom: '1px solid #EAEDF0', margin: '16px 0 0', padding: '0 16px' }}>
+        {TABS.map(tab => (
+          <button key={tab} onClick={() => setActiveTab(tab)}
+            style={{
+              flex: 1, height: 44, background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: 14, fontWeight: activeTab === tab ? 800 : 600,
+              color: activeTab === tab ? '#191F28' : '#8B95A1',
+              borderBottom: activeTab === tab ? '2.5px solid #F5C518' : '2.5px solid transparent',
+            }}
+          >{tab}</button>
+        ))}
+      </div>
 
-      <div className="analysis-section-gap" />
+      <div style={{ padding: '16px 16px 0' }}>
+        {/* 종합 Tab */}
+        {activeTab === '종합' && (
+          <div>
+            {positives.length > 0 && (
+              <div style={{ background: '#fff', borderRadius: 18, padding: 18, marginBottom: 12, boxShadow: '0 1px 6px rgba(30,41,59,0.06)' }}>
+                <h3 style={{ fontSize: 14, fontWeight: 800, color: '#15B36B', marginBottom: 10 }}>✅ 좋은 점</h3>
+                {positives.map((p, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, fontSize: 13, color: '#191F28' }}>
+                    <span style={{ color: '#15B36B', flexShrink: 0 }}>✓</span> {p}
+                  </div>
+                ))}
+              </div>
+            )}
+            {cautions.length > 0 && (
+              <div style={{ background: '#fff', borderRadius: 18, padding: 18, marginBottom: 12, boxShadow: '0 1px 6px rgba(30,41,59,0.06)' }}>
+                <h3 style={{ fontSize: 14, fontWeight: 800, color: '#E8A800', marginBottom: 10 }}>⚠️ 주의 사항</h3>
+                {cautions.map((c, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8, fontSize: 13, color: '#191F28' }}>
+                    <span style={{ color: '#E8A800', flexShrink: 0, marginTop: 1 }}>!</span> {c}
+                  </div>
+                ))}
+              </div>
+            )}
+            {positives.length === 0 && cautions.length === 0 && (
+              <div style={{ background: '#fff', borderRadius: 18, padding: 18, textAlign: 'center', color: '#B0B8C1', boxShadow: '0 1px 6px rgba(30,41,59,0.06)' }}>
+                <p>성분 정보가 충분하지 않아요</p>
+              </div>
+            )}
+          </div>
+        )}
 
-      {/* 3. Toxic alerts */}
-      <ToxicAlertList items={dynamicToxicItems} />
+        {/* 영양소 Tab */}
+        {activeTab === '영양소' && (
+          <div style={{ background: '#fff', borderRadius: 18, padding: 18, boxShadow: '0 1px 6px rgba(30,41,59,0.06)' }}>
+            {ga ? (
+              <>
+                {radarData.length > 0 && (
+                  <div style={{ height: 220, marginBottom: 16 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadarChart data={radarData}>
+                        <PolarGrid stroke="#F0EDE8" />
+                        <PolarAngleAxis dataKey="subject" tick={{ fontSize: 12, fill: '#6B7684' }} />
+                        <Radar dataKey="value" stroke="#F5C518" fill="#F5C518" fillOpacity={0.2} strokeWidth={2} />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+                {[
+                  { label: '조단백질', value: ga.crudeProtein, unit: '%', color: '#F5C518' },
+                  { label: '조지방', value: ga.crudeFat, unit: '%', color: '#15B36B' },
+                  { label: '조섬유', value: ga.crudeFiber, unit: '%', color: '#4E5968' },
+                  { label: '수분', value: ga.moisture, unit: '%', color: '#B0B8C1' },
+                  { label: '칼슘', value: ga.calcium, unit: '%', color: '#CA8A04' },
+                  { label: '인', value: ga.phosphorus, unit: '%', color: '#8B95A1' },
+                ].filter(r => r.value != null && r.value > 0).map(row => (
+                  <div key={row.label} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                    <div style={{ width: 56, fontSize: 12, fontWeight: 700, color: '#6B7684' }}>{row.label}</div>
+                    <div style={{ flex: 1, height: 8, background: '#F0EDE8', borderRadius: 4, overflow: 'hidden' }}>
+                      <div style={{ width: `${Math.min(100, row.value * 3)}%`, height: '100%', background: row.color, borderRadius: 4 }} />
+                    </div>
+                    <div style={{ width: 40, textAlign: 'right', fontSize: 13, fontWeight: 800, color: '#191F28' }}>{row.value}{row.unit}</div>
+                  </div>
+                ))}
+              </>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '20px 0', color: '#B0B8C1' }}>
+                <p style={{ fontWeight: 600 }}>등록된 영양소 정보가 없어요</p>
+              </div>
+            )}
+          </div>
+        )}
 
-      <div className="analysis-section-gap" />
+        {/* 전성분 Tab */}
+        {activeTab === '전성분' && (
+          <div>
+            {product.ingredients.length === 0 ? (
+              <div style={{ background: '#fff', borderRadius: 18, padding: 20, textAlign: 'center', color: '#B0B8C1', boxShadow: '0 1px 6px rgba(30,41,59,0.06)' }}>
+                <p style={{ fontWeight: 600 }}>성분 정보가 없어요</p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {product.ingredients.map((ing, idx) => (
+                  <div key={ing.id || idx} style={{
+                    background: '#fff', borderRadius: 14, padding: '12px 16px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    boxShadow: '0 1px 4px rgba(30,41,59,0.05)',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontSize: 12, color: '#B0B8C1', fontWeight: 700, width: 22 }}>{idx + 1}</span>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#191F28' }}>{ing.nameKo}</div>
+                        {ing.nameEn && <div style={{ fontSize: 11, color: '#8B95A1' }}>{ing.nameEn}</div>}
+                      </div>
+                    </div>
+                    <span style={{
+                      background: RISK_BG[ing.riskLevel] || '#F0EDE8',
+                      color: RISK_COLORS[ing.riskLevel] || '#6B7684',
+                      borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 800, flexShrink: 0,
+                    }}>
+                      {RISK_LABEL[ing.riskLevel] || '정보없음'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
       {/* 4. Ingredient list */}
       <IngredientList ingredients={displayIngredients} />

@@ -1,5 +1,6 @@
 // @ts-nocheck
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { User, ChevronRight, Calendar, ShoppingBag, FileText, Activity, LogOut, Heart, Crown } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -12,80 +13,37 @@ import { getRecommendationBreakdown, gradeFromScore } from '../utils/score';
 import { notify } from '../store/useNotification';
 import { FAVORITES_EMPTY } from '../copy/ui';
 
-const PROFILE_STEP_META = [
-  { title: '이름', prompt: '반려동물의 이름을 알려주세요.' },
-  { title: '종류', prompt: '반려동물의 종류를 알려주세요.' },
-  { title: '크기 구분', prompt: '강아지의 크기 구분을 선택해 주세요.' },
-  { title: '나이', prompt: '반려동물의 나이를 선택해 주세요.' },
-  { title: '체중', prompt: '반려동물의 체중을 선택해 주세요.' },
-  { title: '알레르기', prompt: '피해야 할 알레르기 성분이 있나요?' },
-  { title: '건강 고민', prompt: '어떤 건강 고민이 있나요?' },
-  { title: '기존 질병', prompt: '앓고 있는 기존 질병이 있나요?' }
-];
+const TABS = ['찜', '구매내역', '분석리포트'];
 
-const BREED_LIST_DOG = ['소형견', '중형견', '대형견'];
-const BREED_LIST_CAT = [];
+const GRADE_COLORS = {
+  A: { bg: '#E7F8F0', color: '#15B36B' },
+  B: { bg: '#FEF6E0', color: '#E8A800' },
+  C: { bg: '#FFF0ED', color: '#F04452' },
+  F: { bg: '#F2F4F6', color: '#8B95A1' },
+};
 
-const WEIGHT_OPTIONS = [
-  { label: '1kg 미만', value: 0.5 },
-  ...Array.from({ length: 49 }, (_, i) => {
-    const val = i + 1;
-    return { label: `${val}kg`, value: val };
-  }),
-  { label: '50kg 이상', value: 50 }
-];
-
-const AGE_OPTIONS = [
-  { label: '1년 미만 (0세)', value: 0 },
-  ...Array.from({ length: 20 }, (_, i) => {
-    const val = i + 1;
-    return { label: `${val}세`, value: val };
-  }),
-  { label: '20세 이상', value: 20 }
-];
-
-const allergyOptions = [
-  '닭고기', '소고기', '돼지고기', '오리고기', '양고기', '칠면조',
-  '연어', '생선/흰살생선', '계란/달걀', '유제품(우유/치즈)',
-  '곡물/글루텐', '밀가루', '대두/콩', '옥수수', '감자/고구마',
-  '인공색소/향료', '화학방부제'
-];
-
-const healthConcernOptions = [
-  '체중 관리 / 비만', '모질 개선 / 탈모', '소화 / 장 건강', '변비 예방',
-  '활력 증진 / 면역력', '구강 건강 / 치석', '눈 건강 / 눈물 흔적',
-  '귀 건강 / 귓병 예방', '성장기 발달 / 뼈 강화', '요로 건강 / 결석 예방',
-  '스트레스 / 불안 완화'
-];
-
-const diseaseOptions = [
-  '슬개골 탈구 / 관절염', '만성 신장 질환', '당뇨병', '심장 판막 질환 / 심부전',
-  '아토피 / 알레르기성 피부염', '췌장염', '갑상선 기능 항진/저하증',
-  '부신피질 기능 항진증 (쿠싱)', '요로 결석증', '간 질환 / 간경화',
-  '인지기능 장애 증후군 (치매)', '백내장 / 녹내장', '외이도염',
-  '종양 / 암', '허니아 (디스크)'
-];
-
-
-function getBreedAvatar(breed?: string, species?: 'Dog' | 'Cat') {
-  const normalized = breed?.trim() || '';
-  if (species === 'Cat') {
-    return { emoji: '🐈', label: '고양이', bg: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)' };
-  } else {
-    if (normalized.includes('소형견')) {
-      return { emoji: '🐩', label: '소형견', bg: 'linear-gradient(135deg, #FFF5F5 0%, #FFE3E3 100%)' };
-    }
-    if (normalized.includes('중형견')) {
-      return { emoji: '🐕', label: '중형견', bg: 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)' };
-    }
-    if (normalized.includes('대형견')) {
-      return { emoji: '🦮', label: '대형견', bg: 'linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%)' };
-    }
-    return { emoji: '🐶', label: breed || '강아지', bg: 'linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%)' };
-  }
+function GradeTag({ grade }) {
+  const c = GRADE_COLORS[grade] || { bg: '#F0EDE8', color: '#6B7684' };
+  return <span style={{ background: c.bg, color: c.color, fontWeight: 800, fontSize: 11, borderRadius: 6, padding: '2px 6px' }}>{grade}등급</span>;
 }
 
-type SupabaseOrderItem = any;
+function ScoreCircle({ score }) {
+  const circumference = 2 * Math.PI * 36;
+  const offset = circumference - (score / 100) * circumference;
+  return (
+    <div style={{ position: 'relative', width: 80, height: 80, flexShrink: 0 }}>
+      <svg width="80" height="80" style={{ transform: 'rotate(-90deg)' }}>
+        <circle cx="40" cy="40" r="36" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="6" />
+        <circle cx="40" cy="40" r="36" fill="none" stroke="#fff" strokeWidth="6"
+          strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" />
+      </svg>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ fontSize: 20, fontWeight: 900, color: '#fff', lineHeight: 1 }}>{score}</span>
+        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>/ 100</span>
+      </div>
+    </div>
+  );
+}
 
 export default function Profile() {
   const { 
@@ -119,455 +77,175 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   const navigate = useNavigate();
-  
-  // Sync state if profile changes
-  useEffect(() => {
-    if (profile) {
-      setFormData(profile);
-      setEditForm(profile);
-    }
+  const { profile, isLoggedIn, signOut, favorites, products, orders, reports } = useStore();
+  const [activeTab, setActiveTab] = useState('찜');
+
+  const hasPetProfile = isLoggedIn && profile?.name && profile.name !== '우리 아이';
+
+  const healthScore = useMemo(() => {
+    let s = 92;
+    s -= (profile?.allergies?.length || 0) * 4;
+    s -= (profile?.healthConcerns?.length || 0) * 2;
+    return Math.max(60, Math.min(98, s));
   }, [profile]);
 
-  useEffect(() => {
-    if (!userId) return;
-    if (activeTab === 'orders') fetchOrders();
-    if (activeTab === 'reports') fetchReports();
-  }, [activeTab, fetchOrders, fetchReports, userId]);
+  const favoriteProducts = useMemo(() => {
+    if (!favorites?.length || !products?.length) return [];
+    return favorites.map(id => products.find(p => p.id === id)).filter(Boolean);
+  }, [favorites, products]);
 
-  const handleSignOut = async () => {
-    await logout();
-    navigate('/');
-  };
-  const handleLogout = handleSignOut;
-
-  const handleSave = async () => {
-    await updateProfile(formData);
-    setJustSaved(true);
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/login');
   };
 
-  const handleNext = () => {
-    if (profileStep === 1 && formData.species === 'Cat') {
-      setFormData(prev => ({ ...prev, breed: '고양이' }));
-      setProfileStep(3); // skip step 2 (breed selection)
-      return;
-    }
-    if (profileStep < PROFILE_STEP_META.length - 1) {
-      setProfileStep(prev => prev + 1);
-    } else {
-      handleSave();
-    }
-  };
-
-  const handlePrev = () => {
-    if (profileStep === 3 && formData.species === 'Cat') {
-      setProfileStep(1); // skip back to step 1
-      return;
-    }
-    if (profileStep > 0) {
-      setProfileStep(prev => prev - 1);
-    }
-  };
-
-  const toggleArrayItem = (field: 'healthConcerns' | 'allergies', value: string) => {
-    const list = formData[field] || [];
-    if (list.includes(value)) {
-      setFormData({ ...formData, [field]: list.filter(i => i !== value) });
-    } else {
-      setFormData({ ...formData, [field]: [...list, value] });
-    }
-  };
-
-  const isCat = formData.species === 'Cat';
-  const stepCount = isCat ? PROFILE_STEP_META.length - 1 : PROFILE_STEP_META.length;
-  
-  let stepIndexLabel = profileStep + 1;
-  if (isCat && profileStep >= 3) {
-    stepIndexLabel = profileStep;
-  }
-  
-  const progressPercent = (stepIndexLabel / stepCount) * 100;
-  const step = PROFILE_STEP_META[profileStep];
-  const favoriteProducts = products.filter(p => favorites.includes(p.id));
-
-  const Pill = ({ on, children, onClick }: { on: boolean; children: React.ReactNode; onClick: () => void }) => (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        cursor: 'pointer',
-        padding: '11px 16px',
-        borderRadius: 12,
-        fontSize: 14,
-        fontWeight: on ? 700 : 500,
-        color: on ? '#1E293B' : 'var(--ink-soft)',
-        background: on ? '#FCD34D' : 'var(--surface)',
-        border: `1px solid ${on ? '#CA8A04' : 'var(--hairline)'}`,
-        boxShadow: on ? '0 2px 6px rgba(245, 197, 24, 0.2)' : 'none',
-        transition: 'all .15s ease',
-      }}
-    >
-      {children}
-    </button>
-  );
-
-  const hasPetProfile = isLoggedIn && profile && profile.id && profile.id !== 'local-profile' && profile.name && profile.name !== '우리 아이';
-
-  if (!userId) {
-    return (
-      <div className="animate-fade-in" style={{ padding: '60px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 4 }}>
-        <Helmet><title>마이 펫 | 베로로</title></Helmet>
-        <div style={{
-          width: 76, height: 76, borderRadius: 999, background: 'var(--brand-tint)', border: '1px solid var(--brand-line)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14
-        }}>
-          <User size={34} color="var(--brand-deep)" />
-        </div>
-        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--ink)' }}>로그인이 필요해요</h2>
-        <p style={{ margin: '8px 0 22px', fontSize: 13.5, color: 'var(--ink-soft)', lineHeight: 1.5, maxWidth: 260 }}>
-          프로필을 설정하면 우리 아이 건강에 맞춘<br />사료 분석과 큐레이션을 시작할 수 있어요
-        </p>
-        <button
-          onClick={() => navigate('/auth')}
-          style={{
-            cursor: 'pointer', padding: '15px 28px', borderRadius: 14,
-            background: 'var(--brand)', color: 'var(--ink-on-brand)', fontSize: 15, fontWeight: 700, border: 'none', boxShadow: 'var(--shadow-sm)'
-          }}
-        >
-          로그인 / 회원가입 하기
-        </button>
-      </div>
-    );
-  }
+  const petName = hasPetProfile ? profile.name : '내 반려동물';
+  const speciesLabel = profile?.breed || (profile?.species === 'Cat' ? '고양이' : '강아지');
 
   return (
-    <div className="animate-fade-in" style={{ paddingBottom: '40px' }}>
-      <Helmet><title>마이 펫 | 베로로</title></Helmet>
-      
-      {/* Pet Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 20px 16px' }}>
-        <div style={{ width: 58, height: 58, borderRadius: 999, overflow: 'hidden', border: '2px solid var(--brand-line)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--brand-tint)', fontSize: '28px' }}>
-          {profile.species === 'Cat' ? '🐱' : '🐶'}
+    <div style={{ paddingBottom: 90 }}>
+      {/* Top Hero */}
+      <div style={{
+        background: 'linear-gradient(135deg, #F5C518 0%, #CA8A04 100%)',
+        padding: '52px 20px 24px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+          <div style={{
+            width: 64, height: 64, borderRadius: '50%',
+            background: 'rgba(255,255,255,0.25)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32,
+          }}>
+            {profile?.species === 'Cat' ? '🐱' : '🐶'}
+          </div>
+          <div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: '#fff', letterSpacing: '-0.02em' }}>
+              {petName}
+            </div>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 2 }}>
+              {speciesLabel}
+              {profile?.age ? ` · ${profile.age}살` : ''}
+              {profile?.weightKg ? ` · ${profile.weightKg}kg` : ''}
+            </div>
+          </div>
+          <ScoreCircle score={healthScore} />
         </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 19, fontWeight: 700, color: 'var(--ink)' }}>{profile.name || '우리 아이'}</div>
-          <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 2 }}>
-            {profile.species === 'Cat' ? '고양이' : profile.breed || '소형견'} · {profile.age || 0}세 · {profile.weightKg || 0}kg
+
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: 600, marginBottom: 6 }}>
+          식단 건강 점수 · {healthScore}점
+        </div>
+
+        {hasPetProfile ? (
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {profile?.allergies?.map(a => (
+              <span key={a} style={{ background: '#F04452', color: '#fff', borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 700 }}>⚠️ {a} 알러지</span>
+            ))}
+            {profile?.healthConcerns?.slice(0, 3).map(h => (
+              <span key={h} style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>{h}</span>
+            ))}
+          </div>
+        ) : (
+          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)' }}>
+            {isLoggedIn ? '펫 정보를 등록해보세요' : '로그인 후 펫 정보를 등록해보세요'}
+          </div>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div style={{ padding: '16px 16px 0', display: 'flex', gap: 10 }}>
+        <button
+          onClick={() => navigate(isLoggedIn ? '/pet-profile' : '/login')}
+          style={{
+            flex: 1, height: 46, borderRadius: 12, border: 'none', cursor: 'pointer',
+            background: '#F5C518', fontSize: 14, fontWeight: 700, color: '#191F28',
+          }}
+        >
+          {hasPetProfile ? '정보 수정하기' : (isLoggedIn ? '펫 등록하기' : '로그인하기')}
+        </button>
+        {isLoggedIn && (
+          <button
+            onClick={handleLogout}
+            style={{
+              height: 46, padding: '0 20px', borderRadius: 12,
+              border: '1.5px solid #E5E8EB', cursor: 'pointer',
+              background: '#fff', fontSize: 14, fontWeight: 600, color: '#6B7684',
+            }}
+          >
+            로그아웃
+          </button>
+        )}
+      </div>
+
+      {/* Pet Info Card */}
+      {hasPetProfile && (
+        <div style={{ margin: '16px 16px 0', background: '#fff', borderRadius: 18, padding: 20, boxShadow: '0 1px 8px rgba(30,41,59,0.06)' }}>
+          <h3 style={{ fontSize: 15, fontWeight: 800, color: '#191F28', marginBottom: 14, letterSpacing: '-0.02em' }}>🐾 펫 정보</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            {[
+              { label: '이름', value: profile.name },
+              { label: '종류', value: profile.species === 'Cat' ? '고양이' : '강아지' },
+              { label: '품종', value: profile.breed || '-' },
+              { label: '나이', value: profile.age ? `${profile.age}살` : '-' },
+              { label: '체중', value: profile.weightKg ? `${profile.weightKg}kg` : '-' },
+              { label: '성별', value: profile.gender || '-' },
+            ].map(({ label, value }) => (
+              <div key={label} style={{ background: '#F7F4EE', borderRadius: 12, padding: '10px 14px' }}>
+                <div style={{ fontSize: 11, color: '#8B95A1', fontWeight: 600, marginBottom: 3 }}>{label}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#191F28' }}>{value}</div>
+              </div>
+            ))}
           </div>
         </div>
-      </div>
+      )}
 
       {/* Tabs */}
-      <div className="rail" style={{ display: 'flex', gap: 20, overflowX: 'auto', padding: '0 20px', borderBottom: '1px solid var(--hairline)', msOverflowStyle: 'none', scrollbarWidth: 'none', marginBottom: '20px' }}>
-        {([
-          { key: 'info' as const, label: '프로필 설정' },
-          { key: 'favorites' as const, label: `찜 목록 ${favorites.length}` },
-          { key: 'orders' as const, label: '주문 내역' },
-          { key: 'reports' as const, label: '분석 리포트' },
-        ]).map((t) => {
-          const on = activeTab === t.key;
-          return (
-            <button
-              key={t.key}
-              onClick={() => setActiveTab(t.key)}
+      <div style={{ margin: '16px 0 0', borderBottom: '1px solid #EAEDF0' }}>
+        <div style={{ display: 'flex', padding: '0 16px' }}>
+          {TABS.map(tab => (
+            <button key={tab} onClick={() => setActiveTab(tab)}
               style={{
-                flexShrink: 0, cursor: 'pointer', background: 'none', border: 'none',
-                padding: '0 0 11px', position: 'relative', fontSize: 14, fontWeight: on ? 700 : 500, color: on ? 'var(--ink)' : 'var(--ink-faint)'
+                flex: 1, height: 44, background: 'none', border: 'none', cursor: 'pointer',
+                fontSize: 14, fontWeight: activeTab === tab ? 800 : 600,
+                color: activeTab === tab ? '#191F28' : '#8B95A1',
+                borderBottom: activeTab === tab ? '2.5px solid #F5C518' : '2.5px solid transparent',
               }}
-            >
-              {t.label}
-              {on && <span style={{ position: 'absolute', left: 0, right: 0, bottom: -1, height: 2.5, borderRadius: 2, background: 'var(--ink)' }} />}
-            </button>
-          );
-        })}
+            >{tab}</button>
+          ))}
+        </div>
       </div>
 
-      <div style={{ paddingTop: '8px' }}>
-        {activeTab === 'info' && (
-          <div style={{ padding: '6px 20px 24px' }}>
-            {justSaved && (
-              <div style={{
-                marginBottom: '20px',
-                padding: '16px',
-                borderRadius: '16px',
-                backgroundColor: 'var(--safe-tint)',
-                border: '1.5px solid var(--safe)',
-                color: 'var(--ink)',
-                boxShadow: 'var(--shadow-sm)'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontWeight: 800, color: 'var(--safe)', fontSize: '15px' }}>🎉 프로필 저장 완료!</span>
-                  <button
-                    onClick={() => setJustSaved(false)}
-                    style={{
-                      border: 'none', background: 'none', color: 'var(--ink-soft)', cursor: 'pointer', fontSize: '13px', fontWeight: 700
-                    }}
-                  >
-                    닫기
-                  </button>
-                </div>
-                <p style={{ fontSize: '13.5px', margin: 0, lineHeight: 1.5, fontWeight: 500 }}>
-                  다음과 같이 저장되었습니다:
-                </p>
-                <div style={{ marginTop: '8px', fontSize: '13px', color: 'var(--ink-soft)', display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                  <div>• <b>이름:</b> {profile.name} ({profile.gender || '남아'})</div>
-                  <div>• <b>종류:</b> {profile.species === 'Cat' ? '고양이' : '강아지'} ({profile.breed || '품종 없음'})</div>
-                  <div>• <b>성향:</b> {profile.personality || '활발함 ⚡'}</div>
-                  <div>• <b>나이:</b> {profile.age}세</div>
-                  <div>• <b>체중:</b> {profile.weightKg ? `${profile.weightKg}kg` : '입력 없음'}</div>
-                  <div>• <b>알레르기 성분:</b> {profile.allergies && profile.allergies.length > 0 ? profile.allergies.join(', ') : '없음'}</div>
-                  <div>• <b>건강 고민:</b> {profile.healthConcerns && profile.healthConcerns.length > 0 ? profile.healthConcerns.join(', ') : '없음'}</div>
-                </div>
-              </div>
-            )}
-
-            {hasPetProfile ? (
-              isEditing ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                  <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: 'var(--ink)' }}>프로필 수정</h3>
-                  
-                  {/* Name */}
-                  <div>
-                    <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>이름</label>
-                    <input
-                      value={editForm.name || ''}
-                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                      style={{
-                        width: '100%', boxSizing: 'border-box', padding: '12px 14px', borderRadius: 12, fontSize: 15,
-                        border: '1px solid var(--hairline)', outline: 'none', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'inherit'
-                      }}
-                      placeholder="이름을 입력해주세요"
-                    />
-                  </div>
-
-                  {/* Gender */}
-                  <div>
-                    <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>성별</label>
-                    <div style={{ display: 'flex', gap: 10 }}>
-                      <Pill on={editForm.gender === '남아'} onClick={() => setEditForm({ ...editForm, gender: '남아' })}>남아 ♂</Pill>
-                      <Pill on={editForm.gender === '여아'} onClick={() => setEditForm({ ...editForm, gender: '여아' })}>여아 ♀</Pill>
+      <div style={{ padding: '16px 16px 0' }}>
+        {activeTab === '찜' && (
+          favoriteProducts.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: '#B0B8C1' }}>
+              <div style={{ fontSize: 36, marginBottom: 12 }}>❤️</div>
+              <p style={{ fontWeight: 600, fontSize: 15 }}>찜한 상품이 없어요</p>
+              <p style={{ fontSize: 13, marginTop: 4 }}>마음에 드는 상품에 하트를 눌러보세요</p>
+              <button onClick={() => navigate('/search')}
+                style={{ marginTop: 16, background: '#F5C518', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 14, fontWeight: 700, color: '#191F28', cursor: 'pointer' }}>
+                상품 둘러보기
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {favoriteProducts.map(product => {
+                const score = hasPetProfile ? calculateCompatibilityScore(product, profile) : null;
+                const grade = score != null ? gradeFromScore(score) : null;
+                return (
+                  <div key={product.id} onClick={() => navigate(`/product/${product.id}`)}
+                    style={{ background: '#fff', borderRadius: 16, padding: '14px', boxShadow: '0 1px 6px rgba(30,41,59,0.06)', cursor: 'pointer', display: 'flex', gap: 12 }}>
+                    <div style={{ width: 56, height: 56, borderRadius: 12, overflow: 'hidden', background: '#F7F4EE', flexShrink: 0 }}>
+                      <ProductImage src={product.imageUrl} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     </div>
-                  </div>
-
-                  {/* Species */}
-                  <div>
-                    <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>종류</label>
-                    <div style={{ display: 'flex', gap: 10 }}>
-                      <Pill on={editForm.species === 'Dog'} onClick={() => setEditForm({ ...editForm, species: 'Dog', breed: '' })}>강아지</Pill>
-                      <Pill on={editForm.species === 'Cat'} onClick={() => setEditForm({ ...editForm, species: 'Cat', breed: '' })}>고양이</Pill>
-                    </div>
-                  </div>
-
-                  {/* Personality */}
-                  <div>
-                    <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>성향</label>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      {['활발함 ⚡', '온순함 🧸', '애교많음 🥰', '소심함 🥺', '도도함 👑'].map(p => (
-                        <Pill key={p} on={editForm.personality === p} onClick={() => setEditForm({ ...editForm, personality: p })}>{p}</Pill>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Breed */}
-                  {editForm.species === 'Dog' && (
-                    <div>
-                      <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>크기 구분</label>
-                      <select
-                        value={editForm.breed || ''}
-                        onChange={(e) => setEditForm({ ...editForm, breed: e.target.value })}
-                        style={{
-                          width: '100%', boxSizing: 'border-box', padding: '12px 14px', borderRadius: 12, fontSize: 15,
-                          border: '1px solid var(--hairline)', outline: 'none', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'inherit'
-                        }}
-                      >
-                        <option value="">크기 구분 선택</option>
-                        {BREED_LIST_DOG.map(b => (
-                          <option key={b} value={b}>{b}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  {/* Age */}
-                  <div>
-                    <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>나이</label>
-                    <select
-                      value={editForm.age != null ? editForm.age : ''}
-                      onChange={(e) => setEditForm({ ...editForm, age: parseInt(e.target.value) })}
-                      style={{
-                        width: '100%', boxSizing: 'border-box', padding: '12px 14px', borderRadius: 12, fontSize: 15,
-                        border: '1px solid var(--hairline)', outline: 'none', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'inherit'
-                      }}
-                    >
-                      <option value="">나이 선택</option>
-                      {AGE_OPTIONS.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Weight */}
-                  <div>
-                    <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>체중</label>
-                    <select
-                      value={editForm.weightKg != null ? editForm.weightKg : ''}
-                      onChange={(e) => setEditForm({ ...editForm, weightKg: parseFloat(e.target.value) })}
-                      style={{
-                        width: '100%', boxSizing: 'border-box', padding: '12px 14px', borderRadius: 12, fontSize: 15,
-                        border: '1px solid var(--hairline)', outline: 'none', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'inherit'
-                      }}
-                    >
-                      <option value="">체중 선택</option>
-                      {WEIGHT_OPTIONS.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Allergies */}
-                  <div>
-                    <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>알레르기 성분 (복수 선택)</label>
-                    <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap' }}>
-                      {allergyOptions.map((opt) => {
-                        const on = editForm.allergies?.includes(opt);
-                        return (
-                          <Pill
-                            key={opt}
-                            on={on}
-                            onClick={() => {
-                              const list = editForm.allergies || [];
-                              const nextList = list.includes(opt) ? list.filter(i => i !== opt) : [...list, opt];
-                              setEditForm({ ...editForm, allergies: nextList });
-                            }}
-                          >
-                            {opt}
-                          </Pill>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Health Concerns */}
-                  <div>
-                    <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>건강 고민 (복수 선택)</label>
-                    <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap' }}>
-                      {healthConcernOptions.map((opt) => {
-                        const on = editForm.healthConcerns?.includes(opt);
-                        return (
-                          <Pill
-                            key={opt}
-                            on={on}
-                            onClick={() => {
-                              const list = editForm.healthConcerns || [];
-                              const nextList = list.includes(opt) ? list.filter(i => i !== opt) : [...list, opt];
-                              setEditForm({ ...editForm, healthConcerns: nextList });
-                            }}
-                          >
-                            {opt}
-                          </Pill>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Existing Diseases */}
-                  <div>
-                    <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>기존 질병 (복수 선택)</label>
-                    <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap' }}>
-                      {diseaseOptions.map((opt) => {
-                        const on = editForm.healthConcerns?.includes(opt);
-                        return (
-                          <Pill
-                            key={opt}
-                            on={on}
-                            onClick={() => {
-                              const list = editForm.healthConcerns || [];
-                              const nextList = list.includes(opt) ? list.filter(i => i !== opt) : [...list, opt];
-                              setEditForm({ ...editForm, healthConcerns: nextList });
-                            }}
-                          >
-                            {opt}
-                          </Pill>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Edit Buttons */}
-                  <div style={{ display: 'flex', gap: 10, marginTop: '10px' }}>
-                    <button
-                      onClick={() => {
-                        setEditForm(profile);
-                        setIsEditing(false);
-                      }}
-                      style={{
-                        cursor: 'pointer', flex: 1, padding: '14px', borderRadius: 12,
-                        background: 'var(--surface)', border: '1px solid var(--hairline)', fontSize: 15, fontWeight: 600, color: 'var(--ink-soft)'
-                      }}
-                    >
-                      취소
-                    </button>
-                    <button
-                      onClick={async () => {
-                        await updateProfile(editForm);
-                        setJustSaved(true);
-                        setIsEditing(false);
-                      }}
-                      style={{
-                        cursor: 'pointer', flex: 1, padding: '14px', borderRadius: 12,
-                        background: 'var(--brand)', color: 'var(--ink-on-brand)', fontSize: 15, fontWeight: 700, border: 'none', boxShadow: 'var(--shadow-sm)'
-                      }}
-                    >
-                      저장하기
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                  <div style={{
-                    padding: '24px 20px',
-                    borderRadius: '24px',
-                    background: 'var(--surface)',
-                    border: '1px solid var(--brand-line)',
-                    boxShadow: 'var(--shadow-sm)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    textAlign: 'center',
-                    gap: '16px',
-                  }}>
-                    {/* Breed Avatar Circle */}
-                    <div style={{
-                      width: '80px',
-                      height: '80px',
-                      borderRadius: '50%',
-                      background: getBreedAvatar(profile.breed, profile.species).bg,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '36px',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.06)'
-                    }}>
-                      {getBreedAvatar(profile.breed, profile.species).emoji}
-                    </div>
-
-                    <div>
-                      <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: 'var(--ink)' }}>
-                        {profile.name}
-                      </h3>
-                      <p style={{ margin: '4px 0 0', fontSize: '13.5px', color: 'var(--ink-soft)', fontWeight: 500 }}>
-                        {profile.species === 'Cat' ? '고양이' : `${getBreedAvatar(profile.breed, profile.species).label} · 강아지`}
-                      </p>
-                    </div>
-
-                    {/* Specs Pills */}
-                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                      <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--ink-soft)', background: 'var(--surface-trans)', padding: '5px 12px', borderRadius: '10px', border: '1px solid var(--hairline)' }}>
-                        나이: {profile.age}세
-                      </span>
-                      {profile.weightKg && (
-                        <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--ink-soft)', background: 'var(--surface-trans)', padding: '5px 12px', borderRadius: '10px', border: '1px solid var(--hairline)' }}>
-                          체중: {profile.weightKg}kg
-                        </span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', gap: 5, marginBottom: 4 }}>
+                        {grade && <GradeTag grade={grade} />}
+                      </div>
+                      <div style={{ fontSize: 11, color: '#8B95A1' }}>{product.brand}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#191F28', lineHeight: 1.3 }}>
+                        {product.name.length > 25 ? product.name.slice(0, 25) + '…' : product.name}
+                      </div>
+                      {product.price > 0 && (
+                        <div style={{ fontSize: 13, fontWeight: 800, color: '#191F28', marginTop: 4 }}>{product.price.toLocaleString()}원</div>
                       )}
                     </div>
 
@@ -941,133 +619,18 @@ export default function Profile() {
           </div>
         )}
 
-        {activeTab === 'orders' && (
-          <div style={{ padding: '8px 20px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {orders.length > 0 ? (
-              orders.map(order => (
-                <div key={order.id} style={{ padding: 16, borderRadius: 16, background: 'var(--surface)', border: '1px solid var(--hairline)', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--hairline)', paddingBottom: 10 }}>
-                    <div style={{ fontSize: 12, color: 'var(--ink-faint)' }}>
-                      {new Date(order.created_at).toLocaleDateString()}
-                    </div>
-                    <DeliveryStatus status={order.status} />
-                  </div>
-                  {order.order_items.map((item: SupabaseOrderItem) => (
-                    <div key={item.id} onClick={() => navigate(`/product/${item.product_id}`)} style={{ display: 'flex', gap: 13, alignItems: 'center', cursor: 'pointer' }}>
-                      <img src={item.products.image_url} alt={item.products.name} style={{ width: 60, height: 60, borderRadius: 12, objectFit: 'cover', border: '1px solid var(--hairline)' }} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 11, color: 'var(--ink-faint)' }}>{item.products.brand_name}</div>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.products.name}</div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginTop: 2 }}>{item.price_at_purchase.toLocaleString()}원 · {item.quantity}개</div>
-                      </div>
-                    </div>
-                  ))}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--hairline)', paddingTop: 10, marginTop: 4 }}>
-                    <span style={{ fontSize: 13, color: 'var(--ink-soft)' }}>총 결제 금액</span>
-                    <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--ink)' }}>{order.total_amount.toLocaleString()}원</span>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div style={{ padding: '54px 28px', textAlign: 'center' }}>
-                <ShoppingBag size={30} stroke="var(--ink-faint)" style={{ margin: '0 auto 12px' }} />
-                <div style={{ fontSize: 14, color: 'var(--ink-soft)', marginBottom: 16 }}>아직 주문 내역이 없어요</div>
-                <button
-                  onClick={() => navigate('/')}
-                  style={{
-                    cursor: 'pointer', fontSize: 14, fontWeight: 700, color: 'var(--brand-deep)',
-                    background: 'var(--brand-tint)', border: '1px solid var(--brand-line)', padding: '11px 20px', borderRadius: 12
-                  }}
-                >
-                  제품 보러 가기
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'reports' && (
-          <div style={{ padding: '8px 20px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {reports && reports.length > 0 ? (
-              reports.map(report => {
-                const result = report.analysis_json;
-                const product = report.products;
-                const finalScore = result.scores?.final || 0;
-                const scoreGrade = finalScore >= 80 ? '안전' : (finalScore >= 60 ? '주의' : '경고');
-                const gradeColor = scoreGrade === '안전' ? 'var(--safe)' : (scoreGrade === '주의' ? 'var(--warning)' : 'var(--danger)');
-                const gradeBg = scoreGrade === '안전' ? 'var(--safe-tint)' : (scoreGrade === '주의' ? 'var(--caution-tint)' : 'var(--danger-tint)');
-
-                return (
-                  <div key={report.id} style={{ padding: 16, borderRadius: 16, background: 'var(--surface)', border: '1px solid var(--hairline)', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 11, color: 'var(--ink-faint)' }}>{new Date(report.created_at).toLocaleDateString()}</div>
-                        <div style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--ink)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{product ? product.name : 'OCR 추출 성분 분석'}</div>
-                      </div>
-                      <span style={{ fontSize: 11.5, fontWeight: 700, color: gradeColor, padding: '4px 10px', borderRadius: 999, background: gradeBg }}>{scoreGrade}</span>
-                    </div>
-                    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                      {product?.image_url && (
-                        <img src={product.image_url} alt={product.name} style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover', border: '1px solid var(--hairline)' }} />
-                      )}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ height: 8, borderRadius: 99, background: 'var(--hairline)', overflow: 'hidden' }}>
-                          <div style={{ width: `${finalScore}%`, height: '100%', background: gradeColor }} />
-                        </div>
-                        <div style={{ marginTop: 6, fontSize: 12, color: 'var(--ink-soft)' }}>
-                          성분 안전 점수 <b style={{ color: 'var(--ink)' }}>{finalScore.toFixed(0)}</b>/100
-                        </div>
-                      </div>
-                    </div>
-                    {product && (
-                      <button
-                        onClick={() => navigate(`/product/${report.product_id}`)}
-                        style={{
-                          width: '100%', cursor: 'pointer', padding: '10px', borderRadius: 10,
-                          background: 'none', border: '1px solid var(--hairline)', fontSize: 12.5, fontWeight: 600, color: 'var(--ink-soft)'
-                        }}
-                      >
-                        상세 리포트 보기
-                      </button>
-                    )}
-                  </div>
-                );
-              })
-            ) : (
-              <div style={{ padding: '54px 28px', textAlign: 'center' }}>
-                <Activity size={30} stroke="var(--ink-faint)" style={{ margin: '0 auto 12px' }} />
-                <div style={{ fontSize: 14, color: 'var(--ink-soft)', marginBottom: 16 }}>저장된 분석 리포트가 없어요</div>
-                <button
-                  onClick={() => navigate('/')}
-                  style={{
-                    cursor: 'pointer', fontSize: 14, fontWeight: 700, color: 'var(--brand-deep)',
-                    background: 'var(--brand-tint)', border: '1px solid var(--brand-line)', padding: '11px 20px', borderRadius: 12
-                  }}
-                >
-                  사료 분석하러 가기
-                </button>
-              </div>
-            )}
+        {activeTab === '분석리포트' && (
+          <div style={{ textAlign: 'center', padding: '40px 0', color: '#B0B8C1' }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>📊</div>
+            <p style={{ fontWeight: 600, fontSize: 15 }}>분석 리포트가 없어요</p>
+            <p style={{ fontSize: 13, marginTop: 4 }}>스캐너로 사료 성분표를 촬영해보세요</p>
+            <button onClick={() => navigate('/scanner')}
+              style={{ marginTop: 16, background: '#F5C518', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 14, fontWeight: 700, color: '#191F28', cursor: 'pointer' }}>
+              스캔하러 가기
+            </button>
           </div>
         )}
       </div>
     </div>
   );
 }
-
-function DeliveryStatus({ status }: { status: string }) {
-  const colors: Record<string, { bg: string; text: string; label: string }> = {
-    pending: { bg: '#FEF3C7', text: '#92400E', label: '주문 확인 중' },
-    paid: { bg: '#DBEAFE', text: '#1E40AF', label: '결제 완료' },
-    shipped: { bg: '#D1FAE5', text: '#065F46', label: '배송 중' },
-    completed: { bg: '#E0E7FF', text: '#3730A3', label: '배송 완료' },
-    cancelled: { bg: '#FEE2E2', text: '#991B1B', label: '취소됨' },
-  };
-  const c = colors[status] || colors.pending;
-  return (
-    <span style={{ fontSize: '13px', fontWeight: 700, color: c.text, backgroundColor: c.bg, padding: '4px 12px', borderRadius: '12px' }}>
-      {c.label}
-    </span>
-  );
-}
-
