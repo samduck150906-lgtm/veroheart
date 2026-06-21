@@ -794,6 +794,18 @@ export default function Profile() {
                   </button>
                 </div>
 
+                {/* 선택 항목 건너뛰기 (이름·종 이후 단계) */}
+                {profileStep >= 2 && profileStep < PROFILE_STEP_META.length - 1 && (
+                  <div style={{ textAlign: 'center', marginTop: 12 }}>
+                    <button
+                      onClick={handleNext}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13.5, fontWeight: 600, color: 'var(--ink-faint)', textDecoration: 'underline', textUnderlineOffset: 3 }}
+                    >
+                      이 단계 건너뛰기
+                    </button>
+                  </div>
+                )}
+
                 <div style={{ padding: '32px 0 0' }}>
                   <button
                     onClick={handleLogout}
