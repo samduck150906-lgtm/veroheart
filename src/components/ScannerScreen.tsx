@@ -124,6 +124,10 @@ export default function ScannerScreen({ onCapture }: ScannerScreenProps) {
             <div className="scanner-corner br" />
             {/* Scan line */}
             <div className="scanner-scan-line" />
+            {/* Label above box */}
+            <div className="scanner-bbox-label">
+              {scannerMode === 'barcode' ? '📦 바코드를 여기에' : '📋 성분표를 여기에'}
+            </div>
           </div>
 
           {/* Helper text */}
