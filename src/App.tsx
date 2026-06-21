@@ -37,6 +37,7 @@ import PersonalityQuiz from './pages/Test';
 import ViralEvent from './pages/ViralEvent';
 import NotFound from './pages/NotFound';
 import Brand from './pages/Brand';
+import CommunityPost from './pages/CommunityPost';
 
 function App() {
   const { initApp, isInitializing, isLoggedIn } = useStore();
@@ -126,6 +127,7 @@ function App() {
               <Route path="search" element={<Search />} />
               <Route path="scanner" element={<Scanner />} />
               <Route path="community" element={<Community />} />
+              <Route path="community/:postId" element={<CommunityPost />} />
               <Route path="auth" element={<Login />} />
               <Route path="login" element={<Login />} />
               <Route path="profile" element={<Profile />} />

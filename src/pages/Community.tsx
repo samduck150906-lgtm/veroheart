@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { MessageSquare, MessageCircle, ThumbsUp, Pencil, ChevronDown, ChevronUp, Trash2, Loader2 } from 'lucide-react';
 import { useStore } from '../store/useStore';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   getCommunityPosts,
   createCommunityPost,
@@ -96,10 +96,13 @@ function PostCard({
         {post.category}
       </span>
 
-      {/* Title */}
-      <div style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--ink)', lineHeight: 1.4, marginBottom: '8px' }}>
+      {/* Title — navigates to detail */}
+      <Link
+        to={`/community/${post.id}`}
+        style={{ textDecoration: 'none', display: 'block', fontSize: '14.5px', fontWeight: 800, color: 'var(--ink)', lineHeight: 1.4, marginBottom: '8px' }}
+      >
         {post.title}
-      </div>
+      </Link>
 
       {/* Content with expand/collapse */}
       <div>

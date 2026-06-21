@@ -754,3 +754,75 @@ export async function deleteCommunityPost(userId: string, postId: string): Promi
   notify.success('글이 삭제되었습니다.');
   return true;
 }
+
+export async function getCommunityPost(postId: string, userId?: string): Promise<CommunityPostRow | null> {
+  if (!isSupabaseConfigured) return null;
+  const { data, error } = await supabase
+    .from('community_posts')
+    .select('*, users(nickname)')
+    .eq('id', postId)
+    .single();
+  if (error) return null;
+  const post = data as CommunityPostRow;
+  if (userId) {
+    const { data: liked } = await supabase
+      .from('community_post_likes')
+      .select('post_id')
+      .eq('user_id', userId)
+      .eq('post_id', postId)
+      .maybeSingle();
+    post.has_liked = Boolean(liked);
+  }
+  return post;
+}
+
+// ─── Community Comments ───────────────────────────────────────────────────────
+
+export interface CommunityCommentRow {
+  id: string;
+  post_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  users?: { nickname?: string | null };
+}
+
+export async function getCommunityComments(postId: string): Promise<CommunityCommentRow[]> {
+  if (!isSupabaseConfigured) return [];
+  const { data, error } = await supabase
+    .from('community_comments')
+    .select('*, users(nickname)')
+    .eq('post_id', postId)
+    .order('created_at', { ascending: true });
+  if (error) return [];
+  return (data || []) as CommunityCommentRow[];
+}
+
+export async function createCommunityComment(
+  userId: string,
+  postId: string,
+  content: string,
+): Promise<CommunityCommentRow | null> {
+  const { data, error } = await supabase
+    .from('community_comments')
+    .insert({ user_id: userId, post_id: postId, content })
+    .select('*, users(nickname)')
+    .single();
+  if (error) {
+    notify.error('댓글 등록에 실패했습니다.');
+    return null;
+  }
+  return data as CommunityCommentRow;
+}
+
+export async function deleteCommunityComment(userId: string, commentId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('community_comments')
+    .delete()
+    .match({ id: commentId, user_id: userId });
+  if (error) {
+    notify.error('댓글 삭제에 실패했습니다.');
+    return false;
+  }
+  return true;
+}
