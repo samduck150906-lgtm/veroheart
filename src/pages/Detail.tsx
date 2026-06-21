@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -47,6 +47,7 @@ import { toDryMatter, calculateCalories } from '../analysis/nutrition';
 import { openCoupangForProduct } from '../utils/externalPurchase';
 import Analyzer from '../components/Analyzer';
 import BottomSheet from '../components/BottomSheet';
+import FeedingGuideCalculator from '../components/FeedingGuideCalculator';
 import { TossCard } from '../components/TossUI';
 import ProductImage from '../components/ProductImage';
 import BreedNutritionPanel from '../components/BreedNutritionPanel';
@@ -164,16 +165,11 @@ export default function Detail() {
     }
   }
 
-  // DER Calculation
-  const getFeedingAmount = () => {
-    if (!profile.weight) return null;
-    const rer = 70 * Math.pow(profile.weight, 0.75);
-    const der = rer * 1.6; // 일반 성견·성묘 평균 활동계수
-    const kcalPerKg = 3500; // 건식 사료 평균 대사에너지(ME) 밀도 추정치 (kcal/kg)
-    const grams = (der / kcalPerKg) * 1000;
-    return Math.round(grams);
-  };
-  const feedingGrams = getFeedingAmount();
+  // 제품 칼로리 밀도 계산 (FeedingGuideCalculator 전달용)
+  const productKcalPer100g = useMemo(() => {
+    if (!product?.guaranteedAnalysis) return 0;
+    return calculateCalories(product.guaranteedAnalysis).kcalPer100g;
+  }, [product?.guaranteedAnalysis]);
 
   const getRiskColor = (level: string) => {
     if (level === 'danger') return '#F04452'; // Toss Red
@@ -696,35 +692,13 @@ export default function Detail() {
         </div>
       )}
 
-      {/* 일일 급여량 계산기 */}
+      {/* 일일 급여량 계산기 (활동량·중성화·체형 보정 + 지방 위험 평가) */}
       <section className="card" style={{ marginBottom: '40px' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-dark)' }}>
-          <Dog size={22} color="var(--safe)" /> {profile.name} 맞춤 일일 급여량
-        </h2>
-        {feedingGrams ? (
-          <div>
-            <div style={{ fontSize: '32px', fontWeight: 900, color: 'var(--safe)', marginBottom: '8px' }}>
-              하루 약 {feedingGrams}g
-            </div>
-            <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-              {profile.weight}kg 기준 (평균 활동량 적용)<br/>
-              <span style={{ fontSize: '12px', opacity: 0.8 }}>*평균 칼로리(3500kcal/kg) 기준 추정치입니다.</span>
-            </p>
-          </div>
-        ) : (
-          <div>
-            <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '16px' }}>
-              몸무게를 입력하시면 정확한 권장 급여량을 알려드려요!
-            </p>
-            <button 
-              className="btn btn-outline" 
-              style={{ borderRadius: 'var(--border-radius-sm)', width: '100%' }}
-              onClick={() => navigate('/profile')}
-            >
-              몸무게 입력하러 가기
-            </button>
-          </div>
-        )}
+        <FeedingGuideCalculator
+          kcalPer100g={productKcalPer100g || 350}
+          productName={product.name}
+          fatPercent={product.guaranteedAnalysis?.crudeFat}
+        />
       </section>
 
       {/* Toss-style Ingredient Analysis */}
@@ -733,14 +707,63 @@ export default function Detail() {
           {headline}
         </h2>
         
-        {/* Nutrition Summary */}
-        <div style={{ backgroundColor: 'var(--secondary)', padding: '20px', borderRadius: 'var(--border-radius-lg)', marginBottom: '32px' }}>
-          <p style={{ fontSize: '15px', color: 'var(--text-dark)', fontWeight: 600, lineHeight: 1.6 }}>
-            {profile.healthConcerns.includes('비만') 
-              ? "다이어트가 필요한 아이에겐 지방 수치가 다소 높으니 급여량을 10% 줄여주세요." 
-              : "조단백질이 풍부하여 근육 형성과 에너지 보충에 아주 좋습니다."}
-          </p>
-        </div>
+        {/* Nutrition Summary — 활동량 인식 지방 위험 메시지 */}
+        {(() => {
+          const isWeightConcern = profile.healthConcerns.some(
+            (c) => ['비만', '체중관리', '다이어트', '과체중'].includes(c),
+          );
+          const fatPct = product.guaranteedAnalysis?.crudeFat;
+          const activityLevel = profile.activityLevel ?? 'normal';
+          const activityLabel = { low: '낮음', normal: '보통', high: '높음', very_high: '매우 높음' }[activityLevel] ?? '보통';
+
+          if (isWeightConcern && fatPct != null && fatPct > 12) {
+            const riskLevel =
+              activityLevel === 'low'   ? 'high' :
+              activityLevel === 'normal' ? 'medium' :
+              activityLevel === 'high'  ? 'medium' : 'low';
+
+            const msg =
+              riskLevel === 'high'
+                ? `활동량이 ${activityLabel}이라 칼로리 한도가 좁습니다. 지방 ${fatPct}%는 체중관리 기준(12%)을 초과하므로 급여량을 10–15% 줄이고 저지방 사료 병행을 권장합니다.`
+                : riskLevel === 'medium'
+                ? `활동량이 ${activityLabel}이라 지방 에너지를 부분적으로 소모합니다. 지방 ${fatPct}%는 기준(12%) 초과이므로 급여량을 약 10% 줄이는 것을 권장합니다.`
+                : `활동량이 ${activityLabel}이라 지방 ${fatPct}%를 운동 연료로 충분히 소모합니다. 동일 제품이라도 체중 부담이 크지 않을 수 있습니다.`;
+
+            return (
+              <div
+                style={{
+                  backgroundColor:
+                    riskLevel === 'high' ? '#FFF1F2' : riskLevel === 'medium' ? '#FFFBEB' : '#ECFDF5',
+                  border: `1px solid ${riskLevel === 'high' ? '#FECDD3' : riskLevel === 'medium' ? '#FDE68A' : '#BBF7D0'}`,
+                  padding: '16px 20px',
+                  borderRadius: 'var(--border-radius-lg)',
+                  marginBottom: '32px',
+                }}
+              >
+                <p style={{
+                  fontSize: '14px',
+                  color: riskLevel === 'high' ? '#BE123C' : riskLevel === 'medium' ? '#92400E' : '#166534',
+                  fontWeight: 700,
+                  lineHeight: 1.6,
+                  margin: 0,
+                }}>
+                  {msg}
+                </p>
+                <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '8px', fontWeight: 600, margin: '8px 0 0' }}>
+                  ※ 지방 {fatPct}% 라벨 감점은 활동량과 무관하게 기준 초과로 고정되지만, 실제 체중 증가 위험은 활동량이 높을수록 낮아집니다.
+                </p>
+              </div>
+            );
+          }
+
+          return (
+            <div style={{ backgroundColor: 'var(--secondary)', padding: '20px', borderRadius: 'var(--border-radius-lg)', marginBottom: '32px' }}>
+              <p style={{ fontSize: '15px', color: 'var(--text-dark)', fontWeight: 600, lineHeight: 1.6 }}>
+                조단백질이 풍부하여 근육 형성과 에너지 보충에 아주 좋습니다.
+              </p>
+            </div>
+          );
+        })()}
 
         <GuaranteedAnalysisSection ga={product.guaranteedAnalysis} />
 
