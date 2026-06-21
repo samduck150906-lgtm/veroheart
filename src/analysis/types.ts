@@ -127,6 +127,8 @@ export interface ProductForAnalysis {
   species: Species;
   productType: ProductType;
   lifeStage?: LifeStage;
+  /** 제품의 기능성 건강 태그 예: ["관절","피부","소화"] */
+  healthConcerns?: string[];
   /** 이미 토큰화된 성분 배열(라벨 파서 출력). rawIngredients와 둘 중 하나는 필요. */
   matchedIngredients?: MatchedIngredient[];
   guaranteedAnalysis?: GuaranteedAnalysis;

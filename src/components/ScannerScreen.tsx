@@ -7,13 +7,14 @@ import { useStore } from '../store/useStore';
  * ScannerScreen
  * - 카메라 권한 + 실시간 프리뷰
  * - 하단 토글: '바코드 스캔' | '성분표 촬영'
- * - 모드에 따라 Bounding Box 비율이 애니메이션으로 전환
- * - 네 모서리 스캔 애니메이션
- * - 촬영 버튼 → 캡처 후 콜백(onCapture) 실행
+ * - 바코드 모드: BarcodeDetector API로 실시간 자동 감지
+ * - 성분표 모드: 촬영 버튼 → 캡처 후 콜백(onCapture) 실행
  */
 interface ScannerScreenProps {
-  /** 캡처된 이미지 blob URL 을 전달받아 처리하는 부모 콜백 */
+  /** 성분표 촬영 완료 콜백 */
   onCapture?: (dataUrl: string, mode: 'barcode' | 'text') => void;
+  /** 바코드 감지 성공 콜백 (rawValue) */
+  onBarcodeDetect?: (barcode: string) => void;
 }
 
 const MODES = [
@@ -27,15 +28,18 @@ const BOX_SIZE = {
   text:    { w: '88%', h: '64%' },
 };
 
-export default function ScannerScreen({ onCapture }: ScannerScreenProps) {
+export default function ScannerScreen({ onCapture, onBarcodeDetect }: ScannerScreenProps) {
   const videoRef  = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const rafRef    = useRef<number | null>(null);
+  const detectedRef = useRef(false);
 
-  const [error,         setError        ] = useState<string | null>(null);
-  const [hasPermission, setHasPermission] = useState(false);
-  const [flashActive,   setFlashActive  ] = useState(false);
-  const [captured,      setCaptured     ] = useState(false);
+  const [error,          setError         ] = useState<string | null>(null);
+  const [hasPermission,  setHasPermission ] = useState(false);
+  const [flashActive,    setFlashActive   ] = useState(false);
+  const [captured,       setCaptured      ] = useState(false);
+  const [barcodeHint,    setBarcodeHint   ] = useState<string | null>(null);
 
   const scannerMode    = useStore((s) => s.scannerMode);
   const setScannerMode = useStore((s) => s.setScannerMode);
@@ -62,6 +66,50 @@ export default function ScannerScreen({ onCapture }: ScannerScreenProps) {
       streamRef.current?.getTracks().forEach((t) => t.stop());
     };
   }, []);
+
+  // ── Barcode real-time detection (BarcodeDetector API) ───────────────
+  useEffect(() => {
+    if (scannerMode !== 'barcode' || !hasPermission) return;
+
+    // Reset detection state when entering barcode mode
+    detectedRef.current = false;
+    setBarcodeHint(null);
+
+    if (!('BarcodeDetector' in window)) {
+      setBarcodeHint('이 브라우저는 자동 감지를 지원하지 않아요. 촬영 버튼을 눌러 스캔하세요.');
+      return;
+    }
+
+    const detector = new (window as any).BarcodeDetector({
+      formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'qr_code'],
+    });
+
+    const scanFrame = async () => {
+      if (detectedRef.current) return;
+      const video = videoRef.current;
+      if (video && video.readyState >= 2) {
+        try {
+          const barcodes = await detector.detect(video);
+          if (barcodes.length > 0 && !detectedRef.current) {
+            detectedRef.current = true;
+            setFlashActive(true);
+            setTimeout(() => setFlashActive(false), 300);
+            onBarcodeDetect?.(barcodes[0].rawValue);
+            return;
+          }
+        } catch {
+          // individual frame errors are expected — continue scanning
+        }
+      }
+      rafRef.current = requestAnimationFrame(scanFrame);
+    };
+
+    rafRef.current = requestAnimationFrame(scanFrame);
+
+    return () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    };
+  }, [scannerMode, hasPermission, onBarcodeDetect]);
 
   // ── Capture ─────────────────────────────────────────────────────────
   const handleCapture = useCallback(() => {
@@ -127,7 +175,9 @@ export default function ScannerScreen({ onCapture }: ScannerScreenProps) {
           </div>
 
           {/* Helper text */}
-          <div className="scanner-hint">{modeInfo.desc}</div>
+          <div className="scanner-hint">
+            {barcodeHint ?? modeInfo.desc}
+          </div>
         </>
       )}
 

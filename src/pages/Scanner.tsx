@@ -1,10 +1,12 @@
 // @ts-nocheck
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import ScannerScreen from '../components/ScannerScreen';
 import ImageCropScreen from '../components/ImageCropScreen';
 import { useNavigate } from 'react-router-dom';
 import { notify } from '../store/useNotification';
+import { getProductByBarcode } from '../lib/supabase';
+import { useStore } from '../store/useStore';
 
 type FlowStep = 'scan' | 'crop';
 
@@ -21,15 +23,30 @@ export default function Scanner() {
 
   const handleCapture = (dataUrl: string, mode: 'barcode' | 'text') => {
     if (mode === 'text') {
-      // Text/ingredient mode → go to crop screen for precision selection
       setCapturedUrl(dataUrl);
       setCaptureMode(mode);
       setStep('crop');
-    } else {
-      // Barcode mode is not yet implemented
-      notify.info('바코드 스캔 기능은 준비 중입니다. 성분표 촬영 모드를 이용해 주세요.');
     }
+    // barcode mode: handled by onBarcodeDetect below (real-time, no manual capture needed)
   };
+
+  const handleBarcodeDetect = useCallback(async (barcode: string) => {
+    notify.info(`바코드 인식: ${barcode}`);
+    try {
+      const product = await getProductByBarcode(barcode);
+      if (product) {
+        notify.success(`${product.name} 발견!`);
+        navigate(`/detail/${product.id}`);
+      } else {
+        notify.info('등록되지 않은 상품이에요. 성분표를 촬영해 분석해 보세요.');
+        // Switch to OCR mode automatically
+        useStore.getState().setScannerMode?.('text');
+      }
+    } catch (err) {
+      console.error('[Scanner] barcode lookup failed:', err);
+      notify.error('상품 검색 중 오류가 발생했어요. 다시 시도해 주세요.');
+    }
+  }, [navigate]);
 
   const handleCropDone = async (base64: string) => {
     setOcr({ busy: true, label: '인식 엔진 준비 중', ratio: 0 });
@@ -64,7 +81,10 @@ export default function Scanner() {
       </Helmet>
 
       {step === 'scan' && (
-        <ScannerScreen onCapture={handleCapture} />
+        <ScannerScreen
+          onCapture={handleCapture}
+          onBarcodeDetect={handleBarcodeDetect}
+        />
       )}
 
       {step === 'crop' && capturedUrl && (

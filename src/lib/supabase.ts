@@ -264,6 +264,30 @@ export async function getProductDetail(productId: string): Promise<Product | nul
   return mapProductFromSupabaseRow(data as SupabaseProductRow);
 }
 
+export async function getProductByBarcode(barcode: string): Promise<Product | null> {
+  if (!isSupabaseConfigured) return null;
+  const { data, error } = await supabase
+    .from('products')
+    .select(`
+      *,
+      product_ingredients (
+        ingredient_id,
+        ingredients (*)
+      ),
+      nutritional_profiles (
+        crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus
+      )
+    `)
+    .eq('barcode', barcode)
+    .single();
+
+  if (error) {
+    if (error.code !== 'PGRST116') console.error('getProductByBarcode error:', error);
+    return null;
+  }
+  return mapProductFromSupabaseRow(data as SupabaseProductRow);
+}
+
 /** 다이어트·체중 관련 태그( DB product_health_concerns 값과 맞추면 매칭됨 ) */
 export const DIET_HEALTH_TAGS = ['비만', '다이어트', '체중', '저칼로리', '체중관리', '다이어트케어'] as const;
 

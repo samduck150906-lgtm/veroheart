@@ -25,6 +25,25 @@ import { normalizeIngredientName } from './normalize';
 const DISCLAIMER =
   '이 분석은 제품 라벨 기반 참고 정보이며, 질병·치료 목적의 급여 판단은 수의사 상담이 필요합니다.';
 
+// 건강 고민 태그 동의어 맵 (제품 태그 → 펫 disease 태그 매칭)
+const HEALTH_CONCERN_ALIASES: Record<string, string[]> = {
+  '관절': ['관절', 'joint', 'arthritis'],
+  '피부': ['피부', 'skin', 'allergy', '알레르기'],
+  '소화': ['소화', 'digestion', 'stomach'],
+  '비만': ['비만', 'obesity', '체중', 'weight'],
+  '신장': ['신장', 'kidney', 'renal'],
+  '심장': ['심장', 'heart', 'cardiac'],
+  '면역': ['면역', 'immune', 'immunity'],
+  '구강': ['구강', 'dental', 'teeth'],
+};
+
+const PET_LIFE_STAGE_LABEL: Record<string, string> = {
+  puppy_kitten: '자견·자묘',
+  adult: '성견·성묘',
+  senior: '노령견·노령묘',
+  all_life_stages: '전 연령',
+};
+
 function clamp(n: number, min = 0, max = 100): number {
   return Math.max(min, Math.min(max, n));
 }
@@ -230,6 +249,76 @@ export function analyzeProduct(
         safety -= 30;
       }
     }
+  }
+
+  // ── 건강 고민 매칭 보너스: 제품 기능성 태그 ↔ 펫 건강 고민 ──
+  if (pet && product.healthConcerns?.length && pet.diseases?.length) {
+    const matchedConcerns = product.healthConcerns.filter((tag) =>
+      pet.diseases!.some((d) =>
+        d.includes(tag) || tag.includes(d) ||
+        HEALTH_CONCERN_ALIASES[tag]?.includes(d)
+      )
+    );
+    if (matchedConcerns.length) {
+      const bonus = Math.min(matchedConcerns.length * 5, 20);
+      ingredientQuality = clamp(ingredientQuality + bonus);
+      positives.push({
+        ruleId: 'HEALTH_CONCERN_MATCH',
+        level: 'good',
+        title: '건강 고민 맞춤 제품',
+        message: `${matchedConcerns.join(', ')} 관련 기능성 성분이 포함된 제품이에요.`,
+        ingredients: [],
+        scoreDelta: bonus,
+        evidenceLevel: 'internal_policy',
+      });
+    }
+  }
+
+  // ── 연령(라이프스테이지) 적합성 ──
+  if (pet?.lifeStage && product.lifeStage && product.lifeStage !== 'unknown') {
+    const isAllStages = product.lifeStage === 'all_life_stages';
+    const isMatch = isAllStages || product.lifeStage === pet.lifeStage;
+    if (isMatch) {
+      ingredientQuality = clamp(ingredientQuality + 8);
+      positives.push({
+        ruleId: 'LIFE_STAGE_MATCH',
+        level: 'good',
+        title: '연령 적합 제품',
+        message: isAllStages
+          ? '모든 연령에 적합한 제품이에요.'
+          : `${PET_LIFE_STAGE_LABEL[pet.lifeStage]} 전용으로 설계된 제품이에요.`,
+        ingredients: [],
+        scoreDelta: 8,
+        evidenceLevel: 'nutrition_guideline',
+      });
+    } else {
+      safety = clamp(safety - 5);
+      warnings.push({
+        ruleId: 'LIFE_STAGE_MISMATCH',
+        level: 'watch',
+        title: '연령 부적합 가능성',
+        message: `이 제품은 ${PET_LIFE_STAGE_LABEL[product.lifeStage]} 전용이에요. 우리 아이의 연령과 다를 수 있어요.`,
+        ingredients: [],
+        scoreDelta: -5,
+        evidenceLevel: 'nutrition_guideline',
+      });
+    }
+  }
+
+  // ── 종(Species) 적합성 ──
+  if (product.species !== 'both' && product.species !== petSpecies) {
+    safety = clamp(safety - 15);
+    warnings.push({
+      ruleId: 'SPECIES_MISMATCH',
+      level: 'caution',
+      title: '다른 종 전용 제품',
+      message: `이 제품은 ${product.species === 'cat' ? '고양이' : '강아지'} 전용이에요. 다른 종에게 급여하면 영양 불균형이 생길 수 있어요.`,
+      ingredients: [],
+      scoreDelta: -15,
+      evidenceLevel: 'veterinary',
+    });
+  } else if (product.species === petSpecies) {
+    ingredientQuality = clamp(ingredientQuality + 5);
   }
 
   // ── 투명도 ──
