@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
 import { Helmet } from 'react-helmet-async';
 import {
@@ -58,6 +58,13 @@ export default function Home() {
     s -= (profile?.healthConcerns?.length || 0) * 2;
     return Math.max(60, Math.min(98, s));
   }, [profile]);
+
+  // 게이지 채워지는 애니메이션 (온보딩 완료 직후의 보상 모션)
+  const [scoreFill, setScoreFill] = useState(0);
+  useEffect(() => {
+    const t = setTimeout(() => setScoreFill(healthScore), 150);
+    return () => clearTimeout(t);
+  }, [healthScore]);
 
   const recent = (recentViews?.length ? recentViews : products).slice(0, 8);
   const favoriteSet = new Set(favorites || []);
@@ -120,7 +127,7 @@ export default function Home() {
             </span>
           </div>
           <div style={{ height: '8px', background: '#E5E8EB', borderRadius: '99px', overflow: 'hidden', marginTop: '8px' }}>
-            <div style={{ width: `${healthScore}%`, height: '100%', background: 'var(--brand)', borderRadius: '99px' }} />
+            <div style={{ width: `${scoreFill}%`, height: '100%', background: 'var(--brand)', borderRadius: '99px', transition: 'width 0.9s cubic-bezier(0.16, 1, 0.3, 1)' }} />
           </div>
         </div>
       </div>
