@@ -1,7 +1,9 @@
 // @ts-nocheck
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { BERO_PET } from '../data/mvpMock';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import { useStore } from '../store/useStore';
+import { notify } from '../store/useNotification';
 
 const PawIcon = () => (
   <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
@@ -16,14 +18,43 @@ const PawIcon = () => (
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { initApp } = useStore();
   const [showEmailForm, setShowEmailForm] = useState(false);
+  const [isSignup, setIsSignup] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = () => {
-    localStorage.setItem('mvp_logged_in', 'true');
-    localStorage.setItem('mvp_pet', JSON.stringify(BERO_PET));
-    navigate('/');
+  const redirectTo = (location.state as any)?.from ?? '/';
+
+  const handleEmailAuth = async () => {
+    if (!email.trim() || !password) {
+      notify.error('이메일과 비밀번호를 입력해 주세요.');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      if (isSignup) {
+        const { error } = await supabase.auth.signUp({ email: email.trim(), password });
+        if (error) throw error;
+        notify.success('회원가입이 완료됐어요! 이메일 인증 후 로그인해 주세요.');
+        setIsSignup(false);
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        if (error) throw error;
+        await initApp();
+        navigate(redirectTo, { replace: true });
+      }
+    } catch (err: any) {
+      notify.error(err.message || '로그인에 실패했어요. 다시 시도해 주세요.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBrowse = () => {
+    navigate('/', { replace: true });
   };
 
   return (
@@ -56,7 +87,7 @@ export default function Login() {
 
       <div style={{ width: '100%', maxWidth: 360, paddingBottom: 40 }}>
         <button
-          onClick={handleLogin}
+          onClick={() => { notify.info('카카오 소셜 로그인은 준비 중이에요.'); }}
           style={{
             width: '100%', height: 54, borderRadius: 14,
             background: '#FEE500', border: 'none', cursor: 'pointer',
@@ -70,7 +101,7 @@ export default function Login() {
         </button>
 
         <button
-          onClick={handleLogin}
+          onClick={() => { notify.info('네이버 소셜 로그인은 준비 중이에요.'); }}
           style={{
             width: '100%', height: 54, borderRadius: 14,
             background: '#03C75A', border: 'none', cursor: 'pointer',
@@ -84,7 +115,7 @@ export default function Login() {
         </button>
 
         <button
-          onClick={handleLogin}
+          onClick={() => { notify.info('Apple 로그인은 준비 중이에요.'); }}
           style={{
             width: '100%', height: 54, borderRadius: 14,
             background: '#000', border: 'none', cursor: 'pointer',
@@ -134,6 +165,7 @@ export default function Login() {
               placeholder="비밀번호"
               value={password}
               onChange={e => setPassword(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleEmailAuth()}
               style={{
                 width: '100%', height: 50, borderRadius: 12,
                 border: '1.5px solid #E5E8EB', padding: '0 16px',
@@ -142,28 +174,39 @@ export default function Login() {
               }}
             />
             <button
-              onClick={handleLogin}
+              onClick={handleEmailAuth}
+              disabled={isLoading}
               style={{
                 width: '100%', height: 50, borderRadius: 14,
-                background: '#F5C518', border: 'none', cursor: 'pointer',
+                background: '#F5C518', border: 'none', cursor: isLoading ? 'not-allowed' : 'pointer',
                 fontSize: 16, fontWeight: 700, color: '#191F28',
+                opacity: isLoading ? 0.7 : 1, marginBottom: 10,
               }}
             >
-              로그인
+              {isLoading ? '처리 중...' : (isSignup ? '회원가입' : '로그인')}
+            </button>
+            <button
+              onClick={() => setIsSignup(!isSignup)}
+              style={{
+                width: '100%', background: 'none', border: 'none', cursor: 'pointer',
+                fontSize: 13, color: '#8B95A1', fontWeight: 500,
+              }}
+            >
+              {isSignup ? '이미 계정이 있으신가요? 로그인' : '계정이 없으신가요? 회원가입'}
             </button>
           </div>
         )}
 
         <div style={{ textAlign: 'center' }}>
           <button
-            onClick={handleLogin}
+            onClick={handleBrowse}
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
               fontSize: 14, color: '#8B95A1', fontWeight: 500,
               textDecoration: 'underline', textUnderlineOffset: 3,
             }}
           >
-            지금 바로 둘러보기
+            로그인 없이 둘러보기
           </button>
         </div>
 

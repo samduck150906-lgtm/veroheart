@@ -1,7 +1,69 @@
 // @ts-nocheck
 import { useState } from 'react';
 import { Plus, ThumbsUp, MessageCircle } from 'lucide-react';
-import { MOCK_COMMUNITY_POSTS } from '../data/mvpMock';
+
+const COMMUNITY_POSTS = [
+  {
+    id: 'post-1',
+    category: '정보공유',
+    title: '말티즈 눈물흔 개선에 도움된 사료 공유합니다 🐶',
+    content: '6개월 동안 여러 사료를 바꿔본 결과 오리 단백질 기반 사료로 바꾸고 나서 눈물흔이 많이 줄었어요!',
+    author: '말티맘',
+    authorBadge: null,
+    likes: 142,
+    comments: 38,
+    time: '2시간 전',
+    isLiked: false,
+  },
+  {
+    id: 'post-2',
+    category: '수의사칼럼',
+    title: '슬개골 탈구 예방을 위한 영양소 가이드',
+    content: '소형견에서 자주 발생하는 슬개골 탈구, 글루코사민과 콘드로이틴이 풍부한 사료 선택이 중요합니다.',
+    author: '김수의사',
+    authorBadge: '수의사',
+    likes: 312,
+    comments: 67,
+    time: '5시간 전',
+    isLiked: true,
+  },
+  {
+    id: 'post-3',
+    category: '성분분석',
+    title: 'BHA/BHT 정말 위험한가요? 팩트체크',
+    content: '많은 분들이 BHA를 무조건 피하라고 하는데, 실제 함량과 위험성에 대해 정확히 알아봤습니다.',
+    author: '성분연구소',
+    authorBadge: null,
+    likes: 89,
+    comments: 24,
+    time: '1일 전',
+    isLiked: false,
+  },
+  {
+    id: 'post-4',
+    category: '질문',
+    title: '4살 말티즈 관절 영양제 추천해주세요',
+    content: '최근 산책 후 다리를 살짝 드는 모습이 보여서 관절 영양제를 찾고 있어요. 추천 부탁드려요!',
+    author: '베로파파',
+    authorBadge: null,
+    likes: 23,
+    comments: 15,
+    time: '1일 전',
+    isLiked: false,
+  },
+  {
+    id: 'post-5',
+    category: '정보공유',
+    title: '그레인프리 vs 일반 사료, 실제 차이는?',
+    content: '그레인프리가 무조건 좋은 건 아니에요. 품종과 건강 상태에 따라 맞는 사료가 다릅니다.',
+    author: '사료박사',
+    authorBadge: null,
+    likes: 201,
+    comments: 44,
+    time: '2일 전',
+    isLiked: false,
+  },
+];
 
 const CATS = ['전체', '정보공유', '수의사칼럼', '성분분석', '질문'];
 
@@ -16,7 +78,7 @@ export default function Community() {
   const [activeTab, setActiveTab] = useState('전체');
   const [likes, setLikes] = useState({});
 
-  const filtered = activeTab === '전체' ? MOCK_COMMUNITY_POSTS : MOCK_COMMUNITY_POSTS.filter(p => p.category === activeTab);
+  const filtered = activeTab === '전체' ? COMMUNITY_POSTS : COMMUNITY_POSTS.filter(p => p.category === activeTab);
 
   const toggleLike = (id) => {
     setLikes(prev => ({ ...prev, [id]: !prev[id] }));
