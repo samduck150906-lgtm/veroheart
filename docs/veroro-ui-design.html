@@ -1,0 +1,1863 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>베로로 UI 디자인</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<style>
+  :root {
+    --primary: #F5B800;
+    --primary-light: #FFF8DC;
+    --primary-dark: #D4A200;
+    --bg: #F7F8FA;
+    --surface: #FFFFFF;
+    --text1: #191F28;
+    --text2: #6B7684;
+    --text3: #ADB5BD;
+    --safe: #05C270;
+    --safe-bg: #E8FAF2;
+    --warn: #FF7A00;
+    --warn-bg: #FFF3E8;
+    --danger: #FF4B4B;
+    --danger-bg: #FFEFEF;
+    --border: #F2F4F6;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+    background: #1C1C2E;
+    min-height: 100vh;
+    display: flex;
+    gap: 0;
+  }
+  /* Sidebar */
+  .sidebar {
+    width: 180px;
+    min-height: 100vh;
+    background: #13131F;
+    padding: 24px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .sidebar-title {
+    color: #F5B800;
+    font-size: 16px;
+    font-weight: 800;
+    margin-bottom: 16px;
+    padding: 0 8px;
+  }
+  .sidebar-btn {
+    background: none;
+    border: none;
+    color: #9B9BB4;
+    font-size: 12px;
+    font-family: 'Pretendard', sans-serif;
+    text-align: left;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    line-height: 1.4;
+  }
+  .sidebar-btn:hover { background: #1E1E30; color: #fff; }
+  .sidebar-btn.active { background: #F5B800; color: #000; font-weight: 700; }
+  /* Demo area */
+  .demo-area {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+  }
+  /* Phone frame */
+  .phone-frame {
+    width: 390px;
+    height: 844px;
+    background: #111;
+    border-radius: 50px;
+    box-shadow: 0 0 0 2px #333, 0 0 0 6px #222, 0 32px 80px rgba(0,0,0,0.7);
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .phone-frame::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 120px; height: 34px;
+    background: #111;
+    border-radius: 0 0 20px 20px;
+    z-index: 1000;
+  }
+  /* Screens */
+  .screen {
+    position: absolute;
+    top: 0; left: 0;
+    width: 390px;
+    height: 844px;
+    background: var(--bg);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .screen.active { display: flex; }
+  /* Status bar */
+  .status-bar {
+    height: 50px;
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    flex-shrink: 0;
+    padding-top: 14px;
+  }
+  .status-time { font-size: 15px; font-weight: 700; color: var(--text1); }
+  .status-icons { display: flex; align-items: center; gap: 6px; }
+  .status-icons svg { color: var(--text1); }
+  /* Bottom tab bar */
+  .tab-bar {
+    height: 83px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    padding-top: 8px;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .tab-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding-top: 4px;
+  }
+  .tab-icon { font-size: 22px; }
+  .tab-label { font-size: 10px; color: var(--text3); font-weight: 500; }
+  .tab-item.active .tab-label { color: var(--primary); font-weight: 700; }
+  .tab-scan {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    position: relative;
+  }
+  .tab-scan-btn {
+    width: 52px; height: 52px;
+    background: var(--primary);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: -22px;
+    box-shadow: 0 4px 16px rgba(245,184,0,0.4);
+  }
+  .tab-scan-label { font-size: 10px; color: var(--text3); font-weight: 500; margin-top: 34px; }
+  /* Content scroll area */
+  .content { flex: 1; overflow-y: auto; background: var(--bg); }
+  .content::-webkit-scrollbar { display: none; }
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border-radius: 20px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+    padding: 16px;
+  }
+  /* Section title */
+  .section-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text1);
+    margin-bottom: 12px;
+  }
+  /* Badge chips */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge-safe { background: var(--safe-bg); color: var(--safe); }
+  .badge-warn { background: var(--warn-bg); color: var(--warn); }
+  .badge-danger { background: var(--danger-bg); color: var(--danger); }
+  .badge-primary { background: var(--primary-light); color: var(--primary-dark); }
+  .badge-gray { background: var(--border); color: var(--text2); }
+  .badge-blue { background: #EEF2FF; color: #3B82F6; }
+  .badge-green { background: var(--safe-bg); color: var(--safe); }
+
+  /* ===== SCREEN 1: LOGIN ===== */
+  #screen-login {
+    background: var(--surface);
+  }
+  #screen-login .status-bar { background: var(--surface); }
+  .login-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 28px;
+    gap: 0;
+  }
+  .login-logo-emoji { font-size: 56px; margin-bottom: 8px; }
+  .login-brand { font-size: 32px; font-weight: 900; color: var(--text1); margin-bottom: 8px; }
+  .login-tagline {
+    font-size: 14px;
+    color: var(--text2);
+    text-align: center;
+    line-height: 1.6;
+    margin-bottom: 32px;
+  }
+  .input-field {
+    width: 100%;
+    height: 52px;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 0 16px;
+    font-size: 15px;
+    font-family: 'Pretendard', sans-serif;
+    color: var(--text1);
+    background: var(--bg);
+    margin-bottom: 10px;
+    outline: none;
+  }
+  .input-wrap { position: relative; width: 100%; margin-bottom: 10px; }
+  .input-wrap .input-field { margin-bottom: 0; }
+  .pw-toggle {
+    position: absolute;
+    right: 14px; top: 50%;
+    transform: translateY(-50%);
+    background: none; border: none;
+    cursor: pointer; color: var(--text3);
+    font-size: 18px;
+  }
+  .btn-primary {
+    width: 100%;
+    height: 52px;
+    background: var(--primary);
+    border: none;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #000;
+    cursor: pointer;
+    margin-top: 8px;
+    font-family: 'Pretendard', sans-serif;
+  }
+  .btn-secondary {
+    width: 100%;
+    height: 52px;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text2);
+    cursor: pointer;
+    margin-top: 8px;
+    font-family: 'Pretendard', sans-serif;
+  }
+  .forgot-link {
+    font-size: 13px;
+    color: var(--text2);
+    text-align: center;
+    margin-top: 12px;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  .or-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    margin: 20px 0;
+  }
+  .or-line { flex: 1; height: 1px; background: var(--border); }
+  .or-text { font-size: 13px; color: var(--text3); }
+  .social-row { display: flex; gap: 12px; width: 100%; justify-content: center; }
+  .social-btn {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    border: 1.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 18px; font-weight: 800;
+    flex-shrink: 0;
+  }
+  .social-kakao { background: #FEE500; border-color: #FEE500; color: #000; }
+  .social-naver { background: #03C75A; border-color: #03C75A; color: #fff; }
+  .social-google { background: #fff; border-color: var(--border); }
+  .browse-link {
+    font-size: 14px;
+    color: var(--text2);
+    text-align: center;
+    margin-top: 20px;
+    cursor: pointer;
+  }
+
+  /* ===== SCREEN 2: HOME ===== */
+  #screen-home .status-bar { background: var(--surface); }
+  .home-header {
+    background: var(--surface);
+    padding: 10px 20px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .home-logo { font-size: 22px; font-weight: 700; color: var(--text1); }
+  .header-icons { display: flex; gap: 8px; }
+  .icon-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: none;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .pet-card {
+    background: var(--primary-light);
+    border: 1.5px solid var(--primary);
+    border-radius: 20px;
+    padding: 16px;
+    margin: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .pet-avatar {
+    width: 56px; height: 56px;
+    background: var(--primary);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+  }
+  .pet-info { flex: 1; }
+  .pet-name { font-size: 18px; font-weight: 700; color: var(--text1); }
+  .pet-breed { font-size: 13px; color: var(--text2); margin-bottom: 8px; }
+  .pet-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pet-tag-orange { background: var(--warn-bg); color: var(--warn); padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .pet-tag-yellow { background: var(--primary-light); color: var(--primary-dark); padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; border: 1px solid var(--primary); }
+  .pet-score { display: flex; flex-direction: column; align-items: center; gap: 2px; flex-shrink: 0; }
+  .pet-score-label { font-size: 10px; color: var(--text2); }
+  .cat-section { padding: 0 16px; margin-bottom: 16px; }
+  .cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .cat-item {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    background: var(--surface);
+    border-radius: 14px;
+    padding: 12px 8px;
+    cursor: pointer;
+  }
+  .cat-icon-circle {
+    width: 44px; height: 44px;
+    background: var(--bg);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .cat-label { font-size: 11px; color: var(--text1); font-weight: 500; }
+  .care-section { padding: 0 16px; margin-bottom: 16px; }
+  .care-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; }
+  .care-scroll::-webkit-scrollbar { display: none; }
+  .care-card {
+    background: var(--surface);
+    border-radius: 14px;
+    padding: 14px;
+    min-width: 140px;
+    flex-shrink: 0;
+    border-left: 4px solid;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .care-card-green { border-color: var(--safe); }
+  .care-card-orange { border-color: var(--warn); }
+  .care-card-blue { border-color: #3B82F6; }
+  .care-card-emoji { font-size: 24px; margin-bottom: 6px; }
+  .care-card-title { font-size: 13px; font-weight: 700; color: var(--text1); margin-bottom: 2px; }
+  .care-card-sub { font-size: 11px; color: var(--text2); }
+  .recent-section { padding: 0 16px; margin-bottom: 16px; }
+  .mini-scroll { display: flex; gap: 10px; overflow-x: auto; }
+  .mini-scroll::-webkit-scrollbar { display: none; }
+  .mini-product {
+    background: var(--surface);
+    border-radius: 14px;
+    padding: 10px;
+    min-width: 110px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .mini-product-img {
+    width: 90px; height: 70px;
+    background: var(--bg);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    margin-bottom: 8px;
+  }
+  .mini-product-brand { font-size: 10px; color: var(--text3); margin-bottom: 2px; }
+  .mini-product-name { font-size: 12px; font-weight: 600; color: var(--text1); margin-bottom: 4px; line-height: 1.3; }
+  .mini-product-row { display: flex; align-items: center; justify-content: space-between; }
+  .mini-product-price { font-size: 12px; font-weight: 700; color: var(--text1); }
+  .recommend-section { padding: 0 16px 16px; }
+  .rec-product {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 14px;
+    display: flex;
+    gap: 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .rec-product-img {
+    width: 72px; height: 72px;
+    background: var(--bg);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px;
+    flex-shrink: 0;
+  }
+  .rec-product-info { flex: 1; }
+  .rec-product-brand { font-size: 11px; color: var(--text3); }
+  .rec-product-name { font-size: 14px; font-weight: 700; color: var(--text1); margin: 2px 0; line-height: 1.3; }
+  .rec-product-meta { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  .rec-product-compat { font-size: 12px; color: var(--primary-dark); font-weight: 600; }
+  .rec-product-price { font-size: 14px; font-weight: 700; color: var(--text1); }
+
+  /* ===== SCREEN 3: SEARCH ===== */
+  #screen-search .status-bar { background: var(--surface); }
+  .search-header { background: var(--surface); padding: 10px 16px 14px; }
+  .search-bar {
+    display: flex;
+    align-items: center;
+    background: var(--bg);
+    border-radius: 100px;
+    padding: 0 16px;
+    height: 46px;
+    gap: 8px;
+    border: 1.5px solid var(--border);
+  }
+  .search-bar input {
+    flex: 1; border: none; background: none;
+    font-size: 14px; font-family: 'Pretendard', sans-serif;
+    color: var(--text1); outline: none;
+  }
+  .species-tabs { display: flex; gap: 0; margin-top: 12px; border-bottom: 1.5px solid var(--border); }
+  .species-tab {
+    flex: 1; text-align: center;
+    padding: 8px 0;
+    font-size: 14px; font-weight: 600;
+    color: var(--text2);
+    cursor: pointer;
+    border-bottom: 2.5px solid transparent;
+    margin-bottom: -1.5px;
+  }
+  .species-tab.active { color: var(--primary-dark); border-bottom-color: var(--primary); }
+  .filter-chips-wrap { background: var(--surface); padding: 10px 16px; border-bottom: 1px solid var(--border); }
+  .filter-chips { display: flex; gap: 8px; overflow-x: auto; }
+  .filter-chips::-webkit-scrollbar { display: none; }
+  .filter-chip {
+    padding: 6px 14px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 600;
+    background: var(--bg);
+    color: var(--text2);
+    border: 1.5px solid var(--border);
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .filter-chip.active { background: var(--primary); color: #000; border-color: var(--primary); }
+  .sort-row { padding: 10px 16px; background: var(--surface); display: flex; justify-content: flex-end; }
+  .sort-text { font-size: 13px; color: var(--text2); font-weight: 600; cursor: pointer; }
+  .product-list { padding: 0 16px 8px; }
+  .product-card {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 14px;
+    display: flex;
+    gap: 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .product-img {
+    width: 72px; height: 72px;
+    background: #E8E8E8;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px;
+    flex-shrink: 0;
+  }
+  .product-info { flex: 1; min-width: 0; }
+  .product-brand { font-size: 11px; color: var(--text3); }
+  .product-name { font-size: 14px; font-weight: 700; color: var(--text1); margin: 2px 0; line-height: 1.3; }
+  .product-meta { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; flex-wrap: wrap; }
+  .product-stars { font-size: 12px; color: #F5B800; font-weight: 600; }
+  .product-reviews { font-size: 11px; color: var(--text2); }
+  .product-compat { font-size: 12px; color: var(--primary-dark); font-weight: 700; }
+  .product-price { font-size: 15px; font-weight: 800; color: var(--text1); }
+  .product-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; flex-shrink: 0; }
+  .heart-btn { background: none; border: none; font-size: 20px; cursor: pointer; }
+  .compare-btn {
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 100px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text2);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  /* ===== SCREEN 4: SCANNER ===== */
+  #screen-scanner {
+    background: #111111;
+  }
+  #screen-scanner .status-bar {
+    background: transparent;
+    position: relative;
+    z-index: 10;
+  }
+  #screen-scanner .status-time { color: #fff; }
+  .scanner-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px 10px;
+    background: transparent;
+  }
+  .scanner-close-btn {
+    width: 36px; height: 36px;
+    background: rgba(255,255,255,0.15);
+    border: none; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    color: #fff;
+    font-size: 18px;
+  }
+  .scanner-flash-btn {
+    width: 36px; height: 36px;
+    background: rgba(255,255,255,0.15);
+    border: none; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    color: #fff;
+    font-size: 18px;
+  }
+  .scanner-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+  }
+  .viewfinder {
+    width: 240px; height: 240px;
+    position: relative;
+  }
+  .corner {
+    position: absolute;
+    width: 28px; height: 28px;
+    border-color: #fff;
+    border-style: solid;
+  }
+  .corner-tl { top: 0; left: 0; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+  .corner-tr { top: 0; right: 0; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+  .corner-bl { bottom: 0; left: 0; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+  .corner-br { bottom: 0; right: 0; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+  .scan-line {
+    position: absolute;
+    left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--primary), transparent);
+    animation: scanMove 2s ease-in-out infinite;
+  }
+  @keyframes scanMove {
+    0% { top: 10%; }
+    50% { top: 85%; }
+    100% { top: 10%; }
+  }
+  .scanner-text {
+    color: #fff;
+    text-align: center;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  .scanner-toggle {
+    display: flex;
+    background: rgba(255,255,255,0.15);
+    border-radius: 100px;
+    padding: 3px;
+    gap: 0;
+  }
+  .scanner-toggle-item {
+    padding: 8px 18px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.6);
+    cursor: pointer;
+  }
+  .scanner-toggle-item.active { background: var(--primary); color: #000; }
+  .scanner-bottom {
+    padding: 20px 0 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+  }
+  .scanner-side-btn {
+    width: 44px; height: 44px;
+    background: rgba(255,255,255,0.15);
+    border: none; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: #fff; font-size: 20px;
+  }
+  .capture-btn {
+    width: 72px; height: 72px;
+    background: #fff;
+    border: 4px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .capture-btn-inner {
+    width: 56px; height: 56px;
+    background: #fff;
+    border-radius: 50%;
+  }
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-title">🐾 베로로</div>
+  <button class="sidebar-btn" onclick="showScreen('screen-login')">1. 로그인</button>
+  <button class="sidebar-btn active" onclick="showScreen('screen-home')">2. 홈</button>
+  <button class="sidebar-btn" onclick="showScreen('screen-search')">3. 검색</button>
+  <button class="sidebar-btn" onclick="showScreen('screen-scanner')">4. 스캐너</button>
+  <button class="sidebar-btn" onclick="showScreen('screen-ranking')">5. 랭킹</button>
+  <button class="sidebar-btn" onclick="showScreen('screen-product')">6. 상품 상세</button>
+  <button class="sidebar-btn" onclick="showScreen('screen-report')">7. 분석 리포트</button>
+  <button class="sidebar-btn" onclick="showScreen('screen-compare')">8. 비교</button>
+  <button class="sidebar-btn" onclick="showScreen('screen-community')">9. 커뮤니티</button>
+  <button class="sidebar-btn" onclick="showScreen('screen-dictionary')">10. 성분사전</button>
+  <button class="sidebar-btn" onclick="showScreen('screen-mypet')">11. 마이</button>
+</div>
+
+<div class="demo-area">
+  <div class="phone-frame">
+
+    <!-- SCREEN 1: LOGIN -->
+    <div class="screen" id="screen-login">
+      <div class="status-bar">
+        <span class="status-time">9:41</span>
+        <div class="status-icons">
+          <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><rect x="0" y="3" width="3" height="9" rx="1"/><rect x="4.5" y="2" width="3" height="10" rx="1"/><rect x="9" y="0.5" width="3" height="11.5" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg>
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 2.4C10.5 2.4 12.7 3.4 14.3 5L16 3.3C13.9 1.2 11.1 0 8 0C4.9 0 2.1 1.2 0 3.3L1.7 5C3.3 3.4 5.5 2.4 8 2.4Z"/><path d="M8 5C9.7 5 11.2 5.7 12.3 6.8L14 5.1C12.4 3.5 10.3 2.6 8 2.6C5.7 2.6 3.6 3.5 2 5.1L3.7 6.8C4.8 5.7 6.3 5 8 5Z"/><circle cx="8" cy="10" r="2"/></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="currentColor"/><rect x="2" y="2" width="16" height="8" rx="2" fill="currentColor"/><path d="M23 4v4c1.1-.5 1.1-3.5 0-4z" fill="currentColor"/></svg>
+        </div>
+      </div>
+      <div class="login-content">
+        <div class="login-logo-emoji">🐾</div>
+        <div class="login-brand">베로로</div>
+        <div class="login-tagline">우리 아이에게 딱 맞는 사료를 찾아요</div>
+        <input class="input-field" type="email" placeholder="이메일">
+        <div class="input-wrap">
+          <input class="input-field" type="password" placeholder="비밀번호">
+          <button class="pw-toggle">👁</button>
+        </div>
+        <button class="btn-primary">로그인</button>
+        <button class="btn-secondary">회원가입</button>
+        <div class="forgot-link">비밀번호를 잊으셨나요?</div>
+        <div class="or-divider">
+          <div class="or-line"></div>
+          <span class="or-text">또는</span>
+          <div class="or-line"></div>
+        </div>
+        <div class="social-row">
+          <div class="social-btn social-kakao">K</div>
+          <div class="social-btn social-naver">N</div>
+          <div class="social-btn social-google">
+            <svg width="22" height="22" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+          </div>
+        </div>
+        <div class="browse-link">둘러보기로 시작하기 →</div>
+      </div>
+    </div>
+
+    <!-- SCREEN 2: HOME -->
+    <div class="screen active" id="screen-home">
+      <div class="status-bar">
+        <span class="status-time">9:41</span>
+        <div class="status-icons">
+          <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><rect x="0" y="3" width="3" height="9" rx="1"/><rect x="4.5" y="2" width="3" height="10" rx="1"/><rect x="9" y="0.5" width="3" height="11.5" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg>
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 2.4C10.5 2.4 12.7 3.4 14.3 5L16 3.3C13.9 1.2 11.1 0 8 0C4.9 0 2.1 1.2 0 3.3L1.7 5C3.3 3.4 5.5 2.4 8 2.4Z"/><path d="M8 5C9.7 5 11.2 5.7 12.3 6.8L14 5.1C12.4 3.5 10.3 2.6 8 2.6C5.7 2.6 3.6 3.5 2 5.1L3.7 6.8C4.8 5.7 6.3 5 8 5Z"/><circle cx="8" cy="10" r="2"/></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="currentColor"/><rect x="2" y="2" width="16" height="8" rx="2" fill="currentColor"/><path d="M23 4v4c1.1-.5 1.1-3.5 0-4z" fill="currentColor"/></svg>
+        </div>
+      </div>
+      <div class="home-header">
+        <div class="home-logo">🐾 베로로</div>
+        <div class="header-icons">
+          <button class="icon-btn">
+            <svg width="18" height="20" viewBox="0 0 18 20" fill="none" stroke="#191F28" stroke-width="1.7"><path d="M9 0C9 0 3 3.5 3 10.5V14L1 16v1h16v-1l-2-2v-3.5C15 3.5 9 0 9 0z"/><path d="M7 17a2 2 0 004 0"/></svg>
+          </button>
+          <button class="icon-btn">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#191F28" stroke-width="1.7"><circle cx="8" cy="8" r="6"/><path d="M13 13l3.5 3.5"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="content">
+        <!-- Pet card -->
+        <div class="pet-card">
+          <div class="pet-avatar">🐕</div>
+          <div class="pet-info">
+            <div class="pet-name">베로</div>
+            <div class="pet-breed">말티즈 · 3세 · 3.2kg</div>
+            <div class="pet-tags">
+              <span class="pet-tag-orange">닭고기 알러지</span>
+              <span class="pet-tag-yellow">슬개골 주의</span>
+            </div>
+          </div>
+          <div class="pet-score">
+            <svg width="60" height="60" viewBox="0 0 60 60">
+              <circle cx="30" cy="30" r="24" fill="none" stroke="#F2F4F6" stroke-width="5"/>
+              <circle cx="30" cy="30" r="24" fill="none" stroke="#F5B800" stroke-width="5"
+                stroke-dasharray="130.6 150.8" stroke-dashoffset="37.7" stroke-linecap="round" transform="rotate(-90 30 30)"/>
+              <text x="30" y="26" text-anchor="middle" font-size="14" font-weight="800" fill="#191F28">86</text>
+              <text x="30" y="38" text-anchor="middle" font-size="8" fill="#6B7684">/ 100점</text>
+            </svg>
+            <div class="pet-score-label">식단점수</div>
+          </div>
+        </div>
+
+        <!-- Category -->
+        <div class="cat-section">
+          <div class="section-title">카테고리</div>
+          <div class="cat-grid">
+            <div class="cat-item"><div class="cat-icon-circle">🍗</div><div class="cat-label">사료</div></div>
+            <div class="cat-item"><div class="cat-icon-circle">🦴</div><div class="cat-label">간식</div></div>
+            <div class="cat-item"><div class="cat-icon-circle">💊</div><div class="cat-label">영양제</div></div>
+            <div class="cat-item"><div class="cat-icon-circle">🦷</div><div class="cat-label">구강</div></div>
+            <div class="cat-item"><div class="cat-icon-circle">🛁</div><div class="cat-label">피부·목욕</div></div>
+            <div class="cat-item"><div class="cat-icon-circle">👁️</div><div class="cat-label">눈·귀</div></div>
+            <div class="cat-item"><div class="cat-icon-circle">🚽</div><div class="cat-label">배변</div></div>
+            <div class="cat-item"><div class="cat-icon-circle">🏠</div><div class="cat-label">생활용품</div></div>
+          </div>
+        </div>
+
+        <!-- Care section -->
+        <div class="care-section">
+          <div class="section-title">베로 맞춤 케어</div>
+          <div class="care-scroll">
+            <div class="care-card care-card-green">
+              <div class="care-card-emoji">🦵</div>
+              <div class="care-card-title">슬개골·관절</div>
+              <div class="care-card-sub">소형견 맞춤</div>
+            </div>
+            <div class="care-card care-card-orange">
+              <div class="care-card-emoji">👁️</div>
+              <div class="care-card-title">눈물흔·체중</div>
+              <div class="care-card-sub">눈가 케어</div>
+            </div>
+            <div class="care-card care-card-blue">
+              <div class="care-card-emoji">🐾</div>
+              <div class="care-card-title">민감성 피부</div>
+              <div class="care-card-sub">저알러지 식단</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent products -->
+        <div class="recent-section">
+          <div class="section-title">최근 본 상품</div>
+          <div class="mini-scroll">
+            <div class="mini-product">
+              <div class="mini-product-img">🥘</div>
+              <div class="mini-product-brand">내추럴코어</div>
+              <div class="mini-product-name">오리 & 현미 성견사료</div>
+              <div class="mini-product-row">
+                <span class="badge badge-safe" style="font-size:10px;">A</span>
+                <span class="mini-product-price">38,900원</span>
+              </div>
+            </div>
+            <div class="mini-product">
+              <div class="mini-product-img">🐟</div>
+              <div class="mini-product-brand">지위픽</div>
+              <div class="mini-product-name">연어 & 고구마</div>
+              <div class="mini-product-row">
+                <span class="badge badge-safe" style="font-size:10px;">A</span>
+                <span class="mini-product-price">45,900원</span>
+              </div>
+            </div>
+            <div class="mini-product">
+              <div class="mini-product-img">🍖</div>
+              <div class="mini-product-brand">힐스</div>
+              <div class="mini-product-name">사이언스 다이어트</div>
+              <div class="mini-product-row">
+                <span class="badge badge-safe" style="font-size:10px;">A</span>
+                <span class="mini-product-price">35,500원</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recommend section -->
+        <div class="recommend-section">
+          <div class="section-title">베로에게 추천해요</div>
+          <div class="rec-product">
+            <div class="rec-product-img">🥘</div>
+            <div class="rec-product-info">
+              <div class="rec-product-brand">내추럴코어</div>
+              <div class="rec-product-name">오리 & 현미 성견사료 2.5kg</div>
+              <div class="rec-product-meta">
+                <span class="badge badge-safe">A+</span>
+                <span class="rec-product-compat">궁합 94/100</span>
+              </div>
+              <div class="rec-product-price">38,900원</div>
+            </div>
+          </div>
+          <div class="rec-product">
+            <div class="rec-product-img">🐟</div>
+            <div class="rec-product-info">
+              <div class="rec-product-brand">지위픽</div>
+              <div class="rec-product-name">연어 & 고구마 소형견 1.8kg</div>
+              <div class="rec-product-meta">
+                <span class="badge badge-safe">A</span>
+                <span class="rec-product-compat">궁합 91/100</span>
+              </div>
+              <div class="rec-product-price">45,900원</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Tab bar -->
+      <div class="tab-bar">
+        <div class="tab-item active" onclick="showScreen('screen-home')">
+          <span class="tab-icon">🏠</span>
+          <span class="tab-label" style="color:var(--primary)">홈</span>
+        </div>
+        <div class="tab-item" onclick="showScreen('screen-search')">
+          <span class="tab-icon">🔍</span>
+          <span class="tab-label">검색</span>
+        </div>
+        <div class="tab-scan" onclick="showScreen('screen-scanner')">
+          <div class="tab-scan-btn">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx="0.5"/><rect x="18" y="14" width="3" height="3" rx="0.5"/><rect x="14" y="18" width="3" height="3" rx="0.5"/><rect x="18" y="18" width="3" height="3" rx="0.5"/></svg>
+          </div>
+          <span class="tab-scan-label">스캔</span>
+        </div>
+        <div class="tab-item" onclick="showScreen('screen-community')">
+          <span class="tab-icon">💬</span>
+          <span class="tab-label">커뮤니티</span>
+        </div>
+        <div class="tab-item" onclick="showScreen('screen-mypet')">
+          <span class="tab-icon">😺</span>
+          <span class="tab-label">마이</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 3: SEARCH -->
+    <div class="screen" id="screen-search">
+      <div class="status-bar">
+        <span class="status-time">9:41</span>
+        <div class="status-icons">
+          <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><rect x="0" y="3" width="3" height="9" rx="1"/><rect x="4.5" y="2" width="3" height="10" rx="1"/><rect x="9" y="0.5" width="3" height="11.5" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg>
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 2.4C10.5 2.4 12.7 3.4 14.3 5L16 3.3C13.9 1.2 11.1 0 8 0C4.9 0 2.1 1.2 0 3.3L1.7 5C3.3 3.4 5.5 2.4 8 2.4Z"/><path d="M8 5C9.7 5 11.2 5.7 12.3 6.8L14 5.1C12.4 3.5 10.3 2.6 8 2.6C5.7 2.6 3.6 3.5 2 5.1L3.7 6.8C4.8 5.7 6.3 5 8 5Z"/><circle cx="8" cy="10" r="2"/></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="currentColor"/><rect x="2" y="2" width="16" height="8" rx="2" fill="currentColor"/><path d="M23 4v4c1.1-.5 1.1-3.5 0-4z" fill="currentColor"/></svg>
+        </div>
+      </div>
+      <div class="search-header">
+        <div class="search-bar">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#ADB5BD" stroke-width="1.7"><circle cx="8" cy="8" r="6"/><path d="M13 13l3.5 3.5"/></svg>
+          <input type="text" placeholder="사료, 브랜드, 성분 검색">
+        </div>
+        <div class="species-tabs">
+          <div class="species-tab active">전체</div>
+          <div class="species-tab">강아지</div>
+          <div class="species-tab">고양이</div>
+          <div class="species-tab">공용</div>
+        </div>
+      </div>
+      <div class="filter-chips-wrap">
+        <div class="filter-chips">
+          <div class="filter-chip">다이어트·체중</div>
+          <div class="filter-chip">시니어</div>
+          <div class="filter-chip">표준사료</div>
+          <div class="filter-chip active">알러지</div>
+          <div class="filter-chip">관절</div>
+          <div class="filter-chip">눈물흔</div>
+          <div class="filter-chip">피부</div>
+        </div>
+      </div>
+      <div class="sort-row">
+        <span class="sort-text">맞춤 추천순 ▾</span>
+      </div>
+      <div class="content">
+        <div class="product-list">
+          <div class="product-card">
+            <div class="product-img">🥘</div>
+            <div class="product-info">
+              <div class="product-brand">내추럴코어</div>
+              <div class="product-name">오리 & 현미 성견사료 2.5kg</div>
+              <div class="product-meta">
+                <span class="product-stars">★4.7</span>
+                <span class="product-reviews">(387개)</span>
+                <span class="product-compat">궁합 94/100</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span class="badge badge-safe">A</span>
+                <span class="product-price">38,900원</span>
+              </div>
+            </div>
+            <div class="product-actions">
+              <button class="heart-btn">🤍</button>
+              <button class="compare-btn">+ 비교</button>
+            </div>
+          </div>
+          <div class="product-card">
+            <div class="product-img">🐟</div>
+            <div class="product-info">
+              <div class="product-brand">지위픽</div>
+              <div class="product-name">연어 & 고구마 소형견 1.8kg</div>
+              <div class="product-meta">
+                <span class="product-stars">★4.6</span>
+                <span class="product-reviews">(241개)</span>
+                <span class="product-compat">궁합 91/100</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span class="badge badge-safe">A</span>
+                <span class="product-price">45,900원</span>
+              </div>
+            </div>
+            <div class="product-actions">
+              <button class="heart-btn">❤️</button>
+              <button class="compare-btn">+ 비교</button>
+            </div>
+          </div>
+          <div class="product-card">
+            <div class="product-img">🍖</div>
+            <div class="product-info">
+              <div class="product-brand">힐스</div>
+              <div class="product-name">사이언스 다이어트 성견 소형견 1.5kg</div>
+              <div class="product-meta">
+                <span class="product-stars">★4.5</span>
+                <span class="product-reviews">(523개)</span>
+                <span class="product-compat">궁합 88/100</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span class="badge badge-safe">A</span>
+                <span class="product-price">35,500원</span>
+              </div>
+            </div>
+            <div class="product-actions">
+              <button class="heart-btn">🤍</button>
+              <button class="compare-btn">+ 비교</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab-item" onclick="showScreen('screen-home')"><span class="tab-icon">🏠</span><span class="tab-label">홈</span></div>
+        <div class="tab-item active" onclick="showScreen('screen-search')"><span class="tab-icon">🔍</span><span class="tab-label" style="color:var(--primary)">검색</span></div>
+        <div class="tab-scan" onclick="showScreen('screen-scanner')">
+          <div class="tab-scan-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx="0.5"/><rect x="18" y="14" width="3" height="3" rx="0.5"/><rect x="14" y="18" width="3" height="3" rx="0.5"/><rect x="18" y="18" width="3" height="3" rx="0.5"/></svg></div>
+          <span class="tab-scan-label">스캔</span>
+        </div>
+        <div class="tab-item" onclick="showScreen('screen-community')"><span class="tab-icon">💬</span><span class="tab-label">커뮤니티</span></div>
+        <div class="tab-item" onclick="showScreen('screen-mypet')"><span class="tab-icon">😺</span><span class="tab-label">마이</span></div>
+      </div>
+    </div>
+
+    <!-- SCREEN 4: SCANNER -->
+    <div class="screen" id="screen-scanner" style="background:#111111; flex-direction:column;">
+      <div class="status-bar" style="background:transparent;">
+        <span class="status-time" style="color:#fff;">9:41</span>
+        <div class="status-icons" style="color:#fff;">
+          <svg width="17" height="12" viewBox="0 0 17 12" fill="#fff"><rect x="0" y="3" width="3" height="9" rx="1"/><rect x="4.5" y="2" width="3" height="10" rx="1"/><rect x="9" y="0.5" width="3" height="11.5" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg>
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="#fff"><path d="M8 2.4C10.5 2.4 12.7 3.4 14.3 5L16 3.3C13.9 1.2 11.1 0 8 0C4.9 0 2.1 1.2 0 3.3L1.7 5C3.3 3.4 5.5 2.4 8 2.4Z"/><path d="M8 5C9.7 5 11.2 5.7 12.3 6.8L14 5.1C12.4 3.5 10.3 2.6 8 2.6C5.7 2.6 3.6 3.5 2 5.1L3.7 6.8C4.8 5.7 6.3 5 8 5Z"/><circle cx="8" cy="10" r="2"/></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="#fff"/><rect x="2" y="2" width="16" height="8" rx="2" fill="#fff"/><path d="M23 4v4c1.1-.5 1.1-3.5 0-4z" fill="#fff"/></svg>
+        </div>
+      </div>
+      <div class="scanner-topbar">
+        <button class="scanner-close-btn">✕</button>
+        <button class="scanner-flash-btn">🔦</button>
+      </div>
+      <div class="scanner-area">
+        <div class="viewfinder">
+          <div class="corner corner-tl"></div>
+          <div class="corner corner-tr"></div>
+          <div class="corner corner-bl"></div>
+          <div class="corner corner-br"></div>
+          <div class="scan-line"></div>
+        </div>
+        <div class="scanner-text">바코드나 성분표를 촬영하면<br>자동으로 분석해요</div>
+        <div class="scanner-toggle">
+          <div class="scanner-toggle-item active">바코드 모드</div>
+          <div class="scanner-toggle-item">성분표 모드</div>
+        </div>
+      </div>
+      <div class="scanner-bottom">
+        <button class="scanner-side-btn">🖼️</button>
+        <button class="capture-btn"><div class="capture-btn-inner"></div></button>
+        <button class="scanner-side-btn">⚡</button>
+      </div>
+    </div>
+
+    <!-- SCREEN 5: RANKING -->
+    <div class="screen" id="screen-ranking">
+      <div class="status-bar">
+        <span class="status-time">9:41</span>
+        <div class="status-icons">
+          <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><rect x="0" y="3" width="3" height="9" rx="1"/><rect x="4.5" y="2" width="3" height="10" rx="1"/><rect x="9" y="0.5" width="3" height="11.5" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="currentColor"/><rect x="2" y="2" width="16" height="8" rx="2" fill="currentColor"/><path d="M23 4v4c1.1-.5 1.1-3.5 0-4z" fill="currentColor"/></svg>
+        </div>
+      </div>
+      <div style="background:var(--surface);padding:14px 16px 10px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+          <div style="font-size:20px;font-weight:800;color:var(--text1);">이번 주 사료 랭킹</div>
+          <div style="background:var(--primary);color:#000;font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;">WEEKLY · 6월 2주차</div>
+        </div>
+        <div style="display:flex;gap:0;border-bottom:1.5px solid var(--border);">
+          <div style="flex:1;text-align:center;padding:8px 0;font-size:14px;font-weight:600;color:var(--text2);cursor:pointer;">전체</div>
+          <div style="flex:1;text-align:center;padding:8px 0;font-size:14px;font-weight:700;color:var(--primary-dark);border-bottom:2.5px solid var(--primary);margin-bottom:-1.5px;cursor:pointer;">강아지</div>
+          <div style="flex:1;text-align:center;padding:8px 0;font-size:14px;font-weight:600;color:var(--text2);cursor:pointer;">고양이</div>
+        </div>
+        <div style="display:flex;gap:8px;padding:10px 0 4px;overflow-x:auto;">
+          <div class="filter-chip active" style="font-size:12px;padding:5px 12px;">궁합점수</div>
+          <div class="filter-chip" style="font-size:12px;padding:5px 12px;">평점</div>
+          <div class="filter-chip" style="font-size:12px;padding:5px 12px;">리뷰</div>
+          <div class="filter-chip" style="font-size:12px;padding:5px 12px;">성분안전</div>
+          <div class="filter-chip" style="font-size:12px;padding:5px 12px;">가성비</div>
+        </div>
+      </div>
+      <div class="content">
+        <!-- Stats row -->
+        <div style="display:flex;gap:8px;padding:12px 16px;">
+          <div style="flex:1;background:var(--surface);border-radius:14px;padding:12px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+            <div style="font-size:18px;font-weight:800;color:var(--text1);">★4.8</div>
+            <div style="font-size:11px;color:var(--text2);">평균 평점</div>
+          </div>
+          <div style="flex:1;background:var(--surface);border-radius:14px;padding:12px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+            <div style="font-size:14px;font-weight:800;color:var(--text1);">128,394</div>
+            <div style="font-size:11px;color:var(--text2);">누적 리뷰</div>
+          </div>
+          <div style="flex:1;background:var(--surface);border-radius:14px;padding:12px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+            <div style="font-size:18px;font-weight:800;color:var(--safe);">92%</div>
+            <div style="font-size:11px;color:var(--text2);">평균 안전도</div>
+          </div>
+        </div>
+        <!-- Ranking list -->
+        <div style="padding:0 16px 16px;display:flex;flex-direction:column;gap:8px;">
+          <!-- #1 -->
+          <div style="background:var(--primary-light);border:1.5px solid var(--primary);border-radius:16px;padding:14px;display:flex;align-items:center;gap:12px;">
+            <div style="font-size:28px;min-width:36px;text-align:center;">🥇</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:14px;font-weight:700;color:var(--text1);line-height:1.3;">내추럴코어 오리 & 현미 성견사료</div>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                <span class="badge" style="background:#1a7a3c;color:#fff;font-size:11px;">A+</span>
+                <span style="font-size:12px;font-weight:700;color:var(--primary-dark);">궁합 97</span>
+                <span style="font-size:11px;color:var(--text2);">★4.8</span>
+              </div>
+            </div>
+            <div style="font-size:14px;font-weight:700;color:var(--text1);">38,900원</div>
+          </div>
+          <!-- #2 -->
+          <div style="background:var(--surface);border-radius:16px;padding:14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+            <div style="font-size:28px;min-width:36px;text-align:center;">🥈</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:14px;font-weight:700;color:var(--text1);line-height:1.3;">지위픽 연어 & 고구마</div>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                <span class="badge badge-safe">A</span>
+                <span style="font-size:12px;font-weight:700;color:var(--primary-dark);">궁합 94</span>
+                <span style="font-size:11px;color:var(--text2);">★4.7</span>
+              </div>
+            </div>
+            <div style="font-size:14px;font-weight:700;color:var(--text1);">45,900원</div>
+          </div>
+          <!-- #3 -->
+          <div style="background:var(--surface);border-radius:16px;padding:14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+            <div style="font-size:28px;min-width:36px;text-align:center;">🥉</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:14px;font-weight:700;color:var(--text1);line-height:1.3;">힐스 사이언스 다이어트</div>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                <span class="badge badge-safe">A</span>
+                <span style="font-size:12px;font-weight:700;color:var(--primary-dark);">궁합 91</span>
+                <span style="font-size:11px;color:var(--text2);">★4.6</span>
+              </div>
+            </div>
+            <div style="font-size:14px;font-weight:700;color:var(--text1);">35,500원</div>
+          </div>
+          <!-- #4 -->
+          <div style="background:var(--surface);border-radius:16px;padding:14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+            <div style="width:36px;height:36px;background:var(--bg);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:var(--text2);min-width:36px;">4</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:14px;font-weight:700;color:var(--text1);line-height:1.3;">로얄캐닌 미니 어덜트</div>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                <span class="badge" style="background:#d4edda;color:#1a7a3c;">B+</span>
+                <span style="font-size:12px;font-weight:700;color:var(--primary-dark);">궁합 88</span>
+                <span style="font-size:11px;color:var(--text2);">★4.4</span>
+              </div>
+            </div>
+            <div style="font-size:14px;font-weight:700;color:var(--text1);">42,000원</div>
+          </div>
+          <!-- #5 -->
+          <div style="background:var(--surface);border-radius:16px;padding:14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+            <div style="width:36px;height:36px;background:var(--bg);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:var(--text2);min-width:36px;">5</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:14px;font-weight:700;color:var(--text1);line-height:1.3;">오리젠 오리지널</div>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                <span class="badge badge-safe">A</span>
+                <span style="font-size:12px;font-weight:700;color:var(--primary-dark);">궁합 86</span>
+                <span style="font-size:11px;color:var(--text2);">★4.5</span>
+              </div>
+            </div>
+            <div style="font-size:14px;font-weight:700;color:var(--text1);">68,000원</div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab-item" onclick="showScreen('screen-home')"><span class="tab-icon">🏠</span><span class="tab-label">홈</span></div>
+        <div class="tab-item" onclick="showScreen('screen-search')"><span class="tab-icon">🔍</span><span class="tab-label">검색</span></div>
+        <div class="tab-scan" onclick="showScreen('screen-scanner')">
+          <div class="tab-scan-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx="0.5"/><rect x="18" y="14" width="3" height="3" rx="0.5"/><rect x="14" y="18" width="3" height="3" rx="0.5"/><rect x="18" y="18" width="3" height="3" rx="0.5"/></svg></div>
+          <span class="tab-scan-label">스캔</span>
+        </div>
+        <div class="tab-item" onclick="showScreen('screen-community')"><span class="tab-icon">💬</span><span class="tab-label">커뮤니티</span></div>
+        <div class="tab-item" onclick="showScreen('screen-mypet')"><span class="tab-icon">😺</span><span class="tab-label">마이</span></div>
+      </div>
+    </div>
+
+    <!-- SCREEN 6: PRODUCT DETAIL -->
+    <div class="screen" id="screen-product">
+      <div class="status-bar">
+        <span class="status-time">9:41</span>
+        <div class="status-icons">
+          <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><rect x="0" y="3" width="3" height="9" rx="1"/><rect x="4.5" y="2" width="3" height="10" rx="1"/><rect x="9" y="0.5" width="3" height="11.5" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="currentColor"/><rect x="2" y="2" width="16" height="8" rx="2" fill="currentColor"/><path d="M23 4v4c1.1-.5 1.1-3.5 0-4z" fill="currentColor"/></svg>
+        </div>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding-bottom:80px;">
+        <!-- Hero image -->
+        <div style="height:180px;background:#F7F8FA;display:flex;align-items:center;justify-content:center;position:relative;">
+          <span style="font-size:64px;">🥘</span>
+          <button style="position:absolute;top:12px;left:12px;width:36px;height:36px;background:rgba(255,255,255,0.9);border:none;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button>
+          <div style="position:absolute;top:12px;right:12px;display:flex;gap:8px;">
+            <button style="width:36px;height:36px;background:rgba(255,255,255,0.9);border:none;border-radius:50%;font-size:16px;cursor:pointer;">🔗</button>
+            <button style="width:36px;height:36px;background:rgba(255,255,255,0.9);border:none;border-radius:50%;font-size:16px;cursor:pointer;">🤍</button>
+          </div>
+        </div>
+        <!-- Product info card -->
+        <div style="background:var(--surface);padding:16px 16px 0;margin-bottom:8px;">
+          <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">내추럴코어</div>
+          <div style="font-size:18px;font-weight:800;color:var(--text1);line-height:1.3;margin-bottom:8px;">오리 & 현미 성견사료 2.5kg</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+            <span style="color:#F5B800;font-size:14px;font-weight:700;">★4.8</span>
+            <span style="font-size:12px;color:var(--text2);">(387개 리뷰)</span>
+            <span style="font-size:13px;font-weight:700;color:var(--primary-dark);">궁합 97/100</span>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+            <span style="background:var(--safe-bg);color:var(--safe);padding:4px 10px;border-radius:100px;font-size:11px;font-weight:600;">무항생제 인증 ✓</span>
+            <span style="background:var(--safe-bg);color:var(--safe);padding:4px 10px;border-radius:100px;font-size:11px;font-weight:600;">AAFCO 기준 충족 ✓</span>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;padding-bottom:16px;">
+            <span class="badge badge-gray">🐶 강아지</span>
+            <span class="badge badge-gray">성견</span>
+            <span class="badge badge-gray">건식</span>
+          </div>
+        </div>
+        <!-- Analysis report card -->
+        <div style="margin:0 16px 10px;">
+          <div style="background:var(--primary-light);border-radius:16px;padding:14px;display:flex;align-items:center;gap:12px;">
+            <div>
+              <div style="font-size:36px;font-weight:900;color:var(--text1);line-height:1;">A+</div>
+              <div style="font-size:12px;color:var(--text2);">종합 등급</div>
+            </div>
+            <div style="flex:1;">
+              <div style="font-size:16px;font-weight:700;color:var(--text1);">성분·영양 분석 리포트</div>
+              <div style="font-size:13px;color:var(--text2);">97점 / 100점</div>
+            </div>
+            <div style="font-size:18px;color:var(--primary-dark);">→</div>
+          </div>
+        </div>
+        <!-- Feeding info -->
+        <div style="margin:0 16px 10px;">
+          <div style="background:var(--surface);border-radius:16px;padding:14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+            <span style="font-size:28px;">🐕</span>
+            <div>
+              <div style="font-size:12px;color:var(--text2);margin-bottom:2px;">베로의 하루 권장 급여량</div>
+              <div style="font-size:15px;font-weight:700;color:var(--text1);">약 96g · 2회 나눠 급여</div>
+            </div>
+          </div>
+        </div>
+        <!-- Ingredients -->
+        <div style="margin:0 16px 10px;">
+          <div style="background:var(--surface);border-radius:16px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+            <div class="section-title" style="margin-bottom:10px;">주요 성분</div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="font-size:14px;font-weight:600;color:var(--text1);">오리고기 <span style="color:var(--text3);font-size:12px;font-weight:400;">38%</span></div>
+                <span class="badge badge-safe">안전</span>
+              </div>
+              <div style="height:1px;background:var(--border);"></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="font-size:14px;font-weight:600;color:var(--text1);">현미</div>
+                <span class="badge badge-safe">안전</span>
+              </div>
+              <div style="height:1px;background:var(--border);"></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="font-size:14px;font-weight:600;color:var(--text1);">글루코사민</div>
+                <span class="badge badge-safe">안전</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Price -->
+        <div style="margin:0 16px 16px;">
+          <div style="background:var(--surface);border-radius:16px;padding:14px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+            <span style="font-size:22px;">🛒</span>
+            <div style="font-size:16px;font-weight:800;color:var(--text1);">최저가 38,900원</div>
+          </div>
+        </div>
+      </div>
+      <!-- Sticky bottom -->
+      <div style="position:absolute;bottom:83px;left:0;right:0;background:var(--surface);padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:10px;">
+        <button style="flex:1;height:48px;border:2px solid var(--primary);border-radius:12px;background:#fff;font-size:14px;font-weight:700;color:var(--primary-dark);cursor:pointer;font-family:'Pretendard',sans-serif;">비교함 추가</button>
+        <button style="flex:1;height:48px;background:var(--primary);border:none;border-radius:12px;font-size:14px;font-weight:700;color:#000;cursor:pointer;font-family:'Pretendard',sans-serif;">구매하기</button>
+      </div>
+      <div class="tab-bar">
+        <div class="tab-item" onclick="showScreen('screen-home')"><span class="tab-icon">🏠</span><span class="tab-label">홈</span></div>
+        <div class="tab-item" onclick="showScreen('screen-search')"><span class="tab-icon">🔍</span><span class="tab-label">검색</span></div>
+        <div class="tab-scan" onclick="showScreen('screen-scanner')">
+          <div class="tab-scan-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx="0.5"/><rect x="18" y="14" width="3" height="3" rx="0.5"/><rect x="14" y="18" width="3" height="3" rx="0.5"/><rect x="18" y="18" width="3" height="3" rx="0.5"/></svg></div>
+          <span class="tab-scan-label">스캔</span>
+        </div>
+        <div class="tab-item" onclick="showScreen('screen-community')"><span class="tab-icon">💬</span><span class="tab-label">커뮤니티</span></div>
+        <div class="tab-item" onclick="showScreen('screen-mypet')"><span class="tab-icon">😺</span><span class="tab-label">마이</span></div>
+      </div>
+    </div>
+
+    <!-- SCREEN 7: ANALYSIS REPORT -->
+    <div class="screen" id="screen-report">
+      <div class="status-bar">
+        <span class="status-time">9:41</span>
+        <div class="status-icons">
+          <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><rect x="0" y="3" width="3" height="9" rx="1"/><rect x="4.5" y="2" width="3" height="10" rx="1"/><rect x="9" y="0.5" width="3" height="11.5" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="currentColor"/><rect x="2" y="2" width="16" height="8" rx="2" fill="currentColor"/><path d="M23 4v4c1.1-.5 1.1-3.5 0-4z" fill="currentColor"/></svg>
+        </div>
+      </div>
+      <div style="background:var(--surface);padding:10px 16px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);">
+        <button style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text1);">←</button>
+        <div>
+          <div style="font-size:18px;font-weight:800;color:var(--text1);">분석 리포트</div>
+          <div style="font-size:12px;color:var(--text2);">내추럴코어 · 오리 & 현미 성견사료</div>
+        </div>
+      </div>
+      <div class="content">
+        <!-- Score card -->
+        <div style="margin:12px 16px;background:var(--surface);border-radius:20px;padding:20px;text-align:center;box-shadow:0 2px 16px rgba(0,0,0,0.07);">
+          <div style="display:flex;align-items:baseline;justify-content:center;gap:4px;margin-bottom:8px;">
+            <span style="font-size:48px;font-weight:900;color:var(--text1);">86</span>
+            <span style="font-size:20px;color:var(--text2);">/ 100</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:6px;">
+            <span style="background:var(--safe-bg);color:var(--safe);font-size:20px;font-weight:800;padding:4px 16px;border-radius:12px;">A</span>
+          </div>
+          <div style="font-size:14px;color:var(--text2);">베로와의 궁합</div>
+        </div>
+        <!-- Donut chart -->
+        <div style="margin:0 16px 12px;background:var(--surface);border-radius:20px;padding:20px;box-shadow:0 2px 16px rgba(0,0,0,0.07);">
+          <div class="section-title" style="margin-bottom:16px;">영양 구성</div>
+          <div style="display:flex;justify-content:center;">
+            <svg width="200" height="200" viewBox="0 0 200 200">
+              <!-- Background circle -->
+              <circle cx="100" cy="100" r="80" fill="none" stroke="#F2F4F6" stroke-width="24"/>
+              <!-- 단백질 38% = 502.65*0.38 = 190.9 -->
+              <circle cx="100" cy="100" r="80" fill="none" stroke="#F5B800" stroke-width="24"
+                stroke-dasharray="190.9 502.65" stroke-dashoffset="125.7" stroke-linecap="butt" transform="rotate(-90 100 100)"/>
+              <!-- 지방 18% = 502.65*0.18 = 90.5, offset = -190.9 → dashoffset = 125.7+502.65-190.9 = 437.45 -->
+              <circle cx="100" cy="100" r="80" fill="none" stroke="#FF7A00" stroke-width="24"
+                stroke-dasharray="90.5 502.65" stroke-dashoffset="437.45" stroke-linecap="butt" transform="rotate(-90 100 100)"/>
+              <!-- 탄수화물 34% = 170.9, offset = -(190.9+90.5) = -281.4 → 125.7+502.65-281.4 = 346.95 -->
+              <circle cx="100" cy="100" r="80" fill="none" stroke="#3B82F6" stroke-width="24"
+                stroke-dasharray="170.9 502.65" stroke-dashoffset="346.95" stroke-linecap="butt" transform="rotate(-90 100 100)"/>
+              <!-- 기타 10% = 50.27, offset = -(281.4+170.9) = -452.3 → 125.7+502.65-452.3 = 176.05 -->
+              <circle cx="100" cy="100" r="80" fill="none" stroke="#ADB5BD" stroke-width="24"
+                stroke-dasharray="50.27 502.65" stroke-dashoffset="176.05" stroke-linecap="butt" transform="rotate(-90 100 100)"/>
+              <text x="100" y="96" text-anchor="middle" font-size="14" font-weight="700" fill="#191F28">영양</text>
+              <text x="100" y="114" text-anchor="middle" font-size="14" font-weight="700" fill="#191F28">구성</text>
+            </svg>
+          </div>
+          <!-- Legend -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="width:12px;height:12px;border-radius:50%;background:#F5B800;flex-shrink:0;"></div>
+              <span style="font-size:12px;color:var(--text2);">단백질</span>
+              <span style="font-size:13px;font-weight:700;color:var(--text1);margin-left:auto;">38%</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="width:12px;height:12px;border-radius:50%;background:#FF7A00;flex-shrink:0;"></div>
+              <span style="font-size:12px;color:var(--text2);">지방</span>
+              <span style="font-size:13px;font-weight:700;color:var(--text1);margin-left:auto;">18%</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="width:12px;height:12px;border-radius:50%;background:#3B82F6;flex-shrink:0;"></div>
+              <span style="font-size:12px;color:var(--text2);">탄수화물</span>
+              <span style="font-size:13px;font-weight:700;color:var(--text1);margin-left:auto;">34%</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="width:12px;height:12px;border-radius:50%;background:#ADB5BD;flex-shrink:0;"></div>
+              <span style="font-size:12px;color:var(--text2);">기타</span>
+              <span style="font-size:13px;font-weight:700;color:var(--text1);margin-left:auto;">10%</span>
+            </div>
+          </div>
+        </div>
+        <!-- Warning -->
+        <div style="margin:0 16px 12px;background:var(--warn-bg);border-radius:16px;padding:14px;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:20px;">⚠️</span>
+          <div style="flex:1;">
+            <div style="font-size:14px;font-weight:700;color:var(--warn);">1개의 주의 성분이 발견됐어요</div>
+          </div>
+          <span style="background:var(--warn);color:#fff;padding:3px 10px;border-radius:100px;font-size:12px;font-weight:700;">BHA</span>
+        </div>
+        <!-- Full ingredient list -->
+        <div style="margin:0 16px 12px;background:var(--surface);border-radius:20px;padding:16px;box-shadow:0 2px 16px rgba(0,0,0,0.07);">
+          <div class="section-title" style="margin-bottom:12px;">전성분 분석</div>
+          <div style="display:flex;flex-direction:column;gap:0;">
+            <div style="display:flex;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+              <div style="flex:1;">
+                <div style="font-size:14px;font-weight:600;color:var(--text1);">오리고기</div>
+                <div style="font-size:11px;color:var(--text2);">주원료, 동물성 단백질</div>
+              </div>
+              <span class="badge badge-safe">안전</span>
+            </div>
+            <div style="display:flex;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+              <div style="flex:1;">
+                <div style="font-size:14px;font-weight:600;color:var(--text1);">현미</div>
+                <div style="font-size:11px;color:var(--text2);">탄수화물 급원</div>
+              </div>
+              <span class="badge badge-safe">안전</span>
+            </div>
+            <div style="display:flex;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+              <div style="flex:1;">
+                <div style="font-size:14px;font-weight:600;color:var(--text1);">글루코사민</div>
+                <div style="font-size:11px;color:var(--text2);">관절 보호</div>
+              </div>
+              <span class="badge badge-safe">안전</span>
+            </div>
+            <div style="display:flex;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);background:var(--warn-bg);margin:0 -16px;padding-left:16px;padding-right:16px;">
+              <div style="flex:1;">
+                <div style="font-size:14px;font-weight:600;color:var(--warn);">BHA</div>
+                <div style="font-size:11px;color:var(--warn);">합성 산화방지제</div>
+              </div>
+              <span class="badge badge-warn">⚠️주의</span>
+            </div>
+            <div style="display:flex;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+              <div style="flex:1;">
+                <div style="font-size:14px;font-weight:600;color:var(--text1);">토코페롤</div>
+                <div style="font-size:11px;color:var(--text2);">천연 비타민E</div>
+              </div>
+              <span class="badge badge-safe">안전</span>
+            </div>
+            <div style="display:flex;align-items:center;padding:10px 0;">
+              <div style="flex:1;">
+                <div style="font-size:14px;font-weight:600;color:var(--text1);">콜레스테롤</div>
+                <div style="font-size:11px;color:var(--text2);">조절</div>
+              </div>
+              <span class="badge badge-gray">확인필요</span>
+            </div>
+          </div>
+        </div>
+        <!-- Allergy check -->
+        <div style="margin:0 16px 12px;background:var(--surface);border-radius:16px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+          <div style="font-size:14px;font-weight:700;color:var(--text1);margin-bottom:10px;">알레르기 체크</div>
+          <div style="display:flex;gap:10px;">
+            <span style="color:var(--safe);font-size:13px;font-weight:600;">닭고기 없음 ✓</span>
+            <span style="color:var(--safe);font-size:13px;font-weight:600;">대두 없음 ✓</span>
+          </div>
+        </div>
+        <!-- Disclaimer -->
+        <div style="margin:0 16px 24px;">
+          <div style="font-size:11px;color:var(--text3);line-height:1.6;text-align:center;">베로로의 분석은 참고 정보이며, 질병 치료나 진단을 대체하지 않아요.</div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab-item" onclick="showScreen('screen-home')"><span class="tab-icon">🏠</span><span class="tab-label">홈</span></div>
+        <div class="tab-item" onclick="showScreen('screen-search')"><span class="tab-icon">🔍</span><span class="tab-label">검색</span></div>
+        <div class="tab-scan" onclick="showScreen('screen-scanner')">
+          <div class="tab-scan-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx="0.5"/><rect x="18" y="14" width="3" height="3" rx="0.5"/><rect x="14" y="18" width="3" height="3" rx="0.5"/><rect x="18" y="18" width="3" height="3" rx="0.5"/></svg></div>
+          <span class="tab-scan-label">스캔</span>
+        </div>
+        <div class="tab-item" onclick="showScreen('screen-community')"><span class="tab-icon">💬</span><span class="tab-label">커뮤니티</span></div>
+        <div class="tab-item" onclick="showScreen('screen-mypet')"><span class="tab-icon">😺</span><span class="tab-label">마이</span></div>
+      </div>
+    </div>
+
+    <!-- SCREEN 8: COMPARE -->
+    <div class="screen" id="screen-compare">
+      <div class="status-bar">
+        <span class="status-time">9:41</span>
+        <div class="status-icons">
+          <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><rect x="0" y="3" width="3" height="9" rx="1"/><rect x="4.5" y="2" width="3" height="10" rx="1"/><rect x="9" y="0.5" width="3" height="11.5" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="currentColor"/><rect x="2" y="2" width="16" height="8" rx="2" fill="currentColor"/><path d="M23 4v4c1.1-.5 1.1-3.5 0-4z" fill="currentColor"/></svg>
+        </div>
+      </div>
+      <div style="background:var(--surface);padding:10px 16px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);">
+        <button style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text1);">←</button>
+        <div style="font-size:18px;font-weight:800;color:var(--text1);flex:1;">사료 비교</div>
+        <span style="background:var(--primary);color:#000;font-size:12px;font-weight:700;padding:3px 10px;border-radius:100px;">3/4</span>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding-bottom:83px;">
+        <div style="overflow-x:auto;padding-bottom:8px;">
+          <table style="border-collapse:collapse;min-width:600px;width:100%;">
+            <colgroup>
+              <col style="width:120px;">
+              <col style="width:150px;">
+              <col style="width:150px;">
+              <col style="width:150px;">
+              <col style="width:100px;">
+            </colgroup>
+            <thead>
+              <tr style="background:var(--surface);border-bottom:2px solid var(--border);">
+                <th style="padding:12px 8px;text-align:left;font-size:12px;color:var(--text2);font-weight:600;position:sticky;left:0;background:var(--surface);z-index:2;"></th>
+                <th style="padding:12px 8px;min-width:150px;">
+                  <div style="display:flex;align-items:center;gap:4px;justify-content:center;">
+                    <span style="font-size:20px;">🥘</span>
+                    <div style="text-align:left;">
+                      <div style="font-size:11px;color:var(--text3);">내추럴코어</div>
+                      <div style="font-size:12px;font-weight:700;color:var(--text1);">오리 & 현미</div>
+                    </div>
+                    <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;margin-left:4px;">✕</button>
+                  </div>
+                </th>
+                <th style="padding:12px 8px;min-width:150px;">
+                  <div style="display:flex;align-items:center;gap:4px;justify-content:center;">
+                    <span style="font-size:20px;">🐟</span>
+                    <div style="text-align:left;">
+                      <div style="font-size:11px;color:var(--text3);">지위픽</div>
+                      <div style="font-size:12px;font-weight:700;color:var(--text1);">연어 & 고구마</div>
+                    </div>
+                    <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;margin-left:4px;">✕</button>
+                  </div>
+                </th>
+                <th style="padding:12px 8px;min-width:150px;">
+                  <div style="display:flex;align-items:center;gap:4px;justify-content:center;">
+                    <span style="font-size:20px;">🍖</span>
+                    <div style="text-align:left;">
+                      <div style="font-size:11px;color:var(--text3);">힐스</div>
+                      <div style="font-size:12px;font-weight:700;color:var(--text1);">사이언스다이어트</div>
+                    </div>
+                    <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;margin-left:4px;">✕</button>
+                  </div>
+                </th>
+                <th style="padding:12px 8px;min-width:100px;">
+                  <div style="width:80px;height:50px;border:2px dashed var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--text3);cursor:pointer;margin:0 auto;">+</div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Row: 궁합점수 -->
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:12px 8px;font-size:12px;color:var(--text2);font-weight:600;position:sticky;left:0;background:var(--bg);z-index:1;white-space:nowrap;">궁합점수</td>
+                <td style="padding:12px 8px;text-align:center;background:var(--primary-light);">
+                  <span style="font-size:15px;font-weight:800;color:var(--primary-dark);">97점 👑</span>
+                </td>
+                <td style="padding:12px 8px;text-align:center;"><span style="font-size:14px;font-weight:700;color:var(--text1);">94점</span></td>
+                <td style="padding:12px 8px;text-align:center;"><span style="font-size:14px;font-weight:700;color:var(--text1);">91점</span></td>
+                <td></td>
+              </tr>
+              <!-- Row: 가격 -->
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:12px 8px;font-size:12px;color:var(--text2);font-weight:600;position:sticky;left:0;background:var(--bg);z-index:1;">가격</td>
+                <td style="padding:12px 8px;text-align:center;"><span style="font-size:13px;font-weight:600;color:var(--text1);">38,900원</span></td>
+                <td style="padding:12px 8px;text-align:center;"><span style="font-size:13px;font-weight:600;color:var(--text1);">45,900원</span></td>
+                <td style="padding:12px 8px;text-align:center;background:var(--primary-light);">
+                  <span style="font-size:13px;font-weight:700;color:var(--primary-dark);">35,500원 👑</span>
+                </td>
+                <td></td>
+              </tr>
+              <!-- Row: 평점 -->
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:12px 8px;font-size:12px;color:var(--text2);font-weight:600;position:sticky;left:0;background:var(--bg);z-index:1;">평점</td>
+                <td style="padding:12px 8px;text-align:center;background:var(--primary-light);">
+                  <span style="font-size:13px;font-weight:700;color:var(--primary-dark);">4.8 👑</span>
+                </td>
+                <td style="padding:12px 8px;text-align:center;"><span style="font-size:13px;font-weight:600;color:var(--text1);">4.7</span></td>
+                <td style="padding:12px 8px;text-align:center;"><span style="font-size:13px;font-weight:600;color:var(--text1);">4.6</span></td>
+                <td></td>
+              </tr>
+              <!-- Row: 리뷰수 -->
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:12px 8px;font-size:12px;color:var(--text2);font-weight:600;position:sticky;left:0;background:var(--bg);z-index:1;">리뷰수</td>
+                <td style="padding:12px 8px;text-align:center;"><span style="font-size:13px;color:var(--text1);">387개</span></td>
+                <td style="padding:12px 8px;text-align:center;"><span style="font-size:13px;color:var(--text1);">241개</span></td>
+                <td style="padding:12px 8px;text-align:center;background:var(--primary-light);">
+                  <span style="font-size:13px;font-weight:700;color:var(--primary-dark);">523개 👑</span>
+                </td>
+                <td></td>
+              </tr>
+              <!-- Row: 안전도 -->
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:12px 8px;font-size:12px;color:var(--text2);font-weight:600;position:sticky;left:0;background:var(--bg);z-index:1;">안전도</td>
+                <td style="padding:12px 8px;text-align:center;background:var(--primary-light);">
+                  <span style="font-size:13px;font-weight:700;color:var(--primary-dark);">97% 👑</span>
+                </td>
+                <td style="padding:12px 8px;text-align:center;"><span style="font-size:13px;color:var(--text1);">94%</span></td>
+                <td style="padding:12px 8px;text-align:center;"><span style="font-size:13px;color:var(--text1);">91%</span></td>
+                <td></td>
+              </tr>
+              <!-- Row: 등급 -->
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:12px 8px;font-size:12px;color:var(--text2);font-weight:600;position:sticky;left:0;background:var(--bg);z-index:1;">등급</td>
+                <td style="padding:12px 8px;text-align:center;background:var(--primary-light);">
+                  <span class="badge" style="background:#1a7a3c;color:#fff;font-size:12px;">A+ 👑</span>
+                </td>
+                <td style="padding:12px 8px;text-align:center;"><span class="badge badge-safe" style="font-size:12px;">A</span></td>
+                <td style="padding:12px 8px;text-align:center;"><span class="badge badge-safe" style="font-size:12px;">A</span></td>
+                <td></td>
+              </tr>
+              <!-- Row: 주의성분수 -->
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:12px 8px;font-size:12px;color:var(--text2);font-weight:600;position:sticky;left:0;background:var(--bg);z-index:1;white-space:nowrap;">주의성분수</td>
+                <td style="padding:12px 8px;text-align:center;background:var(--primary-light);">
+                  <span style="font-size:13px;font-weight:700;color:var(--safe);">0개 👑</span>
+                </td>
+                <td style="padding:12px 8px;text-align:center;background:var(--primary-light);">
+                  <span style="font-size:13px;font-weight:700;color:var(--safe);">0개 👑</span>
+                </td>
+                <td style="padding:12px 8px;text-align:center;"><span style="font-size:13px;color:var(--warn);">1개</span></td>
+                <td></td>
+              </tr>
+              <!-- Row: 주요원료 -->
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:12px 8px;font-size:12px;color:var(--text2);font-weight:600;position:sticky;left:0;background:var(--bg);z-index:1;white-space:nowrap;">주요원료</td>
+                <td style="padding:12px 8px;text-align:center;"><span style="font-size:12px;color:var(--text1);">오리고기</span></td>
+                <td style="padding:12px 8px;text-align:center;"><span style="font-size:12px;color:var(--text1);">연어</span></td>
+                <td style="padding:12px 8px;text-align:center;"><span style="font-size:12px;color:var(--text1);">닭고기</span></td>
+                <td></td>
+              </tr>
+              <!-- Row: 급여량 -->
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:12px 8px;font-size:12px;color:var(--text2);font-weight:600;position:sticky;left:0;background:var(--bg);z-index:1;">급여량</td>
+                <td style="padding:12px 8px;text-align:center;"><span style="font-size:12px;color:var(--text1);">96g</span></td>
+                <td style="padding:12px 8px;text-align:center;background:var(--primary-light);">
+                  <span style="font-size:12px;font-weight:700;color:var(--primary-dark);">88g 👑</span>
+                </td>
+                <td style="padding:12px 8px;text-align:center;"><span style="font-size:12px;color:var(--text1);">102g</span></td>
+                <td></td>
+              </tr>
+              <!-- Row: g당가격 -->
+              <tr>
+                <td style="padding:12px 8px;font-size:12px;color:var(--text2);font-weight:600;position:sticky;left:0;background:var(--bg);z-index:1;white-space:nowrap;">g당가격</td>
+                <td style="padding:12px 8px;text-align:center;"><span style="font-size:12px;color:var(--text1);">15.6원</span></td>
+                <td style="padding:12px 8px;text-align:center;"><span style="font-size:12px;color:var(--text1);">18.4원</span></td>
+                <td style="padding:12px 8px;text-align:center;background:var(--primary-light);">
+                  <span style="font-size:12px;font-weight:700;color:var(--primary-dark);">13.8원 👑</span>
+                </td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Sticky bottom -->
+      <div style="position:absolute;bottom:83px;left:0;right:0;background:var(--surface);padding:12px 16px;border-top:1px solid var(--border);">
+        <button style="width:100%;height:48px;background:var(--primary);border:none;border-radius:14px;font-size:15px;font-weight:700;color:#000;cursor:pointer;font-family:'Pretendard',sans-serif;">이 상품으로 결정하기</button>
+      </div>
+      <div class="tab-bar">
+        <div class="tab-item" onclick="showScreen('screen-home')"><span class="tab-icon">🏠</span><span class="tab-label">홈</span></div>
+        <div class="tab-item" onclick="showScreen('screen-search')"><span class="tab-icon">🔍</span><span class="tab-label">검색</span></div>
+        <div class="tab-scan" onclick="showScreen('screen-scanner')">
+          <div class="tab-scan-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx="0.5"/><rect x="18" y="14" width="3" height="3" rx="0.5"/><rect x="14" y="18" width="3" height="3" rx="0.5"/><rect x="18" y="18" width="3" height="3" rx="0.5"/></svg></div>
+          <span class="tab-scan-label">스캔</span>
+        </div>
+        <div class="tab-item" onclick="showScreen('screen-community')"><span class="tab-icon">💬</span><span class="tab-label">커뮤니티</span></div>
+        <div class="tab-item" onclick="showScreen('screen-mypet')"><span class="tab-icon">😺</span><span class="tab-label">마이</span></div>
+      </div>
+    </div>
+
+    <!-- SCREEN 9: COMMUNITY -->
+    <div class="screen" id="screen-community">
+      <div class="status-bar">
+        <span class="status-time">9:41</span>
+        <div class="status-icons">
+          <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><rect x="0" y="3" width="3" height="9" rx="1"/><rect x="4.5" y="2" width="3" height="10" rx="1"/><rect x="9" y="0.5" width="3" height="11.5" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="currentColor"/><rect x="2" y="2" width="16" height="8" rx="2" fill="currentColor"/><path d="M23 4v4c1.1-.5 1.1-3.5 0-4z" fill="currentColor"/></svg>
+        </div>
+      </div>
+      <div style="background:var(--surface);padding:10px 16px 0;border-bottom:1px solid var(--border);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
+          <div style="font-size:22px;font-weight:800;color:var(--text1);">랜선애카</div>
+          <button style="background:none;border:none;font-size:22px;cursor:pointer;">✏️</button>
+        </div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:12px;">먹이고, 키우고, 나누는 이야기</div>
+        <div style="display:flex;gap:0;border-bottom:1.5px solid var(--border);">
+          <div style="flex:1;text-align:center;padding:8px 0;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;">전체</div>
+          <div style="flex:1;text-align:center;padding:8px 0;font-size:13px;font-weight:700;color:var(--primary-dark);border-bottom:2.5px solid var(--primary);margin-bottom:-1.5px;cursor:pointer;">사료추천</div>
+          <div style="flex:1;text-align:center;padding:8px 0;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;">집사꿀팁</div>
+          <div style="flex:1;text-align:center;padding:8px 0;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;">수의사Q&A</div>
+          <div style="flex:1;text-align:center;padding:8px 0;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;">잡담</div>
+        </div>
+        <div style="display:flex;gap:12px;padding:10px 0 0;">
+          <div style="font-size:13px;font-weight:700;color:var(--text1);cursor:pointer;padding-bottom:8px;border-bottom:2px solid var(--text1);">인기글</div>
+          <div style="font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;padding-bottom:8px;">최신글</div>
+        </div>
+      </div>
+      <div class="content" style="position:relative;">
+        <div style="padding:12px 16px;display:flex;flex-direction:column;gap:10px;">
+          <div style="background:var(--surface);border-radius:16px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+              <div style="width:32px;height:32px;border-radius:50%;background:#F5B800;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#000;">초</div>
+              <div style="flex:1;">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <span style="font-size:13px;font-weight:700;color:var(--text1);">초코맘</span>
+                  <span style="background:var(--primary-light);color:var(--primary-dark);padding:2px 7px;border-radius:100px;font-size:10px;font-weight:600;">사료추천</span>
+                </div>
+                <div style="font-size:11px;color:var(--text3);">3분 전</div>
+              </div>
+            </div>
+            <div style="font-size:15px;font-weight:700;color:var(--text1);margin-bottom:6px;line-height:1.4;">말티즈 눈물흔에 지위픽 써봤어요!</div>
+            <div style="font-size:13px;color:var(--text2);margin-bottom:10px;line-height:1.5;">3개월 먹였는데 확실히 눈물자국이...</div>
+            <div style="display:flex;gap:12px;"><span style="font-size:13px;color:var(--text2);">💛 48</span><span style="font-size:13px;color:var(--text2);">💬 12</span></div>
+          </div>
+          <div style="background:var(--surface);border-radius:16px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+              <div style="width:32px;height:32px;border-radius:50%;background:#3B82F6;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;">박</div>
+              <div style="flex:1;">
+                <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                  <span style="font-size:13px;font-weight:700;color:var(--text1);">Dr.박수의사</span>
+                  <span style="background:#EEF2FF;color:#3B82F6;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:600;">✅ 수의사 인증</span>
+                  <span style="background:#EEF2FF;color:#3B82F6;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:600;">수의사Q&A</span>
+                </div>
+                <div style="font-size:11px;color:var(--text3);">1시간 전</div>
+              </div>
+            </div>
+            <div style="font-size:15px;font-weight:700;color:var(--text1);margin-bottom:6px;line-height:1.4;">닭고기 알러지 대체 단백질 추천</div>
+            <div style="font-size:13px;color:var(--text2);margin-bottom:10px;line-height:1.5;">닭고기 알러지가 있는 반려견을 위한...</div>
+            <div style="display:flex;gap:12px;"><span style="font-size:13px;color:var(--text2);">💛 124</span><span style="font-size:13px;color:var(--text2);">💬 39</span></div>
+          </div>
+          <div style="background:var(--surface);border-radius:16px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+              <div style="width:32px;height:32px;border-radius:50%;background:#9B59B6;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;">냥</div>
+              <div style="flex:1;">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <span style="font-size:13px;font-weight:700;color:var(--text1);">냥이집사</span>
+                  <span style="background:var(--safe-bg);color:var(--safe);padding:2px 7px;border-radius:100px;font-size:10px;font-weight:600;">집사꿀팁</span>
+                </div>
+                <div style="font-size:11px;color:var(--text3);">5시간 전</div>
+              </div>
+            </div>
+            <div style="font-size:15px;font-weight:700;color:var(--text1);margin-bottom:6px;line-height:1.4;">사료 보관 완벽 가이드 (밀봉 필수!)</div>
+            <div style="font-size:13px;color:var(--text2);margin-bottom:10px;line-height:1.5;">사료 산화 방지하려면 이렇게 보관하세요...</div>
+            <div style="display:flex;gap:12px;"><span style="font-size:13px;color:var(--text2);">💛 67</span><span style="font-size:13px;color:var(--text2);">💬 8</span></div>
+          </div>
+        </div>
+        <div style="position:sticky;bottom:16px;right:16px;display:flex;justify-content:flex-end;padding:0 16px 8px;">
+          <button style="width:56px;height:56px;background:var(--primary);border:none;border-radius:50%;font-size:22px;cursor:pointer;box-shadow:0 4px 16px rgba(245,184,0,0.4);display:flex;align-items:center;justify-content:center;">✏️</button>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab-item" onclick="showScreen('screen-home')"><span class="tab-icon">🏠</span><span class="tab-label">홈</span></div>
+        <div class="tab-item" onclick="showScreen('screen-search')"><span class="tab-icon">🔍</span><span class="tab-label">검색</span></div>
+        <div class="tab-scan" onclick="showScreen('screen-scanner')"><div class="tab-scan-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx="0.5"/><rect x="18" y="14" width="3" height="3" rx="0.5"/><rect x="14" y="18" width="3" height="3" rx="0.5"/><rect x="18" y="18" width="3" height="3" rx="0.5"/></svg></div><span class="tab-scan-label">스캔</span></div>
+        <div class="tab-item active" onclick="showScreen('screen-community')"><span class="tab-icon">💬</span><span class="tab-label" style="color:var(--primary)">커뮤니티</span></div>
+        <div class="tab-item" onclick="showScreen('screen-mypet')"><span class="tab-icon">😺</span><span class="tab-label">마이</span></div>
+      </div>
+    </div>
+
+    <!-- SCREEN 10: INGREDIENT DICTIONARY -->
+    <div class="screen" id="screen-dictionary">
+      <div class="status-bar">
+        <span class="status-time">9:41</span>
+        <div class="status-icons">
+          <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><rect x="0" y="3" width="3" height="9" rx="1"/><rect x="4.5" y="2" width="3" height="10" rx="1"/><rect x="9" y="0.5" width="3" height="11.5" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="currentColor"/><rect x="2" y="2" width="16" height="8" rx="2" fill="currentColor"/><path d="M23 4v4c1.1-.5 1.1-3.5 0-4z" fill="currentColor"/></svg>
+        </div>
+      </div>
+      <div style="background:var(--surface);padding:10px 16px 14px;border-bottom:1px solid var(--border);">
+        <div style="font-size:20px;font-weight:800;color:var(--text1);margin-bottom:2px;">성분사전</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:12px;">한국표준사료 성분사전</div>
+        <div style="display:flex;align-items:center;background:var(--bg);border-radius:100px;padding:0 16px;height:44px;gap:8px;border:1.5px solid var(--border);margin-bottom:12px;">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#ADB5BD" stroke-width="1.7"><circle cx="8" cy="8" r="6"/><path d="M13 13l3.5 3.5"/></svg>
+          <input type="text" placeholder="성분명으로 검색" style="flex:1;border:none;background:none;font-size:14px;font-family:'Pretendard',sans-serif;color:var(--text1);outline:none;">
+        </div>
+        <div style="display:flex;gap:0;border-bottom:1.5px solid var(--border);">
+          <div style="flex:1;text-align:center;padding:8px 0;font-size:13px;font-weight:700;color:var(--primary-dark);border-bottom:2.5px solid var(--primary);margin-bottom:-1.5px;cursor:pointer;">전체</div>
+          <div style="flex:1;text-align:center;padding:8px 0;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;">안전</div>
+          <div style="flex:1;text-align:center;padding:8px 0;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;">주의</div>
+          <div style="flex:1;text-align:center;padding:8px 0;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;">위험</div>
+        </div>
+      </div>
+      <div class="content">
+        <div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px;">
+          <div style="background:var(--surface);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);cursor:pointer;">
+            <div style="flex:1;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><span style="font-size:15px;font-weight:700;color:var(--text1);">조단백질</span><span style="background:var(--safe-bg);color:var(--safe);padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600;">안전</span></div><div style="font-size:12px;color:var(--text2);margin-bottom:2px;">근육 형성에 필요한 필수 영양소</div><div style="font-size:11px;color:var(--text3);">권장: 18% 이상</div></div>
+            <div style="font-size:18px;color:var(--text3);">›</div>
+          </div>
+          <div style="background:var(--surface);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);cursor:pointer;">
+            <div style="flex:1;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><span style="font-size:15px;font-weight:700;color:var(--text1);">조지방</span><span style="background:var(--safe-bg);color:var(--safe);padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600;">안전</span></div><div style="font-size:12px;color:var(--text2);margin-bottom:2px;">에너지원, 피부·모질 개선</div><div style="font-size:11px;color:var(--text3);">권장: 5% 이상</div></div>
+            <div style="font-size:18px;color:var(--text3);">›</div>
+          </div>
+          <div style="background:var(--warn-bg);border:1px solid #FFD4A8;border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;">
+            <div style="flex:1;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><span style="font-size:15px;font-weight:700;color:var(--warn);">조섬유</span><span style="background:var(--warn-bg);color:var(--warn);padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600;">주의</span></div><div style="font-size:12px;color:var(--warn);margin-bottom:2px;">소화 도움, 적정 섭취 필요</div><div style="font-size:11px;color:var(--warn);">주의기준: 5% 이하</div></div>
+            <div style="font-size:18px;color:var(--warn);">›</div>
+          </div>
+          <div style="background:var(--surface);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);cursor:pointer;">
+            <div style="flex:1;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><span style="font-size:15px;font-weight:700;color:var(--text1);">칼슘</span><span style="background:var(--safe-bg);color:var(--safe);padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600;">안전</span></div><div style="font-size:12px;color:var(--text2);margin-bottom:2px;">뼈·치아 강화</div><div style="font-size:11px;color:var(--text3);">권장: 0.6~2.5%</div></div>
+            <div style="font-size:18px;color:var(--text3);">›</div>
+          </div>
+          <div style="background:var(--surface);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);cursor:pointer;">
+            <div style="flex:1;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><span style="font-size:15px;font-weight:700;color:var(--text1);">오메가3</span><span style="background:var(--safe-bg);color:var(--safe);padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600;">안전</span></div><div style="font-size:12px;color:var(--text2);margin-bottom:2px;">항염증, 피부 개선</div><div style="font-size:11px;color:var(--text3);">권장: 명시 권장</div></div>
+            <div style="font-size:18px;color:var(--text3);">›</div>
+          </div>
+          <div style="background:var(--surface);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);cursor:pointer;">
+            <div style="flex:1;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><span style="font-size:15px;font-weight:700;color:var(--text1);">글루코사민</span><span style="background:var(--safe-bg);color:var(--safe);padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600;">안전</span></div><div style="font-size:12px;color:var(--text2);margin-bottom:2px;">관절 보호 성분</div><div style="font-size:11px;color:var(--text3);">기능성 성분</div></div>
+            <div style="font-size:18px;color:var(--text3);">›</div>
+          </div>
+          <div style="background:var(--warn-bg);border:1px solid #FFD4A8;border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;">
+            <div style="flex:1;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><span style="font-size:15px;font-weight:700;color:var(--warn);">BHA</span><span style="background:var(--warn-bg);color:var(--warn);padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600;">⚠️주의</span></div><div style="font-size:12px;color:var(--warn);margin-bottom:2px;">합성 산화방지제 (발암 위험 논란)</div><div style="font-size:11px;color:var(--warn);">0.02% 초과 주의</div></div>
+            <div style="font-size:18px;color:var(--warn);">›</div>
+          </div>
+          <div style="background:var(--warn-bg);border:1px solid #FFD4A8;border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;margin-bottom:16px;">
+            <div style="flex:1;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><span style="font-size:15px;font-weight:700;color:var(--warn);">BHT</span><span style="background:var(--warn-bg);color:var(--warn);padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600;">⚠️주의</span></div><div style="font-size:12px;color:var(--warn);margin-bottom:2px;">합성 산화방지제</div><div style="font-size:11px;color:var(--warn);">과다 섭취 주의</div></div>
+            <div style="font-size:18px;color:var(--warn);">›</div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab-item" onclick="showScreen('screen-home')"><span class="tab-icon">🏠</span><span class="tab-label">홈</span></div>
+        <div class="tab-item" onclick="showScreen('screen-search')"><span class="tab-icon">🔍</span><span class="tab-label">검색</span></div>
+        <div class="tab-scan" onclick="showScreen('screen-scanner')"><div class="tab-scan-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx="0.5"/><rect x="18" y="14" width="3" height="3" rx="0.5"/><rect x="14" y="18" width="3" height="3" rx="0.5"/><rect x="18" y="18" width="3" height="3" rx="0.5"/></svg></div><span class="tab-scan-label">스캔</span></div>
+        <div class="tab-item" onclick="showScreen('screen-community')"><span class="tab-icon">💬</span><span class="tab-label">커뮤니티</span></div>
+        <div class="tab-item" onclick="showScreen('screen-mypet')"><span class="tab-icon">😺</span><span class="tab-label">마이</span></div>
+      </div>
+    </div>
+
+    <!-- SCREEN 11: MY PET -->
+    <div class="screen" id="screen-mypet">
+      <div class="status-bar">
+        <span class="status-time">9:41</span>
+        <div class="status-icons">
+          <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><rect x="0" y="3" width="3" height="9" rx="1"/><rect x="4.5" y="2" width="3" height="10" rx="1"/><rect x="9" y="0.5" width="3" height="11.5" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="currentColor"/><rect x="2" y="2" width="16" height="8" rx="2" fill="currentColor"/><path d="M23 4v4c1.1-.5 1.1-3.5 0-4z" fill="currentColor"/></svg>
+        </div>
+      </div>
+      <div style="background:var(--surface);padding:10px 16px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);">
+        <div style="font-size:22px;font-weight:800;color:var(--text1);">마이</div>
+        <button style="background:none;border:none;font-size:22px;cursor:pointer;">⚙️</button>
+      </div>
+      <div class="content">
+        <div style="margin:12px 16px;background:linear-gradient(135deg,#F5B800,#FFD95A);border-radius:20px;padding:20px;display:flex;align-items:center;gap:16px;">
+          <div style="width:52px;height:52px;background:rgba(255,255,255,0.9);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">🐕</div>
+          <div style="flex:1;">
+            <div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:2px;">베로</div>
+            <div style="font-size:13px;color:rgba(255,255,255,0.85);">말티즈 · 성견 · 3세</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.75);margin-top:4px;">오늘의 식단 점수</div>
+          </div>
+          <div style="flex-shrink:0;">
+            <svg width="64" height="64" viewBox="0 0 64 64">
+              <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="5"/>
+              <circle cx="32" cy="32" r="26" fill="none" stroke="#fff" stroke-width="5"
+                stroke-dasharray="141.4 163.4" stroke-dashoffset="40.8" stroke-linecap="round" transform="rotate(-90 32 32)"/>
+              <text x="32" y="28" text-anchor="middle" font-size="14" font-weight="800" fill="#fff">86</text>
+              <text x="32" y="42" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.85)">/ 100</text>
+            </svg>
+          </div>
+        </div>
+        <div style="margin:0 16px 12px;background:var(--surface);border-radius:20px;padding:16px;box-shadow:0 2px 16px rgba(0,0,0,0.07);">
+          <div style="font-size:16px;font-weight:700;color:var(--text1);margin-bottom:12px;">펫 프로필</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
+            <div style="padding:8px 0;border-bottom:1px solid var(--border);"><div style="font-size:11px;color:var(--text3);margin-bottom:2px;">이름</div><div style="font-size:14px;font-weight:600;color:var(--text1);">베로</div></div>
+            <div style="padding:8px 0;border-bottom:1px solid var(--border);"><div style="font-size:11px;color:var(--text3);margin-bottom:2px;">성별</div><div style="font-size:14px;font-weight:600;color:var(--text1);">수컷</div></div>
+            <div style="padding:8px 0;border-bottom:1px solid var(--border);"><div style="font-size:11px;color:var(--text3);margin-bottom:2px;">품종</div><div style="font-size:14px;font-weight:600;color:var(--text1);">말티즈</div></div>
+            <div style="padding:8px 0;border-bottom:1px solid var(--border);"><div style="font-size:11px;color:var(--text3);margin-bottom:2px;">나이</div><div style="font-size:14px;font-weight:600;color:var(--text1);">3세</div></div>
+            <div style="padding:8px 0;border-bottom:1px solid var(--border);"><div style="font-size:11px;color:var(--text3);margin-bottom:2px;">체중</div><div style="font-size:14px;font-weight:600;color:var(--text1);">3.2kg</div></div>
+            <div style="padding:8px 0;border-bottom:1px solid var(--border);"><div style="font-size:11px;color:var(--text3);margin-bottom:2px;">알레르기</div><div style="font-size:13px;font-weight:600;color:var(--warn);">닭고기</div></div>
+            <div style="padding:8px 0;grid-column:1/-1;"><div style="font-size:11px;color:var(--text3);margin-bottom:2px;">건강고민</div><div style="font-size:13px;font-weight:600;color:var(--text1);">슬개골 · 눈물흔</div></div>
+          </div>
+          <div style="margin-top:8px;padding-top:10px;border-top:1px solid var(--border);">
+            <span style="font-size:13px;color:var(--primary-dark);font-weight:700;cursor:pointer;">프로필 수정하기 →</span>
+          </div>
+        </div>
+        <div style="margin:0 16px 12px;background:var(--surface);border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+          <div style="display:flex;border-bottom:1.5px solid var(--border);">
+            <div style="flex:1;text-align:center;padding:12px;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;">프로필</div>
+            <div style="flex:1;text-align:center;padding:12px;font-size:13px;font-weight:700;color:var(--primary-dark);border-bottom:2.5px solid var(--primary);margin-bottom:-1.5px;cursor:pointer;">찜</div>
+            <div style="flex:1;text-align:center;padding:12px;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;">주문</div>
+            <div style="flex:1;text-align:center;padding:12px;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;">리포트</div>
+          </div>
+          <div style="padding:12px;display:flex;gap:10px;overflow-x:auto;">
+            <div style="background:var(--bg);border-radius:12px;padding:10px;min-width:120px;flex-shrink:0;text-align:center;">
+              <div style="font-size:28px;margin-bottom:6px;">🥘</div>
+              <div style="font-size:11px;color:var(--text3);">내추럴코어</div>
+              <div style="font-size:12px;font-weight:600;color:var(--text1);line-height:1.3;">오리 & 현미</div>
+              <div style="font-size:12px;font-weight:700;color:var(--text1);margin-top:4px;">38,900원</div>
+            </div>
+            <div style="background:var(--bg);border-radius:12px;padding:10px;min-width:120px;flex-shrink:0;text-align:center;">
+              <div style="font-size:28px;margin-bottom:6px;">🐟</div>
+              <div style="font-size:11px;color:var(--text3);">지위픽</div>
+              <div style="font-size:12px;font-weight:600;color:var(--text1);line-height:1.3;">연어 & 고구마</div>
+              <div style="font-size:12px;font-weight:700;color:var(--text1);margin-top:4px;">45,900원</div>
+            </div>
+          </div>
+        </div>
+        <div style="margin:0 16px 12px;background:var(--surface);border-radius:16px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+          <div style="font-size:15px;font-weight:700;color:var(--text1);margin-bottom:12px;">최근 분석 리포트</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+            <span style="font-size:22px;">🥘</span>
+            <div style="flex:1;"><div style="font-size:13px;font-weight:600;color:var(--text1);">내추럴코어 오리 & 현미</div><div style="font-size:11px;color:var(--text3);">2025.06.18</div></div>
+            <div style="text-align:right;"><div style="font-size:14px;font-weight:800;color:var(--text1);">86점</div><span style="background:var(--safe-bg);color:var(--safe);padding:2px 7px;border-radius:100px;font-size:10px;font-weight:600;">A</span></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;">
+            <span style="font-size:22px;">🐟</span>
+            <div style="flex:1;"><div style="font-size:13px;font-weight:600;color:var(--text1);">지위픽 연어 & 고구마</div><div style="font-size:11px;color:var(--text3);">2025.06.15</div></div>
+            <div style="text-align:right;"><div style="font-size:14px;font-weight:800;color:var(--text1);">94점</div><span style="background:var(--safe-bg);color:var(--safe);padding:2px 7px;border-radius:100px;font-size:10px;font-weight:600;">A</span></div>
+          </div>
+        </div>
+        <div style="margin:0 16px 24px;text-align:center;">
+          <div style="height:1px;background:var(--border);margin-bottom:16px;"></div>
+          <span style="font-size:14px;color:var(--danger);cursor:pointer;font-weight:600;">로그아웃</span>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab-item" onclick="showScreen('screen-home')"><span class="tab-icon">🏠</span><span class="tab-label">홈</span></div>
+        <div class="tab-item" onclick="showScreen('screen-search')"><span class="tab-icon">🔍</span><span class="tab-label">검색</span></div>
+        <div class="tab-scan" onclick="showScreen('screen-scanner')"><div class="tab-scan-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx="0.5"/><rect x="18" y="14" width="3" height="3" rx="0.5"/><rect x="14" y="18" width="3" height="3" rx="0.5"/><rect x="18" y="18" width="3" height="3" rx="0.5"/></svg></div><span class="tab-scan-label">스캔</span></div>
+        <div class="tab-item" onclick="showScreen('screen-community')"><span class="tab-icon">💬</span><span class="tab-label">커뮤니티</span></div>
+        <div class="tab-item active" onclick="showScreen('screen-mypet')"><span class="tab-icon">😺</span><span class="tab-label" style="color:var(--primary)">마이</span></div>
+      </div>
+    </div>
+
+  </div><!-- end phone-frame -->
+</div><!-- end demo-area -->
+
+<script>
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+  var target = document.getElementById(id);
+  if (target) target.classList.add('active');
+  document.querySelectorAll('.sidebar-btn').forEach(function(btn) {
+    btn.classList.remove('active');
+    if (btn.getAttribute('onclick') && btn.getAttribute('onclick').indexOf(id) !== -1) {
+      btn.classList.add('active');
+    }
+  });
+}
+showScreen('screen-home');
+</script>
+</body>
+</html>
