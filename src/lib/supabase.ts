@@ -158,6 +158,18 @@ export async function signInWithEmail(email: string, password: string) {
 }
 
 
+export async function signInWithKakao() {
+  const redirectTo = `${window.location.origin}/auth/callback`;
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'kakao',
+    options: { redirectTo },
+  });
+  if (error) {
+    notify.error('카카오 로그인에 실패했습니다. 잠시 후 다시 시도해주세요.');
+    throw error;
+  }
+}
+
 export async function signOut() {
   const { error } = await supabase.auth.signOut();
   if (error) notify.error(error.message);
@@ -259,6 +271,30 @@ export async function getProductDetail(productId: string): Promise<Product | nul
 
   if (error) {
     console.error('getProductDetail error:', error);
+    return null;
+  }
+  return mapProductFromSupabaseRow(data as SupabaseProductRow);
+}
+
+export async function getProductByBarcode(barcode: string): Promise<Product | null> {
+  if (!isSupabaseConfigured) return null;
+  const { data, error } = await supabase
+    .from('products')
+    .select(`
+      *,
+      product_ingredients (
+        ingredient_id,
+        ingredients (*)
+      ),
+      nutritional_profiles (
+        crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus
+      )
+    `)
+    .eq('barcode', barcode)
+    .single();
+
+  if (error) {
+    if (error.code !== 'PGRST116') console.error('getProductByBarcode error:', error);
     return null;
   }
   return mapProductFromSupabaseRow(data as SupabaseProductRow);
@@ -686,6 +722,64 @@ export async function setSponsoredProduct(
     .update({ is_sponsored: isSponsored, sponsor_label: sponsorLabel, sponsor_order: sponsorOrder })
     .eq('id', productId);
   if (error) console.error('setSponsoredProduct error:', error);
+}
+
+// ─── 커뮤니티 API (legacy — view-based) ──────────────────────
+
+export interface CommunityPost {
+  id: string;
+  user_id: string;
+  category: string;
+  title: string;
+  body: string;
+  like_count: number;
+  comment_count: number;
+  author_nickname: string;
+  created_at: string;
+  hasLiked?: boolean;
+}
+
+export interface CommunityComment {
+  id: string;
+  post_id: string;
+  user_id: string;
+  body: string;
+  created_at: string;
+  users: { nickname: string };
+}
+
+export async function getPostComments(postId: string): Promise<CommunityComment[]> {
+  if (!isSupabaseConfigured) return [];
+  const { data, error } = await supabase
+    .from('community_comments')
+    .select('*, users(nickname)')
+    .eq('post_id', postId)
+    .order('created_at', { ascending: true });
+  if (error) { console.error('getPostComments error:', error); return []; }
+  return (data ?? []) as CommunityComment[];
+}
+
+export async function createComment(
+  postId: string,
+  userId: string,
+  body: string,
+): Promise<CommunityComment | null> {
+  const { data, error } = await supabase
+    .from('community_comments')
+    .insert({ post_id: postId, user_id: userId, body })
+    .select('*, users(nickname)')
+    .single();
+  if (error) { notify.error('댓글 등록에 실패했습니다.'); return null; }
+  return data as CommunityComment;
+}
+
+export async function getMyLikedPostIds(userId: string): Promise<string[]> {
+  if (!isSupabaseConfigured || !userId) return [];
+  const { data } = await supabase
+    .from('post_likes')
+    .select('post_id')
+    .eq('user_id', userId);
+  return (data ?? []).map((r: any) => r.post_id);
 }
 
 /** 미매칭 원료를 검수 큐에 기록(있으면 카운트 증가). 분석 중 발견 시 호출. */

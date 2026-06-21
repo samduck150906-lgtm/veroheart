@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, CheckCircle2 } from 'lucide-react';
 import { useStore } from '../store/useStore';
-import { signUpWithEmail, signInWithEmail } from '../lib/supabase';
+import { signUpWithEmail, signInWithEmail, signInWithKakao } from '../lib/supabase';
 import { notify } from '../store/useNotification';
 import { Button } from '../components/Button';
 
@@ -12,8 +12,19 @@ export default function Auth() {
   const [confirmEmail, setConfirmEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [kakaoLoading, setKakaoLoading] = useState(false);
   const navigate = useNavigate();
   const { initApp } = useStore();
+
+  const handleKakaoLogin = async () => {
+    setKakaoLoading(true);
+    try {
+      await signInWithKakao();
+      // Redirect handled by Supabase OAuth flow → /auth/callback
+    } catch {
+      setKakaoLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -173,7 +184,7 @@ export default function Auth() {
         />
 
         <div style={{ textAlign: 'center', marginTop: '16px' }}>
-          <button 
+          <button
             type="button"
             onClick={() => setIsLogin(!isLogin)}
             style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}
@@ -181,6 +192,37 @@ export default function Auth() {
             {isLogin ? '아직 회원이 아니신가요? 회원가입' : '이미 계정이 있으신가요? 로그인'}
           </button>
         </div>
+
+        {/* ── 소셜 로그인 구분선 ── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '28px' }}>
+          <div style={{ flex: 1, height: '1px', background: '#E5E8EB' }} />
+          <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>또는</span>
+          <div style={{ flex: 1, height: '1px', background: '#E5E8EB' }} />
+        </div>
+
+        {/* ── 카카오 로그인 버튼 ── */}
+        <button
+          type="button"
+          onClick={handleKakaoLogin}
+          disabled={kakaoLoading}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+            width: '100%', height: '56px', borderRadius: '20px', border: 'none',
+            background: '#FEE500', color: '#191919',
+            fontSize: '16px', fontWeight: 800, cursor: kakaoLoading ? 'not-allowed' : 'pointer',
+            opacity: kakaoLoading ? 0.7 : 1, transition: 'opacity 0.2s',
+            marginTop: '16px',
+          }}
+        >
+          {/* 카카오 로고 SVG */}
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path fillRule="evenodd" clipRule="evenodd"
+              d="M10 2C5.582 2 2 4.91 2 8.5c0 2.296 1.518 4.313 3.817 5.468l-.974 3.62a.25.25 0 0 0 .378.277L9.43 15.52A10.14 10.14 0 0 0 10 15.5c4.418 0 8-2.91 8-6.5S14.418 2 10 2Z"
+              fill="#191919"
+            />
+          </svg>
+          {kakaoLoading ? '카카오 로그인 중...' : '카카오로 계속하기'}
+        </button>
       </form>
     </div>
   );

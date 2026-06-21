@@ -40,6 +40,7 @@ import Brand from './pages/Brand';
 import CommunityPost from './pages/CommunityPost';
 import KnowledgeIngredients from './pages/KnowledgeIngredients';
 import KnowledgeNutrients from './pages/KnowledgeNutrients';
+import AuthCallback from './pages/AuthCallback';
 
 function App() {
   const { initApp, isInitializing, isLoggedIn } = useStore();
@@ -133,6 +134,8 @@ function App() {
               {/* <Route path="success" element={<Success />} /> */}
               {/* <Route path="fail" element={<Fail />} /> */}
               <Route path="product/:id" element={<Detail />} />
+              <Route path="detail/:id" element={<Detail />} />
+              <Route path="auth/callback" element={<AuthCallback />} />
               <Route path="analysis" element={<AnalysisResult />} />
               <Route path="scan-result" element={<ScanResult />} />
               <Route path="pet-profile" element={<PetProfilePage />} />
