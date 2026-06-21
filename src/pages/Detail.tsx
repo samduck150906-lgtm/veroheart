@@ -27,6 +27,7 @@ import {
   deleteReview,
 } from '../lib/supabase';
 import { buildProductConclusion } from '../utils/productConclusion';
+import { getRecommendationBreakdown } from '../utils/score';
 import { COUPANG_PARTNERS_DISCLOSURE } from '../constants/coupangPartners';
 import { REVIEW_QUICK_TAGS } from '../constants/reviewTags';
 
@@ -142,6 +143,7 @@ export default function Detail() {
 
   const report = product ? generateAnalysisReport(product, profile) : null;
   const conclusion = product && report ? buildProductConclusion(product, profile, report) : null;
+  const breakdown = hasPetProfile && product ? getRecommendationBreakdown(product, profile) : null;
   const isComparing = comparisonList.includes(product?.id || '');
   const verificationMeta = getVerificationMeta(product.verificationStatus);
 
@@ -436,52 +438,73 @@ export default function Detail() {
 
         <GuaranteedAnalysisSection ga={product.guaranteedAnalysis} />
 
+        {breakdown?.capped && (
+          <div style={{
+            display: 'flex', gap: '12px', alignItems: 'flex-start',
+            padding: '16px', borderRadius: '16px', marginBottom: '20px',
+            background: breakdown.allergyHits.length > 0 ? '#FFF1F2' : '#FFFBEB',
+            border: `1px solid ${breakdown.allergyHits.length > 0 ? '#FECDD3' : '#FDE68A'}`,
+          }}>
+            <AlertCircle size={20} color={breakdown.allergyHits.length > 0 ? '#F43F5E' : '#D97706'} style={{ flexShrink: 0, marginTop: '1px' }} />
+            <div>
+              <div style={{ fontSize: '14px', fontWeight: 800, color: breakdown.allergyHits.length > 0 ? '#BE123C' : '#92400E', marginBottom: '4px' }}>
+                {breakdown.allergyHits.length > 0
+                  ? `${breakdown.allergyHits.join(', ')}이(가) 들어 있어요`
+                  : `주의 성분 ${breakdown.dangerCount}개가 포함돼 있어요`}
+              </div>
+              <div style={{ fontSize: '12.5px', fontWeight: 600, color: breakdown.allergyHits.length > 0 ? '#BE123C' : '#92400E', opacity: 0.85, lineHeight: 1.5 }}>
+                {breakdown.allergyHits.length > 0
+                  ? `${profile.name}는 ${breakdown.allergyHits.join(', ')}을(를) 피하는 게 좋아요. 궁합 점수도 이를 반영했어요.`
+                  : `이 성분은 장기 급여 시 주의가 필요해요. 수의사와 상담해 보세요.`}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '16px' }}>
           <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-dark)' }}>전성분 상세</h3>
           <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 500 }}>총 {product.ingredients?.length}개</div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {product.ingredients?.map(ing => {
-            const isAllergy = profile.allergies.some(a => 
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', borderRadius: '18px', overflow: 'hidden', border: '1px solid var(--hairline)' }}>
+          {product.ingredients?.map((ing, idx) => {
+            const isAllergy = profile.allergies.some(a =>
               ing.nameKo.includes(a) || (ing.nameEn && ing.nameEn.toLowerCase().includes(a.toLowerCase()))
             );
             const isDanger = isAllergy || ing.riskLevel === 'danger';
             const isCaution = !isDanger && ing.riskLevel === 'caution';
 
+            const dotColor = isDanger ? '#F04452' : isCaution ? '#F59E0B' : '#15B36B';
+            const badgeBg = isDanger ? '#FFF1F2' : isCaution ? '#FFFBEB' : 'var(--safe-tint, #ECFDF5)';
+            const badgeColor = isDanger ? '#BE123C' : isCaution ? '#92400E' : '#166534';
+            const badgeLabel = isAllergy ? '알레르기' : isDanger ? '주의' : isCaution ? '확인' : '안전';
+
             return (
-              <button 
-                key={ing.id} 
+              <button
+                key={ing.id}
                 onClick={() => setSelectedIngredient({ ...ing, isAllergy })}
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '16px', borderRadius: 'var(--border-radius-md)', 
-                  background: 'var(--bg-color)', border: 'none', cursor: 'pointer', textAlign: 'left',
-                  transition: 'background-color 0.2s', width: '100%'
+                  padding: '13px 16px',
+                  background: idx % 2 === 0 ? '#fff' : 'rgba(0,0,0,0.012)',
+                  border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%',
+                  borderBottom: idx < (product.ingredients?.length ?? 1) - 1 ? '1px solid var(--hairline)' : 'none',
                 }}
-                className="hover:bg-gray-50 active:bg-gray-100"
               >
-                <div>
-                  <div style={{ fontWeight: isDanger || isCaution ? 800 : 600, fontSize: '16px', color: isDanger ? '#F04452' : (isCaution ? '#F59E0B' : 'var(--text-dark)') }}>
-                    {ing.nameKo}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: isDanger || isCaution ? 700 : 500, fontSize: '14.5px', color: isDanger ? '#BE123C' : 'var(--text-dark)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {ing.nameKo}
+                    </div>
+                    {ing.purpose && (
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', fontWeight: 500 }}>{ing.purpose}</div>
+                    )}
                   </div>
-                  <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px', fontWeight: 500 }}>{ing.purpose}</div>
                 </div>
-                {isDanger && (
-                  <div style={{ background: '#FEE2E2', color: '#F04452', padding: '6px 12px', borderRadius: '12px', fontSize: '13px', fontWeight: 800 }}>
-                    {isAllergy ? '알레르기 위험' : '주의 성분'}
-                  </div>
-                )}
-                {isCaution && (
-                  <div style={{ background: '#FEF3C7', color: '#D97706', padding: '6px 12px', borderRadius: '12px', fontSize: '13px', fontWeight: 800 }}>
-                    확인 필요
-                  </div>
-                )}
-                {!isDanger && !isCaution && (
-                  <div style={{ fontSize: '13px', color: 'var(--text-light)', fontWeight: 600 }}>
-                    안전
-                  </div>
-                )}
+                <span style={{ flexShrink: 0, marginLeft: '8px', padding: '3px 10px', borderRadius: '99px', background: badgeBg, color: badgeColor, fontSize: '11.5px', fontWeight: 700 }}>
+                  {badgeLabel}
+                </span>
               </button>
             );
           })}

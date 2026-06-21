@@ -32,6 +32,7 @@ import EntryGate from './components/EntryGate';
 import { markEntryGateDone, readEntryGateDone } from './lib/entryGateStorage';
 import { isAdminExperience, toggleAdminDesktopMode } from './utils/adminHost';
 import { ThemeProvider } from './theme/ThemeProvider';
+import IngredientDictionary from './pages/IngredientDictionary';
 import PersonalityQuiz from './pages/Test';
 import ViralEvent from './pages/ViralEvent';
 import NotFound from './pages/NotFound';
@@ -129,6 +130,7 @@ function App() {
               <Route path="profile" element={<Profile />} />
               <Route path="comparison" element={<Comparison />} />
               <Route path="ranking" element={<Ranking />} />
+              <Route path="dictionary" element={<IngredientDictionary />} />
               {/* <Route path="cart" element={<Cart />} /> */}
               {/* <Route path="checkout" element={<Checkout />} /> */}
               {/* <Route path="success" element={<Success />} /> */}
