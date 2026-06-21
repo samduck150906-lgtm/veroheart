@@ -161,6 +161,51 @@ export default function AnalysisResult() {
         <ScoreGauge score={compatScore} grade={grade} />
       </div>
 
+      {/* ── 점수 산출 근거 ── */}
+      {breakdown && (
+        <div style={{ margin: '20px 0 0', padding: '18px 16px', borderRadius: '18px', background: 'var(--fill)', border: '1px solid var(--hairline)' }}>
+          <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ink)', marginBottom: '14px' }}>점수 산출 근거</div>
+          {[
+            { label: '성분 안전', value: breakdown.safety ?? 0, max: 35, color: '#15B36B' },
+            { label: '건강 고민 적합', value: breakdown.concern ?? 0, max: 25, color: 'var(--brand-deep)' },
+            { label: '신뢰도 (평점·리뷰)', value: breakdown.socialProof ?? 0, max: 20, color: '#3182F6' },
+            { label: '종·연령 적합', value: breakdown.petFit ?? 0, max: 10, color: '#A855F7' },
+            { label: '가성비', value: breakdown.value ?? 0, max: 10, color: '#F59E0B' },
+            { label: 'AAFCO 영양', value: breakdown.nutrition ?? 0, max: 10, color: '#06B6D4' },
+          ].map(({ label, value, max, color }) => (
+            <div key={label} style={{ marginBottom: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
+                <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ink-soft)' }}>{label}</span>
+                <span style={{ fontSize: '12.5px', fontWeight: 800, color }}>
+                  {value}<span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--ink-faint)' }}>/{max}</span>
+                </span>
+              </div>
+              <div style={{ height: '7px', background: 'var(--hairline)', borderRadius: '99px', overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%',
+                  width: `${Math.round((value / max) * 100)}%`,
+                  background: color,
+                  borderRadius: '99px',
+                  transition: 'width 0.8s cubic-bezier(0.16,1,0.3,1)',
+                }} />
+              </div>
+            </div>
+          ))}
+          <div style={{ marginTop: '8px', paddingTop: '12px', borderTop: '1px solid var(--hairline)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink-soft)' }}>종합 점수</span>
+            <span style={{ fontSize: '20px', fontWeight: 900, color: score >= 80 ? '#15B36B' : score >= 60 ? '#E8A800' : '#F04452' }}>
+              {breakdown.total}<span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink-faint)' }}>/100</span>
+            </span>
+          </div>
+          <p style={{ fontSize: '10.5px', color: 'var(--ink-faint)', fontWeight: 500, lineHeight: 1.5, marginTop: '8px' }}>
+            * 이 분석은 의료적 진단을 대체하지 않습니다. 반려동물의 건강 이상 시 수의사와 상담하세요.
+          </p>
+        </div>
+      )}
+
+      {/* Section divider */}
+      <div className="analysis-section-gap" />
+
       {/* Tabs */}
       <div style={{ display: 'flex', borderBottom: '1px solid #EAEDF0', margin: '16px 0 0', padding: '0 16px' }}>
         {TABS.map(tab => (

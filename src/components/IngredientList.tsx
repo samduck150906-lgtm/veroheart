@@ -69,16 +69,21 @@ function BottomSheet({ item, onClose }: { item: Ingredient; onClose: () => void 
 
 export default function IngredientList({ ingredients }: IngredientListProps) {
   const [selected, setSelected] = useState<Ingredient | null>(null);
+  const [showAll, setShowAll] = useState(false);
 
   const safeCount    = ingredients.filter((i) => i.safety === 'safe').length;
   const cautionCount = ingredients.filter((i) => i.safety === 'caution').length;
   const dangerCount  = ingredients.filter((i) => i.safety === 'danger').length;
 
+  const PREVIEW_COUNT = 6;
+  const displayedIngredients = showAll ? ingredients : ingredients.slice(0, PREVIEW_COUNT);
+  const hasMore = ingredients.length > PREVIEW_COUNT;
+
   return (
     <div className="ing-wrap">
       {/* Header */}
       <div className="ing-header">
-        <h3 className="ing-title">성분 목록</h3>
+        <h3 className="ing-title">전성분 목록</h3>
         <div className="ing-legend">
           <span><span className="ing-dot" style={{ background: '#22c55e' }} />{safeCount} 안전</span>
           <span><span className="ing-dot" style={{ background: '#f59e0b' }} />{cautionCount} 주의</span>
@@ -94,7 +99,7 @@ export default function IngredientList({ ingredients }: IngredientListProps) {
 
       {/* List */}
       <div className="ing-list">
-        {ingredients.map((ing, idx) => (
+        {displayedIngredients.map((ing, idx) => (
           <button
             key={idx}
             className="ing-item"
@@ -107,6 +112,24 @@ export default function IngredientList({ ingredients }: IngredientListProps) {
           </button>
         ))}
       </div>
+
+      {/* Show more / less button */}
+      {hasMore && (
+        <button
+          onClick={() => setShowAll(v => !v)}
+          style={{
+            width: '100%', marginTop: '10px', padding: '12px',
+            borderRadius: '12px', border: '1px solid var(--hairline)',
+            background: 'var(--fill)', color: 'var(--ink-soft)',
+            fontSize: '13px', fontWeight: 700, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+          }}
+        >
+          {showAll
+            ? `접기 ▲`
+            : `전성분 더보기 (${ingredients.length - PREVIEW_COUNT}개) ▼`}
+        </button>
+      )}
 
       {/* Bottom sheet */}
       {selected && (
