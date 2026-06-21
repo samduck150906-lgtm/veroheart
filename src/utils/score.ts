@@ -141,7 +141,7 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
     verification = 0;
   }
 
-  // ── 영양 버킷 (AAFCO DMB + Ca:P) ──────────────────────────────────
+  // ── 영양 버킷 (AAFCO DMB + Ca:P + 체중관리 지방 보정) ──────────────
   // guaranteedAnalysis가 없으면 버킷 자체를 0으로 두어 기존 점수에 영향 없음.
   let nutrition = 0;
   const ga = product.guaranteedAnalysis;
@@ -158,6 +158,36 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
     nutrition += fatDMB >= minFat ? 2 : -1;
     const caRatioWarning = checkCalciumPhosphorusRatio(ga);
     nutrition += caRatioWarning === null ? 1 : -1;
+
+    // ── 체중관리 지방 패널티 (활동량 보정) ──────────────────────────────
+    // 라벨 농도 심사(지방% > 12% → 감점)는 활동량과 무관하게 항상 적용.
+    // 단, 활동량이 높을수록 실제 체중 증가 위험이 낮으므로 감점 가중치를 줄인다.
+    // 이 구조가 "활동량은 라벨 감점 자체를 지우지 않고, 가중치를 약화"하는 보정 변수임.
+    const isWeightConcern = profile.healthConcerns.some(
+      (c) => ['비만', '체중관리', '다이어트', '과체중'].includes(c),
+    );
+    if (isWeightConcern && ga.crudeFat != null) {
+      const FAT_WEIGHT_MGMT_THRESHOLD = 12; // 체중관리 사료 지방 상한 (as-fed %)
+      const fatAsFed = ga.crudeFat;
+      if (fatAsFed > FAT_WEIGHT_MGMT_THRESHOLD) {
+        // 활동량별 페널티 가중치 (1.0 = 전량 적용, 0.1 = 거의 면제)
+        const activityWeightMap: Record<string, number> = {
+          low:       1.0,
+          normal:    0.70,
+          high:      0.40,
+          very_high: 0.10,
+        };
+        const activityKey = profile.activityLevel ?? 'normal';
+        const activityWeight = activityWeightMap[activityKey] ?? 0.70;
+
+        // 기준 초과 비율 (최대 2배 초과까지 선형 적용)
+        const excessRatio = Math.min(2.0, (fatAsFed - FAT_WEIGHT_MGMT_THRESHOLD) / FAT_WEIGHT_MGMT_THRESHOLD);
+        const rawPenalty = Math.round(excessRatio * 8); // 최대 8점 감점
+        const adjustedPenalty = Math.round(rawPenalty * activityWeight);
+        nutrition -= adjustedPenalty;
+      }
+    }
+
     nutrition = Math.max(0, Math.min(10, nutrition));
   }
 

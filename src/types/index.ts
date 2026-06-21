@@ -1,3 +1,6 @@
+export type ActivityLevel = 'low' | 'normal' | 'high' | 'very_high';
+export type BodyCondition = 'thin' | 'normal' | 'overweight';
+
 export interface UserPetProfile {
   id: string;
   name: string;
@@ -5,11 +8,18 @@ export interface UserPetProfile {
   age: number;
   /** kg, 선택 — DB 미연동 시에도 폼에만 반영 가능 */
   weightKg?: number;
+  weight?: number;
   breed?: string;
   healthConcerns: string[];
   allergies: string[];
   gender?: '남아' | '여아';
   personality?: string;
+  /** 활동량 단계: 급여량 및 체중관리 점수 보정에 사용 */
+  activityLevel?: ActivityLevel;
+  /** 중성화 여부: MER 보정계수에 영향 */
+  isNeutered?: boolean;
+  /** 체형 상태: 과체중/저체중 시 급여량 조정 */
+  bodyCondition?: BodyCondition;
 }
 
 export interface Ingredient {
@@ -29,6 +39,17 @@ export interface GuaranteedAnalysis {
   moisture?: number;
   calcium?: number;
   phosphorus?: number;
+  /** 기능성 영양소 (mg/kg) — 견종별 규칙 엔진 전용 */
+  glucosamineMgKg?: number;
+  chondroitinMgKg?: number;
+  /** EPA+DHA 합산 % (라벨 표기) */
+  epaDhaPercent?: number;
+  sodiumMgKg?: number;
+  taurineMgKg?: number;
+  lcarnitineMgKg?: number;
+  msmMgKg?: number;
+  /** 칼로리 밀도 (kcal/kg) — 1000kcal 기준 환산에 사용 */
+  caloriesKcalKg?: number;
 }
 
 export interface Product {

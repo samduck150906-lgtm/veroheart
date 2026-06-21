@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -30,6 +30,8 @@ import { buildProductConclusion } from '../utils/productConclusion';
 import { getRecommendationBreakdown } from '../utils/score';
 import { COUPANG_PARTNERS_DISCLOSURE } from '../constants/coupangPartners';
 import { REVIEW_QUICK_TAGS } from '../constants/reviewTags';
+import { runScoringPipeline } from '../analysis/scoringPipeline';
+import { PURPOSE_STYLE } from '../analysis/nutrientClassification';
 
 const getVerificationMeta = (s: string) => {
   if (s === 'verified') return { bg: 'var(--brand-tint)', color: 'var(--brand-deep)', border: 'var(--brand-line)', label: '공식 인증' };
@@ -45,8 +47,10 @@ import { toDryMatter, calculateCalories } from '../analysis/nutrition';
 import { openCoupangForProduct } from '../utils/externalPurchase';
 import Analyzer from '../components/Analyzer';
 import BottomSheet from '../components/BottomSheet';
+import FeedingGuideCalculator from '../components/FeedingGuideCalculator';
 import { TossCard } from '../components/TossUI';
 import ProductImage from '../components/ProductImage';
+import BreedNutritionPanel from '../components/BreedNutritionPanel';
 
 export default function Detail() {
   const { id } = useParams();
@@ -144,6 +148,7 @@ export default function Detail() {
   const report = product ? generateAnalysisReport(product, profile) : null;
   const conclusion = product && report ? buildProductConclusion(product, profile, report) : null;
   const breakdown = hasPetProfile && product ? getRecommendationBreakdown(product, profile) : null;
+  const pipeline = product ? runScoringPipeline(product, profile?.breed || '') : null;
   const isComparing = comparisonList.includes(product?.id || '');
   const verificationMeta = getVerificationMeta(product.verificationStatus);
 
@@ -160,16 +165,11 @@ export default function Detail() {
     }
   }
 
-  // DER Calculation
-  const getFeedingAmount = () => {
-    if (!profile.weight) return null;
-    const rer = 70 * Math.pow(profile.weight, 0.75);
-    const der = rer * 1.6; // 일반 성견·성묘 평균 활동계수
-    const kcalPerKg = 3500; // 건식 사료 평균 대사에너지(ME) 밀도 추정치 (kcal/kg)
-    const grams = (der / kcalPerKg) * 1000;
-    return Math.round(grams);
-  };
-  const feedingGrams = getFeedingAmount();
+  // 제품 칼로리 밀도 계산 (FeedingGuideCalculator 전달용)
+  const productKcalPer100g = useMemo(() => {
+    if (!product?.guaranteedAnalysis) return 0;
+    return calculateCalories(product.guaranteedAnalysis).kcalPer100g;
+  }, [product?.guaranteedAnalysis]);
 
   const getRiskColor = (level: string) => {
     if (level === 'danger') return '#F04452'; // Toss Red
@@ -311,6 +311,10 @@ export default function Detail() {
         </div>
       </TossCard>
 
+      {hasPetProfile && product && (
+        <BreedNutritionPanel product={product} profile={profile} />
+      )}
+
       <button
         onClick={() => navigate('/analysis', { state: { product } })}
         style={{
@@ -348,6 +352,304 @@ export default function Detail() {
         </div>
         <ChevronRight size={20} color="#ffffff" />
       </button>
+
+      {/* ── 두 축 분리 분석 시작 ─────────────────────────────────── */}
+
+      {pipeline && pipeline.top3.length > 0 && (
+        <section style={{ marginBottom: '24px' }}>
+          {/* 원료 출처 카드 (원료 축) */}
+          <div style={{ padding: '20px', borderRadius: '20px', background: '#fff', border: '1px solid #EEF0F3', boxShadow: '0 4px 16px rgba(0,0,0,0.04)', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '17px', fontWeight: 800, color: '#0F172A', margin: 0 }}>단백질 출처</h3>
+              <Link
+                to="/knowledge/ingredients"
+                style={{ fontSize: '12px', fontWeight: 700, color: '#3182F6', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '2px' }}
+              >
+                기준 문서 <ChevronRight size={12} />
+              </Link>
+            </div>
+
+            {pipeline.top3.map((item, idx) => (
+              <div key={item.name} style={{ marginBottom: idx < pipeline.top3.length - 1 ? '14px' : 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#94A3B8', minWidth: '16px' }}>{idx + 1}</span>
+                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>{item.name}</span>
+                  </div>
+                  <span style={{ fontSize: '12px', fontWeight: 800, color: item.qualityResult.color, flexShrink: 0, marginLeft: '8px' }}>
+                    {item.qualityResult.label}
+                  </span>
+                </div>
+                <div style={{ height: '7px', borderRadius: '99px', background: '#F1F5F9', overflow: 'hidden' }}>
+                  <div style={{ width: `${item.barWidth}%`, height: '100%', background: item.qualityResult.color, borderRadius: '99px', transition: 'width 0.4s ease' }} />
+                </div>
+              </div>
+            ))}
+
+            {(pipeline.hasProteinInflation || pipeline.hasDCMRisk) && (
+              <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {pipeline.hasProteinInflation && (
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '10px 12px', borderRadius: '12px', background: '#FFFBEB', border: '1px solid #FDE68A' }}>
+                    <AlertCircle size={14} color="#D97706" style={{ flexShrink: 0, marginTop: '1px' }} />
+                    <span style={{ fontSize: '12.5px', color: '#92400E', fontWeight: 700, lineHeight: 1.5 }}>
+                      단백질 인플레이션 감지 — {pipeline.inflationDetails.join(', ')}
+                    </span>
+                  </div>
+                )}
+                {pipeline.hasDCMRisk && (
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '10px 12px', borderRadius: '12px', background: '#FFF1F2', border: '1px solid #FECDD3' }}>
+                    <AlertCircle size={14} color="#F04452" style={{ flexShrink: 0, marginTop: '1px' }} />
+                    <span style={{ fontSize: '12.5px', color: '#BE123C', fontWeight: 700, lineHeight: 1.5 }}>
+                      DCM 위험 패턴 — 상위 5위 내 두류 {pipeline.dcmLegumes.length}종: {pipeline.dcmLegumes.join(', ')}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* 강점 배지 */}
+          {pipeline.strengths.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
+              {pipeline.strengths.map(badge => (
+                <span
+                  key={badge}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '99px',
+                    background: '#ECFDF5',
+                    border: '1px solid #86EFAC',
+                    fontSize: '13px',
+                    fontWeight: 800,
+                    color: '#166534',
+                  }}
+                >
+                  ✓ {badge}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* 종합 성분 평가 카드 4개 */}
+          <div style={{ padding: '20px', borderRadius: '20px', background: '#fff', border: '1px solid #EEF0F3', boxShadow: '0 4px 16px rgba(0,0,0,0.04)', marginBottom: '16px' }}>
+            <h3 style={{ fontSize: '17px', fontWeight: 800, color: '#0F172A', marginBottom: '16px' }}>종합 성분 평가</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+              {/* 성분표 분석점수 */}
+              <div style={{ padding: '14px', borderRadius: '14px', background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: '#94A3B8', marginBottom: '6px' }}>성분표 분석점수</div>
+                <div style={{ fontSize: '22px', fontWeight: 900, color: '#0F172A', letterSpacing: '-0.03em' }}>{pipeline.ingredientScoreDisplay}</div>
+              </div>
+              {/* 원료 등급 */}
+              <div style={{ padding: '14px', borderRadius: '14px', background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: '#94A3B8', marginBottom: '6px' }}>원료 등급</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                  <span style={{ fontSize: '22px', fontWeight: 900, color: '#0F172A', letterSpacing: '-0.03em' }}>{pipeline.rawMaterialGrade}</span>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#94A3B8' }}>{pipeline.rawMaterialCriteriaScore}/6</span>
+                </div>
+              </div>
+              {/* 영양 공개 수준 */}
+              <div style={{ padding: '14px', borderRadius: '14px', background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: '#94A3B8', marginBottom: '6px' }}>영양 공개 수준</div>
+                <div style={{ fontSize: '15px', fontWeight: 800, color: pipeline.nutritionDisclosureLevel === '완전 공개' ? '#15B36B' : pipeline.nutritionDisclosureLevel === '부분 공개' ? '#F59E0B' : '#F04452' }}>
+                  {pipeline.nutritionDisclosureLevel}
+                </div>
+                <div style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600 }}>({pipeline.nutritionDisclosureCount}/7 항목)</div>
+              </div>
+              {/* 안전성 검증 */}
+              <div style={{ padding: '14px', borderRadius: '14px', background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: '#94A3B8', marginBottom: '6px' }}>안전성 검증</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  {pipeline.safetyFailures === 0
+                    ? <CheckCircle2 size={16} color="#15B36B" />
+                    : <AlertCircle size={16} color="#F04452" />}
+                  <span style={{ fontSize: '14px', fontWeight: 800, color: pipeline.safetyFailures === 0 ? '#15B36B' : '#F04452' }}>
+                    {pipeline.safetyDisplay}
+                  </span>
+                </div>
+              </div>
+            </div>
+            {/* ETF 신뢰도 */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '12px 16px',
+              borderRadius: '12px',
+              background: pipeline.etfGrade === 'C1' ? '#ECFDF5' : pipeline.etfGrade === 'C2' ? '#EFF6FF' : pipeline.etfGrade === 'C3' ? '#FFFBEB' : '#FFF1F2',
+              border: `1px solid ${pipeline.etfGrade === 'C1' ? '#86EFAC' : pipeline.etfGrade === 'C2' ? '#BFDBFE' : pipeline.etfGrade === 'C3' ? '#FDE68A' : '#FECDD3'}`,
+            }}>
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: '#94A3B8', marginBottom: '2px' }}>공개 정보 신뢰도 ETF</div>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>{pipeline.etfDescription}</div>
+              </div>
+              <span style={{
+                fontSize: '18px',
+                fontWeight: 900,
+                color: pipeline.etfGrade === 'C1' ? '#15B36B' : pipeline.etfGrade === 'C2' ? '#3182F6' : pipeline.etfGrade === 'C3' ? '#F59E0B' : '#F04452',
+              }}>
+                {pipeline.etfDisplay}
+              </span>
+            </div>
+          </div>
+
+          {/* 포함된 기능성 성분 카드 (영양소 축) */}
+          <div style={{ padding: '20px', borderRadius: '20px', background: '#fff', border: '1px solid #EEF0F3', boxShadow: '0 4px 16px rgba(0,0,0,0.04)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <h3 style={{ fontSize: '17px', fontWeight: 800, color: '#0F172A', margin: 0 }}>포함된 기능성 성분</h3>
+              <Link
+                to="/knowledge/nutrients"
+                style={{ fontSize: '12px', fontWeight: 700, color: '#3182F6', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '2px' }}
+              >
+                기준 문서 <ChevronRight size={12} />
+              </Link>
+            </div>
+
+            {pipeline.functionalIngredients.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {pipeline.functionalIngredients.map(fi => (
+                  <div key={fi.name} style={{ padding: '12px 14px', borderRadius: '14px', background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A' }}>{fi.name}</span>
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '6px' }}>
+                      {fi.purposes.map(purpose => {
+                        const ps = PURPOSE_STYLE[purpose] ?? { bg: '#F9FAFB', text: '#374151', border: '#E5E7EB', emoji: '•' };
+                        return (
+                          <span
+                            key={purpose}
+                            style={{
+                              padding: '3px 10px',
+                              borderRadius: '99px',
+                              background: ps.bg,
+                              border: `1px solid ${ps.border}`,
+                              fontSize: '12px',
+                              fontWeight: 700,
+                              color: ps.text,
+                            }}
+                          >
+                            {ps.emoji} {purpose}
+                          </span>
+                        );
+                      })}
+                    </div>
+                    <p style={{ fontSize: '12px', color: '#64748B', fontWeight: 600, lineHeight: 1.5, margin: 0 }}>{fi.description}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p style={{ fontSize: '14px', color: '#94A3B8', fontWeight: 600, textAlign: 'center', padding: '20px 0', margin: 0 }}>
+                기능성 성분이 확인되지 않았어요.
+              </p>
+            )}
+          </div>
+        </section>
+      )}
+
+          {/* ── 견종별 건강 관리 ─────────────────────────────── */}
+          {pipeline?.breedDisease && pipeline.breedDisease.activeDiseases.length > 0 && (
+            <div style={{ padding: '20px', borderRadius: '20px', background: '#fff', border: '1px solid #EEF0F3', boxShadow: '0 4px 16px rgba(0,0,0,0.04)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                <h3 style={{ fontSize: '17px', fontWeight: 800, color: '#0F172A', margin: 0 }}>견종별 건강 관리</h3>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#3182F6', background: '#EFF6FF', padding: '3px 8px', borderRadius: '99px' }}>
+                  {pipeline.breedDisease.breedMatched ?? profile?.breed}
+                </span>
+              </div>
+              <p style={{ fontSize: '12px', color: '#64748B', fontWeight: 600, marginBottom: '14px', lineHeight: 1.5 }}>
+                이 견종의 취약 질환 기준으로 현재 사료를 평가했어요.
+              </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {pipeline.breedDisease.activeDiseases.map(ad => {
+                  const hasQuantitative = ad.disease.hasQuantitativeRules && ad.ruleChecks.length > 0;
+                  const allPass = ad.failCount === 0 && ad.passCount > 0;
+                  const anyFail = ad.failCount > 0;
+                  const isClinicalFirst = ad.disease.id === 'cancer';
+
+                  const headerBg = isClinicalFirst ? '#FFF1F2'
+                    : anyFail ? '#FFFBEB'
+                    : allPass ? '#ECFDF5'
+                    : '#F8FAFC';
+                  const headerBorder = isClinicalFirst ? '#FECDD3'
+                    : anyFail ? '#FDE68A'
+                    : allPass ? '#86EFAC'
+                    : '#E2E8F0';
+                  const headerAccent = isClinicalFirst ? '#BE123C'
+                    : anyFail ? '#92400E'
+                    : allPass ? '#166534'
+                    : '#475569';
+
+                  return (
+                    <div key={ad.disease.id} style={{ borderRadius: '14px', background: headerBg, border: `1.5px solid ${headerBorder}`, overflow: 'hidden' }}>
+                      <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '18px' }}>{ad.disease.emoji}</span>
+                          <span style={{ fontSize: '14px', fontWeight: 800, color: headerAccent }}>{ad.disease.name}</span>
+                        </div>
+                        {hasQuantitative && (
+                          <span style={{ fontSize: '12px', fontWeight: 800, color: headerAccent }}>
+                            {ad.passCount}/{ad.ruleChecks.length} 충족
+                          </span>
+                        )}
+                        {!hasQuantitative && !isClinicalFirst && (
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#94A3B8' }}>보조 성분 점검</span>
+                        )}
+                      </div>
+
+                      {isClinicalFirst && ad.disease.clinicalNote && (
+                        <div style={{ padding: '8px 14px 12px', fontSize: '12px', color: '#9F1239', fontWeight: 600, lineHeight: 1.55 }}>
+                          ⚠️ {ad.disease.clinicalNote}
+                        </div>
+                      )}
+
+                      {!isClinicalFirst && hasQuantitative && (
+                        <div style={{ borderTop: `1px solid ${headerBorder}`, padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          {ad.ruleChecks.map((rc, idx) => {
+                            const statusColor = rc.status === 'pass' ? '#15B36B' : rc.status === 'fail' ? '#F04452' : '#94A3B8';
+                            const statusBg = rc.status === 'pass' ? '#ECFDF5' : rc.status === 'fail' ? '#FFF1F2' : '#F8FAFC';
+                            return (
+                              <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                                <span style={{ fontSize: '11px', fontWeight: 800, color: statusColor, background: statusBg, padding: '2px 7px', borderRadius: '6px', flexShrink: 0, marginTop: '1px' }}>
+                                  {rc.status === 'pass' ? '충족' : rc.status === 'fail' ? '미달' : '미확인'}
+                                </span>
+                                <div>
+                                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#374151' }}>{rc.rule.displayName}</span>
+                                  <span style={{ fontSize: '11px', color: '#94A3B8', marginLeft: '6px' }}>
+                                    {rc.rule.evidenceLevel === 'high' ? '근거 높음' : '근거 중간'}
+                                  </span>
+                                  <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600, marginTop: '2px' }}>{rc.message}</div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {!isClinicalFirst && ad.supplementGaps.length > 0 && (
+                        <div style={{ borderTop: `1px solid ${headerBorder}`, padding: '8px 14px 12px' }}>
+                          <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', marginBottom: '6px' }}>보조 성분 미확인</div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                            {ad.supplementGaps.map(s => (
+                              <span key={s} style={{ fontSize: '11px', fontWeight: 700, color: '#F59E0B', background: '#FFFBEB', border: '1px solid #FDE68A', padding: '2px 8px', borderRadius: '6px' }}>
+                                {s}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {!isClinicalFirst && ad.disease.clinicalNote && (
+                        <div style={{ borderTop: `1px solid ${headerBorder}`, padding: '8px 14px', fontSize: '11px', color: '#64748B', fontWeight: 600, lineHeight: 1.5 }}>
+                          ℹ️ {ad.disease.clinicalNote}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+      {/* ── 두 축 분리 분석 끝 ─────────────────────────────────── */}
 
       <div style={{ display: 'flex', gap: '12px', marginBottom: '8px' }}>
         <button className="btn btn-outline" style={{ flex: 1, height: '56px', borderRadius: 'var(--border-radius-md)' }} onClick={() => {
@@ -390,35 +692,13 @@ export default function Detail() {
         </div>
       )}
 
-      {/* 일일 급여량 계산기 */}
+      {/* 일일 급여량 계산기 (활동량·중성화·체형 보정 + 지방 위험 평가) */}
       <section className="card" style={{ marginBottom: '40px' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-dark)' }}>
-          <Dog size={22} color="var(--safe)" /> {profile.name} 맞춤 일일 급여량
-        </h2>
-        {feedingGrams ? (
-          <div>
-            <div style={{ fontSize: '32px', fontWeight: 900, color: 'var(--safe)', marginBottom: '8px' }}>
-              하루 약 {feedingGrams}g
-            </div>
-            <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-              {profile.weight}kg 기준 (평균 활동량 적용)<br/>
-              <span style={{ fontSize: '12px', opacity: 0.8 }}>*평균 칼로리(3500kcal/kg) 기준 추정치입니다.</span>
-            </p>
-          </div>
-        ) : (
-          <div>
-            <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '16px' }}>
-              몸무게를 입력하시면 정확한 권장 급여량을 알려드려요!
-            </p>
-            <button 
-              className="btn btn-outline" 
-              style={{ borderRadius: 'var(--border-radius-sm)', width: '100%' }}
-              onClick={() => navigate('/profile')}
-            >
-              몸무게 입력하러 가기
-            </button>
-          </div>
-        )}
+        <FeedingGuideCalculator
+          kcalPer100g={productKcalPer100g || 350}
+          productName={product.name}
+          fatPercent={product.guaranteedAnalysis?.crudeFat}
+        />
       </section>
 
       {/* Toss-style Ingredient Analysis */}
@@ -427,14 +707,63 @@ export default function Detail() {
           {headline}
         </h2>
         
-        {/* Nutrition Summary */}
-        <div style={{ backgroundColor: 'var(--secondary)', padding: '20px', borderRadius: 'var(--border-radius-lg)', marginBottom: '32px' }}>
-          <p style={{ fontSize: '15px', color: 'var(--text-dark)', fontWeight: 600, lineHeight: 1.6 }}>
-            {profile.healthConcerns.includes('비만') 
-              ? "다이어트가 필요한 아이에겐 지방 수치가 다소 높으니 급여량을 10% 줄여주세요." 
-              : "조단백질이 풍부하여 근육 형성과 에너지 보충에 아주 좋습니다."}
-          </p>
-        </div>
+        {/* Nutrition Summary — 활동량 인식 지방 위험 메시지 */}
+        {(() => {
+          const isWeightConcern = profile.healthConcerns.some(
+            (c) => ['비만', '체중관리', '다이어트', '과체중'].includes(c),
+          );
+          const fatPct = product.guaranteedAnalysis?.crudeFat;
+          const activityLevel = profile.activityLevel ?? 'normal';
+          const activityLabel = { low: '낮음', normal: '보통', high: '높음', very_high: '매우 높음' }[activityLevel] ?? '보통';
+
+          if (isWeightConcern && fatPct != null && fatPct > 12) {
+            const riskLevel =
+              activityLevel === 'low'   ? 'high' :
+              activityLevel === 'normal' ? 'medium' :
+              activityLevel === 'high'  ? 'medium' : 'low';
+
+            const msg =
+              riskLevel === 'high'
+                ? `활동량이 ${activityLabel}이라 칼로리 한도가 좁습니다. 지방 ${fatPct}%는 체중관리 기준(12%)을 초과하므로 급여량을 10–15% 줄이고 저지방 사료 병행을 권장합니다.`
+                : riskLevel === 'medium'
+                ? `활동량이 ${activityLabel}이라 지방 에너지를 부분적으로 소모합니다. 지방 ${fatPct}%는 기준(12%) 초과이므로 급여량을 약 10% 줄이는 것을 권장합니다.`
+                : `활동량이 ${activityLabel}이라 지방 ${fatPct}%를 운동 연료로 충분히 소모합니다. 동일 제품이라도 체중 부담이 크지 않을 수 있습니다.`;
+
+            return (
+              <div
+                style={{
+                  backgroundColor:
+                    riskLevel === 'high' ? '#FFF1F2' : riskLevel === 'medium' ? '#FFFBEB' : '#ECFDF5',
+                  border: `1px solid ${riskLevel === 'high' ? '#FECDD3' : riskLevel === 'medium' ? '#FDE68A' : '#BBF7D0'}`,
+                  padding: '16px 20px',
+                  borderRadius: 'var(--border-radius-lg)',
+                  marginBottom: '32px',
+                }}
+              >
+                <p style={{
+                  fontSize: '14px',
+                  color: riskLevel === 'high' ? '#BE123C' : riskLevel === 'medium' ? '#92400E' : '#166534',
+                  fontWeight: 700,
+                  lineHeight: 1.6,
+                  margin: 0,
+                }}>
+                  {msg}
+                </p>
+                <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '8px', fontWeight: 600, margin: '8px 0 0' }}>
+                  ※ 지방 {fatPct}% 라벨 감점은 활동량과 무관하게 기준 초과로 고정되지만, 실제 체중 증가 위험은 활동량이 높을수록 낮아집니다.
+                </p>
+              </div>
+            );
+          }
+
+          return (
+            <div style={{ backgroundColor: 'var(--secondary)', padding: '20px', borderRadius: 'var(--border-radius-lg)', marginBottom: '32px' }}>
+              <p style={{ fontSize: '15px', color: 'var(--text-dark)', fontWeight: 600, lineHeight: 1.6 }}>
+                조단백질이 풍부하여 근육 형성과 에너지 보충에 아주 좋습니다.
+              </p>
+            </div>
+          );
+        })()}
 
         <GuaranteedAnalysisSection ga={product.guaranteedAnalysis} />
 
@@ -461,9 +790,26 @@ export default function Detail() {
           </div>
         )}
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '16px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-dark)' }}>전성분 상세</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '12px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-dark)' }}>수집된 전체 원료표</h3>
           <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 500 }}>총 {product.ingredients?.length}개</div>
+        </div>
+
+        {/* 신호 범례 */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
+          {[
+            { dot: '#15B36B', label: '주요 가점' },
+            { dot: '#F59E0B', label: '보조 가점' },
+            { dot: '#3182F6', label: '대체 단백질' },
+            { dot: '#94A3B8', label: '중립' },
+            { dot: '#F97316', label: '주의' },
+            { dot: '#F04452', label: '강한 주의' },
+          ].map(s => (
+            <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 700, color: '#64748B' }}>
+              <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: s.dot, display: 'inline-block' }} />
+              {s.label}
+            </div>
+          ))}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', borderRadius: '18px', overflow: 'hidden', border: '1px solid var(--hairline)' }}>
@@ -471,13 +817,32 @@ export default function Detail() {
             const isAllergy = profile.allergies.some(a =>
               ing.nameKo.includes(a) || (ing.nameEn && ing.nameEn.toLowerCase().includes(a.toLowerCase()))
             );
-            const isDanger = isAllergy || ing.riskLevel === 'danger';
-            const isCaution = !isDanger && ing.riskLevel === 'caution';
 
-            const dotColor = isDanger ? '#F04452' : isCaution ? '#F59E0B' : '#15B36B';
-            const badgeBg = isDanger ? '#FFF1F2' : isCaution ? '#FFFBEB' : 'var(--safe-tint, #ECFDF5)';
-            const badgeColor = isDanger ? '#BE123C' : isCaution ? '#92400E' : '#166534';
-            const badgeLabel = isAllergy ? '알레르기' : isDanger ? '주의' : isCaution ? '확인' : '안전';
+            // Use 6-level signal from pipeline if available, fallback to 3-level
+            const pipelineSignal = pipeline?.allSignals?.find(s => s.name === ing.nameKo);
+            let dotColor: string;
+            let badgeBg: string;
+            let badgeColor: string;
+            let badgeLabel: string;
+
+            if (isAllergy) {
+              dotColor = '#F04452';
+              badgeBg = '#FFF1F2';
+              badgeColor = '#BE123C';
+              badgeLabel = '알레르기';
+            } else if (pipelineSignal) {
+              dotColor = pipelineSignal.signal.dotColor;
+              badgeBg = pipelineSignal.signal.labelBg;
+              badgeColor = pipelineSignal.signal.labelColor;
+              badgeLabel = pipelineSignal.signal.label;
+            } else {
+              const isDanger = ing.riskLevel === 'danger';
+              const isCaution = ing.riskLevel === 'caution';
+              dotColor = isDanger ? '#F04452' : isCaution ? '#F59E0B' : '#94A3B8';
+              badgeBg = isDanger ? '#FFF1F2' : isCaution ? '#FFFBEB' : '#F8FAFC';
+              badgeColor = isDanger ? '#BE123C' : isCaution ? '#92400E' : '#475569';
+              badgeLabel = isDanger ? '강한 주의' : isCaution ? '주의' : '중립';
+            }
 
             return (
               <button
@@ -492,12 +857,23 @@ export default function Detail() {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
+                  <span style={{ width: '9px', height: '9px', borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontWeight: isDanger || isCaution ? 700 : 500, fontSize: '14.5px', color: isDanger ? '#BE123C' : 'var(--text-dark)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <div style={{
+                      fontWeight: isAllergy || ing.riskLevel === 'danger' ? 700 : 500,
+                      fontSize: '14.5px',
+                      color: isAllergy || ing.riskLevel === 'danger' ? '#BE123C' : 'var(--text-dark)',
+                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    }}>
                       {ing.nameKo}
                     </div>
-                    {ing.purpose && (
+                    {pipelineSignal?.qualityResult?.typeLabel && !isAllergy && (
+                      <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px', fontWeight: 600 }}>
+                        {pipelineSignal.qualityResult.typeLabel}
+                        {ing.purpose ? ` · ${ing.purpose}` : ''}
+                      </div>
+                    )}
+                    {!pipelineSignal && ing.purpose && (
                       <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', fontWeight: 500 }}>{ing.purpose}</div>
                     )}
                   </div>
