@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { Helmet } from 'react-helmet-async';
 import { Search as SearchIcon, X, ChevronRight } from 'lucide-react';
 import { INGREDIENT_DICTIONARY } from '../analysis/ingredientDictionary';
+import { INGREDIENT_DICT } from '../copy/ui';
 
 const CATEGORY_LABELS: Record<string, string> = {
   animal_protein: '동물성 단백질',
@@ -91,7 +92,7 @@ export default function IngredientDictionary() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="성분명으로 검색 (예: 글루코사민, BHA)"
+            placeholder={INGREDIENT_DICT.searchPlaceholder}
             style={{ flex: 1, border: 'none', outline: 'none', background: 'none', fontSize: 14.5, color: 'var(--ink)', fontFamily: 'inherit' }}
           />
           {query && <X size={16} stroke="var(--ink-faint)" style={{ cursor: 'pointer' }} onClick={() => setQuery('')} />}

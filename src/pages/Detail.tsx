@@ -51,6 +51,7 @@ import FeedingGuideCalculator from '../components/FeedingGuideCalculator';
 import { TossCard } from '../components/TossUI';
 import ProductImage from '../components/ProductImage';
 import BreedNutritionPanel from '../components/BreedNutritionPanel';
+import { CAUTION_INGREDIENT, ALLERGY_CONFLICT, MEDICAL_DISCLAIMER, PRE_PURCHASE } from '../copy/ui';
 
 export default function Detail() {
   const { id } = useParams();
@@ -666,8 +667,20 @@ export default function Detail() {
             openCoupangForProduct(product);
           }}
         >
-          🚀 쿠팡 최저가 구매 <ExternalLink size={18} />
+          {PRE_PURCHASE.ctaBuy} <ExternalLink size={18} />
         </button>
+      </div>
+
+      {/* 구매 전 체크리스트 */}
+      <div style={{ margin: '0 0 12px', padding: '14px 16px', background: 'var(--fill)', borderRadius: '14px', border: '1px solid var(--hairline)' }}>
+        <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ink-soft)', marginBottom: '8px' }}>{PRE_PURCHASE.sectionTitle}</div>
+        {PRE_PURCHASE.checklist.map((item, i) => (
+          <div key={i} style={{ display: 'flex', gap: '7px', fontSize: '12px', color: 'var(--ink-soft)', lineHeight: 1.6, marginBottom: i < PRE_PURCHASE.checklist.length - 1 ? '4px' : 0 }}>
+            <span style={{ color: 'var(--brand)', fontWeight: 800, flexShrink: 0 }}>·</span>
+            {item}
+          </div>
+        ))}
+        <p style={{ margin: '10px 0 0', fontSize: '11px', color: 'var(--ink-faint)', lineHeight: 1.5 }}>{MEDICAL_DISCLAIMER.short}</p>
       </div>
 
       <p style={{ margin: '0 0 24px', padding: '10px 14px', fontSize: '11px', lineHeight: 1.55, fontWeight: 600, color: '#64748B', background: '#F1F5F9', borderRadius: '12px' }}>
@@ -784,7 +797,7 @@ export default function Detail() {
               <div style={{ fontSize: '12.5px', fontWeight: 600, color: breakdown.allergyHits.length > 0 ? '#BE123C' : '#92400E', opacity: 0.85, lineHeight: 1.5 }}>
                 {breakdown.allergyHits.length > 0
                   ? `${profile.name}는 ${breakdown.allergyHits.join(', ')}을(를) 피하는 게 좋아요. 궁합 점수도 이를 반영했어요.`
-                  : `이 성분은 장기 급여 시 주의가 필요해요. 수의사와 상담해 보세요.`}
+                  : CAUTION_INGREDIENT.warning.hint}
               </div>
             </div>
           </div>
@@ -1071,7 +1084,7 @@ function VetBadge({ riskLevel }: { riskLevel: string }) {
   const isDanger = riskLevel === 'danger';
   return (
     <div style={{ fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '8px', background: isDanger ? '#FEF2F2' : '#FFFBEB', color: isDanger ? '#991B1B' : '#92400E', border: `1px solid ${isDanger ? '#FECACA' : '#FDE68A'}` }}>
-      {isDanger ? '⚠️ 수의사 주의' : '👁 확인 권장'}
+      {isDanger ? CAUTION_INGREDIENT.danger.badge : CAUTION_INGREDIENT.warning.badge}
     </div>
   );
 }
@@ -1080,12 +1093,12 @@ function getVetComment(ingredients: Ingredient[]): string {
   const dangerCount = ingredients.filter(i => i.riskLevel === 'danger').length;
   const cautionCount = ingredients.filter(i => i.riskLevel === 'caution').length;
   if (dangerCount > 0) {
-    return `이 제품에는 ${dangerCount}개의 주의 성분이 포함되어 있습니다. 특히 BHA, BHT, 에톡시퀸 등 합성 보존료나 인공색소는 장기 섭취 시 간 부담을 줄 수 있으며, 알레르기 반응이 있는 반려동물에게는 주의가 필요합니다. 급여 전 수의사와 상담하세요.`;
+    return `${dangerCount}가지 주의 성분이 들어 있어요. ${CAUTION_INGREDIENT.danger.hint}`;
   }
   if (cautionCount > 0) {
-    return `전반적으로 안전한 성분 구성이나 ${cautionCount}개 성분은 개체에 따라 반응이 다를 수 있습니다. 처음 급여 시 소량부터 시작하고 이상 반응(구토, 설사, 피부 발진 등)이 있으면 즉시 중단하세요.`;
+    return `${cautionCount}가지 성분을 한 번 더 확인해보면 좋겠어요. ${CAUTION_INGREDIENT.warning.hint}`;
   }
-  return `주요 성분 모두 안전 등급으로 분류되었습니다. 천연 단백질원 위주의 건강한 구성입니다. 다만 각 반려동물마다 체질이 다르므로 처음에는 소량씩 테스트하며 급여하는 것을 권장합니다.`;
+  return `${CAUTION_INGREDIENT.safe.description} ${CAUTION_INGREDIENT.safe.hint}`;
 }
 
 /** 등록성분량(보증성분) 섹션 — 라벨 표기값 + 건물기준(DMB) 환산 + 추정 칼로리 */

@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { MessageSquare, MessageCircle, ThumbsUp, CheckCircle2, Pencil, ChevronDown, ChevronUp } from 'lucide-react';
+import { COMMUNITY_WRITE } from '../copy/ui';
 
 interface Post {
   id: string;
@@ -297,7 +298,7 @@ export default function Community() {
           boxShadow: '0 6px 16px rgba(255, 201, 40, 0.28)',
         }}
       >
-        <Pencil size={17} strokeWidth={2.4} /> 글쓰기
+        <Pencil size={17} strokeWidth={2.4} /> {COMMUNITY_WRITE.submit}
       </button>
 
       {/* Write form — animated slide-down */}
@@ -317,7 +318,7 @@ export default function Community() {
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ink)' }}>새 글 작성</span>
+            <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ink)' }}>{COMMUNITY_WRITE.screenTitle}</span>
             <select
               value={newCategory}
               onChange={e => setNewCategory(e.target.value)}
@@ -335,7 +336,7 @@ export default function Community() {
 
           <input
             type="text"
-            placeholder="제목을 입력해주세요"
+            placeholder={COMMUNITY_WRITE.titlePlaceholder}
             value={newTitle}
             onChange={e => setNewTitle(e.target.value)}
             required
@@ -348,7 +349,7 @@ export default function Community() {
           />
 
           <textarea
-            placeholder="성분 분석 경험담이나 사료에 관련된 고민을 적어주세요"
+            placeholder={COMMUNITY_WRITE.bodyPlaceholder}
             value={newContent}
             onChange={e => setNewContent(e.target.value)}
             required
@@ -382,7 +383,7 @@ export default function Community() {
                 border: 'none', fontSize: '13px', fontWeight: 800, cursor: 'pointer',
               }}
             >
-              등록하기
+              {COMMUNITY_WRITE.submit}
             </button>
           </div>
         </form>
@@ -392,7 +393,7 @@ export default function Community() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         {filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--ink-faint)', fontSize: '13px', fontWeight: 600 }}>
-            이 카테고리에는 아직 글이 없어요.<br />첫 글의 주인공이 되어보세요!
+            이 카테고리에는 아직 글이 없어요.<br />{COMMUNITY_WRITE.notice}
           </div>
         ) : (
           filtered.map(post => (

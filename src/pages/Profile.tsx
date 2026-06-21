@@ -10,6 +10,7 @@ import ProductCard from '../components/ProductCard';
 import ProductImage from '../components/ProductImage';
 import { getRecommendationBreakdown, gradeFromScore } from '../utils/score';
 import { notify } from '../store/useNotification';
+import { FAVORITES_EMPTY } from '../copy/ui';
 
 const PROFILE_STEP_META = [
   { title: '이름', prompt: '반려동물의 이름을 알려주세요.' },
@@ -923,7 +924,9 @@ export default function Profile() {
             ) : (
               <div style={{ padding: '54px 28px', textAlign: 'center' }}>
                 <Heart size={30} stroke="var(--ink-faint)" style={{ margin: '0 auto 12px' }} />
-                <div style={{ fontSize: 14, color: 'var(--ink-soft)', marginBottom: 16 }}>아직 찜한 제품이 없어요</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)', marginBottom: 6 }}>{FAVORITES_EMPTY.title}</div>
+                <div style={{ fontSize: 14, color: 'var(--ink-soft)', marginBottom: 6 }}>{FAVORITES_EMPTY.description}</div>
+                <div style={{ fontSize: 13, color: 'var(--ink-faint)', marginBottom: 16 }}>{FAVORITES_EMPTY.hint}</div>
                 <button
                   onClick={() => navigate('/')}
                   style={{
@@ -931,7 +934,7 @@ export default function Profile() {
                     background: 'var(--brand-tint)', border: '1px solid var(--brand-line)', padding: '11px 20px', borderRadius: 12
                   }}
                 >
-                  제품 탐색하기
+                  {FAVORITES_EMPTY.cta}
                 </button>
               </div>
             )}
