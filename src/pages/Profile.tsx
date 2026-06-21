@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
-import { User, ChevronRight, Calendar, ShoppingBag, FileText, Activity, LogOut, Heart } from 'lucide-react';
+import { User, ChevronRight, Calendar, ShoppingBag, FileText, Activity, LogOut, Heart, Crown } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { TossCard, TossInput, TossButton, TossChip, TossSectionTitle } from '../components/TossUI';
@@ -98,7 +98,8 @@ export default function Profile() {
     fetchReports, 
     logout,
     favorites,
-    products
+    products,
+    membershipTier,
   } = useStore();
 
   const [searchParams] = useSearchParams();
@@ -620,6 +621,32 @@ export default function Profile() {
                       ✏️ 정보 수정하기
                     </button>
                     
+                    {/* 멤버십 진입점 */}
+                    <button
+                      onClick={() => navigate('/membership')}
+                      style={{
+                        cursor: 'pointer', width: '100%', padding: '14px', borderRadius: 14,
+                        background: membershipTier === 'free' ? 'var(--fill)' : 'var(--brand-tint)',
+                        border: '1px solid var(--hairline)', fontSize: 14, fontWeight: 700, color: 'var(--ink)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Crown size={16} color={membershipTier === 'free' ? 'var(--ink-faint)' : 'var(--brand-deep)'} />
+                        <span>
+                          멤버십
+                          <span style={{
+                            marginLeft: 8, fontSize: 11, fontWeight: 800, padding: '2px 7px', borderRadius: 99,
+                            background: membershipTier === 'pro' ? '#7C3AED' : membershipTier === 'plus' ? '#3B82F6' : '#E5E7EB',
+                            color: membershipTier === 'free' ? '#6B7280' : '#fff',
+                          }}>
+                            {membershipTier === 'pro' ? 'Pro' : membershipTier === 'plus' ? 'Plus' : 'Free'}
+                          </span>
+                        </span>
+                      </div>
+                      <ChevronRight size={16} color="var(--ink-faint)" />
+                    </button>
+
                     <button
                       onClick={handleLogout}
                       style={{

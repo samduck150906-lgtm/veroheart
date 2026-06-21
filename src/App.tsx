@@ -26,6 +26,8 @@ import AdminProducts from './pages/admin/AdminProducts';
 import AdminIngredients from './pages/admin/AdminIngredients';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminAnalysis from './pages/admin/AdminAnalysis';
+import AdminSponsors from './pages/admin/AdminSponsors';
+import Membership from './pages/Membership';
 import Notification from './components/Notification';
 import AdminAuthGuard from './pages/admin/AdminAuthGuard';
 import EntryGate from './components/EntryGate';
@@ -141,6 +143,7 @@ function App() {
               <Route path="pet-profile" element={<PetProfilePage />} />
               <Route path="event/personality-quiz" element={<PersonalityQuiz />} />
               <Route path="event/viral" element={<ViralEvent />} />
+              <Route path="membership" element={<Membership />} />
               <Route path="terms" element={<Terms />} />
               <Route path="privacy" element={<Privacy />} />
               <Route path="refund" element={<Refund />} />
@@ -153,6 +156,7 @@ function App() {
             <Route path="products" element={<AdminProducts />} />
             <Route path="ingredients" element={<AdminIngredients />} />
             <Route path="analysis" element={<AdminAnalysis />} />
+            <Route path="sponsors" element={<AdminSponsors />} />
             <Route path="settings" element={<AdminSettings />} />
           </Route>
         </Routes>

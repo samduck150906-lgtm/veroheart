@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { create } from 'zustand';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
-import type { UserPetProfile, Product, SupabaseOrderWithItems, AnalysisReportRow, Banner } from '../types';
+import type { UserPetProfile, Product, SupabaseOrderWithItems, AnalysisReportRow, Banner, MembershipTier } from '../types';
 import { DEFAULT_USER_PET_PROFILE } from '../types';
 import {
   supabase,
@@ -100,6 +100,9 @@ interface StoreState {
   fetchBanners: () => Promise<void>;
   saveBanner: (banner: Partial<Banner>) => Promise<void>;
   deleteBanner: (bannerId: string) => Promise<void>;
+  // Membership
+  membershipTier: MembershipTier;
+  fetchMembership: () => Promise<void>;
 }
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -116,6 +119,18 @@ export const useStore = create<StoreState>((set, get) => ({
   scannerMode: 'barcode' as 'barcode' | 'text',
   setScannerMode: (mode: 'barcode' | 'text') => set({ scannerMode: mode }),
   banners: DEFAULT_BANNERS,
+  membershipTier: 'free' as MembershipTier,
+  fetchMembership: async () => {
+    const { userId } = get();
+    if (!userId) return;
+    try {
+      const { getUserMembershipTier } = await import('../lib/supabase');
+      const tier = await getUserMembershipTier(userId);
+      set({ membershipTier: tier });
+    } catch (err) {
+      console.error('fetchMembership err:', err);
+    }
+  },
 
   signOut: async () => {
     await supabaseSignOut();
@@ -232,8 +247,8 @@ export const useStore = create<StoreState>((set, get) => ({
         set({ recentViews: recentData as any[] });
       }
 
-      const { fetchProducts, fetchOrders, fetchReports, fetchBanners } = get();
-      await Promise.all([fetchProducts(), fetchOrders(), fetchReports(), fetchBanners()]);
+      const { fetchProducts, fetchOrders, fetchReports, fetchBanners, fetchMembership } = get();
+      await Promise.all([fetchProducts(), fetchOrders(), fetchReports(), fetchBanners(), fetchMembership()]);
       set({ isInitializing: false });
     } catch (err) {
       console.error('initApp err:', err);
