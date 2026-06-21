@@ -36,6 +36,7 @@ import IngredientDictionary from './pages/IngredientDictionary';
 import PersonalityQuiz from './pages/Test';
 import ViralEvent from './pages/ViralEvent';
 import NotFound from './pages/NotFound';
+import Brand from './pages/Brand';
 
 function App() {
   const { initApp, isInitializing, isLoggedIn } = useStore();
@@ -139,6 +140,7 @@ function App() {
               <Route path="analysis" element={<AnalysisResult />} />
               <Route path="scan-result" element={<ScanResult />} />
               <Route path="pet-profile" element={<PetProfilePage />} />
+              <Route path="brand/:brandName" element={<Brand />} />
               <Route path="event/personality-quiz" element={<PersonalityQuiz />} />
               <Route path="event/viral" element={<ViralEvent />} />
               <Route path="terms" element={<Terms />} />
