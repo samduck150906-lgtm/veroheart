@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Filter,
   X,
@@ -16,7 +16,8 @@ import {
   SlidersHorizontal,
   Sparkles,
   Search as SearchIcon,
-  Database
+  Database,
+  BookOpen
 } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import type { Product } from '../types';
@@ -85,6 +86,7 @@ export default function Search() {
   const { profile, isLoggedIn } = useStore();
   const hasPetProfile = isLoggedIn && profile && profile.id && profile.id !== 'local-profile' && profile.name && profile.name !== '우리 아이';
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const category = resolveCategoryFromSearchParams(searchParams.get('category'));
 
   const setCategory = (name: string) => {
@@ -370,16 +372,25 @@ export default function Search() {
         </button>
       </div>
 
-      {/* Standard Feed Database button */}
-      <div style={{ padding: '8px 20px 0' }}>
+      {/* Dictionary entry buttons */}
+      <div style={{ padding: '8px 20px 0', display: 'flex', gap: 8 }}>
+        <button
+          onClick={() => navigate('/dictionary')}
+          style={{
+            flex: 1, display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700,
+            color: 'var(--brand-deep)', background: 'var(--brand-tint)', padding: '11px 14px', borderRadius: '14px', border: '1px solid var(--brand-line)', cursor: 'pointer', justifyContent: 'center'
+          }}
+        >
+          <BookOpen size={14} /> 성분사전
+        </button>
         <button
           onClick={() => setIsStandardFeedModalOpen(true)}
           style={{
-            display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700,
-            color: 'var(--safe)', background: 'var(--safe-tint)', padding: '10px 16px', borderRadius: '14px', border: '1px solid var(--hairline)', cursor: 'pointer', width: '100%', justifyContent: 'center'
+            flex: 1, display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700,
+            color: 'var(--safe)', background: 'var(--safe-tint)', padding: '11px 14px', borderRadius: '14px', border: '1px solid var(--hairline)', cursor: 'pointer', justifyContent: 'center'
           }}
         >
-          <Database size={14} /> 한국표준사료 성분사전 검색
+          <Database size={14} /> 표준사료 사전
         </button>
       </div>
 
