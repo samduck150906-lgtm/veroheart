@@ -27,7 +27,7 @@ import {
   deleteReview,
 } from '../lib/supabase';
 import { buildProductConclusion } from '../utils/productConclusion';
-import { getRecommendationBreakdown } from '../utils/score';
+import { getRecommendationBreakdown, gradeFromScore } from '../utils/score';
 import { COUPANG_PARTNERS_DISCLOSURE } from '../constants/coupangPartners';
 import { REVIEW_QUICK_TAGS } from '../constants/reviewTags';
 
@@ -310,6 +310,116 @@ export default function Detail() {
           )}
         </div>
       </TossCard>
+
+      {/* ── 핵심 태그 ── */}
+      {(() => {
+        const tags = [];
+        const ga = product.guaranteedAnalysis;
+        if (ga?.crudeProtein && ga.crudeProtein >= 28) tags.push({ label: '고단백', color: '#A855F7', bg: '#FAF5FF' });
+        if (!product.ingredients?.some(i => i.riskLevel === 'danger')) tags.push({ label: '주의성분 없음', color: '#15B36B', bg: '#ECFDF5' });
+        if (product.name?.includes('무곡물') || product.name?.includes('grain free') || product.name?.toLowerCase().includes('grain-free')) tags.push({ label: '무곡물', color: '#0369A1', bg: '#F0F9FF' });
+        if (product.healthConcerns?.includes('피부')) tags.push({ label: '피부건강', color: '#EA580C', bg: '#FFF7ED' });
+        if (product.healthConcerns?.includes('관절')) tags.push({ label: '관절건강', color: '#7C3AED', bg: '#F5F3FF' });
+        if (product.healthConcerns?.includes('소화')) tags.push({ label: '소화건강', color: '#0891B2', bg: '#ECFEFF' });
+        if (product.healthConcerns?.includes('비만') || product.healthConcerns?.includes('다이어트')) tags.push({ label: '체중관리', color: '#B45309', bg: '#FFFBEB' });
+        if (product.targetLifeStage?.includes('시니어')) tags.push({ label: '시니어', color: '#64748B', bg: '#F8FAFC' });
+        if (product.targetPetType === 'cat') tags.push({ label: '고양이 전용', color: '#DB2777', bg: '#FDF2F8' });
+        if (product.targetPetType === 'dog') tags.push({ label: '강아지 전용', color: '#2563EB', bg: '#EFF6FF' });
+        if (tags.length === 0) return null;
+        return (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '7px', marginBottom: '16px' }}>
+            {tags.map(({ label, color, bg }) => (
+              <span key={label} style={{ padding: '5px 11px', borderRadius: '99px', fontSize: '12px', fontWeight: 700, color, background: bg }}>
+                {label}
+              </span>
+            ))}
+          </div>
+        );
+      })()}
+
+      {/* ── VERORO SCORE ── */}
+      {report && (
+        <div style={{
+          marginBottom: '20px',
+          padding: '18px 20px',
+          borderRadius: '20px',
+          background: report.score >= 80
+            ? 'linear-gradient(135deg, #ECFDF5 0%, #F0FFF4 100%)'
+            : report.score >= 60
+              ? 'linear-gradient(135deg, #FFFBEB 0%, #FFF 100%)'
+              : 'linear-gradient(135deg, #FFF1F2 0%, #FFF 100%)',
+          border: `1px solid ${report.score >= 80 ? '#BBF7D0' : report.score >= 60 ? '#FDE68A' : '#FECACA'}`,
+        }}>
+          <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--ink-faint)', letterSpacing: '0.08em', marginBottom: '8px' }}>VERORO SCORE</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                <span style={{ fontSize: '42px', fontWeight: 900, color: report.score >= 80 ? '#15B36B' : report.score >= 60 ? '#E8A800' : '#F04452', letterSpacing: '-0.04em', lineHeight: 1 }}>
+                  {report.score}
+                </span>
+                <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ink-faint)' }}>/ 100</span>
+              </div>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink-soft)', marginTop: '4px' }}>
+                {report.score >= 90 ? '최고 등급 · 강력 추천' : report.score >= 80 ? '우수 · 추천' : report.score >= 60 ? '보통 · 참고 필요' : '주의 필요'}
+              </div>
+            </div>
+            <div style={{
+              width: '60px', height: '60px', borderRadius: '18px',
+              background: report.score >= 80 ? '#15B36B' : report.score >= 60 ? '#E8A800' : '#F04452',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexDirection: 'column',
+            }}>
+              <span style={{ fontSize: '20px', fontWeight: 900, color: '#fff', lineHeight: 1 }}>
+                {gradeFromScore(report.score)}
+              </span>
+              <span style={{ fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.8)', marginTop: '2px' }}>등급</span>
+            </div>
+          </div>
+          {hasPetProfile && breakdown && (
+            <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)' }}>{profile.name}와의 궁합</span>
+              <span style={{ fontSize: '14px', fontWeight: 900, color: 'var(--brand-deep)' }}>{breakdown.total}점</span>
+              {breakdown.allergyHits?.length > 0 && (
+                <span style={{ fontSize: '11px', fontWeight: 700, color: '#BE123C', background: '#FFF1F2', padding: '2px 7px', borderRadius: '6px' }}>
+                  ⚠ 알러지 주의
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── 핵심 성분 요약 ── */}
+      {product.ingredients && product.ingredients.length > 0 && (() => {
+        const INGREDIENT_EMOJI: Record<string, string> = {
+          '닭': '🍗', '오리': '🦆', '연어': '🐟', '소': '🥩', '양': '🐑', '참치': '🐠',
+          '고구마': '🍠', '현미': '🌾', '귀리': '🌾', '감자': '🥔', '완두': '🫛',
+          '블루베리': '🫐', '당근': '🥕', '시금치': '🥬', '호박': '🎃',
+          '글루코사민': '🦴', '오메가': '💊', '비타민': '💊',
+        };
+        const safeIngs = product.ingredients.filter(i => i.riskLevel === 'safe').slice(0, 5);
+        return (
+          <div style={{ marginBottom: '20px', padding: '16px 18px', borderRadius: '18px', background: 'var(--fill)', border: '1px solid var(--hairline)' }}>
+            <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ink)', marginBottom: '12px' }}>핵심 성분</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {safeIngs.map(ing => {
+                const emoji = Object.entries(INGREDIENT_EMOJI).find(([k]) => ing.nameKo?.includes(k))?.[1] || '🌿';
+                return (
+                  <div key={ing.id || ing.nameKo} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ width: '32px', height: '32px', borderRadius: '10px', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', border: '1px solid var(--hairline)' }}>
+                      {emoji}
+                    </span>
+                    <div>
+                      <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--ink)' }}>{ing.nameKo}</div>
+                      {ing.purpose && <div style={{ fontSize: '11.5px', color: 'var(--ink-faint)', fontWeight: 500 }}>{ing.purpose}</div>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
 
       <button
         onClick={() => navigate('/analysis', { state: { product } })}
@@ -686,6 +796,29 @@ export default function Detail() {
       </p>
 
       <Analyzer />
+
+      {/* ── Sticky CTA ── */}
+      <div style={{
+        position: 'fixed', bottom: '72px', left: '50%', transform: 'translateX(-50%)',
+        width: 'min(calc(100% - 32px), 488px)',
+        zIndex: 50,
+        pointerEvents: 'none',
+      }}>
+        <button
+          style={{
+            width: '100%', padding: '16px 24px', borderRadius: '16px',
+            background: 'var(--ink)', color: '#fff',
+            fontWeight: 900, fontSize: '16px', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+            pointerEvents: 'auto',
+          }}
+          onClick={() => openCoupangForProduct(product)}
+        >
+          🛒 구매하기
+          {product.price ? <span style={{ fontSize: '14px', fontWeight: 700, opacity: 0.8 }}>{product.price.toLocaleString()}원~</span> : null}
+        </button>
+      </div>
     </div>
   );
 }
