@@ -40,6 +40,7 @@
 | **value** (가성비) | 10 | 6 ±가격대 보정 − max(0, 위험−1) |
 | **petFit** (종/연령 적합) | 10 | 종 일치 10 / 공용 8 / 불일치 0, 시니어·퍼피 매칭 시 +2 |
 | **verification** (검수) | 10 | verified 10 / pending 0 / needs_review 1 / 기본 4 |
+| **nutrition** (AAFCO 영양) | 10 | `guaranteedAnalysis` 없으면 0. 있으면: 기본 5 + 단백 DMB ≥ 기준 +2/−2 + 지방 DMB ≥ 기준 +2/−1 + Ca:P 정상 +1/−1. clamp(0,10). |
 
 `rawTotal = clamp(0, 100, Σ buckets)`
 
@@ -118,7 +119,7 @@ capped = total < rawTotal
 
 ## 8. 알려진 한계 & 다음 개선
 
-- **영양 균형(AAFCO/보증성분) 미반영:** 현재 concern/safety는 성분 *목록* 기반. `guaranteedAnalysis`(조단백/지방/Ca:P)를 DMB로 환산해 별도 버킷(영양)으로 가중하면 정밀도 ↑ (`src/analysis/nutrition.ts` 활용).
+- **영양 균형(AAFCO/보증성분) 반영됨 (v2):** `nutrition` 버킷이 `guaranteedAnalysis`(조단백/지방/Ca:P)를 DMB로 환산해 AAFCO 최소 기준 충족 여부를 0–10점으로 반영한다 (`src/analysis/nutrition.ts` 활용). 데이터 없으면 0점(중립).
 - **금지 성분 사용자 입력:** 프로필에 `bannedIngredients[]`를 추가하면 알레르기와 동일한 하드캡 어휘로 확장 가능.
 - **활동량·중성화·체중:** 급여량(`FeedingGuideCalculator`)에는 쓰이나 궁합 점수에는 미반영. petFit 정교화 여지.
 - **동의어 정규화:** 매칭이 부분 문자열 기반 → `src/analysis/normalize.ts`/사전 alias로 교체하면 오탐/누락 감소.

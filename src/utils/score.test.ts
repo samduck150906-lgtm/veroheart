@@ -74,3 +74,29 @@ describe('compatibility hard caps', () => {
     expect(b.grade).not.toBe('A');
   });
 });
+
+describe('nutrition bucket (AAFCO DMB)', () => {
+  it('returns nutrition=0 when guaranteedAnalysis is absent', () => {
+    const b = getRecommendationBreakdown(makeProduct(), profile);
+    expect(b.nutrition).toBe(0);
+  });
+
+  it('gives high nutrition score when AAFCO minimums are met (dog: protein≥18%, fat≥5.5% DMB)', () => {
+    const product = makeProduct({
+      guaranteedAnalysis: { crudeProtein: 28, crudeFat: 14, moisture: 10, crudeFiber: 3, crudeAsh: 7, calcium: 1.2, phosphorus: 0.8 },
+    });
+    const b = getRecommendationBreakdown(product, profile);
+    expect(b.nutrition).toBeGreaterThanOrEqual(8);
+    expect(b.reasons.some(r => r.includes('AAFCO'))).toBe(true);
+  });
+
+  it('penalises nutrition when protein is below AAFCO minimum', () => {
+    const product = makeProduct({
+      guaranteedAnalysis: { crudeProtein: 14, crudeFat: 12, moisture: 10 },
+    });
+    const b = getRecommendationBreakdown(product, profile);
+    // 14% as-fed → 14/0.9 ≈ 15.6% DMB < 18% dog minimum → penalty
+    expect(b.nutrition).toBeLessThan(7);
+    expect(b.reasons.some(r => r.includes('AAFCO'))).toBe(true);
+  });
+});
