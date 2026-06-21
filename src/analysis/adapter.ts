@@ -43,13 +43,50 @@ export function toAllergenTags(allergies: string[]): string[] {
   return [...tags];
 }
 
+function inferLifeStageFromAge(species: 'dog' | 'cat', ageYears: number): import('./types').LifeStage {
+  if (species === 'cat') {
+    if (ageYears < 1) return 'puppy_kitten';
+    if (ageYears < 11) return 'adult';
+    return 'senior';
+  }
+  // dog — conservative estimate (varies by size; default small-medium)
+  if (ageYears < 1) return 'puppy_kitten';
+  if (ageYears < 7) return 'adult';
+  return 'senior';
+}
+
 export function toPetProfile(profile: UserPetProfile): PetProfile {
+  const species = toEngineSpecies(profile.species);
+  const ageYears = profile.age ?? 0;
   return {
-    species: toEngineSpecies(profile.species),
+    species,
+    ageMonths: ageYears * 12,
+    lifeStage: inferLifeStageFromAge(species, ageYears),
     allergies: toAllergenTags(profile.allergies ?? []),
     diseases: profile.healthConcerns ?? [],
     name: profile.name,
   };
+}
+
+const LIFE_STAGE_MAP: Record<string, import('./types').LifeStage> = {
+  puppy: 'puppy_kitten',
+  puppy_kitten: 'puppy_kitten',
+  kitten: 'puppy_kitten',
+  자견: 'puppy_kitten',
+  자묘: 'puppy_kitten',
+  adult: 'adult',
+  성견: 'adult',
+  성묘: 'adult',
+  senior: 'senior',
+  노령: 'senior',
+  all: 'all_life_stages',
+  all_life_stages: 'all_life_stages',
+};
+
+function toLifeStage(stages: string[] | undefined): import('./types').LifeStage {
+  if (!stages?.length) return 'unknown';
+  const first = stages[0].toLowerCase();
+  return LIFE_STAGE_MAP[first] ?? 'unknown';
 }
 
 export function toProductForAnalysis(product: Product): ProductForAnalysis {
@@ -64,6 +101,8 @@ export function toProductForAnalysis(product: Product): ProductForAnalysis {
           ? 'dog'
           : 'both',
     productType: inferProductType(product),
+    lifeStage: toLifeStage(product.targetLifeStage),
+    healthConcerns: product.healthConcerns ?? [],
   };
 }
 
