@@ -146,7 +146,7 @@ export default function Detail() {
   const report = product ? generateAnalysisReport(product, profile) : null;
   const conclusion = product && report ? buildProductConclusion(product, profile, report) : null;
   const breakdown = hasPetProfile && product ? getRecommendationBreakdown(product, profile) : null;
-  const pipeline = product ? runScoringPipeline(product) : null;
+  const pipeline = product ? runScoringPipeline(product, profile?.breed || '') : null;
   const isComparing = comparisonList.includes(product?.id || '');
   const verificationMeta = getVerificationMeta(product.verificationStatus);
 
@@ -543,6 +543,110 @@ export default function Detail() {
           </div>
         </section>
       )}
+
+          {/* ── 견종별 건강 관리 ─────────────────────────────── */}
+          {pipeline?.breedDisease && pipeline.breedDisease.activeDiseases.length > 0 && (
+            <div style={{ padding: '20px', borderRadius: '20px', background: '#fff', border: '1px solid #EEF0F3', boxShadow: '0 4px 16px rgba(0,0,0,0.04)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                <h3 style={{ fontSize: '17px', fontWeight: 800, color: '#0F172A', margin: 0 }}>견종별 건강 관리</h3>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#3182F6', background: '#EFF6FF', padding: '3px 8px', borderRadius: '99px' }}>
+                  {pipeline.breedDisease.breedMatched ?? profile?.breed}
+                </span>
+              </div>
+              <p style={{ fontSize: '12px', color: '#64748B', fontWeight: 600, marginBottom: '14px', lineHeight: 1.5 }}>
+                이 견종의 취약 질환 기준으로 현재 사료를 평가했어요.
+              </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {pipeline.breedDisease.activeDiseases.map(ad => {
+                  const hasQuantitative = ad.disease.hasQuantitativeRules && ad.ruleChecks.length > 0;
+                  const allPass = ad.failCount === 0 && ad.passCount > 0;
+                  const anyFail = ad.failCount > 0;
+                  const isClinicalFirst = ad.disease.id === 'cancer';
+
+                  const headerBg = isClinicalFirst ? '#FFF1F2'
+                    : anyFail ? '#FFFBEB'
+                    : allPass ? '#ECFDF5'
+                    : '#F8FAFC';
+                  const headerBorder = isClinicalFirst ? '#FECDD3'
+                    : anyFail ? '#FDE68A'
+                    : allPass ? '#86EFAC'
+                    : '#E2E8F0';
+                  const headerAccent = isClinicalFirst ? '#BE123C'
+                    : anyFail ? '#92400E'
+                    : allPass ? '#166534'
+                    : '#475569';
+
+                  return (
+                    <div key={ad.disease.id} style={{ borderRadius: '14px', background: headerBg, border: `1.5px solid ${headerBorder}`, overflow: 'hidden' }}>
+                      <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '18px' }}>{ad.disease.emoji}</span>
+                          <span style={{ fontSize: '14px', fontWeight: 800, color: headerAccent }}>{ad.disease.name}</span>
+                        </div>
+                        {hasQuantitative && (
+                          <span style={{ fontSize: '12px', fontWeight: 800, color: headerAccent }}>
+                            {ad.passCount}/{ad.ruleChecks.length} 충족
+                          </span>
+                        )}
+                        {!hasQuantitative && !isClinicalFirst && (
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#94A3B8' }}>보조 성분 점검</span>
+                        )}
+                      </div>
+
+                      {isClinicalFirst && ad.disease.clinicalNote && (
+                        <div style={{ padding: '8px 14px 12px', fontSize: '12px', color: '#9F1239', fontWeight: 600, lineHeight: 1.55 }}>
+                          ⚠️ {ad.disease.clinicalNote}
+                        </div>
+                      )}
+
+                      {!isClinicalFirst && hasQuantitative && (
+                        <div style={{ borderTop: `1px solid ${headerBorder}`, padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          {ad.ruleChecks.map((rc, idx) => {
+                            const statusColor = rc.status === 'pass' ? '#15B36B' : rc.status === 'fail' ? '#F04452' : '#94A3B8';
+                            const statusBg = rc.status === 'pass' ? '#ECFDF5' : rc.status === 'fail' ? '#FFF1F2' : '#F8FAFC';
+                            return (
+                              <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                                <span style={{ fontSize: '11px', fontWeight: 800, color: statusColor, background: statusBg, padding: '2px 7px', borderRadius: '6px', flexShrink: 0, marginTop: '1px' }}>
+                                  {rc.status === 'pass' ? '충족' : rc.status === 'fail' ? '미달' : '미확인'}
+                                </span>
+                                <div>
+                                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#374151' }}>{rc.rule.displayName}</span>
+                                  <span style={{ fontSize: '11px', color: '#94A3B8', marginLeft: '6px' }}>
+                                    {rc.rule.evidenceLevel === 'high' ? '근거 높음' : '근거 중간'}
+                                  </span>
+                                  <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600, marginTop: '2px' }}>{rc.message}</div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {!isClinicalFirst && ad.supplementGaps.length > 0 && (
+                        <div style={{ borderTop: `1px solid ${headerBorder}`, padding: '8px 14px 12px' }}>
+                          <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', marginBottom: '6px' }}>보조 성분 미확인</div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                            {ad.supplementGaps.map(s => (
+                              <span key={s} style={{ fontSize: '11px', fontWeight: 700, color: '#F59E0B', background: '#FFFBEB', border: '1px solid #FDE68A', padding: '2px 8px', borderRadius: '6px' }}>
+                                {s}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {!isClinicalFirst && ad.disease.clinicalNote && (
+                        <div style={{ borderTop: `1px solid ${headerBorder}`, padding: '8px 14px', fontSize: '11px', color: '#64748B', fontWeight: 600, lineHeight: 1.5 }}>
+                          ℹ️ {ad.disease.clinicalNote}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
       {/* ── 두 축 분리 분석 끝 ─────────────────────────────────── */}
 
