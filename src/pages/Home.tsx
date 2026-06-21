@@ -22,6 +22,7 @@ import { useNavigate } from 'react-router-dom';
 import ProductImage from '../components/ProductImage';
 import ProductCard from '../components/ProductCard';
 import { rankProductsForProfile, gradeFromScore, calculateCompatibilityScore } from '../utils/score';
+import { HOME } from '../copy/ui';
 
 const CATEGORY_GRID = [
   { name: '사료', label: '사료', Icon: Utensils },
@@ -183,7 +184,7 @@ export default function Home() {
         <section style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
-              {petName} 맞춤 추천
+              {HOME.sectionRecommended(petName)}
             </h3>
             <button onClick={() => navigate('/search')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '2px', fontSize: '13px', fontWeight: 600, color: 'var(--ink-faint)' }}>
               전체보기 <ChevronRight size={15} />
@@ -201,7 +202,7 @@ export default function Home() {
       {recent.length > 0 && (
         <section style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.02em' }}>최근 본 상품</h3>
+            <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.02em' }}>{HOME.sectionRecent}</h3>
             <button onClick={() => navigate('/search')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '2px', fontSize: '13px', fontWeight: 600, color: 'var(--ink-faint)' }}>
               더보기 <ChevronRight size={15} />
             </button>
