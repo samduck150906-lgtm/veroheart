@@ -7,6 +7,8 @@ import {
   getETFTrustGrade,
 } from './nutrientClassification';
 import type { FunctionalIngredient, NutritionDisclosureLevel, ETFTrustGrade } from './nutrientClassification';
+import { runBreedDiseaseEngine } from './breedDiseaseEngine';
+import type { BreedDiseaseResult } from './breedDiseaseEngine';
 
 export interface ScoringPipelineResult {
   ingredientScore: number;
@@ -31,6 +33,7 @@ export interface ScoringPipelineResult {
   inflationDetails: string[];
   hasDCMRisk: boolean;
   dcmLegumes: string[];
+  breedDisease: BreedDiseaseResult | null;
 }
 
 export function runScoringPipeline(product: {
@@ -38,11 +41,15 @@ export function runScoringPipeline(product: {
   guaranteedAnalysis?: {
     crudeProtein?: number; crudeFat?: number; crudeFiber?: number;
     crudeAsh?: number; moisture?: number; calcium?: number; phosphorus?: number;
+    taurine?: number;
   };
   verificationStatus?: string;
-}): ScoringPipelineResult {
+}, breed?: string): ScoringPipelineResult {
   const ingredients = product.ingredients ?? [];
   const ga = product.guaranteedAnalysis;
+  const breedDisease = breed && breed.trim()
+    ? runBreedDiseaseEngine(breed.trim(), product)
+    : null;
 
   const quality = analyzeIngredientQuality(ingredients);
   const functional = classifyFunctionalIngredients(ingredients);
@@ -78,5 +85,6 @@ export function runScoringPipeline(product: {
     inflationDetails: quality.proteinInflation.processedPlantProteins,
     hasDCMRisk: quality.dcmRisk.hasRisk,
     dcmLegumes: quality.dcmRisk.legumesInTop5,
+    breedDisease,
   };
 }
