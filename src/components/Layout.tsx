@@ -6,6 +6,7 @@ import Footer from './Footer';
 const PAGE_TITLES: Record<string, string> = {
   '/search': '검색',
   '/ranking': '랭킹',
+  '/dictionary': '성분사전',
   '/comparison': '비교함',
   '/community': '커뮤니티',
   '/analysis': '분석 리포트',
