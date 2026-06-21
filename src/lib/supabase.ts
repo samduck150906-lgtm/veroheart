@@ -641,6 +641,53 @@ export async function setUnmatchedStatus(
   if (error) console.error('setUnmatchedStatus error:', error);
 }
 
+// ─── 멤버십 / 구독 ───────────────────────────────────────────
+
+import type { MembershipTier } from '../types';
+
+export async function getUserMembershipTier(userId: string): Promise<MembershipTier> {
+  if (!isSupabaseConfigured) return 'free';
+  const { data } = await supabase
+    .from('users')
+    .select('membership_tier, membership_expires_at')
+    .eq('id', userId)
+    .single();
+  if (!data) return 'free';
+  if (data.membership_expires_at && new Date(data.membership_expires_at) < new Date()) {
+    return 'free';
+  }
+  const tier = data.membership_tier as MembershipTier;
+  return (tier === 'plus' || tier === 'pro') ? tier : 'free';
+}
+
+export async function updateUserMembershipTier(
+  userId: string,
+  tier: MembershipTier,
+  expiresAt?: string,
+): Promise<void> {
+  if (!isSupabaseConfigured) return;
+  await supabase
+    .from('users')
+    .update({ membership_tier: tier, membership_expires_at: expiresAt ?? null })
+    .eq('id', userId);
+}
+
+// ─── 스폰서 관리 ─────────────────────────────────────────────
+
+export async function setSponsoredProduct(
+  productId: string,
+  isSponsored: boolean,
+  sponsorLabel = '광고',
+  sponsorOrder = 0,
+): Promise<void> {
+  if (!isSupabaseConfigured) return;
+  const { error } = await supabase
+    .from('products')
+    .update({ is_sponsored: isSponsored, sponsor_label: sponsorLabel, sponsor_order: sponsorOrder })
+    .eq('id', productId);
+  if (error) console.error('setSponsoredProduct error:', error);
+}
+
 /** 미매칭 원료를 검수 큐에 기록(있으면 카운트 증가). 분석 중 발견 시 호출. */
 export async function logUnmatchedIngredients(rawNames: string[]) {
   if (!isSupabaseConfigured || rawNames.length === 0) return;

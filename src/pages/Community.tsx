@@ -279,7 +279,7 @@ export default function Community() {
           boxShadow: '0 6px 16px rgba(255, 201, 40, 0.28)',
         }}
       >
-        <Pencil size={17} strokeWidth={2.4} /> 글쓰기
+        <Pencil size={17} strokeWidth={2.4} /> 공유하기
       </button>
 
       {/* Write form */}
@@ -295,7 +295,7 @@ export default function Community() {
           style={{ background: '#fff', borderRadius: '18px', border: '1px solid var(--hairline)', padding: '18px' }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ink)' }}>새 글 작성</span>
+            <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ink)' }}>이야기 나눠요</span>
             <select
               value={newCategory}
               onChange={e => setNewCategory(e.target.value)}
@@ -313,7 +313,7 @@ export default function Community() {
 
           <input
             type="text"
-            placeholder="제목을 입력해주세요"
+            placeholder="어떤 이야기를 나눠볼까요?"
             value={newTitle}
             onChange={e => setNewTitle(e.target.value)}
             required
@@ -326,7 +326,7 @@ export default function Community() {
           />
 
           <textarea
-            placeholder="성분 분석 경험담이나 사료에 관련된 고민을 적어주세요"
+            placeholder="우리 아이의 사료 이야기, 궁금한 것, 추천하고 싶은 것 뭐든 좋아요."
             value={newContent}
             onChange={e => setNewContent(e.target.value)}
             required

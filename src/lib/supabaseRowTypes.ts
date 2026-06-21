@@ -18,6 +18,9 @@ export type SupabaseProductRow = {
   verified_at?: string | null;
   coupang_product_id?: string | null;
   coupang_link?: string | null;
+  is_sponsored?: boolean | null;
+  sponsor_label?: string | null;
+  sponsor_order?: number | null;
   min_price?: number | null;
   image_url?: string | null;
   review_count?: number | null;
@@ -121,6 +124,9 @@ export function mapProductFromSupabaseRow(p: SupabaseProductRow): Product {
     verifiedAt: p.verified_at || undefined,
     coupangProductId: p.coupang_product_id || undefined,
     coupangLink: p.coupang_link?.trim() || undefined,
+    isSponsored: p.is_sponsored ?? false,
+    sponsorLabel: p.sponsor_label ?? '광고',
+    sponsorOrder: p.sponsor_order ?? 0,
     price: p.min_price ?? 0,
     imageUrl:
       p.image_url ||

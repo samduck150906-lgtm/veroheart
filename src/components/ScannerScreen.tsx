@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { AlertTriangle, Camera, Scan, FileText, X, Zap } from 'lucide-react';
 import { useStore } from '../store/useStore';
+import { SCANNER_GUIDE } from '../copy/ui';
 
 /**
  * ScannerScreen
@@ -17,8 +18,8 @@ interface ScannerScreenProps {
 }
 
 const MODES = [
-  { id: 'barcode' as const, label: '바코드', icon: Scan, desc: '제품 뒷면 바코드를 스캔하세요' },
-  { id: 'text'    as const, label: '성분표', icon: FileText, desc: '성분표 전체가 가이드 안에 들어오도록 맞춰주세요' },
+  { id: 'barcode' as const, label: '바코드', icon: Scan, desc: SCANNER_GUIDE.hint2 },
+  { id: 'text'    as const, label: '성분표', icon: FileText, desc: SCANNER_GUIDE.description },
 ];
 
 // Bounding box sizes per mode (% of viewport)
@@ -54,7 +55,7 @@ export default function ScannerScreen({ onCapture }: ScannerScreenProps) {
         }
         setHasPermission(true);
       } catch {
-        setError('카메라 접근 권한이 필요합니다.\n브라우저 설정 → 사이트 → 카메라를 허용해 주세요.');
+        setError(`${SCANNER_GUIDE.permission.title}\n${SCANNER_GUIDE.permission.denied}`);
       }
     }
     startCamera();

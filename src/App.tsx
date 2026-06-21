@@ -26,6 +26,8 @@ import AdminProducts from './pages/admin/AdminProducts';
 import AdminIngredients from './pages/admin/AdminIngredients';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminAnalysis from './pages/admin/AdminAnalysis';
+import AdminSponsors from './pages/admin/AdminSponsors';
+import Membership from './pages/Membership';
 import Notification from './components/Notification';
 import AdminAuthGuard from './pages/admin/AdminAuthGuard';
 import EntryGate from './components/EntryGate';
@@ -38,6 +40,8 @@ import ViralEvent from './pages/ViralEvent';
 import NotFound from './pages/NotFound';
 import Brand from './pages/Brand';
 import CommunityPost from './pages/CommunityPost';
+import KnowledgeIngredients from './pages/KnowledgeIngredients';
+import KnowledgeNutrients from './pages/KnowledgeNutrients';
 
 function App() {
   const { initApp, isInitializing, isLoggedIn } = useStore();
@@ -134,6 +138,8 @@ function App() {
               <Route path="comparison" element={<Comparison />} />
               <Route path="ranking" element={<Ranking />} />
               <Route path="dictionary" element={<IngredientDictionary />} />
+              <Route path="knowledge/ingredients" element={<KnowledgeIngredients />} />
+              <Route path="knowledge/nutrients" element={<KnowledgeNutrients />} />
               {/* <Route path="cart" element={<Cart />} /> */}
               {/* <Route path="checkout" element={<Checkout />} /> */}
               {/* <Route path="success" element={<Success />} /> */}
@@ -145,6 +151,7 @@ function App() {
               <Route path="brand/:brandName" element={<Brand />} />
               <Route path="event/personality-quiz" element={<PersonalityQuiz />} />
               <Route path="event/viral" element={<ViralEvent />} />
+              <Route path="membership" element={<Membership />} />
               <Route path="terms" element={<Terms />} />
               <Route path="privacy" element={<Privacy />} />
               <Route path="refund" element={<Refund />} />
@@ -157,6 +164,7 @@ function App() {
             <Route path="products" element={<AdminProducts />} />
             <Route path="ingredients" element={<AdminIngredients />} />
             <Route path="analysis" element={<AdminAnalysis />} />
+            <Route path="sponsors" element={<AdminSponsors />} />
             <Route path="settings" element={<AdminSettings />} />
           </Route>
         </Routes>

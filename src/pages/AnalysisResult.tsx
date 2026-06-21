@@ -19,6 +19,7 @@ import NutritionDonutChart   from '../components/NutritionDonutChart';
 import ToxicAlertList        from '../components/ToxicAlertList';
 import IngredientList        from '../components/IngredientList';
 import FeedingGuideCalculator from '../components/FeedingGuideCalculator';
+import { CAUTION_INGREDIENT, ALLERGY_CONFLICT, MEDICAL_DISCLAIMER, FEEDING_GUIDE } from '../copy/ui';
 
 export default function AnalysisResult() {
   const location = useLocation();
@@ -190,7 +191,7 @@ export default function AnalysisResult() {
             <div style={{ fontSize: '12.5px', fontWeight: 600, color: breakdown.allergyHits.length > 0 ? '#BE123C' : '#92400E', opacity: 0.85, lineHeight: 1.5 }}>
               {breakdown.allergyHits.length > 0
                 ? `${profile.name}는 ${breakdown.allergyHits.join(', ')}을(를) 피하는 게 좋아요. 안전을 위해 점수 상한이 적용됐어요.`
-                : `이 성분은 장기 급여 시 주의가 필요해요. 수의사와 상담해 보세요.`}
+                : CAUTION_INGREDIENT.warning.hint}
             </div>
           </div>
         </div>
@@ -219,6 +220,16 @@ export default function AnalysisResult() {
         kcalPer100g={kcalPer100g}
         productName={product.name}
       />
+
+      {/* 의료 고지 */}
+      <div style={{ margin: '0 16px', padding: '16px', borderRadius: '14px', background: 'var(--fill)', border: '1px solid var(--border)' }}>
+        <p style={{ fontSize: '12px', color: 'var(--ink-faint)', lineHeight: 1.7, margin: 0, textAlign: 'center' }}>
+          {MEDICAL_DISCLAIMER.short}
+        </p>
+        <p style={{ fontSize: '12px', color: 'var(--ink-faint)', lineHeight: 1.7, margin: '6px 0 0', textAlign: 'center' }}>
+          {FEEDING_GUIDE.disclaimer}
+        </p>
+      </div>
 
       <div style={{ height: '40px' }} />
     </div>

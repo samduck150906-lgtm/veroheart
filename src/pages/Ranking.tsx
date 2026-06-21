@@ -2,7 +2,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Trophy, Dog, Cat, Star, ChevronRight } from 'lucide-react';
+import { Trophy, Dog, Cat, Star, ChevronRight, Megaphone } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { rankProductsForProfile, calculateCompatibilityScore, gradeFromScore } from '../utils/score';
 import ProductImage from '../components/ProductImage';
@@ -49,9 +49,17 @@ export default function Ranking() {
     return safe / total;
   };
 
+  // 스폰서 상품은 추천 알고리즘에서 완전 분리
+  const sponsored = useMemo(() =>
+    products
+      .filter(p => p.isSponsored && (petFilter === 'all' || p.targetPetType === petFilter || p.targetPetType === 'all'))
+      .sort((a, b) => (a.sponsorOrder ?? 0) - (b.sponsorOrder ?? 0))
+  , [products, petFilter]);
+
   const ranked = useMemo(() => {
     const base = products.filter(p =>
-      petFilter === 'all' || p.targetPetType === petFilter || p.targetPetType === 'all'
+      !p.isSponsored &&
+      (petFilter === 'all' || p.targetPetType === petFilter || p.targetPetType === 'all')
     );
 
     if (sortBy === 'compatibility' && hasPetProfile) {
@@ -208,6 +216,75 @@ export default function Ranking() {
           </div>
         )}
       </div>
+
+      {/* ─── 스폰서 섹션 (추천 알고리즘과 완전 분리) ─── */}
+      {sponsored.length > 0 && (
+        <div style={{ marginTop: 32, paddingTop: 24, borderTop: '2px dashed var(--hairline)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <Megaphone size={15} color="var(--ink-faint)" strokeWidth={2} />
+            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-faint)', letterSpacing: 0.4 }}>스폰서</span>
+            <span style={{ fontSize: 11, color: 'var(--ink-faint)', fontWeight: 500 }}>— 이 영역은 브랜드 광고로 운영되며 랭킹 순위에 영향을 주지 않습니다.</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {sponsored.map((p) => {
+              const score = hasPetProfile ? calculateCompatibilityScore(p, profile) : null;
+              const grade = score != null ? gradeFromScore(score) : null;
+
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => navigate(`/product/${p.id}`)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    padding: '14px 12px',
+                    borderRadius: 12,
+                    background: '#F9FAFB',
+                    border: '1px solid var(--hairline)',
+                    marginBottom: 10,
+                    cursor: 'pointer', textAlign: 'left', width: '100%',
+                  }}
+                >
+                  <div style={{ width: '60px', height: '60px', borderRadius: '12px', overflow: 'hidden', flexShrink: 0, background: 'var(--fill)', position: 'relative' }}>
+                    <ProductImage src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    {grade && (
+                      <span style={{
+                        position: 'absolute', bottom: '3px', left: '3px',
+                        padding: '1px 5px', borderRadius: '4px', fontSize: '10px', fontWeight: 800,
+                        background: GRADE_BG[grade], color: GRADE_COLOR[grade],
+                      }}>{grade}</span>
+                    )}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ink-faint)' }}>{p.brand}</span>
+                      <span style={{
+                        fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4,
+                        background: '#F3F4F6', color: '#6B7280', border: '1px solid #E5E7EB',
+                      }}>{p.sponsorLabel || '광고'}</span>
+                    </div>
+                    <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.35, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                      {p.name}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
+                      <Star size={11} fill="#E8A800" color="#E8A800" />
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink-soft)' }}>{p.averageRating?.toFixed(1)}</span>
+                      {score != null && (
+                        <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--brand-deep)' }}>· 궁합 {score}점</span>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ink)' }}>
+                      {p.price?.toLocaleString()}원
+                    </div>
+                    <ChevronRight size={14} color="var(--ink-300)" style={{ marginTop: 4 }} />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

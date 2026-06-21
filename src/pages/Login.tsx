@@ -15,6 +15,7 @@ function KakaoIcon() {
   );
 }
 import { HOME_HERO } from '../copy/marketing';
+import { LOGIN } from '../copy/ui';
 import { VERORO_LOGO_SRC } from '../constants/assets';
 import { TossButton } from '../components/TossUI';
 
@@ -61,13 +62,13 @@ export default function Login() {
   const handleSubmit = async () => {
     const addr = email.trim();
     const errors: { email?: string; password?: string; confirmPassword?: string } = {};
-    if (!addr) errors.email = '이메일을 입력해 주세요.';
-    else if (!isValidEmail(addr)) errors.email = '올바른 이메일 형식을 입력해 주세요.';
-    if (!password) errors.password = '비밀번호를 입력해 주세요.';
+    if (!addr) errors.email = LOGIN.errors.emailRequired;
+    else if (!isValidEmail(addr)) errors.email = LOGIN.errors.emailInvalid;
+    if (!password) errors.password = LOGIN.errors.passwordRequired;
     else if (password.length < 8) errors.password = '비밀번호는 8자 이상이어야 합니다.';
     if (mode === 'signup') {
       if (!confirmPassword) errors.confirmPassword = '비밀번호 확인을 입력해 주세요.';
-      else if (password !== confirmPassword) errors.confirmPassword = '비밀번호가 일치하지 않습니다.';
+      else if (password !== confirmPassword) errors.confirmPassword = LOGIN.errors.passwordMismatch;
     }
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -213,7 +214,7 @@ export default function Login() {
       const msg = err instanceof Error ? err.message : String(err);
       const lower = msg.toLowerCase();
       if (msg.includes('Invalid login credentials')) {
-        notify.error('이메일 또는 비밀번호가 올바르지 않습니다.');
+        notify.error(LOGIN.errors.invalidCredentials);
       } else if (msg.includes('User already registered') || lower.includes('already registered')) {
         notify.error('이미 가입된 이메일입니다. 로그인을 시도해 주세요.');
       } else if (lower.includes('email not confirmed')) {
@@ -250,9 +251,9 @@ export default function Login() {
             style={{ height: '48px', width: 'auto', maxWidth: 'min(280px, 100%)', objectFit: 'contain', margin: '0 auto 14px', display: 'block' }}
           />
           <h1 style={{ fontSize: '18px', fontWeight: 800, color: '#111827', margin: '0 0 6px', lineHeight: 1.35 }}>
-            {mode === 'login' ? '이메일로 로그인' : '이메일로 회원가입'}
+            {mode === 'login' ? LOGIN.title : '베로로에 오신 걸 환영해요'}
           </h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.55 }}>{HOME_HERO.sub}</p>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.55 }}>{LOGIN.description}</p>
         </div>
 
         <div style={{ display: 'flex', backgroundColor: 'var(--primary-light)', borderRadius: '16px', padding: '4px', marginBottom: '22px' }}>

@@ -39,6 +39,8 @@ import {
   type PriceBand
 } from '../constants/searchFilters';
 
+import { SEARCH_EMPTY, SEARCH_NO_RESULTS, INGREDIENT_DICT } from '../copy/ui';
+
 const CORE_COPY = { ocr: '반려동물의 체질과 알레르기, 건강 고민을 조합하여 딱 맞는 완벽한 한 끼를 찾아보세요.' };
 
 const TossSearchBar = ({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) => (
@@ -628,7 +630,7 @@ export default function Search() {
               {ingredientSearch && (
                 <div style={{ maxHeight: '160px', overflowY: 'auto', border: '1px solid #E5E7EB', borderRadius: '12px', background: '#fff' }}>
                   {filteredIngList.length === 0 ? (
-                    <div style={{ padding: '12px', fontSize: '13px', color: '#9CA3AF', textAlign: 'center' }}>검색 결과 없음</div>
+                    <div style={{ padding: '12px', fontSize: '13px', color: '#9CA3AF', textAlign: 'center' }}>{INGREDIENT_DICT.notFound}</div>
                   ) : filteredIngList.map(ing => (
                     <button
                       key={ing.id}
@@ -679,7 +681,7 @@ export default function Search() {
 
             <div style={{ overflowY: 'auto', flex: 1, border: '1px solid #E5E7EB', borderRadius: '12px' }}>
               {filteredStandardFeed.length === 0 ? (
-                <div style={{ padding: '40px', textAlign: 'center', color: '#9CA3AF', fontSize: '14px' }}>검색 결과가 없습니다.</div>
+                <div style={{ padding: '40px', textAlign: 'center', color: '#9CA3AF', fontSize: '14px' }}>{SEARCH_NO_RESULTS.title}</div>
               ) : (
                 filteredStandardFeed.map((item: any, idx: number) => (
                   <div 

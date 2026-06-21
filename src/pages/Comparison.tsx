@@ -5,6 +5,7 @@ import { getRecommendationBreakdown, gradeFromScore } from '../utils/score';
 import { X, GitCompare, ExternalLink } from 'lucide-react';
 import ProductImage from '../components/ProductImage';
 import { openCoupangForProduct } from '../utils/externalPurchase';
+import { COMPARE_EMPTY, PRE_PURCHASE } from '../copy/ui';
 
 const GRADE_COLOR: Record<string, string> = {
   A: '#15B36B', B: '#6BB04E', C: '#E8A800', D: '#F04452',
@@ -51,15 +52,18 @@ export default function Comparison() {
         <div style={{ width: '72px', height: '72px', borderRadius: '20px', background: 'var(--fill)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
           <GitCompare size={32} color="var(--ink-300)" />
         </div>
-        <h3 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ink)', marginBottom: '8px' }}>비교함이 비어있어요</h3>
-        <p style={{ fontSize: '14px', color: 'var(--ink-faint)', lineHeight: 1.6, marginBottom: '28px' }}>
-          상품 상세 페이지에서 "비교" 버튼을 눌러<br />원하는 사료를 담아보세요
+        <h3 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ink)', marginBottom: '8px' }}>{COMPARE_EMPTY.title}</h3>
+        <p style={{ fontSize: '14px', color: 'var(--ink-faint)', lineHeight: 1.6, marginBottom: '8px' }}>
+          {COMPARE_EMPTY.description}
+        </p>
+        <p style={{ fontSize: '13px', color: 'var(--ink-faint)', lineHeight: 1.5, marginBottom: '28px' }}>
+          {COMPARE_EMPTY.hint}
         </p>
         <button
           onClick={() => navigate('/search')}
           style={{ padding: '14px 28px', borderRadius: '14px', background: 'var(--brand)', color: 'var(--ink-on-brand)', fontWeight: 800, fontSize: '15px', border: 'none', cursor: 'pointer' }}
         >
-          사료 탐색하기
+          {COMPARE_EMPTY.cta}
         </button>
       </div>
     );
@@ -224,7 +228,7 @@ export default function Comparison() {
             onClick={() => openCoupangForProduct(p)}
             style={{ flex: 1, padding: '13px 0', borderRadius: '14px', background: 'var(--brand)', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 800, color: 'var(--ink-on-brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}
           >
-            구매 <ExternalLink size={13} />
+            {PRE_PURCHASE.ctaBuy} <ExternalLink size={13} />
           </button>
         ))}
       </div>
