@@ -1,13 +1,14 @@
 // @ts-nocheck
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AlertCircle } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import Analyzer from '../components/Analyzer';
 import { SIGNUP_PROMPT } from '../copy/ui';
 
 export default function ScanResult() {
   const navigate = useNavigate();
-  const { products } = useStore();
+  const { products, isLoggedIn, profile } = useStore();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,6 +27,10 @@ export default function ScanResult() {
     return () => clearInterval(t);
   }, [loading]);
 
+  const hasPetProfile = isLoggedIn && profile?.name && profile.name !== '우리 아이';
+  const allergyCount = profile?.allergies?.length ?? 0;
+  const concernCount = profile?.healthConcerns?.length ?? 0;
+
   if (loading) {
     return (
       <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#F7F4EE' }}>
@@ -38,6 +43,8 @@ export default function ScanResult() {
     );
   }
 
+  return (
+    <div style={{ padding: '16px', paddingBottom: 90 }}>
       {/* ─── 반려동물 프로필 컨텍스트 배너 ─── */}
       {hasPetProfile ? (
         <div style={{

@@ -150,11 +150,7 @@ export default function AnalysisResult() {
             </div>
           </div>
         </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 12, color: '#8B95A1', marginBottom: 3 }}>{product.brand}</div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: '#191F28', lineHeight: 1.4 }}>{product.name}</div>
-        </div>
-      </div>
+      )}
 
       {/* Score Gauge */}
       <div style={{ background: '#fff', margin: '16px 16px 0', borderRadius: 20, boxShadow: '0 2px 12px rgba(30,41,59,0.06)' }}>
@@ -328,6 +324,8 @@ export default function AnalysisResult() {
             )}
           </div>
         )}
+
+      </div>
 
       {/* 4. Ingredient list */}
       <IngredientList ingredients={displayIngredients} />

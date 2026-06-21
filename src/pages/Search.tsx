@@ -197,9 +197,18 @@ export default function Search() {
                         <Heart size={15} fill={isFav ? '#F04452' : 'none'} color={isFav ? '#F04452' : '#B0B8C1'} strokeWidth={2} />
                       </button>
                     </div>
-                  ))}
+                  </div>
                 </div>
-              )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {isFilterOpen && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'flex-end' }}>
+          <div style={{ width: '100%', backgroundColor: '#fff', borderRadius: '20px 20px 0 0', padding: '24px 20px', maxHeight: '85vh', overflowY: 'auto' }}>
+            <TossFilterSection title="제외 성분 검색">
               <div style={{ position: 'relative', marginBottom: '8px' }}>
                 <FlaskConical size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
                 <input
@@ -301,10 +310,10 @@ export default function Search() {
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            );
-          })}
+                )))
+              }
+            </div>
+          </div>
         </div>
       )}
     </div>

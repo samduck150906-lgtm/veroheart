@@ -19,7 +19,8 @@ import {
   Star,
   Trash2,
   Sparkles,
-  ChevronRight
+  ChevronRight,
+  Heart
 } from 'lucide-react';
 import { 
   getReviews, 
@@ -185,23 +186,15 @@ export default function Detail() {
         <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: 8 }}>
           <button onClick={() => toggleFavorite(product.id)}
             style={{
-              margin: '0 0 8px',
-              fontSize: '20px',
-              fontWeight: 900,
-              color: '#0F172A',
-              lineHeight: 1.35,
-              letterSpacing: '-0.02em',
+              background: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: '50%',
+              width: 40, height: 40, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
             }}
           >
-            {conclusion.headline}
-          </p>
-          {conclusion.subline ? (
-            <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#475569', lineHeight: 1.55 }}>
-              {conclusion.subline}
-            </p>
-          ) : null}
-        </section>
-      )}
+            <Heart size={20} fill={isFav ? '#F04452' : 'none'} color={isFav ? '#F04452' : '#8B95A1'} />
+          </button>
+        </div>
+      </div>
 
       <div className="detail-fab-stack" aria-label="빠른 이동 버튼">
         <button
@@ -771,7 +764,7 @@ export default function Detail() {
             {alternativeProduct.p.brand} {alternativeProduct.p.name} 보러가기
           </button>
         </div>
-      </div>
+      )}
 
       {/* 일일 급여량 계산기 (활동량·중성화·체형 보정 + 지방 위험 평가) */}
       <section className="card" style={{ marginBottom: '40px' }}>
@@ -962,16 +955,16 @@ export default function Detail() {
                 <span style={{ flexShrink: 0, marginLeft: '8px', padding: '3px 10px', borderRadius: '99px', background: badgeBg, color: badgeColor, fontSize: '11.5px', fontWeight: 700 }}>
                   {badgeLabel}
                 </span>
-              ))}
-              {product.ingredients.length > 12 && (
-                <button onClick={() => navigate('/analysis', { state: { productId: product.id } })}
-                  style={{ background: '#E5E8EB', border: 'none', borderRadius: 20, padding: '5px 12px', fontSize: 12, fontWeight: 700, color: '#6B7684', cursor: 'pointer' }}>
-                  +{product.ingredients.length - 12}개 더보기
-                </button>
-              )}
-            </div>
-          </div>
-        )}
+              </button>
+            );
+          })}
+          {product.ingredients.length > 12 && (
+            <button onClick={() => navigate('/analysis', { state: { productId: product.id } })}
+              style={{ background: '#E5E8EB', border: 'none', borderRadius: 20, padding: '5px 12px', fontSize: 12, fontWeight: 700, color: '#6B7684', cursor: 'pointer' }}>
+              +{product.ingredients.length - 12}개 더보기
+            </button>
+          )}
+        </div>
 
         {/* Caution ingredients */}
         {cautionList.length > 0 && (
@@ -1012,7 +1005,7 @@ export default function Detail() {
             <span style={{ fontSize: 13, color: '#8B95A1' }}>최저가 기준</span>
           </div>
         )}
-      </div>
+      </section>
 
       {/* Fixed bottom CTA */}
       <div style={{
@@ -1106,7 +1099,7 @@ export default function Detail() {
             );
           })}
         </div>
-      </section>
+      </div>
 
       <p
         style={{
