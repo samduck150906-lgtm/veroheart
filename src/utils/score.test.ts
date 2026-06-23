@@ -75,6 +75,34 @@ describe('compatibility hard caps', () => {
   });
 });
 
+describe('심화 품질 신호 (DCM / 단백 보강)', () => {
+  it('상위 원료에 콩과 식물 2종 이상이면 legumeRisk=danger이고 점수가 낮아진다', () => {
+    const clean = getRecommendationBreakdown(makeProduct(), profile);
+    const dcm = getRecommendationBreakdown(
+      makeProduct({ ingredients: [ing('오리고기'), ing('완두'), ing('렌틸콩'), ing('현미')] }),
+      profile,
+    );
+    expect(dcm.legumeRisk).toBe('danger');
+    expect(dcm.total).toBeLessThan(clean.total);
+    expect(dcm.reasons.some(r => r.includes('DCM'))).toBe(true);
+  });
+
+  it('가공 식물성 단백이 있으면 proteinInflated=true', () => {
+    const b = getRecommendationBreakdown(
+      makeProduct({ ingredients: [ing('오리고기'), ing('완두단백'), ing('현미')] }),
+      profile,
+    );
+    expect(b.proteinInflated).toBe(true);
+    expect(b.reasons.some(r => r.includes('단백 보강'))).toBe(true);
+  });
+
+  it('통곡·동물성 위주 구성은 신호가 없다', () => {
+    const b = getRecommendationBreakdown(makeProduct(), profile);
+    expect(b.legumeRisk).toBe('none');
+    expect(b.proteinInflated).toBe(false);
+  });
+});
+
 describe('nutrition bucket (AAFCO DMB)', () => {
   it('returns nutrition=0 when guaranteedAnalysis is absent', () => {
     const b = getRecommendationBreakdown(makeProduct(), profile);

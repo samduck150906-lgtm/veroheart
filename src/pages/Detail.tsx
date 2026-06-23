@@ -864,6 +864,29 @@ export default function Detail() {
           </div>
         )}
 
+        {breakdown && (breakdown.legumeRisk !== 'none' || breakdown.proteinInflated) && (
+          <div style={{
+            display: 'flex', gap: '12px', alignItems: 'flex-start',
+            padding: '16px', borderRadius: '16px', marginBottom: '20px',
+            background: '#FFFBEB', border: '1px solid #FDE68A',
+          }}>
+            <AlertCircle size={20} color="#D97706" style={{ flexShrink: 0, marginTop: '1px' }} />
+            <div>
+              <div style={{ fontSize: '14px', fontWeight: 800, color: '#92400E', marginBottom: '4px' }}>
+                원료 구성에서 참고할 점이 있어요
+              </div>
+              <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#92400E', opacity: 0.85, lineHeight: 1.6 }}>
+                {breakdown.legumeRisk !== 'none' && (
+                  <div>· 상위 원료에 콩과 식물이 많아요. 그레인프리 사료의 콩과 식물 과다는 확장성 심근병증(DCM)과의 연관 가능성이 보고된 바 있어 참고가 필요해요.</div>
+                )}
+                {breakdown.proteinInflated && (
+                  <div>· 가공 식물성 단백이 포함돼 있어요. 단백질 수치가 실제 동물성 비중보다 높아 보일 수 있으니 원료 순위를 함께 확인해 보세요.</div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '12px' }}>
           <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-dark)' }}>수집된 전체 원료표</h3>
           <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 500 }}>총 {product.ingredients?.length}개</div>

@@ -1,5 +1,7 @@
 import type { Product, UserPetProfile } from '../types';
 import { toDryMatter, checkCalciumPhosphorusRatio } from '../analysis/nutrition';
+import { findIngredientByName } from '../analysis/ingredientDictionary';
+import { detectDCMRisk, detectProteinInflation } from '../analysis/ingredientQuality';
 
 /** 회피(알레르기) 성분 포함 시 궁합 점수 상한 — 추천 등급(C 이상) 불가 */
 export const ALLERGEN_SCORE_CAP = 55;
@@ -35,6 +37,10 @@ export interface RecommendationBreakdown {
   matchedConcerns: string[];
   dangerCount: number;
   cautionCount: number;
+  /** 상위 원료 콩과 식물 과다(DCM 연관) 위험도 */
+  legumeRisk: 'none' | 'watch' | 'danger';
+  /** 식물성 단백 보강(protein inflation) 의심 여부 */
+  proteinInflated: boolean;
   reasons: string[];
 }
 
@@ -90,11 +96,28 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
   const cautionCount = product.ingredients.filter((ingredient) => ingredient.riskLevel === 'caution').length;
   const safeCount = product.ingredients.filter((ingredient) => ingredient.riskLevel === 'safe').length;
 
+  // ── 심화 품질 신호 (엔진과 동일 로직 재사용) ──────────────────────
+  // 그레인프리 사료의 콩과 식물 과다(DCM 연관)와 식물성 단백 보강을
+  // 추천 점수의 안전 버킷에도 반영해 분석 화면과 일관성을 맞춘다.
+  const ingForQuality = product.ingredients.map((ingredient, idx) => ({
+    nameKo: ingredient.nameKo,
+    dictEntry:
+      findIngredientByName(ingredient.nameKo) ??
+      (ingredient.nameEn ? findIngredientByName(ingredient.nameEn) : null),
+    position: idx + 1,
+  }));
+  const dcm = detectDCMRisk(ingForQuality);
+  const inflation = detectProteinInflation(ingForQuality);
+
   let safety = 35;
   safety -= dangerCount * 10;
   safety -= cautionCount * 4;
   safety -= allergyHits.length * 18;
   if (allergyHits.length > 0) safety -= 6;
+  if (dcm.riskLevel === 'danger') safety -= 8;
+  else if (dcm.riskLevel === 'watch') safety -= 3;
+  if (inflation.inflationSignal === 'major') safety -= 5;
+  else if (inflation.inflationSignal === 'minor') safety -= 2;
   safety += Math.min(6, safeCount);
   safety = Math.max(0, Math.min(35, safety));
 
@@ -230,6 +253,12 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
   if (ga && ga.crudeProtein != null && ga.crudeFat != null) {
     reasons.push(nutrition >= 8 ? 'AAFCO 영양 기준 충족' : nutrition >= 5 ? 'AAFCO 영양 기준 일부 충족' : 'AAFCO 영양 기준 미달 항목 있음');
   }
+  if (dcm.riskLevel !== 'none') {
+    reasons.push(`상위 원료 콩과 식물 ${dcm.legumesInTop5.length}종 포함 (DCM 참고)`);
+  }
+  if (inflation.hasInflation) {
+    reasons.push('식물성 단백 보강 의심');
+  }
 
   return {
     total,
@@ -247,6 +276,8 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
     matchedConcerns,
     dangerCount,
     cautionCount,
+    legumeRisk: dcm.riskLevel,
+    proteinInflated: inflation.hasInflation,
     reasons,
   };
 }
