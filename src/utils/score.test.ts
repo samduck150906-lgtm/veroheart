@@ -104,6 +104,35 @@ describe('심화 품질 신호 (DCM / 단백 보강)', () => {
   });
 });
 
+describe('견종 호발 질환 반영 (breedRiskFails)', () => {
+  const renalRiskGA = { crudeProtein: 30, crudeFat: 14, moisture: 10, crudeFiber: 3, crudeAsh: 7, calcium: 1.8, phosphorus: 1.5 };
+
+  it('견종 미설정이면 breedRiskFails=0이고 점수에 영향 없다', () => {
+    const product = makeProduct({ guaranteedAnalysis: renalRiskGA });
+    const b = getRecommendationBreakdown(product, profile);
+    expect(b.breedRiskFails).toBe(0);
+    expect(b.breedMatched).toBeNull();
+  });
+
+  it('신장 호발 견종(뉴펀들랜드) + 고인 사료는 견종 위반을 잡아내고 감점한다', () => {
+    const product = makeProduct({ guaranteedAnalysis: renalRiskGA });
+    const breedPet: UserPetProfile = { ...profile, breed: '뉴펀들랜드' };
+    const withBreed = getRecommendationBreakdown(product, breedPet);
+    const without = getRecommendationBreakdown(product, profile);
+    expect(withBreed.breedMatched).toBeTruthy();
+    expect(withBreed.breedRiskFails).toBeGreaterThan(0);
+    expect(withBreed.safety).toBeLessThan(without.safety);
+    expect(withBreed.reasons.some(r => r.includes('호발 질환'))).toBe(true);
+  });
+
+  it('견종 위반 시 견종 주의 배지가 노출된다', () => {
+    const product = makeProduct({ guaranteedAnalysis: renalRiskGA });
+    const breedPet: UserPetProfile = { ...profile, breed: '뉴펀들랜드' };
+    const badges = getProductBadges(getRecommendationBreakdown(product, breedPet));
+    expect(badges.some(b => b.label === '견종 주의')).toBe(true);
+  });
+});
+
 describe('getProductBadges (목록 분석 배지)', () => {
   it('알러지 포함 제품은 danger 배지를 최우선 노출한다', () => {
     const allergicPet: UserPetProfile = { ...profile, allergies: ['닭고기'] };

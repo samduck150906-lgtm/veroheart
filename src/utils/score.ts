@@ -2,6 +2,7 @@ import type { Product, UserPetProfile } from '../types';
 import { toDryMatter, checkCalciumPhosphorusRatio } from '../analysis/nutrition';
 import { findIngredientByName } from '../analysis/ingredientDictionary';
 import { detectDCMRisk, detectProteinInflation } from '../analysis/ingredientQuality';
+import { runBreedDiseaseEngine } from '../analysis/breedDiseaseEngine';
 
 /** 회피(알레르기) 성분 포함 시 궁합 점수 상한 — 추천 등급(C 이상) 불가 */
 export const ALLERGEN_SCORE_CAP = 55;
@@ -41,6 +42,10 @@ export interface RecommendationBreakdown {
   legumeRisk: 'none' | 'watch' | 'danger';
   /** 식물성 단백 보강(protein inflation) 의심 여부 */
   proteinInflated: boolean;
+  /** 견종 호발 질환 NRC 정량 기준 위반 개수(profile.breed 기반). 미설정 시 0 */
+  breedRiskFails: number;
+  /** 매칭된 견종명(없으면 null) */
+  breedMatched: string | null;
   reasons: string[];
 }
 
@@ -109,10 +114,21 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
   const dcm = detectDCMRisk(ingForQuality);
   const inflation = detectProteinInflation(ingForQuality);
 
+  // ── 견종 호발 질환 정량 기준 위반 (NRC 2006) ──────────────────────
+  // profile.breed가 있으면 견종별 질환 임계값을 평가해 위반 개수를 안전 점수에 반영.
+  let breedRiskFails = 0;
+  let breedMatched: string | null = null;
+  if (profile.breed && profile.breed.trim()) {
+    const breedResult = runBreedDiseaseEngine(profile.breed.trim(), product);
+    breedMatched = breedResult.breedMatched;
+    breedRiskFails = breedResult.activeDiseases.reduce((sum, d) => sum + d.failCount, 0);
+  }
+
   let safety = 35;
   safety -= dangerCount * 10;
   safety -= cautionCount * 4;
   safety -= allergyHits.length * 18;
+  safety -= Math.min(10, breedRiskFails * 4);
   if (allergyHits.length > 0) safety -= 6;
   if (dcm.riskLevel === 'danger') safety -= 8;
   else if (dcm.riskLevel === 'watch') safety -= 3;
@@ -259,6 +275,9 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
   if (inflation.hasInflation) {
     reasons.push('식물성 단백 보강 의심');
   }
+  if (breedRiskFails > 0) {
+    reasons.push(`${breedMatched ?? '견종'} 호발 질환 영양기준 ${breedRiskFails}개 항목 미충족`);
+  }
 
   return {
     total,
@@ -278,6 +297,8 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
     cautionCount,
     legumeRisk: dcm.riskLevel,
     proteinInflated: inflation.hasInflation,
+    breedRiskFails,
+    breedMatched,
     reasons,
   };
 }
@@ -304,6 +325,7 @@ export function getProductBadges(
 
   if (breakdown.allergyHits.length > 0) badges.push({ label: '알러지 포함', tone: 'danger' });
   if (breakdown.dangerCount > 0) badges.push({ label: '위험 성분', tone: 'danger' });
+  if (breakdown.breedRiskFails > 0) badges.push({ label: '견종 주의', tone: 'warn' });
   if (breakdown.legumeRisk !== 'none') badges.push({ label: 'DCM 주의', tone: 'warn' });
   if (breakdown.proteinInflated) badges.push({ label: '단백보강 의심', tone: 'warn' });
   if (breakdown.nutrition >= 8) badges.push({ label: 'AAFCO 충족', tone: 'good' });
