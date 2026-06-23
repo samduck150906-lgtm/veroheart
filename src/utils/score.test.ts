@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   getRecommendationBreakdown,
+  getProductBadges,
   gradeFromScore,
   ALLERGEN_SCORE_CAP,
   DANGER_SCORE_CAP,
@@ -100,6 +101,36 @@ describe('심화 품질 신호 (DCM / 단백 보강)', () => {
     const b = getRecommendationBreakdown(makeProduct(), profile);
     expect(b.legumeRisk).toBe('none');
     expect(b.proteinInflated).toBe(false);
+  });
+});
+
+describe('getProductBadges (목록 분석 배지)', () => {
+  it('알러지 포함 제품은 danger 배지를 최우선 노출한다', () => {
+    const allergicPet: UserPetProfile = { ...profile, allergies: ['닭고기'] };
+    const product = makeProduct({ ingredients: [ing('닭고기'), ing('현미')] });
+    const badges = getProductBadges(getRecommendationBreakdown(product, allergicPet));
+    expect(badges[0]).toEqual({ label: '알러지 포함', tone: 'danger' });
+  });
+
+  it('콩과 과다 제품은 DCM 주의 배지를 노출한다', () => {
+    const product = makeProduct({ ingredients: [ing('오리고기'), ing('완두'), ing('렌틸콩'), ing('현미')] });
+    const badges = getProductBadges(getRecommendationBreakdown(product, profile));
+    expect(badges.some(b => b.label === 'DCM 주의')).toBe(true);
+  });
+
+  it('AAFCO 충족 시 good 배지를 노출한다', () => {
+    const product = makeProduct({
+      guaranteedAnalysis: { crudeProtein: 28, crudeFat: 14, moisture: 10, calcium: 1.2, phosphorus: 0.8 },
+    });
+    const badges = getProductBadges(getRecommendationBreakdown(product, profile));
+    expect(badges.some(b => b.label === 'AAFCO 충족' && b.tone === 'good')).toBe(true);
+  });
+
+  it('기본 최대 2개까지만 반환한다', () => {
+    const allergicPet: UserPetProfile = { ...profile, allergies: ['오리고기'] };
+    const product = makeProduct({ ingredients: [ing('오리고기'), ing('완두'), ing('렌틸콩'), ing('BHA', 'danger')] });
+    const badges = getProductBadges(getRecommendationBreakdown(product, allergicPet));
+    expect(badges.length).toBeLessThanOrEqual(2);
   });
 });
 

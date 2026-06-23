@@ -11,9 +11,10 @@ import {
   Heart,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { rankProductsForProfile, gradeFromScore, calculateCompatibilityScore } from '../utils/score';
+import { rankProductsForProfile, gradeFromScore, calculateCompatibilityScore, getRecommendationBreakdown, getProductBadges } from '../utils/score';
 import { HOME } from '../copy/ui';
 import ProductImage from '../components/ProductImage';
+import AnalysisBadges from '../components/AnalysisBadges';
 
 const CATEGORY_GRID = [
   { name: '사료', label: '사료', emoji: '🐾' },
@@ -280,8 +281,10 @@ export default function Home() {
           </div>
           <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4 }}>
             {topRanked.slice(0, 6).map(product => {
-              const score = hasPetProfile ? calculateCompatibilityScore(product, profile) : null;
+              const breakdown = getRecommendationBreakdown(product, profile);
+              const score = hasPetProfile ? breakdown.total : null;
               const grade = score != null ? gradeFromScore(score) : (product.verificationStatus === 'verified' ? 'A' : 'B');
+              const badges = getProductBadges(breakdown, { max: 1 });
               return (
                 <div
                   key={product.id}
@@ -304,9 +307,10 @@ export default function Home() {
                     )}
                   </div>
                   <div style={{ fontSize: 11, color: '#8B95A1', marginBottom: 2 }}>{product.brand}</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#191F28', lineHeight: 1.4, marginBottom: 8 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#191F28', lineHeight: 1.4, marginBottom: 6 }}>
                     {product.name.length > 22 ? product.name.slice(0, 22) + '…' : product.name}
                   </div>
+                  <AnalysisBadges badges={badges} style={{ marginBottom: 8 }} />
                   <div style={{ fontSize: 14, fontWeight: 800, color: '#191F28', marginBottom: 10 }}>
                     {product.price ? `${product.price.toLocaleString()}원` : '가격 미정'}
                   </div>

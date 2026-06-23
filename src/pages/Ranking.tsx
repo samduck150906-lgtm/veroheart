@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Trophy, Dog, Cat, Star, ChevronRight, Megaphone } from 'lucide-react';
 import { useStore } from '../store/useStore';
-import { calculateCompatibilityScore, gradeFromScore, rankProductsForProfile } from '../utils/score';
+import { calculateCompatibilityScore, getRecommendationBreakdown, getProductBadges, gradeFromScore, rankProductsForProfile } from '../utils/score';
+import AnalysisBadges from '../components/AnalysisBadges';
 import ProductImage from '../components/ProductImage';
 
 const CATEGORY_FILTERS = ['전체', '사료', '간식', '영양제'];
@@ -178,8 +179,10 @@ export default function Ranking() {
             <p style={{ fontWeight: 600 }}>해당 카테고리 상품이 없어요</p>
           </div>
         ) : ranked.map((product, idx) => {
-          const score = hasPetProfile ? calculateCompatibilityScore(product, profile) : null;
+          const breakdown = getRecommendationBreakdown(product, profile);
+          const score = hasPetProfile ? breakdown.total : null;
           const grade = score != null ? gradeFromScore(score) : null;
+          const badges = getProductBadges(breakdown);
           return (
             <div
               key={product.id}
@@ -214,6 +217,7 @@ export default function Ranking() {
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#191F28', lineHeight: 1.3 }}>
                   {product.name.length > 28 ? product.name.slice(0, 28) + '…' : product.name}
                 </div>
+                <AnalysisBadges badges={badges} style={{ marginTop: 4 }} />
                 {product.averageRating > 0 && (
                   <div style={{ fontSize: 11, color: '#6B7684', marginTop: 3 }}>
                     ⭐ {Number(product.averageRating).toFixed(1)}

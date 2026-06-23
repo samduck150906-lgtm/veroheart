@@ -286,6 +286,32 @@ export function calculateCompatibilityScore(product: Product, profile: UserPetPr
   return getRecommendationBreakdown(product, profile).total;
 }
 
+export interface ProductBadge {
+  label: string;
+  tone: 'good' | 'warn' | 'danger';
+}
+
+/**
+ * 목록(카드)에서 노출할 분석 배지를 생성한다.
+ * 위험 > 주의 > 가점 순으로 우선순위가 높고, 기본 2개까지만 반환한다.
+ * 점수 breakdown을 재사용하므로 카드별 추가 연산이 거의 없다.
+ */
+export function getProductBadges(
+  breakdown: RecommendationBreakdown,
+  options: { max?: number } = {},
+): ProductBadge[] {
+  const badges: ProductBadge[] = [];
+
+  if (breakdown.allergyHits.length > 0) badges.push({ label: '알러지 포함', tone: 'danger' });
+  if (breakdown.dangerCount > 0) badges.push({ label: '위험 성분', tone: 'danger' });
+  if (breakdown.legumeRisk !== 'none') badges.push({ label: 'DCM 주의', tone: 'warn' });
+  if (breakdown.proteinInflated) badges.push({ label: '단백보강 의심', tone: 'warn' });
+  if (breakdown.nutrition >= 8) badges.push({ label: 'AAFCO 충족', tone: 'good' });
+  else if (breakdown.matchedConcerns.length > 0) badges.push({ label: '맞춤 케어', tone: 'good' });
+
+  return badges.slice(0, options.max ?? 2);
+}
+
 export function getCompatibilityBreakdown(product: Product, profile: UserPetProfile): RecommendationBreakdown {
   return getRecommendationBreakdown(product, profile);
 }

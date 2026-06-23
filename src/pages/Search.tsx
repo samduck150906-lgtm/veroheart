@@ -3,8 +3,9 @@ import { useState, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Search as SearchIcon, Heart, FlaskConical, Plus, Trash2, X } from 'lucide-react';
 import { useStore } from '../store/useStore';
-import { calculateCompatibilityScore, gradeFromScore } from '../utils/score';
+import { getRecommendationBreakdown, getProductBadges, gradeFromScore } from '../utils/score';
 import ProductImage from '../components/ProductImage';
+import AnalysisBadges from '../components/AnalysisBadges';
 import { TossFilterSection } from '../components/TossUI';
 
 import { SEARCH_EMPTY, SEARCH_NO_RESULTS, INGREDIENT_DICT } from '../copy/ui';
@@ -142,10 +143,12 @@ export default function Search() {
       ) : (
         <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
           {filtered.map(product => {
+            const breakdown = getRecommendationBreakdown(product, profile);
             const score = (isLoggedIn && profile?.name && profile.name !== '우리 아이')
-              ? calculateCompatibilityScore(product, profile)
+              ? breakdown.total
               : null;
             const grade = score != null ? gradeFromScore(score) : null;
+            const badges = getProductBadges(breakdown);
             const isFav = favoriteSet.has(product.id);
 
             return (
@@ -175,6 +178,7 @@ export default function Search() {
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#191F28', lineHeight: 1.4, marginBottom: 4 }}>
                     {product.name.length > 30 ? product.name.slice(0, 30) + '…' : product.name}
                   </div>
+                  <AnalysisBadges badges={badges} style={{ marginBottom: 6 }} />
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     {product.averageRating > 0 && <span style={{ fontSize: 12, color: '#6B7684' }}>⭐ {Number(product.averageRating).toFixed(1)}</span>}
                     {product.reviewsCount > 0 && <>
