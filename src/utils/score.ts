@@ -363,11 +363,10 @@ export function rankProductsForProfile(
     .filter((product) => product.id !== options.excludeProductId)
     .filter((product) => !product.targetPetType || product.targetPetType === expectedPetType || product.targetPetType === 'all')
     .filter((product) => !options.preferredCategory || !product.mainCategory || product.mainCategory === options.preferredCategory)
-    .map((product) => ({
-      product,
-      breakdown: getRecommendationBreakdown(product, profile),
-      score: getRecommendationBreakdown(product, profile).total,
-    }))
+    .map((product) => {
+      const breakdown = getRecommendationBreakdown(product, profile);
+      return { product, breakdown, score: breakdown.total };
+    })
     .sort((a, b) => b.score - a.score);
 
   return ranked.slice(0, options.limit ?? ranked.length);
