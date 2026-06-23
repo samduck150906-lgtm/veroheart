@@ -1,6 +1,5 @@
 // @ts-nocheck
-import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
 import { useStore } from '../store/useStore';
 import { User, ChevronRight, Calendar, ShoppingBag, FileText, Activity, LogOut, Heart, Crown } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -9,7 +8,7 @@ import { TossCard, TossInput, TossButton, TossChip, TossSectionTitle } from '../
 import { Button } from '../components/Button';
 import ProductCard from '../components/ProductCard';
 import ProductImage from '../components/ProductImage';
-import { getRecommendationBreakdown, gradeFromScore } from '../utils/score';
+import { getRecommendationBreakdown, gradeFromScore, calculateCompatibilityScore } from '../utils/score';
 import { notify } from '../store/useNotification';
 import { FAVORITES_EMPTY } from '../copy/ui';
 
@@ -54,8 +53,9 @@ export default function Profile() {
     orders, 
     fetchOrders, 
     reports, 
-    fetchReports, 
+    fetchReports,
     logout,
+    signOut,
     favorites,
     products,
     membershipTier,
@@ -63,7 +63,6 @@ export default function Profile() {
 
   const [searchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
-  const [activeTab, setActiveTab] = useState<'info' | 'orders' | 'reports' | 'favorites'>('info');
 
   useEffect(() => {
     if (tabParam === 'favorites' || tabParam === 'orders' || tabParam === 'reports' || tabParam === 'info') {
@@ -77,7 +76,6 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   const navigate = useNavigate();
-  const { profile, isLoggedIn, signOut, favorites, products, orders, reports } = useStore();
   const [activeTab, setActiveTab] = useState('찜');
 
   const hasPetProfile = isLoggedIn && profile?.name && profile.name !== '우리 아이';
