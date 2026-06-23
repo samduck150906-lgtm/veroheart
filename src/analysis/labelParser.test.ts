@@ -84,4 +84,18 @@ describe('parseLabel (통합)', () => {
     expect(parsed.ingredients).toHaveLength(3);
     expect(parsed.ingredients[2].ingredient?.id).toBe('xylitol');
   });
+
+  it('비타민·미네랄·아미노산 프리믹스를 인식해 unknown을 남기지 않는다', () => {
+    const label = `원료명: 건조닭고기, 현미, 산화아연, 황산망간, 비타민A, 엽산, 디엘메티오닌, 염화칼륨, 유카추출물, 프락토올리고당, 초록입홍합`;
+    const parsed = parseLabel(label);
+    const matched = parsed.ingredients.filter(i => i.ingredient).length;
+    expect(matched).toBe(parsed.ingredients.length);
+    expect(parsed.unknowns).toHaveLength(0);
+  });
+
+  it('프락토올리고당은 유산균이 아니라 프리바이오틱스(fos)로 매칭된다', () => {
+    const parsed = parseLabel('프락토올리고당, 유산균');
+    expect(parsed.ingredients[0].ingredient?.id).toBe('fos');
+    expect(parsed.ingredients[1].ingredient?.id).toBe('probiotics');
+  });
 });

@@ -160,11 +160,11 @@ export const GOOD_RULES: AnalysisRule[] = [
     id: 'JOINT_SUPPORT',
     target: 'ingredient',
     species: 'both',
-    condition: { hasAnyIngredient: ['글루코사민', '콘드로이친', 'MSM'] },
+    condition: { hasAnyIngredient: ['글루코사민', '콘드로이친', 'MSM', '초록입홍합'] },
     severity: 'good',
     scoreDelta: +3,
     title: '관절 보조 성분',
-    messageTemplate: '글루코사민·콘드로이친·MSM 등 관절 보조 성분이 포함돼 있어요.',
+    messageTemplate: '글루코사민·콘드로이친·MSM·초록입홍합 등 관절 보조 성분이 포함돼 있어요.',
     evidenceLevel: 'nutrition_guideline',
   },
   {

@@ -68,6 +68,11 @@ describe('확장 규칙 — 추가 위험/가점 성분', () => {
     const r = analyzeProduct(dogFood(), undefined, ['정어리', '현미']);
     expect(r.positives.some((p) => p.ruleId === 'FIRST_INGREDIENT_ANIMAL_PROTEIN')).toBe(true);
   });
+
+  it('초록입홍합도 관절 보조 가점을 받는다', () => {
+    const r = analyzeProduct(dogFood(), undefined, ['닭고기', '초록입홍합']);
+    expect(r.positives.some((p) => p.ruleId === 'JOINT_SUPPORT')).toBe(true);
+  });
 });
 
 describe('절대 위험 규칙', () => {
