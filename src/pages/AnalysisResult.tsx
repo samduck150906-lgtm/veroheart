@@ -1,16 +1,69 @@
 // @ts-nocheck
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
+import { ArrowLeft, AlertCircle } from 'lucide-react';
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from 'recharts';
 import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
-import { getRecommendationBreakdown, gradeFromScore } from '../utils/score';
+import { getRecommendationBreakdown, gradeFromScore, calculateCompatibilityScore } from '../utils/score';
 import AnalysisSummaryHeader from '../components/AnalysisSummaryHeader';
 import NutritionDonutChart   from '../components/NutritionDonutChart';
 import ToxicAlertList        from '../components/ToxicAlertList';
 import IngredientList        from '../components/IngredientList';
 import FeedingGuideCalculator from '../components/FeedingGuideCalculator';
 import { CAUTION_INGREDIENT, ALLERGY_CONFLICT, MEDICAL_DISCLAIMER, FEEDING_GUIDE } from '../copy/ui';
+
+const GRADE_GAUGE_COLOR: Record<string, string> = {
+  A: '#15B36B', B: '#6BB04E', C: '#E8A800', D: '#F04452', F: '#8B95A1',
+};
+
+const GRADE_LABEL: Record<string, string> = {
+  A: '아주 잘 맞아요', B: '잘 맞는 편이에요', C: '보통이에요', D: '주의가 필요해요', F: '맞지 않아요',
+};
+
+function ScoreGauge({ score, grade }: { score: number; grade: string }) {
+  const color = GRADE_GAUGE_COLOR[grade] ?? '#F5C518';
+  const [fill, setFill] = useState(0);
+  useEffect(() => {
+    const t = setTimeout(() => setFill(score), 150);
+    return () => clearTimeout(t);
+  }, [score]);
+
+  const r = 52;
+  const circumference = 2 * Math.PI * r;
+  const offset = circumference - (fill / 100) * circumference;
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 20, padding: '24px 20px' }}>
+      <div style={{ position: 'relative', width: 128, height: 128, flexShrink: 0 }}>
+        <svg width="128" height="128" style={{ transform: 'rotate(-90deg)' }}>
+          <circle cx="64" cy="64" r={r} fill="none" stroke="var(--fill)" strokeWidth="11" />
+          <circle
+            cx="64" cy="64" r={r} fill="none" stroke={color} strokeWidth="11"
+            strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round"
+            style={{ transition: 'stroke-dashoffset 0.9s cubic-bezier(0.16,1,0.3,1)' }}
+          />
+        </svg>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontSize: 34, fontWeight: 900, color: 'var(--ink)', lineHeight: 1, letterSpacing: '-0.03em' }}>{Math.round(fill)}</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-faint)' }}>/ 100</span>
+        </div>
+      </div>
+      <div style={{ minWidth: 0 }}>
+        <span style={{ display: 'inline-block', background: color, color: '#fff', borderRadius: 8, padding: '4px 12px', fontSize: 15, fontWeight: 900, marginBottom: 8 }}>
+          {grade}등급
+        </span>
+        <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
+          {GRADE_LABEL[grade] ?? '분석 완료'}
+        </div>
+        <div style={{ fontSize: 12.5, color: 'var(--ink-faint)', fontWeight: 600, marginTop: 4, lineHeight: 1.5 }}>
+          우리 아이와의 종합 궁합 점수예요
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function AnalysisResult() {
   const navigate = useNavigate();

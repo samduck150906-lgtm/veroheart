@@ -1,10 +1,11 @@
 // @ts-nocheck
 import { useState, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Search as SearchIcon, Heart } from 'lucide-react';
+import { Search as SearchIcon, Heart, FlaskConical, Plus, Trash2, X } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { calculateCompatibilityScore, gradeFromScore } from '../utils/score';
 import ProductImage from '../components/ProductImage';
+import { TossFilterSection } from '../components/TossUI';
 
 import { SEARCH_EMPTY, SEARCH_NO_RESULTS, INGREDIENT_DICT } from '../copy/ui';
 

@@ -28,7 +28,7 @@ import {
   deleteReview,
 } from '../lib/supabase';
 import { buildProductConclusion } from '../utils/productConclusion';
-import { getRecommendationBreakdown, gradeFromScore } from '../utils/score';
+import { getRecommendationBreakdown, gradeFromScore, calculateCompatibilityScore } from '../utils/score';
 import { COUPANG_PARTNERS_DISCLOSURE } from '../constants/coupangPartners';
 import { REVIEW_QUICK_TAGS } from '../constants/reviewTags';
 import { runScoringPipeline } from '../analysis/scoringPipeline';
