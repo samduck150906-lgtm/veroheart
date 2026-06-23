@@ -27,6 +27,47 @@ describe('성분 사전 / 정규화', () => {
   it('사전에 없는 성분은 null', () => {
     expect(findIngredientByName('정체불명특수원료xyz')).toBeNull();
   });
+
+  it('확장된 사전 — 생선/신규단백/기능성/곡물 성분을 인식한다', () => {
+    expect(findIngredientByName('대구')?.category).toBe('animal_protein');
+    expect(findIngredientByName('고등어')?.nutritionTags).toContain('omega3');
+    expect(findIngredientByName('사슴고기')?.id).toBe('venison');
+    expect(findIngredientByName('연어분')?.category).toBe('processed_protein');
+    expect(findIngredientByName('아마씨유')?.nutritionTags).toContain('omega3');
+    expect(findIngredientByName('MSM')?.nutritionTags).toContain('joint');
+    expect(findIngredientByName('퀴노아')?.id).toBe('quinoa');
+    expect(findIngredientByName('비트펄프')?.nutritionTags).toContain('gut');
+    expect(findIngredientByName('블루베리')?.nutritionTags).toContain('antioxidant');
+  });
+});
+
+describe('확장 규칙 — 추가 위험/가점 성분', () => {
+  it('아보카도는 caution 경고', () => {
+    const r = analyzeProduct(dogFood(), { species: 'dog', allergies: [] }, ['닭고기', '아보카도']);
+    expect(r.warnings.some((w) => w.ruleId === 'AVOCADO_CAUTION')).toBe(true);
+  });
+
+  it('호두는 개에게 caution 경고', () => {
+    const r = analyzeProduct(dogFood(), { species: 'dog', allergies: [] }, ['닭고기', '호두']);
+    expect(r.warnings.some((w) => w.ruleId === 'WALNUT_CAUTION')).toBe(true);
+  });
+
+  it('등푸른생선·식물성 오메가-3도 오메가3 가점을 받는다', () => {
+    const fish = analyzeProduct(dogFood(), undefined, ['고등어', '현미']);
+    expect(fish.positives.some((p) => p.ruleId === 'OMEGA3_PRESENT')).toBe(true);
+    const flax = analyzeProduct(dogFood(), undefined, ['닭고기', '아마씨유']);
+    expect(flax.positives.some((p) => p.ruleId === 'OMEGA3_PRESENT')).toBe(true);
+  });
+
+  it('MSM도 관절 보조 가점을 받는다', () => {
+    const r = analyzeProduct(dogFood(), undefined, ['닭고기', 'MSM']);
+    expect(r.positives.some((p) => p.ruleId === 'JOINT_SUPPORT')).toBe(true);
+  });
+
+  it('신규 단백(정어리)이 제1원료면 동물성 단백 가점', () => {
+    const r = analyzeProduct(dogFood(), undefined, ['정어리', '현미']);
+    expect(r.positives.some((p) => p.ruleId === 'FIRST_INGREDIENT_ANIMAL_PROTEIN')).toBe(true);
+  });
 });
 
 describe('절대 위험 규칙', () => {

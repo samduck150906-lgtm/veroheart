@@ -83,6 +83,30 @@ export const DANGER_RULES: AnalysisRule[] = [
 /** 주의(논란/합성 보존제 등) 규칙 — 감점하되 위험은 아님 */
 export const CAUTION_RULES: AnalysisRule[] = [
   {
+    id: 'AVOCADO_CAUTION',
+    target: 'ingredient',
+    species: 'both',
+    condition: { hasIngredient: '아보카도' },
+    severity: 'caution',
+    scoreDelta: -20,
+    title: '논란이 있는 과일 성분',
+    messageTemplate:
+      '아보카도의 페르신 성분은 반려동물 안전성에 논란이 있어요. 포함 시 과다 급여는 권장되지 않아요.',
+    evidenceLevel: 'veterinary',
+  },
+  {
+    id: 'WALNUT_CAUTION',
+    target: 'ingredient',
+    species: 'dog',
+    condition: { hasIngredient: '호두' },
+    severity: 'caution',
+    scoreDelta: -25,
+    title: '개에게 주의가 필요한 견과류',
+    messageTemplate:
+      '호두(특히 곰팡이가 핀 경우)는 개에게 신경 독성 위험이 보고돼 있어요.',
+    evidenceLevel: 'veterinary',
+  },
+  {
     id: 'SYNTHETIC_PRESERVATIVE',
     target: 'ingredient',
     species: 'both',
@@ -125,22 +149,22 @@ export const GOOD_RULES: AnalysisRule[] = [
     id: 'OMEGA3_PRESENT',
     target: 'ingredient',
     species: 'both',
-    condition: { hasAnyIngredient: ['연어오일', '어유'] },
+    condition: { hasAnyIngredient: ['연어오일', '어유', '아마씨유', '크릴오일', '고등어', '청어', '정어리', '연어분', '청어분'] },
     severity: 'good',
     scoreDelta: +3,
     title: '오메가-3 공급원',
-    messageTemplate: '오메가-3(연어 오일·어유)가 포함돼 피부·관절 건강에 도움이 될 수 있어요.',
+    messageTemplate: '오메가-3(생선 오일·등푸른생선 등)가 포함돼 피부·관절 건강에 도움이 될 수 있어요.',
     evidenceLevel: 'nutrition_guideline',
   },
   {
     id: 'JOINT_SUPPORT',
     target: 'ingredient',
     species: 'both',
-    condition: { hasAnyIngredient: ['글루코사민', '콘드로이친'] },
+    condition: { hasAnyIngredient: ['글루코사민', '콘드로이친', 'MSM'] },
     severity: 'good',
     scoreDelta: +3,
     title: '관절 보조 성분',
-    messageTemplate: '글루코사민·콘드로이친 등 관절 보조 성분이 포함돼 있어요.',
+    messageTemplate: '글루코사민·콘드로이친·MSM 등 관절 보조 성분이 포함돼 있어요.',
     evidenceLevel: 'nutrition_guideline',
   },
   {
