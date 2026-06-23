@@ -38,7 +38,7 @@ export default function BottomNav() {
       {sideItems.map(({ path, label, Icon }) => {
         const active = isActive(path);
         return (
-          <Link key={path} to={path} className="tab-item" aria-label={label}>
+          <Link key={path} to={path} className="tab-item" aria-label={label} aria-current={active ? 'page' : undefined}>
             <Icon size={22} strokeWidth={active ? 2.4 : 2} color={active ? 'var(--brand-deep)' : 'var(--ink-400)'} />
             <span className="tab-label" style={{ color: active ? 'var(--brand-deep)' : 'var(--ink-400)' }}>{label}</span>
           </Link>
@@ -60,7 +60,7 @@ export default function BottomNav() {
       {rightItems.map(({ path, label, Icon }) => {
         const active = isActive(path);
         return (
-          <Link key={path} to={path} className="tab-item" aria-label={label}>
+          <Link key={path} to={path} className="tab-item" aria-label={label} aria-current={active ? 'page' : undefined}>
             {Icon ? (
               <Icon size={22} strokeWidth={active ? 2.4 : 2} color={active ? 'var(--brand-deep)' : 'var(--ink-400)'} />
             ) : (
