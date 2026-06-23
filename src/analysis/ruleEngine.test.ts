@@ -100,6 +100,70 @@ describe('미매칭 원료는 unknowns로 수집', () => {
   });
 });
 
+describe('보증성분 기반 영양 적합도', () => {
+  it('완전사료 + AAFCO 충족 보증성분이면 가점 finding이 붙는다', () => {
+    const product: ProductForAnalysis = {
+      species: 'dog',
+      productType: 'complete_food',
+      guaranteedAnalysis: { crudeProtein: 30, crudeFat: 16, moisture: 10, calcium: 1.2, phosphorus: 1.0 },
+    };
+    const r = analyzeProduct(product, { species: 'dog', allergies: [] }, ['닭고기', '현미', '연어오일']);
+    expect(r.positives.some((p) => p.ruleId === 'AAFCO_PASS')).toBe(true);
+    expect(r.breakdown.nutritionFit).toBeGreaterThan(70);
+  });
+
+  it('단백질이 AAFCO 기준 미달이면 caution finding과 영양점수 감점', () => {
+    const product: ProductForAnalysis = {
+      species: 'dog',
+      productType: 'complete_food',
+      guaranteedAnalysis: { crudeProtein: 12, crudeFat: 8, moisture: 10 },
+    };
+    const r = analyzeProduct(product, { species: 'dog', allergies: [] }, ['옥수수', '현미']);
+    expect(r.warnings.some((w) => w.ruleId === 'AAFCO_FAIL')).toBe(true);
+    expect(r.breakdown.nutritionFit).toBeLessThan(70);
+  });
+
+  it('칼슘:인 비율이 범위를 벗어나면 watch finding', () => {
+    const product: ProductForAnalysis = {
+      species: 'dog',
+      productType: 'complete_food',
+      guaranteedAnalysis: { crudeProtein: 28, crudeFat: 14, moisture: 10, calcium: 3.0, phosphorus: 1.0 },
+    };
+    const r = analyzeProduct(product, { species: 'dog', allergies: [] }, ['닭고기']);
+    expect(r.warnings.some((w) => w.ruleId === 'CA_P_RATIO')).toBe(true);
+  });
+
+  it('보증성분이 없으면 영양점수는 중립(70)을 유지한다', () => {
+    const r = analyzeProduct(dogFood(), { species: 'dog', allergies: [] }, ['닭고기', '현미']);
+    expect(r.breakdown.nutritionFit).toBe(70);
+    expect(r.warnings.some((w) => w.ruleId === 'AAFCO_FAIL')).toBe(false);
+  });
+});
+
+describe('심화 품질: DCM 콩과 위험 / 단백 보강', () => {
+  it('상위 5순위에 콩과 식물 2종 이상이면 DCM 경고', () => {
+    const r = analyzeProduct(dogFood(), { species: 'dog', allergies: [] }, ['닭고기', '완두', '렌틸콩', '현미']);
+    expect(r.warnings.some((w) => w.ruleId === 'DCM_LEGUME_RISK')).toBe(true);
+  });
+
+  it('콩과 식물이 1종뿐이면 DCM danger 경고는 없다', () => {
+    const r = analyzeProduct(dogFood(), { species: 'dog', allergies: [] }, ['닭고기', '완두', '현미', '연어오일']);
+    const dcm = r.warnings.find((w) => w.ruleId === 'DCM_LEGUME_RISK');
+    expect(dcm?.level).not.toBe('caution');
+  });
+
+  it('가공 식물성 단백(완두단백)이 있으면 단백 보강 의심 경고', () => {
+    const r = analyzeProduct(dogFood(), { species: 'dog', allergies: [] }, ['닭고기', '완두단백', '현미']);
+    expect(r.warnings.some((w) => w.ruleId === 'PROTEIN_INFLATION')).toBe(true);
+  });
+
+  it('일반 통곡·동물성 구성은 DCM/단백보강 경고가 없다', () => {
+    const r = analyzeProduct(dogFood(), { species: 'dog', allergies: [] }, ['닭고기', '현미', '연어오일']);
+    expect(r.warnings.some((w) => w.ruleId === 'DCM_LEGUME_RISK')).toBe(false);
+    expect(r.warnings.some((w) => w.ruleId === 'PROTEIN_INFLATION')).toBe(false);
+  });
+});
+
 describe('영양 계산 순수 함수', () => {
   it('건물 기준 환산', () => {
     expect(toDryMatter(25, 10)).toBeCloseTo(27.78, 1);

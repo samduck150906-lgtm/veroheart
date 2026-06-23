@@ -7,12 +7,25 @@ import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } fro
 import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
 import { getRecommendationBreakdown, gradeFromScore, calculateCompatibilityScore } from '../utils/score';
+import { calculateCalories } from '../analysis/nutrition';
 import AnalysisSummaryHeader from '../components/AnalysisSummaryHeader';
 import NutritionDonutChart   from '../components/NutritionDonutChart';
 import ToxicAlertList        from '../components/ToxicAlertList';
 import IngredientList        from '../components/IngredientList';
 import FeedingGuideCalculator from '../components/FeedingGuideCalculator';
 import { CAUTION_INGREDIENT, ALLERGY_CONFLICT, MEDICAL_DISCLAIMER, FEEDING_GUIDE } from '../copy/ui';
+
+const TABS = ['종합', '영양소', '전성분'] as const;
+
+const RISK_COLORS: Record<string, string> = { safe: '#15B36B', caution: '#E8A800', danger: '#F04452' };
+const RISK_BG: Record<string, string> = { safe: '#E7F8F0', caution: '#FEF6E0', danger: '#FDECEE' };
+const RISK_LABEL: Record<string, string> = { safe: '안전', caution: '주의', danger: '위험' };
+
+const LIFE_STAGE_LABEL: Record<string, string> = {
+  '퍼피·키튼': '자견·자묘',
+  '성견·성묘': '성견·성묘',
+  '시니어': '노령',
+};
 
 const GRADE_GAUGE_COLOR: Record<string, string> = {
   A: '#15B36B', B: '#6BB04E', C: '#E8A800', D: '#F04452', F: '#8B95A1',
@@ -109,18 +122,47 @@ export default function AnalysisResult() {
     { subject: '칼슘', value: Math.min(100, (ga.calcium || 0) * 50) },
   ] : [];
 
-  const positives = [
+  const basePositives = [
     safeIngredients.length > 5 ? `안전 성분 ${safeIngredients.length}가지 확인` : null,
     cautionIngredients.length === 0 && dangerIngredients.length === 0 ? '주의/위험 성분 없음 ✓' : null,
     allergyConflicts.length === 0 && hasPetProfile ? '알러지 성분 미포함 ✓' : null,
     ga?.crudeProtein && ga.crudeProtein > 25 ? `고단백 사료 (단백질 ${ga.crudeProtein}%)` : null,
-  ].filter(Boolean);
+  ].filter(Boolean) as string[];
 
-  const cautions = [
+  // ── 규칙 엔진(심화 성분 분석) 리포트 — AAFCO·Ca:P·DCM·단백보강 등 ──
+  const report = useMemo(
+    () => (product ? generateAnalysisReport(product, profile) : null),
+    [product, profile],
+  );
+
+  const breakdown = useMemo(
+    () => (product ? getRecommendationBreakdown(product, profile) : null),
+    [product, profile],
+  );
+
+  // 엔진 하이라이트를 화면 종합 탭의 좋은 점/주의 사항에 합친다(중복 제거).
+  const reportPositives = (report?.highlights ?? []).filter(h => h.type === 'positive').map(h => h.text);
+  const reportCautions = (report?.highlights ?? []).filter(h => h.type !== 'positive').map(h => h.text);
+
+  const positives = Array.from(new Set([
+    ...basePositives,
+    ...reportPositives,
+  ]));
+
+  const cautions = Array.from(new Set([
     cautionIngredients.length > 0 ? `주의 성분 ${cautionIngredients.length}가지: ${cautionIngredients.map(i => i.nameKo).slice(0, 3).join(', ')}` : null,
     dangerIngredients.length > 0 ? `위험 성분 ${dangerIngredients.length}가지: ${dangerIngredients.map(i => i.nameKo).slice(0, 2).join(', ')}` : null,
     allergyConflicts.length > 0 ? `알러지 의심 성분: ${allergyConflicts.map(i => i.nameKo).join(', ')}` : null,
-  ].filter(Boolean);
+    ...reportCautions,
+  ].filter(Boolean) as string[]));
+
+  // 화면에 직접 쓰이는 파생값들
+  const score = compatScore;
+  const displayIngredients = product?.ingredients ?? [];
+  const lifeStageString = product?.targetLifeStage
+    ? (LIFE_STAGE_LABEL[product.targetLifeStage] ?? product.targetLifeStage)
+    : '전 연령';
+  const kcalPer100g = ga ? calculateCalories(ga).kcalPer100g : (product?.caloriesPer100g ?? 0);
 
   if (!product) {
     return (

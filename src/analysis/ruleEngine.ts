@@ -21,6 +21,8 @@ import type {
 import { findIngredientByName } from './ingredientDictionary';
 import { ALL_RULES } from './rules';
 import { normalizeIngredientName } from './normalize';
+import { validateAAFCO, checkCalciumPhosphorusRatio, toDryMatter } from './nutrition';
+import { detectDCMRisk, detectProteinInflation } from './ingredientQuality';
 
 const DISCLAIMER =
   '이 분석은 제품 라벨 기반 참고 정보이며, 질병·치료 목적의 급여 판단은 수의사 상담이 필요합니다.';
@@ -182,6 +184,149 @@ const SECTION_TITLE: Record<'good' | 'warn', string> = {
 };
 
 /**
+ * 보증성분(guaranteedAnalysis) 기반 영양 적합도 평가.
+ *
+ * 라벨 영양값이 없거나 완전사료가 아니면 중립(70)을 돌려준다(간식/보충제는
+ * 영양 완전성을 기대하지 않으므로). 완전사료 + 영양값이 있으면 AAFCO 성체
+ * 유지 최소기준(건물 기준)·칼슘:인 비율·고단백 여부를 점수와 근거로 환산한다.
+ *
+ * 여기서 만든 finding은 nutritionFit 점수에만 반영하고, safety 누적에는
+ * 넣지 않는다(이중 감점 방지). 호출부에서 positives/warnings 배열에만 합친다.
+ */
+function analyzeNutrition(
+  product: ProductForAnalysis,
+  petSpecies: 'dog' | 'cat',
+): { score: number; positives: Finding[]; warnings: Finding[] } {
+  const positives: Finding[] = [];
+  const warnings: Finding[] = [];
+  const ga = product.guaranteedAnalysis;
+
+  if (
+    !ga ||
+    product.productType !== 'complete_food' ||
+    ga.crudeProtein == null ||
+    ga.crudeFat == null
+  ) {
+    return { score: 70, positives, warnings };
+  }
+
+  let score = 70;
+
+  const { passed, details } = validateAAFCO(ga, petSpecies);
+  if (passed) {
+    score += 12;
+    positives.push({
+      ruleId: 'AAFCO_PASS',
+      level: 'good',
+      title: 'AAFCO 영양 기준 충족',
+      message: '성체 유지 최소 기준(건물 기준 조단백질·조지방)을 충족하는 구성이에요.',
+      ingredients: [],
+      scoreDelta: 12,
+      evidenceLevel: 'nutrition_guideline',
+    });
+  } else {
+    score -= 15;
+    warnings.push({
+      ruleId: 'AAFCO_FAIL',
+      level: 'caution',
+      title: 'AAFCO 영양 기준 미달',
+      message: details.join(' ') || '성체 유지 최소 영양 기준에 못 미치는 항목이 있어요.',
+      ingredients: [],
+      scoreDelta: -15,
+      evidenceLevel: 'nutrition_guideline',
+    });
+  }
+
+  const caRatioWarning = checkCalciumPhosphorusRatio(ga);
+  if (caRatioWarning) {
+    score -= 8;
+    warnings.push({
+      ruleId: 'CA_P_RATIO',
+      level: 'watch',
+      title: '칼슘:인 비율 주의',
+      message: caRatioWarning,
+      ingredients: [],
+      scoreDelta: -8,
+      evidenceLevel: 'nutrition_guideline',
+    });
+  } else if (ga.calcium != null && ga.phosphorus != null) {
+    score += 4;
+  }
+
+  const moisture = ga.moisture ?? 10;
+  const proteinDMB = toDryMatter(ga.crudeProtein, moisture) ?? 0;
+  const highProteinThreshold = petSpecies === 'cat' ? 40 : 30;
+  if (proteinDMB >= highProteinThreshold) {
+    score += 6;
+    positives.push({
+      ruleId: 'HIGH_PROTEIN',
+      level: 'good',
+      title: '고단백 구성',
+      message: `건물 기준 조단백질이 약 ${proteinDMB.toFixed(0)}%로, 단백질 함량이 넉넉한 편이에요.`,
+      ingredients: [],
+      scoreDelta: 6,
+      evidenceLevel: 'nutrition_guideline',
+    });
+  }
+
+  return { score: clamp(score), positives, warnings };
+}
+
+/**
+ * 상위 원료 구성 기반 심화 품질 평가 — 그레인프리 DCM(확장성 심근병증) 연관
+ * 콩과 식물 과다, 식물성 단백 보강(protein inflation) 의심을 finding으로 환산한다.
+ * ingredientQuality 점수에만 반영한다.
+ */
+function analyzeAdvancedQuality(matched: MatchedIngredient[]): {
+  delta: number;
+  warnings: Finding[];
+} {
+  const warnings: Finding[] = [];
+  let delta = 0;
+
+  // 단백 보강 탐지는 라벨 표기(예: "완두단백")의 "단백" 신호가 필요하므로
+  // 정규화된 canonical이 아니라 원문(originalName)을 그대로 쓴다.
+  // DCM 탐지는 category 기반이라 dictEntry로 판단한다.
+  const forQuality = matched.map((m) => ({
+    nameKo: m.originalName,
+    dictEntry: m.ingredient,
+    position: m.position,
+  }));
+
+  const dcm = detectDCMRisk(forQuality);
+  if (dcm.riskLevel !== 'none') {
+    const d = dcm.riskLevel === 'danger' ? -12 : -5;
+    delta += d;
+    warnings.push({
+      ruleId: 'DCM_LEGUME_RISK',
+      level: dcm.riskLevel === 'danger' ? 'caution' : 'watch',
+      title: '콩과 식물 다량 함유 (DCM 참고)',
+      message: `상위 원료에 ${dcm.legumesInTop5.join(', ')} 등 콩과 식물이 ${dcm.legumesInTop5.length}종 포함돼 있어요. 그레인프리 사료의 콩과 식물 과다는 확장성 심근병증(DCM)과의 연관 가능성이 보고된 바 있어 참고가 필요해요.`,
+      ingredients: dcm.legumesInTop5,
+      scoreDelta: d,
+      evidenceLevel: 'veterinary',
+    });
+  }
+
+  const inflation = detectProteinInflation(forQuality);
+  if (inflation.hasInflation) {
+    const d = inflation.inflationSignal === 'major' ? -8 : -4;
+    delta += d;
+    warnings.push({
+      ruleId: 'PROTEIN_INFLATION',
+      level: 'watch',
+      title: '식물성 단백 보강 의심',
+      message: `${inflation.processedPlantProteins.join(', ')} 같은 가공 식물성 단백이 포함돼 있어요. 동물성 단백 비중이 실제보다 높아 보이게 만드는 '단백질 보강'일 수 있어, 동물성 원료 순위를 함께 확인해 보세요.`,
+      ingredients: inflation.processedPlantProteins,
+      scoreDelta: d,
+      evidenceLevel: 'nutrition_guideline',
+    });
+  }
+
+  return { delta, warnings };
+}
+
+/**
  * 메인 분석 함수.
  * matchedIngredients가 없으면 문자열 배열(rawNames)에서 매칭한다.
  */
@@ -198,12 +343,22 @@ export function analyzeProduct(
 
   // ── 점수 기준선 ──
   let safety = 100;
-  const nutritionFit = 70;
   let ingredientQuality = 70;
   const feedingGuide = 70;
 
   const positives: Finding[] = [];
   const warnings: Finding[] = [];
+
+  // ── 영양 적합도 (보증성분 기반, 완전사료 한정) ──
+  const nutrition = analyzeNutrition(product, petSpecies);
+  const nutritionFit = nutrition.score;
+  positives.push(...nutrition.positives);
+  warnings.push(...nutrition.warnings);
+
+  // ── 심화 품질: DCM 콩과 위험 + 식물성 단백 보강 ──
+  const advancedQuality = analyzeAdvancedQuality(matched);
+  ingredientQuality = clamp(ingredientQuality + advancedQuality.delta);
+  warnings.push(...advancedQuality.warnings);
 
   // ── 규칙 적용 ──
   for (const rule of ALL_RULES) {
