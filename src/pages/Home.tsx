@@ -11,6 +11,7 @@ import {
   Heart,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import ProductImage from '../components/ProductImage';
 import { rankProductsForProfile, gradeFromScore, calculateCompatibilityScore } from '../utils/score';
 import { HOME } from '../copy/ui';
 

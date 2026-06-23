@@ -1,8 +1,9 @@
 // @ts-nocheck
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Helmet } from 'react-helmet-async';
 import { Search as SearchIcon, X, ChevronRight } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 import { INGREDIENT_DICTIONARY } from '../analysis/ingredientDictionary';
 import { INGREDIENT_DICT } from '../copy/ui';
 
