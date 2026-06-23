@@ -1,9 +1,6 @@
 // @ts-nocheck
 import { useMemo, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { Helmet } from 'react-helmet-async';
-import { Search as SearchIcon, X, ChevronRight } from 'lucide-react';
-import { INGREDIENT_DICTIONARY } from '../analysis/ingredientDictionary';
+import { Search as SearchIcon } from 'lucide-react';
 import { INGREDIENT_DICT } from '../copy/ui';
 
 const FILTER_CATS = ['전체', '방부제', '단백질원', '탄수화물', '미네랄', '비타민'];

@@ -43,7 +43,7 @@ import KnowledgeNutrients from './pages/KnowledgeNutrients';
 import AuthCallback from './pages/AuthCallback';
 
 function App() {
-  const { initApp, isInitializing, isLoggedIn } = useStore();
+  const { initApp, isInitializing } = useStore();
   const [splashLine] = useState(() => pickSplashTagline());
   const adminMode = typeof window !== 'undefined'
     && isAdminExperience(window.location.hostname, window.location.pathname);

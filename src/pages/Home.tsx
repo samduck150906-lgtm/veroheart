@@ -1,17 +1,9 @@
 // @ts-nocheck
 import { useMemo, useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
-import { Helmet } from 'react-helmet-async';
-import {
-  ChevronRight,
-  Pencil,
-  Bone,
-  Droplet,
-  ShieldCheck,
-  Heart,
-} from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { rankProductsForProfile, gradeFromScore, calculateCompatibilityScore, getRecommendationBreakdown, getProductBadges } from '../utils/score';
+import { rankProductsForProfile, gradeFromScore, getRecommendationBreakdown, getProductBadges } from '../utils/score';
 import { HOME } from '../copy/ui';
 import ProductImage from '../components/ProductImage';
 import AnalysisBadges from '../components/AnalysisBadges';
@@ -79,7 +71,7 @@ function AnimatedScore({ target }) {
 
 export default function Home() {
   const navigate = useNavigate();
-  const { products, profile, recentViews, isLoggedIn, favorites } = useStore();
+  const { products, profile, recentViews, isLoggedIn } = useStore();
 
   const hasPetProfile = isLoggedIn && profile?.name && profile.name !== '우리 아이';
 
@@ -98,9 +90,6 @@ export default function Home() {
   }, [healthScore]);
 
   const [scoreExpanded, setScoreExpanded] = useState(false);
-
-  const recent = (recentViews?.length ? recentViews : products).slice(0, 8);
-  const favoriteSet = new Set(favorites || []);
 
   const topRanked = useMemo(() => {
     if (!products.length) return products.slice(0, 6);

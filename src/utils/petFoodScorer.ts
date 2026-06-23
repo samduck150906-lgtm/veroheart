@@ -366,7 +366,6 @@ export class PetFoodScorer {
     }
 
     // 5-2. 유익한 첨가제 가산점
-    let beneficialCount = 0;
     for (const ben of this.beneficialIngredients) {
       if (this.ingredients.some(ing => ing.toLowerCase().includes(ben.name))) {
         bonuses.push({
@@ -374,7 +373,6 @@ export class PetFoodScorer {
           points: ben.bonus
         });
         score += ben.bonus;
-        beneficialCount++;
       }
     }
 

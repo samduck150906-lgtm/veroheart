@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Heart, Star } from 'lucide-react';
 import type { Product } from '../types';
 import { useStore } from '../store/useStore';
@@ -29,7 +29,6 @@ const SponsorBadge = ({ label }: { label: string }) => (
 
 export default function ProductCard({
   product,
-  compact = false,
   showHealthTags = true,
   variant = 'horizontal',
   rank,

@@ -8,7 +8,7 @@ import { SIGNUP_PROMPT } from '../copy/ui';
 
 export default function ScanResult() {
   const navigate = useNavigate();
-  const { products, isLoggedIn, profile } = useStore();
+  const { isLoggedIn, profile } = useStore();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

@@ -9,11 +9,9 @@ import { generateAnalysisReport } from '../utils/analysis';
 import { getRecommendationBreakdown, gradeFromScore, calculateCompatibilityScore } from '../utils/score';
 import { calculateCalories } from '../analysis/nutrition';
 import AnalysisSummaryHeader from '../components/AnalysisSummaryHeader';
-import NutritionDonutChart   from '../components/NutritionDonutChart';
-import ToxicAlertList        from '../components/ToxicAlertList';
 import IngredientList        from '../components/IngredientList';
 import FeedingGuideCalculator from '../components/FeedingGuideCalculator';
-import { CAUTION_INGREDIENT, ALLERGY_CONFLICT, MEDICAL_DISCLAIMER, FEEDING_GUIDE } from '../copy/ui';
+import { CAUTION_INGREDIENT, MEDICAL_DISCLAIMER, FEEDING_GUIDE } from '../copy/ui';
 
 const TABS = ['종합', '영양소', '전성분'] as const;
 

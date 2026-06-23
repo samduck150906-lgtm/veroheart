@@ -1,36 +1,26 @@
 // @ts-nocheck
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
   ChevronUp,
   GitCompare,
-  Loader2,
   AlertCircle,
   CheckCircle2,
-  ShieldCheck,
   Dog,
   Cat,
   Calendar,
   Layers,
   ExternalLink,
   Shield,
-  MessageSquare,
   Star,
   Trash2,
   Sparkles,
   ChevronRight,
   Heart
 } from 'lucide-react';
-import { 
-  getReviews, 
-  createReview, 
-  deleteReview,
-} from '../lib/supabase';
-import { buildProductConclusion } from '../utils/productConclusion';
-import { getRecommendationBreakdown, gradeFromScore, calculateCompatibilityScore } from '../utils/score';
+import { getRecommendationBreakdown, gradeFromScore } from '../utils/score';
 import { COUPANG_PARTNERS_DISCLOSURE } from '../constants/coupangPartners';
-import { REVIEW_QUICK_TAGS } from '../constants/reviewTags';
 import { runScoringPipeline } from '../analysis/scoringPipeline';
 import { PURPOSE_STYLE } from '../analysis/nutrientClassification';
 
@@ -40,43 +30,22 @@ const getVerificationMeta = (s: string) => {
   return { bg: 'var(--chip-bg)', color: 'var(--ink-soft)', border: 'var(--hairline)', label: '검수 대기' };
 };
 
-interface Ingredient { id: string; riskLevel: string; nameKo: string; nameEn?: string; purpose?: string; description?: string; }
 import { Helmet } from 'react-helmet-async';
 import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
 import { toDryMatter, calculateCalories } from '../analysis/nutrition';
 import { openCoupangForProduct } from '../utils/externalPurchase';
 import Analyzer from '../components/Analyzer';
-import BottomSheet from '../components/BottomSheet';
 import FeedingGuideCalculator from '../components/FeedingGuideCalculator';
 import { TossCard } from '../components/TossUI';
 import ProductImage from '../components/ProductImage';
 import BreedNutritionPanel from '../components/BreedNutritionPanel';
-import { CAUTION_INGREDIENT, ALLERGY_CONFLICT, MEDICAL_DISCLAIMER, PRE_PURCHASE } from '../copy/ui';
-
-const GRADE_COLORS = {
-  A: '#15B36B', B: '#E8A800', C: '#F04452', D: '#F04452', F: '#8B95A1',
-};
-
-const RISK_COLORS = { safe: '#15B36B', caution: '#E8A800', danger: '#F04452' };
-const RISK_BG = { safe: '#E7F8F0', caution: '#FEF6E0', danger: '#FFF0ED' };
-const RISK_LABEL = { safe: '안전', caution: '주의', danger: '위험' };
-
-function GradeCircle({ grade }) {
-  return (
-    <div style={{
-      width: 44, height: 44, borderRadius: '50%',
-      background: GRADE_COLORS[grade] || '#8B95A1',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      color: '#fff', fontSize: 18, fontWeight: 900,
-    }}>{grade}</div>
-  );
-}
+import { CAUTION_INGREDIENT, MEDICAL_DISCLAIMER, PRE_PURCHASE } from '../copy/ui';
 
 export default function Detail() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { products, selectedProduct, profile, isLoggedIn, favorites, toggleFavorite, addToComparison, trackRecentView } = useStore();
+  const { products, selectedProduct, profile, isLoggedIn, favorites, toggleFavorite, addToComparison } = useStore();
 
   const product = useMemo(() => {
     const found = id ? products.find(p => p.id === id) : null;
@@ -87,13 +56,6 @@ export default function Detail() {
 
   const hasPetProfile = isLoggedIn && profile?.name && profile.name !== '우리 아이';
   const isFav = favorites?.includes(product?.id);
-
-  const compatScore = useMemo(() => {
-    if (!product || !hasPetProfile) return null;
-    return calculateCompatibilityScore(product, profile);
-  }, [product, profile, hasPetProfile]);
-
-  const grade = compatScore != null ? gradeFromScore(compatScore) : null;
 
   const ga = product?.guaranteedAnalysis;
 
@@ -120,7 +82,6 @@ export default function Detail() {
   );
 
   const report = product ? generateAnalysisReport(product, profile) : null;
-  const conclusion = product && report ? buildProductConclusion(product, profile, report) : null;
   const breakdown = hasPetProfile && product ? getRecommendationBreakdown(product, profile) : null;
   const pipeline = product ? runScoringPipeline(product, profile?.breed || '') : null;
   const isComparing = comparisonList.includes(product?.id || '');
@@ -144,12 +105,6 @@ export default function Detail() {
     if (!product?.guaranteedAnalysis) return 0;
     return calculateCalories(product.guaranteedAnalysis).kcalPer100g;
   }, [product?.guaranteedAnalysis]);
-
-  const getRiskColor = (level: string) => {
-    if (level === 'danger') return '#F04452'; // Toss Red
-    if (level === 'caution') return '#F59E0B'; // Yellow
-    return '#3182F6'; // Toss Blue for safe
-  };
 
   // selectedIngredient state moved to top with other hooks
   
@@ -1175,28 +1130,6 @@ export default function Detail() {
       </div>
     </div>
   );
-}
-
-function VetBadge({ riskLevel }: { riskLevel: string }) {
-  if (riskLevel === 'safe') return null;
-  const isDanger = riskLevel === 'danger';
-  return (
-    <div style={{ fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '8px', background: isDanger ? '#FEF2F2' : '#FFFBEB', color: isDanger ? '#991B1B' : '#92400E', border: `1px solid ${isDanger ? '#FECACA' : '#FDE68A'}` }}>
-      {isDanger ? CAUTION_INGREDIENT.danger.badge : CAUTION_INGREDIENT.warning.badge}
-    </div>
-  );
-}
-
-function getVetComment(ingredients: Ingredient[]): string {
-  const dangerCount = ingredients.filter(i => i.riskLevel === 'danger').length;
-  const cautionCount = ingredients.filter(i => i.riskLevel === 'caution').length;
-  if (dangerCount > 0) {
-    return `${dangerCount}가지 주의 성분이 들어 있어요. ${CAUTION_INGREDIENT.danger.hint}`;
-  }
-  if (cautionCount > 0) {
-    return `${cautionCount}가지 성분을 한 번 더 확인해보면 좋겠어요. ${CAUTION_INGREDIENT.warning.hint}`;
-  }
-  return `${CAUTION_INGREDIENT.safe.description} ${CAUTION_INGREDIENT.safe.hint}`;
 }
 
 /** 등록성분량(보증성분) 섹션 — 라벨 표기값 + 건물기준(DMB) 환산 + 추정 칼로리 */

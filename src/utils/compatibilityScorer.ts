@@ -556,7 +556,6 @@ function buildSummary(
   grade: CompatibilityGrade,
   pet: CompatibilityPetProfile,
   allergyResult: AllergyCheckResult,
-  product: CompatibilityProduct,
 ): string {
   const petName = pet.name ?? '우리 아이';
 
@@ -629,7 +628,7 @@ export function calculateCompatibilityScore(
   const cautionReasons = buildCautionReasons(allergyResult, warningResult, nutritionResult);
   const feedingGuide = buildFeedingGuide(product, pet);
   const alternativeConditions = buildAlternativeConditions(pet, allergyResult, warningResult);
-  const summary = buildSummary(grade, pet, allergyResult, product);
+  const summary = buildSummary(grade, pet, allergyResult);
 
   return {
     matchScore,

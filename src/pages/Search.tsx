@@ -8,9 +8,7 @@ import ProductImage from '../components/ProductImage';
 import AnalysisBadges from '../components/AnalysisBadges';
 import { TossFilterSection } from '../components/TossUI';
 
-import { SEARCH_EMPTY, SEARCH_NO_RESULTS, INGREDIENT_DICT } from '../copy/ui';
-
-const CORE_COPY = { ocr: '반려동물의 체질과 알레르기, 건강 고민을 조합하여 딱 맞는 완벽한 한 끼를 찾아보세요.' };
+import { SEARCH_NO_RESULTS, INGREDIENT_DICT } from '../copy/ui';
 
 const GRADE_COLORS = {
   A: { bg: '#E7F8F0', color: '#15B36B' },
@@ -32,14 +30,12 @@ function GradeTag({ grade }) {
 export default function Search() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { products, profile, isLoggedIn, favorites, toggleFavorite, addToComparison } = useStore();
+  const { products, profile, isLoggedIn, favorites, toggleFavorite } = useStore();
 
   const [query, setQuery] = useState(searchParams.get('query') || '');
   const [speciesFilter, setSpeciesFilter] = useState('전체');
   const [detailFilter, setDetailFilter] = useState<string | null>(null);
   const [sort, setSort] = useState('평점순');
-  const [inCompare, setInCompare] = useState<Record<string, boolean>>({});
-
   const favoriteSet = new Set(favorites || []);
 
   const filtered = useMemo(() => {

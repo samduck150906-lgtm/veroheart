@@ -14,7 +14,7 @@ export default function Scanner() {
   const navigate = useNavigate();
   const [step,       setStep      ] = useState<FlowStep>('scan');
   const [capturedUrl, setCapturedUrl] = useState<string | null>(null);
-  const [captureMode, setCaptureMode] = useState<'barcode' | 'text'>('barcode');
+  const [, setCaptureMode] = useState<'barcode' | 'text'>('barcode');
   const [ocr, setOcr] = useState<{ busy: boolean; label: string; ratio: number }>({
     busy: false,
     label: '',

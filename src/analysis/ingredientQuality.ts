@@ -1,6 +1,6 @@
 // src/analysis/ingredientQuality.ts
 import { findIngredientByName } from './ingredientDictionary';
-import type { DictionaryIngredient, IngredientCategory } from './types';
+import type { DictionaryIngredient } from './types';
 
 export type QualityGrade = '최고' | '양호' | '주의' | '경고';
 

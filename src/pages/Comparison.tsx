@@ -7,7 +7,7 @@ import { gradeFromScore, getRecommendationBreakdown, getProductBadges } from '..
 import ProductImage from '../components/ProductImage';
 import AnalysisBadges from '../components/AnalysisBadges';
 import { openCoupangForProduct } from '../utils/externalPurchase';
-import { COMPARE_EMPTY, PRE_PURCHASE } from '../copy/ui';
+import { PRE_PURCHASE } from '../copy/ui';
 
 const GRADE_COLORS = {
   A: { bg: '#E7F8F0', color: '#15B36B' },
@@ -45,15 +45,6 @@ export default function Comparison() {
       })
     );
   }, [compareProducts, breakdowns, hasPetProfile]);
-
-  const cautionCounts = useMemo(() => {
-    return Object.fromEntries(
-      compareProducts.map(p => [
-        p.id,
-        (p.ingredients || []).filter(i => i.riskLevel === 'caution' || i.riskLevel === 'danger').length,
-      ])
-    );
-  }, [compareProducts]);
 
   if (compareProducts.length === 0) {
     return (

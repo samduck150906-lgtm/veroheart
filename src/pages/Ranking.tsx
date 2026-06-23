@@ -1,8 +1,7 @@
 // @ts-nocheck
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
-import { Trophy, Dog, Cat, Star, ChevronRight, Megaphone } from 'lucide-react';
+import { Star, ChevronRight, Megaphone } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { calculateCompatibilityScore, getRecommendationBreakdown, getProductBadges, gradeFromScore, rankProductsForProfile } from '../utils/score';
 import AnalysisBadges from '../components/AnalysisBadges';
