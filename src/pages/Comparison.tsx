@@ -3,8 +3,9 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, ExternalLink } from 'lucide-react';
 import { useStore } from '../store/useStore';
-import { gradeFromScore, getRecommendationBreakdown } from '../utils/score';
+import { gradeFromScore, getRecommendationBreakdown, getProductBadges } from '../utils/score';
 import ProductImage from '../components/ProductImage';
+import AnalysisBadges from '../components/AnalysisBadges';
 import { openCoupangForProduct } from '../utils/externalPurchase';
 import { COMPARE_EMPTY, PRE_PURCHASE } from '../copy/ui';
 
@@ -29,19 +30,21 @@ export default function Comparison() {
       .slice(0, 4);
   }, [comparisonList, products]);
 
-  const breakdowns = useMemo(() => {
-    if (!hasPetProfile) return compareProducts.map(() => null);
-    return compareProducts.map(p => getRecommendationBreakdown(p, profile));
-  }, [compareProducts, profile, hasPetProfile]);
+  // 항상 계산: DCM·단백보강·AAFCO 등은 펫 프로필과 무관한 제품 고유 신호다.
+  // 개인화 표시(궁합 점수·등급)는 hasPetProfile로 게이팅한다.
+  const breakdowns = useMemo(
+    () => compareProducts.map(p => getRecommendationBreakdown(p, profile)),
+    [compareProducts, profile],
+  );
 
   const grades = useMemo(() => {
     return Object.fromEntries(
       compareProducts.map((p, i) => {
         const bd = breakdowns[i];
-        return [p.id, bd ? gradeFromScore(bd.total) : null];
+        return [p.id, hasPetProfile && bd ? gradeFromScore(bd.total) : null];
       })
     );
-  }, [compareProducts, breakdowns]);
+  }, [compareProducts, breakdowns, hasPetProfile]);
 
   const cautionCounts = useMemo(() => {
     return Object.fromEntries(
@@ -143,6 +146,7 @@ export default function Comparison() {
                     <span style={{ fontSize: '18px', fontWeight: 900, color: GRADE_COLORS[grade]?.color }}>{bd.total}</span>
                   </div>
                 ) : null}
+                {bd && <AnalysisBadges badges={getProductBadges(bd, { max: 3 })} style={{ marginTop: 8 }} />}
               </div>
             );
           })}
@@ -160,10 +164,15 @@ export default function Comparison() {
               return Math.round((s / t) * 100);
             };
             const dangerCount = (p) => (p.ingredients || []).filter(i => i.riskLevel === 'danger').length;
+            // 동점이면 -1(승자 표시 없음), 아니면 최댓/최솟값 인덱스
+            const bestHigh = (nums) => nums.every(n => n === nums[0]) ? -1 : nums.indexOf(Math.max(...nums));
+            const bestLow = (nums) => nums.every(n => n === nums[0]) ? -1 : nums.indexOf(Math.min(...nums));
+            const LEGUME_RANK = { none: 0, watch: 1, danger: 2 };
+            const LEGUME_LABEL = { none: '없음', watch: '주의', danger: '위험' };
             const rows = [
               {
                 label: '궁합 점수',
-                vals: compareProducts.map((p, i) => breakdowns[i]?.total ?? '-'),
+                vals: compareProducts.map((p, i) => hasPetProfile ? breakdowns[i].total : '-'),
                 winner: hasPetProfile
                   ? breakdowns.reduce((bi, bd, i) => (bd?.total ?? 0) > (breakdowns[bi]?.total ?? 0) ? i : bi, 0)
                   : -1,
@@ -182,8 +191,26 @@ export default function Comparison() {
                 fmt: (v) => `${v}개`,
               },
               {
+                label: 'AAFCO 영양',
+                vals: compareProducts.map((p, i) => breakdowns[i].nutrition),
+                winner: bestHigh(compareProducts.map((p, i) => breakdowns[i].nutrition)),
+                fmt: (v) => v > 0 ? `${v}/10` : '-',
+              },
+              {
+                label: 'DCM 위험',
+                vals: compareProducts.map((p, i) => breakdowns[i].legumeRisk),
+                winner: bestLow(compareProducts.map((p, i) => LEGUME_RANK[breakdowns[i].legumeRisk] ?? 0)),
+                fmt: (v) => LEGUME_LABEL[v] ?? v,
+              },
+              {
+                label: '단백 보강',
+                vals: compareProducts.map((p, i) => breakdowns[i].proteinInflated ? 1 : 0),
+                winner: bestLow(compareProducts.map((p, i) => breakdowns[i].proteinInflated ? 1 : 0)),
+                fmt: (v) => v ? '의심' : '없음',
+              },
+              {
                 label: '등급',
-                vals: compareProducts.map((p, i) => breakdowns[i] ? gradeFromScore(breakdowns[i].total) : '-'),
+                vals: compareProducts.map((p, i) => hasPetProfile && breakdowns[i] ? gradeFromScore(breakdowns[i].total) : '-'),
                 winner: hasPetProfile
                   ? breakdowns.reduce((bi, bd, i) => (bd?.total ?? 0) > (breakdowns[bi]?.total ?? 0) ? i : bi, 0)
                   : -1,
