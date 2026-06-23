@@ -341,6 +341,15 @@ export default function Detail() {
               )}
             </div>
           )}
+          {breakdown && breakdown.reasons.length > 0 && (
+            <div style={{ marginTop: '10px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {breakdown.reasons.slice(0, 5).map(r => (
+                <span key={r} style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ink-soft)', background: 'var(--surface)', border: '1px solid var(--hairline)', padding: '3px 9px', borderRadius: '999px' }}>
+                  {r}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
