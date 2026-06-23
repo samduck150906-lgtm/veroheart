@@ -1,14 +1,28 @@
 // @ts-nocheck
 import { useState, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Search as SearchIcon, Heart } from 'lucide-react';
+import { Search as SearchIcon, Heart, FlaskConical, Plus, Trash2, X } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { calculateCompatibilityScore, gradeFromScore } from '../utils/score';
 import ProductImage from '../components/ProductImage';
+import { TossFilterSection } from '../components/TossUI';
+import { INGREDIENT_DICTIONARY } from '../analysis/ingredientDictionary';
+import STANDARD_FEED_DATA from '../data/standard_feed_data.json';
 
 import { SEARCH_EMPTY, SEARCH_NO_RESULTS, INGREDIENT_DICT } from '../copy/ui';
 
 const CORE_COPY = { ocr: '반려동물의 체질과 알레르기, 건강 고민을 조합하여 딱 맞는 완벽한 한 끼를 찾아보세요.' };
+
+const SPECIES_FILTERS = ['전체', '강아지', '고양이'];
+const DETAIL_FILTERS = ['사료', '간식', '영양제', '구강', '피부', '눈·귀', '배변', '생활용품'];
+const SORT_OPTIONS = ['평점순', '가격순', '이름순'];
+
+/** 제외 성분 검색 후보 — 성분 사전을 모달 picker 형태로 변환 */
+const INGREDIENT_OPTIONS = INGREDIENT_DICTIONARY.map(d => ({
+  id: d.id,
+  name_ko: d.canonicalKo,
+  risk_level: d.defaultSeverity,
+}));
 
 const GRADE_COLORS = {
   A: { bg: '#E7F8F0', color: '#15B36B' },
@@ -38,7 +52,40 @@ export default function Search() {
   const [sort, setSort] = useState('평점순');
   const [inCompare, setInCompare] = useState<Record<string, boolean>>({});
 
+  // 제외 성분 필터 모달
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [ingredientSearch, setIngredientSearch] = useState('');
+  const [excludedIngredients, setExcludedIngredients] = useState<string[]>([]);
+
+  // 한국표준사료 성분사전 모달
+  const [isStandardFeedModalOpen, setIsStandardFeedModalOpen] = useState(false);
+  const [standardFeedSearch, setStandardFeedSearch] = useState('');
+
   const favoriteSet = new Set(favorites || []);
+
+  const standardFeedData = STANDARD_FEED_DATA as any[];
+
+  const filteredIngList = useMemo(() => {
+    const q = ingredientSearch.trim().toLowerCase();
+    if (!q) return [];
+    return INGREDIENT_OPTIONS.filter(i => i.name_ko.toLowerCase().includes(q)).slice(0, 30);
+  }, [ingredientSearch]);
+
+  const filteredStandardFeed = useMemo(() => {
+    const q = standardFeedSearch.trim().toLowerCase();
+    if (!q) return standardFeedData;
+    return standardFeedData.filter(i =>
+      (i.name_ko || '').toLowerCase().includes(q) || (i.name_en || '').toLowerCase().includes(q)
+    );
+  }, [standardFeedSearch, standardFeedData]);
+
+  const resetFilters = () => {
+    setSpeciesFilter('전체');
+    setDetailFilter(null);
+    setSort('평점순');
+    setExcludedIngredients([]);
+    setIngredientSearch('');
+  };
 
   const filtered = useMemo(() => {
     let list = products;
@@ -59,13 +106,20 @@ export default function Search() {
         (p.name || '').includes(detailFilter)
       );
     }
+    if (excludedIngredients.length) {
+      list = list.filter(p =>
+        !(p.ingredients || []).some(ing =>
+          excludedIngredients.some(ex => (ing.nameKo || '').includes(ex))
+        )
+      );
+    }
     return [...list].sort((a, b) => {
       if (sort === '평점순') return (b.averageRating || 0) - (a.averageRating || 0);
       if (sort === '가격순') return (a.price || 0) - (b.price || 0);
       if (sort === '이름순') return a.name.localeCompare(b.name);
       return 0;
     });
-  }, [products, speciesFilter, query, detailFilter, sort]);
+  }, [products, speciesFilter, query, detailFilter, sort, excludedIngredients]);
 
   return (
     <div style={{ paddingBottom: 90 }}>
@@ -114,6 +168,29 @@ export default function Search() {
             }}
           >{f}</button>
         ))}
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, padding: '0 16px 8px', overflowX: 'auto' }}>
+        <button onClick={() => setIsFilterOpen(true)}
+          style={{
+            flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '7px 14px', borderRadius: 20, cursor: 'pointer', fontSize: 12, fontWeight: 700,
+            border: `1.5px solid ${excludedIngredients.length ? '#F5C518' : '#E5E8EB'}`,
+            background: excludedIngredients.length ? '#FEF6E0' : '#fff',
+            color: excludedIngredients.length ? '#CA8A04' : '#6B7684',
+          }}
+        >
+          <FlaskConical size={14} /> 제외 성분{excludedIngredients.length ? ` ${excludedIngredients.length}` : ''}
+        </button>
+        <button onClick={() => setIsStandardFeedModalOpen(true)}
+          style={{
+            flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '7px 14px', borderRadius: 20, cursor: 'pointer', fontSize: 12, fontWeight: 700,
+            border: '1.5px solid #E5E8EB', background: '#fff', color: '#6B7684',
+          }}
+        >
+          📖 표준사료 성분사전
+        </button>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px 12px' }}>

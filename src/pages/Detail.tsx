@@ -28,7 +28,8 @@ import {
   deleteReview,
 } from '../lib/supabase';
 import { buildProductConclusion } from '../utils/productConclusion';
-import { getRecommendationBreakdown, gradeFromScore } from '../utils/score';
+import { getRecommendationBreakdown, gradeFromScore, calculateCompatibilityScore } from '../utils/score';
+import type { Product } from '../types';
 import { COUPANG_PARTNERS_DISCLOSURE } from '../constants/coupangPartners';
 import { REVIEW_QUICK_TAGS } from '../constants/reviewTags';
 import { runScoringPipeline } from '../analysis/scoringPipeline';
@@ -76,7 +77,7 @@ function GradeCircle({ grade }) {
 export default function Detail() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { products, selectedProduct, profile, isLoggedIn, favorites, toggleFavorite, addToComparison, trackRecentView } = useStore();
+  const { products, selectedProduct, profile, isLoggedIn, favorites, toggleFavorite, addToComparison, removeFromComparison, comparisonList, userId, trackRecentView } = useStore();
 
   const product = useMemo(() => {
     const found = id ? products.find(p => p.id === id) : null;
@@ -84,6 +85,29 @@ export default function Detail() {
   }, [id, products, selectedProduct]);
 
   const [inCompare, setInCompare] = useState(false);
+  const [selectedIngredient, setSelectedIngredient] = useState<any>(null);
+  const [reviews, setReviews] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!product?.id) return;
+    let active = true;
+    getReviews(product.id)
+      .then(data => { if (active) setReviews(data || []); })
+      .catch(() => { /* noop */ });
+    return () => { active = false; };
+  }, [product?.id]);
+
+  const handleScrollTop = () => {
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!userId) return;
+    try {
+      await deleteReview(reviewId, userId);
+      setReviews(prev => prev.filter(r => r.id !== reviewId));
+    } catch (e) { /* noop */ }
+  };
 
   const hasPetProfile = isLoggedIn && profile?.name && profile.name !== '우리 아이';
   const isFav = favorites?.includes(product?.id);
@@ -1141,6 +1165,33 @@ export default function Detail() {
           {product.price ? <span style={{ fontSize: '14px', fontWeight: 700, opacity: 0.8 }}>{product.price.toLocaleString()}원~</span> : null}
         </button>
       </div>
+
+      {/* 성분 상세 바텀시트 */}
+      {selectedIngredient && (
+        <BottomSheet
+          isOpen={!!selectedIngredient}
+          onClose={() => setSelectedIngredient(null)}
+          title={selectedIngredient.nameKo}
+        >
+          <div style={{ padding: '4px 4px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {selectedIngredient.nameEn && (
+                <span style={{ fontSize: 13, color: '#8B95A1' }}>{selectedIngredient.nameEn}</span>
+              )}
+              <span style={{
+                background: RISK_BG[selectedIngredient.riskLevel] || '#F0EDE8',
+                color: RISK_COLORS[selectedIngredient.riskLevel] || '#6B7684',
+                borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 800,
+              }}>
+                {selectedIngredient.isAllergy ? '알레르기 주의' : (RISK_LABEL[selectedIngredient.riskLevel] || '정보없음')}
+              </span>
+            </div>
+            <p style={{ fontSize: 14, color: '#374151', lineHeight: 1.6, margin: 0 }}>
+              {selectedIngredient.description || selectedIngredient.purpose || '이 성분에 대한 추가 설명이 아직 없어요.'}
+            </p>
+          </div>
+        </BottomSheet>
+      )}
     </div>
   );
 }

@@ -1,16 +1,52 @@
 // @ts-nocheck
 import { useState, useMemo } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { ArrowLeft, AlertCircle } from 'lucide-react';
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from 'recharts';
 import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
-import { getRecommendationBreakdown, gradeFromScore } from '../utils/score';
+import { getRecommendationBreakdown, gradeFromScore, calculateCompatibilityScore } from '../utils/score';
 import AnalysisSummaryHeader from '../components/AnalysisSummaryHeader';
 import NutritionDonutChart   from '../components/NutritionDonutChart';
 import ToxicAlertList        from '../components/ToxicAlertList';
 import IngredientList        from '../components/IngredientList';
 import FeedingGuideCalculator from '../components/FeedingGuideCalculator';
 import { CAUTION_INGREDIENT, ALLERGY_CONFLICT, MEDICAL_DISCLAIMER, FEEDING_GUIDE } from '../copy/ui';
+
+const TABS = ['종합', '영양소', '전성분'];
+
+const RISK_COLORS = { safe: '#15B36B', caution: '#E8A800', danger: '#F04452' };
+const RISK_BG = { safe: '#E7F8F0', caution: '#FEF6E0', danger: '#FFF0ED' };
+const RISK_LABEL = { safe: '안전', caution: '주의', danger: '위험' };
+
+function ScoreGauge({ score, grade }) {
+  const colors = { A: '#15B36B', B: '#E8A800', C: '#F04452', D: '#F04452' };
+  const circumference = 2 * Math.PI * 48;
+  const offset = circumference - (score / 100) * circumference;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0' }}>
+      <div style={{ position: 'relative', width: 120, height: 120 }}>
+        <svg width="120" height="120" style={{ transform: 'rotate(-90deg)' }}>
+          <circle cx="60" cy="60" r="48" fill="none" stroke="#F0EDE8" strokeWidth="10" />
+          <circle cx="60" cy="60" r="48" fill="none" stroke={colors[grade] || '#15B36B'} strokeWidth="10"
+            strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" />
+        </svg>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontSize: 28, fontWeight: 900, color: '#191F28' }}>{score}</span>
+          <span style={{ fontSize: 12, color: '#8B95A1', fontWeight: 600 }}>/ 100</span>
+        </div>
+      </div>
+      <div style={{
+        marginTop: 10, width: 36, height: 36, borderRadius: '50%',
+        background: colors[grade] || '#15B36B',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: '#fff', fontSize: 16, fontWeight: 900,
+      }}>{grade}</div>
+      <p style={{ fontSize: 13, color: '#8B95A1', marginTop: 6 }}>안전도 점수</p>
+    </div>
+  );
+}
 
 export default function AnalysisResult() {
   const navigate = useNavigate();
@@ -33,7 +69,29 @@ export default function AnalysisResult() {
     return 75;
   }, [product, profile, hasPetProfile]);
 
-  const grade = gradeFromScore(compatScore);
+  const breakdown = useMemo(
+    () => (product && hasPetProfile ? getRecommendationBreakdown(product, profile) : null),
+    [product, profile, hasPetProfile],
+  );
+
+  const score = breakdown?.total ?? compatScore;
+  const grade = gradeFromScore(score);
+
+  const lifeStageString = product?.targetLifeStage?.length
+    ? product.targetLifeStage.join(', ')
+    : '전 연령';
+
+  const displayIngredients = useMemo(
+    () => (product?.ingredients || []).map(i => ({
+      name: i.nameKo,
+      safety: i.riskLevel,
+      role: i.purpose,
+      description: i.nameEn,
+    })),
+    [product],
+  );
+
+  const kcalPer100g = product?.guaranteedAnalysis?.kcalPer100g ?? 0;
 
   const safeIngredients = (product?.ingredients || []).filter(i => i.riskLevel === 'safe');
   const cautionIngredients = (product?.ingredients || []).filter(i => i.riskLevel === 'caution');
