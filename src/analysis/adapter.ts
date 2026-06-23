@@ -43,7 +43,7 @@ export function toAllergenTags(allergies: string[]): string[] {
   return [...tags];
 }
 
-function inferLifeStageFromAge(species: 'dog' | 'cat', ageYears: number): import('./types').LifeStage {
+function inferLifeStageFromAge(species: 'dog' | 'cat', ageYears: number): 'puppy_kitten' | 'adult' | 'senior' {
   if (species === 'cat') {
     if (ageYears < 1) return 'puppy_kitten';
     if (ageYears < 11) return 'adult';
