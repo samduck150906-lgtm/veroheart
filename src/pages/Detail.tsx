@@ -30,7 +30,6 @@ const getVerificationMeta = (s: string) => {
   return { bg: 'var(--chip-bg)', color: 'var(--ink-soft)', border: 'var(--hairline)', label: '검수 대기' };
 };
 
-import { Helmet } from 'react-helmet-async';
 import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
 import { toDryMatter, calculateCalories } from '../analysis/nutrition';
@@ -61,6 +60,13 @@ export default function Detail() {
 
   const cautionList = (product?.ingredients || []).filter(i => i.riskLevel === 'caution' || i.riskLevel === 'danger');
 
+  // 제품 칼로리 밀도 계산 (FeedingGuideCalculator 전달용)
+  // ⚠️ 훅은 조기 반환(early return) 이전에 호출해야 한다(Rules of Hooks).
+  const productKcalPer100g = useMemo(() => {
+    if (!product?.guaranteedAnalysis) return 0;
+    return calculateCalories(product.guaranteedAnalysis).kcalPer100g;
+  }, [product?.guaranteedAnalysis]);
+
   if (!product) {
     return (
       <div style={{ padding: '60px 24px', textAlign: 'center', color: '#B0B8C1' }}>
@@ -72,14 +78,6 @@ export default function Detail() {
       </div>
     );
   }
-
-  if (!product) return (
-    <div className="text-center p-12">
-      <Helmet><title>제품을 찾을 수 없어요 | 베로로</title></Helmet>
-      <p className="text-gray-500">제품을 찾을 수 없습니다.</p>
-      <button onClick={() => navigate('/')} className="mt-4 text-primary font-bold">홈으로 이동</button>
-    </div>
-  );
 
   const report = product ? generateAnalysisReport(product, profile) : null;
   const breakdown = hasPetProfile && product ? getRecommendationBreakdown(product, profile) : null;
@@ -94,17 +92,11 @@ export default function Detail() {
       .filter(p => p.id !== product?.id && p.category === product?.category)
       .map(p => ({ p, score: generateAnalysisReport(p, profile).score }))
       .sort((a, b) => b.score - a.score);
-    
+
     if (scoredProducts.length > 0 && scoredProducts[0].score >= 80) {
       alternativeProduct = scoredProducts[0];
     }
   }
-
-  // 제품 칼로리 밀도 계산 (FeedingGuideCalculator 전달용)
-  const productKcalPer100g = useMemo(() => {
-    if (!product?.guaranteedAnalysis) return 0;
-    return calculateCalories(product.guaranteedAnalysis).kcalPer100g;
-  }, [product?.guaranteedAnalysis]);
 
   // selectedIngredient state moved to top with other hooks
   
