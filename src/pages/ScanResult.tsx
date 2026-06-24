@@ -6,6 +6,8 @@ import { useStore } from '../store/useStore';
 import Analyzer from '../components/Analyzer';
 import { SIGNUP_PROMPT } from '../copy/ui';
 
+const LOADING_MESSAGES = ['성분표 인식 중...', '데이터베이스 조회 중...', '분석 완료!'];
+
 export default function ScanResult() {
   const navigate = useNavigate();
   const { isLoggedIn, profile } = useStore();
@@ -16,13 +18,12 @@ export default function ScanResult() {
     return () => clearTimeout(t);
   }, []);
 
-  const messages = ['성분표 인식 중...', '데이터베이스 조회 중...', '분석 완료!'];
   const [msgIdx, setMsgIdx] = useState(0);
 
   useEffect(() => {
     if (!loading) return;
     const t = setInterval(() => {
-      setMsgIdx(prev => Math.min(prev + 1, messages.length - 1));
+      setMsgIdx(prev => Math.min(prev + 1, LOADING_MESSAGES.length - 1));
     }, 600);
     return () => clearInterval(t);
   }, [loading]);
@@ -36,7 +37,7 @@ export default function ScanResult() {
       <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#F7F4EE' }}>
         <div style={{ fontSize: 56, marginBottom: 20 }}>🔍</div>
         <div style={{ width: 48, height: 48, border: '4px solid rgba(245,197,24,0.3)', borderTopColor: '#F5C518', borderRadius: '50%', animation: 'spin 0.85s linear infinite', marginBottom: 20 }} />
-        <p style={{ fontSize: 16, fontWeight: 700, color: '#191F28' }}>{messages[msgIdx]}</p>
+        <p style={{ fontSize: 16, fontWeight: 700, color: '#191F28' }}>{LOADING_MESSAGES[msgIdx]}</p>
         <p style={{ fontSize: 13, color: '#8B95A1', marginTop: 6 }}>AI가 성분을 분석하고 있어요</p>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
