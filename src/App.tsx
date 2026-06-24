@@ -41,6 +41,7 @@ import CommunityPost from './pages/CommunityPost';
 import KnowledgeIngredients from './pages/KnowledgeIngredients';
 import KnowledgeNutrients from './pages/KnowledgeNutrients';
 import AuthCallback from './pages/AuthCallback';
+import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
   const { initApp, isInitializing, isLoggedIn } = useStore();
@@ -114,6 +115,7 @@ function App() {
     <ThemeProvider>
       <BrowserRouter>
         <Notification />
+        <ErrorBoundary>
           <Routes>
             <Route path="/" element={<Layout />}>
               <Route index element={<Home />} />
@@ -158,7 +160,8 @@ function App() {
             <Route path="sponsors" element={<AdminSponsors />} />
             <Route path="settings" element={<AdminSettings />} />
           </Route>
-        </Routes>
+          </Routes>
+        </ErrorBoundary>
       </BrowserRouter>
     </ThemeProvider>
   );
