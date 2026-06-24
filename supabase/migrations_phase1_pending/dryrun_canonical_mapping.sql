@@ -69,17 +69,38 @@ rel AS (  -- relation_type + 알러지 신뢰도
       ELSE 'unknown_derivative'
     END AS relation_type
   FROM fm f
+),
+cat AS (  -- category 축: source_group=unknown 인 비(非)동물 성분을 분류 (알러지와 무관한 정상 성분)
+  SELECT r.*,
+    CASE
+      WHEN source_group <> 'unknown' THEN
+        CASE WHEN source_group IN ('chicken','duck','turkey','beef','pork','lamb','salmon','tuna','fish','egg')
+             THEN 'animal_origin' ELSE 'plant_staple' END
+      WHEN name_ko ~ '비타민|미네랄|프리믹스|타우린|칼슘|아연|철분|마그네슘|엽산|판토텐|콜린|셀레늄|요오드|망간|인산|염화|황산|메티오닌|라이신|아미노산|카르니틴|글루코사민|콘드로이|MSM|루테인' THEN 'vitamin_mineral'
+      WHEN name_ko ~ '토코페롤|로즈마리|구연산|소르빈산|보존|산화방지|녹차추출물|BHA|BHT|에톡시퀸|아질산' THEN 'preservative'
+      WHEN name_ko ~ '향미|향료|착향|효모|유카|글리세린|레시틴|구아검|잔탄|증점|색소|착색|정제수|증진제|카라기난|조미료|젤라틴|프로필렌' THEN 'additive'
+      WHEN name_ko ~ '유산균|프로바이오|프리바이오|락토|올리고당|이눌린|치커리' THEN 'probiotic'
+      WHEN name_ko ~ '오일|기름|지방|아마씨|아마인|해바라기|카놀라|유채|코코넛|올리브|식물성유|식물성 유지|어유|MCT|유$' THEN 'oil_fat'
+      WHEN name_ko ~ '고구마|감자|전분|타피오카|보리|귀리|곡물|글루텐|식이섬유|펄프|비트|호밀|수수|셀룰로오스|말토덱스트린|치아씨' THEN 'carbohydrate'
+      WHEN name_ko ~ '당근|호박|브로콜리|시금치|토마토|셀러리|케일|파슬리|채소|야채|양배추|단호박|아스파라거스|해조류|강황' THEN 'vegetable'
+      WHEN name_ko ~ '사과|블루베리|크랜베리|바나나|배|딸기|과일|구기자|아로니아|석류|망고' THEN 'fruit'
+      WHEN name_ko ~ '새우|크릴|게살|조개|홍합|굴|갑각' THEN 'animal_origin'  -- 갑각류: 알러지 보유 → 검수 필요
+      ELSE 'other'
+    END AS category
+  FROM rel r
 )
 SELECT
   id                         AS legacy_ingredient_id,
   name_ko                    AS legacy_name,
   source_group,
+  category,
   ingredient_form,
   relation_type,
   -- 제안 canonical 명 (source_group+form). unknown 이면 자기 이름 유지(=병합 안 함)
   CASE
-    WHEN source_group='unknown' THEN name_ko
-    ELSE source_group || ':' || ingredient_form
+    WHEN source_group<>'unknown' THEN source_group || ':' || ingredient_form
+    WHEN category<>'other'       THEN 'cat:' || category || ':' || lower(regexp_replace(name_ko,'[[:space:]()]','','g'))
+    ELSE name_ko  -- 미해결: 병합 안 함(자기 자신 유지)
   END                        AS proposed_canonical_key,
   -- 제안 allergen group
   CASE
@@ -100,8 +121,9 @@ SELECT
   'auto_suggested'           AS inference_status,
   products_count,
   -- 수동 검수 필요 플래그 (모호/복합/장기/미상)
-  (source_group='unknown'
-    OR ingredient_form IN ('liver','heart','gizzard','cartilage','bone','feet','broth')
-    OR name_ko ~ '\(|,|등|및|기타|또는|혼합') AS needs_manual_review
-FROM rel
-ORDER BY source_group, ingredient_form, legacy_name;
+  ((source_group='unknown' AND category='other')         -- 완전 미해결
+    OR ingredient_form IN ('liver','heart','gizzard','cartilage','bone','feet','broth')  -- 장기/육수
+    OR category='animal_origin' AND source_group='unknown'  -- 갑각류 등 알러지 보유 추정
+    OR name_ko ~ '플레이버|향료|추출물|부산물|기술|효소|\(|,|등|및|기타|또는|혼합') AS needs_manual_review
+FROM cat
+ORDER BY source_group, category, ingredient_form, legacy_name;
