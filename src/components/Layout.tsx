@@ -2,6 +2,7 @@ import { Outlet, useLocation, Link, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Search as SearchIcon } from 'lucide-react';
 import BottomNav from './BottomNav';
 import Footer from './Footer';
+import { useStore } from '../store/useStore';
 
 const PAGE_TITLES: Record<string, string> = {
   '/search': '검색',
@@ -33,28 +34,34 @@ const BrandPaw = () => (
   </svg>
 );
 
-function HeaderActions({ onSearch }: { onSearch: () => void }) {
+function HeaderActions({ onSearch, showSearch = true, favoriteCount = 0 }: { onSearch: () => void; showSearch?: boolean; favoriteCount?: number }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
       <Link
         to="/profile?tab=favorites"
         aria-label="찜한 상품"
         style={{ position: 'relative', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}
       >
         <span style={{ fontSize: '20px', lineHeight: 1 }}>🐾</span>
-        <span style={{
-          position: 'absolute', top: '4px', right: '2px', minWidth: '16px', height: '16px', padding: '0 4px',
-          borderRadius: '8px', background: 'var(--ink)', color: '#fff', fontSize: '9.5px', fontWeight: 800,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
-        }}>2</span>
+        {/* CHANGED: 하드코딩 "2" → 실제 찜 개수, 0개면 숨김 */}
+        {favoriteCount > 0 && (
+          <span style={{
+            position: 'absolute', top: '4px', right: '2px', minWidth: '16px', height: '16px', padding: '0 4px',
+            borderRadius: '8px', background: 'var(--ink)', color: '#fff', fontSize: '9.5px', fontWeight: 800,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
+          }}>{favoriteCount > 99 ? '99+' : favoriteCount}</span>
+        )}
       </Link>
-      <button
-        onClick={onSearch}
-        aria-label="검색"
-        style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink)' }}
-      >
-        <SearchIcon size={22} strokeWidth={2.2} />
-      </button>
+      {/* CHANGED: 홈에는 본문에 큰 검색바가 있어 헤더 돋보기를 숨겨 중복 제거 (아이콘 정돈). */}
+      {showSearch && (
+        <button
+          onClick={onSearch}
+          aria-label="검색"
+          style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink)' }}
+        >
+          <SearchIcon size={22} strokeWidth={2.2} />
+        </button>
+      )}
     </div>
   );
 }
@@ -63,6 +70,7 @@ export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const path = location.pathname;
+  const favoriteCount = useStore((s) => s.favorites?.length ?? 0);
 
   const isHome = path === '/';
   // Pages that render their own header / are full-screen
@@ -106,7 +114,7 @@ export default function Layout() {
                 <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.02em' }}>{title}</span>
               </div>
             )}
-            <HeaderActions onSearch={() => navigate('/search')} />
+            <HeaderActions onSearch={() => navigate('/search')} showSearch={!isHome} favoriteCount={favoriteCount} />
           </div>
 
           {/* Home sub-tabs: 홈 / 랭킹 */}
