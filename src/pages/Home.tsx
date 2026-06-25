@@ -7,15 +7,7 @@ import { useStore } from '../store/useStore';
 import { useNavigate } from 'react-router-dom';
 import { Search, ChevronRight, Heart } from 'lucide-react';
 import ProductImage from '../components/ProductImage';
-import { rankProductsForProfile } from '../utils/score';
-import { getDisplayGrade } from '../utils/productGrade';
 import { displayBrand } from '../utils/brandLabel';
-
-// 등급→색상 매핑 (상세페이지와 동일 점수 팔레트). 알 수 없는 등급은 중립 회색.
-const getGradeColor = (grade) => {
-  const map = { S: '#2ECC71', A: '#A8E063', B: '#F5C842', C: '#FF9F43', D: '#EE5A24' };
-  return map[grade] ?? '#ABABAB';
-};
 
 const CATEGORY_CHIPS = [
   { icon: '🥣', label: '사료', category: '사료' },
@@ -61,11 +53,8 @@ export default function Home() {
   // 맞춤 추천 상품 (기존 랭킹 로직 유지)
   const topRanked = useMemo(() => {
     if (!products.length) return [];
-    if (hasPetProfile) {
-      return rankProductsForProfile(products, profile, { limit: 6 }).map((r) => r.product);
-    }
     return [...products].sort((a, b) => b.averageRating - a.averageRating).slice(0, 6);
-  }, [products, profile, hasPetProfile]);
+  }, [products]);
 
   // 인기 TOP 3 — 평점순 상위 3개
   const rankingTop3 = useMemo(
@@ -79,7 +68,6 @@ export default function Home() {
     [recentViews],
   );
 
-  const gradeInfoOf = (product) => getDisplayGrade(product, profile, hasPetProfile);
   const favoriteSet = new Set(favorites || []);
   const loading = isLoadingProducts && products.length === 0;
   const MEDALS = ['🥇', '🥈', '🥉'];
@@ -185,7 +173,6 @@ export default function Home() {
         ) : topRanked.length > 0 ? (
           <div className="grid grid-cols-2 gap-3">
             {topRanked.slice(0, 6).map((product) => {
-              const { grade, label } = gradeInfoOf(product);
               const isFav = favoriteSet.has(product.id);
               return (
                 <div
@@ -195,12 +182,6 @@ export default function Home() {
                 >
                   <div className="relative bg-[#F8F8F8] aspect-square">
                     <ProductImage src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
-                    <span
-                      className="absolute top-2 left-2 text-[10px] font-bold text-white px-2 py-0.5 rounded-full shadow-sm"
-                      style={{ background: getGradeColor(grade) }}
-                    >
-                      {label}
-                    </span>
                     <button
                       onClick={(e) => { e.stopPropagation(); toggleFavorite?.(product.id); }}
                       aria-label="찜하기"
@@ -261,7 +242,6 @@ export default function Home() {
                   </div>
                 ))
               : rankingTop3.map((product, index) => {
-                  const { grade } = gradeInfoOf(product);
                   return (
                     <div
                       key={product.id}
@@ -278,12 +258,6 @@ export default function Home() {
                           {product.price ? `${product.price.toLocaleString()}원` : '가격 미정'}
                         </p>
                       </div>
-                      <span
-                        className="text-[11px] font-bold text-white px-2 py-1 rounded-full flex-shrink-0"
-                        style={{ background: getGradeColor(grade) }}
-                      >
-                        {grade === 'pending' ? '분석 중' : `${grade}등급`}
-                      </span>
                     </div>
                   );
                 })}
@@ -297,7 +271,6 @@ export default function Home() {
           <p className="text-[17px] font-extrabold text-[#1A1A1A] mb-3">최근 본 상품</p>
           <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
             {recentList.slice(0, 8).map((product) => {
-              const { grade } = gradeInfoOf(product);
               return (
                 <div
                   key={product.id}
@@ -306,12 +279,6 @@ export default function Home() {
                 >
                   <div className="relative bg-[#F8F8F8] h-[100px]">
                     <ProductImage src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
-                    <span
-                      className="absolute top-1.5 left-1.5 text-[9px] font-bold text-white px-1.5 py-0.5 rounded-full"
-                      style={{ background: getGradeColor(grade) }}
-                    >
-                      {grade === 'pending' ? '분석 중' : grade}
-                    </span>
                   </div>
                   <div className="p-2">
                     <p className="text-[11px] text-[#1A1A1A] font-medium leading-snug line-clamp-2 mb-1 min-h-[28px]">

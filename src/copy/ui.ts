@@ -239,23 +239,6 @@ export const ALLERGY_CONFLICT = {
   },
 } as const;
 
-// ─── 12. 궁합 점수 설명 ──────────────────────────────────────────────────────
-
-export const COMPATIBILITY_SCORE = {
-  sectionTitle: '궁합 점수란?',
-  description:
-    '베로로는 등록된 아이의 알러지, 나이, 체중 정보를 바탕으로 이 사료가 얼마나 잘 맞을지 참고 점수를 알려드려요.',
-  label: (petName: string, score: number) => {
-    if (score >= 90) return `${petName}에게 잘 맞을 것 같아요`;
-    if (score >= 70) return '대체로 괜찮아요, 몇 가지만 확인해보세요';
-    if (score >= 50) return '일부 성분을 확인해보면 좋겠어요';
-    return '다른 사료를 함께 살펴보는 걸 권해요';
-  },
-  hint1: '같은 점수라도 아이마다 반응이 다를 수 있어요.',
-  hint2: '등록된 정보가 많을수록 점수가 더 정확해져요.',
-  disclaimer: '궁합 점수는 성분 분석을 바탕으로 한 참고 수치예요. 진단이나 처방을 대신하지 않아요.',
-} as const;
-
 // ─── 13. 급여량 안내 ─────────────────────────────────────────────────────────
 
 export const FEEDING_GUIDE = {

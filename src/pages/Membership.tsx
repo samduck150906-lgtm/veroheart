@@ -17,7 +17,6 @@ const TIERS = [
     features: [
       { text: '반려동물 프로필 1개', included: true },
       { text: '기본 성분 분석 (월 3회)', included: true },
-      { text: '궁합 점수 기본 제공', included: true },
       { text: '상품 랭킹 · 검색', included: true },
       { text: '무제한 성분 분석', included: false },
       { text: '상세 영양 리포트', included: false },
@@ -40,7 +39,6 @@ const TIERS = [
     features: [
       { text: '반려동물 프로필 3개', included: true },
       { text: '무제한 성분 분석', included: true },
-      { text: '궁합 점수 기본 제공', included: true },
       { text: '상품 랭킹 · 검색', included: true },
       { text: '상세 영양 리포트', included: true },
       { text: '유해 성분 즉시 알림', included: true },
@@ -63,7 +61,6 @@ const TIERS = [
     features: [
       { text: '반려동물 프로필 무제한', included: true },
       { text: '무제한 성분 분석', included: true },
-      { text: '궁합 점수 기본 제공', included: true },
       { text: '상품 랭킹 · 검색', included: true },
       { text: '상세 영양 리포트', included: true },
       { text: '유해 성분 즉시 알림', included: true },

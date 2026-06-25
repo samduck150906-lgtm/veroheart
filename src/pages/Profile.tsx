@@ -8,10 +8,7 @@ import { TossCard, TossInput, TossButton, TossChip, TossSectionTitle } from '../
 import { Button } from '../components/Button';
 import ProductCard from '../components/ProductCard';
 import ProductImage from '../components/ProductImage';
-import { getRecommendationBreakdown, gradeFromScore, calculateCompatibilityScore } from '../utils/score';
-import { getAllergyInfo } from '../utils/productGrade';
 import { displayBrand } from '../utils/brandLabel';
-import GradeBadge from '../components/GradeBadge';
 import { notify } from '../store/useNotification';
 import { FAVORITES_EMPTY } from '../copy/ui';
 
@@ -223,8 +220,6 @@ export default function Profile() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {favoriteProducts.map(product => {
-                const score = hasPetProfile ? calculateCompatibilityScore(product, profile) : null;
-                const allergy = getAllergyInfo(product, profile, hasPetProfile);
                 const brandLabel = displayBrand(product.brand, product.name);
                 return (
                   <div key={product.id} onClick={() => navigate(`/product/${product.id}`)}
@@ -233,19 +228,6 @@ export default function Profile() {
                       <ProductImage src={product.imageUrl} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', gap: 5, marginBottom: 4, flexWrap: 'wrap', alignItems: 'center' }}>
-                        <GradeBadge product={product} profile={profile} withProfile={hasPetProfile} />
-                        {score != null && (
-                          <span style={{ background: '#F0EDE8', color: '#4E5968', fontWeight: 700, fontSize: 11, borderRadius: 6, padding: '2px 6px' }}>궁합 {score}%</span>
-                        )}
-                        {allergy && (
-                          <span style={{
-                            fontSize: 11, fontWeight: 700, borderRadius: 6, padding: '2px 6px',
-                            background: allergy.safe ? 'var(--safe-tint)' : 'var(--danger-tint)',
-                            color: allergy.safe ? 'var(--safe)' : 'var(--danger)',
-                          }}>{allergy.safe ? '✓ 알러지 적합' : `⚠ ${allergy.hits.join('·')}`}</span>
-                        )}
-                      </div>
                       {brandLabel && <div style={{ fontSize: 11, color: '#8B95A1' }}>{brandLabel}</div>}
                       <div style={{ fontSize: 13, fontWeight: 700, color: '#191F28', lineHeight: 1.3 }}>
                         {product.name.length > 25 ? product.name.slice(0, 25) + '…' : product.name}
@@ -265,18 +247,11 @@ export default function Profile() {
           <div style={{ padding: '4px 20px 20px' }}>
             {favoriteProducts.length > 0 ? (
               (() => {
-                const GRADE_COLOR = { A: '#15B36B', B: '#6BB04E', C: '#E8A800', D: '#F04452' };
-                const GRADE_BG    = { A: '#ECFDF5', B: '#F0FDE8', C: '#FFFBEB', D: '#FFF1F2' };
-
-                const scored = favoriteProducts.map(p => ({
-                  p,
-                  bd: hasPetProfile ? getRecommendationBreakdown(p, profile) : null,
-                })).sort((a, b) => (b.bd?.total ?? 0) - (a.bd?.total ?? 0));
+                const scored = [...favoriteProducts].sort((a, b) => (b.averageRating ?? 0) - (a.averageRating ?? 0));
 
                 return (
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    {scored.map(({ p, bd }) => {
-                      const grade = bd ? gradeFromScore(bd.total) : null;
+                    {scored.map((p) => {
                       return (
                         <button
                           key={p.id}
@@ -291,13 +266,6 @@ export default function Profile() {
                           {/* thumbnail */}
                           <div style={{ width: 68, height: 68, borderRadius: 14, overflow: 'hidden', flexShrink: 0, background: 'var(--fill)', position: 'relative' }}>
                             <ProductImage src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            {grade && (
-                              <span style={{
-                                position: 'absolute', bottom: 4, left: 4,
-                                padding: '1px 6px', borderRadius: 5, fontSize: 10, fontWeight: 800,
-                                background: GRADE_BG[grade], color: GRADE_COLOR[grade],
-                              }}>{grade}</span>
-                            )}
                           </div>
 
                           {/* info */}
@@ -306,24 +274,14 @@ export default function Profile() {
                             <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.35, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                               {p.name}
                             </div>
-                            {bd?.allergyHits?.length > 0 && (
-                              <span style={{ display: 'inline-block', marginTop: 5, fontSize: 11, fontWeight: 700, color: '#BE123C', background: '#FFF1F2', padding: '2px 7px', borderRadius: 5 }}>
-                                ⚠ {bd.allergyHits.join(', ')} 포함
-                              </span>
-                            )}
                           </div>
 
-                          {/* score */}
-                          {bd && (
-                            <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                              <div style={{ fontSize: 20, fontWeight: 900, color: grade ? GRADE_COLOR[grade] : 'var(--ink)', letterSpacing: '-0.02em' }}>
-                                {bd.total}<span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-faint)' }}>점</span>
-                              </div>
-                              <div style={{ fontSize: 11.5, color: 'var(--ink-faint)', fontWeight: 600, marginTop: 2 }}>
-                                {p.price?.toLocaleString()}원
-                              </div>
+                          {/* price */}
+                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                            <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink)' }}>
+                              {p.price?.toLocaleString()}원
                             </div>
-                          )}
+                          </div>
                         </button>
                       );
                     })}

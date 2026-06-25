@@ -3,10 +3,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Search as SearchIcon, Heart, FlaskConical, Plus, Trash2, X } from 'lucide-react';
 import { useStore } from '../store/useStore';
-import { calculateCompatibilityScore } from '../utils/score';
-import { getDisplayGrade, getAllergyInfo, hasRealPetProfile } from '../utils/productGrade';
 import { displayBrand } from '../utils/brandLabel';
-import GradeBadge from '../components/GradeBadge';
 import ProductImage from '../components/ProductImage';
 import { TossFilterSection } from '../components/TossUI';
 import { INGREDIENT_DICTIONARY } from '../analysis/ingredientDictionary';
@@ -18,16 +15,7 @@ const CORE_COPY = { ocr: '반려동물의 체질과 알레르기, 건강 고민�
 
 const SPECIES_FILTERS = ['전체', '강아지', '고양이'];
 const DETAIL_FILTERS = ['사료', '간식', '영양제', '구강', '피부', '눈·귀', '배변', '생활용품'];
-const GRADE_FILTERS = ['전체', 'A', 'B', 'C 이하', '분석 중'];
 const SORT_OPTIONS = ['평점순', '가격순', '이름순'];
-
-/** 등급 필터 칩 → getDisplayGrade 결과 매칭 */
-function matchesGradeFilter(filter: string, grade: string): boolean {
-  if (filter === '전체') return true;
-  if (filter === '분석 중') return grade === 'pending';
-  if (filter === 'C 이하') return grade === 'C' || grade === 'D';
-  return grade === filter;
-}
 
 /** 제외 성분 검색 후보 — 성분 사전을 모달 picker 형태로 변환 */
 const INGREDIENT_OPTIONS = INGREDIENT_DICTIONARY.map(d => ({
@@ -40,16 +28,13 @@ const INGREDIENT_OPTIONS = INGREDIENT_DICTIONARY.map(d => ({
 export default function Search() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { products, profile, isLoggedIn, favorites, toggleFavorite, addToComparison } = useStore();
+  const { products, favorites, toggleFavorite, addToComparison } = useStore();
 
   const [query, setQuery] = useState(searchParams.get('query') || '');
   const [speciesFilter, setSpeciesFilter] = useState('전체');
   const [detailFilter, setDetailFilter] = useState<string | null>(null);
-  const [gradeFilter, setGradeFilter] = useState('전체');
   const [sort, setSort] = useState('평점순');
   const [inCompare, setInCompare] = useState<Record<string, boolean>>({});
-
-  const withProfile = hasRealPetProfile(profile, isLoggedIn);
 
   // 제외 성분 필터 모달
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -81,7 +66,6 @@ export default function Search() {
   const resetFilters = () => {
     setSpeciesFilter('전체');
     setDetailFilter(null);
-    setGradeFilter('전체');
     setSort('평점순');
     setExcludedIngredients([]);
     setIngredientSearch('');
@@ -113,18 +97,13 @@ export default function Search() {
         )
       );
     }
-    if (gradeFilter !== '전체') {
-      list = list.filter(p =>
-        matchesGradeFilter(gradeFilter, getDisplayGrade(p, profile, withProfile).grade)
-      );
-    }
     return [...list].sort((a, b) => {
       if (sort === '평점순') return (b.averageRating || 0) - (a.averageRating || 0);
       if (sort === '가격순') return (a.price || 0) - (b.price || 0);
       if (sort === '이름순') return a.name.localeCompare(b.name);
       return 0;
     });
-  }, [products, speciesFilter, query, detailFilter, gradeFilter, sort, excludedIngredients, profile, withProfile]);
+  }, [products, speciesFilter, query, detailFilter, sort, excludedIngredients]);
 
   return (
     <div style={{ paddingBottom: 90 }}>
@@ -172,22 +151,6 @@ export default function Search() {
               color: detailFilter === f ? '#CA8A04' : '#6B7684',
             }}
           >{f}</button>
-        ))}
-      </div>
-
-      {/* 안전등급 필터 */}
-      <div style={{ display: 'flex', gap: 8, padding: '0 16px 8px', overflowX: 'auto', alignItems: 'center' }}>
-        <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 700, color: '#8B95A1' }}>안전등급</span>
-        {GRADE_FILTERS.map(f => (
-          <button key={f} onClick={() => setGradeFilter(f)}
-            style={{
-              flexShrink: 0, padding: '6px 13px', borderRadius: 20,
-              border: `1.5px solid ${gradeFilter === f ? '#15B36B' : '#E5E8EB'}`,
-              cursor: 'pointer', fontSize: 12, fontWeight: 700,
-              background: gradeFilter === f ? '#E7F8F0' : '#fff',
-              color: gradeFilter === f ? '#15B36B' : '#6B7684',
-            }}
-          >{f === '전체' ? '전체' : f === '분석 중' ? '분석 중' : `${f}`}</button>
         ))}
       </div>
 
@@ -253,8 +216,6 @@ export default function Search() {
       ) : (
         <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
           {filtered.map(product => {
-            const score = withProfile ? calculateCompatibilityScore(product, profile) : null;
-            const allergy = getAllergyInfo(product, profile, withProfile);
             const isFav = favoriteSet.has(product.id);
             const brandLabel = displayBrand(product.brand, product.name);
             const tags = (product.healthConcerns || []).slice(0, 2);
@@ -274,23 +235,6 @@ export default function Search() {
                   <ProductImage src={product.imageUrl} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', gap: 6, marginBottom: 5, flexWrap: 'wrap', alignItems: 'center' }}>
-                    <GradeBadge product={product} profile={profile} withProfile={withProfile} />
-                    {score != null && (
-                      <span style={{ background: '#F0EDE8', color: '#4E5968', fontWeight: 700, fontSize: 11, borderRadius: 6, padding: '2px 6px' }}>
-                        궁합 {score}%
-                      </span>
-                    )}
-                    {allergy && (
-                      <span style={{
-                        fontSize: 11, fontWeight: 700, borderRadius: 6, padding: '2px 6px',
-                        background: allergy.safe ? 'var(--safe-tint)' : 'var(--danger-tint)',
-                        color: allergy.safe ? 'var(--safe)' : 'var(--danger)',
-                      }}>
-                        {allergy.safe ? '✓ 알러지 적합' : `⚠ ${allergy.hits.join('·')}`}
-                      </span>
-                    )}
-                  </div>
                   {brandLabel && <div style={{ fontSize: 12, color: '#8B95A1', marginBottom: 2 }}>{brandLabel}</div>}
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#191F28', lineHeight: 1.4, marginBottom: 4 }}>
                     {product.name.length > 30 ? product.name.slice(0, 30) + '…' : product.name}

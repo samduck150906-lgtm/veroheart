@@ -3,24 +3,13 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, ExternalLink } from 'lucide-react';
 import { useStore } from '../store/useStore';
-import { gradeFromScore, getRecommendationBreakdown } from '../utils/score';
 import ProductImage from '../components/ProductImage';
 import { openCoupangForProduct } from '../utils/externalPurchase';
-import { COMPARE_EMPTY, PRE_PURCHASE } from '../copy/ui';
-
-const GRADE_COLORS = {
-  A: { bg: '#E7F8F0', color: '#15B36B' },
-  B: { bg: '#FEF6E0', color: '#E8A800' },
-  C: { bg: '#FFF0ED', color: '#F04452' },
-  D: { bg: '#FFF0ED', color: '#F04452' },
-  F: { bg: '#F2F4F6', color: '#8B95A1' },
-};
+import { PRE_PURCHASE } from '../copy/ui';
 
 export default function Comparison() {
   const navigate = useNavigate();
-  const { products, comparisonList, removeFromComparison, profile, isLoggedIn } = useStore();
-
-  const hasPetProfile = isLoggedIn && profile?.name && profile.name !== '우리 아이';
+  const { products, comparisonList, removeFromComparison } = useStore();
 
   const compareProducts = useMemo(() => {
     return comparisonList
@@ -28,29 +17,6 @@ export default function Comparison() {
       .filter(Boolean)
       .slice(0, 4);
   }, [comparisonList, products]);
-
-  const breakdowns = useMemo(() => {
-    if (!hasPetProfile) return compareProducts.map(() => null);
-    return compareProducts.map(p => getRecommendationBreakdown(p, profile));
-  }, [compareProducts, profile, hasPetProfile]);
-
-  const grades = useMemo(() => {
-    return Object.fromEntries(
-      compareProducts.map((p, i) => {
-        const bd = breakdowns[i];
-        return [p.id, bd ? gradeFromScore(bd.total) : null];
-      })
-    );
-  }, [compareProducts, breakdowns]);
-
-  const cautionCounts = useMemo(() => {
-    return Object.fromEntries(
-      compareProducts.map(p => [
-        p.id,
-        (p.ingredients || []).filter(i => i.riskLevel === 'caution' || i.riskLevel === 'danger').length,
-      ])
-    );
-  }, [compareProducts]);
 
   if (compareProducts.length === 0) {
     return (
@@ -76,9 +42,7 @@ export default function Comparison() {
 
         {/* ─── 상품 헤더 카드들 (가로 스크롤) ─── */}
         <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px', marginBottom: '24px', scrollbarWidth: 'none' }}>
-          {compareProducts.map((p, i) => {
-            const bd = breakdowns[i];
-            const grade = grades[p.id];
+          {compareProducts.map((p) => {
             return (
               <div key={p.id} style={{ flexShrink: 0, width: '160px', background: 'var(--fill)', borderRadius: '18px', padding: '14px', position: 'relative' }}>
                 <button
@@ -91,17 +55,9 @@ export default function Comparison() {
                   <ProductImage src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
                 <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--ink-faint)', marginBottom: '2px' }}>{p.brand}</div>
-                <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ink)', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: '10px' }}>
+                <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ink)', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                   {p.name}
                 </div>
-                {grade && bd ? (
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                    <span style={{ padding: '3px 8px', borderRadius: '7px', background: GRADE_COLORS[grade]?.bg, color: GRADE_COLORS[grade]?.color, fontSize: '13px', fontWeight: 800 }}>
-                      {grade}등급
-                    </span>
-                    <span style={{ fontSize: '18px', fontWeight: 900, color: GRADE_COLORS[grade]?.color }}>{bd.total}</span>
-                  </div>
-                ) : null}
               </div>
             );
           })}
@@ -121,14 +77,6 @@ export default function Comparison() {
             const dangerCount = (p) => (p.ingredients || []).filter(i => i.riskLevel === 'danger').length;
             const rows = [
               {
-                label: '궁합 점수',
-                vals: compareProducts.map((p, i) => breakdowns[i]?.total ?? '-'),
-                winner: hasPetProfile
-                  ? breakdowns.reduce((bi, bd, i) => (bd?.total ?? 0) > (breakdowns[bi]?.total ?? 0) ? i : bi, 0)
-                  : -1,
-                fmt: (v) => v !== '-' ? `${v}점` : '-',
-              },
-              {
                 label: '성분 안전',
                 vals: compareProducts.map(p => safeRatio(p)),
                 winner: compareProducts.reduce((bi, p, i) => safeRatio(p) > safeRatio(compareProducts[bi]) ? i : bi, 0),
@@ -139,14 +87,6 @@ export default function Comparison() {
                 vals: compareProducts.map(p => dangerCount(p)),
                 winner: compareProducts.reduce((bi, p, i) => dangerCount(p) < dangerCount(compareProducts[bi]) ? i : bi, 0),
                 fmt: (v) => `${v}개`,
-              },
-              {
-                label: '등급',
-                vals: compareProducts.map((p, i) => breakdowns[i] ? gradeFromScore(breakdowns[i].total) : '-'),
-                winner: hasPetProfile
-                  ? breakdowns.reduce((bi, bd, i) => (bd?.total ?? 0) > (breakdowns[bi]?.total ?? 0) ? i : bi, 0)
-                  : -1,
-                fmt: (v) => v !== '-' ? `${v}등급` : '-',
               },
               {
                 label: '가격',

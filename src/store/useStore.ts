@@ -54,7 +54,7 @@ const DEFAULT_BANNERS: Banner[] = [
   },
   {
     id: 'default-3',
-    title: '동반자 펫 등록하고\n맞춤형 궁합 정보 받기',
+    title: '동반자 펫 등록하고\n맞춤 정보 받기',
     subtitle: '마이펫 정보 입력하러 가기',
     imageUrl: '🐶',
     linkUrl: '/profile',
