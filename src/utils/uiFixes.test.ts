@@ -1,0 +1,104 @@
+import { describe, it, expect } from 'vitest';
+import type { Product, Ingredient } from '../types';
+import { DEFAULT_USER_PET_PROFILE } from '../types';
+import { HOME } from '../copy/ui';
+import { matchesSpecies, matchesCategory } from './rankingFilters';
+import { getDisplayGrade, getSafetyScore } from './productGrade';
+import { displayBrand, hasMeaningfulBrand } from './brandLabel';
+
+const ing = (over: Partial<Ingredient> = {}): Ingredient => ({
+  id: 'i', nameKo: '닭고기', nameEn: 'chicken', purpose: '단백질', riskLevel: 'safe', ...over,
+});
+
+const makeProduct = (over: Partial<Product> = {}): Product => ({
+  id: 'p1', brand: '테스트', name: '테스트 사료', category: 'food',
+  price: 10000, imageUrl: '', ingredients: [], reviewsCount: 0, averageRating: 0, ...over,
+});
+
+// ── P0-1: 홈 "null에게 잘 맞을 것 같아요" 폴백 ──────────────────────────
+describe('HOME copy null fallback (P0-1)', () => {
+  it('falls back to 우리 아이 when petName is null/empty', () => {
+    expect(HOME.sectionRecommended(null)).toBe('우리 아이에게 잘 맞을 것 같아요');
+    expect(HOME.sectionRecommended('')).toBe('우리 아이에게 잘 맞을 것 같아요');
+    expect(HOME.sectionRecommended('   ')).toBe('우리 아이에게 잘 맞을 것 같아요');
+    expect(HOME.petGreeting(null)).toContain('우리 아이');
+    // 절대 "null" 문자열이 노출되지 않아야 함
+    expect(HOME.sectionRecommended(null)).not.toContain('null');
+  });
+
+  it('uses the real pet name when provided', () => {
+    expect(HOME.sectionRecommended('코코')).toBe('코코에게 잘 맞을 것 같아요');
+    expect(HOME.petGreeting('베로')).toContain('베로');
+  });
+});
+
+// ── P0-2: 랭킹 종/카테고리 필터 (한글 라벨 ↔ 영문 enum) ───────────────
+describe('ranking filters (P0-2)', () => {
+  it('matches species across Korean label / English target_pet_type', () => {
+    const dog = makeProduct({ targetPetType: 'dog' });
+    // 버그 재현 방지: '강아지' 라벨이 'dog' 상품과 매칭되어야 함
+    expect(matchesSpecies(dog, '강아지')).toBe(true);
+    expect(matchesSpecies(dog, '고양이')).toBe(false);
+    expect(matchesSpecies(dog, '전체')).toBe(true);
+
+    const all = makeProduct({ targetPetType: 'all' });
+    expect(matchesSpecies(all, '강아지')).toBe(true);
+    expect(matchesSpecies(all, '고양이')).toBe(true);
+
+    // target_pet_type 미지정 상품은 모든 종 필터를 통과(빈 랭킹 방지)
+    const none = makeProduct({ targetPetType: undefined });
+    expect(matchesSpecies(none, '강아지')).toBe(true);
+    expect(matchesSpecies(none, '고양이')).toBe(true);
+  });
+
+  it('matches category against main_category, not product_type', () => {
+    const p = makeProduct({ category: 'food', mainCategory: '사료' });
+    // 버그 재현 방지: category='food'를 '사료'와 비교하면 실패했음 → mainCategory로 매칭
+    expect(matchesCategory(p, '사료')).toBe(true);
+    expect(matchesCategory(p, '간식')).toBe(false);
+    expect(matchesCategory(p, '전체')).toBe(true);
+  });
+});
+
+// ── P1-3: 등급 배지 + "분석 중" 상태 ──────────────────────────────────
+describe('display grade (P1-3)', () => {
+  it('returns 분석 중 (pending) when no ingredients are analyzed', () => {
+    const info = getDisplayGrade(makeProduct({ ingredients: [] }), null, false);
+    expect(info.grade).toBe('pending');
+    expect(info.label).toBe('분석 중');
+    expect(info.basis).toBe('pending');
+  });
+
+  it('returns a safety grade (no profile) when analyzed', () => {
+    const safe = makeProduct({ ingredients: [ing(), ing({ id: 'i2' })] });
+    const info = getDisplayGrade(safe, null, false);
+    expect(info.basis).toBe('safety');
+    expect(['A', 'B', 'C', 'D']).toContain(info.grade);
+    // 위험 성분이 있으면 안전 점수가 더 낮아야 함
+    const risky = makeProduct({ ingredients: [ing({ riskLevel: 'danger' })] });
+    expect(getSafetyScore(risky)).toBeLessThan(getSafetyScore(safe));
+  });
+
+  it('returns a compatibility grade when a profile is present', () => {
+    const p = makeProduct({ ingredients: [ing()] });
+    const info = getDisplayGrade(p, DEFAULT_USER_PET_PROFILE, true);
+    expect(info.basis).toBe('compatibility');
+    expect(info.score).not.toBeNull();
+  });
+});
+
+// ── P1-4: "쿠팡상품" 등 내부 플레이스홀더 브랜드 정리 ──────────────────
+describe('brand label sanitizing (P1-4)', () => {
+  it('replaces placeholder brands with a guess from the product name', () => {
+    expect(displayBrand('쿠팡상품', 'now 어덜트 강아지 그레인프리 사료')).toBe('now');
+    expect(displayBrand('쿠팡 파트너스', '오가앤리프 유기농 강아지 사료')).toBe('오가앤리프');
+    expect(displayBrand('쿠팡상품', '')).toBe('');
+  });
+
+  it('keeps real brand names untouched', () => {
+    expect(displayBrand('로얄캐닌', '미니 어덜트')).toBe('로얄캐닌');
+    expect(hasMeaningfulBrand('로얄캐닌')).toBe(true);
+    expect(hasMeaningfulBrand('쿠팡상품')).toBe(false);
+    expect(hasMeaningfulBrand('')).toBe(false);
+  });
+});

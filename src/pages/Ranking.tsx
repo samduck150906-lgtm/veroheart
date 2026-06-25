@@ -4,11 +4,15 @@ import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Trophy, Dog, Cat, Star, ChevronRight, Megaphone } from 'lucide-react';
 import { useStore } from '../store/useStore';
-import { calculateCompatibilityScore, gradeFromScore, rankProductsForProfile } from '../utils/score';
+import { calculateCompatibilityScore } from '../utils/score';
+import { getDisplayGrade, hasRealPetProfile } from '../utils/productGrade';
+import { matchesSpecies, matchesCategory } from '../utils/rankingFilters';
+import { displayBrand } from '../utils/brandLabel';
+import GradeBadge from '../components/GradeBadge';
 import ProductImage from '../components/ProductImage';
 
 const CATEGORY_FILTERS = ['전체', '사료', '간식', '영양제'];
-const SPECIES_FILTERS = ['강아지', '고양이'];
+const SPECIES_FILTERS = ['전체', '강아지', '고양이'];
 
 const GRADE_COLORS = {
   A: { bg: '#E7F8F0', color: '#15B36B' },
@@ -18,38 +22,34 @@ const GRADE_COLORS = {
   F: { bg: '#F2F4F6', color: '#8B95A1' },
 };
 
-function GradeTag({ grade }) {
-  const c = GRADE_COLORS[grade] || GRADE_COLORS.B;
-  return (
-    <span style={{ background: c.bg, color: c.color, fontWeight: 800, fontSize: 11, borderRadius: 6, padding: '2px 6px' }}>{grade}등급</span>
-  );
-}
-
 const MEDALS = ['🥇', '🥈', '🥉'];
 
 export default function Ranking() {
   const navigate = useNavigate();
   const { products, profile, isLoggedIn } = useStore();
   const [categoryFilter, setCategoryFilter] = useState('전체');
-  const [speciesFilter, setSpeciesFilter] = useState('강아지');
+  const [speciesFilter, setSpeciesFilter] = useState('전체');
 
-  const hasPetProfile = isLoggedIn && profile?.name && profile.name !== '우리 아이';
+  const hasPetProfile = hasRealPetProfile(profile, isLoggedIn);
 
   const sponsored = useMemo(() =>
     products
-      .filter(p => p.isSponsored && (p.targetPetType === speciesFilter || p.targetPetType === 'all'))
+      .filter(p => p.isSponsored && matchesSpecies(p, speciesFilter))
       .sort((a, b) => (a.sponsorOrder ?? 0) - (b.sponsorOrder ?? 0))
   , [products, speciesFilter]);
 
   const ranked = useMemo(() => {
     const base = products.filter(p =>
-      !p.isSponsored &&
-      (p.targetPetType === speciesFilter || p.targetPetType === 'all') &&
-      (categoryFilter === '전체' || p.category === categoryFilter)
+      !p.isSponsored && matchesSpecies(p, speciesFilter) && matchesCategory(p, categoryFilter)
     );
 
     if (hasPetProfile) {
-      return rankProductsForProfile(base, profile, { limit: 30 });
+      // 선택된 종 필터를 그대로 존중하기 위해 직접 궁합 점수로 정렬(이중 종필터 회피)
+      return [...base]
+        .map(p => ({ p, s: calculateCompatibilityScore(p, profile) }))
+        .sort((a, b) => b.s - a.s)
+        .slice(0, 30)
+        .map(x => x.p);
     }
     return [...base].sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0)).slice(0, 30);
   }, [products, speciesFilter, categoryFilter, profile, hasPetProfile]);
@@ -57,11 +57,7 @@ export default function Ranking() {
   const avgRating = ranked.length > 0
     ? (ranked.reduce((s, p) => s + (p.averageRating || 0), 0) / ranked.length).toFixed(1)
     : '0.0';
-  const aGradeCount = ranked.filter((p) => {
-    const score = hasPetProfile ? calculateCompatibilityScore(p, profile) : null;
-    const grade = score != null ? gradeFromScore(score) : null;
-    return grade === 'A';
-  }).length;
+  const aGradeCount = ranked.filter((p) => getDisplayGrade(p, profile, hasPetProfile).grade === 'A').length;
 
   return (
     <div style={{ paddingBottom: 90 }}>
@@ -145,17 +141,17 @@ export default function Ranking() {
           },
           {
             label: '안전 성분',
-            value: ranked.length > 0
-              ? (() => {
-                  const top = ranked.slice(0, 10);
-                  const avg = top.reduce((s, p) => {
-                    const t = p.ingredients?.length || 1;
-                    const safe = p.ingredients?.filter(i => i.riskLevel === 'safe').length || 0;
+            value: (() => {
+                  // 성분이 분석된 상품만 평균 — 미분석 상품이 0%로 평균을 떨어뜨리지 않도록
+                  const analyzed = ranked.slice(0, 10).filter(p => (p.ingredients?.length || 0) > 0);
+                  if (analyzed.length === 0) return '-';
+                  const avg = analyzed.reduce((s, p) => {
+                    const t = p.ingredients.length;
+                    const safe = p.ingredients.filter(i => i.riskLevel === 'safe').length;
                     return s + (safe / t) * 100;
-                  }, 0) / (top.length || 1);
+                  }, 0) / analyzed.length;
                   return Math.round(avg);
-                })()
-              : '-',
+                })(),
             unit: '%',
             color: '#3182F6',
             bg: '#EFF6FF',
@@ -163,7 +159,7 @@ export default function Ranking() {
         ].map(({ label, value, unit, color, bg }) => (
           <div key={label} style={{ flex: 1, padding: '12px 10px', borderRadius: '14px', background: bg, textAlign: 'center' }}>
             <div style={{ fontSize: '20px', fontWeight: 900, color, letterSpacing: '-0.02em' }}>
-              {value}<span style={{ fontSize: '12px', fontWeight: 700 }}>{unit}</span>
+              {value}{value !== '-' && <span style={{ fontSize: '12px', fontWeight: 700 }}>{unit}</span>}
             </div>
             <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ink-faint)', marginTop: '3px' }}>{label}</div>
           </div>
@@ -173,13 +169,29 @@ export default function Ranking() {
       {/* Ranking List */}
       <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {ranked.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 40, color: '#B0B8C1' }}>
+          <div style={{ textAlign: 'center', padding: '40px 20px', color: '#B0B8C1' }}>
             <div style={{ fontSize: 36, marginBottom: 12 }}>📊</div>
-            <p style={{ fontWeight: 600 }}>해당 카테고리 상품이 없어요</p>
+            <p style={{ fontWeight: 700, fontSize: 15, color: '#4E5968', marginBottom: 6 }}>
+              {categoryFilter === '전체' && speciesFilter === '전체'
+                ? '아직 표시할 상품이 없어요'
+                : '이 조건에 맞는 상품이 없어요'}
+            </p>
+            <p style={{ fontSize: 13, marginBottom: 18 }}>필터를 바꾸거나 전체에서 둘러보세요</p>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+              {(categoryFilter !== '전체' || speciesFilter !== '전체') && (
+                <button
+                  onClick={() => { setCategoryFilter('전체'); setSpeciesFilter('전체'); }}
+                  style={{ background: '#F5C518', border: 'none', borderRadius: 10, padding: '10px 18px', fontSize: 14, fontWeight: 700, color: '#191F28', cursor: 'pointer' }}
+                >필터 초기화</button>
+              )}
+              <button
+                onClick={() => navigate('/search')}
+                style={{ background: '#fff', border: '1.5px solid #E5E8EB', borderRadius: 10, padding: '10px 18px', fontSize: 14, fontWeight: 700, color: '#4E5968', cursor: 'pointer' }}
+              >검색으로 둘러보기</button>
+            </div>
           </div>
         ) : ranked.map((product, idx) => {
           const score = hasPetProfile ? calculateCompatibilityScore(product, profile) : null;
-          const grade = score != null ? gradeFromScore(score) : null;
           return (
             <div
               key={product.id}
@@ -202,15 +214,17 @@ export default function Ranking() {
                 <ProductImage src={product.imageUrl} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', gap: 5, marginBottom: 4, flexWrap: 'wrap' }}>
-                  {grade && <GradeTag grade={grade} />}
+                <div style={{ display: 'flex', gap: 5, marginBottom: 4, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <GradeBadge product={product} profile={profile} withProfile={hasPetProfile} />
                   {score != null && (
                     <span style={{ background: '#F0EDE8', color: '#4E5968', fontWeight: 700, fontSize: 10, borderRadius: 5, padding: '2px 5px' }}>
                       궁합 {score}%
                     </span>
                   )}
                 </div>
-                <div style={{ fontSize: 11, color: '#8B95A1', marginBottom: 1 }}>{product.brand}</div>
+                {displayBrand(product.brand, product.name) && (
+                  <div style={{ fontSize: 11, color: '#8B95A1', marginBottom: 1 }}>{displayBrand(product.brand, product.name)}</div>
+                )}
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#191F28', lineHeight: 1.3 }}>
                   {product.name.length > 28 ? product.name.slice(0, 28) + '…' : product.name}
                 </div>
@@ -248,7 +262,8 @@ export default function Ranking() {
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {sponsored.map((p) => {
               const score = hasPetProfile ? calculateCompatibilityScore(p, profile) : null;
-              const grade = score != null ? gradeFromScore(score) : null;
+              const sgrade = getDisplayGrade(p, profile, hasPetProfile).grade;
+              const grade = sgrade === 'pending' ? null : sgrade;
 
               return (
                 <button
@@ -276,7 +291,7 @@ export default function Ranking() {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ink-faint)' }}>{p.brand}</span>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ink-faint)' }}>{displayBrand(p.brand, p.name)}</span>
                       <span style={{
                         fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4,
                         background: '#F3F4F6', color: '#6B7280', border: '1px solid #E5E7EB',
