@@ -337,7 +337,11 @@ export default function Analyzer({ initialMode = 'text' }: AnalyzerProps) {
           <Zap size={20} className="fill-emerald-400 stroke-emerald-500" />
         </div>
         <div>
-          <h2 className="text-lg font-black text-slate-800 tracking-tight leading-tight">
+          {/* CHANGED: Tailwind 미적용 환경이라 섹션 제목을 인라인 스타일로 강조 */}
+          <h2
+            className="text-lg font-black text-slate-800 tracking-tight leading-tight"
+            style={{ fontSize: '19px', fontWeight: 900, color: '#191F28', letterSpacing: '-0.02em', lineHeight: 1.25 }}
+          >
             AI 성분 정밀 종합 분석
           </h2>
           <p className="text-[11px] text-slate-400 font-semibold tracking-wide uppercase">
@@ -351,8 +355,41 @@ export default function Analyzer({ initialMode = 'text' }: AnalyzerProps) {
         실제 출시 환경에서는 로그인 사용자만 사용할 수 있으며, 지나치게 짧거나 긴 성분표는 분석이 제한됩니다.
       </div>
       {!isLoggedIn && (
-        <div className="mb-4 rounded-2xl border border-rose-100 bg-rose-50/50 p-3.5 text-xs font-bold text-rose-600">
-          AI 정밀 분석은 비용이 발생하는 기능이라 로그인 사용자만 사용할 수 있습니다.
+        // CHANGED: 빨간 경고 텍스트 → 소프트한 회색 안내 박스 + '로그인하고 분석하기' CTA 버튼
+        <div
+          style={{
+            marginBottom: '16px',
+            borderRadius: '14px',
+            border: '1px solid var(--hairline)',
+            background: 'var(--fill)',
+            padding: '14px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            flexWrap: 'wrap',
+          }}
+        >
+          <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--ink-soft)', lineHeight: 1.5 }}>
+            AI 정밀 분석은 로그인 후 이용할 수 있어요.
+          </span>
+          <button
+            type="button"
+            onClick={() => navigate('/login', { state: { from: window.location.pathname } })}
+            style={{
+              flexShrink: 0,
+              padding: '9px 16px',
+              borderRadius: '10px',
+              border: 'none',
+              background: 'var(--primary)',
+              color: 'var(--ink-on-brand)',
+              fontSize: '13px',
+              fontWeight: 800,
+              cursor: 'pointer',
+            }}
+          >
+            로그인하고 분석하기
+          </button>
         </div>
       )}
       

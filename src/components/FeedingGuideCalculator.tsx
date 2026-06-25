@@ -19,6 +19,7 @@ import { useState, useMemo } from 'react';
 import { useStore } from '../store/useStore';
 import { Utensils, Dog, Cat, Info, Flame, AlertTriangle } from 'lucide-react';
 import type { ActivityLevel, BodyCondition } from '../types';
+import AnimatedNumber from './AnimatedNumber'; // CHANGED: 결과 숫자 count-up 애니메이션
 
 interface FeedingGuideProps {
   /** 사료 100g 당 칼로리 (kcal) */
@@ -207,58 +208,37 @@ export default function FeedingGuideCalculator({ kcalPer100g, productName, fatPe
         </p>
       </div>
 
-      {/* Neutered + Body Condition */}
-      <div className="feeding-section" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-        {/* 중성화 */}
-        <div style={{ flex: '1', minWidth: '120px' }}>
-          <div className="feeding-label" style={{ marginBottom: '8px' }}>중성화 여부</div>
-          <div style={{ display: 'flex', gap: '6px' }}>
-            {[true, false].map((val) => (
-              <button
-                key={String(val)}
-                onClick={() => setIsNeutered(val)}
-                style={{
-                  flex: 1,
-                  padding: '8px 0',
-                  borderRadius: '10px',
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  border: isNeutered === val ? '2px solid var(--brand, #3182F6)' : '1.5px solid var(--hairline)',
-                  background: isNeutered === val ? 'var(--brand-tint, #EFF6FF)' : '#fff',
-                  color: isNeutered === val ? 'var(--brand-deep, #1D4ED8)' : 'var(--ink-soft)',
-                  cursor: 'pointer',
-                }}
-              >
-                {val ? '중성화 ✓' : '미중성화'}
-              </button>
-            ))}
-          </div>
+      {/* CHANGED: 중성화 여부를 활동량과 동일한 2열 버튼 그리드로 통일 */}
+      <div className="feeding-section">
+        <div className="feeding-label">중성화 여부</div>
+        <div className="feeding-activity-grid">
+          {[true, false].map((val) => (
+            <button
+              key={String(val)}
+              type="button"
+              className={`feeding-activity-btn ${isNeutered === val ? 'feeding-activity-btn--active' : ''}`}
+              onClick={() => setIsNeutered(val)}
+            >
+              {val ? '중성화 ✓' : '미중성화'}
+            </button>
+          ))}
         </div>
+      </div>
 
-        {/* 체형 */}
-        <div style={{ flex: '1', minWidth: '160px' }}>
-          <div className="feeding-label" style={{ marginBottom: '8px' }}>체형</div>
-          <div style={{ display: 'flex', gap: '6px' }}>
-            {(Object.keys(BODY_LABELS) as BodyCondition[]).map((cond) => (
-              <button
-                key={cond}
-                onClick={() => setBodyCondition(cond)}
-                style={{
-                  flex: 1,
-                  padding: '8px 0',
-                  borderRadius: '10px',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  border: bodyCondition === cond ? '2px solid var(--brand, #3182F6)' : '1.5px solid var(--hairline)',
-                  background: bodyCondition === cond ? 'var(--brand-tint, #EFF6FF)' : '#fff',
-                  color: bodyCondition === cond ? 'var(--brand-deep, #1D4ED8)' : 'var(--ink-soft)',
-                  cursor: 'pointer',
-                }}
-              >
-                {BODY_LABELS[cond]}
-              </button>
-            ))}
-          </div>
+      {/* CHANGED: 체형 선택도 2열 버튼 그리드로 통일 */}
+      <div className="feeding-section">
+        <div className="feeding-label">체형</div>
+        <div className="feeding-activity-grid">
+          {(Object.keys(BODY_LABELS) as BodyCondition[]).map((cond) => (
+            <button
+              key={cond}
+              type="button"
+              className={`feeding-activity-btn ${bodyCondition === cond ? 'feeding-activity-btn--active' : ''}`}
+              onClick={() => setBodyCondition(cond)}
+            >
+              {BODY_LABELS[cond]}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -267,13 +247,13 @@ export default function FeedingGuideCalculator({ kcalPer100g, productName, fatPe
         <div className="feeding-result-row">
           <div className="feeding-result-item feeding-result-item--primary">
             <span className="feeding-result-label">하루 권장량</span>
-            <span className="feeding-result-num">{dailyGrams}g</span>
-            <span className="feeding-result-sub">{dailyKcal} kcal</span>
+            <span className="feeding-result-num"><AnimatedNumber value={dailyGrams} suffix="g" /></span>
+            <span className="feeding-result-sub"><AnimatedNumber value={dailyKcal} suffix=" kcal" /></span>
           </div>
           <div className="feeding-result-divider" />
           <div className="feeding-result-item">
             <span className="feeding-result-label">1회 급여량</span>
-            <span className="feeding-result-num">{mealGrams}g</span>
+            <span className="feeding-result-num"><AnimatedNumber value={mealGrams} suffix="g" /></span>
             <span className="feeding-result-sub">하루 2회 기준</span>
           </div>
           {fatPercent != null && fatRisk && (
@@ -281,7 +261,7 @@ export default function FeedingGuideCalculator({ kcalPer100g, productName, fatPe
               <div className="feeding-result-divider" />
               <div className="feeding-result-item">
                 <span className="feeding-result-label">일일 지방 섭취</span>
-                <span className="feeding-result-num" style={{ color: riskColor }}>{fatRisk.dailyFatG}g</span>
+                <span className="feeding-result-num" style={{ color: riskColor }}><AnimatedNumber value={fatRisk.dailyFatG} decimals={1} suffix="g" /></span>
                 <span className="feeding-result-sub">지방 {fatPercent}%</span>
               </div>
             </>
