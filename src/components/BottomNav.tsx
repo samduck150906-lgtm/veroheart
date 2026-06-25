@@ -49,11 +49,19 @@ export default function BottomNav() {
       <button
         type="button"
         className="tab-fab"
-        aria-label="성분 스캔"
+        aria-label="성분 분석"
         onClick={() => navigate('/scanner')}
+        style={{ position: 'relative' }}
       >
         <span className="tab-fab-btn" style={{ background: isActive('/scanner') ? 'var(--brand-deep)' : 'var(--brand)' }}>
           <ScanLine size={26} strokeWidth={2.4} color="#241B00" />
+        </span>
+        {/* CHANGED: 중앙 버튼 의미가 불명확해 "성분분석" 라벨 추가 (문제 #8) */}
+        <span
+          className="tab-label"
+          style={{ position: 'absolute', left: 0, right: 0, bottom: 7, textAlign: 'center', color: 'var(--brand-deep)', fontWeight: 800 }}
+        >
+          성분분석
         </span>
       </button>
 

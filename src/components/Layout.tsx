@@ -111,15 +111,22 @@ export default function Layout() {
 
           {/* Home sub-tabs: 홈 / 랭킹 */}
           {isHome && (
-            <div style={{ display: 'flex', gap: '22px', padding: '0 16px' }}>
-              <Link to="/" style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ink)', padding: '6px 0 10px', borderBottom: '2.5px solid var(--ink)', textDecoration: 'none' }}>홈</Link>
-              <Link to="/ranking" style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink-400)', padding: '6px 0 10px', textDecoration: 'none' }}>랭킹</Link>
+            // CHANGED: 활성 탭 밑줄을 텍스트 폭에 정확히 맞춰 정렬(좌측 치우침 해소) (문제 #7).
+            <div className="flex px-4">
+              <Link to="/" className="relative py-2.5 mr-6 text-[15px] font-semibold text-[#1A1A1A]" style={{ textDecoration: 'none' }}>
+                홈
+                <span className="absolute left-0 right-0 bottom-0 h-[2px] bg-[#1A1A1A] rounded-full" />
+              </Link>
+              <Link to="/ranking" className="relative py-2.5 text-[15px] font-semibold text-[#ABABAB]" style={{ textDecoration: 'none' }}>
+                랭킹
+              </Link>
             </div>
           )}
         </header>
       )}
 
-      <main className="app-main container" style={{ flex: 1 }}>
+      {/* CHANGED: 홈은 좌우 패딩을 컴포넌트(px-4/가로 스크롤 풀블리드)가 직접 제어하도록 .container 제외 (문제 #10). */}
+      <main className={isHome ? 'app-main' : 'app-main container'} style={{ flex: 1 }}>
         <div className="animate-fade-in" style={{ paddingBottom: '20px' }}>
           <Outlet />
         </div>
