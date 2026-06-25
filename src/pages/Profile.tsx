@@ -9,22 +9,13 @@ import { Button } from '../components/Button';
 import ProductCard from '../components/ProductCard';
 import ProductImage from '../components/ProductImage';
 import { getRecommendationBreakdown, gradeFromScore, calculateCompatibilityScore } from '../utils/score';
+import { getAllergyInfo } from '../utils/productGrade';
+import { displayBrand } from '../utils/brandLabel';
+import GradeBadge from '../components/GradeBadge';
 import { notify } from '../store/useNotification';
 import { FAVORITES_EMPTY } from '../copy/ui';
 
 const TABS = ['찜', '구매내역', '분석리포트'];
-
-const GRADE_COLORS = {
-  A: { bg: '#E7F8F0', color: '#15B36B' },
-  B: { bg: '#FEF6E0', color: '#E8A800' },
-  C: { bg: '#FFF0ED', color: '#F04452' },
-  F: { bg: '#F2F4F6', color: '#8B95A1' },
-};
-
-function GradeTag({ grade }) {
-  const c = GRADE_COLORS[grade] || { bg: '#F0EDE8', color: '#6B7684' };
-  return <span style={{ background: c.bg, color: c.color, fontWeight: 800, fontSize: 11, borderRadius: 6, padding: '2px 6px' }}>{grade}등급</span>;
-}
 
 function ScoreCircle({ score }) {
   const circumference = 2 * Math.PI * 36;
@@ -214,31 +205,50 @@ export default function Profile() {
       <div style={{ padding: '16px 16px 0' }}>
         {activeTab === '찜' && (
           favoriteProducts.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px 0', color: '#B0B8C1' }}>
+            <div style={{ textAlign: 'center', padding: '40px 20px', color: '#B0B8C1' }}>
               <div style={{ fontSize: 36, marginBottom: 12 }}>❤️</div>
-              <p style={{ fontWeight: 600, fontSize: 15 }}>찜한 상품이 없어요</p>
-              <p style={{ fontSize: 13, marginTop: 4 }}>마음에 드는 상품에 하트를 눌러보세요</p>
-              <button onClick={() => navigate('/search')}
-                style={{ marginTop: 16, background: '#F5C518', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 14, fontWeight: 700, color: '#191F28', cursor: 'pointer' }}>
-                상품 둘러보기
-              </button>
+              <p style={{ fontWeight: 700, fontSize: 15, color: '#4E5968' }}>찜한 상품이 없어요</p>
+              <p style={{ fontSize: 13, marginTop: 4, marginBottom: 18 }}>마음에 드는 상품에 하트를 눌러 저장해두세요</p>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+                <button onClick={() => navigate('/search')}
+                  style={{ background: '#F5C518', border: 'none', borderRadius: 10, padding: '10px 18px', fontSize: 14, fontWeight: 700, color: '#191F28', cursor: 'pointer' }}>
+                  상품 둘러보기
+                </button>
+                {!hasPetProfile && (
+                  <button onClick={() => navigate(isLoggedIn ? '/pet-profile' : '/login')}
+                    style={{ background: '#fff', border: '1.5px solid #E5E8EB', borderRadius: 10, padding: '10px 18px', fontSize: 14, fontWeight: 700, color: '#4E5968', cursor: 'pointer' }}>
+                    반려동물 등록하고 맞춤 추천 받기
+                  </button>
+                )}
+              </div>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {favoriteProducts.map(product => {
                 const score = hasPetProfile ? calculateCompatibilityScore(product, profile) : null;
-                const grade = score != null ? gradeFromScore(score) : null;
+                const allergy = getAllergyInfo(product, profile, hasPetProfile);
+                const brandLabel = displayBrand(product.brand, product.name);
                 return (
                   <div key={product.id} onClick={() => navigate(`/product/${product.id}`)}
-                    style={{ background: '#fff', borderRadius: 16, padding: '14px', boxShadow: '0 1px 6px rgba(30,41,59,0.06)', cursor: 'pointer', display: 'flex', gap: 12 }}>
+                    style={{ background: '#fff', borderRadius: 16, padding: '14px', boxShadow: '0 1px 6px rgba(30,41,59,0.06)', cursor: 'pointer', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                     <div style={{ width: 56, height: 56, borderRadius: 12, overflow: 'hidden', background: '#F7F4EE', flexShrink: 0 }}>
                       <ProductImage src={product.imageUrl} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', gap: 5, marginBottom: 4 }}>
-                        {grade && <GradeTag grade={grade} />}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', gap: 5, marginBottom: 4, flexWrap: 'wrap', alignItems: 'center' }}>
+                        <GradeBadge product={product} profile={profile} withProfile={hasPetProfile} />
+                        {score != null && (
+                          <span style={{ background: '#F0EDE8', color: '#4E5968', fontWeight: 700, fontSize: 11, borderRadius: 6, padding: '2px 6px' }}>궁합 {score}%</span>
+                        )}
+                        {allergy && (
+                          <span style={{
+                            fontSize: 11, fontWeight: 700, borderRadius: 6, padding: '2px 6px',
+                            background: allergy.safe ? 'var(--safe-tint)' : 'var(--danger-tint)',
+                            color: allergy.safe ? 'var(--safe)' : 'var(--danger)',
+                          }}>{allergy.safe ? '✓ 알러지 적합' : `⚠ ${allergy.hits.join('·')}`}</span>
+                        )}
                       </div>
-                      <div style={{ fontSize: 11, color: '#8B95A1' }}>{product.brand}</div>
+                      {brandLabel && <div style={{ fontSize: 11, color: '#8B95A1' }}>{brandLabel}</div>}
                       <div style={{ fontSize: 13, fontWeight: 700, color: '#191F28', lineHeight: 1.3 }}>
                         {product.name.length > 25 ? product.name.slice(0, 25) + '…' : product.name}
                       </div>
@@ -246,43 +256,7 @@ export default function Profile() {
                         <div style={{ fontSize: 13, fontWeight: 800, color: '#191F28', marginTop: 4 }}>{product.price.toLocaleString()}원</div>
                       )}
                     </div>
-
-                    <div style={{ width: '100%', height: '1px', background: 'var(--hairline)', margin: '4px 0' }} />
-
-                    {/* Allergies / Health concerns lists */}
-                    <div style={{ width: '100%', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      <div>
-                        <span style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: 'var(--ink-faint)', marginBottom: '6px' }}>알레르기 성분</span>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                          {profile.allergies && profile.allergies.length > 0 ? (
-                            profile.allergies.map(allergy => (
-                              <span key={allergy} style={{ fontSize: '12px', fontWeight: 700, color: 'var(--danger)', background: 'var(--danger-tint)', padding: '4px 10px', borderRadius: '8px' }}>
-                                {allergy}
-                              </span>
-                            ))
-                          ) : (
-                            <span style={{ fontSize: '12.5px', color: 'var(--ink-soft)', fontStyle: 'italic' }}>설정된 알레르기가 없습니다.</span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div>
-                        <span style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: 'var(--ink-faint)', marginBottom: '6px' }}>건강 고민</span>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                          {profile.healthConcerns && profile.healthConcerns.length > 0 ? (
-                            profile.healthConcerns.map(concern => (
-                              <span key={concern} style={{ fontSize: '12px', fontWeight: 700, color: 'var(--brand-deep)', background: 'var(--brand-tint)', padding: '4px 10px', borderRadius: '8px' }}>
-                                {concern}
-                              </span>
-                            ))
-                          ) : (
-                            <span style={{ fontSize: '12.5px', color: 'var(--ink-soft)', fontStyle: 'italic' }}>설정된 건강 고민이 없습니다.</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
                   </div>
-
                 );
               })}
             </div>

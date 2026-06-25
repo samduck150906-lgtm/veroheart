@@ -12,7 +12,9 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ProductImage from '../components/ProductImage';
-import { rankProductsForProfile, gradeFromScore, calculateCompatibilityScore } from '../utils/score';
+import { rankProductsForProfile, calculateCompatibilityScore } from '../utils/score';
+import GradeBadge from '../components/GradeBadge';
+import { displayBrand } from '../utils/brandLabel';
 import { HOME } from '../copy/ui';
 
 const CATEGORY_GRID = [
@@ -36,23 +38,6 @@ const CATEGORIES = [
   { icon: '🧻', label: '배변', query: '배변' },
   { icon: '🎾', label: '생활용품', query: '생활' },
 ];
-
-const GRADE_COLORS = {
-  A: { bg: '#E7F8F0', color: '#15B36B' },
-  B: { bg: '#FEF6E0', color: '#E8A800' },
-  C: { bg: '#FFF0ED', color: '#F04452' },
-  D: { bg: '#FFF0ED', color: '#F04452' },
-  F: { bg: '#F2F4F6', color: '#8B95A1' },
-};
-
-function GradeTag({ grade }) {
-  const c = GRADE_COLORS[grade] || GRADE_COLORS.B;
-  return (
-    <span style={{ background: c.bg, color: c.color, fontWeight: 800, fontSize: 12, borderRadius: 6, padding: '2px 7px' }}>
-      {grade}등급
-    </span>
-  );
-}
 
 function AnimatedScore({ target }) {
   const [score, setScore] = useState(0);
@@ -312,7 +297,6 @@ export default function Home() {
           <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4 }}>
             {topRanked.slice(0, 6).map(product => {
               const score = hasPetProfile ? calculateCompatibilityScore(product, profile) : null;
-              const grade = score != null ? gradeFromScore(score) : (product.verificationStatus === 'verified' ? 'A' : 'B');
               return (
                 <div
                   key={product.id}
@@ -327,14 +311,16 @@ export default function Home() {
                     <ProductImage src={product.imageUrl} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, flexWrap: 'wrap' }}>
-                    <GradeTag grade={grade} />
+                    <GradeBadge product={product} profile={profile} withProfile={hasPetProfile} />
                     {score != null && (
                       <span style={{ background: '#F0EDE8', color: '#4E5968', borderRadius: 6, padding: '2px 7px', fontSize: 11, fontWeight: 700 }}>
                         궁합 {score}%
                       </span>
                     )}
                   </div>
-                  <div style={{ fontSize: 11, color: '#8B95A1', marginBottom: 2 }}>{product.brand}</div>
+                  {displayBrand(product.brand, product.name) && (
+                    <div style={{ fontSize: 11, color: '#8B95A1', marginBottom: 2 }}>{displayBrand(product.brand, product.name)}</div>
+                  )}
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#191F28', lineHeight: 1.4, marginBottom: 8 }}>
                     {product.name.length > 22 ? product.name.slice(0, 22) + '…' : product.name}
                   </div>

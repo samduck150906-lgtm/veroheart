@@ -4,6 +4,9 @@ import type { Product } from '../types';
 import { useStore } from '../store/useStore';
 import { notify } from '../store/useNotification';
 import { calculateCompatibilityScore } from '../utils/score';
+import { hasRealPetProfile } from '../utils/productGrade';
+import { displayBrand } from '../utils/brandLabel';
+import GradeBadge from './GradeBadge';
 import ProductImage from './ProductImage';
 
 type ProductCardProps = {
@@ -36,8 +39,10 @@ export default function ProductCard({
 }: ProductCardProps) {
   const { profile, favorites, toggleFavorite, isLoggedIn } = useStore();
   const navigate = useNavigate();
-  const score = calculateCompatibilityScore(product, profile);
+  const withProfile = hasRealPetProfile(profile, isLoggedIn);
+  const score = withProfile ? calculateCompatibilityScore(product, profile) : null;
   const isFav = favorites.includes(product.id);
+  const brandLabel = displayBrand(product.brand, product.name);
 
   const handleToggleFav = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -113,8 +118,9 @@ export default function ProductCard({
           </span>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.4, color: 'var(--ink-faint)' }}>{product.brand}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+            <GradeBadge product={product} profile={profile} withProfile={withProfile} />
+            {brandLabel && <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.4, color: 'var(--ink-faint)' }}>{brandLabel}</span>}
             {isSponsorSlot && <SponsorBadge label={product.sponsorLabel || '광고'} />}
           </div>
           <span style={{
@@ -167,8 +173,9 @@ export default function ProductCard({
         <ProductImage src={product.imageUrl} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </div>
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.3, color: 'var(--ink-faint)' }}>{product.brand}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <GradeBadge product={product} profile={profile} withProfile={withProfile} />
+          {brandLabel && <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.3, color: 'var(--ink-faint)' }}>{brandLabel}</span>}
           {isSponsorSlot && <SponsorBadge label={product.sponsorLabel || '광고'} />}
         </div>
         <span style={{

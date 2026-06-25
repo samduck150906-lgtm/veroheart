@@ -53,13 +53,22 @@ export const LOGIN = {
 
 // ─── 3. 홈 ──────────────────────────────────────────────────────────────────
 
+/** 펫 미등록/이름 누락 시 사용하는 기본 호칭 */
+export const DEFAULT_PET_LABEL = '우리 아이';
+
+/** petName이 비어있거나 null이면 기본 호칭으로 폴백 ("null에게…" 노출 방지) */
+const petOr = (petName?: string | null) => {
+  const n = petName?.trim();
+  return n ? n : DEFAULT_PET_LABEL;
+};
+
 export const HOME = {
   greeting: (name: string) => `안녕하세요, ${name}님`,
-  petGreeting: (petName: string) => `${petName}에게 잘 맞는 사료를 찾아볼까요?`,
+  petGreeting: (petName?: string | null) => `${petOr(petName)}에게 잘 맞는 사료를 찾아볼까요?`,
   ctaScan: '사료 스캔하기',
   searchPlaceholder: '브랜드명이나 제품명을 검색해보세요',
   sectionRecent: '최근에 확인한 사료',
-  sectionRecommended: (petName: string) => `${petName}에게 잘 맞을 것 같아요`,
+  sectionRecommended: (petName?: string | null) => `${petOr(petName)}에게 잘 맞을 것 같아요`,
   lastScanned: (days: number) => `${days}일 전에 확인한 사료예요`,
   guestBanner: {
     title: '우리 아이 맞춤 분석을 받아보세요',
