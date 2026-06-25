@@ -5,7 +5,9 @@ import { useMemo } from 'react';
 import { useStore } from '../store/useStore';
 import { useNavigate } from 'react-router-dom';
 import ProductImage from '../components/ProductImage';
-import { rankProductsForProfile, gradeFromScore, calculateCompatibilityScore } from '../utils/score';
+import { rankProductsForProfile } from '../utils/score';
+import { getDisplayGrade } from '../utils/productGrade';
+import { displayBrand } from '../utils/brandLabel';
 
 // CHANGED: 등급→색상 매핑 유틸 추가 (상세페이지와 통일된 점수 팔레트). 알 수 없는 등급은 중립 회색.
 const getGradeColor = (grade) => {
@@ -47,7 +49,9 @@ export default function Home() {
   const topRanked = useMemo(() => {
     if (!products.length) return products.slice(0, 6);
     if (hasPetProfile) {
-      return rankProductsForProfile(products, profile, { limit: 6 });
+      // rankProductsForProfile는 {product, breakdown, score} 래퍼를 반환하므로 Product[]로 정규화.
+      // (정규화 누락 시 카드가 래퍼를 Product로 취급해 이름/가격이 비어 "가격 미정"으로 표시됨)
+      return rankProductsForProfile(products, profile, { limit: 6 }).map((r) => r.product);
     }
     return [...products].sort((a, b) => b.averageRating - a.averageRating).slice(0, 6);
   }, [products, profile, hasPetProfile]);
@@ -64,13 +68,9 @@ export default function Home() {
     [recentViews, products],
   );
 
-  // 등급 산출 (기존 규칙 유지: 프로필 있으면 궁합점수 기반, 없으면 검수상태 기반 기본값)
-  const gradeOf = (product) =>
-    hasPetProfile
-      ? gradeFromScore(calculateCompatibilityScore(product, profile))
-      : product.verificationStatus === 'verified'
-        ? 'A'
-        : 'B';
+  // 등급 산출: 프로필 있으면 맞춤 궁합 등급, 없으면 성분 안전도 등급, 미분석이면 '분석 중'(pending).
+  // {grade, label} — grade: 'A'|'B'|'C'|'D'|'pending', label: 'A등급'|…|'분석 중'
+  const gradeInfoOf = (product) => getDisplayGrade(product, profile, hasPetProfile);
 
   const favoriteSet = new Set(favorites || []);
 
@@ -163,7 +163,7 @@ export default function Home() {
           {/* CHANGED: 작은 이미지/약한 outline 버튼 카드를, 1:1 이미지 + 채워진 비교 버튼 2열 그리드로 교체 (문제 #4, #5). */}
           <div className="grid grid-cols-2 gap-3">
             {topRanked.slice(0, 6).map((product) => {
-              const grade = gradeOf(product);
+              const { grade, label } = gradeInfoOf(product);
               const isFav = favoriteSet.has(product.id);
               return (
                 <div
@@ -182,7 +182,7 @@ export default function Home() {
                       className="absolute top-2 left-2 text-[10px] font-bold text-white px-2 py-0.5 rounded-full"
                       style={{ background: getGradeColor(grade) }}
                     >
-                      {grade}등급
+                      {label}
                     </span>
                     <button
                       onClick={(e) => { e.stopPropagation(); toggleFavorite?.(product.id); }}
@@ -196,7 +196,7 @@ export default function Home() {
 
                   {/* 정보 영역 */}
                   <div className="p-3">
-                    <p className="text-[10px] text-[#ABABAB] mb-0.5 truncate">{product.brand}</p>
+                    <p className="text-[10px] text-[#ABABAB] mb-0.5 truncate">{displayBrand(product.brand, product.name)}</p>
                     <p className="text-[13px] font-semibold text-[#1A1A1A] leading-snug line-clamp-2 mb-2">
                       {product.name}
                     </p>
@@ -233,7 +233,7 @@ export default function Home() {
 
           <div className="bg-white rounded-[16px] overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06)] divide-y divide-[#EFEFEF]">
             {rankingTop3.map((product, index) => {
-              const grade = gradeOf(product);
+              const { grade, label } = gradeInfoOf(product);
               return (
                 <div
                   key={product.id}
@@ -259,7 +259,7 @@ export default function Home() {
                     className="text-[11px] font-bold text-white px-2 py-1 rounded-full flex-shrink-0"
                     style={{ background: getGradeColor(grade) }}
                   >
-                    {grade}
+                    {grade === 'pending' ? '분석 중' : grade}
                   </span>
                 </div>
               );
@@ -287,7 +287,7 @@ export default function Home() {
         ) : (
           <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
             {recentList.slice(0, 8).map((product) => {
-              const grade = gradeOf(product);
+              const { grade, label } = gradeInfoOf(product);
               return (
                 // CHANGED: 이미지+상품명만 있던 카드에 등급 뱃지와 가격 정보를 추가 (문제 #6).
                 <div
@@ -301,7 +301,7 @@ export default function Home() {
                       className="absolute top-1.5 left-1.5 text-[9px] font-bold text-white px-1.5 py-0.5 rounded-full"
                       style={{ background: getGradeColor(grade) }}
                     >
-                      {grade}
+                      {grade === 'pending' ? '분석 중' : grade}
                     </span>
                   </div>
                   <div className="p-2">
