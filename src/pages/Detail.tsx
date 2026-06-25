@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useEffect, useState, useMemo } from 'react';
+import { createPortal } from 'react-dom'; // CHANGED: 하단 고정 CTA를 body로 포털 — 조상 transform의 fixed 포함블록 문제 회피
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -55,7 +56,6 @@ import { TossCard } from '../components/TossUI';
 import ProductImage from '../components/ProductImage';
 import BreedNutritionPanel from '../components/BreedNutritionPanel';
 import ProductImageSlider from '../components/ProductImageSlider';
-import CollapsibleSection from '../components/CollapsibleSection';
 import AnimatedNumber from '../components/AnimatedNumber';
 import { CAUTION_INGREDIENT, ALLERGY_CONFLICT, MEDICAL_DISCLAIMER, PRE_PURCHASE } from '../copy/ui';
 
@@ -219,187 +219,143 @@ export default function Detail() {
   }
 
   return (
-    <div style={{ paddingBottom: 160 }}>
-      {/* CHANGED: 분리됐던 2개 이미지 카드 → 단일 풀와이드 스와이프 슬라이더(도트 인디케이터, 좋아요 버튼 유지) */}
+    <div className="pb-40">
+      {/* CHANGED(Tailwind): 분리됐던 2개 이미지 카드 → 풀와이드 단일 슬라이더(360px, 도트, 좋아요) */}
       <ProductImageSlider
         images={product.imageUrl ? [product.imageUrl] : []}
         productName={product.name}
         isFav={isFav}
         onToggleFav={() => toggleFavorite(product.id)}
       />
-
-      {/* CHANGED: 뒤로가기는 이미지 위 좌상단, 맨위로는 우하단으로 분리 — 하단 고정 CTA와 겹치지 않도록 */}
+      {/* 뒤로가기 — 이미지 위 좌상단 고정 */}
       <button
         type="button"
-        className="detail-back-fab"
         onClick={() => navigate(-1)}
         aria-label="뒤로 가기"
-        style={{ position: 'fixed', top: 'calc(12px + env(safe-area-inset-top, 0px))', left: 'max(16px, calc(50% - 240px + 16px))', zIndex: 56 }}
+        className="w-10 h-10 rounded-full bg-white/85 backdrop-blur-sm shadow-md flex items-center justify-center"
+        style={{ position: 'fixed', top: 'calc(12px + env(safe-area-inset-top, 0px))', left: 'max(12px, calc(50% - 260px + 12px))', zIndex: 56 }}
       >
-        <ArrowLeft size={22} strokeWidth={2.25} aria-hidden />
-      </button>
-      <button
-        type="button"
-        className="detail-scroll-top-fab"
-        onClick={handleScrollTop}
-        aria-label="맨 위로 이동"
-        style={{ position: 'fixed', right: 'max(16px, calc(50% - 240px + 16px))', bottom: 'calc(150px + env(safe-area-inset-bottom, 0px))', zIndex: 52 }}
-      >
-        <ChevronUp size={22} strokeWidth={2.4} aria-hidden />
+        <ArrowLeft size={20} color="#1A1A1A" />
       </button>
 
-      <TossCard style={{ marginBottom: '24px', padding: '20px' }}>
-        <div style={{ marginBottom: '8px', fontSize: '13px', color: 'var(--text-light)', fontWeight: 700 }}>{product.brand}</div>
-        <h1 style={{ fontSize: '26px', lineHeight: 1.3, marginBottom: '14px', fontWeight: 900 }}>{product.name}</h1>
-      
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '18px' }}>
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontSize: '12px',
-              fontWeight: 800,
-              padding: '7px 10px',
-              borderRadius: '999px',
-              background: verificationMeta.bg,
-              color: verificationMeta.color,
-              border: `1px solid ${verificationMeta.border}`,
-            }}
-          >
-            <Shield size={14} />
-            {verificationMeta.label}
-          </div>
+      {/* CHANGED(Tailwind, #2): 상품명 카드 + 태그 분리 → 단일 정보 헤더로 통합 */}
+      <div className="pt-5 pb-4">
+        <div className="flex items-center gap-2 mb-2">
+          {(product.coupangProductId || product.coupangLink) && (
+            <span className="text-[11px] text-[#6B6B6B] bg-[#EFEFEF] px-2 py-0.5 rounded-full font-medium">쿠팡상품</span>
+          )}
           {product.targetPetType && (
-            <div className="ui-badge ui-badge-muted" style={{ display: 'inline-flex' }}>
-              {product.targetPetType === 'dog' ? <Dog size={14} /> : (product.targetPetType === 'cat' ? <Cat size={14} /> : <Layers size={14} />)}
-              {product.targetPetType === 'dog' ? '강아지용' : (product.targetPetType === 'cat' ? '고양이용' : '공용')}
-            </div>
+            <span className="text-[11px] text-[#6B6B6B] bg-[#EFEFEF] px-2 py-0.5 rounded-full">
+              {product.targetPetType === 'dog' ? '🐶 강아지용' : product.targetPetType === 'cat' ? '🐱 고양이용' : '🐾 전체'}
+            </span>
           )}
-          {product.targetLifeStage && product.targetLifeStage.length > 0 && (
-            <div className="ui-badge ui-badge-muted" style={{ display: 'inline-flex' }}>
-              <Calendar size={14} />
-              {product.targetLifeStage.join(', ')}
-            </div>
-          )}
-          {product.formulation && (
-            <div className="ui-badge ui-badge-muted" style={{ display: 'inline-flex' }}>
-              <Layers size={14} />
-              {product.formulation}
-            </div>
-          )}
+          {/* CHANGED(#2): 검수 상태는 눈에 덜 띄게 우측 muted 처리 */}
+          <span className="text-[11px] text-[#ABABAB] ml-auto">{verificationMeta.label}</span>
         </div>
-      </TossCard>
+        <div className="text-[12px] text-[#6B6B6B] font-medium mb-1">{product.brand}</div>
+        <h1 className="text-[18px] font-bold text-[#1A1A1A] leading-snug mb-3">{product.name}</h1>
+        {(() => {
+          const ga = product.guaranteedAnalysis;
+          const tags = [];
+          if (!product.ingredients?.some(i => i.riskLevel === 'danger')) tags.push({ label: '주의성분 없음', emoji: '✅', cls: 'text-[#2ECC71] bg-[#EAFAF1]' });
+          if (allergyIngs.length === 0 && hasPetProfile) tags.push({ label: '알러지 성분 없음', emoji: '🛡️', cls: 'text-[#2ECC71] bg-[#EAFAF1]' });
+          if (ga?.crudeProtein && ga.crudeProtein >= 28) tags.push({ label: '고단백', emoji: '💪', cls: 'text-[#F5A623] bg-[#FEF9E7]' });
+          if (product.targetPetType === 'dog') tags.push({ label: '강아지 전용', emoji: '🐕', cls: 'text-[#F5A623] bg-[#FEF9E7]' });
+          if (product.targetPetType === 'cat') tags.push({ label: '고양이 전용', emoji: '🐈', cls: 'text-[#F5A623] bg-[#FEF9E7]' });
+          if (/무곡|grain.?free/i.test(product.name || '')) tags.push({ label: '무곡물', emoji: '🌾', cls: 'text-[#2ECC71] bg-[#EAFAF1]' });
+          if (!tags.length) return null;
+          return (
+            <div className="flex flex-wrap gap-2">
+              {tags.map(t => (
+                <span key={t.label} className={`flex items-center gap-1 text-[11px] font-semibold px-3 py-1.5 rounded-full ${t.cls}`}>
+                  {t.emoji} {t.label}
+                </span>
+              ))}
+            </div>
+          );
+        })()}
+      </div>
 
-      {/* CHANGED: VERORO SCORE — 48px count-up 점수 + 등급 컬러 + 한줄 설명 + 등급별 게이지바 시각화 */}
+      {/* CHANGED(Tailwind, #3): 점수 + 게이지바 + 등급 범례(D C B A S) + 한줄 설명 */}
       {report && (() => {
         const g = gradeFromScore(report.score);
         const gm = GRADE_META[g] || GRADE_META.D;
+        const legend = ['D', 'C', 'B', 'A', 'S'];
         return (
-          <div className="pdp-score-card" style={{ background: gm.bg, borderColor: gm.line }}>
-            <div className="pdp-score-top">
+          <div className="mb-3 bg-white rounded-[16px] p-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+            <p className="text-[11px] font-semibold text-[#ABABAB] tracking-widest mb-3">VERORO SCORE</p>
+            <div className="flex items-center justify-between">
               <div>
-                <div className="pdp-score-eyebrow">VERORO SCORE</div>
-                <div className="pdp-score-numrow">
-                  <span className="pdp-score-num" style={{ color: gm.color }}>
-                    <AnimatedNumber value={report.score} />
-                  </span>
-                  <span className="pdp-score-den">/ 100</span>
+                <div className="flex items-end gap-1 mb-1">
+                  <span className="text-[52px] font-extrabold leading-none" style={{ color: gm.color }}><AnimatedNumber value={report.score} /></span>
+                  <span className="text-[16px] text-[#ABABAB] mb-2">/ 100</span>
                 </div>
-                <div className="pdp-score-tier" style={{ color: gm.color }}>{gm.tier}</div>
+                <p className="text-[13px] text-[#6B6B6B]">{gm.tier}</p>
+                <p className="text-[12px] text-[#ABABAB] mt-0.5">{scoreOneLiner(product, report, pipeline)}</p>
               </div>
-              <div className="pdp-score-grade" style={{ background: gm.color }}>
-                <span className="pdp-score-grade-letter">{g}</span>
-                <span className="pdp-score-grade-label">등급</span>
+              <div className="flex flex-col items-center gap-1">
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-md" style={{ background: gm.color }}>
+                  <span className="text-[28px] font-extrabold text-white">{g}</span>
+                </div>
+                <span className="text-[11px] text-[#ABABAB]">등급</span>
               </div>
             </div>
-
-            <div className="pdp-score-gauge" aria-hidden>
-              <div className="pdp-score-gauge-fill" style={{ width: `${Math.max(4, Math.min(100, report.score))}%`, background: gm.color }} />
-            </div>
-            <div className="pdp-score-gauge-scale" aria-hidden>
-              <span>0</span><span>D</span><span>C</span><span>B</span><span>A</span>
-            </div>
-
-            <p className="pdp-score-line">{scoreOneLiner(product, report, pipeline)}</p>
-
-            {hasPetProfile && breakdown && (
-              <div className="pdp-score-compat">
-                <span className="pdp-score-compat-label">{profile.name}와의 궁합</span>
-                <span className="pdp-score-compat-val">{breakdown.total}점</span>
-                {breakdown.allergyHits?.length > 0 && (
-                  <span className="pdp-score-compat-warn">⚠ 알러지 주의</span>
-                )}
+            <div className="mt-4">
+              <div className="flex justify-between text-[10px] text-[#ABABAB] mb-1"><span>0</span><span>50</span><span>100</span></div>
+              <div className="w-full h-2 bg-[#EFEFEF] rounded-full overflow-hidden">
+                <div className="h-full rounded-full transition-all duration-700"
+                  style={{ width: `${Math.max(3, Math.min(100, report.score))}%`, background: 'linear-gradient(to right, #F5C842, #2ECC71)' }} />
               </div>
-            )}
+              <div className="flex justify-between mt-2 text-[10px]">
+                {legend.map(x => (
+                  <span key={x} style={{ color: GRADE_META[x].color, fontWeight: x === g ? 700 : 400 }}>
+                    {x}{x === g ? ' ◀' : ''}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
         );
       })()}
 
-      {hasPetProfile && product && (
-        <BreedNutritionPanel product={product} profile={profile} />
-      )}
-
-      {/* CHANGED: 핵심 특징 태그를 스코어 다음으로 이동(시선 흐름: 이미지→이름→점수→특징) */}
-      {/* ── 핵심 태그 ── */}
-      {(() => {
-        const tags = [];
-        const ga = product.guaranteedAnalysis;
-        if (ga?.crudeProtein && ga.crudeProtein >= 28) tags.push({ label: '고단백', color: '#A855F7', bg: '#FAF5FF' });
-        if (!product.ingredients?.some(i => i.riskLevel === 'danger')) tags.push({ label: '주의성분 없음', color: '#15B36B', bg: '#ECFDF5' });
-        if (product.name?.includes('무곡물') || product.name?.includes('grain free') || product.name?.toLowerCase().includes('grain-free')) tags.push({ label: '무곡물', color: '#0369A1', bg: '#F0F9FF' });
-        if (product.healthConcerns?.includes('피부')) tags.push({ label: '피부건강', color: '#EA580C', bg: '#FFF7ED' });
-        if (product.healthConcerns?.includes('관절')) tags.push({ label: '관절건강', color: '#7C3AED', bg: '#F5F3FF' });
-        if (product.healthConcerns?.includes('소화')) tags.push({ label: '소화건강', color: '#0891B2', bg: '#ECFEFF' });
-        if (product.healthConcerns?.includes('비만') || product.healthConcerns?.includes('다이어트')) tags.push({ label: '체중관리', color: '#B45309', bg: '#FFFBEB' });
-        if (product.targetLifeStage?.includes('시니어')) tags.push({ label: '시니어', color: '#64748B', bg: '#F8FAFC' });
-        if (product.targetPetType === 'cat') tags.push({ label: '고양이 전용', color: '#DB2777', bg: '#FDF2F8' });
-        if (product.targetPetType === 'dog') tags.push({ label: '강아지 전용', color: '#2563EB', bg: '#EFF6FF' });
-        if (tags.length === 0) return null;
-        return (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '7px', marginBottom: '16px' }}>
-            {tags.map(({ label, color, bg }) => (
-              <span key={label} style={{ padding: '5px 11px', borderRadius: '99px', fontSize: '12px', fontWeight: 700, color, background: bg }}>
-                {label}
-              </span>
-            ))}
-          </div>
-        );
-      })()}
-
-      {/* CHANGED: AI 프리미엄 배너 색상 파란/보라 → 메인 컬러(골드)로 통일, 어두운 텍스트로 대비 확보 */}
+      {/* CHANGED(Tailwind, #4): 파란 배너 → 메인 노란색 그라데이션으로 통일 */}
       <button
         type="button"
         onClick={() => navigate('/analysis', { state: { product } })}
-        className="pdp-ai-banner"
+        className="mb-4 w-full bg-gradient-to-r from-[#F5C842] to-[#F0A500] rounded-[14px] px-4 py-3.5 flex items-center gap-3 shadow-[0_4px_16px_rgba(245,200,66,0.35)] active:scale-[0.99] transition-transform"
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div className="pdp-ai-banner-ico">
-            <Sparkles size={20} color="#A16207" />
-          </div>
-          <div style={{ textAlign: 'left' }}>
-            <div className="pdp-ai-banner-title">AI 프리미엄 영양 리포트 보기</div>
-            <div className="pdp-ai-banner-sub">DMB 건물기준 변환 · 급여량 계산기 · 유해성분 탐지</div>
-          </div>
+        <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center text-lg">✨</div>
+        <div className="flex-1 text-left">
+          <p className="text-[14px] font-bold text-white">AI 프리미엄 영양 리포트 보기</p>
+          <p className="text-[11px] text-white/80">DMB 건물기준 변환 · 급여량 계산기 · 유해성분 탐지</p>
         </div>
-        <ChevronRight size={20} color="#7A5B00" />
+        <span className="text-white text-lg">›</span>
       </button>
 
-      {/* CHANGED: 하루 급여 가이드를 접기/펼치기 아코디언으로 처리(스코어보다 아래로 우선순위 조정) */}
-      <CollapsibleSection
-        title="하루 급여 가이드"
-        subtitle="체중·활동량 기준 맞춤 급여량 계산"
-        icon={<Utensils size={18} color="var(--primary-dark)" />}
-        defaultOpen={false}
-      >
-        <FeedingGuideCalculator
-          kcalPer100g={productKcalPer100g || 350}
-          productName={product.name}
-          fatPercent={product.guaranteedAnalysis?.crudeFat}
-        />
-      </CollapsibleSection>
+      {/* CHANGED(Tailwind, #6→재배치 #5): 불릿 텍스트 → 아이콘 체크 카드 (스코어/배너 다음) */}
+      <div className="mb-4 bg-white rounded-[14px] p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+        <p className="text-[13px] font-semibold text-[#1A1A1A] mb-3">{PRE_PURCHASE.sectionTitle}</p>
+        <div className="flex flex-col gap-2.5">
+          {PRE_PURCHASE.checklist.map((text, i) => (
+            <div key={i} className="flex items-start gap-2.5">
+              <div className="w-5 h-5 rounded-full bg-[#EAFAF1] flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-[10px] text-[#2ECC71] font-bold">✓</span>
+              </div>
+              <p className="text-[13px] text-[#6B6B6B] leading-snug">{text}</p>
+            </div>
+          ))}
+        </div>
+        <p className="text-[11px] text-[#ABABAB] mt-3 pt-3 border-t border-[#EFEFEF]">{MEDICAL_DISCLAIMER.short}</p>
+      </div>
 
-      {/* CHANGED: 원료 안심 분석 — 성분 데이터가 있을 때만 노출(빈 '총 0개' 표/스켈레톤 숨김) */}
+      {/* CHANGED(#6): 급여 가이드 — 카드형, 선택 버튼 2열 통일, 결과 박스 강조 (컴포넌트 내부 Tailwind) */}
+      <FeedingGuideCalculator
+        kcalPer100g={productKcalPer100g || 350}
+        productName={product.name}
+        fatPercent={product.guaranteedAnalysis?.crudeFat}
+      />
+
+      {/* CHANGED(#7,#9): 원료/성분 분석 — 데이터 있을 때만 노출(빈 '총 0개' 숨김) */}
       {(product.ingredients?.length ?? 0) > 0 && (
         <>
       {/* ── 핵심 성분 요약 ── */}
@@ -727,7 +683,7 @@ export default function Detail() {
           )}
       {/* Toss-style Ingredient Analysis */}
       <section style={{ marginBottom: '40px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: 900, color: headlineColor, lineHeight: 1.4, marginBottom: '24px', letterSpacing: '-0.02em' }}>
+        <h2 style={{ fontSize: '18px', fontWeight: 800, color: headlineColor, lineHeight: 1.4, marginBottom: '24px', letterSpacing: '-0.02em' }}>
           {headline}
         </h2>
         
@@ -977,78 +933,56 @@ export default function Detail() {
         </div>
       )}
 
-      {/* AI 성분 정밀 분석 (Analyzer): 섹션 제목 강조 + 로그인 유도 소프트 처리는 컴포넌트 내부에서) */}
+      {/* AI 성분 정밀 분석 — 로그인 유도는 컴포넌트 내부에서 소프트 처리 */}
       <Analyzer />
 
-      {/* CHANGED: 구매 전 체크리스트 — 불릿(·) 텍스트 → 체크 아이콘(✓) 라운드 카드 */}
-      <section className="pdp-checklist">
-        <div className="pdp-checklist-title">{PRE_PURCHASE.sectionTitle}</div>
-        <div className="pdp-checklist-items">
-          {PRE_PURCHASE.checklist.map((item, i) => (
-            <div key={i} className="pdp-checklist-item">
-              <CheckCircle2 size={17} color="var(--safe)" style={{ flexShrink: 0, marginTop: '1px' }} aria-hidden />
-              <span>{item}</span>
-            </div>
-          ))}
-        </div>
-        <p className="pdp-checklist-note">{MEDICAL_DISCLAIMER.short}</p>
-      </section>
-
-      <p className="pdp-disclosure">{COUPANG_PARTNERS_DISCLOSURE}</p>
-
-      {/* CHANGED: 리뷰 섹션을 고정 CTA 밖(정상 문서 흐름)으로 분리 + 빈 상태 일러스트/CTA로 개선 */}
-      <section className="pdp-reviews">
-        <div className="pdp-reviews-head">
-          <h3 className="pdp-section-title">리뷰</h3>
-          {reviews.length > 0 && <span className="pdp-reviews-count">{reviews.length}개</span>}
+      {/* CHANGED(Tailwind, #10): 리뷰 빈 상태 → 일러스트 + 리뷰 작성 CTA */}
+      <section className="mb-6">
+        <div className="flex items-center gap-2 mb-3">
+          <h3 className="text-[16px] font-bold text-[#1A1A1A]">리뷰</h3>
+          {reviews.length > 0 && <span className="text-[13px] text-[#ABABAB]">{reviews.length}개</span>}
         </div>
         {reviews.length === 0 ? (
-          <div className="pdp-reviews-empty">
-            <div className="pdp-reviews-empty-emoji">🐾</div>
-            <div className="pdp-reviews-empty-title">아직 리뷰가 없어요</div>
-            <div className="pdp-reviews-empty-sub">첫 리뷰를 남겨 다른 보호자에게 도움을 주세요!</div>
-            {!isLoggedIn && (
-              <button
-                type="button"
-                className="pdp-reviews-empty-cta"
-                onClick={() => navigate('/login', { state: { from: `/product/${product.id}` } })}
-              >
-                로그인하고 리뷰 쓰기
-              </button>
-            )}
+          <div className="bg-white rounded-[16px] p-6 text-center shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+            <div className="text-5xl mb-3">💬</div>
+            <p className="text-[15px] font-bold text-[#1A1A1A] mb-1">아직 리뷰가 없어요</p>
+            <p className="text-[13px] text-[#ABABAB] mb-4">이 사료를 드셔봤다면 첫 번째 리뷰를 남겨주세요!</p>
+            <button
+              type="button"
+              onClick={() => navigate('/login', { state: { from: `/product/${product.id}` } })}
+              className="w-full py-3 border-2 border-[#F5C842] rounded-[12px] text-[14px] font-bold text-[#F5C842]"
+            >
+              ✏️ 리뷰 작성하기
+            </button>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div className="flex flex-col gap-3">
             {reviews.map(review => {
               const tagMatch = review.content.match(/^#\s*(.+?)(\n\n|\n|$)/);
               const tags = tagMatch ? tagMatch[1].split(' · ').map(t => t.trim()).filter(Boolean) : [];
               const text = tagMatch ? review.content.slice(tagMatch[0].length).trim() : review.content;
               return (
-                <div key={review.id} style={{ padding: '16px 20px', background: '#fff', border: '1px solid #F3F4F6', borderRadius: '16px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                <div key={review.id} className="p-4 bg-white border border-[#EFEFEF] rounded-[16px]">
+                  <div className="flex justify-between items-start mb-2">
                     <div>
-                      <div style={{ display: 'flex', gap: '2px', marginBottom: '4px' }}>
+                      <div className="flex gap-0.5 mb-1">
                         {[1, 2, 3, 4, 5].map(s => (
                           <Star key={s} size={14} fill={s <= review.rating ? '#FCD34D' : 'none'} color={s <= review.rating ? '#FCD34D' : '#E5E7EB'} />
                         ))}
                       </div>
-                      <div style={{ fontSize: '12px', color: '#9CA3AF' }}>
-                        {review.users?.nickname || '익명'} · {new Date(review.created_at).toLocaleDateString()}
-                      </div>
+                      <div className="text-[12px] text-[#ABABAB]">{review.users?.nickname || '익명'} · {new Date(review.created_at).toLocaleDateString()}</div>
                     </div>
                     {review.user_id === userId && (
-                      <button onClick={() => handleDeleteReview(review.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#D1D5DB' }}>
+                      <button onClick={() => handleDeleteReview(review.id)} className="bg-transparent border-0 cursor-pointer text-[#D1D5DB]">
                         <Trash2 size={16} />
                       </button>
                     )}
                   </div>
-                  {text ? <p style={{ fontSize: '14px', color: '#374151', lineHeight: 1.6, margin: '0 0 10px' }}>{text}</p> : null}
+                  {text ? <p className="text-[14px] text-[#374151] leading-relaxed m-0 mb-2.5">{text}</p> : null}
                   {tags.length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    <div className="flex flex-wrap gap-1.5">
                       {tags.map(tag => (
-                        <span key={tag} style={{ padding: '4px 10px', background: '#F3F4F6', borderRadius: '999px', fontSize: '12px', fontWeight: 700, color: '#374151' }}>
-                          {tag}
-                        </span>
+                        <span key={tag} className="px-2.5 py-1 bg-[#F3F4F6] rounded-full text-[12px] font-bold text-[#374151]">{tag}</span>
                       ))}
                     </div>
                   )}
@@ -1059,23 +993,35 @@ export default function Detail() {
         )}
       </section>
 
-      {/* CHANGED: 인라인 비교/구매 행 + 고정 바 2개(최저가 + 구매하기) → 단일 하단 고정 CTA로 통합.
-          비교는 아이콘 버튼으로 축소, 최저가 구매를 가장 큰 노란 버튼으로. */}
-      <div className="pdp-cta-bar">
-        <button
-          type="button"
-          className={`pdp-cta-compare ${isComparing ? 'pdp-cta-compare--on' : ''}`}
-          onClick={() => { isComparing ? removeFromComparison(product.id) : addToComparison(product.id); }}
-          aria-label={isComparing ? '비교함에서 제거' : '비교함에 추가'}
-          aria-pressed={isComparing}
+      {/* CHANGED(Tailwind, #11): 두 줄 CTA → 슬림 단일 바. createPortal로 body 렌더 —
+          .animate-fade-in의 잔존 transform이 fixed 포함블록이 되는 문제 회피(뷰포트 하단 고정) */}
+      {createPortal(
+        <div
+          className="fixed left-1/2 -translate-x-1/2 w-full max-w-[520px] z-[58] bg-white border-t border-[#EFEFEF] px-4 py-3"
+          style={{ bottom: 'calc(62px + env(safe-area-inset-bottom, 0px))' }}
         >
-          <GitCompare size={22} />
-        </button>
-        <button type="button" className="pdp-cta-buy" onClick={() => openCoupangForProduct(product)}>
-          최저가로 구매하기
-          {product.price ? <span className="pdp-cta-buy-price">{product.price.toLocaleString()}원~</span> : null}
-        </button>
-      </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => { isComparing ? removeFromComparison(product.id) : addToComparison(product.id); }}
+            aria-label={isComparing ? '비교함에서 제거' : '비교함에 추가'}
+            aria-pressed={isComparing}
+            className={`w-12 h-12 rounded-[12px] border-2 flex items-center justify-center flex-shrink-0 ${isComparing ? 'border-[#F5C842] bg-[#FEF9E7]' : 'border-[#EFEFEF] bg-white'}`}
+          >
+            <GitCompare size={20} color={isComparing ? '#F5C842' : '#6B6B6B'} />
+          </button>
+          <button
+            type="button"
+            onClick={() => openCoupangForProduct(product)}
+            className="flex-1 h-12 bg-[#F5C842] rounded-[12px] flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(245,200,66,0.4)] active:scale-[0.98] transition-transform"
+          >
+            <span className="text-[15px] font-bold text-white">최저가로 구매하기</span>
+            {product.price ? <span className="text-[13px] font-semibold text-white/80">{product.price.toLocaleString()}원~</span> : null}
+          </button>
+        </div>
+        </div>,
+        document.body
+      )}
 
       {/* 성분 상세 바텀시트 */}
       {selectedIngredient && (

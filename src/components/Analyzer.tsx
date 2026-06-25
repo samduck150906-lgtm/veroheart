@@ -355,40 +355,19 @@ export default function Analyzer({ initialMode = 'text' }: AnalyzerProps) {
         실제 출시 환경에서는 로그인 사용자만 사용할 수 있으며, 지나치게 짧거나 긴 성분표는 분석이 제한됩니다.
       </div>
       {!isLoggedIn && (
-        // CHANGED: 빨간 경고 텍스트 → 소프트한 회색 안내 박스 + '로그인하고 분석하기' CTA 버튼
-        <div
-          style={{
-            marginBottom: '16px',
-            borderRadius: '14px',
-            border: '1px solid var(--hairline)',
-            background: 'var(--fill)',
-            padding: '14px 16px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '12px',
-            flexWrap: 'wrap',
-          }}
-        >
-          <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--ink-soft)', lineHeight: 1.5 }}>
-            AI 정밀 분석은 로그인 후 이용할 수 있어요.
-          </span>
+        // CHANGED(Tailwind, #10): 빨간 경고 텍스트 → 부드러운 🔒 잠금 안내 박스 + 로그인 버튼
+        <div className="bg-[#F8F8F8] border border-[#EFEFEF] rounded-[12px] p-3.5 flex items-center gap-3 mb-3">
+          <span className="text-2xl">🔒</span>
+          <div className="flex-1">
+            <p className="text-[13px] font-semibold text-[#1A1A1A]">로그인 후 무료로 분석하기</p>
+            <p className="text-[11px] text-[#ABABAB]">AI 분석은 로그인 사용자 전용 기능이에요</p>
+          </div>
           <button
             type="button"
             onClick={() => navigate('/login', { state: { from: window.location.pathname } })}
-            style={{
-              flexShrink: 0,
-              padding: '9px 16px',
-              borderRadius: '10px',
-              border: 'none',
-              background: 'var(--primary)',
-              color: 'var(--ink-on-brand)',
-              fontSize: '13px',
-              fontWeight: 800,
-              cursor: 'pointer',
-            }}
+            className="flex-shrink-0 text-[12px] font-bold text-[#F5C842] bg-[#FEF9E7] px-3 py-1.5 rounded-full"
           >
-            로그인하고 분석하기
+            로그인
           </button>
         </div>
       )}
