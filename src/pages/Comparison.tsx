@@ -74,47 +74,6 @@ export default function Comparison() {
         <h1 style={{ fontSize: 22, fontWeight: 900, color: '#191F28', letterSpacing: '-0.03em', marginBottom: 4 }}>비교함</h1>
         <p style={{ fontSize: 14, color: '#8B95A1', marginBottom: 20 }}>최대 4개 상품을 비교할 수 있어요</p>
 
-        {/* ─── AI 추천 ─── */}
-        {hasPetProfile && compareProducts.length >= 2 && (() => {
-          const bestIdx = breakdowns.reduce((bi, bd, i) =>
-            (bd?.total ?? 0) > (breakdowns[bi]?.total ?? 0) ? i : bi, 0);
-          const best = compareProducts[bestIdx];
-          const bd = breakdowns[bestIdx];
-          const reasons = [];
-          if (bd) {
-            if (bd.safety >= 28) reasons.push('성분 안전도 우수');
-            if (bd.concern >= 18) reasons.push('건강 고민 적합');
-            if (bd.value >= 7) reasons.push('가성비 좋음');
-            if (reasons.length === 0) reasons.push('종합 점수 최고');
-          }
-          return (
-            <div style={{ marginBottom: '20px', padding: '18px 16px', borderRadius: '18px', background: 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)', border: '1px solid #FDE68A' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                <span style={{ fontSize: '18px' }}>🤖</span>
-                <span style={{ fontSize: '13px', fontWeight: 800, color: '#A16207' }}>AI 추천</span>
-              </div>
-              <div style={{ fontSize: '16px', fontWeight: 900, color: '#1C1917', lineHeight: 1.35, marginBottom: '12px' }}>
-                <span style={{ color: 'var(--brand-deep)' }}>
-                  {best.brand} {best.name.length > 18 ? best.name.slice(0, 18) + '…' : best.name}
-                </span>을(를) 추천합니다
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {reasons.map(r => (
-                  <div key={r} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600, color: '#78716C' }}>
-                    <span style={{ color: 'var(--safe)', fontWeight: 900 }}>✔</span> {r}
-                  </div>
-                ))}
-              </div>
-              {bd && (
-                <div style={{ marginTop: '12px', padding: '8px 12px', borderRadius: '10px', background: 'rgba(255,255,255,0.7)', display: 'inline-flex', alignItems: 'baseline', gap: '4px' }}>
-                  <span style={{ fontSize: '22px', fontWeight: 900, color: 'var(--brand-deep)' }}>{bd.total}</span>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink-faint)' }}>점 / 100</span>
-                </div>
-              )}
-            </div>
-          );
-        })()}
-
         {/* ─── 상품 헤더 카드들 (가로 스크롤) ─── */}
         <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px', marginBottom: '24px', scrollbarWidth: 'none' }}>
           {compareProducts.map((p, i) => {

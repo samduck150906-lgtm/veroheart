@@ -49,7 +49,6 @@ import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
 import { toDryMatter, calculateCalories } from '../analysis/nutrition';
 import { openCoupangForProduct } from '../utils/externalPurchase';
-import Analyzer from '../components/Analyzer';
 import BottomSheet from '../components/BottomSheet';
 import FeedingGuideCalculator from '../components/FeedingGuideCalculator';
 import { TossCard } from '../components/TossUI';
@@ -318,21 +317,7 @@ export default function Detail() {
         );
       })()}
 
-      {/* CHANGED(Tailwind, #4): 파란 배너 → 메인 노란색 그라데이션으로 통일 */}
-      <button
-        type="button"
-        onClick={() => navigate('/analysis', { state: { product } })}
-        className="mb-4 w-full bg-gradient-to-r from-[#F5C842] to-[#F0A500] rounded-[14px] px-4 py-3.5 flex items-center gap-3 shadow-[0_4px_16px_rgba(245,200,66,0.35)] active:scale-[0.99] transition-transform"
-      >
-        <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center text-lg">✨</div>
-        <div className="flex-1 text-left">
-          <p className="text-[14px] font-bold text-white">AI 프리미엄 영양 리포트 보기</p>
-          <p className="text-[11px] text-white/80">DMB 건물기준 변환 · 급여량 계산기 · 유해성분 탐지</p>
-        </div>
-        <span className="text-white text-lg">›</span>
-      </button>
-
-      {/* CHANGED(Tailwind, #6→재배치 #5): 불릿 텍스트 → 아이콘 체크 카드 (스코어/배너 다음) */}
+      {/* CHANGED(Tailwind, #6→재배치 #5): 불릿 텍스트 → 아이콘 체크 카드 (스코어 다음) */}
       <div className="mb-4 bg-white rounded-[14px] p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
         <p className="text-[13px] font-semibold text-[#1A1A1A] mb-3">{PRE_PURCHASE.sectionTitle}</p>
         <div className="flex flex-col gap-2.5">
@@ -864,12 +849,6 @@ export default function Detail() {
               </button>
             );
           })}
-          {product.ingredients.length > 12 && (
-            <button onClick={() => navigate('/analysis', { state: { productId: product.id } })}
-              style={{ background: '#E5E8EB', border: 'none', borderRadius: 20, padding: '5px 12px', fontSize: 12, fontWeight: 700, color: '#6B7684', cursor: 'pointer' }}>
-              +{product.ingredients.length - 12}개 더보기
-            </button>
-          )}
         </div>
 
         {/* Caution ingredients */}
@@ -932,9 +911,6 @@ export default function Detail() {
           </button>
         </div>
       )}
-
-      {/* AI 성분 정밀 분석 — 로그인 유도는 컴포넌트 내부에서 소프트 처리 */}
-      <Analyzer />
 
       {/* CHANGED(Tailwind, #10): 리뷰 빈 상태 → 일러스트 + 리뷰 작성 CTA */}
       <section className="mb-6">

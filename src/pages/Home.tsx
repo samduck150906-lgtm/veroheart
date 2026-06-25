@@ -131,7 +131,7 @@ export default function Home() {
           <div className="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full" />
           <div className="absolute -right-2 -bottom-8 w-20 h-20 bg-white/10 rounded-full" />
           <div className="relative p-5">
-            <p className="text-[12px] font-semibold text-white/75 mb-1">AI 사료 성분 분석</p>
+            <p className="text-[12px] font-semibold text-white/75 mb-1">맞춤 사료 추천</p>
             <p className="text-[21px] font-extrabold text-white leading-snug mb-3">
               내 아이에게 딱 맞는<br />사료를 찾아드려요 🐾
             </p>
@@ -167,7 +167,7 @@ export default function Home() {
               {petName ? `${petName}에게 잘 맞을 것 같아요` : '추천 사료 모아봤어요'}
             </p>
             <p className="text-[12px] text-[#ABABAB] mt-0.5">
-              {petName ? 'AI가 분석한 맞춤 추천이에요' : '인기 있는 사료부터 확인해보세요'}
+              {petName ? '반려동물 맞춤 추천이에요' : '인기 있는 사료부터 확인해보세요'}
             </p>
           </div>
           <button

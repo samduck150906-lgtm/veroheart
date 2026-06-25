@@ -15,7 +15,7 @@ import GradeBadge from '../components/GradeBadge';
 import { notify } from '../store/useNotification';
 import { FAVORITES_EMPTY } from '../copy/ui';
 
-const TABS = ['찜', '구매내역', '분석리포트'];
+const TABS = ['찜', '구매내역'];
 
 function ScoreCircle({ score }) {
   const circumference = 2 * Math.PI * 36;
@@ -41,10 +41,8 @@ export default function Profile() {
     isLoggedIn, 
     profile, 
     updateProfile, 
-    orders, 
-    fetchOrders, 
-    reports, 
-    fetchReports,
+    orders,
+    fetchOrders,
     logout,
     signOut,
     favorites,
@@ -56,7 +54,7 @@ export default function Profile() {
   const tabParam = searchParams.get('tab');
 
   useEffect(() => {
-    if (tabParam === 'favorites' || tabParam === 'orders' || tabParam === 'reports' || tabParam === 'info') {
+    if (tabParam === 'favorites' || tabParam === 'orders' || tabParam === 'info') {
       setActiveTab(tabParam);
     }
   }, [tabParam]);
@@ -352,17 +350,6 @@ export default function Profile() {
           </div>
         )}
 
-        {activeTab === '분석리포트' && (
-          <div style={{ textAlign: 'center', padding: '40px 0', color: '#B0B8C1' }}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>📊</div>
-            <p style={{ fontWeight: 600, fontSize: 15 }}>분석 리포트가 없어요</p>
-            <p style={{ fontSize: 13, marginTop: 4 }}>스캐너로 사료 성분표를 촬영해보세요</p>
-            <button onClick={() => navigate('/scanner')}
-              style={{ marginTop: 16, background: '#F5C518', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 14, fontWeight: 700, color: '#191F28', cursor: 'pointer' }}>
-              스캔하러 가기
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

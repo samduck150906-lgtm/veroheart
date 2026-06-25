@@ -248,10 +248,6 @@ export default function Search() {
               onClick={() => { setQuery(''); resetFilters(); }}
               style={{ background: '#F5C518', border: 'none', borderRadius: 10, padding: '10px 18px', fontSize: 14, fontWeight: 700, color: '#191F28', cursor: 'pointer' }}
             >필터 초기화</button>
-            <button
-              onClick={() => navigate('/scanner')}
-              style={{ background: '#fff', border: '1.5px solid #E5E8EB', borderRadius: 10, padding: '10px 18px', fontSize: 14, fontWeight: 700, color: '#4E5968', cursor: 'pointer' }}
-            >📷 직접 스캔하기</button>
           </div>
         </div>
       ) : (

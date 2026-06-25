@@ -9,8 +9,6 @@ const PAGE_TITLES: Record<string, string> = {
   '/dictionary': '성분사전',
   '/comparison': '비교함',
   '/community': '커뮤니티',
-  '/analysis': '분석 리포트',
-  '/scan-result': '분석 리포트',
   '/pet-profile': '마이펫',
   '/terms': '이용약관',
   '/privacy': '개인정보처리방침',
@@ -66,10 +64,10 @@ export default function Layout() {
 
   const isHome = path === '/';
   // Pages that render their own header / are full-screen
-  const noChromeOn = ['/profile', '/login', '/auth', '/scanner'];
+  const noChromeOn = ['/profile', '/login', '/auth'];
   const hideChrome = noChromeOn.some((p) => path === p || path.startsWith(p + '/'));
 
-  const hideFooterOn = ['/auth', '/login', '/scanner'];
+  const hideFooterOn = ['/auth', '/login'];
   const shouldHideFooter = hideFooterOn.some((p) => path.startsWith(p));
 
   const title = getTitle(path);
