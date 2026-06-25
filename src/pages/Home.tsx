@@ -1,22 +1,22 @@
 // @ts-nocheck
-// CHANGED: 홈 전면 리뉴얼 — 인라인 스타일 + 중복 카테고리/깨진 추천 제목 등 문제를 제거하고
-// Tailwind 기반 모바일 우선(max-width 480px) UI로 재작성. 데이터 fetch/상태 로직은 그대로 유지.
+// CHANGED: 홈 전면 재디자인 — 상세페이지와 통일된 Tailwind 디자인 시스템(크림 #FAF8F4 / 브랜드 옐로 #F5C842
+// / 그린 #2ECC71)으로 재작성. 데이터 fetch/상태 로직은 그대로 유지하고, 데이터 미로딩 시 큰 공백이
+// 생기던 문제를 로딩 스켈레톤 + 빈 상태 카드로 해결. 모바일 우선(max-width 480px).
 import { useMemo } from 'react';
 import { useStore } from '../store/useStore';
 import { useNavigate } from 'react-router-dom';
+import { Search, ChevronRight, Heart } from 'lucide-react';
 import ProductImage from '../components/ProductImage';
 import { rankProductsForProfile } from '../utils/score';
 import { getDisplayGrade } from '../utils/productGrade';
 import { displayBrand } from '../utils/brandLabel';
 
-// CHANGED: 등급→색상 매핑 유틸 추가 (상세페이지와 통일된 점수 팔레트). 알 수 없는 등급은 중립 회색.
+// 등급→색상 매핑 (상세페이지와 동일 점수 팔레트). 알 수 없는 등급은 중립 회색.
 const getGradeColor = (grade) => {
   const map = { S: '#2ECC71', A: '#A8E063', B: '#F5C842', C: '#FF9F43', D: '#EE5A24' };
   return map[grade] ?? '#ABABAB';
 };
 
-// CHANGED: 중복으로 두 번 노출되던 4x2 카테고리 그리드를 제거하고, 단일 가로 스크롤 칩 한 줄로 통합 (문제 #1).
-// label/emoji는 명세 디자인을, category(검색 라우팅 값)는 기존 검색 카테고리 체계를 그대로 사용.
 const CATEGORY_CHIPS = [
   { icon: '🥣', label: '사료', category: '사료' },
   { icon: '🦴', label: '간식', category: '간식' },
@@ -28,13 +28,26 @@ const CATEGORY_CHIPS = [
   { icon: '🏠', label: '생활용품', category: '생활용품·환경안전' },
 ];
 
+// CHANGED: 데이터 로딩 중 큰 공백 대신 보여줄 스켈레톤 카드 (문제: 데이터 미로딩 시 가운데 공백)
+function SkeletonCard() {
+  return (
+    <div className="bg-white rounded-[16px] overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+      <div className="aspect-square bg-[#F0EFEC] animate-pulse" />
+      <div className="p-3 flex flex-col gap-2">
+        <div className="h-2.5 w-1/3 bg-[#F0EFEC] rounded animate-pulse" />
+        <div className="h-3 w-full bg-[#F0EFEC] rounded animate-pulse" />
+        <div className="h-3.5 w-1/2 bg-[#F0EFEC] rounded animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const navigate = useNavigate();
-  // CHANGED: 데이터/상태 로직 유지. 찜 버튼 동작을 위해 store의 toggleFavorite만 추가로 구독.
-  const { products, profile, recentViews, isLoggedIn, favorites, toggleFavorite } = useStore();
+  // 데이터/상태 로직 유지. 로딩 스켈레톤을 위해 isLoadingProducts도 구독.
+  const { products, profile, recentViews, isLoggedIn, favorites, toggleFavorite, isLoadingProducts } = useStore();
 
   const hasPetProfile = isLoggedIn && profile?.name && profile.name !== '우리 아이';
-  // CHANGED: 로그인/등록 안 된 경우 petName을 null로 두고, 출력부에서 조건 처리해 "null에게..." 버그 방지 (문제 #3).
   const petName = hasPetProfile ? profile.name : null;
 
   // 식단 건강 점수 (기존 로직 유지)
@@ -47,16 +60,14 @@ export default function Home() {
 
   // 맞춤 추천 상품 (기존 랭킹 로직 유지)
   const topRanked = useMemo(() => {
-    if (!products.length) return products.slice(0, 6);
+    if (!products.length) return [];
     if (hasPetProfile) {
-      // rankProductsForProfile는 {product, breakdown, score} 래퍼를 반환하므로 Product[]로 정규화.
-      // (정규화 누락 시 카드가 래퍼를 Product로 취급해 이름/가격이 비어 "가격 미정"으로 표시됨)
       return rankProductsForProfile(products, profile, { limit: 6 }).map((r) => r.product);
     }
     return [...products].sort((a, b) => b.averageRating - a.averageRating).slice(0, 6);
   }, [products, profile, hasPetProfile]);
 
-  // CHANGED: 인기 TOP 랭킹 미리보기(신규 섹션, 문제 #4)용 데이터 — 평점순 상위 3개. 기존 products 상태만 사용.
+  // 인기 TOP 3 — 평점순 상위 3개
   const rankingTop3 = useMemo(
     () => [...products].sort((a, b) => b.averageRating - a.averageRating).slice(0, 3),
     [products],
@@ -64,66 +75,75 @@ export default function Home() {
 
   // 최근 본 상품 (기존 로직 유지)
   const recentList = useMemo(
-    () => (recentViews?.length ? recentViews : products.slice(0, 6)),
-    [recentViews, products],
+    () => (recentViews?.length ? recentViews : []),
+    [recentViews],
   );
 
-  // 등급 산출: 프로필 있으면 맞춤 궁합 등급, 없으면 성분 안전도 등급, 미분석이면 '분석 중'(pending).
-  // {grade, label} — grade: 'A'|'B'|'C'|'D'|'pending', label: 'A등급'|…|'분석 중'
   const gradeInfoOf = (product) => getDisplayGrade(product, profile, hasPetProfile);
-
   const favoriteSet = new Set(favorites || []);
+  const loading = isLoadingProducts && products.length === 0;
+  const MEDALS = ['🥇', '🥈', '🥉'];
 
   return (
-    // CHANGED: 페이지 배경을 명세 크림 토큰(#FAF8F4)으로 통일, 하단 네비 여백 확보 (문제 #10).
     // veroro-home: preflight 미사용 환경에서 border/divide 유틸이 동작하도록 하는 스코프 클래스.
     <div className="veroro-home bg-[#FAF8F4] min-h-screen pb-24">
 
-      {/* ===== [섹션 1] 히어로 배너 (문제 #2, #9) ===== */}
+      {/* ===== 검색 바 ===== */}
+      <div className="px-4 pt-3 pb-1">
+        <button
+          onClick={() => navigate('/search')}
+          className="w-full flex items-center gap-2.5 bg-white border border-[#EFEFEF] rounded-full px-4 py-3 shadow-[0_1px_6px_rgba(0,0,0,0.04)] text-left active:bg-[#FAFAF8] transition-colors"
+        >
+          <Search size={18} className="text-[#ABABAB]" />
+          <span className="text-[14px] text-[#ABABAB]">사료·간식·브랜드를 검색해보세요</span>
+        </button>
+      </div>
+
+      {/* ===== [섹션 1] 히어로 ===== */}
       {hasPetProfile ? (
-        // CHANGED: 로그인+반려동물 등록 완료 — 흰 카드형 히어로. 기존 식단 적합도(healthScore)는 칩으로 보존.
         <button
           onClick={() => navigate('/pet-profile')}
-          className="mx-4 mt-4 mb-2 bg-white rounded-[20px] p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)] flex items-center gap-3 text-left active:scale-[0.99] transition-transform"
+          className="mx-4 mt-3 mb-1 w-[calc(100%-2rem)] rounded-[20px] p-5 relative overflow-hidden text-left active:scale-[0.99] transition-transform"
+          style={{ background: 'linear-gradient(135deg, #F5C842 0%, #F0A500 100%)' }}
         >
-          <div className="w-14 h-14 rounded-2xl bg-[#FEF9E7] flex items-center justify-center text-3xl flex-shrink-0">
-            {profile?.species === 'Cat' ? '🐱' : '🐕'}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[13px] text-[#ABABAB]">안녕하세요!</p>
-            <p className="text-[16px] font-bold text-[#1A1A1A] truncate">{petName}에게 맞는 사료</p>
-            <div className="flex items-center gap-1.5 mt-1">
-              <span className="text-[11px] font-bold text-[#2ECC71] bg-[#EAFAF1] px-2 py-0.5 rounded-full">
-                식단 적합도 {healthScore}
-              </span>
-              <span className="text-[12px] text-[#6B6B6B] truncate">맞춤 추천 확인</span>
+          <div className="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full" />
+          <div className="absolute right-6 -bottom-10 w-24 h-24 bg-white/10 rounded-full" />
+          <div className="relative flex items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-white/25 backdrop-blur-sm flex items-center justify-center text-4xl flex-shrink-0">
+              {profile?.species === 'Cat' ? '🐱' : '🐕'}
             </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[12px] font-semibold text-white/85 truncate">{petName} 보호자님, 안녕하세요</p>
+              <p className="text-[17px] font-extrabold text-white leading-snug mb-1.5">오늘도 건강한 한 끼 챙겨요</p>
+              <span className="inline-flex items-center gap-1 bg-white/95 px-2.5 py-1 rounded-full text-[12px] font-extrabold text-[#C98A00]">
+                식단 적합도 {healthScore}점
+              </span>
+            </div>
+            <ChevronRight size={22} className="text-white/90 flex-shrink-0" />
           </div>
-          <span className="text-[#ABABAB] text-xl flex-shrink-0">›</span>
         </button>
       ) : (
-        // CHANGED: 비로그인 — 밋밋한 노란 배너를 그라데이션+배경 장식원+일러스트+CTA 히어로로 교체 (문제 #2, #9).
         <button
           onClick={() => navigate(isLoggedIn ? '/pet-profile' : '/login')}
-          className="mx-4 mt-4 mb-2 rounded-[20px] overflow-hidden relative block text-left active:scale-[0.99] transition-transform"
-          style={{ background: 'linear-gradient(135deg, #F5C842 0%, #F0A500 100%)', minHeight: 140 }}
+          className="mx-4 mt-3 mb-1 w-[calc(100%-2rem)] rounded-[20px] overflow-hidden relative block text-left active:scale-[0.99] transition-transform"
+          style={{ background: 'linear-gradient(135deg, #F5C842 0%, #F0A500 100%)', minHeight: 148 }}
         >
           <div className="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full" />
           <div className="absolute -right-2 -bottom-8 w-20 h-20 bg-white/10 rounded-full" />
           <div className="relative p-5">
-            <p className="text-[12px] font-semibold text-white/70 mb-1">AI 성분 분석 앱</p>
-            <p className="text-[20px] font-extrabold text-white leading-snug mb-3">
+            <p className="text-[12px] font-semibold text-white/75 mb-1">AI 사료 성분 분석</p>
+            <p className="text-[21px] font-extrabold text-white leading-snug mb-3">
               내 아이에게 딱 맞는<br />사료를 찾아드려요 🐾
             </p>
             <span className="inline-block bg-white text-[#F0A500] text-[13px] font-bold px-4 py-2 rounded-full shadow-sm">
               반려동물 등록하기 →
             </span>
           </div>
-          <div className="absolute right-5 bottom-4 text-[64px] leading-none opacity-90 pointer-events-none">🐶</div>
+          <div className="absolute right-5 bottom-3 text-[64px] leading-none opacity-90 pointer-events-none">🐶</div>
         </button>
       )}
 
-      {/* ===== [섹션 2] 빠른 카테고리 — 가로 스크롤 칩 한 줄 (문제 #1) ===== */}
+      {/* ===== [섹션 2] 빠른 카테고리 ===== */}
       <div className="mt-4 mb-1">
         <div className="flex gap-2 px-4 overflow-x-auto no-scrollbar pb-1">
           {CATEGORY_CHIPS.map(({ icon, label, category }) => (
@@ -139,28 +159,30 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ===== [섹션 3] 맞춤 추천 상품 (문제 #3, #4, #5) ===== */}
-      {topRanked.length > 0 && (
-        <section className="mt-5 px-4">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              {/* CHANGED: HOME.sectionRecommended(null) → "null에게..." 버그를, petName 조건부 출력으로 수정 (문제 #3). */}
-              <p className="text-[17px] font-bold text-[#1A1A1A]">
-                {petName ? `${petName}에게 잘 맞을 것 같아요` : '추천 사료 모아봤어요'}
-              </p>
-              <p className="text-[12px] text-[#ABABAB] mt-0.5">
-                {petName ? 'AI가 분석한 맞춤 추천이에요' : '인기 있는 사료부터 확인해보세요'}
-              </p>
-            </div>
-            <button
-              onClick={() => navigate('/search')}
-              className="text-[13px] font-medium text-[#ABABAB] flex items-center gap-0.5 flex-shrink-0"
-            >
-              전체보기 <span>›</span>
-            </button>
+      {/* ===== [섹션 3] 맞춤 추천 (로딩 스켈레톤 / 빈 상태 처리) ===== */}
+      <section className="mt-5 px-4">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <p className="text-[17px] font-extrabold text-[#1A1A1A]">
+              {petName ? `${petName}에게 잘 맞을 것 같아요` : '추천 사료 모아봤어요'}
+            </p>
+            <p className="text-[12px] text-[#ABABAB] mt-0.5">
+              {petName ? 'AI가 분석한 맞춤 추천이에요' : '인기 있는 사료부터 확인해보세요'}
+            </p>
           </div>
+          <button
+            onClick={() => navigate('/search')}
+            className="text-[13px] font-medium text-[#ABABAB] flex items-center gap-0.5 flex-shrink-0"
+          >
+            전체보기 <ChevronRight size={14} />
+          </button>
+        </div>
 
-          {/* CHANGED: 작은 이미지/약한 outline 버튼 카드를, 1:1 이미지 + 채워진 비교 버튼 2열 그리드로 교체 (문제 #4, #5). */}
+        {loading ? (
+          <div className="grid grid-cols-2 gap-3">
+            {[0, 1, 2, 3].map((i) => <SkeletonCard key={i} />)}
+          </div>
+        ) : topRanked.length > 0 ? (
           <div className="grid grid-cols-2 gap-3">
             {topRanked.slice(0, 6).map((product) => {
               const { grade, label } = gradeInfoOf(product);
@@ -171,15 +193,10 @@ export default function Home() {
                   onClick={() => navigate(`/product/${product.id}`)}
                   className="bg-white rounded-[16px] overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06)] active:scale-[0.98] transition-transform cursor-pointer"
                 >
-                  {/* 이미지 영역 (1:1) */}
                   <div className="relative bg-[#F8F8F8] aspect-square">
-                    <ProductImage
-                      src={product.imageUrl}
-                      alt={product.name}
-                      className="w-full h-full object-contain p-3"
-                    />
+                    <ProductImage src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
                     <span
-                      className="absolute top-2 left-2 text-[10px] font-bold text-white px-2 py-0.5 rounded-full"
+                      className="absolute top-2 left-2 text-[10px] font-bold text-white px-2 py-0.5 rounded-full shadow-sm"
                       style={{ background: getGradeColor(grade) }}
                     >
                       {label}
@@ -187,116 +204,108 @@ export default function Home() {
                     <button
                       onClick={(e) => { e.stopPropagation(); toggleFavorite?.(product.id); }}
                       aria-label="찜하기"
-                      className="absolute top-2 right-2 w-7 h-7 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm text-sm"
-                      style={{ color: isFav ? '#F04452' : '#1A1A1A' }}
+                      className="absolute top-2 right-2 w-7 h-7 bg-white/85 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm"
                     >
-                      {isFav ? '♥' : '♡'}
+                      <Heart size={14} fill={isFav ? '#F04452' : 'none'} color={isFav ? '#F04452' : '#9A9A9A'} />
                     </button>
                   </div>
-
-                  {/* 정보 영역 */}
                   <div className="p-3">
                     <p className="text-[10px] text-[#ABABAB] mb-0.5 truncate">{displayBrand(product.brand, product.name)}</p>
-                    <p className="text-[13px] font-semibold text-[#1A1A1A] leading-snug line-clamp-2 mb-2">
+                    <p className="text-[13px] font-semibold text-[#1A1A1A] leading-snug line-clamp-2 mb-1.5 min-h-[34px]">
                       {product.name}
                     </p>
-                    <p className="text-[15px] font-extrabold text-[#1A1A1A] mb-2.5">
+                    <p className="text-[15px] font-extrabold text-[#1A1A1A]">
                       {product.price ? `${product.price.toLocaleString()}원` : '가격 미정'}
                     </p>
-                    {/* CHANGED: 약한 outline 버튼 → 채워진 노란 버튼 (문제 #5) */}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); navigate('/comparison'); }}
-                      className="w-full py-2 bg-[#F5C842] rounded-[10px] text-[12px] font-bold text-white active:bg-[#F0A500] transition-colors"
-                    >
-                      비교하기
-                    </button>
                   </div>
                 </div>
               );
             })}
-          </div>
-        </section>
-      )}
-
-      {/* ===== [섹션 4] 인기 TOP 랭킹 미리보기 — 신규 (문제 #4) ===== */}
-      {rankingTop3.length > 0 && (
-        <section className="mt-6 px-4">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-[17px] font-bold text-[#1A1A1A]">🏆 이번 주 인기 TOP 3</p>
-            <button
-              onClick={() => navigate('/ranking')}
-              className="text-[13px] font-medium text-[#ABABAB]"
-            >
-              랭킹 전체 ›
-            </button>
-          </div>
-
-          <div className="bg-white rounded-[16px] overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06)] divide-y divide-[#EFEFEF]">
-            {rankingTop3.map((product, index) => {
-              const { grade, label } = gradeInfoOf(product);
-              return (
-                <div
-                  key={product.id}
-                  onClick={() => navigate(`/product/${product.id}`)}
-                  className="flex items-center gap-3 p-3.5 active:bg-[#FAF8F4] cursor-pointer"
-                >
-                  <span
-                    className="w-6 text-center text-[15px] font-extrabold flex-shrink-0"
-                    style={{ color: index === 0 ? '#F5C842' : index === 1 ? '#ABABAB' : '#CD7F32' }}
-                  >
-                    {index + 1}
-                  </span>
-                  <div className="w-12 h-12 rounded-[10px] bg-[#F8F8F8] flex-shrink-0 overflow-hidden">
-                    <ProductImage src={product.imageUrl} alt={product.name} className="w-full h-full object-contain p-1" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-semibold text-[#1A1A1A] truncate">{product.name}</p>
-                    <p className="text-[12px] text-[#ABABAB]">
-                      {product.price ? `${product.price.toLocaleString()}원` : '가격 미정'}
-                    </p>
-                  </div>
-                  <span
-                    className="text-[11px] font-bold text-white px-2 py-1 rounded-full flex-shrink-0"
-                    style={{ background: getGradeColor(grade) }}
-                  >
-                    {grade === 'pending' ? '분석 중' : grade}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* ===== [섹션 5] 최근 본 상품 — 등급+가격 보강 (문제 #6) ===== */}
-      <section className="mt-6 px-4 mb-6">
-        <p className="text-[17px] font-bold text-[#1A1A1A] mb-3">최근 본 상품</p>
-
-        {recentList.length === 0 ? (
-          // 빈 상태 유지 (토큰만 신규 디자인에 맞춤)
-          <div className="bg-white rounded-[16px] p-6 text-center shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
-            <div className="text-3xl mb-2">🐾</div>
-            <p className="text-[14px] font-semibold text-[#6B6B6B]">아직 본 상품이 없어요</p>
-            <button
-              onClick={() => navigate('/search')}
-              className="mt-3 bg-[#F5C842] rounded-[10px] px-5 py-2.5 text-[13px] font-bold text-white active:bg-[#F0A500] transition-colors"
-            >
-              검색하러 가기
-            </button>
           </div>
         ) : (
+          // 빈 상태 — 큰 공백 대신 검색 유도 카드
+          <div className="bg-white rounded-[16px] p-7 text-center shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+            <div className="text-4xl mb-2">🍽️</div>
+            <p className="text-[14px] font-bold text-[#1A1A1A] mb-1">추천할 사료를 준비 중이에요</p>
+            <p className="text-[12px] text-[#ABABAB] mb-4">원하는 사료를 직접 검색해보세요</p>
+            <button
+              onClick={() => navigate('/search')}
+              className="bg-[#F5C842] rounded-[10px] px-5 py-2.5 text-[13px] font-bold text-white active:bg-[#F0A500] transition-colors"
+            >
+              사료 검색하기
+            </button>
+          </div>
+        )}
+      </section>
+
+      {/* ===== [섹션 4] 인기 TOP 3 ===== */}
+      {(loading || rankingTop3.length > 0) && (
+        <section className="mt-6 px-4">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[17px] font-extrabold text-[#1A1A1A]">🏆 이번 주 인기 TOP 3</p>
+            <button onClick={() => navigate('/ranking')} className="text-[13px] font-medium text-[#ABABAB] flex items-center gap-0.5">
+              랭킹 전체 <ChevronRight size={14} />
+            </button>
+          </div>
+
+          <div className="bg-white rounded-[16px] overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06)] divide-y divide-[#F2F2F2]">
+            {loading
+              ? [0, 1, 2].map((i) => (
+                  <div key={i} className="flex items-center gap-3 p-3.5">
+                    <div className="w-6 h-6 bg-[#F0EFEC] rounded-full animate-pulse flex-shrink-0" />
+                    <div className="w-12 h-12 bg-[#F0EFEC] rounded-[10px] animate-pulse flex-shrink-0" />
+                    <div className="flex-1 flex flex-col gap-2">
+                      <div className="h-3 w-2/3 bg-[#F0EFEC] rounded animate-pulse" />
+                      <div className="h-3 w-1/3 bg-[#F0EFEC] rounded animate-pulse" />
+                    </div>
+                  </div>
+                ))
+              : rankingTop3.map((product, index) => {
+                  const { grade } = gradeInfoOf(product);
+                  return (
+                    <div
+                      key={product.id}
+                      onClick={() => navigate(`/product/${product.id}`)}
+                      className="flex items-center gap-3 p-3.5 active:bg-[#FAF8F4] cursor-pointer"
+                    >
+                      <span className="w-6 text-center text-[18px] flex-shrink-0">{MEDALS[index]}</span>
+                      <div className="w-12 h-12 rounded-[10px] bg-[#F8F8F8] flex-shrink-0 overflow-hidden">
+                        <ProductImage src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-semibold text-[#1A1A1A] truncate">{product.name}</p>
+                        <p className="text-[12px] text-[#ABABAB]">
+                          {product.price ? `${product.price.toLocaleString()}원` : '가격 미정'}
+                        </p>
+                      </div>
+                      <span
+                        className="text-[11px] font-bold text-white px-2 py-1 rounded-full flex-shrink-0"
+                        style={{ background: getGradeColor(grade) }}
+                      >
+                        {grade === 'pending' ? '분석 중' : `${grade}등급`}
+                      </span>
+                    </div>
+                  );
+                })}
+          </div>
+        </section>
+      )}
+
+      {/* ===== [섹션 5] 최근 본 상품 (데이터 있을 때만) ===== */}
+      {recentList.length > 0 && (
+        <section className="mt-6 px-4 mb-2">
+          <p className="text-[17px] font-extrabold text-[#1A1A1A] mb-3">최근 본 상품</p>
           <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
             {recentList.slice(0, 8).map((product) => {
-              const { grade, label } = gradeInfoOf(product);
+              const { grade } = gradeInfoOf(product);
               return (
-                // CHANGED: 이미지+상품명만 있던 카드에 등급 뱃지와 가격 정보를 추가 (문제 #6).
                 <div
                   key={product.id}
                   onClick={() => navigate(`/product/${product.id}`)}
                   className="flex-shrink-0 w-[120px] bg-white rounded-[14px] overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.06)] active:scale-[0.98] transition-transform cursor-pointer"
                 >
                   <div className="relative bg-[#F8F8F8] h-[100px]">
-                    <ProductImage src={product.imageUrl} alt={product.name} className="w-full h-full object-contain p-2" />
+                    <ProductImage src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
                     <span
                       className="absolute top-1.5 left-1.5 text-[9px] font-bold text-white px-1.5 py-0.5 rounded-full"
                       style={{ background: getGradeColor(grade) }}
@@ -305,10 +314,10 @@ export default function Home() {
                     </span>
                   </div>
                   <div className="p-2">
-                    <p className="text-[11px] text-[#1A1A1A] font-medium leading-snug line-clamp-2 mb-1">
+                    <p className="text-[11px] text-[#1A1A1A] font-medium leading-snug line-clamp-2 mb-1 min-h-[28px]">
                       {product.name}
                     </p>
-                    <p className="text-[12px] font-bold text-[#F5C842]">
+                    <p className="text-[12px] font-extrabold text-[#1A1A1A]">
                       {product.price ? `${product.price.toLocaleString()}원` : '가격 미정'}
                     </p>
                   </div>
@@ -316,8 +325,8 @@ export default function Home() {
               );
             })}
           </div>
-        )}
-      </section>
+        </section>
+      )}
     </div>
   );
 }
