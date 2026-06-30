@@ -1,16 +1,7 @@
 // @ts-nocheck
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { MessageSquare, MessageCircle, ThumbsUp, Pencil, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
-import { useStore } from '../store/useStore';
-import { useNavigate, Link } from 'react-router-dom';
-import {
-  getCommunityPosts,
-  createCommunityPost,
-  toggleCommunityPostLike,
-  deleteCommunityPost,
-  type CommunityPostRow,
-} from '../lib/supabase';
+import { MessageSquare, MessageCircle, ThumbsUp, CheckCircle2, Pencil, ChevronDown, ChevronUp } from 'lucide-react';
 
 const CATEGORIES = ['전체', '사료추천', '집사꿀팁', '수의사 Q&A', '잡담'];
 
@@ -51,40 +42,68 @@ function PostCard({
     ? post.content.slice(0, CLAMP_CHARS) + '…'
     : post.content;
 
+const CATEGORIES = ['전체', '사료추천', '집사꿀팁', '수의사 Q&A', '잡담'];
+
+const CATEGORY_STYLE: Record<string, { bg: string; color: string }> = {
+  '수의사 Q&A': { bg: 'rgba(49,130,246,0.10)', color: '#1D4ED8' },
+  '사료추천':   { bg: 'var(--brand-tint)',      color: 'var(--brand-deep)' },
+  '집사꿀팁':   { bg: '#F0FDE8',               color: '#3A7D1C' },
+  '잡담':       { bg: 'var(--fill)',             color: 'var(--ink-soft)' },
+};
+
+function PostCard({ post, onLike }: { post: Post; onLike: (id: string) => void }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const CLAMP_CHARS = 120;
+  const needsClamp = post.content.length > CLAMP_CHARS;
+  const displayContent = needsClamp && !expanded
+    ? post.content.slice(0, CLAMP_CHARS) + '…'
+    : post.content;
+
   const cs = CATEGORY_STYLE[post.category] ?? { bg: 'var(--fill)', color: 'var(--ink-soft)' };
-  const isOwn = currentUserId === post.user_id;
-  const nickname = post.users?.nickname || '익명 집사';
 
   return (
     <article style={{
-      background: '#fff', borderRadius: '20px',
-      border: '1px solid var(--hairline)', padding: '18px',
+      background: '#fff',
+      borderRadius: '20px',
+      border: '1px solid var(--hairline)',
+      padding: '18px',
     }}>
       {/* Author row */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{
-            width: '36px', height: '36px', borderRadius: '50%',
-            background: 'var(--brand-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '16px', flexShrink: 0,
-          }}>
-            🐾
+          <img
+            src={post.author.avatar}
+            alt={post.author.name}
+            style={{
+              width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover',
+              border: post.author.isVet ? '2px solid var(--brand)' : '1px solid var(--hairline)',
+            }}
+          />
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ink)' }}>
+                {post.author.name}
+              </span>
+              {post.author.isVet && (
+                <CheckCircle2 size={13} fill="var(--brand-deep)" color="#fff" />
+              )}
+              <span style={{
+                fontSize: '9px', fontWeight: 700, padding: '2px 5px', borderRadius: '5px',
+                background: post.author.petType === 'cat' ? '#EFF6FF' : '#FEF3C7',
+                color: post.author.petType === 'cat' ? '#1D4ED8' : '#D97706',
+              }}>
+                {post.author.petType === 'cat' ? '묘주' : '견주'}
+              </span>
+            </div>
+            {post.author.badge && (
+              <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--ink-faint)', marginTop: '1px' }}>
+                {post.author.badge}
+              </div>
+            )}
           </div>
-          <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ink)' }}>{nickname}</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '11px', color: 'var(--ink-faint)', fontWeight: 500 }}>
-            {timeAgo(post.created_at)}
-          </span>
-          {isOwn && (
-            <button
-              onClick={() => onDelete(post.id)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--ink-faint)', display: 'flex' }}
-            >
-              <Trash2 size={13} />
-            </button>
-          )}
-        </div>
+        <span style={{ fontSize: '11px', color: 'var(--ink-faint)', fontWeight: 500 }}>{post.time}</span>
       </div>
 
       {/* Category badge */}
@@ -96,13 +115,10 @@ function PostCard({
         {post.category}
       </span>
 
-      {/* Title — navigates to detail */}
-      <Link
-        to={`/community/${post.id}`}
-        style={{ textDecoration: 'none', display: 'block', fontSize: '14.5px', fontWeight: 800, color: 'var(--ink)', lineHeight: 1.4, marginBottom: '8px' }}
-      >
+      {/* Title */}
+      <div style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--ink)', lineHeight: 1.4, marginBottom: '8px' }}>
         {post.title}
-      </Link>
+      </div>
 
       {/* Content with expand/collapse */}
       <div>
@@ -124,7 +140,7 @@ function PostCard({
       </div>
 
       {/* Tags */}
-      {post.tags && post.tags.length > 0 && (
+      {post.tags.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '12px' }}>
           {post.tags.map(tag => (
             <span key={tag} style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ink-faint)' }}>
@@ -134,31 +150,27 @@ function PostCard({
         </div>
       )}
 
+      {/* Divider */}
       <div style={{ height: '1px', background: 'var(--hairline)', margin: '14px 0 12px' }} />
 
       {/* Actions */}
       <div style={{ display: 'flex', gap: '18px' }}>
         <button
-          onClick={() => onLike(post.id, post.has_liked ?? false)}
+          onClick={() => onLike(post.id)}
           style={{
             display: 'flex', alignItems: 'center', gap: '5px',
             background: 'none', border: 'none', cursor: 'pointer', padding: 0,
             fontSize: '12px', fontWeight: 700,
-            color: post.has_liked ? '#F04452' : 'var(--ink-faint)',
+            color: post.hasLiked ? '#E04452' : 'var(--ink-faint)',
             transition: 'color 0.15s',
           }}
         >
-          <ThumbsUp
-            size={14}
-            fill={post.has_liked ? '#F04452' : 'none'}
-            color={post.has_liked ? '#F04452' : 'var(--ink-faint)'}
-            strokeWidth={2.2}
-          />
-          {post.likes_count}
+          <ThumbsUp size={14} fill={post.hasLiked ? '#E04452' : 'none'} color={post.hasLiked ? '#E04452' : 'var(--ink-faint)'} strokeWidth={2.2} />
+          {post.likes}
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 700, color: 'var(--ink-faint)' }}>
           <MessageSquare size={14} strokeWidth={2.2} />
-          {post.comments_count}
+          {post.commentsCount}
         </div>
       </div>
     </article>
@@ -166,78 +178,41 @@ function PostCard({
 }
 
 export default function Community() {
-  const { userId, isLoggedIn } = useStore();
-  const navigate = useNavigate();
-  const [posts, setPosts] = useState<CommunityPostRow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
+  const [posts, setPosts] = useState<Post[]>(INITIAL_POSTS);
   const [selectedCategory, setSelectedCategory] = useState('전체');
   const [isWriteOpen, setIsWriteOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newContent, setNewContent] = useState('');
   const [newCategory, setNewCategory] = useState('집사꿀팁');
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // CHANGED(P0-4): try/catch/finally로 요청 실패 시에도 스피너가 멈추도록 보장하고,
-  // 에러 상태를 분리해 "다시 시도" UI를 제공(무한 로딩 방지).
-  const loadPosts = useCallback(async (category: string) => {
-    setIsLoading(true);
-    setLoadError(false);
-    try {
-      const data = await getCommunityPosts(category, userId ?? undefined);
-      setPosts(data);
-    } catch (err) {
-      console.error('[Community] 글 목록 로딩 실패:', err);
-      setLoadError(true);
-      setPosts([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [userId]);
-
-  useEffect(() => {
-    loadPosts(selectedCategory);
-  }, [selectedCategory, loadPosts]);
-
-  const handleLike = async (postId: string, hasLiked: boolean) => {
-    if (!isLoggedIn || !userId) { navigate('/login'); return; }
-    const nextLiked = !hasLiked;
-    // optimistic update
+  const handleLike = (id: string) => {
     setPosts(prev => prev.map(p =>
-      p.id === postId
-        ? { ...p, has_liked: nextLiked, likes_count: p.likes_count + (nextLiked ? 1 : -1) }
-        : p
+      p.id === id ? { ...p, likes: p.hasLiked ? p.likes - 1 : p.likes + 1, hasLiked: !p.hasLiked } : p
     ));
-    const confirmed = await toggleCommunityPostLike(userId, postId, hasLiked);
-    if (confirmed !== nextLiked) {
-      setPosts(prev => prev.map(p =>
-        p.id === postId
-          ? { ...p, has_liked: confirmed, likes_count: p.likes_count + (confirmed ? 1 : -1) }
-          : p
-      ));
-    }
   };
 
-  const handleDelete = async (postId: string) => {
-    if (!userId) return;
-    const ok = await deleteCommunityPost(userId, postId);
-    if (ok) setPosts(prev => prev.filter(p => p.id !== postId));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isLoggedIn || !userId) { navigate('/login'); return; }
     if (!newTitle.trim() || !newContent.trim()) return;
-    setIsSubmitting(true);
-    const post = await createCommunityPost(userId, newCategory, newTitle.trim(), newContent.trim(), ['베로로커뮤니티']);
-    if (post) {
-      setPosts(prev => [{ ...post, has_liked: false }, ...prev]);
-      setNewTitle('');
-      setNewContent('');
-      setIsWriteOpen(false);
-    }
-    setIsSubmitting(false);
+    const post: Post = {
+      id: Date.now().toString(),
+      author: { name: '행복한 집사', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=120', badge: '뉴비집사', petType: 'dog' },
+      category: newCategory,
+      title: newTitle,
+      content: newContent,
+      tags: ['베로로커뮤니티'],
+      likes: 1,
+      commentsCount: 0,
+      time: '방금 전',
+      hasLiked: true,
+    };
+    setPosts(prev => [post, ...prev]);
+    setNewTitle('');
+    setNewContent('');
+    setIsWriteOpen(false);
   };
+
+  const filtered = selectedCategory === '전체' ? posts : posts.filter(p => p.category === selectedCategory);
 
   return (
     <div style={{ paddingBottom: '96px' }}>
@@ -246,91 +221,29 @@ export default function Community() {
         <meta name="description" content="집사들의 사료 이야기, 수의사 Q&A, 키우기 꿀팁을 나눠요." />
       </Helmet>
 
-      {/* Header Banner — calm neutral */}
-      <div
-        style={{
-          background: 'var(--surface-elevated)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: '16px',
-          padding: '18px 20px',
-          color: 'var(--text-dark)',
-          marginBottom: '20px',
-        }}
-      >
-        <span
-          style={{
-            fontSize: '11px',
-            fontWeight: 500,
-            textTransform: 'uppercase',
-            letterSpacing: '0.04em',
-            color: 'var(--text-light)',
-            display: 'inline-block',
-            marginBottom: '6px',
-          }}
-        >
-          Community
-        </span>
-        <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '4px', letterSpacing: '-0.015em' }}>
-          건강 소통 광장
-        </h2>
-        <Text variant="caption" style={{ color: 'var(--text-muted)', lineHeight: 1.5 }}>
-          영양 정보부터 까다로운 입맛 해결법까지, 보호자·수의사와 함께 나누어 보세요.
-        </Text>
-      </div>
-
-      {/* Write Post Trigger Button */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Filter size={14} color="var(--text-muted)" strokeWidth={1.8} />
-          <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)' }}>카테고리 필터</span>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 0 16px' }}>
+        <div>
+          <div style={{ fontSize: '22px', fontWeight: 900, color: 'var(--ink)', letterSpacing: '-0.03em' }}>랜선애카</div>
+          <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--ink-faint)', marginTop: '2px' }}>먹이고, 키우고, 나누는 이야기</div>
         </div>
-        <button
-          onClick={() => setIsWriteOpen(!isWriteOpen)}
-          style={{
-            background: 'var(--text-dark)',
-            color: '#FFFFFF',
-            border: 'none',
-            borderRadius: '10px',
-            padding: '8px 14px',
-            fontSize: '12px',
-            fontWeight: 600,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            cursor: 'pointer',
-          }}
-        >
-          <Plus size={14} strokeWidth={2} />
-          글쓰기
-        </button>
+        <span style={{ width: '44px', height: '44px', borderRadius: '13px', background: 'var(--brand-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <MessageCircle size={22} strokeWidth={2.2} color="var(--brand-deep)" />
+        </span>
       </div>
 
-      {/* Category Horizontal scroll */}
-      <div 
-        style={{ 
-          display: 'flex', 
-          gap: '8px', 
-          overflowX: 'auto', 
-          paddingBottom: '16px',
-          WebkitOverflowScrolling: 'touch',
-        }}
-        className="no-scrollbar"
-      >
-        {categories.map(cat => (
+      {/* Category tabs */}
+      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '14px', scrollbarWidth: 'none', marginBottom: '4px' }}>
+        {CATEGORIES.map(cat => (
           <button
             key={cat}
             onClick={() => setSelectedCategory(cat)}
             style={{
-              padding: '8px 14px',
-              borderRadius: '999px',
-              border: selectedCategory === cat ? '1px solid var(--text-dark)' : '1px solid var(--border-subtle)',
-              background: selectedCategory === cat ? 'var(--text-dark)' : 'var(--surface-elevated)',
-              color: selectedCategory === cat ? '#FFFFFF' : 'var(--text-muted)',
-              fontSize: '12px',
-              fontWeight: 500,
-              whiteSpace: 'nowrap',
-              cursor: 'pointer',
-              transition: 'background-color 0.15s ease, color 0.15s ease',
+              flexShrink: 0, padding: '8px 16px', borderRadius: '99px', border: 'none', cursor: 'pointer',
+              fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap',
+              background: selectedCategory === cat ? 'var(--ink)' : 'var(--fill)',
+              color: selectedCategory === cat ? '#fff' : 'var(--ink-soft)',
+              transition: 'background 0.15s, color 0.15s',
             }}
           >
             {cat}
@@ -340,10 +253,7 @@ export default function Community() {
 
       {/* Write CTA */}
       <button
-        onClick={() => {
-          if (!isLoggedIn) { navigate('/login', { state: { from: '/community' } }); return; }
-          setIsWriteOpen(o => !o);
-        }}
+        onClick={() => setIsWriteOpen(o => !o)}
         style={{
           width: '100%', height: '50px', margin: '8px 0 16px',
           borderRadius: '14px', background: 'var(--brand)', color: 'var(--ink-on-brand)',
@@ -352,10 +262,10 @@ export default function Community() {
           boxShadow: '0 6px 16px rgba(255, 201, 40, 0.28)',
         }}
       >
-        <Pencil size={17} strokeWidth={2.4} /> 공유하기
+        <Pencil size={17} strokeWidth={2.4} /> 글쓰기
       </button>
 
-      {/* Write form */}
+      {/* Write form — animated slide-down */}
       <div style={{
         overflow: 'hidden',
         maxHeight: isWriteOpen ? '420px' : '0px',
@@ -365,10 +275,14 @@ export default function Community() {
       }}>
         <form
           onSubmit={handleSubmit}
-          style={{ background: '#fff', borderRadius: '18px', border: '1px solid var(--hairline)', padding: '18px' }}
+          style={{
+            background: '#fff', borderRadius: '18px',
+            border: '1px solid var(--hairline)',
+            padding: '18px',
+          }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ink)' }}>이야기 나눠요</span>
+            <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ink)' }}>새 글 작성</span>
             <select
               value={newCategory}
               onChange={e => setNewCategory(e.target.value)}
@@ -386,7 +300,7 @@ export default function Community() {
 
           <input
             type="text"
-            placeholder="어떤 이야기를 나눠볼까요?"
+            placeholder="제목을 입력해주세요"
             value={newTitle}
             onChange={e => setNewTitle(e.target.value)}
             required
@@ -399,7 +313,7 @@ export default function Community() {
           />
 
           <textarea
-            placeholder="우리 아이의 사료 이야기, 궁금한 것, 추천하고 싶은 것 뭐든 좋아요."
+            placeholder="성분 분석 경험담이나 사료에 관련된 고민을 적어주세요"
             value={newContent}
             onChange={e => setNewContent(e.target.value)}
             required
@@ -427,19 +341,29 @@ export default function Community() {
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
               style={{
                 flex: 2, padding: '13px', borderRadius: '12px',
                 background: 'var(--brand)', color: 'var(--ink-on-brand)',
-                border: 'none', fontSize: '13px', fontWeight: 800,
-                cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                opacity: isSubmitting ? 0.7 : 1,
+                border: 'none', fontSize: '13px', fontWeight: 800, cursor: 'pointer',
               }}
             >
-              {isSubmitting ? '등록 중...' : '등록하기'}
+              등록하기
             </button>
           </div>
         </form>
+      </div>
+
+      {/* Feed */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        {filtered.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--ink-faint)', fontSize: '13px', fontWeight: 600 }}>
+            이 카테고리에는 아직 글이 없어요.<br />첫 글의 주인공이 되어보세요!
+          </div>
+        ) : (
+          filtered.map(post => (
+            <PostCard key={post.id} post={post} onLike={handleLike} />
+          ))
+        )}
       </div>
 
       {/* Feed */}

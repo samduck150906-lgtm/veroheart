@@ -2,99 +2,100 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Star, ChevronRight, Megaphone } from 'lucide-react';
+import { Trophy, Dog, Cat, Star, ChevronRight } from 'lucide-react';
 import { useStore } from '../store/useStore';
-import { matchesSpecies, matchesCategory } from '../utils/rankingFilters';
-import { displayBrand } from '../utils/brandLabel';
+import { rankProductsForProfile, calculateCompatibilityScore, gradeFromScore } from '../utils/score';
 import ProductImage from '../components/ProductImage';
 // 등급 색은 단일 토큰(src/theme/tokens.ts)에서만 가져온다.
 import { gradeColor } from '../theme/tokens';
 
-const CATEGORY_FILTERS = ['전체', '사료', '간식', '영양제'];
-const SPECIES_FILTERS = ['전체', '강아지', '고양이'];
+const SORT_TABS = [
+  { key: 'compatibility', label: '맞춤 순' },
+  { key: 'rating',        label: '평점 순' },
+  { key: 'reviews',       label: '리뷰 순' },
+  { key: 'safe',          label: '안전 순' },
+  { key: 'budget',        label: '가성비' },
+];
 
-const MEDALS = ['🥇', '🥈', '🥉'];
+const PET_TABS = [
+  { key: 'all', label: '전체' },
+  { key: 'dog', label: '강아지', Icon: Dog },
+  { key: 'cat', label: '고양이', Icon: Cat },
+];
+
+const GRADE_COLOR: Record<string, string> = {
+  A: '#15B36B', B: '#6BB04E', C: '#E8A800', D: '#F04452',
+};
+const GRADE_BG: Record<string, string> = {
+  A: '#ECFDF5', B: '#F0FDE8', C: '#FFFBEB', D: '#FFF1F2',
+};
+
+const MEDAL = ['🥇', '🥈', '🥉'];
 
 export default function Ranking() {
   const navigate = useNavigate();
-  const { products } = useStore();
-  const [categoryFilter, setCategoryFilter] = useState('전체');
-  const [speciesFilter, setSpeciesFilter] = useState('전체');
 
-  const sponsored = useMemo(() =>
-    products
-      .filter(p => p.isSponsored && matchesSpecies(p, speciesFilter))
-      .sort((a, b) => (a.sponsorOrder ?? 0) - (b.sponsorOrder ?? 0))
-  , [products, speciesFilter]);
+  const hasPetProfile =
+    isLoggedIn && profile?.id && profile.id !== 'local-profile' &&
+    profile.name && profile.name !== '우리 아이';
+
+  const [sortBy, setSortBy] = useState<string>(hasPetProfile ? 'compatibility' : 'rating');
+  const [petFilter, setPetFilter] = useState<'all' | 'dog' | 'cat'>('all');
+
+  const activeSortTabs = SORT_TABS.filter(t => t.key !== 'compatibility' || hasPetProfile);
+
+  const safeRatioOf = (p) => {
+    const total = p.ingredients?.length || 1;
+    const safe = p.ingredients?.filter(i => i.riskLevel === 'safe').length || 0;
+    return safe / total;
+  };
 
   const ranked = useMemo(() => {
     const base = products.filter(p =>
-      !p.isSponsored && matchesSpecies(p, speciesFilter) && matchesCategory(p, categoryFilter)
+      petFilter === 'all' || p.targetPetType === petFilter || p.targetPetType === 'all'
     );
-    return [...base].sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0)).slice(0, 30);
-  }, [products, speciesFilter, categoryFilter]);
 
-  const avgRating = ranked.length > 0
-    ? (ranked.reduce((s, p) => s + (p.averageRating || 0), 0) / ranked.length).toFixed(1)
-    : '0.0';
-  const totalReviews = ranked.reduce((s, p) => s + (p.reviewsCount || 0), 0);
+    if (sortBy === 'compatibility' && hasPetProfile) {
+      return rankProductsForProfile(base, profile, { limit: 50 }).map(r => r.product);
+    }
+    return [...base].sort((a, b) => {
+      if (sortBy === 'rating')  return (b.averageRating || 0) - (a.averageRating || 0);
+      if (sortBy === 'reviews') return (b.reviewsCount || 0) - (a.reviewsCount || 0);
+      if (sortBy === 'safe')    return safeRatioOf(b) - safeRatioOf(a);
+      if (sortBy === 'budget')  return (a.price || 0) - (b.price || 0);
+      return 0;
+    }).slice(0, 50);
+  }, [products, profile, petFilter, sortBy, hasPetProfile]);
+
+  const metricOf = (p) => {
+    if (sortBy === 'compatibility') return { value: calculateCompatibilityScore(p, profile), unit: '점', color: GRADE_COLOR[gradeFromScore(calculateCompatibilityScore(p, profile))] };
+    if (sortBy === 'rating')        return { value: p.averageRating?.toFixed(1), unit: '', color: '#E8A800' };
+    if (sortBy === 'reviews')       return { value: p.reviewsCount?.toLocaleString(), unit: '개', color: '#3182F6' };
+    if (sortBy === 'safe')          return { value: Math.round(safeRatioOf(p) * 100), unit: '%', color: '#15B36B' };
+    if (sortBy === 'budget')        return { value: p.price?.toLocaleString(), unit: '원', color: 'var(--ink)' };
+    return { value: '', unit: '', color: 'var(--ink)' };
+  };
+
+  const subtitleMap = {
+    compatibility: hasPetProfile ? `${profile.name} 맞춤 궁합 높은 순` : '궁합 점수 순',
+    rating: '평점 높은 순',
+    reviews: '리뷰 많은 순',
+    safe: '안전 성분 비율 순',
+    budget: '가격 낮은 순',
+  };
 
   return (
-    <div style={{ paddingBottom: 90 }}>
-      <Helmet><title>인기 랭킹 | 베로로</title></Helmet>
-      <div style={{ padding: '16px 16px 0' }}>
-        <h1 style={{ fontSize: 22, fontWeight: 900, color: '#191F28', letterSpacing: '-0.03em', marginBottom: 4 }}>이번 주 랭킹</h1>
-        <p style={{ fontSize: 14, color: '#8B95A1', fontWeight: 500, marginBottom: 16 }}>
-          평점 기준 상위 상품
-        </p>
+    <div style={{ paddingBottom: '80px' }}>
+      <Helmet><title>랭킹 — 베로로</title></Helmet>
 
-        {/* Species Filter */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-          {SPECIES_FILTERS.map(f => (
-            <button key={f} onClick={() => setSpeciesFilter(f)}
-              style={{
-                minHeight: 44, padding: '0 18px', borderRadius: 22, border: 'none', cursor: 'pointer',
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 13, fontWeight: 700,
-                background: speciesFilter === f ? '#191F28' : '#fff',
-                color: speciesFilter === f ? '#fff' : '#4E5968',
-                boxShadow: '0 1px 3px rgba(30,41,59,0.06)',
-              }}
-            >{f}</button>
-          ))}
-        </div>
-
-        {/* Category Filter */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16, overflowX: 'auto' }}>
-          {CATEGORY_FILTERS.map(f => (
-            <button key={f} onClick={() => setCategoryFilter(f)}
-              style={{
-                flexShrink: 0, minHeight: 38, padding: '0 14px', borderRadius: 19,
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                border: `1.5px solid ${categoryFilter === f ? '#F5C518' : '#E5E8EB'}`,
-                cursor: 'pointer', fontSize: 12, fontWeight: 700,
-                background: categoryFilter === f ? '#FEF6E0' : '#fff',
-                color: categoryFilter === f ? '#CA8A04' : '#6B7684',
-              }}
-            >{f}</button>
-          ))}
-        </div>
-
-        {/* Stats Row */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
-          {[
-            { label: '총 상품', value: `${ranked.length}개` },
-            { label: '평균 평점', value: `⭐ ${avgRating}` },
-            { label: '총 리뷰', value: `${totalReviews.toLocaleString()}개` },
-          ].map(stat => (
-            <div key={stat.label} style={{
-              flex: 1, background: '#fff', borderRadius: 14, padding: '12px 10px', textAlign: 'center',
-              boxShadow: '0 1px 4px rgba(30,41,59,0.06)',
-            }}>
-              <div style={{ fontSize: stat.pending ? 12.5 : 15, fontWeight: 800, color: stat.pending ? '#B0B8C1' : '#191F28', marginBottom: 2 }}>{stat.value}</div>
-              <div style={{ fontSize: 11, color: '#8B95A1', fontWeight: 600 }}>{stat.label}</div>
-            </div>
-          ))}
+      {/* ─── 헤더 ─── */}
+      <div style={{ padding: '20px 0 4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <span style={{ width: '36px', height: '36px', borderRadius: '11px', background: 'var(--brand-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Trophy size={18} color="var(--brand-deep)" strokeWidth={2.2} />
+        </span>
+        <div>
+          <div style={{ fontSize: '20px', fontWeight: 900, color: 'var(--ink)', letterSpacing: '-0.02em' }}>사료 랭킹</div>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', marginTop: '1px' }}>{subtitleMap[sortBy]}</div>
         </div>
       </div>
 
@@ -114,53 +115,6 @@ export default function Ranking() {
           >
             {Icon && <Icon size={13} />}{label}
           </button>
-        ))}
-      </div>
-
-      {/* ─── 통계 배너 ─── */}
-      <div style={{ display: 'flex', gap: '10px', margin: '0 0 16px' }}>
-        {[
-          {
-            label: '평균 궁합 점수',
-            value: hasPetProfile && ranked.length > 0
-              ? Math.round(ranked.reduce((s, p) => s + calculateCompatibilityScore(p, profile), 0) / Math.min(ranked.length, 20))
-              : '-',
-            unit: '점',
-            color: 'var(--brand-deep)',
-            bg: 'var(--brand-tint)',
-          },
-          {
-            label: '알러지 적합',
-            value: hasPetProfile && ranked.length > 0
-              ? ranked.filter(p => {
-                  const allergies = profile?.allergies || [];
-                  return !p.ingredients?.some(i => allergies.some(a => i.nameKo?.includes(a)));
-                }).length
-              : '-',
-            unit: '개',
-            color: 'var(--safe)',
-            bg: 'var(--safe-tint)',
-          },
-          {
-            label: '안전 성분',
-            value: ranked.length > 0
-              ? Math.round(ranked.slice(0, 10).reduce((s, p) => {
-                  const t = p.ingredients?.length || 1;
-                  const safe = p.ingredients?.filter(i => i.riskLevel === 'safe').length || 0;
-                  return s + (safe / t) * 100;
-                }, 0) / Math.min(ranked.slice(0, 10).length, 1))
-              : '-',
-            unit: '%',
-            color: '#3182F6',
-            bg: '#EFF6FF',
-          },
-        ].map(({ label, value, unit, color, bg }) => (
-          <div key={label} style={{ flex: 1, padding: '12px 10px', borderRadius: '14px', background: bg, textAlign: 'center' }}>
-            <div style={{ fontSize: '20px', fontWeight: 900, color, letterSpacing: '-0.02em' }}>
-              {value}<span style={{ fontSize: '12px', fontWeight: 700 }}>{unit}</span>
-            </div>
-            <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ink-faint)', marginTop: '3px' }}>{label}</div>
-          </div>
         ))}
       </div>
 
@@ -235,17 +189,12 @@ export default function Ranking() {
 
               {/* metric */}
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ink-faint)', marginBottom: '2px' }}>제품 평가</div>
                 <div style={{ fontSize: '20px', fontWeight: 900, color: m.color, letterSpacing: '-0.02em' }}>
                   {m.value}<span style={{ fontSize: '11px', fontWeight: 700 }}>{m.unit}</span>
                 </div>
-                {hasPetProfile && sortBy !== 'compatibility' && (
-                  <div style={{ marginTop: '4px', padding: '2px 7px', borderRadius: '6px', background: 'var(--brand-tint)', display: 'inline-block' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--brand-deep)' }}>
-                      궁합 {calculateCompatibilityScore(p, profile)}점
-                    </span>
-                  </div>
-                )}
+                <div style={{ fontSize: '11.5px', color: 'var(--ink-faint)', fontWeight: 600, marginTop: '2px' }}>
+                  {p.price?.toLocaleString()}원
+                </div>
               </div>
 
               <ChevronRight size={16} color="var(--ink-300)" style={{ flexShrink: 0 }} />

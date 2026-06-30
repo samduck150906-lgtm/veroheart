@@ -1,11 +1,5 @@
 // @ts-nocheck
-// CHANGED: 홈 전면 재디자인 v3 — TOSS UI 언어 + 엄격한 타이포 스케일.
-//  · 글자 크기를 8단계 스케일(11·12·13·14·15·18·20·28)로 통일하고 굵기 체계를 정리
-//  · 라이트 그레이 캔버스(#F2F4F6) 위 화이트 카드 + 은은한 그림자(보더 노이즈 제거)
-//  · 아이콘 크기/정렬 규칙화(섹션 18 / 퀵 24 / 별 13 / 하트 15)
-//  · 식단 적합도를 토스 신용점수형 도넛 게이지로 시각화
-//  데이터 fetch/상태 로직은 그대로 유지. 모바일 우선.
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
 import ProductCard from '../components/ProductCard';
 import TargetedAd from '../components/TargetedAd';
@@ -16,154 +10,86 @@ import {
   Bone,
   Droplet,
   ShieldCheck,
+  Utensils,
+  Cookie,
+  Pill,
+  Sparkles,
+  Droplets,
+  Eye,
+  Trash2,
+  Home as HomeIcon,
   Heart,
   MessageCircle,
   Bell,
 } from 'lucide-react';
-import { useNavigate, Link } from 'react-router-dom';
-import { HOME_CATEGORY_ITEMS } from '../constants/productCategories';
-import type { Product } from '../types';
-import { TossChip, TossSectionTitle } from '../components/TossUI';
+import { useNavigate } from 'react-router-dom';
 import ProductImage from '../components/ProductImage';
-import { displayBrand } from '../utils/brandLabel';
+import ProductCard from '../components/ProductCard';
+import { rankProductsForProfile, gradeFromScore, calculateCompatibilityScore } from '../utils/score';
 
 const CATEGORY_GRID = [
-  { name: '사료', label: '사료', emoji: '🐾' },
-  { name: '간식', label: '간식', emoji: '🦴' },
-  { name: '영양제', label: '영양제', emoji: '💊' },
-  { name: '구강관리', label: '구강', emoji: '🦷' },
-  { name: '피부·목욕·위생', label: '피부·목욕', emoji: '🛁' },
-  { name: '눈·귀·민감부위 케어', label: '눈·귀', emoji: '👁' },
-  { name: '배변/모래/패드', label: '배변', emoji: '🪣' },
-  { name: '생활용품·환경안전', label: '생활용품', emoji: '🏠' },
+  { name: '사료', label: '사료', Icon: Utensils },
+  { name: '간식', label: '간식', Icon: Cookie },
+  { name: '영양제', label: '영양제', Icon: Pill },
+  { name: '구강관리', label: '구강', Icon: Sparkles },
+  { name: '피부·목욕·위생', label: '피부·목욕', Icon: Droplets },
+  { name: '눈·귀·민감부위 케어', label: '눈·귀', Icon: Eye },
+  { name: '배변/모래/패드', label: '배변', Icon: Trash2 },
+  { name: '생활용품·환경안전', label: '생활용품', Icon: HomeIcon },
 ];
 
-// 토스식 4분할 퀵액션 — 앱의 핵심 진입점
-const QUICK_ACTIONS = [
-  { label: '성분분석', Icon: ScanLine, to: '/scanner', bg: '#FEF3D6', fg: '#D99500' },
-  { label: '인기 랭킹', Icon: Trophy, to: '/ranking', bg: '#E5F7EE', fg: '#15B36B' },
-  { label: '비교하기', Icon: Scale, to: '/comparison', bg: '#E7F0FF', fg: '#3182F6' },
-  { label: '성분사전', Icon: BookOpen, to: '/dictionary', bg: '#EFE9FF', fg: '#7C5CFC' },
+const CARE_CARDS = [
+  { Icon: Bone, tint: '#FEF3C7', color: '#A16207', title: '슬개골·관절', desc: '소형견 맞춤', to: '/search?category=사료&concern=관절 질환' },
+  { Icon: Droplet, tint: '#FEF9C3', color: '#CA8A04', title: '눈물흔·체중', desc: '눈가 케어', to: '/search?category=사료&concern=비만' },
+  { Icon: ShieldCheck, tint: '#FEFCE8', color: '#A16207', title: '민감성 피부', desc: '저알러지 식단', to: '/search?query=가수분해' },
 ];
+
+const GRADE_COLOR: Record<string, string> = {
+  A: '#15B36B', B: '#6BB04E', C: '#E8A800', D: '#F04452',
+};
 
 export default function Home() {
-  const { products, profile, recentViews, isLoggedIn } = useStore();
+  const { products, profile, recentViews, isLoggedIn, favorites } = useStore();
   const navigate = useNavigate();
-  const petName = profile.name !== '우리 아이' ? profile.name : null;
-  // New filter & search state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filters, setFilters] = useState({ ages: [], ingredients: [], allergens: [] });
-  const [filterOpen, setFilterOpen] = useState(false);
-  // Compute filtered products
-  const filteredProducts = products.filter(p => {
-    const matchesQuery = searchQuery
-      ? p.name?.toLowerCase().includes(searchQuery.toLowerCase())
-      : true;
-    const matchesAge = filters.ages.length
-      ? filters.ages.includes(p.ageGroup)
-      : true;
-    const matchesIngredient = filters.ingredients.length
-      ? filters.ingredients.includes(p.mainIngredient)
-      : true;
-    const matchesAllergen = filters.allergens.length
-      ? !p.allergens?.some(a => filters.allergens.includes(a))
-      : true;
-    return matchesQuery && matchesAge && matchesIngredient && matchesAllergen;
-  });
 
-  // 1. Identify expected pet type from profile
-  const expectedPetType = profile.species === 'Cat' ? 'cat' : 'dog';
+  const hasPetProfile =
+    isLoggedIn && profile && profile.id && profile.id !== 'local-profile' && profile.name && profile.name !== '우리 아이';
 
-  // 2. Build trending first so personalRecs can exclude them
-  const trendingProducts = [...products]
-    .filter(p => p.targetPetType === expectedPetType || p.targetPetType === 'all')
-    .sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
-    .slice(0, 5);
-  const trendingIds = new Set(trendingProducts.map(p => p.id));
+  // Diet health score — deterministic from profile signals
+  const healthScore = useMemo(() => {
+    let s = 92;
+    s -= (profile?.allergies?.length || 0) * 4;
+    s -= (profile?.healthConcerns?.length || 0) * 2;
+    return Math.max(60, Math.min(98, s));
+  }, [profile]);
 
-  const allergenFilter = (p: (typeof products)[0]) => {
-    if (!profile.allergies || profile.allergies.length === 0) return true;
-    const hasAllergenInIngredients = p.ingredients?.some(ing =>
-      profile.allergies.some(allergen =>
-        ing.nameKo?.includes(allergen) || ing.nameEn?.toLowerCase().includes(allergen.toLowerCase())
-      )
-    );
-    const hasAllergenInList = p.allergens?.some(a =>
-      profile.allergies.some(allergen => a.includes(allergen))
-    );
-    return !hasAllergenInIngredients && !hasAllergenInList;
-  };
-
-  const [scoreExpanded, setScoreExpanded] = useState(false);
+  // 게이지 채워지는 애니메이션 (온보딩 완료 직후의 보상 모션)
+  const [scoreFill, setScoreFill] = useState(0);
+  useEffect(() => {
+    const t = setTimeout(() => setScoreFill(healthScore), 150);
+    return () => clearTimeout(t);
+  }, [healthScore]);
 
   const recent = (recentViews?.length ? recentViews : products).slice(0, 8);
   const favoriteSet = new Set(favorites || []);
 
-  // 4. Backfill personalRecs (also excluding trending)
-  if (personalRecs.length < 4) {
-    const backfillCount = 4 - personalRecs.length;
-    const existingIds = new Set(personalRecs.map(p => p.id));
-    const backfill = products
-      .filter(p => (p.targetPetType === expectedPetType || p.targetPetType === 'all') && !existingIds.has(p.id) && !trendingIds.has(p.id))
-      .filter(allergenFilter)
-      .sort((a, b) => (b.averageRating ?? 0) - (a.averageRating ?? 0))
-      .slice(0, backfillCount);
-    personalRecs.push(...backfill);
-  }
+  const topRanked = useMemo(() => {
+    if (!hasPetProfile || !products.length) return [];
+    return rankProductsForProfile(products, profile, { limit: 8 });
+  }, [hasPetProfile, products, profile]);
 
-  // 5. Strict Species-Matching Concern Feed
-  const concernProducts = [...products]
-    .filter(p => p.targetPetType === expectedPetType || p.targetPetType === 'all')
-    .filter(p => (p.healthConcerns ?? []).some(c => profile.healthConcerns.includes(c)))
-    .sort((a, b) => (b.averageRating ?? 0) - (a.averageRating ?? 0))
-    .slice(0, 5); // condensed down to 5
-
-  // 6. Strict Species-Matching Budget Feed
-  const budgetProducts = [...products]
-    .filter(p => p.targetPetType === expectedPetType || p.targetPetType === 'all')
-    .filter(p => (p.price ?? 0) <= 30000)
-    .sort((a, b) => (b.averageRating ?? 0) - (a.averageRating ?? 0))
-    .slice(0, 5); // condensed down to 5
-
-  const topCommunityPicks = []; // Removed for vertical space optimization
-
-
-  const quickActions = [
-    {
-      title: '탐색',
-      description: '',
-      icon: <Search size={18} color="var(--text-muted)" strokeWidth={1.8} />,
-      onClick: () => navigate('/search'),
-    },
-    {
-      title: '랭킹',
-      description: '',
-      icon: <Flame size={18} color="var(--text-muted)" strokeWidth={1.8} />,
-      onClick: () => navigate('/ranking'),
-    },
-    {
-      title: '성향 테스트',
-      description: '',
-      icon: <MessageCircle size={18} color="var(--text-muted)" strokeWidth={1.8} />,
-      onClick: () => navigate('/event/personality-quiz'),
-    },
-    {
-      title: '마이 펫',
-      description: '',
-      icon: <Heart size={18} color="var(--text-muted)" strokeWidth={1.8} />,
-      onClick: () => navigate('/profile'),
-    },
-  ];
+  const petName = hasPetProfile ? profile.name : '베로';
+  const speciesLabel = profile?.species === 'Cat' ? '고양이' : (profile?.breed || '말티즈');
+  const ageLabel = profile?.age ? `${profile.age}살` : '4살';
+  const weightLabel = profile?.weightKg ? `${profile.weightKg}kg` : '5.2kg';
+  const allergyLabel = profile?.allergies?.[0];
+  const concernLabel = profile?.healthConcerns?.[0];
 
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '26px', padding: '18px 0 40px' }}>
       <Helmet>
-        <title>
-          {isLoggedIn
-            ? `${profile.name} 맞춤 홈 — 베로로`
-            : '베로로 — 성분 분석 & 집사들의 찐 리뷰'}
-        </title>
-        <meta name="description" content="베로로 — 사료 성분 분석과 집사들의 찐 리뷰. 의심 대신 베로로 하세요." />
+        <title>{hasPetProfile ? `${profile.name} 맞춤 홈 — 베로로` : '베로로 — 우리 아이 맞춤 사료'}</title>
+        <meta name="description" content="베로로 — 우리 아이에게 딱 맞는 사료를 찾아요. 성분 분석과 맞춤 케어 추천." />
       </Helmet>
 
       {/* ===== Pet Profile Card ===== */}
@@ -204,7 +130,7 @@ export default function Home() {
           <div style={{ height: '1px', background: 'var(--hairline-strong)', margin: '16px 0 12px' }} />
 
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--ink-soft)' }}>현재 식단 적합도</span>
+            <span style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--ink-soft)' }}>식단 건강 점수</span>
             <span style={{ fontSize: '22px', fontWeight: 900, color: 'var(--ink)' }}>
               {healthScore}<span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink-400)' }}>/100</span>
             </span>
@@ -212,408 +138,111 @@ export default function Home() {
           <div style={{ height: '8px', background: '#E5E8EB', borderRadius: '99px', overflow: 'hidden', marginTop: '8px' }}>
             <div style={{ width: `${scoreFill}%`, height: '100%', background: 'var(--brand)', borderRadius: '99px', transition: 'width 0.9s cubic-bezier(0.16, 1, 0.3, 1)' }} />
           </div>
-
-          <button
-            onClick={() => setScoreExpanded(v => !v)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '10px 0 0', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)' }}
-          >
-            점수 산정 근거 보기 {scoreExpanded ? '▲' : '▼'}
-          </button>
-
-          {scoreExpanded && (
-            <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {(profile?.allergies?.length > 0
-                ? [{ label: `${profile.allergies[0]} 알러지 회피`, pts: '+30', color: 'var(--safe)' }]
-                : [{ label: '알러지 성분 없음', pts: '+30', color: 'var(--safe)' }]
-              ).concat(
-                profile?.healthConcerns?.length > 0
-                  ? [{ label: `${profile.healthConcerns[0]} 적합 성분 포함`, pts: '+25', color: 'var(--safe)' }]
-                  : [],
-                [{ label: '체중·활동량 적합', pts: '+20', color: 'var(--safe)' }],
-                profile?.allergies?.length > 1
-                  ? [{ label: '복합 알러지 감점', pts: `-${(profile.allergies.length - 1) * 4}`, color: 'var(--danger)' }]
-                  : []
-              ).map(({ label, pts, color }) => (
-                <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: '10px', background: 'var(--surface)' }}>
-                  <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--ink-soft)' }}>{label}</span>
-                  <span style={{ fontSize: '13px', fontWeight: 800, color }}>{pts}</span>
-                </div>
-              ))}
-              <p style={{ fontSize: '10.5px', color: 'var(--ink-faint)', fontWeight: 500, lineHeight: 1.5, marginTop: '2px' }}>
-                * 현재 급여 중인 사료를 등록하면 더 정확한 점수를 제공해요.
-              </p>
-            </div>
-          )}
         </div>
       </div>
 
       {/* ===== Category Grid ===== */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', rowGap: '16px', columnGap: '8px' }}>
-        {CATEGORY_GRID.map(({ name, label, emoji }) => (
+        {CATEGORY_GRID.map(({ name, label, Icon }) => (
           <button
             key={name}
             onClick={() => navigate(`/search?category=${encodeURIComponent(name)}`)}
             style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
           >
-            <span style={{ width: '54px', height: '54px', borderRadius: '18px', background: 'var(--fill)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
-              {emoji}
+            <span style={{ width: '54px', height: '54px', borderRadius: '16px', background: 'var(--fill)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon size={24} strokeWidth={1.8} color="var(--ink-soft)" />
             </span>
-          </span>
-          <span style={{ fontSize: '11px', color: 'var(--text-light)', fontWeight: 500, marginTop: '2px' }}>
-            맞춤 추천이 준비됐어요
-          </span>
-        </div>
-      </section>
-
-      {/* Slim recall notice — inline single line */}
-      {isRecallBannerVisible && (
-        <section
-          role="button"
-          tabIndex={0}
-          aria-label="FDA 및 농식품부 긴급 회수 공고 자세히 보기"
-          style={{
-            margin: '12px 20px 0',
-            padding: '10px 14px',
-            borderRadius: '12px',
-            background: 'var(--surface-muted)',
-            border: '1px solid var(--border-subtle)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            cursor: 'pointer',
-            boxSizing: 'border-box',
-          }}
-          onClick={() => setIsRecallModalOpen(true)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              setIsRecallModalOpen(true);
-            }
-          }}
-        >
-          <AlertTriangle size={14} color="var(--accent)" strokeWidth={2} aria-hidden />
-          <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'baseline', gap: '8px', overflow: 'hidden' }}>
-            <span
-              style={{
-                fontSize: '11px',
-                fontWeight: 700,
-                color: 'var(--accent)',
-                flexShrink: 0,
-                letterSpacing: '-0.005em',
-              }}
-            >
-              회수 공고
-            </span>
-            <span
-              className="line-clamp-1"
-              style={{
-                fontSize: '12px',
-                fontWeight: 500,
-                color: 'var(--text-muted)',
-                lineHeight: 1.4,
-                minWidth: 0,
-              }}
-            >
-              살모넬라균 오염 의심 사료 회수 대상 안내
-            </span>
-          </div>
-          <ChevronRight size={14} color="var(--text-light)" strokeWidth={2} aria-hidden />
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsRecallBannerVisible(false);
-            }}
-            aria-label="공고 배너 닫기"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '2px',
-              color: 'var(--text-light)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            <X size={14} strokeWidth={2} />
+            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink)' }}>{label}</span>
           </button>
-        </section>
-      )}
+        ))}
+      </div>
 
-      <section style={{ padding: '12px 20px 0', marginBottom: '4px' }}>
-        <button
-          type="button"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            width: '100%',
-            background: 'var(--surface-elevated)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: '14px',
-            padding: '14px 16px',
-            cursor: 'pointer',
-            color: 'var(--text-muted)',
-          }}
-          onClick={() => navigate('/scanner')}
-          aria-label="바코드 스캔으로 성분 분석 시작하기"
-        >
-          <ScanLine size={18} color="var(--text-muted)" strokeWidth={1.8} />
-          <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-muted)' }}>바코드를 스캔해 성분을 분석해 보세요</span>
-        </button>
-      </section>
-
-      {/* Trending Products - SHOW FIRST */}
-      <HorizontalProductSection
-        title="급상승 랭킹"
-        subtitle="리뷰가 빠르게 늘고 있는 제품"
-        products={trendingProducts}
-        onMore={() => navigate('/ranking')}
-      />
-
-      {personalRecs.length > 0 && (
-        <HorizontalProductSection
-          title={`${profile.name} 맞춤 추천`}
-          subtitle={
-            profile.healthConcerns.length > 0
-              ? `${profile.healthConcerns.join(', ')} 고민 기준`
-              : `${profile.name} 프로필 · 성분·리뷰 기반`
-          }
-          products={personalRecs}
-          onMore={() => navigate('/search')}
-        />
-      )}
-
-      {/* Quick Actions — single neutral surface */}
-      <section style={{ marginBottom: '18px', padding: '0 20px' }}>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
-            gap: '4px',
-            background: 'var(--surface-elevated)',
-            borderRadius: '16px',
-            padding: '8px',
-            border: '1px solid var(--border-subtle)',
-          }}
-        >
-          {quickActions.map((item) => (
+      {/* ===== 맞춤 케어 추천 ===== */}
+      <section style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.02em' }}>맞춤 케어 추천</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+          {CARE_CARDS.map(({ Icon, tint, color, title, desc, to }) => (
             <button
-              key={item.title}
-              type="button"
-              onClick={item.onClick}
-              aria-label={item.title}
+              key={title}
+              onClick={() => navigate(to)}
               style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '6px',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: '10px 4px',
-                borderRadius: '12px',
-                outline: 'none',
-              }}
-            >
-              <span
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '34px',
-                  height: '34px',
-                  color: 'var(--text-muted)',
-                }}
-                aria-hidden
-              >
-                {item.icon}
-              </span>
-              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-dark)' }}>{item.title}</div>
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {featuredEvent && (
-        <section style={{ marginBottom: '24px', padding: '0 20px' }}>
-          <div style={{ marginBottom: '10px' }}>
-            <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-dark)', letterSpacing: '-0.01em', marginBottom: '2px' }}>
-              새로운 소식
-            </h2>
-            <p style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: 500, margin: 0 }}>
-              이벤트와 쿠폰 소식을 한 번에
-            </p>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {visibleEvents.map(ev => (
-              <div
-                key={ev.id}
-                style={{
-                  position: 'relative',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '12px',
-                  padding: '12px 14px',
-                  background: 'var(--surface-elevated)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: '12px',
-                }}
-              >
-                <div
-                  style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '10px',
-                    background: 'var(--surface-muted)',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--text-muted)',
-                    flexShrink: 0,
-                  }}
-                  aria-hidden
-                >
-                  <Tag size={16} strokeWidth={1.8} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0, paddingRight: '16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', flexWrap: 'wrap' }}>
-                    <span className="ui-badge ui-badge-muted">{ev.badge}</span>
-                    {ev.code && <span className="ui-badge ui-badge-muted">{ev.code}</span>}
-                  </div>
-                  <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-dark)', marginBottom: '2px', letterSpacing: '-0.005em' }}>
-                    {ev.title}
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: 500, lineHeight: 1.5 }}>
-                    {ev.desc}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setClosedEvents(prev => [...prev, ev.id])}
-                  style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-light)', padding: '2px' }}
-                  aria-label="공지 닫기"
-                >
-                  <X size={14} strokeWidth={2} />
-                </button>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <HorizontalProductSection
-        title="질병 · 부위별 추천"
-        subtitle={
-          profile.healthConcerns.length > 0
-            ? `${profile.name} 프로필 건강 고민 기반`
-            : `${profile.name}을 위해 마이 펫에서 고민을 추가해 보세요`
-        }
-        products={concernProducts}
-        onMore={() => navigate('/search')}
-      />
-
-      <HorizontalProductSection
-        title="가성비 추천"
-        subtitle="3만원 이하 평점 우수 제품"
-        products={budgetProducts}
-        onMore={() => navigate('/search')}
-      />
-
-      <TargetedAd />
-
-      {recentViews.length > 0 && (
-        <section style={{ marginBottom: '38px' }}>
-          <h2 style={{ fontSize: '18px', marginBottom: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 600 }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Clock3 size={20} /> 최근 본 제품</span>
-            <button onClick={() => navigate('/search')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>
-              더보기 <ChevronRight size={16} />
-            </button>
-          </h2>
-          <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-            {recentViews.slice(0, 6).map(p => (
-              <div key={p.id} onClick={() => navigate(`/product/${p.id}`)} style={{ flexShrink: 0, width: '124px', cursor: 'pointer' }}>
-                <ProductImage src={p.imageUrl} alt={p.name} style={{ width: '124px', height: '124px', borderRadius: '18px', objectFit: 'cover', marginBottom: '8px', boxShadow: 'var(--shadow-sm)' }} />
-                <div className="line-clamp-2" style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-dark)', lineHeight: 1.45 }}>{p.name}</div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <section style={{ marginTop: '24px', marginBottom: '24px', padding: '0 20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '14px' }}>
-          <div>
-            <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-dark)', letterSpacing: '-0.01em', marginBottom: '2px' }}>
-              카테고리별 탐색
-            </h2>
-            <p style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: 500, margin: 0 }}>
-              원하는 상품군으로 이동해 보세요
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => navigate('/search')}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '12px',
-              fontWeight: 500,
-              color: 'var(--text-muted)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '2px',
-              padding: '4px',
-            }}
-          >
-            전체 <ChevronRight size={14} />
-          </button>
-        </div>
-        <div className="ui-category-grid">
-          {HOME_CATEGORY_ITEMS.map(item => (
-            <button
-              key={item.name}
-              type="button"
-              onClick={() =>
-                navigate({
-                  pathname: '/search',
-                  search: `?category=${encodeURIComponent(item.name)}`,
-                })
-              }
-              style={{
-                textAlign: 'center',
-                cursor: 'pointer',
-                background: 'none',
-                border: 'none',
-                padding: 0,
+                background: 'var(--fill)', border: 'none', borderRadius: '16px', padding: '14px 12px', cursor: 'pointer',
+                display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '10px', textAlign: 'left',
               }}
               aria-label={`${item.name} 카테고리로 이동`}
             >
-              <div className="ui-category-card">
-                <div className="ui-category-icon">{item.emoji}</div>
-                <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-dark)', letterSpacing: '-0.005em' }}>{item.name}</span>
+              <span style={{ width: '38px', height: '38px', borderRadius: '11px', background: tint, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Icon size={20} strokeWidth={2} color={color} />
+              </span>
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.02em' }}>{title}</div>
+                <div style={{ fontSize: '11px', fontWeight: 500, color: 'var(--ink-faint)', marginTop: '2px' }}>{desc}</div>
               </div>
             </button>
           ))}
         </div>
       </section>
 
-    </div>
-  );
-}
+      {/* ===== 베로 맞춤 추천 ===== */}
+      {topRanked.length > 0 && (
+        <section style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
+              {petName} 맞춤 추천
+            </h3>
+            <button onClick={() => navigate('/search')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '2px', fontSize: '13px', fontWeight: 600, color: 'var(--ink-faint)' }}>
+              전체보기 <ChevronRight size={15} />
+            </button>
+          </div>
+          <div className="rail" style={{ display: 'flex', gap: '12px', overflowX: 'auto', margin: '0 -20px', padding: '0 20px 4px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            {topRanked.map(({ product: p, score: s }) => (
+              <ProductCard key={p.id} product={p} variant="vertical" showHealthTags={false} />
+            ))}
+          </div>
+        </section>
+      )}
 
-function SkeletonCard() {
-  return (
-    <div className="bg-white rounded-[16px] overflow-hidden" style={{ boxShadow: CARD_SM }}>
-      <div className="aspect-square bg-[#EEF1F4] animate-pulse" />
-      <div className="p-3 flex flex-col gap-2">
-        <div className="h-2.5 w-1/3 bg-[#EEF1F4] rounded animate-pulse" />
-        <div className="h-3 w-full bg-[#EEF1F4] rounded animate-pulse" />
-        <div className="h-3.5 w-1/2 bg-[#EEF1F4] rounded animate-pulse" />
-      </div>
+      {/* ===== 최근 본 상품 ===== */}
+      {recent.length > 0 && (
+        <section style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.02em' }}>최근 본 상품</h3>
+            <button onClick={() => navigate('/search')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '2px', fontSize: '13px', fontWeight: 600, color: 'var(--ink-faint)' }}>
+              더보기 <ChevronRight size={15} />
+            </button>
+          </div>
+          <div className="rail" style={{ display: 'flex', gap: '12px', overflowX: 'auto', margin: '0 -20px', padding: '0 20px 4px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            {recent.map((p) => {
+              const score = hasPetProfile ? calculateCompatibilityScore(p, profile) : null;
+              const gradeLetter = score != null ? gradeFromScore(score) : null;
+              const gradeColor = gradeLetter ? GRADE_COLOR[gradeLetter] : '#6BB04E';
+              const liked = favoriteSet.has(p.id);
+              return (
+                <div key={p.id} onClick={() => navigate(`/product/${p.id}`)} style={{ flexShrink: 0, width: '132px', cursor: 'pointer' }}>
+                  <div style={{ position: 'relative', width: '132px', height: '132px', borderRadius: '16px', overflow: 'hidden', background: 'var(--fill)' }}>
+                    <ProductImage src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    {gradeLetter && (
+                      <span style={{ position: 'absolute', top: '8px', left: '8px', width: '22px', height: '22px', borderRadius: '7px', background: gradeColor, color: '#fff', fontSize: '12px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {gradeLetter}
+                      </span>
+                    )}
+                    <span style={{ position: 'absolute', top: '8px', right: '8px', width: '26px', height: '26px', borderRadius: '8px', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+                      <Heart size={15} strokeWidth={2} fill={liked ? '#FF4D6D' : 'none'} color={liked ? '#FF4D6D' : 'var(--ink-300)'} />
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--ink-faint)', fontWeight: 700, marginTop: '8px' }}>{p.brand}</div>
+                  <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.35, marginTop: '1px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    {p.name}
+                  </div>
+                  {p.price ? (
+                    <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ink)', marginTop: '3px' }}>{Number(p.price).toLocaleString()}원</div>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

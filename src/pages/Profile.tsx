@@ -9,7 +9,7 @@ import { TossCard, TossInput, TossButton, TossChip, TossSectionTitle } from '../
 import { Button } from '../components/Button';
 import ProductCard from '../components/ProductCard';
 import ProductImage from '../components/ProductImage';
-import { displayBrand } from '../utils/brandLabel';
+import { getRecommendationBreakdown, gradeFromScore } from '../utils/score';
 import { notify } from '../store/useNotification';
 import { FAVORITES_EMPTY } from '../copy/ui';
 
@@ -416,21 +416,242 @@ export default function Profile() {
                       )}
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          )
+
+                  {/* Action Buttons */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <button
+                      onClick={() => {
+                        setEditForm(profile);
+                        setIsEditing(true);
+                      }}
+                      style={{
+                        cursor: 'pointer', width: '100%', padding: '14px', borderRadius: 14,
+                        background: 'var(--brand)', color: 'var(--ink-on-brand)', fontSize: 15, fontWeight: 700, border: 'none', boxShadow: 'var(--shadow-sm)'
+                      }}
+                    >
+                      ✏️ 정보 수정하기
+                    </button>
+                    
+                    <button
+                      onClick={handleLogout}
+                      style={{
+                        cursor: 'pointer', width: '100%', padding: '14px', borderRadius: 14,
+                        background: 'none', border: '1px solid var(--hairline)', fontSize: 14, fontWeight: 600, color: 'var(--ink-soft)'
+                      }}
+                    >
+                      로그아웃
+                    </button>
+                  </div>
+                </div>
+              )
+            ) : (
+              <div>
+                {/* progress */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--brand-deep)' }}>STEP {stepIndexLabel} / {stepCount}</span>
+                  <span style={{ fontSize: 12.5, color: 'var(--ink-soft)' }}>{step.title}</span>
+                </div>
+                <div style={{ height: 6, borderRadius: 99, background: 'var(--hairline)', overflow: 'hidden', marginBottom: 22 }}>
+                  <div style={{ width: `${progressPercent}%`, height: '100%', background: 'var(--brand)', transition: 'width .25s ease' }} />
+                </div>
+
+                <div style={{ minHeight: 168 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em' }}>{step.prompt}</h3>
+                    </div>
+
+                    {profileStep === 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                        <input
+                          value={formData.name || ''}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          placeholder="예: 체다"
+                          style={{
+                            width: '100%', boxSizing: 'border-box', padding: '14px 16px', borderRadius: 13, fontSize: 16,
+                            border: '1px solid var(--hairline)', outline: 'none', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'inherit',
+                          }}
+                        />
+                        <div>
+                          <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '8px' }}>성별</label>
+                          <div style={{ display: 'flex', gap: 10 }}>
+                            <Pill on={formData.gender === '남아'} onClick={() => setFormData({ ...formData, gender: '남아' })}>남아 ♂</Pill>
+                            <Pill on={formData.gender === '여아'} onClick={() => setFormData({ ...formData, gender: '여아' })}>여아 ♀</Pill>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {profileStep === 1 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                        <div style={{ display: 'flex', gap: 10 }}>
+                          <Pill on={formData.species === 'Dog'} onClick={() => setFormData({ ...formData, species: 'Dog', breed: '' })}>강아지</Pill>
+                          <Pill on={formData.species === 'Cat'} onClick={() => setFormData({ ...formData, species: 'Cat', breed: '' })}>고양이</Pill>
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '8px' }}>성향</label>
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                            {['활발함 ⚡', '온순함 🧸', '애교많음 🥰', '소심함 🥺', '도도함 👑'].map(p => (
+                              <Pill key={p} on={formData.personality === p} onClick={() => setFormData({ ...formData, personality: p })}>{p}</Pill>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {profileStep === 2 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <select
+                          value={formData.breed || ''}
+                          onChange={(e) => setFormData({ ...formData, breed: e.target.value })}
+                          style={{
+                            width: '100%', boxSizing: 'border-box', padding: '14px 16px', borderRadius: 13, fontSize: 16,
+                            border: '1px solid var(--hairline)', outline: 'none', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'inherit',
+                          }}
+                        >
+                          <option value="">크기 구분을 선택해 주세요</option>
+                          {BREED_LIST_DOG.map((b) => (
+                            <option key={b} value={b}>{b}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {profileStep === 3 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <select
+                          value={formData.age != null ? formData.age : ''}
+                          onChange={(e) => setFormData({ ...formData, age: parseInt(e.target.value) })}
+                          style={{
+                            width: '100%', boxSizing: 'border-box', padding: '14px 16px', borderRadius: 13, fontSize: 16,
+                            border: '1px solid var(--hairline)', outline: 'none', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'inherit',
+                          }}
+                        >
+                          <option value="">나이를 선택해 주세요</option>
+                          {AGE_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {profileStep === 4 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <select
+                          value={formData.weightKg != null ? formData.weightKg : ''}
+                          onChange={(e) => setFormData({ ...formData, weightKg: parseFloat(e.target.value) })}
+                          style={{
+                            width: '100%', boxSizing: 'border-box', padding: '14px 16px', borderRadius: 13, fontSize: 16,
+                            border: '1px solid var(--hairline)', outline: 'none', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'inherit',
+                          }}
+                        >
+                          <option value="">체중을 선택해 주세요</option>
+                          {WEIGHT_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {profileStep === 5 && (
+                      <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap' }}>
+                        {allergyOptions.map((opt) => (
+                          <Pill key={opt} on={formData.allergies?.includes(opt)} onClick={() => toggleArrayItem('allergies', opt)}>
+                            {opt}
+                          </Pill>
+                        ))}
+                      </div>
+                    )}
+
+                    {profileStep === 6 && (
+                      <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap' }}>
+                        {healthConcernOptions.map((opt) => (
+                          <Pill key={opt} on={formData.healthConcerns?.includes(opt)} onClick={() => toggleArrayItem('healthConcerns', opt)}>
+                            {opt}
+                          </Pill>
+                        ))}
+                      </div>
+                    )}
+
+                    {profileStep === 7 && (
+                      <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap' }}>
+                        {diseaseOptions.map((opt) => (
+                          <Pill key={opt} on={formData.healthConcerns?.includes(opt)} onClick={() => toggleArrayItem('healthConcerns', opt)}>
+                            {opt}
+                          </Pill>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
+                  {profileStep > 0 && (
+                    <button
+                      onClick={handlePrev}
+                      style={{
+                        cursor: 'pointer', flex: '0 0 auto', padding: '15px 22px', borderRadius: 14,
+                        background: 'var(--surface)', border: '1px solid var(--hairline)', fontSize: 15, fontWeight: 600, color: 'var(--ink-soft)'
+                      }}
+                    >
+                      이전
+                    </button>
+                  )}
+                  <button
+                    onClick={handleNext}
+                    style={{
+                      cursor: 'pointer', flex: 1, padding: '15px', borderRadius: 14, background: 'var(--brand)', color: 'var(--ink-on-brand)',
+                      fontSize: 15, fontWeight: 700, border: 'none', boxShadow: 'var(--shadow-sm)'
+                    }}
+                  >
+                    {profileStep === PROFILE_STEP_META.length - 1 ? '변경 사항 저장' : '다음'}
+                  </button>
+                </div>
+
+                {/* 선택 항목 건너뛰기 (이름·종 이후 단계) */}
+                {profileStep >= 2 && profileStep < PROFILE_STEP_META.length - 1 && (
+                  <div style={{ textAlign: 'center', marginTop: 12 }}>
+                    <button
+                      onClick={handleNext}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13.5, fontWeight: 600, color: 'var(--ink-faint)', textDecoration: 'underline', textUnderlineOffset: 3 }}
+                    >
+                      이 단계 건너뛰기
+                    </button>
+                  </div>
+                )}
+
+                <div style={{ padding: '32px 0 0' }}>
+                  <button
+                    onClick={handleLogout}
+                    style={{
+                      width: '100%', cursor: 'pointer', padding: '14px', borderRadius: 13,
+                      background: 'none', border: '1px solid var(--hairline)', fontSize: 14, fontWeight: 600, color: 'var(--ink-soft)'
+                    }}
+                  >
+                    로그아웃
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         )}
 
         {activeTab === 'favorites' && (
           <div style={{ padding: '4px 20px 20px' }}>
             {favoriteProducts.length > 0 ? (
               (() => {
-                const scored = [...favoriteProducts].sort((a, b) => (b.averageRating ?? 0) - (a.averageRating ?? 0));
+                const GRADE_COLOR = { A: '#15B36B', B: '#6BB04E', C: '#E8A800', D: '#F04452' };
+                const GRADE_BG    = { A: '#ECFDF5', B: '#F0FDE8', C: '#FFFBEB', D: '#FFF1F2' };
+
+                const scored = favoriteProducts.map(p => ({
+                  p,
+                  bd: hasPetProfile ? getRecommendationBreakdown(p, profile) : null,
+                })).sort((a, b) => (b.bd?.total ?? 0) - (a.bd?.total ?? 0));
 
                 return (
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    {scored.map((p) => {
+                    {scored.map(({ p, bd }) => {
+                      const grade = bd ? gradeFromScore(bd.total) : null;
                       return (
                         <button
                           key={p.id}
@@ -445,6 +666,13 @@ export default function Profile() {
                           {/* thumbnail */}
                           <div style={{ width: 68, height: 68, borderRadius: 14, overflow: 'hidden', flexShrink: 0, background: 'var(--fill)', position: 'relative' }}>
                             <ProductImage src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            {grade && (
+                              <span style={{
+                                position: 'absolute', bottom: 4, left: 4,
+                                padding: '1px 6px', borderRadius: 5, fontSize: 10, fontWeight: 800,
+                                background: GRADE_BG[grade], color: GRADE_COLOR[grade],
+                              }}>{grade}</span>
+                            )}
                           </div>
 
                           {/* info */}
@@ -453,14 +681,24 @@ export default function Profile() {
                             <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.35, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                               {p.name}
                             </div>
+                            {bd?.allergyHits?.length > 0 && (
+                              <span style={{ display: 'inline-block', marginTop: 5, fontSize: 11, fontWeight: 700, color: '#BE123C', background: '#FFF1F2', padding: '2px 7px', borderRadius: 5 }}>
+                                ⚠ {bd.allergyHits.join(', ')} 포함
+                              </span>
+                            )}
                           </div>
 
-                          {/* price */}
-                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                            <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink)' }}>
-                              {p.price?.toLocaleString()}원
+                          {/* score */}
+                          {bd && (
+                            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                              <div style={{ fontSize: 20, fontWeight: 900, color: grade ? GRADE_COLOR[grade] : 'var(--ink)', letterSpacing: '-0.02em' }}>
+                                {bd.total}<span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-faint)' }}>점</span>
+                              </div>
+                              <div style={{ fontSize: 11.5, color: 'var(--ink-faint)', fontWeight: 600, marginTop: 2 }}>
+                                {p.price?.toLocaleString()}원
+                              </div>
                             </div>
-                          </div>
+                          )}
                         </button>
                       );
                     })}
