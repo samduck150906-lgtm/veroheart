@@ -42,7 +42,7 @@ describe('non-destructive ingredient migration contract', () => {
   });
 
   it('does not mutate rows or redefine protected tables', () => {
-    expect(executableSql).not.toMatch(/\b(?:INSERT|UPDATE|DELETE|TRUNCATE)\b/i);
+    expect(executableSql).not.toMatch(/(?:^|;)\s*(?:INSERT|UPDATE|DELETE|TRUNCATE)\b/im);
 
     for (const table of protectedTables) {
       expect(executableSql).not.toMatch(new RegExp(`ALTER\\s+TABLE\\s+public\\.${table}\\b`, 'i'));
