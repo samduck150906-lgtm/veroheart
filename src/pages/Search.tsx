@@ -151,7 +151,8 @@ export default function Search() {
         {SPECIES_FILTERS.map(f => (
           <button key={f} onClick={() => setSpeciesFilter(f)}
             style={{
-              flexShrink: 0, padding: '7px 16px', borderRadius: 20, border: 'none', cursor: 'pointer',
+              flexShrink: 0, minHeight: 44, padding: '0 18px', borderRadius: 22, border: 'none', cursor: 'pointer',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 13, fontWeight: 700,
               background: speciesFilter === f ? '#191F28' : '#fff',
               color: speciesFilter === f ? '#fff' : '#4E5968',
@@ -165,7 +166,8 @@ export default function Search() {
         {DETAIL_FILTERS.map(f => (
           <button key={f} onClick={() => setDetailFilter(detailFilter === f ? null : f)}
             style={{
-              flexShrink: 0, padding: '6px 14px', borderRadius: 20,
+              flexShrink: 0, minHeight: 38, padding: '0 14px', borderRadius: 19,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               border: `1.5px solid ${detailFilter === f ? '#F5C518' : '#E5E8EB'}`,
               cursor: 'pointer', fontSize: 12, fontWeight: 700,
               background: detailFilter === f ? '#FEF6E0' : '#fff',
@@ -181,7 +183,8 @@ export default function Search() {
         {GRADE_FILTERS.map(f => (
           <button key={f} onClick={() => setGradeFilter(f)}
             style={{
-              flexShrink: 0, padding: '6px 13px', borderRadius: 20,
+              flexShrink: 0, minHeight: 38, padding: '0 13px', borderRadius: 19,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               border: `1.5px solid ${gradeFilter === f ? '#15B36B' : '#E5E8EB'}`,
               cursor: 'pointer', fontSize: 12, fontWeight: 700,
               background: gradeFilter === f ? '#E7F8F0' : '#fff',

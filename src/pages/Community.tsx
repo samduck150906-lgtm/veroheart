@@ -264,7 +264,8 @@ export default function Community() {
             key={cat}
             onClick={() => setSelectedCategory(cat)}
             style={{
-              flexShrink: 0, padding: '8px 16px', borderRadius: '99px', border: 'none', cursor: 'pointer',
+              flexShrink: 0, minHeight: 44, padding: '0 16px', borderRadius: '99px', border: 'none', cursor: 'pointer',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap',
               background: selectedCategory === cat ? 'var(--ink)' : 'var(--fill)',
               color: selectedCategory === cat ? '#fff' : 'var(--ink-soft)',

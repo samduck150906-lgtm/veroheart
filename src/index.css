@@ -145,8 +145,17 @@ body.admin-desktop-mode {
 }
 
 @media (min-width: 521px) {
+  /* CHANGED(P3-16): 넓은 화면에서 양옆 빈 공간을 은은한 배경으로 채워 모바일 컬럼이
+     의도적인 디바이스 프레임처럼 보이게. (하단 고정 네비와의 정렬을 위해 #root는
+     화면 전체 높이를 유지하고 세로 마진/라운드는 주지 않음.) */
+  body:not(.admin-desktop-mode) {
+    background:
+      radial-gradient(1100px 640px at 50% -8%, rgba(245,197,24,0.10), transparent 62%),
+      var(--bg-gradient);
+  }
   #root {
     margin: 0 auto;
+    box-shadow: 0 0 0 1px rgba(15,23,42,0.04), 0 24px 70px rgba(15,23,42,0.12);
   }
 }
 
@@ -826,6 +835,19 @@ button, a, [role="button"] {
 button:active {
   transform: scale(0.99);
   opacity: 0.96;
+}
+
+/* CHANGED(P2-13): 키보드 포커스 가시성 — 마우스 클릭에는 영향 없이 키보드 탐색 시에만
+   브랜드 색 포커스 링 노출(접근성). */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--primary-dark);
+  outline-offset: 2px;
+  border-radius: 8px;
 }
 
 /* Scrollbar hide utility */

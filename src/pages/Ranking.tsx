@@ -75,7 +75,8 @@ export default function Ranking() {
           {SPECIES_FILTERS.map(f => (
             <button key={f} onClick={() => setSpeciesFilter(f)}
               style={{
-                padding: '7px 18px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                minHeight: 44, padding: '0 18px', borderRadius: 22, border: 'none', cursor: 'pointer',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 13, fontWeight: 700,
                 background: speciesFilter === f ? '#191F28' : '#fff',
                 color: speciesFilter === f ? '#fff' : '#4E5968',
@@ -90,7 +91,8 @@ export default function Ranking() {
           {CATEGORY_FILTERS.map(f => (
             <button key={f} onClick={() => setCategoryFilter(f)}
               style={{
-                flexShrink: 0, padding: '6px 14px', borderRadius: 20,
+                flexShrink: 0, minHeight: 38, padding: '0 14px', borderRadius: 19,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 border: `1.5px solid ${categoryFilter === f ? '#F5C518' : '#E5E8EB'}`,
                 cursor: 'pointer', fontSize: 12, fontWeight: 700,
                 background: categoryFilter === f ? '#FEF6E0' : '#fff',
