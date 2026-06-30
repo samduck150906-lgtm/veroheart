@@ -86,7 +86,7 @@ export const Button: React.FC<ButtonProps> = ({
     switch (variant) {
       case 'secondary':
         return {
-          backgroundColor: 'rgba(129, 201, 149, 0.12)', // primaryLight (Mint 12%)
+          backgroundColor: 'rgba(245, 197, 24, 0.14)', // primary tint (Saffron Gold 14%)
           borderColor: 'transparent',
           color: theme.colors.primary,
         };

@@ -58,8 +58,8 @@ const ProductCard = React.memo<ProductCardProps>(({ product, onPress }) => {
       case 'A':
       case 'B':
         return {
-          bg: 'rgba(129, 201, 149, 0.1)',
-          text: theme.colors.primary,
+          bg: 'rgba(21, 179, 107, 0.1)',
+          text: '#15B36B', // Safe Green (web .grade-badge-A 와 동일 의미)
           label: '우수',
         };
       case 'C':

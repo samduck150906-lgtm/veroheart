@@ -5,11 +5,11 @@ import React, { createContext, useContext, useMemo } from 'react';
 // ==========================================
 
 export interface ThemeColors {
-  primary: string;        // Soft Mint (#81C995)
-  warning: string;        // Soft Red (#D93025)
-  background: string;     // Pure White (#FFFFFF)
-  textNearBlack: string;  // Near-Black (#111111)
-  textGray: string;       // Gray (#575B5F)
+  primary: string;        // Saffron Gold (#F5C518)
+  warning: string;        // Danger Red (#F04452)
+  background: string;     // Surface White (#FFFFFF)
+  textNearBlack: string;  // Ink-900 (#191F28)
+  textGray: string;       // Ink-600 (#4E5968)
   border: string;         // Delicate divider (#E5E8EB)
 }
 
@@ -51,14 +51,16 @@ export interface AppTheme {
 // ==========================================
 // 2. Production Palette & Values Config (Web)
 // ==========================================
+// Single source of truth = CSS custom properties in src/index.css (:root).
+// These reference the same tokens so the React theme and the stylesheet never drift apart.
 
 const defaultColors: ThemeColors = {
-  primary: '#F5C518',
-  warning: '#F04452',
-  background: '#FFFFFF',
-  textNearBlack: '#191F28',
-  textGray: '#4E5968',
-  border: '#E5E8EB',
+  primary: 'var(--primary)',
+  warning: 'var(--danger)',
+  background: 'var(--surface)',
+  textNearBlack: 'var(--text-dark)',
+  textGray: 'var(--text-muted)',
+  border: 'var(--hairline-strong)',
 };
 
 const defaultSpacing: ThemeSpacing = {
@@ -73,9 +75,9 @@ const defaultTheme: AppTheme = {
   colors: defaultColors,
   spacing: defaultSpacing,
   borderRadius: {
-    small: '12px',
-    medium: '20px',
-    large: '28px',
+    small: 'var(--border-radius-sm)',
+    medium: 'var(--border-radius-md)',
+    large: 'var(--border-radius-lg)',
     pill: '9999px',
   },
   typography: {
