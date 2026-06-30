@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
@@ -9,34 +8,51 @@ import {
   AlertCircle,
   CheckCircle2,
   ShieldCheck,
+  Shield,
   Dog,
   Cat,
   Calendar,
   Layers,
-  ExternalLink
+  ExternalLink,
+  Star,
+  Trash2,
+  MessageSquare,
 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
 import Analyzer from '../components/Analyzer';
 import BottomSheet from '../components/BottomSheet';
+import { TossCard } from '../components/TossUI';
+import { getReviews, createReview, deleteReview } from '../lib/supabase';
+import { buildProductConclusion } from '../utils/productConclusion';
+import { REVIEW_QUICK_TAGS } from '../constants/reviewTags';
 
 interface Ingredient { nameKo: string; nameEn?: string; purpose?: string; riskLevel?: string; isAllergy?: boolean; }
 const COUPANG_PARTNERS_DISCLOSURE = '이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.';
 
+function getVerificationMeta(status?: 'pending' | 'verified' | 'needs_review') {
+  if (status === 'verified') return { label: '검수 완료', bg: '#E7F8F0', color: '#15B36B' };
+  if (status === 'needs_review') return { label: '검토 필요', bg: '#FDECEE', color: '#D92D20' };
+  return { label: '검수 대기', bg: '#FEF6E0', color: '#B45309' };
+}
+
 export default function Detail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { 
-    profile, 
-    selectedProduct: product, 
-    isLoadingProducts, 
-    fetchProductDetail, 
-    comparisonList, 
-    addToComparison, 
-    removeFromComparison, 
+  const {
+    profile,
+    selectedProduct: product,
+    isLoadingProducts,
+    fetchProductDetail,
+    comparisonList,
+    addToComparison,
+    removeFromComparison,
     addToCart,
-    products
+    products,
+    userId,
+    favorites,
+    trackRecentView,
   } = useStore();
 
   type ReviewRow = {
@@ -128,8 +144,8 @@ export default function Detail() {
 
   // DER Calculation
   const getFeedingAmount = () => {
-    if (!profile.weight) return null;
-    const rer = 70 * Math.pow(profile.weight, 0.75);
+    if (!profile.weightKg) return null;
+    const rer = 70 * Math.pow(profile.weightKg, 0.75);
     const der = rer * 1.6; // Average adult multiplier
     const kcalPerKg = 3500; // Mock average
     const grams = (der / kcalPerKg) * 1000;
@@ -283,9 +299,9 @@ export default function Detail() {
           <span style={{ marginLeft: '4px' }}>비교</span>
         </button>
         
-        {product.productUrl ? (
+        {product.coupangLink ? (
           <a 
-            href={product.productUrl}
+            href={product.coupangLink}
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn-primary"
@@ -336,7 +352,7 @@ export default function Detail() {
               하루 약 {feedingGrams}g
             </div>
             <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-              {profile.weight}kg 기준 (평균 활동량 적용)<br/>
+              {profile.weightKg}kg 기준 (평균 활동량 적용)<br/>
               <span style={{ fontSize: '12px', opacity: 0.8 }}>*평균 칼로리(3500kcal/kg) 기준 추정치입니다.</span>
             </p>
           </div>
