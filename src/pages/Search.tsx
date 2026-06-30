@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Filter,
@@ -13,14 +13,54 @@ import {
   Package,
   SlidersHorizontal,
   Sparkles,
+  Search as SearchIcon,
 } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import type { Product } from '../types';
-import { TossFilterSection } from '../components/TossUI';
+import { TossFilterSection, TossSearchBar, TossChip, TossButton } from '../components/TossUI';
 import { searchProducts, getAllIngredients } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import standardFeedData from '../data/standard_feed_data.json';
 import { Database } from 'lucide-react';
+import { CORE_COPY } from '../copy/marketing';
+import { rankProductsForProfile } from '../utils/score';
+
+type PriceBand = 'any' | 'under5k' | 'under10k' | 'under20k' | 'over20k';
+
+const PRICE_BAND_LABELS: { id: PriceBand; label: string }[] = [
+  { id: 'any', label: '전체' },
+  { id: 'under5k', label: '5만원 이하' },
+  { id: 'under10k', label: '10만원 이하' },
+  { id: 'under20k', label: '20만원 이하' },
+  { id: 'over20k', label: '20만원 이상' },
+];
+
+function resolveCategoryFromSearchParams(category: string | null): string {
+  return category ?? '전체';
+}
+
+const LIFE_STAGE_OPTIONS = [
+  { value: '퍼피', label: '퍼피·키튼' },
+  { value: '어덜트', label: '어덜트' },
+  { value: '시니어', label: '시니어·노령' },
+  { value: '올스테이지', label: '올스테이지' },
+];
+
+const FORMULATION_OPTIONS = ['건식', '습식', '반습식', '동결건조', '생식', '영양제'];
+
+const HEALTH_CONCERN_OPTIONS = [
+  '피부·모질', '관절', '소화기', '비만·다이어트', '심장', '신장·비뇨기',
+  '간', '면역', '눈', '구강', '스트레스·분리불안', '임신·수유',
+];
+
+type CategoryEntry = { name: string; icon: React.ElementType };
+const SEARCH_MAIN_CATEGORIES: CategoryEntry[] = [
+  { name: '전체', icon: LayoutGrid },
+  { name: '건식사료', icon: Package },
+  { name: '습식사료', icon: Package },
+  { name: '간식', icon: Package },
+  { name: '영양제', icon: FlaskConical },
+];
 
 function defaultPetFromProfile(profile: { species?: string } | undefined): '' | 'dog' | 'cat' | 'all' {
   if (profile?.species === 'Cat') return 'cat';
@@ -61,9 +101,36 @@ export default function Search() {
     priceBand: 'any' as PriceBand,
   });
 
+  const priceMin = filters.priceBand === 'over20k' ? 20000 : undefined;
+  const priceMax = filters.priceBand === 'under5k' ? 5000
+    : filters.priceBand === 'under10k' ? 10000
+    : filters.priceBand === 'under20k' ? 20000
+    : undefined;
+
   const [excludedIngredients, setExcludedIngredients] = useState<string[]>([]);
   const [isStandardFeedModalOpen, setIsStandardFeedModalOpen] = useState(false);
   const [standardFeedSearch, setStandardFeedSearch] = useState('');
+  const [allIngredients, setAllIngredients] = useState<{ id: string; name_ko: string; risk_level: string }[]>([]);
+  const [ingredientSearch, setIngredientSearch] = useState('');
+
+  const filterButtonActive =
+    filters.targetLifeStage !== '' ||
+    filters.formulation !== '' ||
+    filters.subCategory !== '' ||
+    filters.healthConcerns.length > 0 ||
+    filters.dietPreset ||
+    filters.priceBand !== 'any' ||
+    excludedIngredients.length > 0;
+
+  const filteredIngList = useMemo(
+    () => ingredientSearch
+      ? allIngredients.filter(i =>
+          i.name_ko.toLowerCase().includes(ingredientSearch.toLowerCase()) &&
+          !excludedIngredients.includes(i.name_ko)
+        )
+      : [],
+    [allIngredients, ingredientSearch, excludedIngredients]
+  );
 
   const filteredStandardFeed = standardFeedData.filter((item: any) => 
     item.name_ko.toLowerCase().includes(standardFeedSearch.toLowerCase()) ||
@@ -94,6 +161,10 @@ export default function Search() {
     }, 400);
     return () => clearTimeout(timer);
   }, [query, category, filters, excludedIngredients, priceMin, priceMax]);
+
+  useEffect(() => {
+    getAllIngredients().then(setAllIngredients).catch(console.error);
+  }, []);
 
   const displayResults = useMemo(() => {
     if (sortBy === 'default') {

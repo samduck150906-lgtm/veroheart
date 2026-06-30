@@ -121,10 +121,6 @@ const AdminIngredients: React.FC = () => {
     }
   };
 
-  const filteredIngredients = ingredients.filter(i => 
-    i.name_ko.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (i.name_en && i.name_en.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
 
   const filteredStandardFeed = standardFeedData.filter((item: any) => 
     item.name_ko.toLowerCase().includes(standardFeedSearch.toLowerCase()) ||
@@ -301,8 +297,8 @@ const AdminIngredients: React.FC = () => {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <Input label="한글 성분명*" value={currentIngredient.name_ko} onChange={(v) => setCurrentIngredient({...currentIngredient, name_ko: v})} />
-                <Input label="영문 성분명" value={currentIngredient.name_en} onChange={(v) => setCurrentIngredient({...currentIngredient, name_en: v})} />
+                <InputField label="한글 성분명*" value={currentIngredient.name_ko} onChange={(v) => setCurrentIngredient({...currentIngredient, name_ko: v})} />
+                <InputField label="영문 성분명" value={currentIngredient.name_en} onChange={(v) => setCurrentIngredient({...currentIngredient, name_en: v})} />
               </div>
 
               <div>
@@ -326,7 +322,7 @@ const AdminIngredients: React.FC = () => {
                 </div>
               </div>
 
-              <Select label="성분 분류" value={currentIngredient.category} options={INGREDIENT_CATEGORIES} onChange={(v) => setCurrentIngredient({...currentIngredient, category: v})} />
+              <SelectField label="성분 분류" value={currentIngredient.category} options={INGREDIENT_CATEGORIES} onChange={(v) => setCurrentIngredient({...currentIngredient, category: v})} />
 
               <div>
                 <label style={{ fontSize: '13px', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '8px' }}>설명 및 가이드</label>

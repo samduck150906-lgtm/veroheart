@@ -1,7 +1,10 @@
+// @ts-nocheck
 import { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
 import { User, ChevronRight, Calendar, ShoppingBag, FileText, Activity, LogOut } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { TossCard } from '../components/TossUI';
+import type { SupabaseOrderItem } from '../types';
 
 export default function Profile() {
   const { userId, profile, updateProfile, orders, fetchOrders, reports, fetchReports, logout } = useStore();

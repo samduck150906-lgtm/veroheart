@@ -1,5 +1,10 @@
 import type { Product, UserPetProfile } from '../types';
 
+export interface ProductBadge {
+  label: string;
+  tone: 'good' | 'warn' | 'danger';
+}
+
 export interface RecommendationBreakdown {
   total: number;
   safety: number;

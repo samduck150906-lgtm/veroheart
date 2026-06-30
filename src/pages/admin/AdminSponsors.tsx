@@ -1,7 +1,15 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Megaphone, Search, ToggleLeft, ToggleRight, ChevronUp, ChevronDown } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { setSponsoredProduct } from '../../lib/supabase';
+
+async function setSponsoredProduct(id: string, isSponsored: boolean, label?: string, order?: number) {
+  const { error } = await supabase.from('products').update({
+    is_sponsored: isSponsored,
+    sponsor_label: label ?? null,
+    sponsor_order: order ?? null,
+  }).eq('id', id);
+  if (error) throw error;
+}
 import { notify } from '../../store/useNotification';
 
 type SponsorRow = {
