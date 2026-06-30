@@ -142,7 +142,7 @@ export default function Search() {
             style={{ flex: 1, height: 46, border: 'none', outline: 'none', fontSize: 15, color: '#191F28', background: 'transparent' }}
           />
           {query && (
-            <button onClick={() => setQuery('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8B95A1', fontSize: 18 }}>✕</button>
+            <button onClick={() => setQuery('')} aria-label="검색어 지우기" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8B95A1', fontSize: 18 }}>✕</button>
           )}
         </div>
       </div>
@@ -266,18 +266,32 @@ export default function Search() {
             return (
               <div key={product.id} onClick={() => navigate(`/product/${product.id}`)}
                 style={{
+                  position: 'relative',
                   background: '#fff', borderRadius: 18, padding: '16px',
                   boxShadow: '0 2px 10px rgba(30,41,59,0.06)', cursor: 'pointer',
                   display: 'flex', gap: 14, alignItems: 'flex-start',
                 }}
               >
+                {/* CHANGED(P1-10): 하트 위치를 모든 카드에서 우상단으로 통일, 터치 영역 40px */}
+                <button
+                  onClick={e => { e.stopPropagation(); toggleFavorite(product.id); }}
+                  aria-label={isFav ? '찜 해제' : '찜하기'}
+                  style={{
+                    position: 'absolute', top: 8, right: 8,
+                    width: 40, height: 40, borderRadius: 12, border: 'none',
+                    background: isFav ? '#FFF0ED' : 'transparent',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                  }}
+                >
+                  <Heart size={18} fill={isFav ? '#F04452' : 'none'} color={isFav ? '#F04452' : '#B0B8C1'} strokeWidth={2} />
+                </button>
                 <div style={{
                   width: 72, height: 72, borderRadius: 14,
                   background: '#F7F4EE', overflow: 'hidden', flexShrink: 0,
                 }}>
                   <ProductImage src={product.imageUrl} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ flex: 1, minWidth: 0, paddingRight: 34 }}>
                   <div style={{ display: 'flex', gap: 6, marginBottom: 5, flexWrap: 'wrap', alignItems: 'center' }}>
                     <GradeBadge product={product} profile={profile} withProfile={withProfile} />
                     {score != null && (
@@ -313,22 +327,10 @@ export default function Search() {
                       ))}
                     </div>
                   )}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
+                  <div style={{ marginTop: 8 }}>
                     <span style={{ fontSize: 16, fontWeight: 800, color: '#191F28' }}>
                       {product.price ? `${product.price.toLocaleString()}원` : '가격 미정'}
                     </span>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button
-                        onClick={e => { e.stopPropagation(); toggleFavorite(product.id); }}
-                        style={{
-                          width: 34, height: 34, borderRadius: 10, border: '1.5px solid #E5E8EB',
-                          background: isFav ? '#FFF0ED' : '#fff',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                        }}
-                      >
-                        <Heart size={15} fill={isFav ? '#F04452' : 'none'} color={isFav ? '#F04452' : '#B0B8C1'} strokeWidth={2} />
-                      </button>
-                    </div>
                   </div>
                 </div>
               </div>

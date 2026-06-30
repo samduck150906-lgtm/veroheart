@@ -119,16 +119,49 @@ export default function Layout() {
 
           {/* Home sub-tabs: 홈 / 랭킹 */}
           {isHome && (
-            // CHANGED: 활성 탭 밑줄을 텍스트 폭에 정확히 맞춰 정렬(좌측 치우침 해소) (문제 #7).
-            <div className="flex px-4">
-              <Link to="/" className="relative py-2.5 mr-6 text-[15px] font-semibold text-[#1A1A1A]" style={{ textDecoration: 'none' }}>
-                홈
-                <span className="absolute left-0 right-0 bottom-0 h-[2px] bg-[#1A1A1A] rounded-full" />
-              </Link>
-              <Link to="/ranking" className="relative py-2.5 text-[15px] font-semibold text-[#ABABAB]" style={{ textDecoration: 'none' }}>
-                랭킹
-              </Link>
-            </div>
+            // CHANGED(P0-1): flex+gap로 탭이 붙는 현상 해소, 각 탭 최소 44px 터치 영역,
+            // 활성 밑줄을 해당 탭 텍스트 폭에만 정확히 정렬.
+            <nav style={{ display: 'flex', gap: '8px', padding: '0 16px' }} aria-label="홈 탭">
+              {[
+                { to: '/', label: '홈', active: true },
+                { to: '/ranking', label: '랭킹', active: false },
+              ].map(({ to, label, active }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  aria-current={active ? 'page' : undefined}
+                  style={{
+                    position: 'relative',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minHeight: '44px',
+                    padding: '0 12px',
+                    fontSize: '15px',
+                    fontWeight: 700,
+                    color: active ? '#191F28' : '#ABABAB',
+                    textDecoration: 'none',
+                    letterSpacing: '-0.02em',
+                  }}
+                >
+                  {label}
+                  {active && (
+                    <span
+                      aria-hidden
+                      style={{
+                        position: 'absolute',
+                        left: '12px',
+                        right: '12px',
+                        bottom: 0,
+                        height: '2px',
+                        background: '#191F28',
+                        borderRadius: '999px',
+                      }}
+                    />
+                  )}
+                </Link>
+              ))}
+            </nav>
           )}
         </header>
       )}

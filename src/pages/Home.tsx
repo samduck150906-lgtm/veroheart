@@ -299,25 +299,27 @@ export default function Home() {
                 <div
                   key={product.id}
                   onClick={() => navigate(`/product/${product.id}`)}
-                  className="bg-white rounded-[16px] overflow-hidden active:scale-[0.98] transition-transform cursor-pointer"
+                  className="relative bg-white rounded-[16px] active:scale-[0.98] transition-transform cursor-pointer"
                   style={{ boxShadow: CARD_SM }}
                 >
-                  <div className="relative bg-[#F4F6F8] aspect-square">
+                  {/* CHANGED(P1-6): overflow-hidden을 이미지에만 적용 → 등급 뱃지/하트가
+                      카드 둥근 모서리에 잘리지 않도록. 뱃지·하트는 카드 직속 오버레이. */}
+                  <div className="relative bg-[#F4F6F8] aspect-square rounded-t-[16px] overflow-hidden">
                     <ProductImage src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
-                    <span
-                      className="absolute top-2 left-2 text-white px-2 py-0.5 rounded-full"
-                      style={{ ...T.micro, fontWeight: 800, background: getGradeColor(grade) }}
-                    >
-                      {label}
-                    </span>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); toggleFavorite?.(product.id); }}
-                      aria-label="찜하기"
-                      className="absolute top-1.5 right-1.5 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center"
-                    >
-                      <Heart size={15} fill={isFav ? '#F04452' : 'none'} color={isFav ? '#F04452' : '#B0B8C1'} />
-                    </button>
                   </div>
+                  <span
+                    className="absolute top-2.5 left-2.5 text-white px-2 py-0.5 rounded-full"
+                    style={{ ...T.micro, fontWeight: 800, background: getGradeColor(grade) }}
+                  >
+                    {label}
+                  </span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); toggleFavorite?.(product.id); }}
+                    aria-label="찜하기"
+                    className="absolute top-2 right-2 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center"
+                  >
+                    <Heart size={15} fill={isFav ? '#F04452' : 'none'} color={isFav ? '#F04452' : '#B0B8C1'} />
+                  </button>
                   <div className="p-3">
                     <p className="truncate" style={T.cap}>{displayBrand(product.brand, product.name)}</p>
                     <p className="mt-0.5 mb-1.5 line-clamp-2 min-h-[36px]" style={T.prodName}>{product.name}</p>
@@ -419,18 +421,19 @@ export default function Home() {
                 <div
                   key={product.id}
                   onClick={() => navigate(`/product/${product.id}`)}
-                  className="flex-shrink-0 w-[128px] bg-white rounded-[16px] overflow-hidden active:scale-[0.98] transition-transform cursor-pointer"
+                  className="relative flex-shrink-0 w-[128px] bg-white rounded-[16px] active:scale-[0.98] transition-transform cursor-pointer"
                   style={{ boxShadow: CARD_SM }}
                 >
-                  <div className="relative bg-[#F4F6F8] h-[104px]">
+                  {/* CHANGED(P1-6): 이미지에만 overflow-hidden → 뱃지 클리핑 방지 */}
+                  <div className="relative bg-[#F4F6F8] h-[104px] rounded-t-[16px] overflow-hidden">
                     <ProductImage src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
-                    <span
-                      className="absolute top-1.5 left-1.5 text-white px-1.5 py-0.5 rounded-full"
-                      style={{ ...T.micro, fontSize: 10, fontWeight: 800, background: getGradeColor(grade) }}
-                    >
-                      {grade === 'pending' ? '분석 중' : grade}
-                    </span>
                   </div>
+                  <span
+                    className="absolute top-2 left-2 text-white px-1.5 py-0.5 rounded-full"
+                    style={{ ...T.micro, fontSize: 10, fontWeight: 800, background: getGradeColor(grade) }}
+                  >
+                    {grade === 'pending' ? '분석 중' : grade}
+                  </span>
                   <div className="p-2.5">
                     <p className="line-clamp-2 min-h-[34px]" style={T.prodName}>{product.name}</p>
                     <p className="mt-1" style={{ ...T.price, fontSize: 13 }}>

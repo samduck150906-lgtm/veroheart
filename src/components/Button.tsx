@@ -85,10 +85,11 @@ export const Button: React.FC<ButtonProps> = ({
 
     switch (variant) {
       case 'secondary':
+        // CHANGED(P2): 앰버 틴트 위 밝은 노랑 글자는 대비(AA) 미달 → 진한 앰버 텍스트로 교체.
         return {
-          backgroundColor: 'rgba(129, 201, 149, 0.12)', // primaryLight (Mint 12%)
+          backgroundColor: 'rgba(245, 197, 24, 0.14)', // brand tint
           borderColor: 'transparent',
-          color: theme.colors.primary,
+          color: '#8A6D00', // deep amber — AA 충족
         };
       case 'outline':
         return {
@@ -98,10 +99,11 @@ export const Button: React.FC<ButtonProps> = ({
         };
       case 'primary':
       default:
+        // CHANGED(P2): 노란 버튼 위 흰 글자는 대비(AA) 미달 → 진한 잉크 텍스트로 교체.
         return {
           backgroundColor: theme.colors.primary,
           borderColor: 'transparent',
-          color: theme.colors.background, // Pure white
+          color: '#241B00', // near-black on amber — AA 충족
         };
     }
   };

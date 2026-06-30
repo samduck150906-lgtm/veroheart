@@ -56,6 +56,8 @@ export default function ProductImage({ src, alt, style, ...props }: ProductImage
       src={src}
       alt={alt || '상품 이미지'}
       referrerPolicy="no-referrer"
+      loading="lazy"
+      decoding="async"
       onError={() => {
         if (!hasError) setHasError(true);
       }}

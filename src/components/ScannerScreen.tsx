@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, Camera, Scan, FileText, X, Zap } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { SCANNER_GUIDE } from '../copy/ui';
@@ -16,6 +17,8 @@ interface ScannerScreenProps {
   onCapture?: (dataUrl: string, mode: 'barcode' | 'text') => void;
   /** 바코드 감지 성공 콜백 (rawValue) */
   onBarcodeDetect?: (barcode: string) => void;
+  /** 닫기/뒤로가기 동작 (미지정 시 라우터 뒤로가기) */
+  onClose?: () => void;
 }
 
 const MODES = [
@@ -29,12 +32,33 @@ const BOX_SIZE = {
   text:    { w: '88%', h: '64%' },
 };
 
-export default function ScannerScreen({ onCapture, onBarcodeDetect }: ScannerScreenProps) {
+export default function ScannerScreen({ onCapture, onBarcodeDetect, onClose }: ScannerScreenProps) {
+  const navigate = useNavigate();
   const videoRef  = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef    = useRef<number | null>(null);
   const detectedRef = useRef(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 화면을 빠져나가는 단일 경로. onClose가 없으면 뒤로가기(없으면 홈).
+  const handleClose = useCallback(() => {
+    if (onClose) { onClose(); return; }
+    if (window.history.length > 1) navigate(-1);
+    else navigate('/');
+  }, [onClose, navigate]);
+
+  // 사진 업로드(파일 선택) → 성분표 분석 흐름으로 진입. 카메라 거부/미지원 시 대체 경로.
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // 같은 파일 재선택 허용
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') onCapture?.(reader.result, 'text');
+    };
+    reader.readAsDataURL(file);
+  }, [onCapture]);
 
   const [error,          setError         ] = useState<string | null>(null);
   const [hasPermission,  setHasPermission ] = useState(false);
@@ -138,6 +162,31 @@ export default function ScannerScreen({ onCapture, onBarcodeDetect }: ScannerScr
       {/* ── Hidden canvas for capture ── */}
       <canvas ref={canvasRef} style={{ display: 'none' }} />
 
+      {/* ── Hidden file input (사진 업로드 대체 경로) ── */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileSelect}
+        style={{ display: 'none' }}
+      />
+
+      {/* ── 닫기 버튼 — 항상 최상단에 노출(권한 거부/검은 화면에서도 빠져나갈 수 있게) ── */}
+      <button
+        type="button"
+        onClick={handleClose}
+        aria-label="닫기"
+        style={{
+          position: 'absolute', top: 'max(12px, env(safe-area-inset-top))', left: '14px',
+          width: '40px', height: '40px', borderRadius: '50%',
+          background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)',
+          border: 'none', cursor: 'pointer', color: '#fff',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 20,
+        }}
+      >
+        <X size={22} strokeWidth={2.4} />
+      </button>
+
       {/* ── Camera feed ── always rendered so srcObject can be set before hasPermission state updates */}
       <video
         ref={videoRef}
@@ -152,6 +201,31 @@ export default function ScannerScreen({ onCapture, onBarcodeDetect }: ScannerScr
           <div className="scanner-error-card">
             <AlertTriangle size={40} className="scanner-error-icon" />
             <p className="scanner-error-text" style={{ whiteSpace: 'pre-line' }}>{error}</p>
+            {/* CHANGED(P0-5): 카메라 거부/미지원 시 갇히지 않도록 대체 경로 + 탈출구 제공 */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '22px' }}>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  width: '100%', padding: '13px', borderRadius: '12px', border: 'none', cursor: 'pointer',
+                  background: 'var(--primary)', color: '#241B00', fontSize: '14.5px', fontWeight: 800,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
+                }}
+              >
+                🖼️ 사진으로 분석하기
+              </button>
+              <button
+                type="button"
+                onClick={handleClose}
+                style={{
+                  width: '100%', padding: '13px', borderRadius: '12px', cursor: 'pointer',
+                  background: 'transparent', color: 'rgba(255,255,255,0.85)',
+                  border: '1px solid rgba(255,255,255,0.25)', fontSize: '14px', fontWeight: 700,
+                }}
+              >
+                뒤로 가기
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -189,9 +263,9 @@ export default function ScannerScreen({ onCapture, onBarcodeDetect }: ScannerScr
       {/* ── Flash effect ── */}
       {flashActive && <div className="scanner-flash" />}
 
-      {/* ── Top bar ── */}
+      {/* ── Top bar ── (닫기 버튼 영역만큼 좌측 여백 확보) */}
       <div className="scanner-topbar">
-        <span className="scanner-topbar-title">
+        <span className="scanner-topbar-title" style={{ marginLeft: '46px' }}>
           <Zap size={16} style={{ marginRight: '6px', color: 'var(--primary)' }} />
           AI 성분 스캐너
         </span>
@@ -218,10 +292,32 @@ export default function ScannerScreen({ onCapture, onBarcodeDetect }: ScannerScr
             })}
           </div>
 
-          {/* Capture button */}
-          <button className="scanner-capture-btn" onClick={handleCapture} aria-label="촬영">
-            <Camera size={28} />
-          </button>
+          {/* Capture row: 사진 업로드 + 촬영 */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '28px', width: '100%' }}>
+            {/* CHANGED(P0-5): 카메라가 동작해도 갤러리 사진으로 분석할 수 있는 대체 경로 */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              aria-label="사진 업로드"
+              style={{
+                width: '52px', height: '52px', borderRadius: '14px',
+                background: 'rgba(255,255,255,0.14)', backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255,255,255,0.22)', cursor: 'pointer', color: '#fff',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px',
+                fontSize: '9px', fontWeight: 700,
+              }}
+            >
+              <span style={{ fontSize: '18px', lineHeight: 1 }}>🖼️</span>
+              업로드
+            </button>
+
+            <button className="scanner-capture-btn" onClick={handleCapture} aria-label="촬영">
+              <Camera size={28} />
+            </button>
+
+            {/* 좌우 대칭용 스페이서 (촬영 버튼 가운데 정렬 유지) */}
+            <span aria-hidden style={{ width: '52px', height: '52px', flexShrink: 0 }} />
+          </div>
         </div>
       )}
     </div>
