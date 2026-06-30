@@ -73,13 +73,186 @@ export default function Profile() {
     return Math.max(60, Math.min(98, s));
   }, [profile]);
 
-  const favoriteProducts = useMemo(() => {
-    if (!favorites?.length || !products?.length) return [];
-    return favorites.map(id => products.find(p => p.id === id)).filter(Boolean);
-  }, [favorites, products]);
+  useEffect(() => {
+    if (!userId) return;
+    if (activeTab === 'orders') fetchOrders();
+    if (activeTab === 'reports') fetchReports();
+  }, [activeTab, fetchOrders, fetchReports, userId]);
+
+  const handleSignOut = async () => {
+    await logout();
+    navigate('/login');
+  };
+
+  const handleSave = async () => {
+    await updateProfile(formData);
+  };
+
+  const handleNext = () => {
+    if (profileStep < PROFILE_STEP_META.length - 1) {
+      setProfileStep(prev => prev + 1);
+    } else {
+      handleSave();
+    }
+  };
+
+  const handlePrev = () => {
+    if (profileStep > 0) {
+      setProfileStep(prev => prev - 1);
+    }
+  };
+
+  const toggleArrayItem = (field: 'healthConcerns' | 'allergies', value: string) => {
+    const list = formData[field] || [];
+    if (list.includes(value)) {
+      setFormData({ ...formData, [field]: list.filter(i => i !== value) });
+    } else {
+      setFormData({ ...formData, [field]: [...list, value] });
+    }
+  };
+
+  const stepCount = PROFILE_STEP_META.length;
+  const step = PROFILE_STEP_META[profileStep];
+  const favoriteProducts = products.filter(p => favorites.includes(p.id));
+
+  const allergyOptions = ['닭고기', '소고기', '연어', '곡물', '인공색소'];
+
+  const profileStepBody = (() => {
+    switch (profileStep) {
+      case 0:
+        return (
+          <TossInput
+            value={formData.name}
+            onChange={(value) => setFormData({ ...formData, name: value })}
+            placeholder="예: 로니"
+          />
+        );
+      case 1:
+        return (
+          <div style={{ display: 'flex', gap: '10px' }}>
+            {(['Dog', 'Cat'] as const).map((sp) => (
+              <button
+                key={sp}
+                type="button"
+                onClick={() => setFormData({ ...formData, species: sp })}
+                style={{
+                  flex: 1,
+                  padding: '16px 14px',
+                  borderRadius: '16px',
+                  fontSize: '15px',
+                  fontWeight: 800,
+                  border: formData.species === sp ? 'none' : '1px solid #E5E7EB',
+                  backgroundColor: formData.species === sp ? 'var(--primary-dark)' : '#fff',
+                  color: formData.species === sp ? '#fff' : 'var(--text-dark)',
+                  cursor: 'pointer',
+                }}
+              >
+                {sp === 'Dog' ? '강아지' : '고양이'}
+              </button>
+            ))}
+          </div>
+        );
+      case 2:
+        return (
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {[
+              { label: '아기', age: 1 },
+              { label: '성인', age: 4 },
+              { label: '시니어', age: 10 },
+            ].map(({ label, age }) => (
+              <button
+                key={label}
+                type="button"
+                onClick={() => setFormData({ ...formData, age })}
+                style={{
+                  padding: '12px 20px',
+                  borderRadius: '999px',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  border: formData.age === age ? 'none' : '1px solid #E2E8F0',
+                  backgroundColor: formData.age === age ? 'var(--primary-dark)' : '#FFFFFF',
+                  color: formData.age === age ? '#FFFFFF' : 'var(--text-dark)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        );
+      case 3:
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <TossInput
+              value={formData.weightKg != null ? String(formData.weightKg) : ''}
+              onChange={(v) => {
+                const n = parseFloat(v.replace(/[^0-9.]/g, ''));
+                setFormData({
+                  ...formData,
+                  weightKg: Number.isFinite(n) && n > 0 ? n : undefined,
+                });
+              }}
+              placeholder="예: 5.2"
+            />
+            <span style={{ fontSize: '14px', fontWeight: 700, color: '#64748B' }}>kg</span>
+          </div>
+        );
+      case 4:
+        return (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+            {allergyOptions.map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => toggleArrayItem('allergies', opt)}
+                style={{
+                  padding: '10px 18px',
+                  borderRadius: '999px',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  border: formData.allergies.includes(opt) ? 'none' : '1px solid #E5E7EB',
+                  backgroundColor: formData.allergies.includes(opt) ? 'var(--danger)' : '#fff',
+                  color: formData.allergies.includes(opt) ? '#fff' : 'var(--text-dark)',
+                  cursor: 'pointer',
+                }}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        );
+      case 5:
+        return (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+            {concernOptions.map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => toggleArrayItem('healthConcerns', opt)}
+                style={{
+                  padding: '10px 18px',
+                  borderRadius: '999px',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  border: formData.healthConcerns.includes(opt) ? 'none' : '1px solid #E5E7EB',
+                  backgroundColor: formData.healthConcerns.includes(opt) ? 'var(--primary-dark)' : '#fff',
+                  color: formData.healthConcerns.includes(opt) ? '#fff' : 'var(--text-dark)',
+                  cursor: 'pointer',
+                }}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        );
+      default:
+        return null;
+    }
+  })();
 
   const handleLogout = async () => {
-    await signOut();
+    await logout();
     navigate('/login');
   };
 

@@ -412,7 +412,16 @@ export const useStore = create<StoreState>((set, get) => ({
     try {
       const { signOut } = await import('../lib/supabase');
       await signOut();
-      set({ userId: null, profile: DEFAULT_USER_PET_PROFILE, orders: [], cart: [], favorites: [] });
+      set({
+        userId: null,
+        isLoggedIn: false,
+        profile: {} as any,
+        orders: [],
+        reports: [],
+        cart: [],
+        favorites: [],
+        recentViews: []
+      });
     } catch (err) {
       console.error(err);
     }
