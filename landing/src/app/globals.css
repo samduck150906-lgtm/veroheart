@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --reveal-duration: 0.65s;
+  --reveal-duration: 0.48s;
 }
 
 html {
@@ -13,13 +13,23 @@ html {
 @layer utilities {
   .reveal-base {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(16px);
     transition:
-      opacity var(--reveal-duration) ease,
-      transform var(--reveal-duration) ease;
+      opacity var(--reveal-duration) cubic-bezier(0.22, 1, 0.36, 1),
+      transform var(--reveal-duration) cubic-bezier(0.22, 1, 0.36, 1);
   }
   .reveal-visible {
     opacity: 1;
     transform: translateY(0);
+  }
+
+  .card-lift {
+    transition:
+      transform 0.22s ease,
+      box-shadow 0.22s ease;
+  }
+  .card-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 48px -8px rgba(146, 64, 14, 0.18);
   }
 }

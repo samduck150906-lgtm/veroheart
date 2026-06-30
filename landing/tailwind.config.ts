@@ -50,8 +50,14 @@ export default {
         sans: ["var(--font-jakarta)", "system-ui", "sans-serif"],
       },
       boxShadow: {
-        soft: "0 18px 50px -12px rgba(180, 83, 9, 0.18)",
-        card: "0 8px 30px -8px rgba(146, 64, 14, 0.1)",
+        soft: "0 20px 56px -12px rgba(180, 83, 9, 0.22)",
+        card: "0 4px 24px -4px rgba(146, 64, 14, 0.10)",
+        "card-hover": "0 16px 48px -8px rgba(146, 64, 14, 0.18)",
+        cta: "0 8px 32px -4px rgba(180, 83, 9, 0.35)",
+      },
+      borderRadius: {
+        "3xl": "1.5rem",
+        "4xl": "2rem",
       },
     },
   },

@@ -15,20 +15,20 @@ export function SectionHeading({
 }: Props) {
   const alignClass = align === "center" ? "text-center mx-auto" : "text-left";
   return (
-    <div className={`mb-10 max-w-2xl ${alignClass}`}>
+    <div className={`mb-12 max-w-2xl ${alignClass}`}>
       {kicker && (
-        <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-gold-deep">
+        <p className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-gold-soft px-3.5 py-1 text-xs font-bold uppercase tracking-widest text-gold-deep ring-1 ring-gold-muted/60">
           {kicker}
         </p>
       )}
       <h2
         id={id}
-        className="text-2xl font-bold tracking-tight text-ink-900 sm:text-3xl"
+        className="text-3xl font-extrabold tracking-tight text-ink-900 sm:text-4xl"
       >
         {title}
       </h2>
       {description && (
-        <p className="mt-3 text-base leading-relaxed text-ink-800/80">
+        <p className="mt-4 text-base leading-relaxed text-ink-800/75 sm:text-[1.0625rem]">
           {description}
         </p>
       )}
