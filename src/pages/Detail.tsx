@@ -1,6 +1,5 @@
 // @ts-nocheck
 import { useEffect, useState, useMemo } from 'react';
-import { createPortal } from 'react-dom'; // CHANGED: 하단 고정 CTA를 body로 포털 — 조상 transform의 fixed 포함블록 문제 회피
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -271,47 +270,36 @@ export default function Detail() {
         })()}
       </div>
 
-      {/* CHANGED(Tailwind, #3): 점수 + 게이지바 + 등급 범례(D C B A S) + 한줄 설명 */}
-      {report && (() => {
-        const g = gradeFromScore(report.score);
-        const gm = GRADE_META[g] || GRADE_META.D;
-        const legend = ['D', 'C', 'B', 'A', 'S'];
-        return (
-          <div className="mb-3 bg-white rounded-[16px] p-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
-            <p className="text-[11px] font-semibold text-[#8B95A1] tracking-widest mb-3">VERORO SCORE</p>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-end gap-1 mb-1">
-                  <span className="text-[52px] font-extrabold leading-none" style={{ color: gm.color }}><AnimatedNumber value={report.score} /></span>
-                  <span className="text-[16px] text-[#8B95A1] mb-2">/ 100</span>
-                </div>
-                <p className="text-[13px] text-[#6B7684]">{gm.tier}</p>
-                <p className="text-[12px] text-[#8B95A1] mt-0.5">{scoreOneLiner(product, report, pipeline)}</p>
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-md" style={{ background: gm.color }}>
-                  <span className="text-[28px] font-extrabold text-white">{g}</span>
-                </div>
-                <span className="text-[11px] text-[#8B95A1]">등급</span>
-              </div>
-            </div>
-            <div className="mt-4">
-              <div className="flex justify-between text-[10px] text-[#8B95A1] mb-1"><span>0</span><span>50</span><span>100</span></div>
-              <div className="w-full h-2 bg-[#EFEFEF] rounded-full overflow-hidden">
-                <div className="h-full rounded-full transition-all duration-700"
-                  style={{ width: `${Math.max(3, Math.min(100, report.score))}%`, background: 'linear-gradient(to right, #F5C842, #15B36B)' }} />
-              </div>
-              <div className="flex justify-between mt-2 text-[10px]">
-                {legend.map(x => (
-                  <span key={x} style={{ color: GRADE_META[x].color, fontWeight: x === g ? 700 : 400 }}>
-                    {x}{x === g ? ' ◀' : ''}
-                  </span>
-                ))}
-              </div>
-            </div>
+      <p style={{ margin: '0 0 24px', padding: '10px 14px', fontSize: '11px', lineHeight: 1.55, fontWeight: 600, color: '#64748B', background: '#F1F5F9', borderRadius: '12px' }}>
+        {COUPANG_PARTNERS_DISCLOSURE}
+      </p>
+
+      {hasPetProfile && alternativeProduct && (
+        <div className="card" style={{ backgroundColor: 'var(--bg-color)', marginBottom: '40px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--danger)', fontWeight: 800, marginBottom: '8px' }}>
+            <AlertCircle size={20} /> 앗! 이 사료는 아이와 맞지 않을 수 있어요.
           </div>
-        );
-      })()}
+          <p style={{ fontSize: '15px', color: 'var(--text-dark)', marginBottom: '16px', lineHeight: 1.5 }}>
+            대신 <b>{profile.name}</b>와(과) 궁합이 <b style={{ color: 'var(--safe)' }}>{alternativeProduct.score}점</b>인 이 사료는 어떠세요?
+          </p>
+          <button 
+            className="btn btn-outline"
+            style={{ width: '100%', borderRadius: 'var(--border-radius-sm)', fontWeight: 700 }}
+            onClick={() => navigate(`/product/${alternativeProduct?.p.id}`)}
+          >
+            {alternativeProduct.p.brand} {alternativeProduct.p.name} 보러가기
+          </button>
+        </div>
+      )}
+
+      {/* 일일 급여량 계산기 (활동량·중성화·체형 보정 + 지방 위험 평가) */}
+      <section className="card" style={{ marginBottom: '40px' }}>
+        <FeedingGuideCalculator
+          kcalPer100g={productKcalPer100g || 350}
+          productName={product.name}
+          fatPercent={product.guaranteedAnalysis?.crudeFat}
+        />
+      </section>
 
       {/* CHANGED(Tailwind, #4): 파란 배너 → 메인 노란색 그라데이션으로 통일 */}
       <button

@@ -19,7 +19,6 @@ import { useState, useMemo } from 'react';
 import { useStore } from '../store/useStore';
 import { Utensils, Dog, Cat, Info, Flame, AlertTriangle } from 'lucide-react';
 import type { ActivityLevel, BodyCondition } from '../types';
-import AnimatedNumber from './AnimatedNumber'; // CHANGED: 결과 숫자 count-up 애니메이션
 
 interface FeedingGuideProps {
   /** 사료 100g 당 칼로리 (kcal) */
@@ -159,6 +158,29 @@ export default function FeedingGuideCalculator({ kcalPer100g, productName, fatPe
     : undefined;
 
   return (
+    <div className="feeding-wrap">
+      {/* Header */}
+      <div className="feeding-header">
+        <Icon size={20} />
+        <h3 className="feeding-title">하루 급여 가이드</h3>
+      </div>
+      <p className="feeding-sub">
+        {profile.name ? `${profile.name}에게 맞는` : '반려동물에게 맞는'} 급여량을 계산해 드려요
+      </p>
+
+  const riskColor = fatRisk
+    ? fatRisk.resultRisk === 'low' ? '#15B36B'
+      : fatRisk.resultRisk === 'medium' ? '#F59E0B'
+      : '#F04452'
+    : undefined;
+
+  const riskBg = fatRisk
+    ? fatRisk.resultRisk === 'low' ? '#ECFDF5'
+      : fatRisk.resultRisk === 'medium' ? '#FFFBEB'
+      : '#FFF1F2'
+    : undefined;
+
+  return (
     <div className="mb-4 bg-white rounded-[16px] p-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
       {/* 헤더 */}
       <div className="flex items-center gap-2 mb-4">
@@ -186,90 +208,110 @@ export default function FeedingGuideCalculator({ kcalPer100g, productName, fatPe
         </div>
       </div>
 
-      {/* CHANGED(#7): 활동량 — 2열 그리드 */}
-      <div className="mb-4">
-        <p className="text-[13px] font-semibold text-[#1A1A1A] mb-2">활동량</p>
-        <div className="grid grid-cols-2 gap-2">
-          {(Object.keys(ACTIVITY_FACTORS) as ActivityLevel[]).map((key) => {
-            const on = activity === key;
-            return (
+      {/* Activity level */}
+      <div className="feeding-section">
+        <div className="feeding-label">활동량</div>
+        <div className="feeding-activity-grid">
+          {(Object.keys(ACTIVITY_FACTORS) as ActivityLevel[]).map((key) => (
+            <button
+              key={key}
+              title={ACTIVITY_FACTORS[key].desc}
+              className={`feeding-activity-btn ${activity === key ? 'feeding-activity-btn--active' : ''}`}
+              onClick={() => setActivity(key)}
+            >
+              {ACTIVITY_FACTORS[key].label}
+            </button>
+          ))}
+        </div>
+        <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '6px', fontWeight: 500 }}>
+          {ACTIVITY_FACTORS[activity].desc}
+        </p>
+      </div>
+
+      {/* Neutered + Body Condition */}
+      <div className="feeding-section" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+        {/* 중성화 */}
+        <div style={{ flex: '1', minWidth: '120px' }}>
+          <div className="feeding-label" style={{ marginBottom: '8px' }}>중성화 여부</div>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            {[true, false].map((val) => (
               <button
-                key={key} type="button" title={ACTIVITY_FACTORS[key].desc}
-                onClick={() => setActivity(key)}
-                className={`py-2.5 rounded-[10px] text-[13px] border transition-colors ${on ? 'bg-[#FEF9E7] border-[#F5C842] text-[#F5C842] font-bold' : 'border-[#EFEFEF] text-[#6B7684] font-medium'}`}
+                key={String(val)}
+                onClick={() => setIsNeutered(val)}
+                style={{
+                  flex: 1,
+                  padding: '8px 0',
+                  borderRadius: '10px',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  border: isNeutered === val ? '2px solid var(--brand, #3182F6)' : '1.5px solid var(--hairline)',
+                  background: isNeutered === val ? 'var(--brand-tint, #EFF6FF)' : '#fff',
+                  color: isNeutered === val ? 'var(--brand-deep, #1D4ED8)' : 'var(--ink-soft)',
+                  cursor: 'pointer',
+                }}
               >
-                {ACTIVITY_FACTORS[key].label}
+                {val ? '중성화 ✓' : '미중성화'}
               </button>
-            );
-          })}
-        </div>
-        <p className="text-[11px] text-[#8B95A1] mt-1.5">{ACTIVITY_FACTORS[activity].desc}</p>
-      </div>
-
-      {/* CHANGED(#7): 중성화(2열) + 체형(3열) 레이아웃 통일 */}
-      <div className="grid grid-cols-2 gap-4 mb-5">
-        <div>
-          <p className="text-[13px] font-semibold text-[#1A1A1A] mb-2">중성화 여부</p>
-          <div className="grid grid-cols-2 gap-2">
-            {[true, false].map((val) => {
-              const on = isNeutered === val;
-              return (
-                <button
-                  key={String(val)} type="button" onClick={() => setIsNeutered(val)}
-                  className={`py-2.5 rounded-[10px] text-[12px] border ${on ? 'bg-[#FEF9E7] border-[#F5C842] text-[#F5C842] font-bold' : 'border-[#EFEFEF] text-[#6B7684]'}`}
-                >
-                  {val ? '중성화 ✓' : '미중성화'}
-                </button>
-              );
-            })}
+            ))}
           </div>
         </div>
-        <div>
-          <p className="text-[13px] font-semibold text-[#1A1A1A] mb-2">체형</p>
-          <div className="grid grid-cols-3 gap-1.5">
-            {(Object.keys(BODY_LABELS) as BodyCondition[]).map((cond) => {
-              const on = bodyCondition === cond;
-              return (
-                <button
-                  key={cond} type="button" onClick={() => setBodyCondition(cond)}
-                  className={`py-2.5 rounded-[10px] text-[11px] border ${on ? 'bg-[#FEF9E7] border-[#F5C842] text-[#F5C842] font-bold' : 'border-[#EFEFEF] text-[#6B7684]'}`}
-                >
-                  {BODY_LABELS[cond]}
-                </button>
-              );
-            })}
+
+        {/* 체형 */}
+        <div style={{ flex: '1', minWidth: '160px' }}>
+          <div className="feeding-label" style={{ marginBottom: '8px' }}>체형</div>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            {(Object.keys(BODY_LABELS) as BodyCondition[]).map((cond) => (
+              <button
+                key={cond}
+                onClick={() => setBodyCondition(cond)}
+                style={{
+                  flex: 1,
+                  padding: '8px 0',
+                  borderRadius: '10px',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  border: bodyCondition === cond ? '2px solid var(--brand, #3182F6)' : '1.5px solid var(--hairline)',
+                  background: bodyCondition === cond ? 'var(--brand-tint, #EFF6FF)' : '#fff',
+                  color: bodyCondition === cond ? 'var(--brand-deep, #1D4ED8)' : 'var(--ink-soft)',
+                  cursor: 'pointer',
+                }}
+              >
+                {BODY_LABELS[cond]}
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* CHANGED(#7): 결과 박스 강조 + count-up */}
-      <div className="bg-[#FEF9E7] border border-[#F5C842] rounded-[14px] p-4">
-        <div className="flex justify-around items-center">
-          <div className="text-center">
-            <p className="text-[11px] text-[#8B95A1] mb-1">하루 권장량</p>
-            <p className="text-[34px] font-extrabold text-[#F5C842] leading-none"><AnimatedNumber value={dailyGrams} suffix="g" /></p>
-            <p className="text-[12px] text-[#8B95A1] mt-1"><AnimatedNumber value={dailyKcal} suffix=" kcal" /></p>
+      {/* Result card */}
+      <div className="feeding-result">
+        <div className="feeding-result-row">
+          <div className="feeding-result-item feeding-result-item--primary">
+            <span className="feeding-result-label">하루 권장량</span>
+            <span className="feeding-result-num">{dailyGrams}g</span>
+            <span className="feeding-result-sub">{dailyKcal} kcal</span>
           </div>
-          <div className="w-px h-12 bg-[#F5C842]/30" />
-          <div className="text-center">
-            <p className="text-[11px] text-[#8B95A1] mb-1">1회 급여량</p>
-            <p className="text-[34px] font-extrabold text-[#F5C842] leading-none"><AnimatedNumber value={mealGrams} suffix="g" /></p>
-            <p className="text-[12px] text-[#8B95A1] mt-1">하루 2회 기준</p>
+          <div className="feeding-result-divider" />
+          <div className="feeding-result-item">
+            <span className="feeding-result-label">1회 급여량</span>
+            <span className="feeding-result-num">{mealGrams}g</span>
+            <span className="feeding-result-sub">하루 2회 기준</span>
           </div>
           {fatPercent != null && fatRisk && (
             <>
-              <div className="w-px h-12 bg-[#F5C842]/30" />
-              <div className="text-center">
-                <p className="text-[11px] text-[#8B95A1] mb-1">일일 지방</p>
-                <p className="text-[34px] font-extrabold leading-none" style={{ color: riskColor }}><AnimatedNumber value={fatRisk.dailyFatG} decimals={1} /></p>
-                <p className="text-[12px] text-[#8B95A1] mt-1">지방 {fatPercent}%</p>
+              <div className="feeding-result-divider" />
+              <div className="feeding-result-item">
+                <span className="feeding-result-label">일일 지방 섭취</span>
+                <span className="feeding-result-num" style={{ color: riskColor }}>{fatRisk.dailyFatG}g</span>
+                <span className="feeding-result-sub">지방 {fatPercent}%</span>
               </div>
             </>
           )}
         </div>
-        <p className="text-[10px] text-[#8B95A1] mt-3 pt-2.5 border-t border-[#F5C842]/20 text-center">
+        <div className="feeding-result-caption">
+          <Utensils size={12} style={{ marginRight: 4 }} />
           {productName} 기준 · {kcalPer100g} kcal/100g · MER 계수 {merFactor.toFixed(2)} (RER {rer} kcal)
-        </p>
+        </div>
       </div>
 
       {/* 지방 위험 평가 패널 */}
@@ -351,7 +393,7 @@ export default function FeedingGuideCalculator({ kcalPer100g, productName, fatPe
         </div>
       )}
 
-      <p className="text-[11px] text-[#8B95A1] mt-3 leading-relaxed">
+      <p className="feeding-disclaimer">
         ※ 본 수치는 참고용이며, 수의사의 처방과 다를 수 있습니다. 반드시 전문가와 상담하세요.
       </p>
     </div>
