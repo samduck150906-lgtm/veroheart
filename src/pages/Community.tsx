@@ -246,30 +246,91 @@ export default function Community() {
         <meta name="description" content="집사들의 사료 이야기, 수의사 Q&A, 키우기 꿀팁을 나눠요." />
       </Helmet>
 
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 0 16px' }}>
-        <div>
-          <div style={{ fontSize: '22px', fontWeight: 900, color: 'var(--ink)', letterSpacing: '-0.03em' }}>랜선애카</div>
-          <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--ink-faint)', marginTop: '2px' }}>먹이고, 키우고, 나누는 이야기</div>
-        </div>
-        <span style={{ width: '44px', height: '44px', borderRadius: '13px', background: 'var(--brand-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <MessageCircle size={22} strokeWidth={2.2} color="var(--brand-deep)" />
+      {/* Header Banner — calm neutral */}
+      <div
+        style={{
+          background: 'var(--surface-elevated)',
+          border: '1px solid var(--border-subtle)',
+          borderRadius: '16px',
+          padding: '18px 20px',
+          color: 'var(--text-dark)',
+          marginBottom: '20px',
+        }}
+      >
+        <span
+          style={{
+            fontSize: '11px',
+            fontWeight: 500,
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
+            color: 'var(--text-light)',
+            display: 'inline-block',
+            marginBottom: '6px',
+          }}
+        >
+          Community
         </span>
+        <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '4px', letterSpacing: '-0.015em' }}>
+          건강 소통 광장
+        </h2>
+        <Text variant="caption" style={{ color: 'var(--text-muted)', lineHeight: 1.5 }}>
+          영양 정보부터 까다로운 입맛 해결법까지, 보호자·수의사와 함께 나누어 보세요.
+        </Text>
       </div>
 
-      {/* Category tabs */}
-      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '14px', scrollbarWidth: 'none', marginBottom: '4px' }}>
-        {CATEGORIES.map(cat => (
+      {/* Write Post Trigger Button */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Filter size={14} color="var(--text-muted)" strokeWidth={1.8} />
+          <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)' }}>카테고리 필터</span>
+        </div>
+        <button
+          onClick={() => setIsWriteOpen(!isWriteOpen)}
+          style={{
+            background: 'var(--text-dark)',
+            color: '#FFFFFF',
+            border: 'none',
+            borderRadius: '10px',
+            padding: '8px 14px',
+            fontSize: '12px',
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            cursor: 'pointer',
+          }}
+        >
+          <Plus size={14} strokeWidth={2} />
+          글쓰기
+        </button>
+      </div>
+
+      {/* Category Horizontal scroll */}
+      <div 
+        style={{ 
+          display: 'flex', 
+          gap: '8px', 
+          overflowX: 'auto', 
+          paddingBottom: '16px',
+          WebkitOverflowScrolling: 'touch',
+        }}
+        className="no-scrollbar"
+      >
+        {categories.map(cat => (
           <button
             key={cat}
             onClick={() => setSelectedCategory(cat)}
             style={{
-              flexShrink: 0, minHeight: 44, padding: '0 16px', borderRadius: '99px', border: 'none', cursor: 'pointer',
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap',
-              background: selectedCategory === cat ? 'var(--ink)' : 'var(--fill)',
-              color: selectedCategory === cat ? '#fff' : 'var(--ink-soft)',
-              transition: 'background 0.15s, color 0.15s',
+              padding: '8px 14px',
+              borderRadius: '999px',
+              border: selectedCategory === cat ? '1px solid var(--text-dark)' : '1px solid var(--border-subtle)',
+              background: selectedCategory === cat ? 'var(--text-dark)' : 'var(--surface-elevated)',
+              color: selectedCategory === cat ? '#FFFFFF' : 'var(--text-muted)',
+              fontSize: '12px',
+              fontWeight: 500,
+              whiteSpace: 'nowrap',
+              cursor: 'pointer',
+              transition: 'background-color 0.15s ease, color 0.15s ease',
             }}
           >
             {cat}

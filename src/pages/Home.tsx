@@ -136,17 +136,27 @@ export default function Home() {
 
   const quickActions = [
     {
+      title: '탐색',
+      description: '',
+      icon: <Search size={18} color="var(--text-muted)" strokeWidth={1.8} />,
+      onClick: () => navigate('/search'),
+    },
+    {
+      title: '랭킹',
+      description: '',
+      icon: <Flame size={18} color="var(--text-muted)" strokeWidth={1.8} />,
+      onClick: () => navigate('/ranking'),
+    },
+    {
       title: '성향 테스트',
       description: '',
-      icon: <MessageCircle size={18} color="#2563EB" />,
-      accent: 'rgba(37, 99, 235, 0.12)',
+      icon: <MessageCircle size={18} color="var(--text-muted)" strokeWidth={1.8} />,
       onClick: () => navigate('/event/personality-quiz'),
     },
     {
       title: '마이 펫',
       description: '',
-      icon: <Heart size={18} color="#DB2777" />,
-      accent: 'rgba(219, 39, 119, 0.12)',
+      icon: <Heart size={18} color="var(--text-muted)" strokeWidth={1.8} />,
       onClick: () => navigate('/profile'),
     },
   ];
@@ -162,156 +172,153 @@ export default function Home() {
         <meta name="description" content="베로로 — 사료 성분 분석과 집사들의 찐 리뷰. 의심 대신 베로로 하세요." />
       </Helmet>
 
-      {/* Premium Pet Profile Header Component */}
-      <header
-        className="glass"
+      {/* Pet context card — quiet inline introduction */}
+      <section
         style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '16px 20px',
-          borderBottom: '1px solid rgba(28, 25, 23, 0.06)',
-          background: 'rgba(255, 255, 255, 0.96)',
-          backdropFilter: 'blur(10px)',
-          position: 'sticky',
-          top: 0,
-          zIndex: 40,
+          gap: '12px',
+          padding: '16px 20px 8px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          {/* Pet Profile Photo with Premium HSL Soft Mint Green Gradient Ring */}
-          <div
-            style={{
-              position: 'relative',
-              width: '48px',
-              height: '48px',
-              borderRadius: '50%',
-              padding: '2.5px',
-              background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
-              boxShadow: '0 6px 16px rgba(129, 201, 149, 0.28)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <img
-              src={profile.species === 'Cat' 
-                ? 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=120&auto=format&fit=crop&q=80' 
-                : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=120&auto=format&fit=crop&q=80'}
-              alt={`${petName} 프로필`}
-              style={{
-                width: '100%',
-                height: '100%',
-                borderRadius: '50%',
-                objectFit: 'cover',
-                border: '2px solid #FFFFFF',
-              }}
-            />
-            {/* Active/Status pulse ring */}
-            <span
-              style={{
-                position: 'absolute',
-                bottom: '1px',
-                right: '1px',
-                width: '11px',
-                height: '11px',
-                borderRadius: '50%',
-                backgroundColor: 'var(--primary)',
-                border: '2px solid #FFFFFF',
-                boxShadow: '0 0 0 2px rgba(129, 201, 149, 0.3)',
-              }}
-            />
-          </div>
+        <div
+          style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '50%',
+            overflow: 'hidden',
+            background: 'var(--surface-muted)',
+            flexShrink: 0,
+          }}
+        >
+          <img
+            src={profile.species === 'Cat'
+              ? 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=120&auto=format&fit=crop&q=80'
+              : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=120&auto=format&fit=crop&q=80'}
+            alt={`${petName} 프로필`}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-dark)', letterSpacing: '-0.01em' }}>
+            {petName}
+            <span style={{ color: 'var(--text-light)', fontWeight: 500, fontSize: '12px', marginLeft: '6px' }}>
+              {petBreed} · {petAge}세
+            </span>
+          </span>
+          <span style={{ fontSize: '11px', color: 'var(--text-light)', fontWeight: 500, marginTop: '2px' }}>
+            맞춤 추천이 준비됐어요
+          </span>
+        </div>
+      </section>
 
-          {/* Personalization Info */}
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
+      {/* Slim recall notice — inline single line */}
+      {isRecallBannerVisible && (
+        <section
+          role="button"
+          tabIndex={0}
+          aria-label="FDA 및 농식품부 긴급 회수 공고 자세히 보기"
+          style={{
+            margin: '12px 20px 0',
+            padding: '10px 14px',
+            borderRadius: '12px',
+            background: 'var(--surface-muted)',
+            border: '1px solid var(--border-subtle)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            cursor: 'pointer',
+            boxSizing: 'border-box',
+          }}
+          onClick={() => setIsRecallModalOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setIsRecallModalOpen(true);
+            }
+          }}
+        >
+          <AlertTriangle size={14} color="var(--accent)" strokeWidth={2} aria-hidden />
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'baseline', gap: '8px', overflow: 'hidden' }}>
             <span
               style={{
                 fontSize: '11px',
-                fontWeight: 800,
-                color: 'var(--primary-dark)',
-                letterSpacing: '0.06em',
-                marginBottom: '1px',
+                fontWeight: 700,
+                color: 'var(--accent)',
+                flexShrink: 0,
+                letterSpacing: '-0.005em',
               }}
             >
-              PET NUTRITION CURATION
+              회수 공고
             </span>
-            <h1
+            <span
+              className="line-clamp-1"
               style={{
-                fontSize: '15px',
-                fontWeight: 800,
-                color: 'var(--text-dark)',
-                margin: 0,
-                letterSpacing: '-0.02em',
-                lineHeight: 1.2,
+                fontSize: '12px',
+                fontWeight: 500,
+                color: 'var(--text-muted)',
+                lineHeight: 1.4,
+                minWidth: 0,
               }}
             >
-              <span style={{ color: '#4F46E5', fontWeight: 900 }}>
-                {petName ?? profile.name}
-              </span>
-              {profile.species && profile.age > 0 && (
-                <span style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '14px' }}>
-                  ({profile.species === 'Dog' ? '강아지' : '고양이'}, {profile.age}세)
-                </span>
-              )}
-              를 위한 맞춤 추천
-            </h1>
+              살모넬라균 오염 의심 사료 회수 대상 안내
+            </span>
           </div>
-        </div>
+          <ChevronRight size={14} color="var(--text-light)" strokeWidth={2} aria-hidden />
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsRecallBannerVisible(false);
+            }}
+            aria-label="공고 배너 닫기"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '2px',
+              color: 'var(--text-light)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <X size={14} strokeWidth={2} />
+          </button>
+        </section>
+      )}
 
-        {/* Right side Premium Notification Icon */}
+      <section style={{ padding: '12px 20px 0', marginBottom: '4px' }}>
         <button
           type="button"
-          onClick={() => {
-            alert('🔔 알림 기능이 곧 제공될 예정입니다.');
-          }}
           style={{
-            background: '#F8FAFC',
-            border: '1px solid rgba(28, 25, 23, 0.08)',
-            cursor: 'pointer',
-            width: '42px',
-            height: '42px',
-            borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--text-dark)',
-            position: 'relative',
-            transition: 'all 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
-            boxSizing: 'border-box',
+            gap: '10px',
+            width: '100%',
+            background: 'var(--surface-elevated)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: '14px',
+            padding: '14px 16px',
+            cursor: 'pointer',
+            color: 'var(--text-muted)',
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-2px) scale(1.04)';
-            e.currentTarget.style.backgroundColor = '#FFFFFF';
-            e.currentTarget.style.borderColor = 'rgba(79, 70, 229, 0.15)';
-            e.currentTarget.style.boxShadow = '0 6px 14px rgba(0, 0, 0, 0.05)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'none';
-            e.currentTarget.style.backgroundColor = '#F8FAFC';
-            e.currentTarget.style.borderColor = 'rgba(28, 25, 23, 0.08)';
-            e.currentTarget.style.boxShadow = 'none';
-          }}
+          onClick={() => navigate('/scanner')}
+          aria-label="바코드 스캔으로 성분 분석 시작하기"
         >
-          <Bell size={20} strokeWidth={2.2} />
-          {/* Glowing Premium Red Alert dot */}
-          <span
-            style={{
-              position: 'absolute',
-              top: '9px',
-              right: '9px',
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              backgroundColor: 'var(--accent)',
-              border: '2px solid #FFFFFF',
-              boxShadow: '0 0 0 2px rgba(217, 48, 37, 0.2)',
-            }}
-          />
+          <ScanLine size={18} color="var(--text-muted)" strokeWidth={1.8} />
+          <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-muted)' }}>바코드를 스캔해 성분을 분석해 보세요</span>
         </button>
-      </header>
+      </section>
 
-
+      {/* Trending Products - SHOW FIRST */}
+      <HorizontalProductSection
+        title="급상승 랭킹"
+        subtitle="리뷰가 빠르게 늘고 있는 제품"
+        products={trendingProducts}
+        onMore={() => navigate('/ranking')}
+      />
 
       {personalRecs.length > 0 && (
         <HorizontalProductSection
@@ -321,62 +328,128 @@ export default function Home() {
               ? `${profile.healthConcerns.join(', ')} 고민 기준`
               : `${profile.name} 프로필 · 성분·리뷰 기반`
           }
-          icon={<Sparkles size={18} color="#F59E0B" />}
           products={personalRecs}
           onMore={() => navigate('/search')}
         />
       )}
 
-      {/* Sleek, Premium Compact Single-row Quick Actions for maximum vertical space optimization */}
-      <section style={{ marginBottom: '14px', padding: '0 4px' }}>
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(4, 1fr)', 
-          gap: '12px', 
-          background: '#FFFFFF',
-          borderRadius: '16px',
-          padding: '14px 10px',
-          border: '1px solid rgba(0,0,0,0.04)',
-          boxShadow: 'var(--shadow-sm)'
-        }}>
+      {/* Quick Actions — single neutral surface */}
+      <section style={{ marginBottom: '18px', padding: '0 20px' }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: '4px',
+            background: 'var(--surface-elevated)',
+            borderRadius: '16px',
+            padding: '8px',
+            border: '1px solid var(--border-subtle)',
+          }}
+        >
           {quickActions.map((item) => (
             <button
               key={item.title}
               type="button"
               onClick={item.onClick}
-              style={{ 
+              aria-label={item.title}
+              style={{
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
+                gap: '6px',
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
-                padding: '4px 0',
+                padding: '10px 4px',
+                borderRadius: '12px',
                 outline: 'none',
-                transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
             >
-              <span style={{ 
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '42px',
-                height: '42px',
-                borderRadius: '14px',
-                background: item.accent,
-                marginBottom: '6px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
-              }}>
+              <span
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '34px',
+                  height: '34px',
+                  color: 'var(--text-muted)',
+                }}
+                aria-hidden
+              >
                 {item.icon}
               </span>
-              <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-dark)' }}>{item.title}</div>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-dark)' }}>{item.title}</div>
             </button>
           ))}
         </div>
       </section>
 
+      {featuredEvent && (
+        <section style={{ marginBottom: '24px', padding: '0 20px' }}>
+          <div style={{ marginBottom: '10px' }}>
+            <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-dark)', letterSpacing: '-0.01em', marginBottom: '2px' }}>
+              새로운 소식
+            </h2>
+            <p style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: 500, margin: 0 }}>
+              이벤트와 쿠폰 소식을 한 번에
+            </p>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {visibleEvents.map(ev => (
+              <div
+                key={ev.id}
+                style={{
+                  position: 'relative',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px',
+                  padding: '12px 14px',
+                  background: 'var(--surface-elevated)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: '12px',
+                }}
+              >
+                <div
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '10px',
+                    background: 'var(--surface-muted)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--text-muted)',
+                    flexShrink: 0,
+                  }}
+                  aria-hidden
+                >
+                  <Tag size={16} strokeWidth={1.8} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0, paddingRight: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                    <span className="ui-badge ui-badge-muted">{ev.badge}</span>
+                    {ev.code && <span className="ui-badge ui-badge-muted">{ev.code}</span>}
+                  </div>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-dark)', marginBottom: '2px', letterSpacing: '-0.005em' }}>
+                    {ev.title}
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: 500, lineHeight: 1.5 }}>
+                    {ev.desc}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setClosedEvents(prev => [...prev, ev.id])}
+                  style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-light)', padding: '2px' }}
+                  aria-label="공지 닫기"
+                >
+                  <X size={14} strokeWidth={2} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <HorizontalProductSection
         title="질병 · 부위별 추천"
@@ -385,11 +458,18 @@ export default function Home() {
             ? `${profile.name} 프로필 건강 고민 기반`
             : `${profile.name}을 위해 마이 펫에서 고민을 추가해 보세요`
         }
-        icon={<Stethoscope size={18} color="#2563EB" />}
         products={concernProducts}
         onMore={() => navigate('/search')}
       />
 
+      <HorizontalProductSection
+        title="가성비 추천"
+        subtitle="3만원 이하 평점 우수 제품"
+        products={budgetProducts}
+        onMore={() => navigate('/search')}
+      />
+
+      <TargetedAd />
 
       {recentViews.length > 0 && (
         <section style={{ marginBottom: '38px' }}>
@@ -410,34 +490,60 @@ export default function Home() {
         </section>
       )}
 
-      <section style={{ marginTop: '32px', marginBottom: '24px' }}>
-        <TossSectionTitle
-          title="카테고리별 탐색"
-          subtitle="원하는 상품군으로 바로 이동해 보세요"
-          right={(
-            <button type="button" className="ui-text-button" onClick={() => navigate('/search')}>
-              전체 탐색 <ChevronRight size={14} />
-            </button>
-          )}
-          style={{ marginBottom: '16px' }}
-        />
+      <section style={{ marginTop: '24px', marginBottom: '24px', padding: '0 20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '14px' }}>
+          <div>
+            <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-dark)', letterSpacing: '-0.01em', marginBottom: '2px' }}>
+              카테고리별 탐색
+            </h2>
+            <p style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: 500, margin: 0 }}>
+              원하는 상품군으로 이동해 보세요
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/search')}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontWeight: 500,
+              color: 'var(--text-muted)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '2px',
+              padding: '4px',
+            }}
+          >
+            전체 <ChevronRight size={14} />
+          </button>
+        </div>
         <div className="ui-category-grid">
           {HOME_CATEGORY_ITEMS.map(item => (
-            <div
-              key={item.name} 
+            <button
+              key={item.name}
+              type="button"
               onClick={() =>
                 navigate({
                   pathname: '/search',
                   search: `?category=${encodeURIComponent(item.name)}`,
                 })
               }
-              style={{ textAlign: 'center', cursor: 'pointer' }}
+              style={{
+                textAlign: 'center',
+                cursor: 'pointer',
+                background: 'none',
+                border: 'none',
+                padding: 0,
+              }}
+              aria-label={`${item.name} 카테고리로 이동`}
             >
               <div className="ui-category-card">
                 <div className="ui-category-icon">{item.emoji}</div>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-dark)' }}>{item.name}</span>
+                <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-dark)', letterSpacing: '-0.005em' }}>{item.name}</span>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </section>
@@ -476,99 +582,81 @@ function SectionHeader({ title, sub, onMore }) {
   );
 }
 
-export default function Home() {
-  const navigate = useNavigate();
-  const { products, profile, recentViews, isLoggedIn, favorites, toggleFavorite, isLoadingProducts } = useStore();
-
-  const hasPetProfile = isLoggedIn && profile?.name && profile.name !== '우리 아이';
-  const petName = hasPetProfile ? profile.name : null;
-
-  const healthScore = useMemo(() => {
-    let s = 92;
-    s -= (profile?.allergies?.length || 0) * 4;
-    s -= (profile?.healthConcerns?.length || 0) * 2;
-    return Math.max(60, Math.min(98, s));
-  }, [profile]);
-
-  const topRanked = useMemo(() => {
-    if (!products.length) return [];
-    return [...products].sort((a, b) => b.averageRating - a.averageRating).slice(0, 6);
-  }, [products]);
-
-  const rankingTop3 = useMemo(
-    () => [...products].sort((a, b) => b.averageRating - a.averageRating).slice(0, 3),
-    [products],
-  );
-
-  const recentList = useMemo(() => (recentViews?.length ? recentViews : []), [recentViews]);
-
-  const favoriteSet = new Set(favorites || []);
-  const loading = isLoadingProducts && products.length === 0;
-  const RANK_STYLE = [
-    { bg: '#FEF0C7', fg: '#D99500' }, // 1위 골드
-    { bg: '#EBEEF2', fg: '#6B7684' }, // 2위 실버
-    { bg: '#F7E7DB', fg: '#B97A45' }, // 3위 브론즈
-  ];
+function HorizontalProductSection({
+  title,
+  subtitle,
+  products,
+  onMore,
+}: {
+  title: string;
+  subtitle: string;
+  icon?: ReactNode;
+  products: Product[];
+  onMore: () => void;
+}) {
+  if (products.length === 0) return null;
 
   return (
-    // veroro-home: preflight 미사용 환경에서 border/divide 유틸이 동작하도록 하는 스코프 클래스.
-    <div className="veroro-home min-h-screen pb-28" style={{ background: '#F2F4F6' }}>
-
-      {/* ===== 검색 바 ===== */}
-      <div className="px-5 pt-3.5 pb-0.5">
+    <section style={{ marginBottom: '24px', padding: '0 20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '10px', gap: '10px' }}>
+        <div style={{ minWidth: 0 }}>
+          <h2 style={{ fontSize: '16px', marginBottom: '2px', fontWeight: 700, color: 'var(--text-dark)', letterSpacing: '-0.01em' }}>
+            {title}
+          </h2>
+          <p style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: 500, margin: 0 }}>{subtitle}</p>
+        </div>
         <button
-          onClick={() => navigate('/search')}
-          className="w-full flex items-center gap-2.5 bg-white rounded-[14px] px-4 h-[50px] text-left active:scale-[0.99] transition-transform"
-          style={{ boxShadow: CARD_SM }}
+          onClick={onMore}
+          style={{
+            flexShrink: 0,
+            fontSize: '12px',
+            fontWeight: 500,
+            color: 'var(--text-muted)',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '2px',
+            padding: '4px',
+          }}
         >
-          <Search size={19} color={MUTED} strokeWidth={2.2} />
-          <span style={{ ...T.body, color: MUTED, fontWeight: 500 }}>사료·간식·브랜드 검색</span>
+          더보기 <ChevronRight size={14} />
         </button>
       </div>
-
-      {/* ===== [1] 히어로 — 식단 적합도 / 온보딩 ===== */}
-      <div className="px-5 pt-3">
-        {hasPetProfile ? (
-          <button
-            onClick={() => navigate('/pet-profile')}
-            className="w-full bg-white rounded-[20px] p-5 text-left active:scale-[0.99] transition-transform"
-            style={{ boxShadow: CARD }}
+      <div
+        style={{
+          display: 'flex',
+          gap: '10px',
+          overflowX: 'auto',
+          paddingBottom: '4px',
+          paddingRight: '32px',
+          msOverflowStyle: 'none',
+          scrollbarWidth: 'none',
+          WebkitMaskImage: 'linear-gradient(to right, #000 0, #000 calc(100% - 28px), transparent 100%)',
+          maskImage: 'linear-gradient(to right, #000 0, #000 calc(100% - 28px), transparent 100%)',
+          scrollSnapType: 'x proximity',
+        }}
+        aria-label={`${title} 가로 스크롤 목록`}
+      >
+        {products.map((product, idx) => (
+          <div
+            key={product.id}
+            style={{ flex: '0 0 168px', position: 'relative', scrollSnapAlign: 'start' }}
           >
-            <div className="flex items-center gap-4">
-              <ScoreRing score={healthScore} />
-              <div className="flex-1 min-w-0">
-                <p style={{ ...T.sub, fontWeight: 600 }}>{petName} 보호자님 👋</p>
-                <p className="mt-1" style={T.h1}>
-                  {healthScore}점 <span style={{ color: scoreColor(healthScore) }}>· {scoreLabel(healthScore)}</span>
-                </p>
-                <p className="mt-1.5" style={T.cap}>
-                  {petName}에게 맞는 사료 {Math.max(topRanked.length, 1)}개를 찾았어요
-                </p>
-              </div>
-            </div>
-            <div className="mt-4 pt-4 flex items-center justify-between" style={{ borderTop: `1px solid ${LINE}` }}>
-              <span style={T.body}>내 아이 프로필 보기</span>
-              <ChevronRight size={18} color={MUTED} />
-            </div>
-          </button>
-        ) : (
-          <button
-            onClick={() => navigate(isLoggedIn ? '/pet-profile' : '/login')}
-            className="w-full bg-white rounded-[20px] p-5 text-left relative overflow-hidden active:scale-[0.99] transition-transform"
-            style={{ boxShadow: CARD }}
-          >
-            <div className="absolute -right-10 -top-12 w-40 h-40 rounded-full" style={{ background: 'rgba(245,200,66,0.13)' }} />
-            <div className="relative">
-              <span className="inline-block px-2.5 py-1 rounded-full mb-3" style={{ ...T.micro, background: '#FEF3D6', color: '#C98A00' }}>
-                AI 맞춤 분석
-              </span>
-              <p style={T.h1}>우리 아이에게 딱 맞는<br />사료를 찾아드려요</p>
-              <p className="mt-2 mb-4" style={T.sub}>1분이면 성분·영양까지 꼼꼼하게 분석해드려요</p>
+            <div style={{ position: 'absolute', top: '14px', left: '14px', zIndex: 2 }}>
               <span
-                className="inline-flex items-center gap-1 px-5 h-[46px] rounded-[13px] text-white"
-                style={{ ...T.body, color: '#fff', background: 'linear-gradient(135deg, #F5C842 0%, #F0A500 100%)', boxShadow: '0 6px 16px rgba(240,165,0,0.28)' }}
+                style={{
+                  background: 'rgba(15, 23, 42, 0.88)',
+                  color: '#ffffff',
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  padding: '3px 7px',
+                  borderRadius: '6px',
+                  letterSpacing: '-0.01em',
+                }}
               >
-                반려동물 등록하기 <ChevronRight size={17} />
+                {idx + 1}
               </span>
             </div>
             <ChevronRight size={22} className="text-white/90 flex-shrink-0" />

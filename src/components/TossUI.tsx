@@ -10,10 +10,10 @@ export function TossCard({ children, style }: TossCardProps) {
   return (
     <section
       style={{
-        background: '#FFFFFF',
-        borderRadius: '20px',
-        border: '1px solid rgba(28, 25, 23, 0.08)',
-        boxShadow: '0 1px 3px rgba(28, 25, 23, 0.06)',
+        background: 'var(--surface-elevated)',
+        borderRadius: '16px',
+        border: '1px solid var(--border-subtle)',
+        boxShadow: 'none',
         ...style,
       }}
     >
@@ -51,20 +51,20 @@ export function TossButton({
   const palette =
     variant === 'primary'
       ? {
-          background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
+          background: 'var(--text-dark)',
           color: '#FFFFFF',
-          border: 'none',
+          border: '1px solid transparent',
         }
       : variant === 'soft'
         ? {
-            background: 'var(--primary-light)',
-            color: 'var(--primary-dark)',
-            border: '1px solid rgba(129, 201, 149, 0.3)',
+            background: 'var(--surface-muted)',
+            color: 'var(--text-dark)',
+            border: '1px solid var(--border-subtle)',
           }
         : {
             background: '#FFFFFF',
-            color: '#4B5563',
-            border: '1px solid #E5E8EB',
+            color: 'var(--text-dark)',
+            border: '1px solid var(--border-strong)',
           };
 
   return (
@@ -114,25 +114,23 @@ export function TossChip({
       style={{
         padding: size === 'sm' ? '6px 10px' : '8px 12px',
         borderRadius: '999px',
-        border: isActive ? '1px solid var(--primary-dark)' : '1px solid #E2E8F0',
-        background: isActive ? 'var(--primary-light)' : '#FFFFFF',
-        color: isActive ? 'var(--primary-dark)' : 'var(--text-muted)',
+        border: isActive ? '1px solid var(--text-dark)' : '1px solid var(--border-subtle)',
+        background: isActive ? 'var(--text-dark)' : 'var(--surface-elevated)',
+        color: isActive ? '#FFFFFF' : 'var(--text-muted)',
         fontSize: size === 'sm' ? '11px' : '12px',
-        fontWeight: 600,
+        fontWeight: 500,
         cursor: 'pointer',
-        transition: 'all 0.2s ease',
+        transition: 'background-color 0.2s ease, color 0.2s ease',
         ...style,
       }}
       onMouseEnter={(e) => {
         if (!isActive) {
-          e.currentTarget.style.backgroundColor = '#F8FAFC';
-          e.currentTarget.style.borderColor = '#CBD5E1';
+          e.currentTarget.style.backgroundColor = 'var(--surface-muted)';
         }
       }}
       onMouseLeave={(e) => {
         if (!isActive) {
-          e.currentTarget.style.backgroundColor = '#FFFFFF';
-          e.currentTarget.style.borderColor = '#E2E8F0';
+          e.currentTarget.style.backgroundColor = 'var(--surface-elevated)';
         }
       }}
     >

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowLeft, RefreshCw, Check, X } from 'lucide-react';
 import { supabase, ensurePublicUserExists } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import { notify } from '../store/useNotification';
@@ -227,16 +227,19 @@ export default function Login() {
     }
   };
 
+  const pageTitle = mode === 'signup' ? '회원가입 | 베로로' : '로그인 | 베로로';
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-gradient)', display: 'flex', flexDirection: 'column' }}>
       <Helmet>
-        <title>{mode === 'login' ? '로그인' : '회원가입'} | 베로로</title>
-        <meta name="description" content="베로로 이메일 로그인 및 회원가입" />
+        <title>{pageTitle}</title>
+        <meta name="description" content="베로로 계정으로 반려동물 맞춤 사료 분석과 추천을 받아보세요." />
       </Helmet>
       <div style={{ padding: '16px 20px' }}>
         <button
           type="button"
           onClick={() => navigate(-1)}
+          aria-label="뒤로 가기"
           style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: '#374151', fontWeight: 600 }}
         >
           <ArrowLeft size={20} /> 뒤로
@@ -256,7 +259,7 @@ export default function Login() {
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.55 }}>{LOGIN.description}</p>
         </div>
 
-        <div style={{ display: 'flex', backgroundColor: 'var(--primary-light)', borderRadius: '16px', padding: '4px', marginBottom: '22px' }}>
+        <div style={{ display: 'flex', backgroundColor: 'var(--surface-muted)', borderRadius: '12px', padding: '4px', marginBottom: '22px' }}>
           {(['login', 'signup'] as const).map((m) => (
             <button
               key={m}
@@ -268,16 +271,16 @@ export default function Login() {
               }}
               style={{
                 flex: 1,
-                padding: '12px',
-                borderRadius: '12px',
+                padding: '10px',
+                borderRadius: '9px',
                 border: 'none',
                 cursor: 'pointer',
-                fontWeight: 700,
-                fontSize: '15px',
-                transition: 'all 0.2s',
+                fontWeight: 600,
+                fontSize: '14px',
+                transition: 'background-color 0.2s, color 0.2s',
                 background: mode === m ? '#FFFFFF' : 'transparent',
-                color: mode === m ? 'var(--primary-dark)' : 'var(--text-muted)',
-                boxShadow: mode === m ? '0 2px 8px rgba(102, 181, 125, 0.08)' : 'none',
+                color: mode === m ? 'var(--text-dark)' : 'var(--text-muted)',
+                boxShadow: 'none',
               }}
             >
               {m === 'login' ? '로그인' : '회원가입'}

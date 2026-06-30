@@ -55,12 +55,12 @@ export interface AppTheme {
 // These reference the same tokens so the React theme and the stylesheet never drift apart.
 
 const defaultColors: ThemeColors = {
-  primary: 'var(--primary)',
-  warning: 'var(--danger)',
-  background: 'var(--surface)',
-  textNearBlack: 'var(--text-dark)',
-  textGray: 'var(--text-muted)',
-  border: 'var(--hairline-strong)',
+  primary: '#0F172A',
+  warning: '#B5443B',
+  background: '#FFFFFF',
+  textNearBlack: '#0F172A',
+  textGray: '#475569',
+  border: '#ECECEA',
 };
 
 const defaultSpacing: ThemeSpacing = {

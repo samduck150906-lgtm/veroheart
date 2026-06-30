@@ -1,5 +1,6 @@
 // @ts-nocheck
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useStore } from '../store/useStore';
 import { User, ChevronRight, Calendar, ShoppingBag, FileText, Activity, LogOut, Heart, Crown } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -256,50 +257,43 @@ export default function Profile() {
     navigate('/login');
   };
 
-  const petName = hasPetProfile ? profile.name : '내 반려동물';
-  const speciesLabel = profile?.breed || (profile?.species === 'Cat' ? '고양이' : '강아지');
+  if (!userId) {
+    return (
+      <div className="animate-fade-in" style={{ padding: '40px 20px', minHeight: '80vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+        <Helmet>
+          <title>마이 펫 | 베로로</title>
+          <meta name="description" content="베로로에서 반려동물 프로필을 등록하고 맞춤 추천을 받아보세요." />
+        </Helmet>
+        <div style={{ width: '80px', height: '80px', borderRadius: '24px', backgroundColor: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
+          <User size={40} color="#D1D5DB" />
+        </div>
+        <h2 style={{ fontSize: '24px', fontWeight: 900, color: 'var(--text-dark)', marginBottom: '12px' }}>
+          로그인이 필요해요
+        </h2>
+        <p style={{ fontSize: '15px', color: 'var(--text-muted)', marginBottom: '32px', textAlign: 'center', lineHeight: 1.5 }}>
+          프로필을 설정하고 아이의 건강 맞춤<br/>사료 분석을 시작해보세요!
+        </p>
+        <Button 
+          title="로그인 / 회원가입 하기"
+          style={{ width: '100%', maxWidth: '320px', borderRadius: '20px', fontSize: '16px' }}
+          onClick={() => navigate('/auth')}
+        />
+      </div>
+    );
+  }
 
   return (
-    <div style={{ paddingBottom: 90 }}>
-      {/* Top Hero */}
-      <div style={{
-        background: 'linear-gradient(135deg, #F5C518 0%, #CA8A04 100%)',
-        padding: '52px 20px 24px',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
-          <div style={{
-            width: 64, height: 64, borderRadius: '50%',
-            background: 'rgba(255,255,255,0.25)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32,
-          }}>
-            {profile?.species === 'Cat' ? '🐱' : '🐶'}
-          </div>
-          <div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: '#fff', letterSpacing: '-0.02em' }}>
-              {petName}
-            </div>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 2 }}>
-              {speciesLabel}
-              {profile?.age ? ` · ${profile.age}살` : ''}
-              {profile?.weightKg ? ` · ${profile.weightKg}kg` : ''}
-            </div>
-          </div>
-          <ScoreCircle score={healthScore} />
-        </div>
-
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: 600, marginBottom: 6 }}>
-          식단 건강 점수 · {healthScore}점
-        </div>
-
-        {hasPetProfile ? (
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {profile?.allergies?.map(a => (
-              <span key={a} style={{ background: '#F04452', color: '#fff', borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 700 }}>⚠️ {a} 알러지</span>
-            ))}
-            {profile?.healthConcerns?.slice(0, 3).map(h => (
-              <span key={h} style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>{h}</span>
-            ))}
-          </div>
+    <div className="animate-fade-in" style={{ paddingBottom: '40px' }}>
+      <Helmet>
+        <title>마이 펫 | 베로로</title>
+        <meta name="description" content="반려동물 프로필, 찜한 사료, 주문 내역, 분석 리포트를 한곳에서 관리하세요." />
+      </Helmet>
+      {/* 로그인/로그아웃 버튼 */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
+        {isLoggedIn ? (
+          <TossButton variant="outline" onClick={handleSignOut} style={{ width: 'auto', height: '38px', padding: '0 14px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <LogOut size={15} /> 로그아웃
+          </TossButton>
         ) : (
           <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)' }}>
             {isLoggedIn ? '펫 정보를 등록해보세요' : '로그인 후 펫 정보를 등록해보세요'}

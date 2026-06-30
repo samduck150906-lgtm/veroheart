@@ -1,0 +1,27 @@
+{
+  "name": "베로로 (Veroro) - 반려동물 사료 성분 분석",
+  "short_name": "베로로",
+  "description": "반려동물 맞춤 사료 성분 분석과 추천. AAFCO 기준 영양 평가, 유해 성분 알림, 맞춤 급여 계산기까지 한 번에.",
+  "lang": "ko-KR",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FAFAF9",
+  "theme_color": "#FAFAF9",
+  "categories": ["lifestyle", "health", "shopping"],
+  "icons": [
+    {
+      "src": "/veroro-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/veroro-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
