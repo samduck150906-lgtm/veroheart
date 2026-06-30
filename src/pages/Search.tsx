@@ -19,18 +19,8 @@ import type { Product } from '../types';
 import { TossFilterSection } from '../components/TossUI';
 import { searchProducts, getAllIngredients } from '../lib/supabase';
 import { useStore } from '../store/useStore';
-import { CORE_COPY } from '../copy/marketing';
-import { rankProductsForProfile } from '../utils/score';
-import { SEARCH_MAIN_CATEGORIES, resolveCategoryFromSearchParams } from '../constants/productCategories';
-import {
-  priceBandToMinMax,
-  PRICE_BAND_LABELS,
-  FORMULATION_OPTIONS,
-  HEALTH_CONCERN_OPTIONS,
-  LIFE_STAGE_OPTIONS,
-  type PriceBand,
-} from '../constants/searchFilters';
-import { TossButton, TossChip, TossSearchBar } from '../components/TossUI';
+import standardFeedData from '../data/standard_feed_data.json';
+import { Database } from 'lucide-react';
 
 function defaultPetFromProfile(profile: { species?: string } | undefined): '' | 'dog' | 'cat' | 'all' {
   if (profile?.species === 'Cat') return 'cat';
@@ -72,52 +62,13 @@ export default function Search() {
   });
 
   const [excludedIngredients, setExcludedIngredients] = useState<string[]>([]);
-  const [allIngredients, setAllIngredients] = useState<{ id: string; name_ko: string; risk_level: string }[]>([]);
-  const [ingredientSearch, setIngredientSearch] = useState('');
+  const [isStandardFeedModalOpen, setIsStandardFeedModalOpen] = useState(false);
+  const [standardFeedSearch, setStandardFeedSearch] = useState('');
 
-  const { priceMin, priceMax } = priceBandToMinMax(filters.priceBand);
-
-  const filterButtonActive = useMemo(() => {
-    const petChanged = filters.targetPetType !== defaultPetFromProfile(profile);
-    return (
-      excludedIngredients.length > 0 ||
-      filters.dietPreset ||
-      filters.healthConcerns.length > 0 ||
-      !!filters.targetLifeStage ||
-      !!filters.formulation ||
-      !!filters.subCategory ||
-      filters.priceBand !== 'any' ||
-      sortBy !== 'default' ||
-      filters.targetPetType === 'all' ||
-      petChanged
-    );
-  }, [filters, excludedIngredients.length, sortBy, profile]);
-
-  useEffect(() => {
-    getAllIngredients().then(setAllIngredients);
-  }, []);
-
-  const filteredIngList = allIngredients.filter(i =>
-    i.name_ko.includes(ingredientSearch) && !excludedIngredients.includes(i.name_ko)
-  ).slice(0, 20);
-
-  const activeFilterChips = useMemo(() => {
-    const chips: string[] = [];
-    if (category !== '전체') chips.push(category);
-    if (filters.targetPetType === 'dog') chips.push('강아지');
-    if (filters.targetPetType === 'cat') chips.push('고양이');
-    if (filters.targetPetType === 'all') chips.push('공용');
-    if (filters.targetLifeStage) chips.push(filters.targetLifeStage);
-    if (filters.formulation) chips.push(filters.formulation);
-    if (filters.dietPreset) chips.push('다이어트·체중');
-    chips.push(...filters.healthConcerns);
-    chips.push(...excludedIngredients.map((name) => `제외:${name}`));
-    if (filters.priceBand !== 'any') {
-      const label = PRICE_BAND_LABELS.find((item) => item.id === filters.priceBand)?.label;
-      if (label) chips.push(label);
-    }
-    return chips;
-  }, [category, excludedIngredients, filters]);
+  const filteredStandardFeed = standardFeedData.filter((item: any) => 
+    item.name_ko.toLowerCase().includes(standardFeedSearch.toLowerCase()) ||
+    item.name_en.toLowerCase().includes(standardFeedSearch.toLowerCase())
+  );
 
   useEffect(() => {
     const timer = setTimeout(async () => {
@@ -371,15 +322,20 @@ export default function Search() {
             </button>
           ))}
         </div>
-      </section>
-
-      {activeFilterChips.length > 0 && (
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '14px' }}>
-          {activeFilterChips.map((chip) => (
-            <TossChip key={chip} label={chip} />
-          ))}
+        
+        {/* Standard Feed DB Button */}
+        <div style={{ marginTop: '8px', padding: '0 4px' }}>
+          <button 
+            onClick={() => setIsStandardFeedModalOpen(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 700,
+              color: '#059669', background: '#ecfdf5', padding: '8px 16px', borderRadius: '12px', border: 'none', cursor: 'pointer'
+            }}
+          >
+            <Database size={14} /> 한국표준사료 성분사전 검색
+          </button>
         </div>
-      )}
+      </div>
 
       <div style={{ marginTop: '12px' }}>
         <div className="ui-list-card" style={{ marginBottom: '16px', padding: '16px 18px' }}>
@@ -573,6 +529,75 @@ export default function Search() {
             <div style={{ position: 'sticky', bottom: 0, paddingTop: '40px', paddingBottom: '24px', backgroundColor: '#fff', display: 'flex', gap: '12px' }}>
               <button type="button" onClick={resetFilters} style={{ flex: 1, padding: '18px', borderRadius: '16px', border: '1px solid #E5E7EB', backgroundColor: '#fff', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}><Trash2 size={18} /> 초기화</button>
               <button type="button" onClick={() => setIsFilterOpen(false)} style={{ flex: 2, padding: '18px', borderRadius: '16px', background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)', color: '#fff', fontWeight: 800, border: 'none', cursor: 'pointer' }}>결과 보기</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Standard Feed Modal */}
+      {isStandardFeedModalOpen && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="animate-scale-in" style={{ width: '90%', maxWidth: '500px', backgroundColor: '#fff', borderRadius: '24px', padding: '24px', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div>
+                <h2 style={{ fontSize: '18px', fontWeight: 900 }}>한국표준사료 성분사전</h2>
+                <p style={{ fontSize: '12px', color: '#6B7280', marginTop: '2px' }}>공식 표준 성분 데이터를 확인해보세요 (총 {standardFeedData.length}개)</p>
+              </div>
+              <button onClick={() => setIsStandardFeedModalOpen(false)} style={{ padding: '8px', background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
+            </div>
+            
+            <div style={{ position: 'relative', marginBottom: '16px' }}>
+              <SearchIcon size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+              <input 
+                type="text" 
+                placeholder="어떤 성분이 궁금하신가요? (예: 귀리)" 
+                value={standardFeedSearch}
+                onChange={(e) => setStandardFeedSearch(e.target.value)}
+                style={{ width: '100%', padding: '12px 12px 12px 38px', borderRadius: '12px', border: '1px solid #E5E7EB', outline: 'none', fontSize: '14px', backgroundColor: '#F9FAFB' }}
+              />
+            </div>
+
+            <div style={{ overflowY: 'auto', flex: 1, border: '1px solid #E5E7EB', borderRadius: '12px' }}>
+              {filteredStandardFeed.length === 0 ? (
+                <div style={{ padding: '40px', textAlign: 'center', color: '#9CA3AF', fontSize: '14px' }}>검색 결과가 없습니다.</div>
+              ) : (
+                filteredStandardFeed.map((item: any, idx: number) => (
+                  <div 
+                    key={idx}
+                    style={{ 
+                      padding: '16px', borderBottom: '1px solid #E5E7EB',
+                      display: 'flex', flexDirection: 'column', gap: '8px'
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 800, color: '#1F2937', fontSize: '15px' }}>{item.name_ko}</div>
+                      <div style={{ fontSize: '12px', color: '#6B7280' }}>{item.name_en || '-'}</div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginTop: '4px' }}>
+                      <div style={{ background: '#F3F4F6', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '10px', color: '#6B7280', fontWeight: 600 }}>조단백질</div>
+                        <div style={{ fontSize: '13px', color: '#111827', fontWeight: 800 }}>{item.protein}%</div>
+                      </div>
+                      <div style={{ background: '#F3F4F6', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '10px', color: '#6B7280', fontWeight: 600 }}>조지방</div>
+                        <div style={{ fontSize: '13px', color: '#111827', fontWeight: 800 }}>{item.fat}%</div>
+                      </div>
+                      <div style={{ background: '#F3F4F6', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '10px', color: '#6B7280', fontWeight: 600 }}>수분</div>
+                        <div style={{ fontSize: '13px', color: '#111827', fontWeight: 800 }}>{item.moisture}%</div>
+                      </div>
+                      <div style={{ background: '#F3F4F6', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '10px', color: '#6B7280', fontWeight: 600 }}>조섬유</div>
+                        <div style={{ fontSize: '13px', color: '#111827', fontWeight: 800 }}>{item.fiber}%</div>
+                      </div>
+                      <div style={{ background: '#F3F4F6', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '10px', color: '#6B7280', fontWeight: 600 }}>조회분</div>
+                        <div style={{ fontSize: '13px', color: '#111827', fontWeight: 800 }}>{item.ash}%</div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

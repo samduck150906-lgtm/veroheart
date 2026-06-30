@@ -12,55 +12,27 @@ import {
   Cat,
   Calendar,
   Layers,
-  Star,
-  Heart,
-  MessageSquare,
-  Trash2,
-  Shield,
   ExternalLink
 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
 import Analyzer from '../components/Analyzer';
-import FishboneDiagram from '../components/FishboneDiagram';
-import { buildProductFishbone } from '../utils/fishboneData';
-import { getReviews, createReview, deleteReview } from '../lib/supabase';
-import type { Ingredient } from '../types';
-import { CORE_COPY } from '../copy/marketing';
-import { notify } from '../store/useNotification';
-import { TossButton, TossCard, TossSectionTitle } from '../components/TossUI';
-import { openCoupangForProduct } from '../utils/externalPurchase';
-import { COUPANG_PARTNERS_DISCLOSURE } from '../constants/coupangPartners';
-import { buildProductConclusion } from '../utils/productConclusion';
-import { REVIEW_QUICK_TAGS } from '../constants/reviewTags';
-
-function getVerificationMeta(status?: 'pending' | 'verified' | 'needs_review') {
-  if (status === 'verified') {
-    return { label: '검수 완료', bg: '#DCFCE7', color: '#166534' };
-  }
-  if (status === 'needs_review') {
-    return { label: '재검토 필요', bg: '#FEE2E2', color: '#991B1B' };
-  }
-  return { label: '검수 대기', bg: '#FEF3C7', color: '#92400E' };
-}
+import BottomSheet from '../components/BottomSheet';
 
 export default function Detail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const {
-    profile,
-    selectedProduct: product,
-    isLoadingProducts,
-    fetchProductDetail,
-    comparisonList,
-    addToComparison,
-    removeFromComparison,
+  const { 
+    profile, 
+    selectedProduct: product, 
+    isLoadingProducts, 
+    fetchProductDetail, 
+    comparisonList, 
+    addToComparison, 
+    removeFromComparison, 
     addToCart,
-    favorites,
-    toggleFavorite,
-    userId,
-    trackRecentView
+    products
   } = useStore();
 
   type ReviewRow = {
@@ -137,11 +109,53 @@ export default function Detail() {
   const isComparing = comparisonList.includes(product?.id || '');
   const verificationMeta = getVerificationMeta(product.verificationStatus);
 
-  const getRiskColor = (level: string) => {
-    if (level === 'danger') return '#EF4444';
-    if (level === 'caution') return '#F59E0B';
-    return '#10B981';
+  // find alternative
+  let alternativeProduct = null;
+  if (report && report.score < 80) {
+    const scoredProducts = products
+      .filter(p => p.id !== product?.id && p.category === product?.category)
+      .map(p => ({ p, score: generateAnalysisReport(p, profile).score }))
+      .sort((a, b) => b.score - a.score);
+    
+    if (scoredProducts.length > 0 && scoredProducts[0].score >= 80) {
+      alternativeProduct = scoredProducts[0];
+    }
+  }
+
+  // DER Calculation
+  const getFeedingAmount = () => {
+    if (!profile.weight) return null;
+    const rer = 70 * Math.pow(profile.weight, 0.75);
+    const der = rer * 1.6; // Average adult multiplier
+    const kcalPerKg = 3500; // Mock average
+    const grams = (der / kcalPerKg) * 1000;
+    return Math.round(grams);
   };
+  const feedingGrams = getFeedingAmount();
+
+  const getRiskColor = (level: string) => {
+    if (level === 'danger') return '#F04452'; // Toss Red
+    if (level === 'caution') return '#F59E0B'; // Yellow
+    return '#3182F6'; // Toss Blue for safe
+  };
+
+  const [selectedIngredient, setSelectedIngredient] = useState<any>(null);
+  
+  // Create Toss-style Headline Data
+  let headline = `${profile.name}가 안심하고 먹을 수 있어요!`;
+  let headlineColor = '#191F28';
+  let dangerIngs = product.ingredients?.filter(i => i.riskLevel === 'danger') || [];
+  let cautionIngs = product.ingredients?.filter(i => i.riskLevel === 'caution') || [];
+  let allergyIngs = product.ingredients?.filter(ing => profile.allergies.some(a => ing.nameKo.includes(a) || (ing.nameEn && ing.nameEn.toLowerCase().includes(a.toLowerCase())))) || [];
+  
+  if (allergyIngs.length > 0 || dangerIngs.length > 0) {
+    const count = new Set([...allergyIngs, ...dangerIngs]).size;
+    headline = `주의 성분이 ${count}개 발견됐어요`;
+    headlineColor = '#F04452'; // Toss Red
+  } else if (cautionIngs.length > 0) {
+    headline = `확인해야 할 성분이 ${cautionIngs.length}개 있어요`;
+    headlineColor = '#F59E0B';
+  }
 
   return (
     <div className="animate-fade-in detail-page-root" style={{ paddingBottom: '40px' }}>
@@ -256,202 +270,192 @@ export default function Detail() {
           )}
         </div>
 
-        <div style={{ display: 'grid', gap: '8px', marginBottom: '18px' }}>
-          {product.manufacturerName && (
-            <div style={{ fontSize: '13px', color: '#475569', fontWeight: 600 }}>
-              제조사 <span style={{ color: '#0F172A', fontWeight: 800 }}>{product.manufacturerName}</span>
-            </div>
-          )}
-          {product.verifiedAt && (
-            <div style={{ fontSize: '12px', color: '#64748B', fontWeight: 600 }}>
-              최근 검수일 {new Date(product.verifiedAt).toLocaleDateString()}
-            </div>
-          )}
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '12px', marginBottom: '18px' }}>
-          <div className="ui-info-card" style={{ padding: '16px' }}>
-            <div style={{ fontSize: '12px', color: '#8A9099', fontWeight: 700, marginBottom: '6px' }}>판매가</div>
-            <div style={{ fontSize: '28px', fontWeight: 900, color: 'var(--primary-dark)' }}>{product.price.toLocaleString()}원</div>
-          </div>
-          <div className="ui-info-card" style={{ padding: '16px' }}>
-            <div style={{ fontSize: '12px', color: '#8A9099', fontWeight: 700, marginBottom: '6px' }}>리뷰 평점</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 900, fontSize: '22px' }}>
-              <span style={{ color: '#FCD34D' }}>★</span>
-              {product.averageRating}
-              <span style={{ color: '#9CA3AF', fontSize: '13px', fontWeight: 700 }}>({product.reviewsCount})</span>
-            </div>
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gap: '10px' }}>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748B', padding: '0 2px' }}>
-            검수 <span style={{ color: verificationMeta.color }}>{verificationMeta.label}</span>
-            {product.manufacturerName ? ` · ${product.manufacturerName}` : ''}
-          </div>
-
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <TossButton
-              onClick={() => toggleFavorite(product.id)}
-              variant="outline"
-              style={{ height: '56px', width: '56px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
-            >
-              <Heart size={22} fill={isFav ? '#EF4444' : 'none'} color={isFav ? '#EF4444' : '#9CA3AF'} />
-            </TossButton>
-            <TossButton
-              variant="outline"
-              style={{ flex: 1, height: '56px', borderRadius: '16px' }}
-              onClick={() => {
-                if (isComparing) removeFromComparison(product.id);
-                else addToComparison(product.id);
-              }}
-            >
-              <GitCompare size={20} />
-              <span style={{ marginLeft: '8px' }}>{isComparing ? '비교 해제' : '비교 추가'}</span>
-            </TossButton>
-          </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <TossButton
-              variant="outline"
-              style={{ flex: 1, height: '56px', borderRadius: '16px', fontWeight: 800, fontSize: '15px' }}
-              onClick={() => {
-                addToCart(product.id, 1);
-                notify.success('장바구니에 담았어요.');
-              }}
-            >
-              장바구니 담기
-            </TossButton>
-          </div>
-          <TossButton
-            variant="soft"
-            style={{ height: '54px', borderRadius: '16px', fontWeight: 800, fontSize: '15px' }}
-            onClick={() => {
-              openCoupangForProduct(product);
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+        <button className="btn btn-outline" style={{ flex: 1, height: '56px', borderRadius: 'var(--border-radius-md)' }} onClick={() => {
+          isComparing ? removeFromComparison(product.id) : addToComparison(product.id);
+        }}>
+          <GitCompare size={20} />
+          <span style={{ marginLeft: '4px' }}>비교</span>
+        </button>
+        
+        {product.productUrl ? (
+          <a 
+            href={product.productUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-primary"
+            style={{ 
+              flex: 2, borderRadius: 'var(--border-radius-md)', 
+              fontWeight: 800, fontSize: '17px', display: 'flex', alignItems: 'center', 
+              justifyContent: 'center', gap: '8px', textDecoration: 'none'
             }}
           >
-            <ExternalLink size={18} />
-            쿠팡 앱에서 이어서 보기
-          </TossButton>
-          <p style={{ margin: 0, fontSize: '11px', color: '#94A3B8', lineHeight: 1.45, fontWeight: 600 }}>
-            구매는 쿠팡에서 이어집니다.
-          </p>
-        </div>
-      </TossCard>
-
-      {/* 수의사 한마디 */}
-      <div style={{ marginBottom: '32px', padding: '20px', background: '#F0FDF4', borderRadius: '20px', border: '1px solid #BBF7D0', display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
-        <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#10B981', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '20px' }}>🩺</div>
-        <div>
-          <div style={{ fontSize: '12px', fontWeight: 800, color: '#065F46', marginBottom: '6px', letterSpacing: '0.02em' }}>한 줄 체크</div>
-          <p style={{ fontSize: '14px', color: '#047857', lineHeight: 1.6, margin: 0 }}>
-            {getVetComment(product.ingredients || [])}
-          </p>
-        </div>
+            🚀 쿠팡 최저가 구매 <ExternalLink size={18} />
+          </a>
+        ) : (
+          <button className="btn btn-primary" style={{ flex: 2, borderRadius: 'var(--border-radius-md)', fontWeight: 800, fontSize: '17px', gap: '8px' }} onClick={() => {
+            addToCart(product.id, 1);
+            navigate('/checkout');
+          }}>
+            바로 구매하기
+          </button>
+        )}
       </div>
 
-      {/* 정밀 분석 리포트 */}
-      <TossCard style={{ marginBottom: '36px', background: '#FAFAF9', padding: '22px 20px', border: '1px solid #E7E5E4' }}>
-        <TossSectionTitle
-          title="맞춤 요약"
-          right={<ShieldCheck size={18} color="#64748B" />}
-          style={{ marginBottom: '16px' }}
-        />
+      {alternativeProduct && (
+        <div className="card" style={{ backgroundColor: 'var(--bg-color)', marginBottom: '40px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--danger)', fontWeight: 800, marginBottom: '8px' }}>
+            <AlertCircle size={20} /> 앗! 이 사료는 아이와 맞지 않을 수 있어요.
+          </div>
+          <p style={{ fontSize: '15px', color: 'var(--text-dark)', marginBottom: '16px', lineHeight: 1.5 }}>
+            대신 <b>{profile.name}</b>와(과) 궁합이 <b style={{ color: 'var(--safe)' }}>{alternativeProduct.score}점</b>인 이 사료는 어떠세요?
+          </p>
+          <button 
+            className="btn btn-outline"
+            style={{ width: '100%', borderRadius: 'var(--border-radius-sm)', fontWeight: 700 }}
+            onClick={() => navigate(`/product/${alternativeProduct?.p.id}`)}
+          >
+            {alternativeProduct.p.brand} {alternativeProduct.p.name} 보러가기
+          </button>
+        </div>
+      )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {(report?.highlights ?? []).slice(0, 3).map((h, i) => (
-            <div
-              key={i}
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '12px',
-                padding: '14px 16px',
-                borderRadius: '16px',
-                backgroundColor: h.type === 'positive' ? '#ECFDF5' : h.type === 'negative' ? '#FEF2F2' : '#FFFBEB',
-                color: h.type === 'positive' ? '#065F46' : h.type === 'negative' ? '#991B1B' : '#92400E',
-                fontSize: '14px',
-                fontWeight: 600,
-                lineHeight: 1.5,
-              }}
-            >
-              {h.type === 'positive' ? <CheckCircle2 size={18} style={{ flexShrink: 0 }} /> : <AlertCircle size={18} style={{ flexShrink: 0 }} />}
-              <span>{h.text}</span>
+      {/* 일일 급여량 계산기 */}
+      <section className="card" style={{ marginBottom: '40px' }}>
+        <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-dark)' }}>
+          <Dog size={22} color="var(--safe)" /> {profile.name} 맞춤 일일 급여량
+        </h2>
+        {feedingGrams ? (
+          <div>
+            <div style={{ fontSize: '32px', fontWeight: 900, color: 'var(--safe)', marginBottom: '8px' }}>
+              하루 약 {feedingGrams}g
             </div>
-          ))}
-        </div>
-
-        {report?.detailedAnalysis ? (
-          <p style={{ margin: '16px 0 0', fontSize: '13px', color: '#64748B', lineHeight: 1.6, fontWeight: 500 }}>
-            {report.detailedAnalysis}
-          </p>
-        ) : null}
-      </TossCard>
-
-      {/* 피쉬본 원인 분석 */}
-      <section style={{ marginBottom: '36px' }}>
-        <div style={{ marginBottom: '10px' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 900, color: '#0F172A', margin: '0 0 4px' }}>원인 분석</h2>
-          <p style={{ margin: 0, fontSize: '12px', color: '#94A3B8', fontWeight: 600 }}>
-            제품 적합도를 결정하는 4가지 축을 한눈에 확인해 보세요.
-          </p>
-        </div>
-        <FishboneDiagram
-          effect={`${product.name} 적합도`}
-          categories={buildProductFishbone(product, profile)}
-          caption={`${profile.name} 기준 · 성분 ${product.ingredients?.length ?? 0}개 · 후기 ${product.reviewsCount}건`}
-        />
+            <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+              {profile.weight}kg 기준 (평균 활동량 적용)<br/>
+              <span style={{ fontSize: '12px', opacity: 0.8 }}>*평균 칼로리(3500kcal/kg) 기준 추정치입니다.</span>
+            </p>
+          </div>
+        ) : (
+          <div>
+            <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '16px' }}>
+              몸무게를 입력하시면 정확한 권장 급여량을 알려드려요!
+            </p>
+            <button 
+              className="btn btn-outline" 
+              style={{ borderRadius: 'var(--border-radius-sm)', width: '100%' }}
+              onClick={() => navigate('/profile')}
+            >
+              몸무게 입력하러 가기
+            </button>
+          </div>
+        )}
       </section>
 
-      {/* 전성분 분석 */}
-      <div style={{ marginBottom: '6px' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 900, color: '#0F172A', margin: '0 0 4px' }}>성분</h2>
-        <p style={{ margin: 0, fontSize: '12px', color: '#94A3B8', fontWeight: 600 }}>{product.ingredients?.length ?? 0}개</p>
-      </div>
+      {/* Toss-style Ingredient Analysis */}
+      <section style={{ marginBottom: '40px' }}>
+        <h2 style={{ fontSize: '26px', fontWeight: 900, color: headlineColor, lineHeight: 1.4, marginBottom: '24px', letterSpacing: '-0.02em' }}>
+          {headline}
+        </h2>
+        
+        {/* Nutrition Summary */}
+        <div style={{ backgroundColor: 'var(--secondary)', padding: '20px', borderRadius: 'var(--border-radius-lg)', marginBottom: '32px' }}>
+          <p style={{ fontSize: '15px', color: 'var(--text-dark)', fontWeight: 600, lineHeight: 1.6 }}>
+            {profile.healthConcerns.includes('비만') 
+              ? "다이어트가 필요한 아이에겐 지방 수치가 다소 높으니 급여량을 10% 줄여주세요." 
+              : "조단백질이 풍부하여 근육 형성과 에너지 보충에 아주 좋습니다."}
+          </p>
+        </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '18px' }}>
-        {product.ingredients?.map(ing => {
-          const isAllergy = profile.allergies.some(a => 
-            ing.nameKo.includes(a) || (ing.nameEn && ing.nameEn.toLowerCase().includes(a.toLowerCase()))
-          );
-          const purposeShort = ing.purpose?.trim();
-          return (
-            <div key={ing.id} style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '18px 16px', borderRadius: '18px', background: isAllergy ? '#FEF2F2' : '#fff',
-              border: isAllergy ? '1px solid #FECACA' : '1px solid #F1F5F9',
-              boxShadow: isAllergy ? 'none' : '0 1px 3px rgba(0,0,0,0.04)'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', minWidth: 0 }}>
-                <div style={{ 
-                  width: '10px', height: '44px', borderRadius: '6px', backgroundColor: getRiskColor(ing.riskLevel), flexShrink: 0,
-                }} aria-hidden />
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 800, fontSize: '16px', color: '#0F172A', lineHeight: 1.35 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '16px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-dark)' }}>전성분 상세</h3>
+          <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 500 }}>총 {product.ingredients?.length}개</div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {product.ingredients?.map(ing => {
+            const isAllergy = profile.allergies.some(a => 
+              ing.nameKo.includes(a) || (ing.nameEn && ing.nameEn.toLowerCase().includes(a.toLowerCase()))
+            );
+            const isDanger = isAllergy || ing.riskLevel === 'danger';
+            const isCaution = !isDanger && ing.riskLevel === 'caution';
+
+            return (
+              <button 
+                key={ing.id} 
+                onClick={() => setSelectedIngredient({ ...ing, isAllergy })}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '16px', borderRadius: 'var(--border-radius-md)', 
+                  background: 'var(--bg-color)', border: 'none', cursor: 'pointer', textAlign: 'left',
+                  transition: 'background-color 0.2s', width: '100%'
+                }}
+                className="hover:bg-gray-50 active:bg-gray-100"
+              >
+                <div>
+                  <div style={{ fontWeight: isDanger || isCaution ? 800 : 600, fontSize: '16px', color: isDanger ? '#F04452' : (isCaution ? '#F59E0B' : 'var(--text-dark)') }}>
                     {ing.nameKo}
-                    {purposeShort ? (
-                      <span style={{ fontWeight: 600, color: '#64748B' }}> ({purposeShort})</span>
-                    ) : null}
                   </div>
-                  {ing.nameEn ? (
-                    <div style={{ fontSize: '12px', color: '#94A3B8', marginTop: '4px', fontWeight: 500 }}>{ing.nameEn}</div>
-                  ) : null}
+                  <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px', fontWeight: 500 }}>{ing.purpose}</div>
                 </div>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                {isAllergy && (
-                  <div
-                    title={CORE_COPY.allergyAlert}
-                    style={{ background: '#EF4444', color: '#fff', padding: '6px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: 900, maxWidth: '120px', textAlign: 'center', lineHeight: 1.25 }}
-                  >
-                    알레르기 주의보
+                {isDanger && (
+                  <div style={{ background: '#FEE2E2', color: '#F04452', padding: '6px 12px', borderRadius: '12px', fontSize: '13px', fontWeight: 800 }}>
+                    {isAllergy ? '알레르기 위험' : '주의 성분'}
                   </div>
                 )}
-                <VetBadge riskLevel={ing.riskLevel} />
-              </div>
+                {isCaution && (
+                  <div style={{ background: '#FEF3C7', color: '#D97706', padding: '6px 12px', borderRadius: '12px', fontSize: '13px', fontWeight: 800 }}>
+                    확인 필요
+                  </div>
+                )}
+                {!isDanger && !isCaution && (
+                  <div style={{ fontSize: '13px', color: 'var(--text-light)', fontWeight: 600 }}>
+                    안전
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Bottom Sheet for Ingredient Details */}
+      <BottomSheet 
+        isOpen={!!selectedIngredient} 
+        onClose={() => setSelectedIngredient(null)}
+        title={selectedIngredient?.nameKo || ''}
+      >
+        {selectedIngredient && (
+          <div>
+            <div style={{ fontSize: '15px', color: 'var(--text-muted)', marginBottom: '24px', fontWeight: 500 }}>
+              {selectedIngredient.nameEn} · {selectedIngredient.purpose}
             </div>
-          );
-        })}
-      </div>
+            
+            {selectedIngredient.isAllergy ? (
+              <div style={{ backgroundColor: '#FEE2E2', padding: '20px', borderRadius: '16px', color: '#F04452', fontWeight: 700, fontSize: '16px', lineHeight: 1.5 }}>
+                {profile.name}의 알레르기 유발 성분입니다. 절대 급여하지 마세요!
+              </div>
+            ) : selectedIngredient.riskLevel === 'danger' ? (
+              <div style={{ backgroundColor: '#FEE2E2', padding: '20px', borderRadius: '16px', color: '#F04452', fontWeight: 700, fontSize: '16px', lineHeight: 1.5 }}>
+                지속적인 급여 시 간이나 신장에 무리를 줄 수 있는 성분입니다.
+              </div>
+            ) : selectedIngredient.riskLevel === 'caution' ? (
+              <div style={{ backgroundColor: '#FEF3C7', padding: '20px', borderRadius: '16px', color: '#D97706', fontWeight: 700, fontSize: '16px', lineHeight: 1.5 }}>
+                특정 질환이 있는 아이에게는 조심해서 급여해야 하는 성분입니다.
+              </div>
+            ) : (
+              <div style={{ backgroundColor: 'var(--secondary)', padding: '20px', borderRadius: '16px', color: 'var(--text-dark)', fontWeight: 700, fontSize: '16px', lineHeight: 1.5 }}>
+                안심하고 먹일 수 있는 좋은 원료입니다.
+              </div>
+            )}
+            
+            {selectedIngredient.description && (
+              <p style={{ marginTop: '24px', fontSize: '15px', color: 'var(--text-dark)', lineHeight: 1.6, fontWeight: 500 }}>
+                {selectedIngredient.description}
+              </p>
+            )}
+          </div>
+        )}
+      </BottomSheet>
 
       {/* 브랜드 바로가기 */}
       <div style={{ marginBottom: '32px' }}>

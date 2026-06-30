@@ -1,122 +1,123 @@
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
-import { buildCorsHeaders } from '../_shared/cors.ts';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
 
-const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
-const MAX_INGREDIENT_TEXT_LENGTH = 4000;
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
 serve(async (req) => {
-  const corsHeaders = buildCorsHeaders(req);
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
-
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: '허용되지 않은 메서드입니다.' }), {
-      status: 405,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    if (!ANTHROPIC_API_KEY) {
-      throw new Error('AI 분석 서비스 설정이 누락되었습니다.');
-    }
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    )
 
-    const authHeader = req.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return new Response(JSON.stringify({ error: '로그인 사용자만 AI 분석을 사용할 수 있습니다.' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    const { productId, petProfile } = await req.json()
+    const { allergies = [], healthConcerns = [], petName = '아이' } = petProfile
 
-    const { animal, product_type, ingredient } = await req.json();
+    // 1. Fetch Product and its mapped ingredients
+    const { data: product, error } = await supabaseClient
+      .from('products')
+      .select(`
+        id, 
+        name, 
+        brand_name,
+        ingredients:product_ingredients(
+          ingredient:ingredients(id, name_ko, risk_level, description, caution_conditions, allergy_triggers)
+        )
+      `)
+      .eq('id', productId)
+      .single()
 
-    if (!ingredient?.trim()) {
-      return new Response(JSON.stringify({ error: '성분 텍스트를 입력해주세요.' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    if (error) throw error
 
-    if (ingredient.length > MAX_INGREDIENT_TEXT_LENGTH) {
-      return new Response(JSON.stringify({ error: '성분 텍스트가 너무 깁니다. 4000자 이하로 입력해주세요.' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    const mappedIngredients = product.ingredients.map((pi: any) => pi.ingredient)
+    
+    // 2. Analyze
+    let dangerCount = 0;
+    let cautionCount = 0;
+    let isCritical = false;
+    let criticalReasons: string[] = [];
+    
+    const analyzedIngredients = mappedIngredients.map((ing: any) => {
+      // EWG / AAFCO risk mapping
+      let finalRisk = ing.risk_level;
+      let reason = ing.description || '';
 
-    const prompt = `당신은 반려동물 영양 전문 수의사입니다.
-아래의 ${animal === 'dog' ? '강아지' : '고양이'} ${product_type === 'food' ? '사료' : product_type === 'snack' ? '간식' : '영양제'} 성분 목록을 분석해주세요.
+      // Check User Pet Allergies
+      const hasAllergy = allergies.some((a: string) => ing.allergy_triggers?.includes(a) || ing.name_ko.includes(a));
+      if (hasAllergy) {
+        finalRisk = 'danger';
+        isCritical = true;
+        criticalReasons.push(`${ing.name_ko} (알레르기 유발)`);
+        reason = `${petName}의 알레르기 유발 성분입니다. 절대 급여하지 마세요!`;
+      }
 
-성분 목록:
-${ingredient}
+      // Check Health Concerns
+      const affectsCondition = healthConcerns.some((c: string) => ing.caution_conditions?.includes(c));
+      if (affectsCondition) {
+        if (finalRisk !== 'danger') finalRisk = 'caution';
+        reason = `${petName}의 건강 상태(${healthConcerns.join(',')})에 부담을 줄 수 있는 성분입니다.`;
+      }
 
-다음 JSON 형식으로만 응답해주세요 (마크다운 없이 순수 JSON):
-{
-  "summary": "한줄 종합 평가",
-  "risk_level": "safe | caution | danger",
-  "scores": {
-    "safety": 0~100,
-    "nutrition": 0~100,
-    "final": 0~100
-  },
-  "alerts": ["주의사항1", "주의사항2"],
-  "combination_analysis": {
-    "risk_comment": "성분 조합 분석",
-    "protein_quality": "높음 | 보통 | 낮음",
-    "additive_level": "없음 | 낮음 | 보통 | 높음"
-  },
-  "ingredient_analysis": [
-    {
-      "name": "성분명",
-      "category": "단백질 | 탄수화물 | 지방 | 보존료 | 색소 | 첨가물 | 비타민 | 미네랄 | 기타",
-      "risk": "safe | caution | danger",
-      "reason": "이 성분에 대한 간단한 설명"
-    }
-  ]
-}`;
+      if (finalRisk === 'danger') dangerCount++;
+      if (finalRisk === 'caution' && !hasAllergy) cautionCount++;
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2048,
-        messages: [{ role: 'user', content: prompt }],
-      }),
+      return {
+        id: ing.id,
+        name: ing.name_ko,
+        risk: finalRisk,
+        reason: reason
+      }
     });
 
-    if (!response.ok) {
-      const err = await response.text();
-      console.error('Anthropic API error:', err);
-      throw new Error('AI 분석 서비스 오류가 발생했습니다.');
+    // 3. Generate Toss-style Headline & Nutrition Summary
+    let headline = `${petName}가 안심하고 먹을 수 있어요!`;
+    let headlineColor = 'text-gray-900';
+    let isSafe = true;
+
+    if (isCritical || dangerCount > 0) {
+      headline = `치명적인 주의 성분이 ${dangerCount}개 발견됐어요`;
+      headlineColor = 'text-red-500';
+      isSafe = false;
+    } else if (cautionCount > 0) {
+      headline = `급여 전 확인해야 할 성분이 ${cautionCount}개 있어요`;
+      headlineColor = 'text-yellow-600';
+      isSafe = true;
     }
 
-    const aiData = await response.json();
-    const rawText = aiData.content?.[0]?.text ?? '';
+    // Mock Nutrition Summary (In a real app, calculate from crude protein/fat)
+    const nutritionSummary = healthConcerns.includes('비만') 
+      ? "다이어트가 필요한 아이에겐 지방 수치가 다소 높으니 급여량을 10% 줄여주세요." 
+      : "조단백질이 풍부하여 근육 형성과 에너지 보충에 아주 좋습니다.";
 
-    let result;
-    try {
-      // Extract JSON from response (handle potential markdown wrapping)
-      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-      result = JSON.parse(jsonMatch ? jsonMatch[0] : rawText);
-    } catch {
-      throw new Error('AI 응답을 파싱하는 데 실패했습니다.');
-    }
+    const responsePayload = {
+      productId,
+      petName,
+      headline,
+      headlineColor,
+      isSafe,
+      nutritionSummary,
+      criticalReasons,
+      ingredients: analyzedIngredients.sort((a, b) => {
+        const riskScore = { 'danger': 3, 'caution': 2, 'safe': 1 };
+        return riskScore[b.risk as keyof typeof riskScore] - riskScore[a.risk as keyof typeof riskScore];
+      })
+    };
 
-    return new Response(JSON.stringify(result), {
+    return new Response(JSON.stringify(responsePayload), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.';
-    return new Response(JSON.stringify({ error: message }), {
-      status: 500,
+      status: 200,
+    })
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+      status: 400,
+    })
   }
-});
+})

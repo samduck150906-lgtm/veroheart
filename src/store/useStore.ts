@@ -53,6 +53,7 @@ interface StoreState {
   clearCart: () => void;
   reports: AnalysisReportRow[];
   fetchReports: () => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -341,6 +342,16 @@ export const useStore = create<StoreState>((set, get) => ({
     set({ cart: [] });
     if (userId) {
       await clearUserCart(userId);
+    }
+  },
+
+  logout: async () => {
+    try {
+      const { signOut } = await import('../lib/supabase');
+      await signOut();
+      set({ userId: null, profile: mockPetProfile, orders: [], reports: [], cart: [], favorites: [] });
+    } catch (err) {
+      console.error(err);
     }
   }
 }));
