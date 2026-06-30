@@ -103,7 +103,6 @@ export function toProductForAnalysis(product: Product): ProductForAnalysis {
     productType: inferProductType(product),
     lifeStage: toLifeStage(product.targetLifeStage),
     healthConcerns: product.healthConcerns ?? [],
-    guaranteedAnalysis: product.guaranteedAnalysis,
   };
 }
 

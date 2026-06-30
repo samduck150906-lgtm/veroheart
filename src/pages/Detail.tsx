@@ -8,6 +8,10 @@ import {
   AlertCircle,
   CheckCircle2,
   ShieldCheck,
+  Shield,
+  Star,
+  MessageSquare,
+  Trash2,
   Dog,
   Cat,
   Calendar,
@@ -17,8 +21,24 @@ import {
 import { Helmet } from 'react-helmet-async';
 import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
+import { getReviews, createReview, deleteReview } from '../lib/supabase';
+import { buildProductConclusion } from '../utils/productConclusion';
+import { REVIEW_QUICK_TAGS } from '../constants/reviewTags';
+import { COUPANG_PARTNERS_DISCLOSURE } from '../constants/coupangPartners';
+import { TossCard } from '../components/TossUI';
+import type { Ingredient } from '../types';
 import Analyzer from '../components/Analyzer';
 import BottomSheet from '../components/BottomSheet';
+
+function getVerificationMeta(status?: 'pending' | 'verified' | 'needs_review') {
+  if (status === 'verified') {
+    return { label: '검수 완료', bg: '#DCFCE7', color: '#166534' };
+  }
+  if (status === 'needs_review') {
+    return { label: '재검토 필요', bg: '#FEE2E2', color: '#991B1B' };
+  }
+  return { label: '검수 대기', bg: '#FEF3C7', color: '#92400E' };
+}
 
 export default function Detail() {
   const { id } = useParams();
@@ -29,10 +49,13 @@ export default function Detail() {
     isLoadingProducts, 
     fetchProductDetail, 
     comparisonList, 
-    addToComparison, 
-    removeFromComparison, 
+    addToComparison,
+    removeFromComparison,
     addToCart,
-    products
+    products,
+    favorites,
+    userId,
+    trackRecentView
   } = useStore();
 
   type ReviewRow = {
@@ -124,8 +147,8 @@ export default function Detail() {
 
   // DER Calculation
   const getFeedingAmount = () => {
-    if (!profile.weight) return null;
-    const rer = 70 * Math.pow(profile.weight, 0.75);
+    if (!profile.weightKg) return null;
+    const rer = 70 * Math.pow(profile.weightKg, 0.75);
     const der = rer * 1.6; // Average adult multiplier
     const kcalPerKg = 3500; // Mock average
     const grams = (der / kcalPerKg) * 1000;
@@ -269,6 +292,7 @@ export default function Detail() {
             </div>
           )}
         </div>
+      </TossCard>
 
       <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
         <button className="btn btn-outline" style={{ flex: 1, height: '56px', borderRadius: 'var(--border-radius-md)' }} onClick={() => {
@@ -278,9 +302,9 @@ export default function Detail() {
           <span style={{ marginLeft: '4px' }}>비교</span>
         </button>
         
-        {product.productUrl ? (
-          <a 
-            href={product.productUrl}
+        {product.coupangLink ? (
+          <a
+            href={product.coupangLink}
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn-primary"
@@ -331,7 +355,7 @@ export default function Detail() {
               하루 약 {feedingGrams}g
             </div>
             <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-              {profile.weight}kg 기준 (평균 활동량 적용)<br/>
+              {profile.weightKg}kg 기준 (평균 활동량 적용)<br/>
               <span style={{ fontSize: '12px', opacity: 0.8 }}>*평균 칼로리(3500kcal/kg) 기준 추정치입니다.</span>
             </p>
           </div>

@@ -1,4 +1,4 @@
-import type { ProductBadge } from '../utils/score';
+export type ProductBadge = { label: string; tone: 'good' | 'warn' | 'danger' };
 
 const BADGE_TONE: Record<ProductBadge['tone'], { bg: string; color: string }> = {
   good: { bg: '#E7F8F0', color: '#15B36B' },

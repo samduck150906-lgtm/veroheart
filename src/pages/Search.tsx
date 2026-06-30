@@ -16,11 +16,22 @@ import {
 } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import type { Product } from '../types';
-import { TossFilterSection } from '../components/TossUI';
+import { TossFilterSection, TossButton, TossChip, TossSearchBar } from '../components/TossUI';
 import { searchProducts, getAllIngredients } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import standardFeedData from '../data/standard_feed_data.json';
-import { Database } from 'lucide-react';
+import { Database, Search as SearchIcon } from 'lucide-react';
+import { CORE_COPY } from '../copy/marketing';
+import { rankProductsForProfile } from '../utils/score';
+import { SEARCH_MAIN_CATEGORIES, resolveCategoryFromSearchParams } from '../constants/productCategories';
+import {
+  priceBandToMinMax,
+  PRICE_BAND_LABELS,
+  FORMULATION_OPTIONS,
+  HEALTH_CONCERN_OPTIONS,
+  LIFE_STAGE_OPTIONS,
+  type PriceBand,
+} from '../constants/searchFilters';
 
 function defaultPetFromProfile(profile: { species?: string } | undefined): '' | 'dog' | 'cat' | 'all' {
   if (profile?.species === 'Cat') return 'cat';
@@ -62,8 +73,36 @@ export default function Search() {
   });
 
   const [excludedIngredients, setExcludedIngredients] = useState<string[]>([]);
+  const [allIngredients, setAllIngredients] = useState<{ id: string; name_ko: string; risk_level: string }[]>([]);
+  const [ingredientSearch, setIngredientSearch] = useState('');
   const [isStandardFeedModalOpen, setIsStandardFeedModalOpen] = useState(false);
   const [standardFeedSearch, setStandardFeedSearch] = useState('');
+
+  const { priceMin, priceMax } = priceBandToMinMax(filters.priceBand);
+
+  const filterButtonActive = useMemo(() => {
+    const petChanged = filters.targetPetType !== defaultPetFromProfile(profile);
+    return (
+      excludedIngredients.length > 0 ||
+      filters.dietPreset ||
+      filters.healthConcerns.length > 0 ||
+      !!filters.targetLifeStage ||
+      !!filters.formulation ||
+      !!filters.subCategory ||
+      filters.priceBand !== 'any' ||
+      sortBy !== 'default' ||
+      filters.targetPetType === 'all' ||
+      petChanged
+    );
+  }, [filters, excludedIngredients.length, sortBy, profile]);
+
+  useEffect(() => {
+    getAllIngredients().then(setAllIngredients);
+  }, []);
+
+  const filteredIngList = allIngredients.filter(i =>
+    i.name_ko.includes(ingredientSearch) && !excludedIngredients.includes(i.name_ko)
+  ).slice(0, 20);
 
   const filteredStandardFeed = standardFeedData.filter((item: any) => 
     item.name_ko.toLowerCase().includes(standardFeedSearch.toLowerCase()) ||
@@ -335,7 +374,7 @@ export default function Search() {
             <Database size={14} /> 한국표준사료 성분사전 검색
           </button>
         </div>
-      </div>
+      </section>
 
       <div style={{ marginTop: '12px' }}>
         <div className="ui-list-card" style={{ marginBottom: '16px', padding: '16px 18px' }}>

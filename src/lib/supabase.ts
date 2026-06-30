@@ -102,35 +102,6 @@ export async function saveUserPet(petData: Partial<SupabasePet>) {
 }
 
 // Products
-function mapProduct(p: any): Product {
-  return {
-    id: p.id,
-    brand: p.brand_name,
-    name: p.name,
-    category: p.product_type,
-    mainCategory: p.main_category,
-    subCategory: p.sub_category,
-    targetPetType: p.target_pet_type as any,
-    targetLifeStage: p.target_life_stage,
-    formulation: p.formulation,
-    healthConcerns: p.product_health_concerns,
-    hasRiskFactors: p.has_risk_factors,
-    price: p.min_price || 0,
-    imageUrl: p.image_url || 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&q=80',
-    productUrl: p.product_url,
-    source: p.source,
-    ingredients: p.product_ingredients?.map((pi: any) => ({
-      id: pi.ingredients?.id || '',
-      nameKo: pi.ingredients?.name_ko || '',
-      nameEn: pi.ingredients?.name_en || '',
-      riskLevel: pi.ingredients?.risk_level || 'safe',
-      purpose: pi.ingredients?.description || ''
-    })) || [],
-    reviewsCount: p.review_count || 0,
-    averageRating: p.avg_rating || 0
-  };
-}
-
 export async function getProducts(): Promise<Product[]> {
   if (!isSupabaseConfigured) return [];
   const { data, error } = await supabase.from('products').select(`
@@ -332,12 +303,6 @@ export async function getAnalysisReports(userId: string) {
   return data || [];
 }
 
-// ─── Auth ───────────────────────────────────────────────────────────────────
-
-export async function signOut() {
-  await supabase.auth.signOut();
-}
-
 // ─── Reviews ────────────────────────────────────────────────────────────────
 
 export async function getReviews(productId: string) {
@@ -435,6 +400,21 @@ export async function getProductsByBrand(brandName: string): Promise<Product[]> 
     .eq('brand_name', brandName);
   if (error) return [];
   return (data as SupabaseProductRow[]).map(mapProductFromSupabaseRow);
+}
+
+// ─── Sponsorship (admin) ─────────────────────────────────────────────────────
+
+export async function setSponsoredProduct(
+  productId: string,
+  isSponsored: boolean,
+  label: string,
+  order: number,
+) {
+  const { error } = await supabase
+    .from('products')
+    .update({ is_sponsored: isSponsored, sponsor_label: label, sponsor_order: order })
+    .eq('id', productId);
+  if (error) notify.error(error.message);
 }
 
 /** 홈 이벤트/쿠폰 배너용 (정적) */

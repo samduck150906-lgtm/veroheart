@@ -156,29 +156,6 @@ export default function FeedingGuideCalculator({ kcalPer100g, productName, fatPe
     : undefined;
 
   return (
-    <div className="feeding-wrap">
-      {/* Header */}
-      <div className="feeding-header">
-        <Icon size={20} />
-        <h3 className="feeding-title">하루 급여 가이드</h3>
-      </div>
-      <p className="feeding-sub">
-        {profile.name ? `${profile.name}에게 맞는` : '반려동물에게 맞는'} 급여량을 계산해 드려요
-      </p>
-
-  const riskColor = fatRisk
-    ? fatRisk.resultRisk === 'low' ? '#15B36B'
-      : fatRisk.resultRisk === 'medium' ? '#F59E0B'
-      : '#F04452'
-    : undefined;
-
-  const riskBg = fatRisk
-    ? fatRisk.resultRisk === 'low' ? '#ECFDF5'
-      : fatRisk.resultRisk === 'medium' ? '#FFFBEB'
-      : '#FFF1F2'
-    : undefined;
-
-  return (
     <div className="mb-4 bg-white rounded-[16px] p-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
       {/* 헤더 */}
       <div className="flex items-center gap-2 mb-4">
