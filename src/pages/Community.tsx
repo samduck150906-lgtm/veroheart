@@ -24,33 +24,6 @@ function timeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
 }
 
-function PostCard({
-  post,
-  currentUserId,
-  onLike,
-  onDelete,
-}: {
-  post: CommunityPostRow;
-  currentUserId?: string | null;
-  onLike: (id: string, hasLiked: boolean) => void;
-  onDelete: (id: string) => void;
-}) {
-  const [expanded, setExpanded] = useState(false);
-  const CLAMP_CHARS = 120;
-  const needsClamp = post.content.length > CLAMP_CHARS;
-  const displayContent = needsClamp && !expanded
-    ? post.content.slice(0, CLAMP_CHARS) + '…'
-    : post.content;
-
-const CATEGORIES = ['전체', '사료추천', '집사꿀팁', '수의사 Q&A', '잡담'];
-
-const CATEGORY_STYLE: Record<string, { bg: string; color: string }> = {
-  '수의사 Q&A': { bg: 'rgba(49,130,246,0.10)', color: '#1D4ED8' },
-  '사료추천':   { bg: 'var(--brand-tint)',      color: 'var(--brand-deep)' },
-  '집사꿀팁':   { bg: '#F0FDE8',               color: '#3A7D1C' },
-  '잡담':       { bg: 'var(--fill)',             color: 'var(--ink-soft)' },
-};
-
 function PostCard({ post, onLike }: { post: Post; onLike: (id: string) => void }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -365,61 +338,6 @@ export default function Community() {
           ))
         )}
       </div>
-
-      {/* Feed */}
-      {isLoading ? (
-        // CHANGED(P3): 스피너 대신 콘텐츠 모양 스켈레톤으로 체감 속도 개선
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          {[0, 1, 2].map(i => (
-            <div key={i} style={{ background: '#fff', borderRadius: '20px', border: '1px solid var(--hairline)', padding: '18px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-                <div className="animate-pulse" style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--fill)' }} />
-                <div className="animate-pulse" style={{ width: '90px', height: '12px', borderRadius: '6px', background: 'var(--fill)' }} />
-              </div>
-              <div className="animate-pulse" style={{ width: '60%', height: '14px', borderRadius: '6px', background: 'var(--fill)', marginBottom: '10px' }} />
-              <div className="animate-pulse" style={{ width: '100%', height: '11px', borderRadius: '6px', background: 'var(--fill)', marginBottom: '6px' }} />
-              <div className="animate-pulse" style={{ width: '80%', height: '11px', borderRadius: '6px', background: 'var(--fill)' }} />
-            </div>
-          ))}
-        </div>
-      ) : loadError ? (
-        // CHANGED(P0-4): 에러 상태 — 다시 시도 액션 제공
-        <div style={{ textAlign: 'center', padding: '56px 20px' }}>
-          <div style={{ fontSize: '34px', marginBottom: '12px' }}>📡</div>
-          <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>글을 불러오지 못했어요</p>
-          <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--ink-faint)', marginBottom: '18px' }}>네트워크 상태를 확인하고 다시 시도해 주세요</p>
-          <button
-            onClick={() => loadPosts(selectedCategory)}
-            style={{ background: 'var(--brand)', color: 'var(--ink-on-brand)', border: 'none', borderRadius: '12px', padding: '11px 22px', fontSize: '14px', fontWeight: 800, cursor: 'pointer' }}
-          >다시 시도</button>
-        </div>
-      ) : posts.length === 0 ? (
-        // CHANGED(P0-4): 빈 상태 — 첫 글 작성 유도
-        <div style={{ textAlign: 'center', padding: '56px 20px' }}>
-          <div style={{ fontSize: '34px', marginBottom: '12px' }}>✍️</div>
-          <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '6px' }}>이 카테고리에는 아직 글이 없어요</p>
-          <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--ink-faint)', marginBottom: '18px' }}>첫 글의 주인공이 되어보세요!</p>
-          <button
-            onClick={() => {
-              if (!isLoggedIn) { navigate('/login', { state: { from: '/community' } }); return; }
-              setIsWriteOpen(true);
-            }}
-            style={{ background: 'var(--brand)', color: 'var(--ink-on-brand)', border: 'none', borderRadius: '12px', padding: '11px 22px', fontSize: '14px', fontWeight: 800, cursor: 'pointer' }}
-          >첫 글 작성하기</button>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          {posts.map(post => (
-            <PostCard
-              key={post.id}
-              post={post}
-              currentUserId={userId}
-              onLike={handleLike}
-              onDelete={handleDelete}
-            />
-          ))}
-        </div>
-      )}
     </div>
   );
 }
