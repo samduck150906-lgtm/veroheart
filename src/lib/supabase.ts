@@ -89,9 +89,16 @@ export async function signUpWithEmail(email: string, password: string) {
     } else {
       const errRes = await response.json().catch(() => ({}));
       console.warn('Edge signup failed:', errRes.error);
+      const errMsg = errRes.error || '';
+      if (errMsg.toLowerCase().includes('already') || errMsg.toLowerCase().includes('in use') || errMsg.toLowerCase().includes('exists')) {
+        throw new Error('이미 가입된 이메일입니다. 로그인을 시도해 주세요.');
+      }
     }
-  } catch (err) {
-    console.warn('Edge signup failed, falling back to standard signup:', err);
+  } catch (err: any) {
+    console.warn('Edge signup failed:', err);
+    if (err.message && (err.message.includes('이미 가입된') || err.message.includes('already') || err.message.includes('in use'))) {
+      throw err;
+    }
   }
 
   const { data, error } = await supabase.auth.signUp({
@@ -99,10 +106,16 @@ export async function signUpWithEmail(email: string, password: string) {
     password,
   });
   if (error) {
+    if (error.message.toLowerCase().includes('already') || error.message.toLowerCase().includes('in use') || error.message.toLowerCase().includes('exists')) {
+      throw new Error('이미 가입된 이메일입니다. 로그인을 시도해 주세요.');
+    }
     notify.error(error.message);
     return null;
   }
   if (data.user) {
+    if (data.user.identities && data.user.identities.length === 0) {
+      throw new Error('이미 가입된 이메일입니다. 로그인을 시도해 주세요.');
+    }
     await ensurePublicUserExists(data.user.id, email);
   }
   return data.user;

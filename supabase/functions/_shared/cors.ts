@@ -2,6 +2,7 @@
 export function buildCorsHeaders(req: Request): Record<string, string> {
   const base = {
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
   };
   const raw = (Deno.env.get('CORS_ALLOWED_ORIGINS') ?? '').trim();
   if (!raw) {

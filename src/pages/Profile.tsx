@@ -48,12 +48,21 @@ export default function Profile() {
     membershipTier,
   } = useStore();
 
-  const [searchParams] = useSearchParams();
-  const tabParam = searchParams.get('tab');
-
+  const [activeTab, setActiveTab] = useState<'info' | 'orders' | 'reports' | 'favorites'>('info');
+  const [formData, setFormData] = useState(profile);
+  const [profileStep, setProfileStep] = useState(0);
+  const [weightKgStr, setWeightKgStr] = useState(profile?.weightKg != null ? String(profile.weightKg) : '');
+  const navigate = useNavigate();
+  
+  // Sync state if profile changes
   useEffect(() => {
-    if (tabParam === 'favorites' || tabParam === 'orders' || tabParam === 'info') {
-      setActiveTab(tabParam);
+    if (profile) {
+      setFormData(profile);
+      if (profile.weightKg != null && parseFloat(weightKgStr) !== profile.weightKg) {
+        setWeightKgStr(String(profile.weightKg));
+      } else if (profile.weightKg == null) {
+        setWeightKgStr('');
+      }
     }
   }, [tabParam]);
 
@@ -123,7 +132,7 @@ export default function Profile() {
       case 0:
         return (
           <TossInput
-            value={formData.name}
+            value={formData?.name || ''}
             onChange={(value) => setFormData({ ...formData, name: value })}
             placeholder="예: 로니"
           />
@@ -142,9 +151,9 @@ export default function Profile() {
                   borderRadius: '16px',
                   fontSize: '15px',
                   fontWeight: 800,
-                  border: formData.species === sp ? 'none' : '1px solid #E5E7EB',
-                  backgroundColor: formData.species === sp ? 'var(--primary-dark)' : '#fff',
-                  color: formData.species === sp ? '#fff' : 'var(--text-dark)',
+                  border: formData?.species === sp ? 'none' : '1px solid #E5E7EB',
+                  backgroundColor: formData?.species === sp ? 'var(--primary-dark)' : '#fff',
+                  color: formData?.species === sp ? '#fff' : 'var(--text-dark)',
                   cursor: 'pointer',
                 }}
               >
@@ -170,9 +179,9 @@ export default function Profile() {
                   borderRadius: '999px',
                   fontSize: '14px',
                   fontWeight: 700,
-                  border: formData.age === age ? 'none' : '1px solid #E2E8F0',
-                  backgroundColor: formData.age === age ? 'var(--primary-dark)' : '#FFFFFF',
-                  color: formData.age === age ? '#FFFFFF' : 'var(--text-dark)',
+                  border: formData?.age === age ? 'none' : '1px solid #E2E8F0',
+                  backgroundColor: formData?.age === age ? 'var(--primary-dark)' : '#FFFFFF',
+                  color: formData?.age === age ? '#FFFFFF' : 'var(--text-dark)',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
                 }}
@@ -186,13 +195,16 @@ export default function Profile() {
         return (
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <TossInput
-              value={formData.weightKg != null ? String(formData.weightKg) : ''}
+              value={weightKgStr}
               onChange={(v) => {
+                setWeightKgStr(v);
                 const n = parseFloat(v.replace(/[^0-9.]/g, ''));
-                setFormData({
-                  ...formData,
-                  weightKg: Number.isFinite(n) && n > 0 ? n : undefined,
-                });
+                if (Number.isFinite(n) && n >= 0) {
+                  setFormData(prev => ({
+                    ...prev,
+                    weightKg: n
+                  }));
+                }
               }}
               placeholder="예: 5.2"
             />
@@ -212,9 +224,9 @@ export default function Profile() {
                   borderRadius: '999px',
                   fontSize: '14px',
                   fontWeight: 600,
-                  border: formData.allergies.includes(opt) ? 'none' : '1px solid #E5E7EB',
-                  backgroundColor: formData.allergies.includes(opt) ? 'var(--danger)' : '#fff',
-                  color: formData.allergies.includes(opt) ? '#fff' : 'var(--text-dark)',
+                  border: (formData?.allergies || []).includes(opt) ? 'none' : '1px solid #E5E7EB',
+                  backgroundColor: (formData?.allergies || []).includes(opt) ? 'var(--danger)' : '#fff',
+                  color: (formData?.allergies || []).includes(opt) ? '#fff' : 'var(--text-dark)',
                   cursor: 'pointer',
                 }}
               >
@@ -236,9 +248,9 @@ export default function Profile() {
                   borderRadius: '999px',
                   fontSize: '14px',
                   fontWeight: 600,
-                  border: formData.healthConcerns.includes(opt) ? 'none' : '1px solid #E5E7EB',
-                  backgroundColor: formData.healthConcerns.includes(opt) ? 'var(--primary-dark)' : '#fff',
-                  color: formData.healthConcerns.includes(opt) ? '#fff' : 'var(--text-dark)',
+                  border: (formData?.healthConcerns || []).includes(opt) ? 'none' : '1px solid #E5E7EB',
+                  backgroundColor: (formData?.healthConcerns || []).includes(opt) ? 'var(--primary-dark)' : '#fff',
+                  color: (formData?.healthConcerns || []).includes(opt) ? '#fff' : 'var(--text-dark)',
                   cursor: 'pointer',
                 }}
               >

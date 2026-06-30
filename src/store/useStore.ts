@@ -213,7 +213,7 @@ export const useStore = create<StoreState>((set, get) => ({
             name: p.name,
             species: p.pet_type === 'cat' ? 'Cat' : 'Dog',
             age: p.age_group === 'baby' ? 1 : p.age_group === 'senior' ? 10 : 4,
-            breed: localBreed || '',
+            weightKg: p.weight,
             healthConcerns: p.conditions || [],
             allergies: p.allergies || [],
             gender: localGender,
@@ -272,6 +272,7 @@ export const useStore = create<StoreState>((set, get) => ({
       name: newProfile.name,
       pet_type: newProfile.species === 'Cat' ? 'cat' : 'dog',
       age_group: newProfile.age < 2 ? 'baby' : newProfile.age > 7 ? 'senior' : 'adult',
+      weight: newProfile.weightKg,
       conditions: newProfile.healthConcerns,
       allergies: newProfile.allergies,
     });
@@ -412,16 +413,7 @@ export const useStore = create<StoreState>((set, get) => ({
     try {
       const { signOut } = await import('../lib/supabase');
       await signOut();
-      set({
-        userId: null,
-        isLoggedIn: false,
-        profile: {} as any,
-        orders: [],
-        reports: [],
-        cart: [],
-        favorites: [],
-        recentViews: []
-      });
+      set({ userId: null, profile: DEFAULT_USER_PET_PROFILE, orders: [], reports: [], cart: [], favorites: [] });
     } catch (err) {
       console.error(err);
     }

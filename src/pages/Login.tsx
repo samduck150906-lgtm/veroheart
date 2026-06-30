@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, RefreshCw, Check, X } from 'lucide-react';
-import { supabase, ensurePublicUserExists } from '../lib/supabase';
+import { supabase, ensurePublicUserExists, signUpWithEmail, signInWithEmail } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import { notify } from '../store/useNotification';
 
@@ -61,18 +61,27 @@ export default function Login() {
 
   const handleSubmit = async () => {
     const addr = email.trim();
-    const errors: { email?: string; password?: string; confirmPassword?: string } = {};
-    if (!addr) errors.email = LOGIN.errors.emailRequired;
-    else if (!isValidEmail(addr)) errors.email = LOGIN.errors.emailInvalid;
-    if (!password) errors.password = LOGIN.errors.passwordRequired;
-    else if (password.length < 8) errors.password = '비밀번호는 8자 이상이어야 합니다.';
-    if (mode === 'signup') {
-      if (!confirmPassword) errors.confirmPassword = '비밀번호 확인을 입력해 주세요.';
-      else if (password !== confirmPassword) errors.confirmPassword = LOGIN.errors.passwordMismatch;
-    }
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
+    if (!addr || !password) {
+      notify.error('이메일과 비밀번호를 입력해주세요.');
       return;
+    }
+    if (!isValidEmail(addr)) {
+      notify.error('올바른 이메일 형식인지 확인해 주세요.');
+      return;
+    }
+    if (mode === 'signup') {
+      if (!confirmPassword) {
+        notify.error('비밀번호 확인을 입력해주세요.');
+        return;
+      }
+      if (password !== confirmPassword) {
+        notify.error('비밀번호가 일치하지 않습니다.');
+        return;
+      }
+      if (!passwordPolicyOk(password)) {
+        notify.error('비밀번호 정책을 모두 충족해 주세요.');
+        return;
+      }
     }
     setFieldErrors({});
 
@@ -113,100 +122,25 @@ export default function Login() {
         await initApp();
         navigate(redirectTo, { replace: true });
       } else {
-        let signUpSuccess = false;
-        let createdUser = null;
-
-        try {
-          if (supabase.auth.admin) {
-            const { data: adminData, error: adminError } = await supabase.auth.admin.createUser({
-              email: addr,
-              password,
-              email_confirm: true
-            });
-            if (!adminError && adminData.user) {
-              createdUser = adminData.user;
-              signUpSuccess = true;
-            }
-          }
-        } catch (err) {
-          console.warn('Admin user creation failed, falling back to standard signup:', err);
+        const user = await signUpWithEmail(addr, password);
+        if (!user) {
+          return;
         }
 
-        if (signUpSuccess && createdUser) {
-          const { error: signInErr } = await supabase.auth.signInWithPassword({
-            email: addr,
-            password
-          });
-          if (signInErr) throw signInErr;
-
-          // Ensure public.users entry exists defensively
-          await ensurePublicUserExists(createdUser.id, addr);
-
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
           notify.success('회원가입이 완료되었습니다!');
           await initApp();
           navigate(redirectTo, { replace: true });
         } else {
-          const { data, error } = await supabase.auth.signUp({
-            email: addr,
-            password,
-            options: {
-              emailRedirectTo: `${window.location.origin}/login`,
-            },
-          });
-          if (error) throw error;
-
-          if (data.session) {
-            if (data.user) {
-              await ensurePublicUserExists(data.user.id, addr);
-            }
+          const loggedInUser = await signInWithEmail(addr, password);
+          if (loggedInUser) {
             notify.success('회원가입이 완료되었습니다!');
             await initApp();
             navigate(redirectTo, { replace: true });
           } else {
-            let autoConfirmed = false;
-            try {
-              const url = import.meta.env.VITE_SUPABASE_URL;
-              const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-              if (url && anonKey) {
-                const response = await fetch(`${url}/functions/v1/admin-auth`, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${anonKey}`
-                  },
-                  body: JSON.stringify({
-                    action: 'confirm',
-                    email: addr
-                  }),
-                });
-                if (response.ok) {
-                  autoConfirmed = true;
-                }
-              }
-            } catch (err) {
-              console.warn('Signup auto-confirm edge function failed:', err);
-            }
-
-            if (autoConfirmed) {
-              const signInResult = await supabase.auth.signInWithPassword({
-                email: addr,
-                password
-              });
-              if (!signInResult.error && signInResult.data.session) {
-                if (signInResult.data.user) {
-                  await ensurePublicUserExists(signInResult.data.user.id, addr);
-                }
-                notify.success('회원가입이 완료되었습니다!');
-                await initApp();
-                navigate(redirectTo, { replace: true });
-                return;
-              }
-            }
-
-            if (data.user) {
-              await ensurePublicUserExists(data.user.id, addr);
-            }
-            notify.success('가입이 완료되었습니다. 이메일을 확인해 주세요.');
+            notify.success('가입 확인 메일을 보냈어요. 메일의 링크를 눌러 인증을 마쳐 주세요.');
+            setPendingVerification(true);
           }
         }
       }
@@ -266,7 +200,8 @@ export default function Login() {
               type="button"
               onClick={() => {
                 setMode(m);
-                setFieldErrors({});
+                setPendingVerification(false);
+                setPassword('');
                 setConfirmPassword('');
               }}
               style={{
@@ -288,31 +223,89 @@ export default function Login() {
           ))}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
-          {/* 이메일 */}
-          <div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '16px' }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '2px 16px',
+            borderRadius: '16px',
+            background: '#F9FAFB',
+            border: '1.5px solid #E5E8EB',
+            transition: 'all 0.2s',
+          }}>
+            <Mail size={18} color="#9CA3AF" style={{ flexShrink: 0 }} />
+            <TossInput
+              type="email"
+              placeholder="이메일 주소"
+              value={email}
+              onChange={setEmail}
+              style={{ border: 'none', padding: '12px 0', background: 'transparent', fontSize: '15px' }}
+            />
+          </div>
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '2px 16px',
+            borderRadius: '16px',
+            background: '#F9FAFB',
+            border: '1.5px solid #E5E8EB',
+            transition: 'all 0.2s',
+          }}>
+            <Lock size={18} color="#9CA3AF" style={{ flexShrink: 0 }} />
+            <TossInput
+              type={showPw ? 'text' : 'password'}
+              placeholder="비밀번호"
+              value={password}
+              onChange={setPassword}
+              style={{ border: 'none', padding: '12px 0', background: 'transparent', fontSize: '15px' }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPw(!showPw)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', display: 'inline-flex', padding: 0 }}
+            >
+              {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+
+          {mode === 'signup' && (
             <div style={{
-              display: 'flex', alignItems: 'center', gap: '10px',
-              border: fieldErrors.email ? '1.5px solid #F04452' : '1.5px solid #E5E8EB',
-              borderRadius: '14px', background: '#FFFFFF',
-              padding: '0 16px', height: '54px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-              transition: 'border-color 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '2px 16px',
+              borderRadius: '16px',
+              background: '#F9FAFB',
+              border: '1.5px solid #E5E8EB',
+              transition: 'all 0.2s',
             }}>
-              <Mail size={18} color="#8B95A1" style={{ flexShrink: 0 }} />
-              <input
-                type="email"
-                placeholder="이메일 주소"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => { setEmail(e.target.value); setFieldErrors(prev => ({ ...prev, email: undefined })); }}
-                onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-                style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: '16px', color: '#111827' }}
+              <Lock size={18} color="#9CA3AF" style={{ flexShrink: 0 }} />
+              <TossInput
+                type={showPw ? 'text' : 'password'}
+                placeholder="비밀번호 확인"
+                value={confirmPassword}
+                onChange={setConfirmPassword}
+                style={{ border: 'none', padding: '12px 0', background: 'transparent', fontSize: '15px' }}
               />
             </div>
-            {fieldErrors.email && (
-              <p style={{ margin: '5px 0 0 4px', fontSize: '12px', color: '#F04452', fontWeight: 600 }}>{fieldErrors.email}</p>
-            )}
+          )}
+        </div>
+
+        <div style={{ display: 'none' }}>
+          <div style={{ position: 'relative' }}>
+            <Mail size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+            <input
+              type="email"
+              placeholder="이메일 주소"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+              style={{ width: '100%', padding: '16px 16px 16px 46px', borderRadius: '14px', border: '1px solid #E5E7EB', fontSize: '16px', outline: 'none', boxSizing: 'border-box' }}
+            />
           </div>
 
           {/* 비밀번호 */}
@@ -393,31 +386,9 @@ export default function Login() {
           {isLoading ? '처리 중...' : mode === 'login' ? '로그인' : '회원가입'}
         </TossButton>
 
-        {/* 소셜 로그인 구분선 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '18px 0' }}>
-          <div style={{ flex: 1, height: '1px', background: '#E5E8EB' }} />
-          <span style={{ fontSize: '12px', color: '#8B95A1', fontWeight: 600 }}>또는</span>
-          <div style={{ flex: 1, height: '1px', background: '#E5E8EB' }} />
-        </div>
-
-        {/* 카카오 로그인 */}
-        <button
-          type="button"
-          onClick={() => void handleKakaoLogin()}
-          disabled={isLoading || isKakaoLoading}
-          style={{
-            width: '100%', height: '52px', borderRadius: '14px',
-            background: '#FEE500', border: 'none',
-            cursor: isLoading || isKakaoLoading ? 'not-allowed' : 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-            fontSize: '15px', fontWeight: 800, color: '#191919',
-            opacity: isKakaoLoading ? 0.7 : 1,
-            transition: 'opacity 0.15s',
-          }}
-        >
-          <KakaoIcon />
-          {isKakaoLoading ? '카카오 로그인 중...' : '카카오로 시작하기'}
-        </button>
+        <p style={{ margin: 0, textAlign: 'center', fontSize: '12px', color: '#9CA3AF', lineHeight: 1.5 }}>
+          소셜 로그인 없이 이메일과 비밀번호만 사용합니다.
+        </p>
       </div>
     </div>
   );
