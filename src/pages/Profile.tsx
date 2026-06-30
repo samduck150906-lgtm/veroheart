@@ -292,7 +292,7 @@ export default function Profile() {
               <LogOut size={16} /> 로그아웃
             </button>
           </div>
-        </div>
+        </TossCard>
       ) : activeTab === 'orders' ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {orders.length > 0 ? (

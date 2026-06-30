@@ -269,6 +269,7 @@ export default function Detail() {
             </div>
           )}
         </div>
+      </TossCard>
 
       <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
         <button className="btn btn-outline" style={{ flex: 1, height: '56px', borderRadius: 'var(--border-radius-md)' }} onClick={() => {

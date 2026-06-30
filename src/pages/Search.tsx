@@ -335,7 +335,7 @@ export default function Search() {
             <Database size={14} /> 한국표준사료 성분사전 검색
           </button>
         </div>
-      </div>
+      </section>
 
       <div style={{ marginTop: '12px' }}>
         <div className="ui-list-card" style={{ marginBottom: '16px', padding: '16px 18px' }}>
