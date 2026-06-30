@@ -1,0 +1,122 @@
+import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+import { buildCorsHeaders } from '../_shared/cors.ts';
+
+const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
+const MAX_INGREDIENT_TEXT_LENGTH = 4000;
+
+serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req);
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ error: '허용되지 않은 메서드입니다.' }), {
+      status: 405,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  try {
+    if (!ANTHROPIC_API_KEY) {
+      throw new Error('AI 분석 서비스 설정이 누락되었습니다.');
+    }
+
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: '로그인 사용자만 AI 분석을 사용할 수 있습니다.' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const { animal, product_type, ingredient } = await req.json();
+
+    if (!ingredient?.trim()) {
+      return new Response(JSON.stringify({ error: '성분 텍스트를 입력해주세요.' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (ingredient.length > MAX_INGREDIENT_TEXT_LENGTH) {
+      return new Response(JSON.stringify({ error: '성분 텍스트가 너무 깁니다. 4000자 이하로 입력해주세요.' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const prompt = `당신은 반려동물 영양 전문 수의사입니다.
+아래의 ${animal === 'dog' ? '강아지' : '고양이'} ${product_type === 'food' ? '사료' : product_type === 'snack' ? '간식' : '영양제'} 성분 목록을 분석해주세요.
+
+성분 목록:
+${ingredient}
+
+다음 JSON 형식으로만 응답해주세요 (마크다운 없이 순수 JSON):
+{
+  "summary": "한줄 종합 평가",
+  "risk_level": "safe | caution | danger",
+  "scores": {
+    "safety": 0~100,
+    "nutrition": 0~100,
+    "final": 0~100
+  },
+  "alerts": ["주의사항1", "주의사항2"],
+  "combination_analysis": {
+    "risk_comment": "성분 조합 분석",
+    "protein_quality": "높음 | 보통 | 낮음",
+    "additive_level": "없음 | 낮음 | 보통 | 높음"
+  },
+  "ingredient_analysis": [
+    {
+      "name": "성분명",
+      "category": "단백질 | 탄수화물 | 지방 | 보존료 | 색소 | 첨가물 | 비타민 | 미네랄 | 기타",
+      "risk": "safe | caution | danger",
+      "reason": "이 성분에 대한 간단한 설명"
+    }
+  ]
+}`;
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 2048,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      console.error('Anthropic API error:', err);
+      throw new Error('AI 분석 서비스 오류가 발생했습니다.');
+    }
+
+    const aiData = await response.json();
+    const rawText = aiData.content?.[0]?.text ?? '';
+
+    let result;
+    try {
+      // Extract JSON from response (handle potential markdown wrapping)
+      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      result = JSON.parse(jsonMatch ? jsonMatch[0] : rawText);
+    } catch {
+      throw new Error('AI 응답을 파싱하는 데 실패했습니다.');
+    }
+
+    return new Response(JSON.stringify(result), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.';
+    return new Response(JSON.stringify({ error: message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+});

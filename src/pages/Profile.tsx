@@ -1,407 +1,458 @@
-// @ts-nocheck
-import { useState, useMemo, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
-import { Heart, Crown } from 'lucide-react';
-import { Helmet } from 'react-helmet-async';
-import ProductImage from '../components/ProductImage';
-import { getRecommendationBreakdown, gradeFromScore } from '../utils/score';
-import { FAVORITES_EMPTY } from '../copy/ui';
+import type { SupabaseOrderItem } from '../types';
+import { User, ChevronRight, Calendar, ShoppingBag, FileText, Activity, Heart, LogOut, LogIn } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import ProductCard from '../components/ProductCard';
+import { TossButton, TossCard, TossChip, TossSectionTitle, TossInput } from '../components/TossUI';
 
-const TABS = ['찜', '구매내역', '분석리포트'] as const;
-type Tab = (typeof TABS)[number];
+export default function Profile() {
+  const { profile, updateProfile, orders, fetchOrders, reports, fetchReports, isLoggedIn, signOut, favorites, products } = useStore();
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<'info' | 'orders' | 'reports' | 'favorites'>('info');
+  const favoriteProducts = products.filter(p => favorites.includes(p.id));
+  const [formData, setFormData] = useState(profile);
+  const [profileStep, setProfileStep] = useState(0);
 
-const TAB_PARAM_MAP: Record<string, Tab> = {
-  favorites: '찜',
-  orders: '구매내역',
-  reports: '분석리포트',
-};
+  const concernOptions = ['관절', '피부', '체중', '소화', '눈'];
+  const allergyOptions = ['닭고기', '소고기', '연어', '곡물', '인공색소'];
+  const PROFILE_STEP_META = [
+    { title: '이름', prompt: '반려동물의 이름을 알려주세요.' },
+    { title: '종', prompt: '강아지인가요, 고양이인가요?' },
+    { title: '나이', prompt: '나이에 가까운 단계를 골라 주세요.' },
+    { title: '몸무게', prompt: '몸무게를 알고 있다면 입력해 주세요. (선택)' },
+    { title: '알레르기', prompt: '피해야 할 알레르기·회피 성분이 있다면 모두 선택해 주세요.' },
+    { title: '건강 고민', prompt: '요즘 가장 신경 쓰이는 고민을 골라 주세요. (복수 선택)' },
+  ] as const;
 
-const GRADE_COLOR: Record<string, string> = { A: '#15B36B', B: '#6BB04E', C: '#E8A800', D: '#F04452', F: '#8B95A1' };
-const GRADE_BG: Record<string, string> = { A: '#ECFDF5', B: '#F0FDE8', C: '#FFFBEB', D: '#FFF1F2', F: '#F2F4F6' };
+  useEffect(() => {
+    queueMicrotask(() => {
+      setFormData(profile);
+      setProfileStep(0);
+    });
+  }, [profile]);
+  
+  useEffect(() => {
+    if (activeTab === 'orders') fetchOrders();
+    if (activeTab === 'reports') fetchReports();
+  }, [activeTab, fetchOrders, fetchReports]);
 
-const ORDER_STATUS_LABEL: Record<string, string> = {
-  pending: '결제 대기',
-  paid: '결제 완료',
-  completed: '배송 완료',
-  cancelled: '취소됨',
-  failed: '결제 실패',
-};
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
 
-function ScoreCircle({ score }: { score: number }) {
-  const circumference = 2 * Math.PI * 36;
-  const offset = circumference - (score / 100) * circumference;
+  const handleSave = async () => {
+    await updateProfile(formData);
+  };
+
+  const toggleArrayItem = (field: 'healthConcerns' | 'allergies', value: string) => {
+    const list = formData[field];
+    if (list.includes(value)) {
+      setFormData({ ...formData, [field]: list.filter(i => i !== value) });
+    } else {
+      setFormData({ ...formData, [field]: [...list, value] });
+    }
+  };
+
+  const stepCount = PROFILE_STEP_META.length;
+  const step = PROFILE_STEP_META[profileStep];
+
+  const profileStepBody = (() => {
+    switch (profileStep) {
+      case 0:
+        return (
+          <TossInput
+            value={formData.name}
+            onChange={(value) => setFormData({ ...formData, name: value })}
+            placeholder="예: 로니"
+          />
+        );
+      case 1:
+        return (
+          <div style={{ display: 'flex', gap: '10px' }}>
+            {(['Dog', 'Cat'] as const).map((sp) => (
+              <button
+                key={sp}
+                type="button"
+                onClick={() => setFormData({ ...formData, species: sp })}
+                style={{
+                  flex: 1,
+                  padding: '16px 14px',
+                  borderRadius: '16px',
+                  fontSize: '15px',
+                  fontWeight: 800,
+                  border: formData.species === sp ? 'none' : '1px solid #E5E7EB',
+                  backgroundColor: formData.species === sp ? 'var(--primary-dark)' : '#fff',
+                  color: formData.species === sp ? '#fff' : 'var(--text-dark)',
+                  cursor: 'pointer',
+                }}
+              >
+                {sp === 'Dog' ? '강아지' : '고양이'}
+              </button>
+            ))}
+          </div>
+        );
+      case 2:
+        return (
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {[
+              { label: '아기', age: 1 },
+              { label: '성인', age: 4 },
+              { label: '시니어', age: 10 },
+            ].map(({ label, age }) => (
+              <button
+                key={label}
+                type="button"
+                onClick={() => setFormData({ ...formData, age })}
+                style={{
+                  padding: '12px 20px',
+                  borderRadius: '999px',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  border: formData.age === age ? 'none' : '1px solid #E5E7EB',
+                  backgroundColor: formData.age === age ? 'var(--primary)' : '#fff',
+                  color: formData.age === age ? '#111827' : 'var(--text-dark)',
+                  cursor: 'pointer',
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        );
+      case 3:
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <TossInput
+              value={formData.weightKg != null ? String(formData.weightKg) : ''}
+              onChange={(v) => {
+                const n = parseFloat(v.replace(/[^0-9.]/g, ''));
+                setFormData({
+                  ...formData,
+                  weightKg: Number.isFinite(n) && n > 0 ? n : undefined,
+                });
+              }}
+              placeholder="예: 5.2"
+            />
+            <span style={{ fontSize: '14px', fontWeight: 700, color: '#64748B' }}>kg</span>
+          </div>
+        );
+      case 4:
+        return (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+            {allergyOptions.map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => toggleArrayItem('allergies', opt)}
+                style={{
+                  padding: '10px 18px',
+                  borderRadius: '999px',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  border: formData.allergies.includes(opt) ? 'none' : '1px solid #E5E7EB',
+                  backgroundColor: formData.allergies.includes(opt) ? 'var(--danger)' : '#fff',
+                  color: formData.allergies.includes(opt) ? '#fff' : 'var(--text-dark)',
+                  cursor: 'pointer',
+                }}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        );
+      case 5:
+        return (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+            {concernOptions.map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => toggleArrayItem('healthConcerns', opt)}
+                style={{
+                  padding: '10px 18px',
+                  borderRadius: '999px',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  border: formData.healthConcerns.includes(opt) ? 'none' : '1px solid #E5E7EB',
+                  backgroundColor: formData.healthConcerns.includes(opt) ? 'var(--primary-dark)' : '#fff',
+                  color: formData.healthConcerns.includes(opt) ? '#fff' : 'var(--text-dark)',
+                  cursor: 'pointer',
+                }}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        );
+      default:
+        return null;
+    }
+  })();
+
   return (
-    <div style={{ position: 'relative', width: 80, height: 80, flexShrink: 0, marginLeft: 'auto' }}>
-      <svg width="80" height="80" style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx="40" cy="40" r="36" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="6" />
-        <circle cx="40" cy="40" r="36" fill="none" stroke="#fff" strokeWidth="6"
-          strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round"
-          style={{ transition: 'stroke-dashoffset 0.6s cubic-bezier(0.16,1,0.3,1)' }} />
-      </svg>
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ fontSize: 20, fontWeight: 900, color: '#fff', lineHeight: 1 }}>{score}</span>
-        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>/ 100</span>
+    <div className="animate-fade-in" style={{ paddingBottom: '40px' }}>
+      {/* 로그인/로그아웃 버튼 */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
+        {isLoggedIn ? (
+          <TossButton variant="outline" onClick={handleSignOut} style={{ width: 'auto', height: '38px', padding: '0 14px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <LogOut size={15} /> 로그아웃
+          </TossButton>
+        ) : (
+          <Link to="/login" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--primary-dark)', borderRadius: '10px', padding: '8px 14px', fontSize: '13px', fontWeight: 700, color: '#fff', textDecoration: 'none' }}>
+            <LogIn size={15} /> 로그인 / 회원가입
+          </Link>
+        )}
       </div>
+
+      {/* 탭 네비게이션 */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', padding: '0 2px', overflowX: 'auto' }}>
+        {([
+          { key: 'info', label: '프로필 설정' },
+          { key: 'favorites', label: `찜 목록 ${favorites.length > 0 ? `(${favorites.length})` : ''}` },
+          { key: 'orders', label: '주문 내역' },
+          { key: 'reports', label: '분석 리포트' },
+        ] as const).map(tab => (
+          <TossChip key={tab.key} label={tab.label} active={activeTab === tab.key} onClick={() => setActiveTab(tab.key)} />
+        ))}
+      </div>
+
+      {activeTab === 'favorites' ? (
+        <div>
+          {favoriteProducts.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {favoriteProducts.map(p => <ProductCard key={p.id} product={p} />)}
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '100px 20px', backgroundColor: '#F9FAFB', borderRadius: '24px' }}>
+              <Heart color="#D1D5DB" size={40} style={{ margin: '0 auto 16px' }} />
+              <p style={{ color: '#9CA3AF', fontSize: '15px' }}>찜한 제품이 없습니다.</p>
+              <Link to="/search" style={{ color: 'var(--primary)', fontWeight: 700, marginTop: '12px', display: 'inline-block', textDecoration: 'none' }}>제품 탐색하기</Link>
+            </div>
+          )}
+        </div>
+      ) : activeTab === 'info' ? (
+        <TossCard style={{ padding: '28px 22px 24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+            <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <User color="#fff" size={22} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '11px', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.06em', marginBottom: '4px' }}>
+                마이 펫 · {profileStep + 1} / {stepCount}
+              </div>
+              <TossSectionTitle title={step.title} style={{ marginBottom: '0' }} />
+            </div>
+          </div>
+
+          <div
+            style={{
+              height: '4px',
+              borderRadius: '999px',
+              background: '#EEF2F6',
+              marginBottom: '24px',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                height: '100%',
+                width: `${((profileStep + 1) / stepCount) * 100}%`,
+                borderRadius: '999px',
+                background: 'linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%)',
+                transition: 'width 0.25s ease',
+              }}
+            />
+          </div>
+
+          <p style={{ margin: '0 0 22px', fontSize: '16px', fontWeight: 700, color: '#334155', lineHeight: 1.5 }}>
+            {step.prompt}
+          </p>
+
+          <div style={{ marginBottom: '28px' }}>{profileStepBody}</div>
+
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '14px' }}>
+            <TossButton
+              type="button"
+              variant="outline"
+              style={{ flex: 1, height: '50px' }}
+              disabled={profileStep === 0}
+              onClick={() => setProfileStep((s) => Math.max(0, s - 1))}
+            >
+              이전
+            </TossButton>
+            {profileStep < stepCount - 1 ? (
+              <TossButton type="button" style={{ flex: 1, height: '50px' }} onClick={() => setProfileStep((s) => Math.min(stepCount - 1, s + 1))}>
+                다음
+              </TossButton>
+            ) : (
+              <TossButton type="button" style={{ flex: 1, height: '50px' }} onClick={handleSave}>
+                저장
+              </TossButton>
+            )}
+          </div>
+        </TossCard>
+      ) : activeTab === 'orders' ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {orders.length > 0 ? (
+            orders.map(order => (
+              <div key={order.id} className="card" style={{ padding: '20px', border: '1px solid #EEF0F3' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px dashed #E5E7EB' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Calendar size={16} color="var(--text-muted)" />
+                    <span style={{ fontSize: '14px', color: 'var(--text-dark)', fontWeight: 600 }}>{new Date(order.created_at).toLocaleDateString()}</span>
+                  </div>
+                  <DeliveryStatus status={order.status} />
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {order.order_items.map((item: SupabaseOrderItem) => (
+                    <Link key={item.id} to={`/product/${item.product_id}`} style={{ display: 'flex', gap: '12px', textDecoration: 'none', color: 'inherit' }}>
+                      <img src={item.products.image_url} alt={item.products.name} style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover' }} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{item.products.brand_name}</div>
+                        <div style={{ fontSize: '14px', fontWeight: 700, margin: '2px 0' }}>{item.products.name}</div>
+                        <div style={{ fontSize: '13px', fontWeight: 600 }}>{item.price_at_purchase.toLocaleString()}원 · {item.quantity}개</div>
+                      </div>
+                      <ChevronRight size={20} color="#9CA3AF" style={{ alignSelf: 'center' }} />
+                    </Link>
+                  ))}
+                </div>
+
+                {/* 배송 타임라인 */}
+                <DeliveryTimeline status={order.status} />
+
+                <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #F3F4F6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>총 결제 금액</span>
+                  <span style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-dark)' }}>{order.total_amount.toLocaleString()}원</span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div style={{ textAlign: 'center', padding: '100px 20px', backgroundColor: '#F9FAFB', borderRadius: '24px' }}>
+              <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                <ShoppingBag color="#D1D5DB" size={32} />
+              </div>
+              <p style={{ color: '#9CA3AF', fontSize: '15px' }}>아직 주문 내역이 없습니다.</p>
+              <Link to="/" style={{ color: 'var(--primary)', fontWeight: 700, marginTop: '12px', display: 'inline-block', textDecoration: 'none' }}>첫 쇼핑 시작하기</Link>
+            </div>
+          )}
+        </div>
+      ) : activeTab === 'reports' ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {reports && reports.length > 0 ? (
+            reports.map(report => {
+              const result = report.analysis_json;
+              const product = report.products; // linked product
+              const scoreColor = result.scores?.final >= 80 ? '#10B981' : (result.scores?.final >= 60 ? '#F59E0B' : '#EF4444');
+
+              return (
+                <div key={report.id} className="card" style={{ padding: '20px', border: '1px solid #EEF0F3', borderRadius: '20px', backgroundColor: '#fff' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px dashed #E5E7EB' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Calendar size={16} color="var(--text-muted)" />
+                      <span style={{ fontSize: '14px', color: 'var(--text-dark)', fontWeight: 600 }}>{new Date(report.created_at).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  
+                  <div style={{ display: 'flex', gap: '16px' }}>
+                    {product ? (
+                      <img src={product.image_url} alt={product.name} style={{ width: '80px', height: '80px', borderRadius: '12px', objectFit: 'cover', border: '1px solid #F3F4F6' }} />
+                    ) : (
+                      <div style={{ width: '80px', height: '80px', borderRadius: '12px', backgroundColor: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <FileText color="#9CA3AF" />
+                      </div>
+                    )}
+                    
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>{product ? product.brand_name : '임의 분석'}</div>
+                      <div style={{ fontSize: '16px', fontWeight: 800, margin: '4px 0', color: '#1F2937' }}>{product ? product.name : 'OCR 추출 성분 분석'}</div>
+                      <div style={{ fontSize: '13px', color: '#6B7280', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                        {result.summary}
+                      </div>
+                    </div>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ 
+                        width: '50px', height: '50px', borderRadius: '50%', border: `3px solid ${scoreColor}`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', color: scoreColor, fontWeight: 900, fontSize: '16px'
+                      }}>
+                        {result.scores?.final?.toFixed(0) || 0}
+                      </div>
+                    </div>
+                  </div>
+
+                  {product && (
+                    <Link to={`/product/${report.product_id}`} style={{ display: 'block', marginTop: '16px', padding: '12px', textAlign: 'center', backgroundColor: '#F9FAFB', borderRadius: '12px', fontSize: '14px', fontWeight: 700, color: '#4B5563', textDecoration: 'none' }}>
+                      해당 제품 상세보기
+                    </Link>
+                  )}
+                </div>
+              );
+            })
+          ) : (
+            <div style={{ textAlign: 'center', padding: '100px 20px', backgroundColor: '#F9FAFB', borderRadius: '24px' }}>
+              <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                <Activity color="#D1D5DB" size={32} />
+              </div>
+              <p style={{ color: '#9CA3AF', fontSize: '15px' }}>저장된 분석 리포트가 없습니다.</p>
+              <Link to="/search" style={{ color: 'var(--primary)', fontWeight: 700, marginTop: '12px', display: 'inline-block', textDecoration: 'none' }}>사료 검색 및 분석하기</Link>
+            </div>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }
 
-export default function Profile() {
-  const {
-    isLoggedIn,
-    profile,
-    signOut,
-    favorites,
-    products,
-    orders,
-    reports,
-    membershipTier,
-    fetchOrders,
-    fetchReports,
-  } = useStore();
+const DELIVERY_STEPS = [
+  { key: 'pending', label: '주문 확인' },
+  { key: 'paid', label: '결제 완료' },
+  { key: 'shipped', label: '배송 중' },
+  { key: 'completed', label: '배송 완료' },
+];
 
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const tabParam = searchParams.get('tab');
-  const [activeTab, setActiveTab] = useState<Tab>('찜');
-
-  useEffect(() => {
-    if (tabParam && TAB_PARAM_MAP[tabParam]) {
-      setActiveTab(TAB_PARAM_MAP[tabParam]);
-    }
-  }, [tabParam]);
-
-  useEffect(() => {
-    if (isLoggedIn) {
-      fetchOrders?.();
-      fetchReports?.();
-    }
-  }, [isLoggedIn, fetchOrders, fetchReports]);
-
-  const hasPetProfile = isLoggedIn && profile?.name && profile.name !== '우리 아이';
-
-  const healthScore = useMemo(() => {
-    let s = 92;
-    s -= (profile?.allergies?.length || 0) * 4;
-    s -= (profile?.healthConcerns?.length || 0) * 2;
-    return Math.max(60, Math.min(98, s));
-  }, [profile]);
-
-  useEffect(() => {
-    if (!userId) return;
-    if (activeTab === 'orders') fetchOrders();
-    if (activeTab === 'reports') fetchReports();
-  }, [activeTab, fetchOrders, fetchReports, userId]);
-
-  const handleSignOut = async () => {
-    await logout();
-    navigate('/login');
+function DeliveryStatus({ status }: { status: string }) {
+  const colors: Record<string, { bg: string; text: string; label: string }> = {
+    pending: { bg: '#FEF3C7', text: '#92400E', label: '주문 확인 중' },
+    paid: { bg: '#DBEAFE', text: '#1E40AF', label: '결제 완료' },
+    shipped: { bg: '#D1FAE5', text: '#065F46', label: '배송 중' },
+    completed: { bg: '#E0E7FF', text: '#3730A3', label: '배송 완료' },
+    cancelled: { bg: '#FEE2E2', text: '#991B1B', label: '취소됨' },
   };
-
-  const petName = hasPetProfile ? profile.name : '내 반려동물';
-  const speciesLabel = profile?.breed || (profile?.species === 'Cat' ? '고양이' : '강아지');
-  const isPremium = membershipTier && membershipTier !== 'free';
-
+  const c = colors[status] || colors.pending;
   return (
-    <div style={{ paddingBottom: 90 }}>
-      <Helmet><title>마이펫 · 베로로</title></Helmet>
+    <span style={{ fontSize: '13px', fontWeight: 700, color: c.text, backgroundColor: c.bg, padding: '4px 12px', borderRadius: '12px' }}>
+      {c.label}
+    </span>
+  );
+}
 
-      {/* Top Hero */}
-      <div style={{
-        background: 'linear-gradient(135deg, #F5C518 0%, #CA8A04 100%)',
-        padding: '52px 20px 24px',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
-          <div style={{
-            width: 64, height: 64, borderRadius: '50%',
-            background: 'rgba(255,255,255,0.25)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32,
-          }}>
-            {profile?.species === 'Cat' ? '🐱' : '🐶'}
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontSize: 20, fontWeight: 900, color: '#fff', letterSpacing: '-0.02em' }}>
-                {petName}
-              </span>
-              {isPremium && (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: 'rgba(255,255,255,0.92)', color: '#A16207', borderRadius: 20, padding: '2px 8px', fontSize: 10.5, fontWeight: 800 }}>
-                  <Crown size={11} /> {String(membershipTier).toUpperCase()}
-                </span>
-              )}
+function DeliveryTimeline({ status }: { status: string }) {
+  const currentIdx = DELIVERY_STEPS.findIndex(s => s.key === status);
+  const activeIdx = currentIdx === -1 ? 0 : currentIdx;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0', marginTop: '20px', padding: '16px', background: '#F9FAFB', borderRadius: '14px' }}>
+      {DELIVERY_STEPS.map((step, idx) => (
+        <div key={step.key} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 'none' }}>
+            <div style={{
+              width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              backgroundColor: idx <= activeIdx ? 'var(--primary-dark)' : '#E5E7EB',
+              color: idx <= activeIdx ? '#fff' : '#9CA3AF', fontSize: '12px', fontWeight: 800
+            }}>
+              {idx < activeIdx ? '✓' : idx + 1}
             </div>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 2 }}>
-              {speciesLabel}
-              {profile?.age ? ` · ${profile.age}살` : ''}
-              {profile?.weightKg ? ` · ${profile.weightKg}kg` : ''}
-            </div>
+            <span style={{ fontSize: '10px', fontWeight: 600, marginTop: '4px', color: idx <= activeIdx ? 'var(--primary-dark)' : '#9CA3AF', whiteSpace: 'nowrap' }}>
+              {step.label}
+            </span>
           </div>
-          <ScoreCircle score={healthScore} />
+          {idx < DELIVERY_STEPS.length - 1 && (
+            <div style={{ flex: 1, height: '2px', backgroundColor: idx < activeIdx ? 'var(--primary-dark)' : '#E5E7EB', margin: '0 2px', marginBottom: '14px' }} />
+          )}
         </div>
-
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', fontWeight: 600, marginBottom: 6 }}>
-          식단 건강 점수 · {healthScore}점
-        </div>
-
-        {hasPetProfile ? (
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {profile?.allergies?.map(a => (
-              <span key={a} style={{ background: '#F04452', color: '#fff', borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 700 }}>⚠️ {a} 알러지</span>
-            ))}
-            {profile?.healthConcerns?.slice(0, 3).map(h => (
-              <span key={h} style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>{h}</span>
-            ))}
-          </div>
-        ) : (
-          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)' }}>
-            {isLoggedIn ? '펫 정보를 등록해보세요' : '로그인 후 펫 정보를 등록해보세요'}
-          </div>
-        )}
-      </div>
-
-      {/* Actions */}
-      <div style={{ padding: '16px 16px 0', display: 'flex', gap: 10 }}>
-        <button
-          onClick={() => navigate(isLoggedIn ? '/pet-profile' : '/login')}
-          style={{
-            flex: 1, height: 46, borderRadius: 12, border: 'none', cursor: 'pointer',
-            background: '#F5C518', fontSize: 14, fontWeight: 700, color: '#191F28',
-          }}
-        >
-          {hasPetProfile ? '정보 수정하기' : (isLoggedIn ? '펫 등록하기' : '로그인하기')}
-        </button>
-        {isLoggedIn && (
-          <button
-            onClick={handleLogout}
-            style={{
-              height: 46, padding: '0 20px', borderRadius: 12,
-              border: '1.5px solid #E5E8EB', cursor: 'pointer',
-              background: '#fff', fontSize: 14, fontWeight: 600, color: '#6B7684',
-            }}
-          >
-            로그아웃
-          </button>
-        )}
-      </div>
-
-      {/* Pet Info Card */}
-      {hasPetProfile && (
-        <div style={{ margin: '16px 16px 0', background: '#fff', borderRadius: 18, padding: 20, boxShadow: '0 1px 8px rgba(30,41,59,0.06)' }}>
-          <h3 style={{ fontSize: 15, fontWeight: 800, color: '#191F28', marginBottom: 14, letterSpacing: '-0.02em' }}>🐾 펫 정보</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            {[
-              { label: '이름', value: profile.name },
-              { label: '종류', value: profile.species === 'Cat' ? '고양이' : '강아지' },
-              { label: '품종', value: profile.breed || '-' },
-              { label: '나이', value: profile.age ? `${profile.age}살` : '-' },
-              { label: '체중', value: profile.weightKg ? `${profile.weightKg}kg` : '-' },
-              { label: '성별', value: profile.gender || '-' },
-            ].map(({ label, value }) => (
-              <div key={label} style={{ background: '#F7F4EE', borderRadius: 12, padding: '10px 14px' }}>
-                <div style={{ fontSize: 11, color: '#8B95A1', fontWeight: 600, marginBottom: 3 }}>{label}</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#191F28' }}>{value}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Tabs */}
-      <div style={{ margin: '16px 0 0', borderBottom: '1px solid #EAEDF0' }}>
-        <div style={{ display: 'flex', padding: '0 16px' }}>
-          {TABS.map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)}
-              style={{
-                flex: 1, height: 44, background: 'none', border: 'none', cursor: 'pointer',
-                fontSize: 14, fontWeight: activeTab === tab ? 800 : 600,
-                color: activeTab === tab ? '#191F28' : '#8B95A1',
-                borderBottom: activeTab === tab ? '2.5px solid #F5C518' : '2.5px solid transparent',
-                transition: 'color 0.15s ease',
-              }}
-            >{tab}</button>
-          ))}
-        </div>
-      </div>
-
-      <div style={{ padding: '16px 16px 0' }}>
-        {/* 찜 (Favorites) */}
-        {activeTab === '찜' && (
-          favoriteProducts.length > 0 ? (
-            (() => {
-              const scored = favoriteProducts.map(p => ({
-                p,
-                bd: hasPetProfile ? getRecommendationBreakdown(p, profile) : null,
-              })).sort((a, b) => (b.bd?.total ?? 0) - (a.bd?.total ?? 0));
-
-              return (
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  {scored.map(({ p, bd }) => {
-                    const grade = bd ? gradeFromScore(bd.total) : null;
-                    return (
-                      <button
-                        key={p.id}
-                        onClick={() => navigate(`/product/${p.id}`)}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: 13,
-                          padding: '13px 0', borderBottom: '1px solid var(--hairline)',
-                          background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%',
-                          borderBottomColor: 'var(--hairline)',
-                        }}
-                      >
-                        <div style={{ width: 68, height: 68, borderRadius: 14, overflow: 'hidden', flexShrink: 0, background: 'var(--fill)', position: 'relative' }}>
-                          <ProductImage src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          {grade && (
-                            <span style={{
-                              position: 'absolute', bottom: 4, left: 4,
-                              padding: '1px 6px', borderRadius: 5, fontSize: 10, fontWeight: 800,
-                              background: GRADE_BG[grade], color: GRADE_COLOR[grade],
-                            }}>{grade}</span>
-                          )}
-                        </div>
-
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-faint)', marginBottom: 2 }}>{p.brand}</div>
-                          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.35, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                            {p.name}
-                          </div>
-                          {bd?.allergyHits?.length > 0 && (
-                            <span style={{ display: 'inline-block', marginTop: 5, fontSize: 11, fontWeight: 700, color: '#BE123C', background: '#FFF1F2', padding: '2px 7px', borderRadius: 5 }}>
-                              ⚠ {bd.allergyHits.join(', ')} 포함
-                            </span>
-                          )}
-                        </div>
-
-                        {bd && (
-                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                            <div style={{ fontSize: 20, fontWeight: 900, color: grade ? GRADE_COLOR[grade] : 'var(--ink)', letterSpacing: '-0.02em' }}>
-                              {bd.total}<span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-faint)' }}>점</span>
-                            </div>
-                            <div style={{ fontSize: 11.5, color: 'var(--ink-faint)', fontWeight: 600, marginTop: 2 }}>
-                              {p.price?.toLocaleString()}원
-                            </div>
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              );
-            })()
-          ) : (
-            <div style={{ padding: '54px 28px', textAlign: 'center' }}>
-              <Heart size={30} stroke="var(--ink-faint)" style={{ margin: '0 auto 12px' }} />
-              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)', marginBottom: 6 }}>{FAVORITES_EMPTY.title}</div>
-              <div style={{ fontSize: 14, color: 'var(--ink-soft)', marginBottom: 6 }}>{FAVORITES_EMPTY.description}</div>
-              <div style={{ fontSize: 13, color: 'var(--ink-faint)', marginBottom: 16 }}>{FAVORITES_EMPTY.hint}</div>
-              <button
-                onClick={() => navigate('/')}
-                style={{
-                  cursor: 'pointer', fontSize: 14, fontWeight: 700, color: 'var(--brand-deep)',
-                  background: 'var(--brand-tint)', border: '1px solid var(--brand-line)', padding: '11px 20px', borderRadius: 12,
-                }}
-              >
-                {FAVORITES_EMPTY.cta}
-              </button>
-            </div>
-          )
-        )}
-
-        {/* 구매내역 (Orders) */}
-        {activeTab === '구매내역' && (
-          orders?.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {orders.map(order => (
-                <div key={order.id} style={{ background: '#fff', borderRadius: 16, padding: 16, boxShadow: '0 1px 6px rgba(30,41,59,0.06)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                    <span style={{ fontSize: 12, color: '#8B95A1', fontWeight: 600 }}>
-                      {new Date(order.created_at).toLocaleDateString('ko-KR')}
-                    </span>
-                    <span style={{ fontSize: 11.5, fontWeight: 800, color: order.status === 'cancelled' || order.status === 'failed' ? '#F04452' : '#15B36B' }}>
-                      {ORDER_STATUS_LABEL[order.status] ?? order.status}
-                    </span>
-                  </div>
-                  {order.order_items?.map(item => (
-                    <div key={item.id} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '6px 0' }}>
-                      <div style={{ width: 44, height: 44, borderRadius: 10, overflow: 'hidden', background: '#F7F4EE', flexShrink: 0 }}>
-                        <ProductImage src={item.products?.image_url} alt={item.products?.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 11, color: '#8B95A1' }}>{item.products?.brand_name}</div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: '#191F28', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.products?.name}</div>
-                      </div>
-                      <div style={{ fontSize: 12, color: '#6B7684', fontWeight: 600 }}>{item.quantity}개</div>
-                    </div>
-                  ))}
-                  <div style={{ borderTop: '1px solid #EAEDF0', marginTop: 8, paddingTop: 10, display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: 13, color: '#6B7684', fontWeight: 600 }}>총 결제금액</span>
-                    <span style={{ fontSize: 15, fontWeight: 900, color: '#191F28' }}>{order.total_amount?.toLocaleString()}원</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '40px 0', color: '#B0B8C1' }}>
-              <div style={{ fontSize: 36, marginBottom: 12 }}>🛍️</div>
-              <p style={{ fontWeight: 600, fontSize: 15 }}>구매 내역이 없어요</p>
-              <p style={{ fontSize: 13, marginTop: 4 }}>베로로 추천 상품을 둘러보세요</p>
-              <button onClick={() => navigate('/search')}
-                style={{ marginTop: 16, background: '#F5C518', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 14, fontWeight: 700, color: '#191F28', cursor: 'pointer' }}>
-                상품 둘러보기
-              </button>
-            </div>
-          )
-        )}
-
-        {/* 분석리포트 (Reports) */}
-        {activeTab === '분석리포트' && (
-          reports?.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {reports.map(report => {
-                const score = report.analysis_json?.scores?.final;
-                const grade = typeof score === 'number' ? gradeFromScore(score) : null;
-                return (
-                  <button
-                    key={report.id}
-                    onClick={() => report.product_id && navigate(`/product/${report.product_id}`)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 12, padding: 14, width: '100%', textAlign: 'left',
-                      background: '#fff', borderRadius: 16, border: 'none', cursor: report.product_id ? 'pointer' : 'default',
-                      boxShadow: '0 1px 6px rgba(30,41,59,0.06)',
-                    }}
-                  >
-                    <div style={{ width: 52, height: 52, borderRadius: 12, overflow: 'hidden', background: '#F7F4EE', flexShrink: 0 }}>
-                      <ProductImage src={report.products?.image_url} alt={report.products?.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 11, color: '#8B95A1' }}>{report.products?.brand_name}</div>
-                      <div style={{ fontSize: 13.5, fontWeight: 700, color: '#191F28', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {report.products?.name ?? '분석 리포트'}
-                      </div>
-                      <div style={{ fontSize: 11.5, color: '#8B95A1', marginTop: 2 }}>{new Date(report.created_at).toLocaleDateString('ko-KR')}</div>
-                    </div>
-                    {typeof score === 'number' && (
-                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <div style={{ fontSize: 19, fontWeight: 900, color: grade ? GRADE_COLOR[grade] : '#191F28' }}>{Math.round(score)}점</div>
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '40px 0', color: '#B0B8C1' }}>
-              <div style={{ fontSize: 36, marginBottom: 12 }}>📊</div>
-              <p style={{ fontWeight: 600, fontSize: 15 }}>분석 리포트가 없어요</p>
-              <p style={{ fontSize: 13, marginTop: 4 }}>스캐너로 사료 성분표를 촬영해보세요</p>
-              <button onClick={() => navigate('/scanner')}
-                style={{ marginTop: 16, background: '#F5C518', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 14, fontWeight: 700, color: '#191F28', cursor: 'pointer' }}>
-                스캔하러 가기
-              </button>
-            </div>
-          )
-        )}
-      </div>
+      ))}
     </div>
   );
 }

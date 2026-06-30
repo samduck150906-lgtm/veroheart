@@ -56,7 +56,7 @@ export default function Brand() {
             </div>
             <div>
               <h1 style={{ fontSize: '26px', fontWeight: 900, marginBottom: '4px' }}>{decoded}</h1>
-              <p style={{ fontSize: '13px', color: '#6B7684' }}>리뷰와 성분 흐름을 한 번에 보는 브랜드 페이지</p>
+              <p style={{ fontSize: '13px', color: '#6B7280' }}>리뷰와 성분 흐름을 한 번에 보는 브랜드 페이지</p>
             </div>
           </div>
         </div>
@@ -114,9 +114,9 @@ export default function Brand() {
           </div>
         </div>
         {isLoading ? (
-          <div className="ui-info-card" style={{ textAlign: 'center', padding: '60px', color: '#8B95A1' }}>불러오는 중...</div>
+          <div className="ui-info-card" style={{ textAlign: 'center', padding: '60px', color: '#9CA3AF' }}>불러오는 중...</div>
         ) : brandProducts.length === 0 ? (
-          <div className="ui-info-card" style={{ textAlign: 'center', padding: '60px', color: '#8B95A1' }}>
+          <div className="ui-info-card" style={{ textAlign: 'center', padding: '60px', color: '#9CA3AF' }}>
             등록된 제품이 없습니다.
           </div>
         ) : (
@@ -137,7 +137,7 @@ export default function Brand() {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
             {displayOtherBrands.map(brand => (
               <button key={brand} onClick={() => navigate(`/brand/${encodeURIComponent(brand)}`)} style={{
-                padding: '10px 18px', borderRadius: '24px', border: '1px solid #E5E8EB',
+                padding: '10px 18px', borderRadius: '24px', border: '1px solid #E5E7EB',
                 background: '#fff', color: '#374151', fontWeight: 700, fontSize: '14px', cursor: 'pointer',
                 transition: 'all 0.2s'
               }}>

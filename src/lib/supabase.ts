@@ -30,167 +30,16 @@ export const supabase = createClient(
 export async function getInitialSessionUser() {
   if (!isSupabaseConfigured) return null;
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) return session.user;
-    
-    // We do NOT sign in anonymously anymore, we wait for user to sign up
-    return null;
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error) {
+      console.warn('[auth] getSession:', error.message);
+      return null;
+    }
+    return session?.user ?? null;
   } catch (err) {
-    console.error('Session init error:', err);
+    console.warn('[auth] getSession failed:', err);
     return null;
   }
-}
-
-export async function ensurePublicUserExists(userId: string, email: string) {
-  try {
-    const { data, error: selectErr } = await supabase
-      .from('users')
-      .select('id')
-      .eq('id', userId)
-      .single();
-
-    if (selectErr || !data) {
-      const nickname = email.split('@')[0] || '베로';
-      await supabase.from('users').upsert({
-        id: userId,
-        nickname: nickname,
-        avatar_url: ''
-      }, { onConflict: 'id' });
-      console.log('Defensively upserted user into public.users:', userId);
-    }
-  } catch (err) {
-    console.error('ensurePublicUserExists failed defensively:', err);
-  }
-}
-
-export async function signUpWithEmail(email: string, password: string) {
-  try {
-    // Call our secure server-side admin-auth Edge Function
-    const functionUrl = `${supabaseUrl}/functions/v1/admin-auth`;
-    const response = await fetch(functionUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(supabaseKey ? { 'Authorization': `Bearer ${supabaseKey}` } : {})
-      },
-      body: JSON.stringify({
-        action: 'signup',
-        email,
-        password
-      }),
-    });
-
-    if (response.ok) {
-      const result = await response.json();
-      if (result.user) {
-        await ensurePublicUserExists(result.user.id, email);
-        return result.user;
-      }
-    } else {
-      const errRes = await response.json().catch(() => ({}));
-      console.warn('Edge signup failed:', errRes.error);
-      const errMsg = errRes.error || '';
-      if (errMsg.toLowerCase().includes('already') || errMsg.toLowerCase().includes('in use') || errMsg.toLowerCase().includes('exists')) {
-        throw new Error('이미 가입된 이메일입니다. 로그인을 시도해 주세요.');
-      }
-    }
-  } catch (err: any) {
-    console.warn('Edge signup failed:', err);
-    if (err.message && (err.message.includes('이미 가입된') || err.message.includes('already') || err.message.includes('in use'))) {
-      throw err;
-    }
-  }
-
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-  });
-  if (error) {
-    if (error.message.toLowerCase().includes('already') || error.message.toLowerCase().includes('in use') || error.message.toLowerCase().includes('exists')) {
-      throw new Error('이미 가입된 이메일입니다. 로그인을 시도해 주세요.');
-    }
-    notify.error(error.message);
-    return null;
-  }
-  if (data.user) {
-    if (data.user.identities && data.user.identities.length === 0) {
-      throw new Error('이미 가입된 이메일입니다. 로그인을 시도해 주세요.');
-    }
-    await ensurePublicUserExists(data.user.id, email);
-  }
-  return data.user;
-}
-
-export async function signInWithEmail(email: string, password: string) {
-  let { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (error && error.message.toLowerCase().includes('email not confirmed')) {
-    try {
-      // Call our secure server-side admin-auth Edge Function to confirm the email
-      const functionUrl = `${supabaseUrl}/functions/v1/admin-auth`;
-      const response = await fetch(functionUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(supabaseKey ? { 'Authorization': `Bearer ${supabaseKey}` } : {})
-        },
-        body: JSON.stringify({
-          action: 'confirm',
-          email
-        }),
-      });
-
-      if (response.ok) {
-        console.log('Successfully auto-confirmed email via Edge Function for user:', email);
-        const retryResult = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        data = retryResult.data;
-        error = retryResult.error;
-      } else {
-        const errRes = await response.json().catch(() => ({}));
-        console.warn('Edge email confirmation failed:', errRes.error);
-      }
-    } catch (adminErr) {
-      console.error('Failed to auto-confirm user email via Edge Function:', adminErr);
-    }
-  }
-
-  if (error) {
-    notify.error('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
-    return null;
-  }
-  if (data.user) {
-    await ensurePublicUserExists(data.user.id, email);
-  }
-  return data.user;
-}
-
-
-export async function signInWithKakao() {
-  const redirectTo = `${window.location.origin}/auth/callback`;
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: 'kakao',
-    options: { redirectTo },
-  });
-  if (error) {
-    notify.error('카카오 로그인에 실패했습니다. 잠시 후 다시 시도해주세요.');
-    throw error;
-  }
-}
-
-export async function signOut() {
-  const { error } = await supabase.auth.signOut();
-  if (error) notify.error(error.message);
-}
-
-export async function getCurrentUser() {
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.user || null;
 }
 
 export async function getUserProfile(userId: string) {
@@ -220,6 +69,10 @@ export async function saveUserPet(petData: Partial<SupabasePet>) {
 }
 
 // Products
+export function mapProductFromRaw(p: SupabaseProductRow): Product {
+  return mapProductFromSupabaseRow(p);
+}
+
 export async function getProducts(): Promise<Product[]> {
   if (!isSupabaseConfigured) return [];
   const { data, error } = await supabase.from('products').select(`
@@ -245,9 +98,6 @@ export async function getProductDetail(productId: string): Promise<Product | nul
       product_ingredients (
         ingredient_id,
         ingredients (*)
-      ),
-      nutritional_profiles (
-        crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus
       )
     `)
     .eq('id', productId)
@@ -387,30 +237,58 @@ export async function getOrders(userId: string) {
   return data || [];
 }
 
+export async function saveAnalysisReport(
+  userId: string,
+  productId: string | null,
+  rawText: string,
+  analysisJson: object
+) {
+  const { data, error } = await supabase.from('analysis_reports').insert({
+    user_id: userId,
+    product_id: productId,
+    raw_text: rawText,
+    analysis_json: analysisJson
+  }).select().single();
+  
+  if (error) {
+    console.error('Failed to save analysis report:', error);
+    return null;
+  }
+  return data;
+}
+
+export async function getAnalysisReports(userId: string) {
+  const { data, error } = await supabase
+    .from('analysis_reports')
+    .select(`
+      *,
+      products (name, brand_name, image_url)
+    `)
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Failed to fetch analysis reports:', error);
+    return [];
+  }
+  return data || [];
+}
+
+// ─── Auth ───────────────────────────────────────────────────────────────────
+
+export async function signOut() {
+  await supabase.auth.signOut();
+}
+
 // ─── Reviews ────────────────────────────────────────────────────────────────
 
 export async function getReviews(productId: string) {
   const { data, error } = await supabase
     .from('reviews')
-    .select('*, users(nickname)')
+    .select('*, users(email)')
     .eq('product_id', productId)
     .order('created_at', { ascending: false });
-  if (error) {
-    // users(email) join may fail when RLS hides the users table for anonymous reads.
-    // Fall back to the bare review rows so the UI can render an empty/safe state.
-    const fallback = await supabase
-      .from('reviews')
-      .select('*')
-      .eq('product_id', productId)
-      .order('created_at', { ascending: false });
-    if (fallback.error) {
-      if (import.meta.env.DEV) {
-        console.warn('getReviews fallback failed:', fallback.error.message);
-      }
-      return [];
-    }
-    return fallback.data || [];
-  }
+  if (error) console.error('getReviews error:', error);
   return data || [];
 }
 
@@ -501,322 +379,10 @@ export async function getProductsByBrand(brandName: string): Promise<Product[]> 
   return (data as SupabaseProductRow[]).map(mapProductFromSupabaseRow);
 }
 
-// ─── Banners ──────────────────────────────────────────────────────────────────
+/** 홈 이벤트/쿠폰 배너용 (정적) */
+export const MOCK_EVENTS = [
+  { id: 'ev1', title: '신규 회원 첫 구매 10% 할인', code: 'WELCOME10', discount: 10, type: 'percent', desc: '첫 주문 한정 쿠폰', expires: '2026-12-31', color: '#FEF3C7', badge: '신규' },
+  { id: 'ev2', title: '사료 정품 5,000원 할인', code: 'FOOD5000', discount: 5000, type: 'fixed', desc: '30,000원 이상 주문 시', expires: '2026-06-30', color: '#EFF6FF', badge: '기간한정' },
+  { id: 'ev3', title: '봄맞이 케어 기획전', code: null as string | null, discount: 0, type: 'event', desc: '7일 한정 케어 제품 모음', expires: '2026-07-31', color: '#F0FDF4', badge: '이벤트' },
+] as const;
 
-export async function getBanners(): Promise<any[]> {
-  if (!isSupabaseConfigured) return [];
-  try {
-    const { data, error } = await supabase
-      .from('banners')
-      .select('*')
-      .order('created_at', { ascending: true });
-    if (error) {
-      console.warn('banners table query failed or not found, falling back');
-      return [];
-    }
-    return data || [];
-  } catch {
-    return [];
-  }
-}
-
-export async function saveBanner(banner: any) {
-  if (!isSupabaseConfigured) return null;
-  const { data, error } = await supabase
-    .from('banners')
-    .upsert(banner)
-    .select()
-    .single();
-  if (error) {
-    console.error('saveBanner error:', error);
-    return null;
-  }
-  return data;
-}
-
-export async function deleteBannerFromDB(bannerId: string) {
-  if (!isSupabaseConfigured) return;
-  await supabase.from('banners').delete().eq('id', bannerId);
-}
-
-
-
-
-// ─── 멤버십 / 구독 ───────────────────────────────────────────
-
-import type { MembershipTier } from '../types';
-
-export async function getUserMembershipTier(userId: string): Promise<MembershipTier> {
-  if (!isSupabaseConfigured) return 'free';
-  const { data } = await supabase
-    .from('users')
-    .select('membership_tier, membership_expires_at')
-    .eq('id', userId)
-    .single();
-  if (!data) return 'free';
-  if (data.membership_expires_at && new Date(data.membership_expires_at) < new Date()) {
-    return 'free';
-  }
-  const tier = data.membership_tier as MembershipTier;
-  return (tier === 'plus' || tier === 'pro') ? tier : 'free';
-}
-
-export async function updateUserMembershipTier(
-  userId: string,
-  tier: MembershipTier,
-  expiresAt?: string,
-): Promise<void> {
-  if (!isSupabaseConfigured) return;
-  await supabase
-    .from('users')
-    .update({ membership_tier: tier, membership_expires_at: expiresAt ?? null })
-    .eq('id', userId);
-}
-
-// ─── 스폰서 관리 ─────────────────────────────────────────────
-
-export async function setSponsoredProduct(
-  productId: string,
-  isSponsored: boolean,
-  sponsorLabel = '광고',
-  sponsorOrder = 0,
-): Promise<void> {
-  if (!isSupabaseConfigured) return;
-  const { error } = await supabase
-    .from('products')
-    .update({ is_sponsored: isSponsored, sponsor_label: sponsorLabel, sponsor_order: sponsorOrder })
-    .eq('id', productId);
-  if (error) console.error('setSponsoredProduct error:', error);
-}
-
-// ─── 커뮤니티 API (legacy — view-based) ──────────────────────
-
-export interface CommunityPost {
-  id: string;
-  user_id: string;
-  category: string;
-  title: string;
-  body: string;
-  like_count: number;
-  comment_count: number;
-  author_nickname: string;
-  created_at: string;
-  hasLiked?: boolean;
-}
-
-export interface CommunityComment {
-  id: string;
-  post_id: string;
-  user_id: string;
-  body: string;
-  created_at: string;
-  users: { nickname: string };
-}
-
-export async function getPostComments(postId: string): Promise<CommunityComment[]> {
-  if (!isSupabaseConfigured) return [];
-  const { data, error } = await supabase
-    .from('community_comments')
-    .select('*, users(nickname)')
-    .eq('post_id', postId)
-    .order('created_at', { ascending: true });
-  if (error) { console.error('getPostComments error:', error); return []; }
-  return (data ?? []) as CommunityComment[];
-}
-
-export async function createComment(
-  postId: string,
-  userId: string,
-  body: string,
-): Promise<CommunityComment | null> {
-  const { data, error } = await supabase
-    .from('community_comments')
-    .insert({ post_id: postId, user_id: userId, body })
-    .select('*, users(nickname)')
-    .single();
-  if (error) { notify.error('댓글 등록에 실패했습니다.'); return null; }
-  return data as CommunityComment;
-}
-
-export async function getMyLikedPostIds(userId: string): Promise<string[]> {
-  if (!isSupabaseConfigured || !userId) return [];
-  const { data } = await supabase
-    .from('post_likes')
-    .select('post_id')
-    .eq('user_id', userId);
-  return (data ?? []).map((r: any) => r.post_id);
-}
-
-// ─── Community Posts ──────────────────────────────────────────────────────────
-
-export interface CommunityPostRow {
-  id: string;
-  user_id: string;
-  category: string;
-  title: string;
-  content: string;
-  tags: string[];
-  likes_count: number;
-  comments_count: number;
-  created_at: string;
-  users?: { nickname?: string | null };
-  has_liked?: boolean;
-}
-
-export async function getCommunityPosts(category?: string, userId?: string): Promise<CommunityPostRow[]> {
-  if (!isSupabaseConfigured) return [];
-  let builder = supabase
-    .from('community_posts')
-    .select('*, users(nickname)')
-    .order('created_at', { ascending: false })
-    .limit(50);
-
-  if (category && category !== '전체') {
-    builder = builder.eq('category', category);
-  }
-
-  const { data, error } = await builder;
-  if (error) {
-    console.error('getCommunityPosts error:', error);
-    return [];
-  }
-
-  const posts = (data || []) as CommunityPostRow[];
-
-  if (userId && posts.length > 0) {
-    const postIds = posts.map(p => p.id);
-    const { data: likedData } = await supabase
-      .from('community_post_likes')
-      .select('post_id')
-      .eq('user_id', userId)
-      .in('post_id', postIds);
-    const likedSet = new Set((likedData || []).map((l: any) => l.post_id as string));
-    return posts.map(p => ({ ...p, has_liked: likedSet.has(p.id) }));
-  }
-
-  return posts;
-}
-
-export async function createCommunityPost(
-  userId: string,
-  category: string,
-  title: string,
-  content: string,
-  tags: string[] = [],
-): Promise<CommunityPostRow | null> {
-  const { data, error } = await supabase
-    .from('community_posts')
-    .insert({ user_id: userId, category, title, content, tags })
-    .select('*, users(nickname)')
-    .single();
-  if (error) {
-    notify.error('글 등록에 실패했습니다.');
-    return null;
-  }
-  notify.success('글이 등록되었습니다!');
-  return data as CommunityPostRow;
-}
-
-export async function toggleCommunityPostLike(
-  userId: string,
-  postId: string,
-  hasLiked: boolean,
-): Promise<boolean> {
-  if (hasLiked) {
-    const { error } = await supabase
-      .from('community_post_likes')
-      .delete()
-      .match({ user_id: userId, post_id: postId });
-    return error ? hasLiked : false;
-  } else {
-    const { error } = await supabase
-      .from('community_post_likes')
-      .insert({ user_id: userId, post_id: postId });
-    return error ? hasLiked : true;
-  }
-}
-
-export async function deleteCommunityPost(userId: string, postId: string): Promise<boolean> {
-  const { error } = await supabase
-    .from('community_posts')
-    .delete()
-    .match({ id: postId, user_id: userId });
-  if (error) {
-    notify.error('글 삭제에 실패했습니다.');
-    return false;
-  }
-  notify.success('글이 삭제되었습니다.');
-  return true;
-}
-
-export async function getCommunityPost(postId: string, userId?: string): Promise<CommunityPostRow | null> {
-  if (!isSupabaseConfigured) return null;
-  const { data, error } = await supabase
-    .from('community_posts')
-    .select('*, users(nickname)')
-    .eq('id', postId)
-    .single();
-  if (error) return null;
-  const post = data as CommunityPostRow;
-  if (userId) {
-    const { data: liked } = await supabase
-      .from('community_post_likes')
-      .select('post_id')
-      .eq('user_id', userId)
-      .eq('post_id', postId)
-      .maybeSingle();
-    post.has_liked = Boolean(liked);
-  }
-  return post;
-}
-
-// ─── Community Comments ───────────────────────────────────────────────────────
-
-export interface CommunityCommentRow {
-  id: string;
-  post_id: string;
-  user_id: string;
-  content: string;
-  created_at: string;
-  users?: { nickname?: string | null };
-}
-
-export async function getCommunityComments(postId: string): Promise<CommunityCommentRow[]> {
-  if (!isSupabaseConfigured) return [];
-  const { data, error } = await supabase
-    .from('community_comments')
-    .select('*, users(nickname)')
-    .eq('post_id', postId)
-    .order('created_at', { ascending: true });
-  if (error) return [];
-  return (data || []) as CommunityCommentRow[];
-}
-
-export async function createCommunityComment(
-  userId: string,
-  postId: string,
-  content: string,
-): Promise<CommunityCommentRow | null> {
-  const { data, error } = await supabase
-    .from('community_comments')
-    .insert({ user_id: userId, post_id: postId, content })
-    .select('*, users(nickname)')
-    .single();
-  if (error) {
-    notify.error('댓글 등록에 실패했습니다.');
-    return null;
-  }
-  return data as CommunityCommentRow;
-}
-
-export async function deleteCommunityComment(userId: string, commentId: string): Promise<boolean> {
-  const { error } = await supabase
-    .from('community_comments')
-    .delete()
-    .match({ id: commentId, user_id: userId });
-  if (error) {
-    notify.error('댓글 삭제에 실패했습니다.');
-    return false;
-  }
-  return true;
-}

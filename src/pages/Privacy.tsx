@@ -4,7 +4,7 @@ export default function Privacy() {
   return (
     <div style={{ padding: '20px', paddingTop: '80px', paddingBottom: '100px', lineHeight: 1.65 }}>
       <h1 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '8px' }}>VeRoRo(베로로) 개인정보처리방침</h1>
-      <p style={{ fontSize: '12px', color: '#6B7684', marginBottom: '20px' }}>시행일: 2026년 4월 12일</p>
+      <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '20px' }}>시행일: 2026년 4월 12일</p>
 
       <div style={{ fontSize: '13px', color: '#374151' }}>
         <p style={{ fontWeight: 'bold', marginBottom: '8px' }}>사업자 정보</p>
@@ -24,7 +24,7 @@ export default function Privacy() {
           이메일 {COMPANY.email}
         </p>
 
-        <p>{COMPANY.tradeName}(이하 "회사")는 베로로 서비스 운영과 관련하여 「개인정보 보호법」 등 관련 법령상의 개인정보보호 규정을 준수하며, 정보주체의 개인정보 보호 및 권익을 보호하고 이와 관련한 고충을 신속하고 원활하게 처리할 수 있도록 개인정보 처리방침을 수립·공개합니다.</p>
+        <p>{COMPANY.tradeName}(이하 "회사")는 Petty 서비스 운영과 관련하여 「개인정보 보호법」 등 관련 법령상의 개인정보보호 규정을 준수하며, 정보주체의 개인정보 보호 및 권익을 보호하고 이와 관련한 고충을 신속하고 원활하게 처리할 수 있도록 개인정보 처리방침을 수립·공개합니다.</p>
         
         <p style={{ fontWeight: 'bold', marginTop: '16px' }}>1. 개인정보의 수집 및 이용 목적</p>
         <p>회사는 다음의 목적을 위하여 개인정보를 처리합니다. <br/>- 회원 가입 및 관리 <br/>- 재화 또는 서비스 제공(결제, 배송 등)</p>

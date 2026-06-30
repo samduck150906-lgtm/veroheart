@@ -1,5 +1,6 @@
-// @ts-nocheck
 import { useEffect, useState } from 'react';
+import { pickSplashTagline } from './copy/marketing';
+import { VERORO_LOGO_SRC } from './constants/assets';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useStore } from './store/useStore';
 import Layout from './components/Layout';
@@ -7,57 +8,41 @@ import Home from './pages/Home';
 import Search from './pages/Search';
 import Profile from './pages/Profile';
 import Detail from './pages/Detail';
-import Community from './pages/Community';
-import Ranking from './pages/Ranking';
 import Comparison from './pages/Comparison';
-import PetProfilePage from './pages/PetProfile';
+import Cart from './pages/Cart';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Refund from './pages/Refund';
 import Login from './pages/Login';
-import NotFound from './pages/NotFound';
+import Ranking from './pages/Ranking';
+import Brand from './pages/Brand';
+import ViralEvent from './pages/ViralEvent';
+import PersonalityQuiz from './pages/Test';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminIngredients from './pages/admin/AdminIngredients';
 import AdminSettings from './pages/admin/AdminSettings';
-import AdminSponsors from './pages/admin/AdminSponsors';
-import Membership from './pages/Membership';
 import Notification from './components/Notification';
 import AdminAuthGuard from './pages/admin/AdminAuthGuard';
 import EntryGate from './components/EntryGate';
-import DesktopBanner from './components/DesktopBanner';
 import { markEntryGateDone, readEntryGateDone } from './lib/entryGateStorage';
 import { isAdminExperience, toggleAdminDesktopMode } from './utils/adminHost';
-import { ThemeProvider } from './theme/ThemeProvider';
-import IngredientDictionary from './pages/IngredientDictionary';
-import PersonalityQuiz from './pages/Test';
-import ViralEvent from './pages/ViralEvent';
-import NotFound from './pages/NotFound';
-import KnowledgeIngredients from './pages/KnowledgeIngredients';
-import KnowledgeNutrients from './pages/KnowledgeNutrients';
 
 function App() {
-  const { initApp, isInitializing } = useStore();
+  const { initApp, isInitializing, isLoggedIn } = useStore();
   const [splashLine] = useState(() => pickSplashTagline());
   const adminMode = typeof window !== 'undefined'
     && isAdminExperience(window.location.hostname, window.location.pathname);
   const [showEntrySplash, setShowEntrySplash] = useState(() => !adminMode);
-  const [fontsLoaded, setFontsLoaded] = useState(false);
-
-  useEffect(() => {
-    if (typeof document !== 'undefined' && 'fonts' in document) {
-      document.fonts.ready.then(() => setFontsLoaded(true)).catch(() => setFontsLoaded(true));
-    } else {
-      setFontsLoaded(true);
-    }
-  }, []);
+  const [entryGateOpen, setEntryGateOpen] = useState(() => (adminMode ? false : !readEntryGateDone()));
 
   useEffect(() => {
     if (!adminMode) return;
     if (typeof window === 'undefined') return;
     if (window.location.pathname.startsWith('/admin')) return;
-    window.location.replace(`/admin${window.location.search}${window.location.hash}`);
+    const nextUrl = `/admin${window.location.search}${window.location.hash}`;
+    window.location.replace(nextUrl);
   }, [adminMode]);
 
   useEffect(() => {
@@ -75,71 +60,87 @@ function App() {
     return () => window.clearTimeout(timer);
   }, [adminMode]);
 
-  const showSplash = !adminMode && (isInitializing || showEntrySplash || !fontsLoaded);
+  useEffect(() => {
+    if (!isInitializing && isLoggedIn) {
+      markEntryGateDone();
+      queueMicrotask(() => setEntryGateOpen(false));
+    }
+  }, [isInitializing, isLoggedIn]);
+
+  const showSplash = !adminMode && (isInitializing || showEntrySplash);
 
   if (showSplash) {
     return (
       <div style={{
         display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
-        height: '100vh', background: '#F7F4EE', padding: '32px 24px', textAlign: 'center',
+        height: '100vh', background: 'var(--bg-gradient)', padding: '32px 24px', textAlign: 'center',
         boxSizing: 'border-box',
       }}>
-        <p style={{ color: '#191F28', fontSize: '17px', fontWeight: 700, lineHeight: 1.55, maxWidth: '280px', margin: '0 0 28px' }}>베로로</p>
-        <div style={{ width: '36px', height: '36px', border: '3px solid rgba(245,197,24,0.3)', borderTopColor: '#F5C518', borderRadius: '50%', animation: 'spin 0.85s linear infinite' }} />
+        <img
+          src={VERORO_LOGO_SRC}
+          alt="VeRoRo"
+          style={{ height: '128px', width: 'auto', objectFit: 'contain', marginBottom: '26px', display: 'block' }}
+        />
+        <p style={{
+          color: 'var(--text-dark)', fontSize: '15px', fontWeight: 600, lineHeight: 1.55, maxWidth: '320px', margin: '0 0 28px',
+        }}>
+          {splashLine}
+        </p>
+        <div style={{ width: '36px', height: '36px', border: '3px solid rgba(250, 204, 21, 0.3)', borderTopColor: 'var(--primary-dark)', borderRadius: '50%', animation: 'spin 0.85s linear infinite' }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
   return (
-    <ThemeProvider>
-      <BrowserRouter>
-        <Notification />
-        {!adminMode && <DesktopBanner />}
-          <Routes>
-            <Route path="/" element={<Layout />}>
-              <Route index element={<Home />} />
-              <Route path="search" element={<Search />} />
-              <Route path="community" element={<Community />} />
-              <Route path="community/:postId" element={<CommunityPost />} />
-              <Route path="auth" element={<Login />} />
-              <Route path="login" element={<Login />} />
-              <Route path="profile" element={<Profile />} />
-              <Route path="comparison" element={<Comparison />} />
-              <Route path="ranking" element={<Ranking />} />
-              <Route path="dictionary" element={<IngredientDictionary />} />
-              <Route path="knowledge/ingredients" element={<KnowledgeIngredients />} />
-              <Route path="knowledge/nutrients" element={<KnowledgeNutrients />} />
-              {/* <Route path="cart" element={<Cart />} /> */}
-              {/* <Route path="checkout" element={<Checkout />} /> */}
-              {/* <Route path="success" element={<Success />} /> */}
-              {/* <Route path="fail" element={<Fail />} /> */}
-              <Route path="product/:id" element={<Detail />} />
-              <Route path="detail/:id" element={<Detail />} />
-              <Route path="auth/callback" element={<AuthCallback />} />
-              <Route path="pet-profile" element={<PetProfilePage />} />
-              <Route path="brand/:brandName" element={<Brand />} />
-              <Route path="event/personality-quiz" element={<PersonalityQuiz />} />
-              <Route path="event/viral" element={<ViralEvent />} />
-              <Route path="membership" element={<Membership />} />
-              <Route path="terms" element={<Terms />} />
-              <Route path="privacy" element={<Privacy />} />
-              <Route path="refund" element={<Refund />} />
-              <Route path="*" element={<NotFound />} />
-            </Route>
+    <BrowserRouter>
+      <Notification />
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Home />} />
+          <Route path="search" element={<Search />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="comparison" element={<Comparison />} />
+          <Route path="cart" element={<Cart />} />
+          <Route path="product/:id" element={<Detail />} />
+          <Route path="terms" element={<Terms />} />
+          <Route path="privacy" element={<Privacy />} />
+          <Route path="refund" element={<Refund />} />
+          <Route path="ranking" element={<Ranking />} />
+          <Route path="brand/:brandName" element={<Brand />} />
+          <Route path="event/viral" element={<ViralEvent />} />
+          <Route path="event/personality-quiz" element={<PersonalityQuiz />} />
+        </Route>
 
-          {/* Admin CMS Routes — Protected */}
-          <Route path="/admin" element={<AdminAuthGuard><AdminLayout /></AdminAuthGuard>}>
-            <Route index element={<AdminDashboard />} />
-            <Route path="products" element={<AdminProducts />} />
-            <Route path="ingredients" element={<AdminIngredients />} />
-            <Route path="sponsors" element={<AdminSponsors />} />
-            <Route path="settings" element={<AdminSettings />} />
-          </Route>
-          </Routes>
-        </ErrorBoundary>
-      </BrowserRouter>
-    </ThemeProvider>
+        <Route path="/login" element={<Login />} />
+
+        <Route path="/admin" element={<AdminAuthGuard><AdminLayout /></AdminAuthGuard>}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="products" element={<AdminProducts />} />
+          <Route path="ingredients" element={<AdminIngredients />} />
+          <Route path="settings" element={<AdminSettings />} />
+        </Route>
+      </Routes>
+
+      {!adminMode && entryGateOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            background: 'var(--bg-gradient)',
+          }}
+        >
+          <EntryGate
+            onBrowse={() => {
+              markEntryGateDone();
+              setEntryGateOpen(false);
+            }}
+            onDismissForLogin={() => setEntryGateOpen(false)}
+          />
+        </div>
+      )}
+    </BrowserRouter>
   );
 }
 

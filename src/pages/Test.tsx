@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
-import { VIRAL_TEST_CAMPAIGN } from '../copy/marketing';
+import { VIRAL_TEST_CAMPAIGN, KAKAO_SHARE_MESSAGES } from '../copy/marketing';
 import { isKakaoShareConfigured, kakaoShareTextWithLink } from '../lib/kakaoShare';
 import { notify } from '../store/useNotification';
 
@@ -102,7 +101,7 @@ export default function Test() {
 
   const shareText = result
     ? `우리 아이 결과는 "${result.detail.type}"! ${result.detail.summary} 추천: ${result.detail.category}`
-    : '반려동물 성향 테스트 해봐! 우리 아이 성향을 알아보세요.';
+    : KAKAO_SHARE_MESSAGES[0];
 
   const testPageUrl = useMemo(() => `${window.location.origin}/event/personality-quiz`, []);
 
@@ -131,35 +130,31 @@ export default function Test() {
 
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '120px' }}>
-      <Helmet>
-        <title>반려동물 성향 테스트 | 베로로</title>
-        <meta name="description" content="우리 아이의 성향을 알아보고 맞춤 사료를 추천받아보세요." />
-      </Helmet>
       <section style={{ marginBottom: '14px' }}>
         <button
           type="button"
           onClick={() => navigate(-1)}
-          style={{ border: 'none', background: 'none', color: '#6B7684', fontWeight: 700, cursor: 'pointer', padding: 0 }}
+          style={{ border: 'none', background: 'none', color: '#6B7280', fontWeight: 700, cursor: 'pointer', padding: 0 }}
         >
           ← 이전으로
         </button>
       </section>
 
-      <section style={{ marginBottom: '16px', padding: '18px', borderRadius: '18px', background: '#fff', border: '1px solid #F2F4F6' }}>
-        <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, color: '#8B95A1', letterSpacing: '0.05em' }}>VIRAL TEST</p>
+      <section style={{ marginBottom: '16px', padding: '18px', borderRadius: '18px', background: '#fff', border: '1px solid #F3F4F6' }}>
+        <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, color: '#9CA3AF', letterSpacing: '0.05em' }}>VIRAL TEST</p>
         <h1 style={{ margin: '6px 0 8px', fontSize: '22px', lineHeight: 1.35 }}>{VIRAL_TEST_CAMPAIGN.title}</h1>
-        <p style={{ margin: 0, color: '#6B7684', fontSize: '13px', fontWeight: 600 }}>{VIRAL_TEST_CAMPAIGN.subtitle}</p>
+        <p style={{ margin: 0, color: '#6B7280', fontSize: '13px', fontWeight: 600 }}>{VIRAL_TEST_CAMPAIGN.subtitle}</p>
       </section>
 
       {!isFinished && currentQuestion && (
-        <section style={{ background: '#fff', borderRadius: '18px', border: '1px solid #F2F4F6', padding: '18px' }}>
+        <section style={{ background: '#fff', borderRadius: '18px', border: '1px solid #F3F4F6', padding: '18px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-            <span style={{ fontSize: '12px', color: '#6B7684', fontWeight: 700 }}>
+            <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 700 }}>
               {step + 1} / {VIRAL_TEST_CAMPAIGN.questions.length}
             </span>
-            <span style={{ fontSize: '12px', color: '#6B7684', fontWeight: 700 }}>{progress}%</span>
+            <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 700 }}>{progress}%</span>
           </div>
-          <div style={{ width: '100%', height: '8px', borderRadius: '999px', background: '#F2F4F6', marginBottom: '16px' }}>
+          <div style={{ width: '100%', height: '8px', borderRadius: '999px', background: '#F3F4F6', marginBottom: '16px' }}>
             <div
               style={{
                 width: `${progress}%`,
@@ -178,7 +173,7 @@ export default function Test() {
                 onClick={() => handlePick(idx)}
                 style={{
                   textAlign: 'left',
-                  border: '1px solid #E5E8EB',
+                  border: '1px solid #E5E7EB',
                   borderRadius: '12px',
                   padding: '13px 12px',
                   background: '#fff',
@@ -209,14 +204,14 @@ export default function Test() {
             <h2 style={{ margin: '8px 0 10px', fontSize: '24px', lineHeight: 1.35, color: '#7C2D12' }}>{result.detail.type}</h2>
             <p style={{ margin: '0 0 10px', fontSize: '14px', lineHeight: 1.6, color: '#9A3412' }}>{result.detail.summary}</p>
             <div style={{ background: '#fff', border: '1px dashed #FDBA74', borderRadius: '10px', padding: '10px 12px' }}>
-              <p style={{ margin: 0, fontSize: '12px', color: '#6B7684', fontWeight: 700 }}>찰떡궁합 추천 카테고리</p>
+              <p style={{ margin: 0, fontSize: '12px', color: '#6B7280', fontWeight: 700 }}>찰떡궁합 추천 카테고리</p>
               <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#111827', fontWeight: 800 }}>{result.detail.category}</p>
             </div>
           </div>
 
-          <div style={{ background: '#fff', border: '1px solid #F2F4F6', borderRadius: '16px', padding: '14px' }}>
+          <div style={{ background: '#fff', border: '1px solid #F3F4F6', borderRadius: '16px', padding: '14px' }}>
             <p style={{ margin: '0 0 8px', fontSize: '13px', color: '#374151', fontWeight: 800 }}>공유 문구</p>
-            <p style={{ margin: '0 0 10px', fontSize: '12px', color: '#6B7684', lineHeight: 1.5 }}>{shareText}</p>
+            <p style={{ margin: '0 0 10px', fontSize: '12px', color: '#6B7280', lineHeight: 1.5 }}>{shareText}</p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               <button
                 type="button"
@@ -256,7 +251,7 @@ export default function Test() {
               {kakaoSharing ? '카카오톡 연결 중…' : '카카오톡으로 공유'}
             </button>
             {!isKakaoShareConfigured() && (
-              <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#8B95A1', lineHeight: 1.45 }}>
+              <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9CA3AF', lineHeight: 1.45 }}>
                 카카오 원클릭 공유는 VITE_KAKAO_JAVASCRIPT_KEY 설정 후 사용할 수 있어요.
               </p>
             )}

@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>피쉬본 다이어그램 프리뷰 · VeRoRo</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo',
+          'Segoe UI', Roboto, sans-serif;
+      }
+      body {
+        margin: 0;
+        padding: 32px 20px 80px;
+        background: linear-gradient(180deg, #FFFBEB 0%, #F8FAFC 100%);
+        color: #0F172A;
+      }
+      .wrap { max-width: 980px; margin: 0 auto; }
+      h1 { font-size: 22px; font-weight: 900; margin: 0 0 4px; letter-spacing: -0.02em; }
+      p.lede { margin: 0 0 24px; color: #475569; font-weight: 600; font-size: 13px; }
+      .card {
+        margin: 0 0 24px;
+        padding: 20px 16px;
+        border-radius: 20px;
+        background: #fff;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
+      }
+      .card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+      .eyebrow {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        color: #64748B;
+        text-transform: uppercase;
+      }
+      .effect-title {
+        font-size: 15px;
+        font-weight: 800;
+        color: #0F172A;
+        margin-top: 2px;
+      }
+      .caption {
+        font-size: 11px;
+        font-weight: 600;
+        color: #94A3B8;
+        max-width: 55%;
+        text-align: right;
+        line-height: 1.45;
+      }
+      svg { width: 100%; height: auto; display: block; }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #64748B;
+      }
+      .legend span { display: inline-flex; align-items: center; gap: 6px; }
+      .dot {
+        width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+      }
+      .sample-label {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: #FEF3C7;
+        color: #92400E;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        margin-bottom: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <span class="sample-label">PREVIEW · 샘플 데이터</span>
+      <h1>피쉬본(이시카와) 원인 분석</h1>
+      <p class="lede">
+        제품 상세(Detail) 페이지의 "맞춤 요약" 아래, "전성분 분석" 위에 이 다이어그램이 들어갑니다.
+        4가지 축(성분 안전성 · 영양 구성 · 우리 아이 적합 · 브랜드 신뢰)으로 제품 적합도의 원인을 한눈에 보여줍니다.
+      </p>
+
+      <!-- 샘플 1: 긍정적인 제품 -->
+      <figure class="card">
+        <figcaption class="card-head">
+          <div>
+            <div class="eyebrow">Fishbone · 원인 분석</div>
+            <div class="effect-title">오리젠 피트앤트림 적합도</div>
+          </div>
+          <div class="caption">뽀삐 기준 · 성분 24개 · 후기 128건</div>
+        </figcaption>
+        <svg viewBox="0 0 920 440" role="img" aria-label="오리젠 피트앤트림 적합도 원인 분석 도식">
+          <!-- spine -->
+          <line x1="60" y1="220" x2="740" y2="220" stroke="#0F172A" stroke-width="3" stroke-linecap="round" />
+          <polygon points="42,220 56,210 56,230" fill="#0F172A" />
+          <!-- effect head -->
+          <g transform="translate(758, 220)">
+            <rect x="0" y="-36" rx="16" ry="16" width="160" height="72" fill="#0F172A" />
+            <text x="80" y="-4" text-anchor="middle" fill="#FDE68A" font-size="11" font-weight="700" letter-spacing="1.5">EFFECT</text>
+            <text x="80" y="18" text-anchor="middle" fill="#FFFFFF" font-size="13" font-weight="800">오리젠 피트앤트림 적합도</text>
+          </g>
+
+          <!-- category: 성분 안전성 (top, left) -->
+          <g>
+            <line x1="175" y1="216" x2="105" y2="80" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round" />
+            <rect x="27" y="54" rx="10" ry="10" width="156" height="22" fill="#F8FAFC" stroke="#E2E8F0" />
+            <text x="105" y="69" text-anchor="middle" fill="#0F172A" font-size="12" font-weight="800">성분 안전성</text>
+            <!-- twigs -->
+            <line x1="150" y1="168" x2="116" y2="146" stroke="#059669" stroke-width="1.5" stroke-linecap="round" opacity="0.85" />
+            <text x="112" y="142" text-anchor="end" fill="#059669" font-size="11" font-weight="600">안전 성분 18개</text>
+            <line x1="140" y1="149" x2="106" y2="127" stroke="#B45309" stroke-width="1.5" stroke-linecap="round" opacity="0.85" />
+            <text x="102" y="123" text-anchor="end" fill="#B45309" font-size="11" font-weight="600">주의 성분 4개</text>
+            <line x1="131" y1="130" x2="97" y2="108" stroke="#B91C1C" stroke-width="1.5" stroke-linecap="round" opacity="0.85" />
+            <text x="93" y="104" text-anchor="end" fill="#B91C1C" font-size="11" font-weight="600">위험 성분 2개</text>
+          </g>
+
+          <!-- category: 영양 구성 (bottom) -->
+          <g>
+            <line x1="315" y1="224" x2="245" y2="360" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round" />
+            <rect x="167" y="368" rx="10" ry="10" width="156" height="22" fill="#F8FAFC" stroke="#E2E8F0" />
+            <text x="245" y="383" text-anchor="middle" fill="#0F172A" font-size="12" font-weight="800">영양 구성</text>
+            <line x1="290" y1="272" x2="256" y2="294" stroke="#475569" stroke-width="1.5" stroke-linecap="round" opacity="0.85" />
+            <text x="252" y="304" text-anchor="end" fill="#475569" font-size="11" font-weight="600">건식 사료</text>
+            <line x1="281" y1="291" x2="247" y2="313" stroke="#475569" stroke-width="1.5" stroke-linecap="round" opacity="0.85" />
+            <text x="243" y="323" text-anchor="end" fill="#475569" font-size="11" font-weight="600">사료</text>
+            <line x1="271" y1="310" x2="237" y2="332" stroke="#475569" stroke-width="1.5" stroke-linecap="round" opacity="0.85" />
+            <text x="233" y="342" text-anchor="end" fill="#475569" font-size="11" font-weight="600">성견·시니어</text>
+          </g>
+
+          <!-- category: 우리 아이 적합 (top) -->
+          <g>
+            <line x1="455" y1="216" x2="385" y2="80" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round" />
+            <rect x="307" y="54" rx="10" ry="10" width="156" height="22" fill="#F8FAFC" stroke="#E2E8F0" />
+            <text x="385" y="69" text-anchor="middle" fill="#0F172A" font-size="12" font-weight="800">우리 아이 적합</text>
+            <line x1="430" y1="168" x2="396" y2="146" stroke="#059669" stroke-width="1.5" stroke-linecap="round" opacity="0.85" />
+            <text x="392" y="142" text-anchor="end" fill="#059669" font-size="11" font-weight="600">등록 알레르기 회피</text>
+            <line x1="420" y1="149" x2="386" y2="127" stroke="#059669" stroke-width="1.5" stroke-linecap="round" opacity="0.85" />
+            <text x="382" y="123" text-anchor="end" fill="#059669" font-size="11" font-weight="600">관절 → 글루코사민</text>
+            <line x1="411" y1="130" x2="377" y2="108" stroke="#059669" stroke-width="1.5" stroke-linecap="round" opacity="0.85" />
+            <text x="373" y="104" text-anchor="end" fill="#059669" font-size="11" font-weight="600">강아지 전용</text>
+          </g>
+
+          <!-- category: 브랜드 신뢰 (bottom) -->
+          <g>
+            <line x1="595" y1="224" x2="525" y2="360" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round" />
+            <rect x="447" y="368" rx="10" ry="10" width="156" height="22" fill="#F8FAFC" stroke="#E2E8F0" />
+            <text x="525" y="383" text-anchor="middle" fill="#0F172A" font-size="12" font-weight="800">브랜드 신뢰</text>
+            <line x1="570" y1="272" x2="536" y2="294" stroke="#059669" stroke-width="1.5" stroke-linecap="round" opacity="0.85" />
+            <text x="532" y="304" text-anchor="end" fill="#059669" font-size="11" font-weight="600">평점 4.6</text>
+            <line x1="561" y1="291" x2="527" y2="313" stroke="#059669" stroke-width="1.5" stroke-linecap="round" opacity="0.85" />
+            <text x="523" y="323" text-anchor="end" fill="#059669" font-size="11" font-weight="600">후기 128건</text>
+            <line x1="551" y1="310" x2="517" y2="332" stroke="#059669" stroke-width="1.5" stroke-linecap="round" opacity="0.85" />
+            <text x="513" y="342" text-anchor="end" fill="#059669" font-size="11" font-weight="600">검수 완료</text>
+          </g>
+        </svg>
+        <div class="legend">
+          <span><i class="dot" style="background:#059669"></i>강점</span>
+          <span><i class="dot" style="background:#B45309"></i>주의</span>
+          <span><i class="dot" style="background:#B91C1C"></i>위험</span>
+          <span><i class="dot" style="background:#475569"></i>참고</span>
+        </div>
+      </figure>
+
+      <!-- 샘플 2: 경고가 섞인 제품 -->
+      <figure class="card">
+        <figcaption class="card-head">
+          <div>
+            <div class="eyebrow">Fishbone · 원인 분석</div>
+            <div class="effect-title">가성비 츄르 스낵 적합도</div>
+          </div>
+          <div class="caption">나비 기준 · 성분 12개 · 후기 4건</div>
+        </figcaption>
+        <svg viewBox="0 0 920 440" role="img" aria-label="가성비 츄르 스낵 적합도 원인 분석 도식">
+          <line x1="60" y1="220" x2="740" y2="220" stroke="#0F172A" stroke-width="3" stroke-linecap="round" />
+          <polygon points="42,220 56,210 56,230" fill="#0F172A" />
+          <g transform="translate(758, 220)">
+            <rect x="0" y="-36" rx="16" ry="16" width="160" height="72" fill="#0F172A" />
+            <text x="80" y="-4" text-anchor="middle" fill="#FDE68A" font-size="11" font-weight="700" letter-spacing="1.5">EFFECT</text>
+            <text x="80" y="18" text-anchor="middle" fill="#FFFFFF" font-size="13" font-weight="800">가성비 츄르 스낵 적합도</text>
+          </g>
+
+          <g>
+            <line x1="175" y1="216" x2="105" y2="80" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round" />
+            <rect x="27" y="54" rx="10" ry="10" width="156" height="22" fill="#F8FAFC" stroke="#E2E8F0" />
+            <text x="105" y="69" text-anchor="middle" fill="#0F172A" font-size="12" font-weight="800">성분 안전성</text>
+            <line x1="150" y1="168" x2="116" y2="146" stroke="#059669" stroke-width="1.5" stroke-linecap="round" opacity="0.85" />
+            <text x="112" y="142" text-anchor="end" fill="#059669" font-size="11" font-weight="600">안전 성분 5개</text>
+            <line x1="140" y1="149" x2="106" y2="127" stroke="#B45309" stroke-width="1.5" stroke-linecap="round" opacity="0.85" />
+            <text x="102" y="123" text-anchor="end" fill="#B45309" font-size="11" font-weight="600">주의 성분 5개</text>
+            <line x1="131" y1="130" x2="97" y2="108" stroke="#B91C1C" stroke-width="1.5" stroke-linecap="round" opacity="0.85" />
+            <text x="93" y="104" text-anchor="end" fill="#B91C1C" font-size="11" font-weight="600">위험 성분 2개</text>
+          </g>
+
+          <g>
+            <line x1="315" y1="224" x2="245" y2="360" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round" />
+            <rect x="167" y="368" rx="10" ry="10" width="156" height="22" fill="#F8FAFC" stroke="#E2E8F0" />
+            <text x="245" y="383" text-anchor="middle" fill="#0F172A" font-size="12" font-weight="800">영양 구성</text>
+            <line x1="290" y1="272" x2="256" y2="294" stroke="#475569" stroke-width="1.5" stroke-linecap="round" opacity="0.85" />
+            <text x="252" y="304" text-anchor="end" fill="#475569" font-size="11" font-weight="600">습식 간식</text>
+            <line x1="281" y1="291" x2="247" y2="313" stroke="#475569" stroke-width="1.5" stroke-linecap="round" opacity="0.85" />
+            <text x="243" y="323" text-anchor="end" fill="#475569" font-size="11" font-weight="600">간식</text>
+            <line x1="271" y1="310" x2="237" y2="332" stroke="#475569" stroke-width="1.5" stroke-linecap="round" opacity="0.85" />
+            <text x="233" y="342" text-anchor="end" fill="#475569" font-size="11" font-weight="600">전 연령</text>
+          </g>
+
+          <g>
+            <line x1="455" y1="216" x2="385" y2="80" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round" />
+            <rect x="307" y="54" rx="10" ry="10" width="156" height="22" fill="#F8FAFC" stroke="#E2E8F0" />
+            <text x="385" y="69" text-anchor="middle" fill="#0F172A" font-size="12" font-weight="800">우리 아이 적합</text>
+            <line x1="430" y1="168" x2="396" y2="146" stroke="#B91C1C" stroke-width="1.5" stroke-linecap="round" opacity="0.85" />
+            <text x="392" y="142" text-anchor="end" fill="#B91C1C" font-size="11" font-weight="600">알레르기 닭고기</text>
+            <line x1="420" y1="149" x2="386" y2="127" stroke="#B45309" stroke-width="1.5" stroke-linecap="round" opacity="0.85" />
+            <text x="382" y="123" text-anchor="end" fill="#B45309" font-size="11" font-weight="600">관심 이슈 보완 부족</text>
+            <line x1="411" y1="130" x2="377" y2="108" stroke="#059669" stroke-width="1.5" stroke-linecap="round" opacity="0.85" />
+            <text x="373" y="104" text-anchor="end" fill="#059669" font-size="11" font-weight="600">고양이 전용</text>
+          </g>
+
+          <g>
+            <line x1="595" y1="224" x2="525" y2="360" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round" />
+            <rect x="447" y="368" rx="10" ry="10" width="156" height="22" fill="#F8FAFC" stroke="#E2E8F0" />
+            <text x="525" y="383" text-anchor="middle" fill="#0F172A" font-size="12" font-weight="800">브랜드 신뢰</text>
+            <line x1="570" y1="272" x2="536" y2="294" stroke="#475569" stroke-width="1.5" stroke-linecap="round" opacity="0.85" />
+            <text x="532" y="304" text-anchor="end" fill="#475569" font-size="11" font-weight="600">평점 3.4</text>
+            <line x1="561" y1="291" x2="527" y2="313" stroke="#B45309" stroke-width="1.5" stroke-linecap="round" opacity="0.85" />
+            <text x="523" y="323" text-anchor="end" fill="#B45309" font-size="11" font-weight="600">후기 4건</text>
+            <line x1="551" y1="310" x2="517" y2="332" stroke="#B45309" stroke-width="1.5" stroke-linecap="round" opacity="0.85" />
+            <text x="513" y="342" text-anchor="end" fill="#B45309" font-size="11" font-weight="600">재검토 필요</text>
+          </g>
+        </svg>
+        <div class="legend">
+          <span><i class="dot" style="background:#059669"></i>강점</span>
+          <span><i class="dot" style="background:#B45309"></i>주의</span>
+          <span><i class="dot" style="background:#B91C1C"></i>위험</span>
+          <span><i class="dot" style="background:#475569"></i>참고</span>
+        </div>
+      </figure>
+
+      <p style="font-size:12px;color:#64748B;line-height:1.6;">
+        이 페이지는 디자인 프리뷰입니다. 실제 앱에서는 <code>npm run dev</code> → 제품 상세 페이지에서
+        <strong>맞춤 요약</strong> 아래 <strong>원인 분석</strong> 섹션으로 렌더링됩니다.
+      </p>
+    </div>
+  </body>
+</html>

@@ -6,12 +6,12 @@ function Footer() {
   return (
     <footer
       style={{
-        padding: '14px 20px calc(100px + env(safe-area-inset-bottom, 0px))',
-        background: 'var(--bg-color)',
-        borderTop: '1px solid var(--border-subtle)',
-        color: 'var(--text-light)',
-        fontSize: '10px',
-        lineHeight: 1.5,
+        padding: '12px 20px 14px',
+        background: 'rgba(250, 250, 249, 0.96)',
+        borderTop: '1px solid rgba(28, 25, 23, 0.08)',
+        color: '#78716c',
+        fontSize: '9px',
+        lineHeight: 1.45,
         marginTop: 'auto',
       }}
     >
@@ -55,7 +55,7 @@ function Footer() {
             color: '#292524',
           }}
         >
-          베로로(Veroro) · 우리 아이 맞춤 영양 케어
+          Petty Community powered by VeRoRo
         </div>
 
         <p
@@ -83,12 +83,8 @@ function Footer() {
           </p>
           <p style={{ margin: 0 }}>
             주소 {COMPANY.address} · 연락처{' '}
-            <a
-              href={COMPANY.phoneTelHref}
-              style={{ color: 'inherit', textDecoration: 'none' }}
-              aria-label={`고객센터 ${COMPANY.phone} 연결`}
-            >
-              {COMPANY.phoneDisplay}
+            <a href={COMPANY.phoneTelHref} style={{ color: 'inherit', textDecoration: 'none' }}>
+              {COMPANY.phone}
             </a>{' '}
             · 이메일{' '}
             <a href={`mailto:${COMPANY.email}`} style={{ color: 'inherit', textDecoration: 'none' }}>

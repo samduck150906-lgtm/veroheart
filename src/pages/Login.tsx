@@ -1,27 +1,46 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, RefreshCw, Check, X } from 'lucide-react';
-import { supabase, ensurePublicUserExists, signUpWithEmail, signInWithEmail } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import { notify } from '../store/useNotification';
-
-// 카카오 로고 SVG (공식 색상)
-function KakaoIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path fillRule="evenodd" clipRule="evenodd" d="M10 2C5.582 2 2 4.895 2 8.455c0 2.267 1.446 4.254 3.624 5.393l-.922 3.37a.25.25 0 0 0 .376.274L9.19 15.1A9.48 9.48 0 0 0 10 15.91c4.418 0 8-2.895 8-6.455C18 4.895 14.418 2 10 2z" fill="#191919"/>
-    </svg>
-  );
-}
-import { LOGIN } from '../copy/ui';
+import { HOME_HERO } from '../copy/marketing';
 import { VERORO_LOGO_SRC } from '../constants/assets';
-import { TossButton } from '../components/TossUI';
+import { TossButton, TossCard, TossChip, TossInput, TossField, TossSectionBlock } from '../components/TossUI';
+
+const PASSWORD_RULES = [
+  {
+    id: 'len',
+    label: '8자 이상',
+    test: (pw: string) => pw.length >= 8,
+  },
+  {
+    id: 'letter',
+    label: '영문(A–Z, a–z) 1자 이상',
+    test: (pw: string) => /[a-zA-Z]/.test(pw),
+  },
+  {
+    id: 'digit',
+    label: '숫자 1자 이상',
+    test: (pw: string) => /[0-9]/.test(pw),
+  },
+  {
+    id: 'special',
+    label: '특수문자 1자 이상 (!@#$%^&* 등)',
+    test: (pw: string) => /[^A-Za-z0-9]/.test(pw),
+  },
+] as const;
 
 function isValidEmail(value: string): boolean {
   const v = value.trim();
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 }
+
+function passwordPolicyOk(password: string): boolean {
+  return PASSWORD_RULES.every((r) => r.test(password));
+}
+
+const RESEND_COOLDOWN_SEC = 60;
 
 export default function Login() {
   const navigate = useNavigate();
@@ -30,12 +49,12 @@ export default function Login() {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
-  const [showConfirmPw, setShowConfirmPw] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isKakaoLoading, setIsKakaoLoading] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({});
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [pendingVerification, setPendingVerification] = useState(false);
+  const resendIntervalRef = useRef<number | null>(null);
 
   const redirectTo = useMemo(() => {
     const from = (location.state as { from?: string } | null)?.from;
@@ -43,18 +62,59 @@ export default function Login() {
     return from;
   }, [location.state]);
 
-  const handleKakaoLogin = async () => {
-    setIsKakaoLoading(true);
+  const startResendCooldown = useCallback(() => {
+    if (resendIntervalRef.current != null) {
+      window.clearInterval(resendIntervalRef.current);
+      resendIntervalRef.current = null;
+    }
+    setResendCooldown(RESEND_COOLDOWN_SEC);
+    resendIntervalRef.current = window.setInterval(() => {
+      setResendCooldown((s) => {
+        if (s <= 1) {
+          if (resendIntervalRef.current != null) {
+            window.clearInterval(resendIntervalRef.current);
+            resendIntervalRef.current = null;
+          }
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+  }, []);
+
+  const handleResendVerification = async () => {
+    const addr = email.trim();
+    if (!addr) {
+      notify.error('이메일 주소를 입력해 주세요.');
+      return;
+    }
+    if (!isValidEmail(addr)) {
+      notify.error('이메일 형식을 확인해 주세요.');
+      return;
+    }
+    if (resendCooldown > 0 || resendLoading) return;
+
+    setResendLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'kakao',
-        options: { redirectTo: `${window.location.origin}/profile` },
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: addr,
+        options: {
+          emailRedirectTo: `${window.location.origin}/login`,
+        },
       });
       if (error) throw error;
+      notify.success('인증 메일을 다시 보냈어요. 스팸함도 확인해 주세요.');
+      startResendCooldown();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '카카오 로그인에 실패했습니다.';
-      notify.error(msg);
-      setIsKakaoLoading(false);
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.toLowerCase().includes('rate limit') || msg.includes('429')) {
+        notify.warning('요청이 너무 잦아요. 잠시 후 다시 시도해 주세요.');
+      } else {
+        notify.error(msg || '메일 재전송에 실패했어요.');
+      }
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -68,90 +128,49 @@ export default function Login() {
       notify.error('올바른 이메일 형식인지 확인해 주세요.');
       return;
     }
-    if (mode === 'signup') {
-      if (!confirmPassword) {
-        notify.error('비밀번호 확인을 입력해주세요.');
-        return;
-      }
-      if (password !== confirmPassword) {
-        notify.error('비밀번호가 일치하지 않습니다.');
-        return;
-      }
-      if (!passwordPolicyOk(password)) {
-        notify.error('비밀번호 정책을 모두 충족해 주세요.');
-        return;
-      }
+    if (mode === 'signup' && !passwordPolicyOk(password)) {
+      notify.error('비밀번호 정책을 모두 충족해 주세요.');
+      return;
     }
-    setFieldErrors({});
 
     setIsLoading(true);
     try {
       if (mode === 'login') {
-        let { error } = await supabase.auth.signInWithPassword({ email: addr, password });
-        if (error && error.message.toLowerCase().includes('email not confirmed')) {
-          try {
-            if (supabase.auth.admin) {
-              const { data: listData, error: listErr } = await supabase.auth.admin.listUsers();
-              if (!listErr && listData?.users) {
-                const foundUser = (listData.users as any[]).find(u => u.email === addr);
-                if (foundUser) {
-                  const { error: confirmErr } = await supabase.auth.admin.updateUserById(foundUser.id, {
-                    email_confirm: true
-                  });
-                  if (!confirmErr) {
-                    const retry = await supabase.auth.signInWithPassword({ email: addr, password });
-                    error = retry.error;
-                  }
-                }
-              }
-            }
-          } catch (adminErr) {
-            console.error('Login auto-confirm failed:', adminErr);
-          }
-        }
+        const { error } = await supabase.auth.signInWithPassword({ email: addr, password });
         if (error) throw error;
-
-        // Ensure public.users entry exists defensively
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          await ensurePublicUserExists(session.user.id, addr);
-        }
-
         notify.success('로그인되었습니다!');
         await initApp();
         navigate(redirectTo, { replace: true });
       } else {
-        const user = await signUpWithEmail(addr, password);
-        if (!user) {
-          return;
-        }
+        const { data, error } = await supabase.auth.signUp({
+          email: addr,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/login`,
+          },
+        });
+        if (error) throw error;
 
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
+        if (data.session) {
           notify.success('회원가입이 완료되었습니다!');
+          setPendingVerification(false);
           await initApp();
           navigate(redirectTo, { replace: true });
         } else {
-          const loggedInUser = await signInWithEmail(addr, password);
-          if (loggedInUser) {
-            notify.success('회원가입이 완료되었습니다!');
-            await initApp();
-            navigate(redirectTo, { replace: true });
-          } else {
-            notify.success('가입 확인 메일을 보냈어요. 메일의 링크를 눌러 인증을 마쳐 주세요.');
-            setPendingVerification(true);
-          }
+          notify.success('가입 확인 메일을 보냈어요. 메일의 링크를 눌러 인증을 마쳐 주세요.');
+          setPendingVerification(true);
         }
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       const lower = msg.toLowerCase();
       if (msg.includes('Invalid login credentials')) {
-        notify.error(LOGIN.errors.invalidCredentials);
+        notify.error('이메일 또는 비밀번호가 올바르지 않습니다.');
       } else if (msg.includes('User already registered') || lower.includes('already registered')) {
         notify.error('이미 가입된 이메일입니다. 로그인을 시도해 주세요.');
       } else if (lower.includes('email not confirmed')) {
-        notify.error('이메일 인증이 필요합니다. 메일함을 확인해 주세요.');
+        notify.error('이메일 인증이 아직 완료되지 않았습니다. 메일함을 확인하거나 아래에서 재전송해 주세요.');
+        setPendingVerification(true);
       } else {
         notify.error(msg || '오류가 발생했습니다.');
       }
@@ -160,19 +179,12 @@ export default function Login() {
     }
   };
 
-  const pageTitle = mode === 'signup' ? '회원가입 | 베로로' : '로그인 | 베로로';
-
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-gradient)', display: 'flex', flexDirection: 'column' }}>
-      <Helmet>
-        <title>{pageTitle}</title>
-        <meta name="description" content="베로로 계정으로 반려동물 맞춤 사료 분석과 추천을 받아보세요." />
-      </Helmet>
       <div style={{ padding: '16px 20px' }}>
         <button
           type="button"
           onClick={() => navigate(-1)}
-          aria-label="뒤로 가기"
           style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: '#374151', fontWeight: 600 }}
         >
           <ArrowLeft size={20} /> 뒤로
@@ -187,12 +199,12 @@ export default function Login() {
             style={{ height: '48px', width: 'auto', maxWidth: 'min(280px, 100%)', objectFit: 'contain', margin: '0 auto 14px', display: 'block' }}
           />
           <h1 style={{ fontSize: '18px', fontWeight: 800, color: '#111827', margin: '0 0 6px', lineHeight: 1.35 }}>
-            {mode === 'login' ? LOGIN.title : '베로로에 오신 걸 환영해요'}
+            {mode === 'login' ? '이메일로 로그인' : '이메일로 회원가입'}
           </h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.55 }}>{LOGIN.description}</p>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.55 }}>{HOME_HERO.sub}</p>
         </div>
 
-        <div style={{ display: 'flex', backgroundColor: 'var(--surface-muted)', borderRadius: '12px', padding: '4px', marginBottom: '22px' }}>
+        <div style={{ display: 'flex', backgroundColor: 'rgba(250, 204, 21, 0.2)', borderRadius: '14px', padding: '4px', marginBottom: '22px' }}>
           {(['login', 'signup'] as const).map((m) => (
             <button
               key={m}
@@ -200,21 +212,19 @@ export default function Login() {
               onClick={() => {
                 setMode(m);
                 setPendingVerification(false);
-                setPassword('');
-                setConfirmPassword('');
               }}
               style={{
                 flex: 1,
-                padding: '10px',
-                borderRadius: '9px',
+                padding: '12px',
+                borderRadius: '10px',
                 border: 'none',
                 cursor: 'pointer',
-                fontWeight: 600,
-                fontSize: '14px',
-                transition: 'background-color 0.2s, color 0.2s',
-                background: mode === m ? '#FFFFFF' : 'transparent',
-                color: mode === m ? 'var(--text-dark)' : 'var(--text-muted)',
-                boxShadow: 'none',
+                fontWeight: 700,
+                fontSize: '15px',
+                transition: 'all 0.2s',
+                background: mode === m ? '#fff' : 'transparent',
+                color: mode === m ? '#111827' : '#9CA3AF',
+                boxShadow: mode === m ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
               }}
             >
               {m === 'login' ? '로그인' : '회원가입'}
@@ -223,74 +233,31 @@ export default function Login() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '16px' }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            padding: '2px 16px',
-            borderRadius: '16px',
-            background: '#F9FAFB',
-            border: '1.5px solid #E5E8EB',
-            transition: 'all 0.2s',
-          }}>
-            <Mail size={18} color="#9CA3AF" style={{ flexShrink: 0 }} />
+          <TossField icon={<Mail size={18} color="#9CA3AF" />}>
             <TossInput
               type="email"
               placeholder="이메일 주소"
               value={email}
               onChange={setEmail}
-              style={{ border: 'none', padding: '12px 0', background: 'transparent', fontSize: '15px' }}
+              style={{ border: 'none', padding: '0', background: 'transparent', fontSize: '16px' }}
             />
-          </div>
-
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            padding: '2px 16px',
-            borderRadius: '16px',
-            background: '#F9FAFB',
-            border: '1.5px solid #E5E8EB',
-            transition: 'all 0.2s',
-          }}>
-            <Lock size={18} color="#9CA3AF" style={{ flexShrink: 0 }} />
+          </TossField>
+          <TossField icon={<Lock size={18} color="#9CA3AF" />}>
             <TossInput
               type={showPw ? 'text' : 'password'}
               placeholder="비밀번호"
               value={password}
               onChange={setPassword}
-              style={{ border: 'none', padding: '12px 0', background: 'transparent', fontSize: '15px' }}
+              style={{ border: 'none', padding: '0', background: 'transparent', fontSize: '16px' }}
             />
             <button
               type="button"
               onClick={() => setShowPw(!showPw)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', display: 'inline-flex', padding: 0 }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', display: 'inline-flex' }}
             >
               {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
-          </div>
-
-          {mode === 'signup' && (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '2px 16px',
-              borderRadius: '16px',
-              background: '#F9FAFB',
-              border: '1.5px solid #E5E8EB',
-              transition: 'all 0.2s',
-            }}>
-              <Lock size={18} color="#9CA3AF" style={{ flexShrink: 0 }} />
-              <TossInput
-                type={showPw ? 'text' : 'password'}
-                placeholder="비밀번호 확인"
-                value={confirmPassword}
-                onChange={setConfirmPassword}
-                style={{ border: 'none', padding: '12px 0', background: 'transparent', fontSize: '15px' }}
-              />
-            </div>
-          )}
+          </TossField>
         </div>
 
         <div style={{ display: 'none' }}>
@@ -306,89 +273,103 @@ export default function Login() {
               style={{ width: '100%', padding: '16px 16px 16px 46px', borderRadius: '14px', border: '1px solid #E5E7EB', fontSize: '16px', outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
-
-          {/* 비밀번호 */}
-          <div>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '10px',
-              border: fieldErrors.password ? '1.5px solid #F04452' : '1.5px solid #E5E8EB',
-              borderRadius: '14px', background: '#FFFFFF',
-              padding: '0 16px', height: '54px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-              transition: 'border-color 0.2s',
-            }}>
-              <Lock size={18} color="#8B95A1" style={{ flexShrink: 0 }} />
-              <input
-                type={showPw ? 'text' : 'password'}
-                placeholder="비밀번호 (8자 이상)"
-                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                value={password}
-                onChange={(e) => { setPassword(e.target.value); setFieldErrors(prev => ({ ...prev, password: undefined })); }}
-                onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-                style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: '16px', color: '#111827' }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPw(!showPw)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8B95A1', display: 'inline-flex', flexShrink: 0 }}
-              >
-                {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-            {fieldErrors.password && (
-              <p style={{ margin: '5px 0 0 4px', fontSize: '12px', color: '#F04452', fontWeight: 600 }}>{fieldErrors.password}</p>
-            )}
+          <div style={{ position: 'relative' }}>
+            <Lock size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+            <input
+              type={showPw ? 'text' : 'password'}
+              placeholder="비밀번호"
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+              style={{ width: '100%', padding: '16px 46px 16px 46px', borderRadius: '14px', border: '1px solid #E5E7EB', fontSize: '16px', outline: 'none', boxSizing: 'border-box' }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPw(!showPw)}
+              style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF' }}
+            >
+              {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
-
-          {/* 비밀번호 확인 - 회원가입 시만 */}
-          {mode === 'signup' && (
-            <div>
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: '10px',
-                border: fieldErrors.confirmPassword ? '1.5px solid #F04452' : '1.5px solid #E5E8EB',
-                borderRadius: '14px', background: '#FFFFFF',
-                padding: '0 16px', height: '54px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                transition: 'border-color 0.2s',
-              }}>
-                <Lock size={18} color="#8B95A1" style={{ flexShrink: 0 }} />
-                <input
-                  type={showConfirmPw ? 'text' : 'password'}
-                  placeholder="비밀번호 확인"
-                  autoComplete="new-password"
-                  value={confirmPassword}
-                  onChange={(e) => { setConfirmPassword(e.target.value); setFieldErrors(prev => ({ ...prev, confirmPassword: undefined })); }}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-                  style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: '16px', color: '#111827' }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPw(!showConfirmPw)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8B95A1', display: 'inline-flex', flexShrink: 0 }}
-                >
-                  {showConfirmPw ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-              {fieldErrors.confirmPassword && (
-                <p style={{ margin: '5px 0 0 4px', fontSize: '12px', color: '#F04452', fontWeight: 600 }}>{fieldErrors.confirmPassword}</p>
-              )}
-            </div>
-          )}
         </div>
+
+        {mode === 'signup' && (
+          <TossCard style={{ marginBottom: '18px', padding: '12px 14px', borderRadius: '12px' }}>
+            <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 800, color: '#374151' }}>비밀번호 정책</p>
+            <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'grid', gap: '6px' }}>
+              {PASSWORD_RULES.map((rule) => {
+                const ok = rule.test(password);
+                return (
+                  <li
+                    key={rule.id}
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: ok ? '#059669' : '#6B7280', fontWeight: 600 }}
+                  >
+                    {ok ? <Check size={14} strokeWidth={2.5} /> : <X size={14} strokeWidth={2.5} />}
+                    {rule.label}
+                  </li>
+                );
+              })}
+            </ul>
+          </TossCard>
+        )}
 
         <TossButton
           type="button"
           onClick={() => void handleSubmit()}
-          disabled={isLoading || isKakaoLoading}
-          style={{ width: '100%', height: '52px', fontSize: '16px' }}
+          disabled={isLoading}
+          style={{ width: '100%', marginBottom: '14px', height: '52px', fontSize: '16px' }}
         >
           {isLoading ? '처리 중...' : mode === 'login' ? '로그인' : '회원가입'}
         </TossButton>
+
+        <TossSectionBlock title="이메일 인증" style={{ marginBottom: '14px', borderRadius: '12px', background: '#EFF6FF', border: '1px solid #BFDBFE' }}>
+          <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 800, color: '#1E40AF' }}>이메일 인증</p>
+          <p style={{ margin: '0 0 10px', fontSize: '12px', color: '#1D4ED8', lineHeight: 1.5, fontWeight: 600 }}>
+            가입 직후 또는 로그인이 안 될 때, 아래 버튼으로 인증 메일을 다시 보낼 수 있어요. 스팸함도 꼭 확인해 주세요.
+          </p>
+          <button
+            type="button"
+            onClick={() => void handleResendVerification()}
+            disabled={resendLoading || resendCooldown > 0}
+            style={{
+              width: '100%',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              padding: '12px',
+              borderRadius: '10px',
+              border: '1px solid #93C5FD',
+              background: '#fff',
+              color: '#1D4ED8',
+              fontWeight: 800,
+              fontSize: '13px',
+              cursor: resendLoading || resendCooldown > 0 ? 'not-allowed' : 'pointer',
+              opacity: resendLoading || resendCooldown > 0 ? 0.65 : 1,
+            }}
+          >
+            <RefreshCw size={16} style={{ animation: resendLoading ? 'spin 0.85s linear infinite' : undefined }} />
+            {resendCooldown > 0 ? `${resendCooldown}초 후 다시 보내기` : '인증 메일 다시 보내기'}
+          </button>
+        </TossSectionBlock>
+
+        {(pendingVerification || mode === 'signup') && (
+          <div style={{ marginBottom: '12px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+            <TossChip active>{pendingVerification ? '인증 대기' : '가입 안내'}</TossChip>
+            <p style={{ margin: 0, fontSize: '11px', color: '#92400E', lineHeight: 1.5, fontWeight: 600, width: '100%' }}>
+              {pendingVerification
+                ? '인증이 끝나면 로그인 탭에서 같은 이메일로 로그인해 주세요.'
+                : '회원가입 후 메일 인증이 필요할 수 있어요. 메일이 안 오면 재전송 버튼을 눌러 주세요.'}
+            </p>
+          </div>
+        )}
 
         <p style={{ margin: 0, textAlign: 'center', fontSize: '12px', color: '#9CA3AF', lineHeight: 1.5 }}>
           소셜 로그인 없이 이메일과 비밀번호만 사용합니다.
         </p>
       </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

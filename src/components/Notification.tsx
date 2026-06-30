@@ -42,46 +42,6 @@ export default function Notification() {
           </button>
         </div>
       ))}
-      <style>{`
-        .fixed { position: fixed; }
-        .top-4 { top: 16px; }
-        .right-4 { right: 16px; }
-        .left-4 { left: 16px; }
-        .z-\\[9999\\] { z-index: 9999; }
-        .flex { display: flex; }
-        .flex-col { flex-direction: column; }
-        .gap-3 { gap: 12px; }
-        .pointer-events-none { pointer-events: none; }
-        .pointer-events-auto { pointer-events: auto; }
-        .items-start { align-items: flex-start; }
-        .p-4 { padding: 16px; }
-        .rounded-xl { border-radius: 12px; }
-        .border { border: 1px solid #e2e8f0; }
-        .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); }
-        .duration-300 { animation-duration: 300ms; }
-        .flex-shrink-0 { flex-shrink: 0; }
-        .mt-0.5 { margin-top: 2px; }
-        .flex-1 { flex: 1 1 0%; }
-        .text-sm { font-size: 14px; }
-        .font-semibold { font-weight: 600; }
-        .text-gray-800 { color: #1f2937; }
-        .leading-tight { line-height: 1.25; }
-        .text-gray-400 { color: #8B95A1; }
-        
-        .bg-green-50 { background-color: #f0faf4; }
-        .border-green-100 { border-color: #d1fae5; }
-        .bg-red-50 { background-color: #fef2f2; }
-        .border-red-100 { border-color: #fecaca; }
-        .bg-blue-50 { background-color: #f0f9ff; }
-        .border-blue-100 { border-color: #dbeafe; }
-        .bg-amber-50 { background-color: #fffbeb; }
-        .border-amber-100 { border-color: #fde68a; }
-        
-        @media (min-width: 640px) {
-          .sm\\:left-auto { left: auto; }
-          .sm\\:w-80 { width: 320px; }
-        }
-      `}</style>
     </div>
   );
 }

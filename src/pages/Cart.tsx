@@ -32,18 +32,10 @@ export default function Cart() {
 
   if (cartItems.length === 0) {
     return (
-      <div style={{ textAlign: 'center', padding: '100px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <div style={{ width: '120px', height: '120px', borderRadius: '50%', backgroundColor: '#F2F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
-          <img src="https://cdn-icons-png.flaticon.com/512/825/825590.png" alt="Empty Cart" style={{ width: '60px', opacity: 0.6 }} />
-        </div>
-        <h3 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '8px', color: '#1F2937' }}>장바구니가 텅 비었어요!</h3>
-        <p style={{ marginBottom: '32px', color: '#6B7684', fontSize: '15px' }}>우리 아이와 궁합이 잘 맞는 사료를<br/>먼저 찾아볼까요?</p>
-        <button 
-          className="btn btn-primary" 
-          style={{ padding: '16px 32px', borderRadius: '16px', fontWeight: 800, fontSize: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', border: 'none', cursor: 'pointer' }}
-          onClick={() => navigate('/search')}
-        >
-          맞춤 사료 탐색하기
+      <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
+        <p style={{ marginBottom: '16px' }}>장바구니가 비어있습니다.</p>
+        <button type="button" className="btn btn-primary" onClick={() => navigate('/search')}>
+          상품 둘러보기
         </button>
       </div>
     );

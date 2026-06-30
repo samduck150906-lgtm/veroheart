@@ -18,25 +18,11 @@ export type SupabaseProductRow = {
   verified_at?: string | null;
   coupang_product_id?: string | null;
   coupang_link?: string | null;
-  is_sponsored?: boolean | null;
-  sponsor_label?: string | null;
-  sponsor_order?: number | null;
   min_price?: number | null;
   image_url?: string | null;
   review_count?: number | null;
   avg_rating?: number | null;
   product_ingredients?: SupabaseProductIngredientRow[] | null;
-  nutritional_profiles?: SupabaseNutritionalProfileRow[] | null;
-};
-
-export type SupabaseNutritionalProfileRow = {
-  crude_protein?: number | null;
-  crude_fat?: number | null;
-  crude_fiber?: number | null;
-  crude_ash?: number | null;
-  moisture?: number | null;
-  calcium?: number | null;
-  phosphorus?: number | null;
 };
 
 export type SupabaseProductIngredientRow = {
@@ -78,24 +64,6 @@ export function mapIngredientFromJoin(pi: SupabaseProductIngredientRow): Ingredi
   };
 }
 
-/** nutritional_profiles 행(있으면 첫 건)을 GuaranteedAnalysis로 변환. 값이 하나도 없으면 undefined. */
-export function mapGuaranteedAnalysis(
-  rows?: SupabaseNutritionalProfileRow[] | null,
-): Product['guaranteedAnalysis'] {
-  const np = rows?.[0];
-  if (!np) return undefined;
-  const ga = {
-    crudeProtein: np.crude_protein ?? undefined,
-    crudeFat: np.crude_fat ?? undefined,
-    crudeFiber: np.crude_fiber ?? undefined,
-    crudeAsh: np.crude_ash ?? undefined,
-    moisture: np.moisture ?? undefined,
-    calcium: np.calcium ?? undefined,
-    phosphorus: np.phosphorus ?? undefined,
-  };
-  return Object.values(ga).some((v) => v != null) ? ga : undefined;
-}
-
 export function mapProductFromSupabaseRow(p: SupabaseProductRow): Product {
   const ingredients: Ingredient[] =
     p.product_ingredients?.map((pi) => mapIngredientFromJoin(pi)) ?? [];
@@ -124,15 +92,11 @@ export function mapProductFromSupabaseRow(p: SupabaseProductRow): Product {
     verifiedAt: p.verified_at || undefined,
     coupangProductId: p.coupang_product_id || undefined,
     coupangLink: p.coupang_link?.trim() || undefined,
-    isSponsored: p.is_sponsored ?? false,
-    sponsorLabel: p.sponsor_label ?? '광고',
-    sponsorOrder: p.sponsor_order ?? 0,
     price: p.min_price ?? 0,
     imageUrl:
       p.image_url ||
       'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&q=80',
     ingredients,
-    guaranteedAnalysis: mapGuaranteedAnalysis(p.nutritional_profiles),
     reviewsCount: p.review_count ?? 0,
     averageRating: p.avg_rating ?? 0,
   };

@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { Search as SearchIcon, X, SlidersHorizontal } from 'lucide-react';
+import { Search as SearchIcon, X } from 'lucide-react';
 
 type TossCardProps = {
   children: ReactNode;
@@ -10,10 +10,10 @@ export function TossCard({ children, style }: TossCardProps) {
   return (
     <section
       style={{
-        background: 'var(--surface-elevated)',
-        borderRadius: '16px',
-        border: '1px solid var(--border-subtle)',
-        boxShadow: 'none',
+        background: '#FFFFFF',
+        borderRadius: '20px',
+        border: '1px solid rgba(28, 25, 23, 0.08)',
+        boxShadow: '0 1px 3px rgba(28, 25, 23, 0.06)',
         ...style,
       }}
     >
@@ -51,20 +51,20 @@ export function TossButton({
   const palette =
     variant === 'primary'
       ? {
-          background: 'var(--text-dark)',
+          background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
           color: '#FFFFFF',
-          border: '1px solid transparent',
+          border: 'none',
         }
       : variant === 'soft'
         ? {
-            background: 'var(--surface-muted)',
-            color: 'var(--text-dark)',
-            border: '1px solid var(--border-subtle)',
+            background: '#FFFBEB',
+            color: '#92400E',
+            border: '1px solid #FCD34D',
           }
         : {
             background: '#FFFFFF',
-            color: 'var(--text-dark)',
-            border: '1px solid var(--border-strong)',
+            color: '#4B5563',
+            border: '1px solid #E5E7EB',
           };
 
   return (
@@ -114,24 +114,13 @@ export function TossChip({
       style={{
         padding: size === 'sm' ? '6px 10px' : '8px 12px',
         borderRadius: '999px',
-        border: isActive ? '1px solid var(--text-dark)' : '1px solid var(--border-subtle)',
-        background: isActive ? 'var(--text-dark)' : 'var(--surface-elevated)',
-        color: isActive ? '#FFFFFF' : 'var(--text-muted)',
+        border: isActive ? '1px solid #F59E0B' : '1px solid #E5E7EB',
+        background: isActive ? '#FFFBEB' : '#FFFFFF',
+        color: isActive ? '#92400E' : '#6B7280',
         fontSize: size === 'sm' ? '11px' : '12px',
         fontWeight: 500,
         cursor: 'pointer',
-        transition: 'background-color 0.2s ease, color 0.2s ease',
         ...style,
-      }}
-      onMouseEnter={(e) => {
-        if (!isActive) {
-          e.currentTarget.style.backgroundColor = 'var(--surface-muted)';
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!isActive) {
-          e.currentTarget.style.backgroundColor = 'var(--surface-elevated)';
-        }
       }}
     >
       {children ?? label}
@@ -179,7 +168,7 @@ export function TossField({ label, children, helperText, icon, style }: TossFiel
       )}
       {children}
       {helperText && (
-        <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#8B95A1', fontWeight: 600, lineHeight: 1.45 }}>
+        <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9CA3AF', fontWeight: 600, lineHeight: 1.45 }}>
           {helperText}
         </p>
       )}
@@ -257,7 +246,7 @@ export function TossSearchBar({
         padding: '12px 14px',
       }}
     >
-      <SearchIcon size={18} color="#8B95A1" />
+      <SearchIcon size={18} color="#9CA3AF" />
       <input
         type="text"
         value={value}
@@ -279,7 +268,7 @@ export function TossSearchBar({
           onClick={() => onChange('')}
           style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex' }}
         >
-          <X size={16} color="#8B95A1" />
+          <X size={16} color="#9CA3AF" />
         </button>
       )}
       {rightSlot}
@@ -287,10 +276,10 @@ export function TossSearchBar({
         <button
           type="button"
           onClick={onFilterClick}
-          style={{ marginLeft: '12px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#6B7684' }}
+          style={{ marginLeft: '8px', background: 'none', border: 'none', cursor: 'pointer' }}
           aria-label="필터 열기"
         >
-          <SlidersHorizontal size={18} />
+          ⚙️
         </button>
       )}
     </div>
@@ -318,7 +307,7 @@ export function TossInput({
         width: '100%',
         padding: '13px 14px',
         borderRadius: '12px',
-        border: '1px solid #E5E8EB',
+        border: '1px solid #E5E7EB',
         fontSize: '15px',
         outline: 'none',
         background: disabled ? '#F9FAFB' : '#FFFFFF',

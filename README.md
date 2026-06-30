@@ -42,7 +42,7 @@ npm run test     # Vitest 단위 테스트
 ## 배포 개요
 
 - **프론트**: Vite 정적 빌드(`dist`). Netlify 사용 시 `netlify.toml`의 SPA 폴백과 관리자 호스트 리다이렉트를 참고하세요.
-- **Supabase**: `admin-auth` 등 Edge Function.
+- **Supabase**: `analyze-ingredients`, `personalized-score` 등 AI·점수 관련 Edge Function.
 
 ## 관리자 콘솔
 

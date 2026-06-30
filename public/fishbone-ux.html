@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>VeRoRo UX 피쉬본</title>
+    <style>
+      :root { color-scheme: light; font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', 'Segoe UI', Roboto, sans-serif; }
+      body { margin: 0; padding: 32px 24px; background: linear-gradient(180deg, #FFFBEB 0%, #F8FAFC 100%); color: #0F172A; }
+      .wrap { max-width: 1280px; margin: 0 auto; }
+      .card { padding: 28px 24px; border-radius: 24px; background: #fff; border: 1px solid #E2E8F0; box-shadow: 0 8px 28px rgba(15, 23, 42, 0.06); }
+      .head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+      .eyebrow { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; color: #B45309; text-transform: uppercase; }
+      .title { font-size: 22px; font-weight: 900; color: #0F172A; margin-top: 4px; letter-spacing: -0.02em; }
+      .caption { font-size: 12px; font-weight: 600; color: #64748B; max-width: 48%; text-align: right; line-height: 1.55; }
+      svg { width: 100%; height: auto; display: block; }
+      .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 18px; font-size: 12px; font-weight: 700; color: #475569; }
+      .legend span { display: inline-flex; align-items: center; gap: 6px; }
+      .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+      .foot { margin-top: 16px; padding: 14px 18px; border-radius: 14px; background: #F8FAFC; border: 1px solid #E2E8F0; font-size: 12px; color: #475569; line-height: 1.6; font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <figure class="card" style="margin: 0;">
+        <figcaption class="head">
+          <div>
+            <div class="eyebrow">UX Fishbone · Ishikawa</div>
+            <div class="title">VeRoRo 반려인이 "안심하고 고른다"를 만드는 요인</div>
+          </div>
+          <div class="caption">
+            발견 → 온보딩 → 신뢰 → 의사결정 → 전환 → 유지<br/>
+            6축으로 본 사용자 경험 원인 지도
+          </div>
+        </figcaption>
+
+        <svg viewBox="0 0 1240 720" role="img" aria-label="VeRoRo 사용자 경험 피쉬본 다이어그램">
+          <defs>
+            <linearGradient id="headG" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#0F172A"/>
+              <stop offset="1" stop-color="#1E293B"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Spine -->
+          <line x1="70" y1="360" x2="980" y2="360" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
+          <polygon points="48,360 66,348 66,372" fill="#0F172A"/>
+
+          <!-- Effect head -->
+          <g transform="translate(996, 360)">
+            <rect x="0" y="-54" rx="20" ry="20" width="220" height="108" fill="url(#headG)"/>
+            <text x="110" y="-24" text-anchor="middle" fill="#FDE68A" font-size="12" font-weight="800" letter-spacing="1.8">EFFECT</text>
+            <text x="110" y="4" text-anchor="middle" fill="#FFFFFF" font-size="16" font-weight="900">안심하고</text>
+            <text x="110" y="26" text-anchor="middle" fill="#FFFFFF" font-size="16" font-weight="900">고른다</text>
+            <text x="110" y="46" text-anchor="middle" fill="#FDE68A" font-size="10.5" font-weight="700">(Trusted decision)</text>
+          </g>
+
+          <!-- ========= TOP bones ========= -->
+          <!-- 1. 발견 / Discovery -->
+          <g>
+            <line x1="215" y1="355" x2="130" y2="90" stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round"/>
+            <rect x="36" y="58" rx="12" ry="12" width="200" height="30" fill="#FFF7ED" stroke="#FED7AA"/>
+            <text x="136" y="78" text-anchor="middle" fill="#9A3412" font-size="13.5" font-weight="900">① 발견 · Discovery</text>
+            <!-- twigs -->
+            <g font-size="11.5" font-weight="700">
+              <line x1="200" y1="310" x2="158" y2="282" stroke="#059669" stroke-width="1.8" stroke-linecap="round"/>
+              <text x="152" y="277" text-anchor="end" fill="#059669">홈 맞춤 헤드라인</text>
+              <line x1="188" y1="272" x2="146" y2="244" stroke="#059669" stroke-width="1.8" stroke-linecap="round"/>
+              <text x="140" y="239" text-anchor="end" fill="#059669">카테고리·랭킹</text>
+              <line x1="176" y1="234" x2="134" y2="206" stroke="#B45309" stroke-width="1.8" stroke-linecap="round"/>
+              <text x="128" y="201" text-anchor="end" fill="#B45309">검색 키워드 정확도</text>
+              <line x1="164" y1="196" x2="122" y2="168" stroke="#475569" stroke-width="1.8" stroke-linecap="round"/>
+              <text x="116" y="163" text-anchor="end" fill="#475569">브랜드 페이지 진입</text>
+            </g>
+          </g>
+
+          <!-- 2. 신뢰 / Trust -->
+          <g>
+            <line x1="500" y1="355" x2="415" y2="90" stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round"/>
+            <rect x="321" y="58" rx="12" ry="12" width="200" height="30" fill="#FFF7ED" stroke="#FED7AA"/>
+            <text x="421" y="78" text-anchor="middle" fill="#9A3412" font-size="13.5" font-weight="900">③ 신뢰 · Trust</text>
+            <g font-size="11.5" font-weight="700">
+              <line x1="485" y1="310" x2="443" y2="282" stroke="#059669" stroke-width="1.8" stroke-linecap="round"/>
+              <text x="437" y="277" text-anchor="end" fill="#059669">검수 완료 배지</text>
+              <line x1="473" y1="272" x2="431" y2="244" stroke="#059669" stroke-width="1.8" stroke-linecap="round"/>
+              <text x="425" y="239" text-anchor="end" fill="#059669">수의사 한 줄 체크</text>
+              <line x1="461" y1="234" x2="419" y2="206" stroke="#059669" stroke-width="1.8" stroke-linecap="round"/>
+              <text x="413" y="201" text-anchor="end" fill="#059669">성분 위험등급 색상</text>
+              <line x1="449" y1="196" x2="407" y2="168" stroke="#B45309" stroke-width="1.8" stroke-linecap="round"/>
+              <text x="401" y="163" text-anchor="end" fill="#B45309">재검토 제품 투명 공개</text>
+            </g>
+          </g>
+
+          <!-- 3. 전환 / Conversion -->
+          <g>
+            <line x1="785" y1="355" x2="700" y2="90" stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round"/>
+            <rect x="606" y="58" rx="12" ry="12" width="200" height="30" fill="#FFF7ED" stroke="#FED7AA"/>
+            <text x="706" y="78" text-anchor="middle" fill="#9A3412" font-size="13.5" font-weight="900">⑤ 전환 · Conversion</text>
+            <g font-size="11.5" font-weight="700">
+              <line x1="770" y1="310" x2="728" y2="282" stroke="#059669" stroke-width="1.8" stroke-linecap="round"/>
+              <text x="722" y="277" text-anchor="end" fill="#059669">쿠팡 이어보기</text>
+              <line x1="758" y1="272" x2="716" y2="244" stroke="#059669" stroke-width="1.8" stroke-linecap="round"/>
+              <text x="710" y="239" text-anchor="end" fill="#059669">장바구니·비교함</text>
+              <line x1="746" y1="234" x2="704" y2="206" stroke="#B45309" stroke-width="1.8" stroke-linecap="round"/>
+              <text x="698" y="201" text-anchor="end" fill="#B45309">가격·재고 최신성</text>
+              <line x1="734" y1="196" x2="692" y2="168" stroke="#475569" stroke-width="1.8" stroke-linecap="round"/>
+              <text x="688" y="163" text-anchor="end" fill="#475569">파트너스 고지</text>
+            </g>
+          </g>
+
+          <!-- ========= BOTTOM bones ========= -->
+          <!-- 2. 온보딩 / Onboarding -->
+          <g>
+            <line x1="355" y1="365" x2="270" y2="630" stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round"/>
+            <rect x="176" y="636" rx="12" ry="12" width="200" height="30" fill="#EFF6FF" stroke="#BFDBFE"/>
+            <text x="276" y="656" text-anchor="middle" fill="#1D4ED8" font-size="13.5" font-weight="900">② 온보딩 · Onboarding</text>
+            <g font-size="11.5" font-weight="700">
+              <line x1="340" y1="410" x2="298" y2="438" stroke="#059669" stroke-width="1.8" stroke-linecap="round"/>
+              <text x="292" y="454" text-anchor="end" fill="#059669">엔트리 게이트 1-탭</text>
+              <line x1="328" y1="448" x2="286" y2="476" stroke="#B45309" stroke-width="1.8" stroke-linecap="round"/>
+              <text x="280" y="492" text-anchor="end" fill="#B45309">프로필 필수 필드 최소화</text>
+              <line x1="316" y1="486" x2="274" y2="514" stroke="#059669" stroke-width="1.8" stroke-linecap="round"/>
+              <text x="268" y="530" text-anchor="end" fill="#059669">종·건강 이슈 칩 선택</text>
+              <line x1="304" y1="524" x2="262" y2="552" stroke="#475569" stroke-width="1.8" stroke-linecap="round"/>
+              <text x="256" y="568" text-anchor="end" fill="#475569">비로그인 둘러보기 허용</text>
+            </g>
+          </g>
+
+          <!-- 4. 의사결정 / Decision -->
+          <g>
+            <line x1="640" y1="365" x2="555" y2="630" stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round"/>
+            <rect x="461" y="636" rx="12" ry="12" width="200" height="30" fill="#EFF6FF" stroke="#BFDBFE"/>
+            <text x="561" y="656" text-anchor="middle" fill="#1D4ED8" font-size="13.5" font-weight="900">④ 의사결정 · Decision</text>
+            <g font-size="11.5" font-weight="700">
+              <line x1="625" y1="410" x2="583" y2="438" stroke="#059669" stroke-width="1.8" stroke-linecap="round"/>
+              <text x="577" y="454" text-anchor="end" fill="#059669">맞춤 결론 헤드라인</text>
+              <line x1="613" y1="448" x2="571" y2="476" stroke="#059669" stroke-width="1.8" stroke-linecap="round"/>
+              <text x="565" y="492" text-anchor="end" fill="#059669">원인 분석 피쉬본</text>
+              <line x1="601" y1="486" x2="559" y2="514" stroke="#059669" stroke-width="1.8" stroke-linecap="round"/>
+              <text x="553" y="530" text-anchor="end" fill="#059669">성분 적합도 점수</text>
+              <line x1="589" y1="524" x2="547" y2="552" stroke="#B91C1C" stroke-width="1.8" stroke-linecap="round"/>
+              <text x="541" y="568" text-anchor="end" fill="#B91C1C">알레르기 경고 우선 노출</text>
+            </g>
+          </g>
+
+          <!-- 6. 유지 / Retention -->
+          <g>
+            <line x1="925" y1="365" x2="840" y2="630" stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round"/>
+            <rect x="746" y="636" rx="12" ry="12" width="200" height="30" fill="#EFF6FF" stroke="#BFDBFE"/>
+            <text x="846" y="656" text-anchor="middle" fill="#1D4ED8" font-size="13.5" font-weight="900">⑥ 유지 · Retention</text>
+            <g font-size="11.5" font-weight="700">
+              <line x1="910" y1="410" x2="868" y2="438" stroke="#059669" stroke-width="1.8" stroke-linecap="round"/>
+              <text x="862" y="454" text-anchor="end" fill="#059669">최근 본 / 즐겨찾기</text>
+              <line x1="898" y1="448" x2="856" y2="476" stroke="#059669" stroke-width="1.8" stroke-linecap="round"/>
+              <text x="850" y="492" text-anchor="end" fill="#059669">바이럴 공유 이벤트</text>
+              <line x1="886" y1="486" x2="844" y2="514" stroke="#B45309" stroke-width="1.8" stroke-linecap="round"/>
+              <text x="838" y="530" text-anchor="end" fill="#B45309">알림 세분화 부족</text>
+              <line x1="874" y1="524" x2="832" y2="552" stroke="#475569" stroke-width="1.8" stroke-linecap="round"/>
+              <text x="826" y="568" text-anchor="end" fill="#475569">리뷰 태그 재방문 훅</text>
+            </g>
+          </g>
+        </svg>
+
+        <div class="legend">
+          <span><i class="dot" style="background:#059669"></i>강점 (지금 잘 되는 것)</span>
+          <span><i class="dot" style="background:#B45309"></i>기회 (보강 포인트)</span>
+          <span><i class="dot" style="background:#B91C1C"></i>위험 (우선순위 높음)</span>
+          <span><i class="dot" style="background:#475569"></i>참고 (맥락 정보)</span>
+        </div>
+
+        <p class="foot">
+          피쉬본 해석 가이드 — 가시(카테고리)마다 3~4개 하위 원인(twig)이 달려 있고,
+          각 twig의 색은 해당 UX 요소의 <strong>현재 상태</strong>를 의미합니다.
+          녹색은 이미 탄탄한 경험, 주황은 다음 스프린트에 손볼만한 기회,
+          빨강은 릴리스 이전에 반드시 해결해야 하는 리스크, 회색은 참고 맥락입니다.
+        </p>
+      </figure>
+    </div>
+  </body>
+</html>

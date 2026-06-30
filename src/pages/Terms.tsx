@@ -2,13 +2,13 @@ export default function Terms() {
   return (
     <div style={{ padding: '20px', paddingTop: '80px', paddingBottom: '100px', lineHeight: 1.65 }}>
       <h1 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '8px' }}>VeRoRo(베로로) 서비스 이용약관</h1>
-      <p style={{ fontSize: '12px', color: '#6B7684', marginBottom: '20px' }}>시행일: 2026년 4월 12일</p>
+      <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '20px' }}>시행일: 2026년 4월 12일</p>
 
       <div style={{ fontSize: '13px', color: '#374151' }}>
         <p style={{ fontWeight: 'bold', marginTop: '18px' }}>제1조 (목적)</p>
         <p>
           본 약관은 이터널식스(이하 &quot;회사&quot;)가 제공하는 반려동물 성분 분석·정보 제공·커뮤니티 및 관련 전자상거래
-          서비스 VeRoRo(베로로)(이하 통칭하여 &quot;서비스&quot;)의 이용과 관련하여 회사와
+          서비스 VeRoRo, 브랜드 표기 Petty Community(이하 통칭하여 &quot;서비스&quot;)의 이용과 관련하여 회사와
           이용자 간 권리·의무 및 책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.
         </p>
 
@@ -32,7 +32,7 @@ export default function Terms() {
         <p>① 회사는 다음과 같은 서비스를 제공합니다. 구체적 범위는 서비스 화면 및 정책에 따릅니다.</p>
         <ul style={{ marginTop: '6px', paddingLeft: '20px' }}>
           <li>반려동물 사료·간식 등 제품 정보 제공 및 검색</li>
-          <li>성분 정보 제공 및 성분 분석·요약</li>
+          <li>성분표 촬영·입력 등을 통한 성분 분석·요약 정보 제공(OCR·AI 기능 포함)</li>
           <li>리뷰·커뮤니티 기능</li>
           <li>상품 판매·결제·배송 등 전자상거래 관련 서비스</li>
           <li>프리미엄·구독 등 유료 서비스(도입 시 별도 안내 및 동의)</li>
@@ -70,7 +70,7 @@ export default function Terms() {
         <p>① 서비스를 통해 제공되는 성분 분석·요약·점수·추천 등은 수의학적 진단·치료·처방을 대체하지 않으며,
           참고용 정보에 불과합니다.</p>
         <p>② 반려동물의 질병·알레르기·급여 여부는 수의사 등 전문가와 상담한 후 보호자의 판단과 책임 하에 결정해야 합니다.</p>
-        <p>③ 자동 처리 과정에서 오류가 발생할 수 있으며, 회사는 이로 인한 직접·간접 손해에 대해 법령이 허용하는
+        <p>③ OCR·AI 등 자동 처리 과정에서 오류가 발생할 수 있으며, 회사는 이로 인한 직접·간접 손해에 대해 법령이 허용하는
           한도 내에서 책임을 제한할 수 있습니다.</p>
 
         <p style={{ fontWeight: 'bold', marginTop: '18px' }}>제9조 (유료서비스·전자상거래)</p>

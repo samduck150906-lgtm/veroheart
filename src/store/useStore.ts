@@ -1,7 +1,6 @@
-// @ts-nocheck
 import { create } from 'zustand';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
-import type { UserPetProfile, Product, SupabaseOrderWithItems, Banner, MembershipTier } from '../types';
+import type { UserPetProfile, Product, SupabaseOrderWithItems, AnalysisReportRow } from '../types';
 import { DEFAULT_USER_PET_PROFILE } from '../types';
 import {
   supabase,
@@ -18,49 +17,12 @@ import {
   removeFavorite,
   addRecentView,
   getRecentViews,
-  signOut as supabaseSignOut,
-  getBanners,
-  saveBanner as dbSaveBanner,
-  deleteBannerFromDB
+  mapProductFromRaw,
+  signOut as supabaseSignOut
 } from '../lib/supabase';
 
 let adminDataSyncChannel: any = null;
 let adminDataSyncTimer: ReturnType<typeof setTimeout> | null = null;
-
-const DEFAULT_BANNERS: Banner[] = [
-  {
-    id: 'default-1',
-    title: '지금 꼭 챙겨야 할\n영양 맞춤 사료 라인업',
-    subtitle: '수의 영양학 추천 BEST 모아보기',
-    imageUrl: '🥫',
-    linkUrl: '/ranking',
-    bgColor: 'linear-gradient(135deg, #FFF3C4 0%, #FFE066 100%)'
-  },
-  {
-    id: 'default-quiz',
-    title: '우리 아이 맞춤 사료 찾기\n3초 성향테스트 시작하기 ⚡',
-    subtitle: '간단한 질문으로 알아보는 우리 아이 사료 성향',
-    imageUrl: '✨',
-    linkUrl: '/event/personality-quiz',
-    bgColor: 'linear-gradient(135deg, #FFFDEB 0%, #FDE68A 100%)'
-  },
-  {
-    id: 'default-2',
-    title: '우리아이 맞춤 성분 분석\n간편하게 성분 검색하기',
-    subtitle: '알레르기/위험 성분을 1초만에 감지',
-    imageUrl: '🔍',
-    linkUrl: '/search',
-    bgColor: 'linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%)'
-  },
-  {
-    id: 'default-3',
-    title: '동반자 펫 등록하고\n맞춤 정보 받기',
-    subtitle: '마이펫 정보 입력하러 가기',
-    imageUrl: '🐶',
-    linkUrl: '/profile',
-    bgColor: 'linear-gradient(135deg, #FCE7F3 0%, #FBCFE8 100%)'
-  }
-];
 
 interface StoreState {
   userId: string | null;
@@ -89,15 +51,8 @@ interface StoreState {
   updateCartQuantity: (productId: string, quantity: number) => void;
   removeFromCart: (productId: string) => void;
   clearCart: () => void;
-  logout: () => Promise<void>;
-  // Banner management
-  banners: Banner[];
-  fetchBanners: () => Promise<void>;
-  saveBanner: (banner: Partial<Banner>) => Promise<void>;
-  deleteBanner: (bannerId: string) => Promise<void>;
-  // Membership
-  membershipTier: MembershipTier;
-  fetchMembership: () => Promise<void>;
+  reports: AnalysisReportRow[];
+  fetchReports: () => Promise<void>;
 }
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -107,22 +62,10 @@ export const useStore = create<StoreState>((set, get) => ({
   products: [],
   selectedProduct: null,
   orders: [],
+  reports: [],
   recentViews: [],
   isLoadingProducts: false,
   isInitializing: true,
-  banners: DEFAULT_BANNERS,
-  membershipTier: 'free' as MembershipTier,
-  fetchMembership: async () => {
-    const { userId } = get();
-    if (!userId) return;
-    try {
-      const { getUserMembershipTier } = await import('../lib/supabase');
-      const tier = await getUserMembershipTier(userId);
-      set({ membershipTier: tier });
-    } catch (err) {
-      console.error('fetchMembership err:', err);
-    }
-  },
 
   signOut: async () => {
     await supabaseSignOut();
@@ -130,6 +73,7 @@ export const useStore = create<StoreState>((set, get) => ({
       userId: null,
       isLoggedIn: false,
       orders: [],
+      reports: [],
       favorites: [],
       recentViews: [],
       cart: [],
@@ -174,17 +118,13 @@ export const useStore = create<StoreState>((set, get) => ({
 
       const user = await getInitialSessionUser();
       if (!user) {
-        const localBreed = localStorage.getItem('vh_pet_breed_local') || '';
-        const localGender = localStorage.getItem('vh_pet_gender_local') || '남아';
-        const localPersonality = localStorage.getItem('vh_pet_personality_local') || '활발함 ⚡';
         set({
           isInitializing: false,
-          profile: { ...DEFAULT_USER_PET_PROFILE, breed: localBreed, gender: localGender, personality: localPersonality },
+          profile: DEFAULT_USER_PET_PROFILE,
           userId: null,
           isLoggedIn: false,
         });
         get().fetchProducts();
-        get().fetchBanners();
         return;
       }
 
@@ -204,20 +144,14 @@ export const useStore = create<StoreState>((set, get) => ({
       const pets = await getUserPets(user.id);
       if (pets && pets.length > 0) {
         const p = pets[0];
-        const localBreed = localStorage.getItem('vh_pet_breed_' + user.id) || '';
-        const localGender = localStorage.getItem('vh_pet_gender_' + user.id) || '남아';
-        const localPersonality = localStorage.getItem('vh_pet_personality_' + user.id) || '활발함 ⚡';
         set({
           profile: {
             id: p.id,
             name: p.name,
             species: p.pet_type === 'cat' ? 'Cat' : 'Dog',
             age: p.age_group === 'baby' ? 1 : p.age_group === 'senior' ? 10 : 4,
-            weightKg: p.weight,
             healthConcerns: p.conditions || [],
-            allergies: p.allergies || [],
-            gender: localGender,
-            personality: localPersonality
+            allergies: p.allergies || []
           }
         });
       }
@@ -235,17 +169,17 @@ export const useStore = create<StoreState>((set, get) => ({
       // Fetch Recent Views
       const recentData = await getRecentViews(user.id);
       if (recentData.length > 0) {
-        set({ recentViews: recentData as any[] });
+        const mapped = recentData.map(mapProductFromRaw).filter(Boolean) as Product[];
+        set({ recentViews: mapped });
       }
 
-      const { fetchProducts, fetchOrders, fetchBanners, fetchMembership } = get();
-      await Promise.all([fetchProducts(), fetchOrders(), fetchBanners(), fetchMembership()]);
+      const { fetchProducts, fetchOrders, fetchReports } = get();
+      await Promise.all([fetchProducts(), fetchOrders(), fetchReports()]);
       set({ isInitializing: false });
     } catch (err) {
       console.error('initApp err:', err);
       set({ isInitializing: false });
       get().fetchProducts();
-      get().fetchBanners();
     }
   },
 
@@ -253,16 +187,6 @@ export const useStore = create<StoreState>((set, get) => ({
     const { userId, profile } = get();
     const newProfile = { ...profile, ...updates };
     set({ profile: newProfile });
-
-    if (newProfile.breed != null) {
-      localStorage.setItem('vh_pet_breed_' + (userId || 'local'), newProfile.breed);
-    }
-    if (newProfile.gender != null) {
-      localStorage.setItem('vh_pet_gender_' + (userId || 'local'), newProfile.gender);
-    }
-    if (newProfile.personality != null) {
-      localStorage.setItem('vh_pet_personality_' + (userId || 'local'), newProfile.personality);
-    }
 
     if (!userId) return;
 
@@ -272,7 +196,6 @@ export const useStore = create<StoreState>((set, get) => ({
       name: newProfile.name,
       pet_type: newProfile.species === 'Cat' ? 'cat' : 'dog',
       age_group: newProfile.age < 2 ? 'baby' : newProfile.age > 7 ? 'senior' : 'adult',
-      weight: newProfile.weightKg,
       conditions: newProfile.healthConcerns,
       allergies: newProfile.allergies,
     });
@@ -326,6 +249,18 @@ export const useStore = create<StoreState>((set, get) => ({
     }
   },
 
+  fetchReports: async () => {
+    const { userId } = get();
+    if (!userId) return;
+    try {
+      const { getAnalysisReports } = await import('../lib/supabase');
+      const data = await getAnalysisReports(userId);
+      set({ reports: data as AnalysisReportRow[] });
+    } catch (err) {
+      console.error(err);
+    }
+  },
+  
   favorites: [],
   toggleFavorite: async (id) => {
     const { userId, favorites } = get();
@@ -407,90 +342,6 @@ export const useStore = create<StoreState>((set, get) => ({
     if (userId) {
       await clearUserCart(userId);
     }
-  },
-
-  logout: async () => {
-    try {
-      const { signOut } = await import('../lib/supabase');
-      await signOut();
-      set({ userId: null, profile: DEFAULT_USER_PET_PROFILE, orders: [], reports: [], cart: [], favorites: [] });
-    } catch (err) {
-      console.error(err);
-    }
-  },
-
-  fetchBanners: async () => {
-    let list: any[] = [];
-    try {
-      const dbBanners = await getBanners();
-      list = dbBanners;
-    } catch (err) {
-      console.warn('getBanners error, falling back:', err);
-    }
-    
-    const localBannersStr = localStorage.getItem('vh_local_banners');
-    const localBanners = localBannersStr ? JSON.parse(localBannersStr) : [];
-    
-    const merged = [...list, ...localBanners];
-    if (merged.length === 0) {
-      set({ banners: DEFAULT_BANNERS });
-    } else {
-      // De-duplicate by id
-      const unique = [];
-      const ids = new Set();
-      merged.forEach(b => {
-        if (!ids.has(b.id)) {
-          ids.add(b.id);
-          unique.push(b);
-        }
-      });
-      set({ banners: unique });
-    }
-  },
-
-  saveBanner: async (bannerData) => {
-    const banner = {
-      id: bannerData.id || crypto.randomUUID(),
-      title: bannerData.title || '',
-      subtitle: bannerData.subtitle || '',
-      imageUrl: bannerData.imageUrl || '',
-      linkUrl: bannerData.linkUrl || '',
-      bgColor: bannerData.bgColor || 'linear-gradient(135deg, #FFF3C4 0%, #FFE066 100%)',
-    };
-    
-    try {
-      await dbSaveBanner(banner);
-    } catch {
-      console.warn('Could not save banner to DB, saving locally');
-    }
-    
-    const localBannersStr = localStorage.getItem('vh_local_banners');
-    let localBanners = localBannersStr ? JSON.parse(localBannersStr) : [];
-    if (localBanners.some((b: any) => b.id === banner.id)) {
-      localBanners = localBanners.map((b: any) => b.id === banner.id ? banner : b);
-    } else {
-      localBanners.push(banner);
-    }
-    localStorage.setItem('vh_local_banners', JSON.stringify(localBanners));
-    
-    await get().fetchBanners();
-  },
-
-  deleteBanner: async (bannerId) => {
-    try {
-      await deleteBannerFromDB(bannerId);
-    } catch (err) {
-      console.warn(err);
-    }
-    
-    const localBannersStr = localStorage.getItem('vh_local_banners');
-    if (localBannersStr) {
-      let localBanners = JSON.parse(localBannersStr);
-      localBanners = localBanners.filter((b: any) => b.id !== bannerId);
-      localStorage.setItem('vh_local_banners', JSON.stringify(localBanners));
-    }
-    
-    await get().fetchBanners();
   }
 }));
 
