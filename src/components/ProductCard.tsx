@@ -24,7 +24,7 @@ const SponsorBadge = ({ label }: { label: string }) => (
     display: 'inline-flex', alignItems: 'center',
     padding: '2px 7px', borderRadius: 5,
     fontSize: 10, fontWeight: 700, letterSpacing: 0.3,
-    background: '#F3F4F6', color: '#6B7280', border: '1px solid #E5E7EB',
+    background: '#F2F4F6', color: '#6B7684', border: '1px solid #E5E8EB',
     flexShrink: 0,
   }}>{label}</span>
 );

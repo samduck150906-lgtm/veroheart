@@ -100,7 +100,7 @@ export default function SearchBar({
             cursor: 'pointer',
             padding: 0,
             marginLeft: '4px',
-            color: '#9CA3AF',
+            color: '#8B95A1',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -110,7 +110,7 @@ export default function SearchBar({
             (e.currentTarget as HTMLButtonElement).style.color = 'var(--accent)';
           }}
           onMouseLeave={e => {
-            (e.currentTarget as HTMLButtonElement).style.color = '#9CA3AF';
+            (e.currentTarget as HTMLButtonElement).style.color = '#8B95A1';
           }}
         >
           <X size={16} strokeWidth={2.5} />

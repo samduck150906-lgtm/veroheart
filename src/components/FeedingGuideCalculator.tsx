@@ -165,7 +165,7 @@ export default function FeedingGuideCalculator({ kcalPer100g, productName, fatPe
         <span className="text-xl">🐾</span>
         <div>
           <p className="text-[15px] font-bold text-[#1A1A1A]">하루 급여 가이드</p>
-          <p className="text-[12px] text-[#ABABAB]">{profile.name ? `${profile.name}에게 맞는` : '우리 아이에게 맞는'} 급여량을 계산해 드려요</p>
+          <p className="text-[12px] text-[#8B95A1]">{profile.name ? `${profile.name}에게 맞는` : '우리 아이에게 맞는'} 급여량을 계산해 드려요</p>
         </div>
       </div>
 
@@ -181,7 +181,7 @@ export default function FeedingGuideCalculator({ kcalPer100g, productName, fatPe
           onChange={(e) => setWeight(Number(e.target.value))}
           className="w-full accent-[#F5C842]"
         />
-        <div className="flex justify-between text-[11px] text-[#ABABAB] mt-1">
+        <div className="flex justify-between text-[11px] text-[#8B95A1] mt-1">
           <span>0.5kg</span><span>30kg</span><span>60kg</span>
         </div>
       </div>
@@ -196,14 +196,14 @@ export default function FeedingGuideCalculator({ kcalPer100g, productName, fatPe
               <button
                 key={key} type="button" title={ACTIVITY_FACTORS[key].desc}
                 onClick={() => setActivity(key)}
-                className={`py-2.5 rounded-[10px] text-[13px] border transition-colors ${on ? 'bg-[#FEF9E7] border-[#F5C842] text-[#F5C842] font-bold' : 'border-[#EFEFEF] text-[#6B6B6B] font-medium'}`}
+                className={`py-2.5 rounded-[10px] text-[13px] border transition-colors ${on ? 'bg-[#FEF9E7] border-[#F5C842] text-[#F5C842] font-bold' : 'border-[#EFEFEF] text-[#6B7684] font-medium'}`}
               >
                 {ACTIVITY_FACTORS[key].label}
               </button>
             );
           })}
         </div>
-        <p className="text-[11px] text-[#ABABAB] mt-1.5">{ACTIVITY_FACTORS[activity].desc}</p>
+        <p className="text-[11px] text-[#8B95A1] mt-1.5">{ACTIVITY_FACTORS[activity].desc}</p>
       </div>
 
       {/* CHANGED(#7): 중성화(2열) + 체형(3열) 레이아웃 통일 */}
@@ -216,7 +216,7 @@ export default function FeedingGuideCalculator({ kcalPer100g, productName, fatPe
               return (
                 <button
                   key={String(val)} type="button" onClick={() => setIsNeutered(val)}
-                  className={`py-2.5 rounded-[10px] text-[12px] border ${on ? 'bg-[#FEF9E7] border-[#F5C842] text-[#F5C842] font-bold' : 'border-[#EFEFEF] text-[#6B6B6B]'}`}
+                  className={`py-2.5 rounded-[10px] text-[12px] border ${on ? 'bg-[#FEF9E7] border-[#F5C842] text-[#F5C842] font-bold' : 'border-[#EFEFEF] text-[#6B7684]'}`}
                 >
                   {val ? '중성화 ✓' : '미중성화'}
                 </button>
@@ -232,7 +232,7 @@ export default function FeedingGuideCalculator({ kcalPer100g, productName, fatPe
               return (
                 <button
                   key={cond} type="button" onClick={() => setBodyCondition(cond)}
-                  className={`py-2.5 rounded-[10px] text-[11px] border ${on ? 'bg-[#FEF9E7] border-[#F5C842] text-[#F5C842] font-bold' : 'border-[#EFEFEF] text-[#6B6B6B]'}`}
+                  className={`py-2.5 rounded-[10px] text-[11px] border ${on ? 'bg-[#FEF9E7] border-[#F5C842] text-[#F5C842] font-bold' : 'border-[#EFEFEF] text-[#6B7684]'}`}
                 >
                   {BODY_LABELS[cond]}
                 </button>
@@ -246,28 +246,28 @@ export default function FeedingGuideCalculator({ kcalPer100g, productName, fatPe
       <div className="bg-[#FEF9E7] border border-[#F5C842] rounded-[14px] p-4">
         <div className="flex justify-around items-center">
           <div className="text-center">
-            <p className="text-[11px] text-[#ABABAB] mb-1">하루 권장량</p>
+            <p className="text-[11px] text-[#8B95A1] mb-1">하루 권장량</p>
             <p className="text-[34px] font-extrabold text-[#F5C842] leading-none"><AnimatedNumber value={dailyGrams} suffix="g" /></p>
-            <p className="text-[12px] text-[#ABABAB] mt-1"><AnimatedNumber value={dailyKcal} suffix=" kcal" /></p>
+            <p className="text-[12px] text-[#8B95A1] mt-1"><AnimatedNumber value={dailyKcal} suffix=" kcal" /></p>
           </div>
           <div className="w-px h-12 bg-[#F5C842]/30" />
           <div className="text-center">
-            <p className="text-[11px] text-[#ABABAB] mb-1">1회 급여량</p>
+            <p className="text-[11px] text-[#8B95A1] mb-1">1회 급여량</p>
             <p className="text-[34px] font-extrabold text-[#F5C842] leading-none"><AnimatedNumber value={mealGrams} suffix="g" /></p>
-            <p className="text-[12px] text-[#ABABAB] mt-1">하루 2회 기준</p>
+            <p className="text-[12px] text-[#8B95A1] mt-1">하루 2회 기준</p>
           </div>
           {fatPercent != null && fatRisk && (
             <>
               <div className="w-px h-12 bg-[#F5C842]/30" />
               <div className="text-center">
-                <p className="text-[11px] text-[#ABABAB] mb-1">일일 지방</p>
+                <p className="text-[11px] text-[#8B95A1] mb-1">일일 지방</p>
                 <p className="text-[34px] font-extrabold leading-none" style={{ color: riskColor }}><AnimatedNumber value={fatRisk.dailyFatG} decimals={1} /></p>
-                <p className="text-[12px] text-[#ABABAB] mt-1">지방 {fatPercent}%</p>
+                <p className="text-[12px] text-[#8B95A1] mt-1">지방 {fatPercent}%</p>
               </div>
             </>
           )}
         </div>
-        <p className="text-[10px] text-[#ABABAB] mt-3 pt-2.5 border-t border-[#F5C842]/20 text-center">
+        <p className="text-[10px] text-[#8B95A1] mt-3 pt-2.5 border-t border-[#F5C842]/20 text-center">
           {productName} 기준 · {kcalPer100g} kcal/100g · MER 계수 {merFactor.toFixed(2)} (RER {rer} kcal)
         </p>
       </div>
@@ -351,7 +351,7 @@ export default function FeedingGuideCalculator({ kcalPer100g, productName, fatPe
         </div>
       )}
 
-      <p className="text-[11px] text-[#ABABAB] mt-3 leading-relaxed">
+      <p className="text-[11px] text-[#8B95A1] mt-3 leading-relaxed">
         ※ 본 수치는 참고용이며, 수의사의 처방과 다를 수 있습니다. 반드시 전문가와 상담하세요.
       </p>
     </div>

@@ -14,36 +14,8 @@ import { rankProductsForProfile } from '../utils/score';
 import { getDisplayGrade } from '../utils/productGrade';
 import { displayBrand } from '../utils/brandLabel';
 
-// ===== 토스 톤 색상 =====
-const INK = '#191F28';   // 제목/숫자
-const SUB = '#4E5968';   // 본문
-const MUTED = '#8B95A1'; // 캡션
-const LINE = '#EDF0F3';  // 구분선
-
-// ===== 엄격한 타이포 스케일 (px / weight) — 모든 텍스트는 이 토큰만 사용 =====
-const T = {
-  score:    { fontSize: 28, fontWeight: 800, color: INK, letterSpacing: '-0.03em', lineHeight: 1 },
-  h1:       { fontSize: 20, fontWeight: 800, color: INK, letterSpacing: '-0.03em', lineHeight: 1.32 },
-  section:  { fontSize: 18, fontWeight: 800, color: INK, letterSpacing: '-0.03em', lineHeight: 1.25 },
-  title:    { fontSize: 15, fontWeight: 700, color: INK, letterSpacing: '-0.02em', lineHeight: 1.3 },
-  price:    { fontSize: 15, fontWeight: 800, color: INK, letterSpacing: '-0.02em' },
-  body:     { fontSize: 14, fontWeight: 600, color: INK, letterSpacing: '-0.01em' },
-  prodName: { fontSize: 13, fontWeight: 600, color: INK, letterSpacing: '-0.01em', lineHeight: 1.36 },
-  sub:      { fontSize: 13, fontWeight: 500, color: SUB, letterSpacing: '-0.01em', lineHeight: 1.4 },
-  cap:      { fontSize: 12, fontWeight: 500, color: MUTED, letterSpacing: '-0.01em' },
-  micro:    { fontSize: 11, fontWeight: 700, letterSpacing: '-0.01em' },
-};
-
-const CARD = '0 2px 10px rgba(17,24,39,0.045)';
-const CARD_SM = '0 1px 8px rgba(17,24,39,0.05)';
-
-// 등급→색상 매핑 (상세페이지와 동일 점수 팔레트). 알 수 없는 등급은 중립 회색.
-const getGradeColor = (grade) => {
-  const map = { S: '#15B36B', A: '#2ECC71', B: '#F5C842', C: '#FF9F43', D: '#F04452' };
-  return map[grade] ?? '#B0B8C1';
-};
-const scoreColor = (s) => (s >= 85 ? '#15B36B' : s >= 70 ? '#F5C842' : '#FF8A00');
-const scoreLabel = (s) => (s >= 90 ? '최고예요' : s >= 80 ? '아주 좋아요' : s >= 70 ? '양호해요' : '관리가 필요해요');
+// ===== 디자인 토큰 — 단일 소스(src/theme/tokens.ts) =====
+import { INK, SUB, MUTED, LINE, CARD, CARD_SM, T, gradeColor, scoreColor, scoreLabel } from '../theme/tokens';
 
 const CATEGORY_CHIPS = [
   { icon: '🥣', label: '사료', category: '사료' },
@@ -306,7 +278,7 @@ export default function Home() {
                     <ProductImage src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
                     <span
                       className="absolute top-2 left-2 text-white px-2 py-0.5 rounded-full"
-                      style={{ ...T.micro, fontWeight: 800, background: getGradeColor(grade) }}
+                      style={{ ...T.micro, fontWeight: 800, background: gradeColor(grade).color }}
                     >
                       {label}
                     </span>
@@ -396,7 +368,7 @@ export default function Home() {
                         </div>
                         <span
                           className="text-white px-2.5 py-1 rounded-full flex-shrink-0"
-                          style={{ ...T.micro, fontWeight: 800, background: getGradeColor(grade) }}
+                          style={{ ...T.micro, fontWeight: 800, background: gradeColor(grade).color }}
                         >
                           {grade === 'pending' ? '분석 중' : `${grade}등급`}
                         </span>
@@ -426,7 +398,7 @@ export default function Home() {
                     <ProductImage src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
                     <span
                       className="absolute top-1.5 left-1.5 text-white px-1.5 py-0.5 rounded-full"
-                      style={{ ...T.micro, fontSize: 10, fontWeight: 800, background: getGradeColor(grade) }}
+                      style={{ ...T.micro, fontSize: 10, fontWeight: 800, background: gradeColor(grade).color }}
                     >
                       {grade === 'pending' ? '분석 중' : grade}
                     </span>

@@ -125,7 +125,7 @@ export default function Layout() {
                 홈
                 <span className="absolute left-0 right-0 bottom-0 h-[2px] bg-[#1A1A1A] rounded-full" />
               </Link>
-              <Link to="/ranking" className="relative py-2.5 text-[15px] font-semibold text-[#ABABAB]" style={{ textDecoration: 'none' }}>
+              <Link to="/ranking" className="relative py-2.5 text-[15px] font-semibold text-[#8B95A1]" style={{ textDecoration: 'none' }}>
                 랭킹
               </Link>
             </div>

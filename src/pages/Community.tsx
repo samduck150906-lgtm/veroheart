@@ -144,14 +144,14 @@ function PostCard({
             display: 'flex', alignItems: 'center', gap: '5px',
             background: 'none', border: 'none', cursor: 'pointer', padding: 0,
             fontSize: '12px', fontWeight: 700,
-            color: post.has_liked ? '#E04452' : 'var(--ink-faint)',
+            color: post.has_liked ? '#F04452' : 'var(--ink-faint)',
             transition: 'color 0.15s',
           }}
         >
           <ThumbsUp
             size={14}
-            fill={post.has_liked ? '#E04452' : 'none'}
-            color={post.has_liked ? '#E04452' : 'var(--ink-faint)'}
+            fill={post.has_liked ? '#F04452' : 'none'}
+            color={post.has_liked ? '#F04452' : 'var(--ink-faint)'}
             strokeWidth={2.2}
           />
           {post.likes_count}

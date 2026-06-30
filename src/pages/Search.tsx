@@ -342,38 +342,38 @@ export default function Search() {
           <div style={{ width: '100%', backgroundColor: '#fff', borderRadius: '20px 20px 0 0', padding: '24px 20px', maxHeight: '85vh', overflowY: 'auto' }}>
             <TossFilterSection title="제외 성분 검색">
               <div style={{ position: 'relative', marginBottom: '8px' }}>
-                <FlaskConical size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+                <FlaskConical size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#8B95A1' }} />
                 <input
                   type="text"
                   placeholder="제외할 성분 검색..."
                   value={ingredientSearch}
                   onChange={e => setIngredientSearch(e.target.value)}
-                  style={{ width: '100%', padding: '12px 12px 12px 36px', borderRadius: '12px', border: '1px solid #E5E7EB', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '12px 12px 12px 36px', borderRadius: '12px', border: '1px solid #E5E8EB', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
                 />
               </div>
               {ingredientSearch && (
-                <div style={{ maxHeight: '160px', overflowY: 'auto', border: '1px solid #E5E7EB', borderRadius: '12px', background: '#fff' }}>
+                <div style={{ maxHeight: '160px', overflowY: 'auto', border: '1px solid #E5E8EB', borderRadius: '12px', background: '#fff' }}>
                   {filteredIngList.length === 0 ? (
-                    <div style={{ padding: '12px', fontSize: '13px', color: '#9CA3AF', textAlign: 'center' }}>{INGREDIENT_DICT.notFound}</div>
+                    <div style={{ padding: '12px', fontSize: '13px', color: '#8B95A1', textAlign: 'center' }}>{INGREDIENT_DICT.notFound}</div>
                   ) : filteredIngList.map(ing => (
                     <button
                       key={ing.id}
                       type="button"
                       onClick={() => { setExcludedIngredients(prev => [...prev, ing.name_ko]); setIngredientSearch(''); }}
-                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', borderBottom: '1px solid #F3F4F6' }}
+                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', borderBottom: '1px solid #F2F4F6' }}
                     >
-                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: ing.risk_level === 'danger' ? '#EF4444' : ing.risk_level === 'caution' ? '#F59E0B' : '#10B981', flexShrink: 0 }} />
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: ing.risk_level === 'danger' ? '#F04452' : ing.risk_level === 'caution' ? '#F59E0B' : '#10B981', flexShrink: 0 }} />
                       {ing.name_ko}
-                      <Plus size={14} style={{ marginLeft: 'auto', color: '#9CA3AF' }} />
+                      <Plus size={14} style={{ marginLeft: 'auto', color: '#8B95A1' }} />
                     </button>
                   ))}
                 </div>
               )}
-              <p style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '6px' }}>선택한 성분이 포함된 제품은 검색에서 제외됩니다.</p>
+              <p style={{ fontSize: '12px', color: '#8B95A1', marginTop: '6px' }}>선택한 성분이 포함된 제품은 검색에서 제외됩니다.</p>
             </TossFilterSection>
 
             <div style={{ position: 'sticky', bottom: 0, paddingTop: '40px', paddingBottom: '24px', backgroundColor: '#fff', display: 'flex', gap: '12px' }}>
-              <button type="button" onClick={resetFilters} style={{ flex: 1, padding: '18px', borderRadius: '16px', border: '1px solid #E5E7EB', backgroundColor: '#fff', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}><Trash2 size={18} /> 초기화</button>
+              <button type="button" onClick={resetFilters} style={{ flex: 1, padding: '18px', borderRadius: '16px', border: '1px solid #E5E8EB', backgroundColor: '#fff', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}><Trash2 size={18} /> 초기화</button>
               <button type="button" onClick={() => setIsFilterOpen(false)} style={{ flex: 2, padding: '18px', borderRadius: '16px', background: 'var(--brand)', color: 'var(--ink-on-brand)', fontWeight: 800, border: 'none', cursor: 'pointer' }}>결과 보기</button>
             </div>
           </div>
@@ -387,57 +387,57 @@ export default function Search() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div>
                 <h2 style={{ fontSize: '18px', fontWeight: 900 }}>한국표준사료 성분사전</h2>
-                <p style={{ fontSize: '12px', color: '#6B7280', marginTop: '2px' }}>공식 표준 성분 데이터를 확인해보세요 (총 {standardFeedData.length}개)</p>
+                <p style={{ fontSize: '12px', color: '#6B7684', marginTop: '2px' }}>공식 표준 성분 데이터를 확인해보세요 (총 {standardFeedData.length}개)</p>
               </div>
               <button onClick={() => setIsStandardFeedModalOpen(false)} style={{ padding: '8px', background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
             </div>
             
             <div style={{ position: 'relative', marginBottom: '16px' }}>
-              <SearchIcon size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+              <SearchIcon size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#8B95A1' }} />
               <input 
                 type="text" 
                 placeholder="어떤 성분이 궁금하신가요? (예: 귀리)" 
                 value={standardFeedSearch}
                 onChange={(e) => setStandardFeedSearch(e.target.value)}
-                style={{ width: '100%', padding: '12px 12px 12px 38px', borderRadius: '12px', border: '1px solid #E5E7EB', outline: 'none', fontSize: '14px', backgroundColor: '#F9FAFB' }}
+                style={{ width: '100%', padding: '12px 12px 12px 38px', borderRadius: '12px', border: '1px solid #E5E8EB', outline: 'none', fontSize: '14px', backgroundColor: '#F9FAFB' }}
               />
             </div>
 
-            <div style={{ overflowY: 'auto', flex: 1, border: '1px solid #E5E7EB', borderRadius: '12px' }}>
+            <div style={{ overflowY: 'auto', flex: 1, border: '1px solid #E5E8EB', borderRadius: '12px' }}>
               {filteredStandardFeed.length === 0 ? (
-                <div style={{ padding: '40px', textAlign: 'center', color: '#9CA3AF', fontSize: '14px' }}>{SEARCH_NO_RESULTS.title}</div>
+                <div style={{ padding: '40px', textAlign: 'center', color: '#8B95A1', fontSize: '14px' }}>{SEARCH_NO_RESULTS.title}</div>
               ) : (
                 filteredStandardFeed.map((item: any, idx: number) => (
                   <div 
                     key={idx}
                     style={{ 
-                      padding: '16px', borderBottom: '1px solid #E5E7EB',
+                      padding: '16px', borderBottom: '1px solid #E5E8EB',
                       display: 'flex', flexDirection: 'column', gap: '8px'
                     }}
                   >
                     <div>
                       <div style={{ fontWeight: 800, color: '#1F2937', fontSize: '15px' }}>{item.name_ko}</div>
-                      <div style={{ fontSize: '12px', color: '#6B7280' }}>{item.name_en || '-'}</div>
+                      <div style={{ fontSize: '12px', color: '#6B7684' }}>{item.name_en || '-'}</div>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginTop: '4px' }}>
-                      <div style={{ background: '#F3F4F6', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '10px', color: '#6B7280', fontWeight: 600 }}>조단백질</div>
+                      <div style={{ background: '#F2F4F6', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '10px', color: '#6B7684', fontWeight: 600 }}>조단백질</div>
                         <div style={{ fontSize: '13px', color: '#111827', fontWeight: 800 }}>{item.protein}%</div>
                       </div>
-                      <div style={{ background: '#F3F4F6', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '10px', color: '#6B7280', fontWeight: 600 }}>조지방</div>
+                      <div style={{ background: '#F2F4F6', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '10px', color: '#6B7684', fontWeight: 600 }}>조지방</div>
                         <div style={{ fontSize: '13px', color: '#111827', fontWeight: 800 }}>{item.fat}%</div>
                       </div>
-                      <div style={{ background: '#F3F4F6', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '10px', color: '#6B7280', fontWeight: 600 }}>수분</div>
+                      <div style={{ background: '#F2F4F6', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '10px', color: '#6B7684', fontWeight: 600 }}>수분</div>
                         <div style={{ fontSize: '13px', color: '#111827', fontWeight: 800 }}>{item.moisture}%</div>
                       </div>
-                      <div style={{ background: '#F3F4F6', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '10px', color: '#6B7280', fontWeight: 600 }}>조섬유</div>
+                      <div style={{ background: '#F2F4F6', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '10px', color: '#6B7684', fontWeight: 600 }}>조섬유</div>
                         <div style={{ fontSize: '13px', color: '#111827', fontWeight: 800 }}>{item.fiber}%</div>
                       </div>
-                      <div style={{ background: '#F3F4F6', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '10px', color: '#6B7280', fontWeight: 600 }}>조회분</div>
+                      <div style={{ background: '#F2F4F6', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '10px', color: '#6B7684', fontWeight: 600 }}>조회분</div>
                         <div style={{ fontSize: '13px', color: '#111827', fontWeight: 800 }}>{item.ash}%</div>
                       </div>
                     </div>

@@ -59,13 +59,8 @@ import ProductImageSlider from '../components/ProductImageSlider';
 import AnimatedNumber from '../components/AnimatedNumber';
 import { CAUTION_INGREDIENT, ALLERGY_CONFLICT, MEDICAL_DISCLAIMER, PRE_PURCHASE } from '../copy/ui';
 
-const GRADE_COLORS = {
-  A: '#15B36B', B: '#E8A800', C: '#F04452', D: '#F04452', F: '#8B95A1',
-};
-
-const RISK_COLORS = { safe: '#15B36B', caution: '#E8A800', danger: '#F04452' };
-const RISK_BG = { safe: '#E7F8F0', caution: '#FEF6E0', danger: '#FFF0ED' };
-const RISK_LABEL = { safe: '안전', caution: '주의', danger: '위험' };
+// 등급·위험도 색은 단일 토큰(src/theme/tokens.ts)에서만 가져온다.
+import { gradeColor, RISK_COLOR as RISK_COLORS, RISK_BG, RISK_LABEL } from '../theme/tokens';
 
 // CHANGED: 등급별 색상 토큰 — S(초록)·A(연두)·B(노랑)·C(주황)·D(빨강) 체계 (실제 산출 등급은 A~D)
 const GRADE_META: Record<string, { color: string; bg: string; line: string; tier: string }> = {
@@ -92,7 +87,7 @@ function GradeCircle({ grade }) {
   return (
     <div style={{
       width: 44, height: 44, borderRadius: '50%',
-      background: GRADE_COLORS[grade] || '#8B95A1',
+      background: gradeColor(grade).color,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       color: '#fff', fontSize: 18, fontWeight: 900,
     }}>{grade}</div>
@@ -242,27 +237,27 @@ export default function Detail() {
       <div className="pt-5 pb-4">
         <div className="flex items-center gap-2 mb-2">
           {(product.coupangProductId || product.coupangLink) && (
-            <span className="text-[11px] text-[#6B6B6B] bg-[#EFEFEF] px-2 py-0.5 rounded-full font-medium">쿠팡상품</span>
+            <span className="text-[11px] text-[#6B7684] bg-[#EFEFEF] px-2 py-0.5 rounded-full font-medium">쿠팡상품</span>
           )}
           {product.targetPetType && (
-            <span className="text-[11px] text-[#6B6B6B] bg-[#EFEFEF] px-2 py-0.5 rounded-full">
+            <span className="text-[11px] text-[#6B7684] bg-[#EFEFEF] px-2 py-0.5 rounded-full">
               {product.targetPetType === 'dog' ? '🐶 강아지용' : product.targetPetType === 'cat' ? '🐱 고양이용' : '🐾 전체'}
             </span>
           )}
           {/* CHANGED(#2): 검수 상태는 눈에 덜 띄게 우측 muted 처리 */}
-          <span className="text-[11px] text-[#ABABAB] ml-auto">{verificationMeta.label}</span>
+          <span className="text-[11px] text-[#8B95A1] ml-auto">{verificationMeta.label}</span>
         </div>
-        <div className="text-[12px] text-[#6B6B6B] font-medium mb-1">{product.brand}</div>
+        <div className="text-[12px] text-[#6B7684] font-medium mb-1">{product.brand}</div>
         <h1 className="text-[18px] font-bold text-[#1A1A1A] leading-snug mb-3">{product.name}</h1>
         {(() => {
           const ga = product.guaranteedAnalysis;
           const tags = [];
-          if (!product.ingredients?.some(i => i.riskLevel === 'danger')) tags.push({ label: '주의성분 없음', emoji: '✅', cls: 'text-[#2ECC71] bg-[#EAFAF1]' });
-          if (allergyIngs.length === 0 && hasPetProfile) tags.push({ label: '알러지 성분 없음', emoji: '🛡️', cls: 'text-[#2ECC71] bg-[#EAFAF1]' });
+          if (!product.ingredients?.some(i => i.riskLevel === 'danger')) tags.push({ label: '주의성분 없음', emoji: '✅', cls: 'text-[#15B36B] bg-[#EAFAF1]' });
+          if (allergyIngs.length === 0 && hasPetProfile) tags.push({ label: '알러지 성분 없음', emoji: '🛡️', cls: 'text-[#15B36B] bg-[#EAFAF1]' });
           if (ga?.crudeProtein && ga.crudeProtein >= 28) tags.push({ label: '고단백', emoji: '💪', cls: 'text-[#F5A623] bg-[#FEF9E7]' });
           if (product.targetPetType === 'dog') tags.push({ label: '강아지 전용', emoji: '🐕', cls: 'text-[#F5A623] bg-[#FEF9E7]' });
           if (product.targetPetType === 'cat') tags.push({ label: '고양이 전용', emoji: '🐈', cls: 'text-[#F5A623] bg-[#FEF9E7]' });
-          if (/무곡|grain.?free/i.test(product.name || '')) tags.push({ label: '무곡물', emoji: '🌾', cls: 'text-[#2ECC71] bg-[#EAFAF1]' });
+          if (/무곡|grain.?free/i.test(product.name || '')) tags.push({ label: '무곡물', emoji: '🌾', cls: 'text-[#15B36B] bg-[#EAFAF1]' });
           if (!tags.length) return null;
           return (
             <div className="flex flex-wrap gap-2">
@@ -283,28 +278,28 @@ export default function Detail() {
         const legend = ['D', 'C', 'B', 'A', 'S'];
         return (
           <div className="mb-3 bg-white rounded-[16px] p-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
-            <p className="text-[11px] font-semibold text-[#ABABAB] tracking-widest mb-3">VERORO SCORE</p>
+            <p className="text-[11px] font-semibold text-[#8B95A1] tracking-widest mb-3">VERORO SCORE</p>
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-end gap-1 mb-1">
                   <span className="text-[52px] font-extrabold leading-none" style={{ color: gm.color }}><AnimatedNumber value={report.score} /></span>
-                  <span className="text-[16px] text-[#ABABAB] mb-2">/ 100</span>
+                  <span className="text-[16px] text-[#8B95A1] mb-2">/ 100</span>
                 </div>
-                <p className="text-[13px] text-[#6B6B6B]">{gm.tier}</p>
-                <p className="text-[12px] text-[#ABABAB] mt-0.5">{scoreOneLiner(product, report, pipeline)}</p>
+                <p className="text-[13px] text-[#6B7684]">{gm.tier}</p>
+                <p className="text-[12px] text-[#8B95A1] mt-0.5">{scoreOneLiner(product, report, pipeline)}</p>
               </div>
               <div className="flex flex-col items-center gap-1">
                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-md" style={{ background: gm.color }}>
                   <span className="text-[28px] font-extrabold text-white">{g}</span>
                 </div>
-                <span className="text-[11px] text-[#ABABAB]">등급</span>
+                <span className="text-[11px] text-[#8B95A1]">등급</span>
               </div>
             </div>
             <div className="mt-4">
-              <div className="flex justify-between text-[10px] text-[#ABABAB] mb-1"><span>0</span><span>50</span><span>100</span></div>
+              <div className="flex justify-between text-[10px] text-[#8B95A1] mb-1"><span>0</span><span>50</span><span>100</span></div>
               <div className="w-full h-2 bg-[#EFEFEF] rounded-full overflow-hidden">
                 <div className="h-full rounded-full transition-all duration-700"
-                  style={{ width: `${Math.max(3, Math.min(100, report.score))}%`, background: 'linear-gradient(to right, #F5C842, #2ECC71)' }} />
+                  style={{ width: `${Math.max(3, Math.min(100, report.score))}%`, background: 'linear-gradient(to right, #F5C842, #15B36B)' }} />
               </div>
               <div className="flex justify-between mt-2 text-[10px]">
                 {legend.map(x => (
@@ -339,13 +334,13 @@ export default function Detail() {
           {PRE_PURCHASE.checklist.map((text, i) => (
             <div key={i} className="flex items-start gap-2.5">
               <div className="w-5 h-5 rounded-full bg-[#EAFAF1] flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="text-[10px] text-[#2ECC71] font-bold">✓</span>
+                <span className="text-[10px] text-[#15B36B] font-bold">✓</span>
               </div>
-              <p className="text-[13px] text-[#6B6B6B] leading-snug">{text}</p>
+              <p className="text-[13px] text-[#6B7684] leading-snug">{text}</p>
             </div>
           ))}
         </div>
-        <p className="text-[11px] text-[#ABABAB] mt-3 pt-3 border-t border-[#EFEFEF]">{MEDICAL_DISCLAIMER.short}</p>
+        <p className="text-[11px] text-[#8B95A1] mt-3 pt-3 border-t border-[#EFEFEF]">{MEDICAL_DISCLAIMER.short}</p>
       </div>
 
       {/* CHANGED(#6): 급여 가이드 — 카드형, 선택 버튼 2열 통일, 결과 박스 강조 (컴포넌트 내부 Tailwind) */}
@@ -407,7 +402,7 @@ export default function Detail() {
               <div key={item.name} style={{ marginBottom: idx < pipeline.top3.length - 1 ? '14px' : 0 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#94A3B8', minWidth: '16px' }}>{idx + 1}</span>
+                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#8B95A1', minWidth: '16px' }}>{idx + 1}</span>
                     <span style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>{item.name}</span>
                   </div>
                   <span style={{ fontSize: '12px', fontWeight: 800, color: item.qualityResult.color, flexShrink: 0, marginLeft: '8px' }}>
@@ -470,28 +465,28 @@ export default function Detail() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
               {/* 성분표 분석점수 */}
               <div style={{ padding: '14px', borderRadius: '14px', background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
-                <div style={{ fontSize: '11px', fontWeight: 700, color: '#94A3B8', marginBottom: '6px' }}>성분표 분석점수</div>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: '#8B95A1', marginBottom: '6px' }}>성분표 분석점수</div>
                 <div style={{ fontSize: '22px', fontWeight: 900, color: '#0F172A', letterSpacing: '-0.03em' }}>{pipeline.ingredientScoreDisplay}</div>
               </div>
               {/* 원료 등급 */}
               <div style={{ padding: '14px', borderRadius: '14px', background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
-                <div style={{ fontSize: '11px', fontWeight: 700, color: '#94A3B8', marginBottom: '6px' }}>원료 등급</div>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: '#8B95A1', marginBottom: '6px' }}>원료 등급</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
                   <span style={{ fontSize: '22px', fontWeight: 900, color: '#0F172A', letterSpacing: '-0.03em' }}>{pipeline.rawMaterialGrade}</span>
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#94A3B8' }}>{pipeline.rawMaterialCriteriaScore}/6</span>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#8B95A1' }}>{pipeline.rawMaterialCriteriaScore}/6</span>
                 </div>
               </div>
               {/* 영양 공개 수준 */}
               <div style={{ padding: '14px', borderRadius: '14px', background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
-                <div style={{ fontSize: '11px', fontWeight: 700, color: '#94A3B8', marginBottom: '6px' }}>영양 공개 수준</div>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: '#8B95A1', marginBottom: '6px' }}>영양 공개 수준</div>
                 <div style={{ fontSize: '15px', fontWeight: 800, color: pipeline.nutritionDisclosureLevel === '완전 공개' ? '#15B36B' : pipeline.nutritionDisclosureLevel === '부분 공개' ? '#F59E0B' : '#F04452' }}>
                   {pipeline.nutritionDisclosureLevel}
                 </div>
-                <div style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600 }}>({pipeline.nutritionDisclosureCount}/7 항목)</div>
+                <div style={{ fontSize: '11px', color: '#8B95A1', fontWeight: 600 }}>({pipeline.nutritionDisclosureCount}/7 항목)</div>
               </div>
               {/* 안전성 검증 */}
               <div style={{ padding: '14px', borderRadius: '14px', background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
-                <div style={{ fontSize: '11px', fontWeight: 700, color: '#94A3B8', marginBottom: '6px' }}>안전성 검증</div>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: '#8B95A1', marginBottom: '6px' }}>안전성 검증</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   {pipeline.safetyFailures === 0
                     ? <CheckCircle2 size={16} color="#15B36B" />
@@ -513,7 +508,7 @@ export default function Detail() {
               border: `1px solid ${pipeline.etfGrade === 'C1' ? '#86EFAC' : pipeline.etfGrade === 'C2' ? '#BFDBFE' : pipeline.etfGrade === 'C3' ? '#FDE68A' : '#FECDD3'}`,
             }}>
               <div>
-                <div style={{ fontSize: '11px', fontWeight: 700, color: '#94A3B8', marginBottom: '2px' }}>공개 정보 신뢰도 ETF</div>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: '#8B95A1', marginBottom: '2px' }}>공개 정보 신뢰도 ETF</div>
                 <div style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>{pipeline.etfDescription}</div>
               </div>
               <span style={{
@@ -547,7 +542,7 @@ export default function Detail() {
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '6px' }}>
                       {fi.purposes.map(purpose => {
-                        const ps = PURPOSE_STYLE[purpose] ?? { bg: '#F9FAFB', text: '#374151', border: '#E5E7EB', emoji: '•' };
+                        const ps = PURPOSE_STYLE[purpose] ?? { bg: '#F9FAFB', text: '#374151', border: '#E5E8EB', emoji: '•' };
                         return (
                           <span
                             key={purpose}
@@ -571,7 +566,7 @@ export default function Detail() {
                 ))}
               </div>
             ) : (
-              <p style={{ fontSize: '14px', color: '#94A3B8', fontWeight: 600, textAlign: 'center', padding: '20px 0', margin: 0 }}>
+              <p style={{ fontSize: '14px', color: '#8B95A1', fontWeight: 600, textAlign: 'center', padding: '20px 0', margin: 0 }}>
                 기능성 성분이 확인되지 않았어요.
               </p>
             )}
@@ -624,7 +619,7 @@ export default function Detail() {
                           </span>
                         )}
                         {!hasQuantitative && !isClinicalFirst && (
-                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#94A3B8' }}>보조 성분 점검</span>
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#8B95A1' }}>보조 성분 점검</span>
                         )}
                       </div>
 
@@ -637,7 +632,7 @@ export default function Detail() {
                       {!isClinicalFirst && hasQuantitative && (
                         <div style={{ borderTop: `1px solid ${headerBorder}`, padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                           {ad.ruleChecks.map((rc, idx) => {
-                            const statusColor = rc.status === 'pass' ? '#15B36B' : rc.status === 'fail' ? '#F04452' : '#94A3B8';
+                            const statusColor = rc.status === 'pass' ? '#15B36B' : rc.status === 'fail' ? '#F04452' : '#8B95A1';
                             const statusBg = rc.status === 'pass' ? '#ECFDF5' : rc.status === 'fail' ? '#FFF1F2' : '#F8FAFC';
                             return (
                               <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
@@ -646,7 +641,7 @@ export default function Detail() {
                                 </span>
                                 <div>
                                   <span style={{ fontSize: '12px', fontWeight: 700, color: '#374151' }}>{rc.rule.displayName}</span>
-                                  <span style={{ fontSize: '11px', color: '#94A3B8', marginLeft: '6px' }}>
+                                  <span style={{ fontSize: '11px', color: '#8B95A1', marginLeft: '6px' }}>
                                     {rc.rule.evidenceLevel === 'high' ? '근거 높음' : '근거 중간'}
                                   </span>
                                   <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600, marginTop: '2px' }}>{rc.message}</div>
@@ -781,7 +776,7 @@ export default function Detail() {
             { dot: '#15B36B', label: '주요 가점' },
             { dot: '#F59E0B', label: '보조 가점' },
             { dot: '#3182F6', label: '대체 단백질' },
-            { dot: '#94A3B8', label: '중립' },
+            { dot: '#8B95A1', label: '중립' },
             { dot: '#F97316', label: '주의' },
             { dot: '#F04452', label: '강한 주의' },
           ].map(s => (
@@ -818,7 +813,7 @@ export default function Detail() {
             } else {
               const isDanger = ing.riskLevel === 'danger';
               const isCaution = ing.riskLevel === 'caution';
-              dotColor = isDanger ? '#F04452' : isCaution ? '#F59E0B' : '#94A3B8';
+              dotColor = isDanger ? '#F04452' : isCaution ? '#F59E0B' : '#8B95A1';
               badgeBg = isDanger ? '#FFF1F2' : isCaution ? '#FFFBEB' : '#F8FAFC';
               badgeColor = isDanger ? '#BE123C' : isCaution ? '#92400E' : '#475569';
               badgeLabel = isDanger ? '강한 주의' : isCaution ? '주의' : '중립';
@@ -940,13 +935,13 @@ export default function Detail() {
       <section className="mb-6">
         <div className="flex items-center gap-2 mb-3">
           <h3 className="text-[16px] font-bold text-[#1A1A1A]">리뷰</h3>
-          {reviews.length > 0 && <span className="text-[13px] text-[#ABABAB]">{reviews.length}개</span>}
+          {reviews.length > 0 && <span className="text-[13px] text-[#8B95A1]">{reviews.length}개</span>}
         </div>
         {reviews.length === 0 ? (
           <div className="bg-white rounded-[16px] p-6 text-center shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
             <div className="text-5xl mb-3">💬</div>
             <p className="text-[15px] font-bold text-[#1A1A1A] mb-1">아직 리뷰가 없어요</p>
-            <p className="text-[13px] text-[#ABABAB] mb-4">이 사료를 드셔봤다면 첫 번째 리뷰를 남겨주세요!</p>
+            <p className="text-[13px] text-[#8B95A1] mb-4">이 사료를 드셔봤다면 첫 번째 리뷰를 남겨주세요!</p>
             <button
               type="button"
               onClick={() => navigate('/login', { state: { from: `/product/${product.id}` } })}
@@ -967,10 +962,10 @@ export default function Detail() {
                     <div>
                       <div className="flex gap-0.5 mb-1">
                         {[1, 2, 3, 4, 5].map(s => (
-                          <Star key={s} size={14} fill={s <= review.rating ? '#FCD34D' : 'none'} color={s <= review.rating ? '#FCD34D' : '#E5E7EB'} />
+                          <Star key={s} size={14} fill={s <= review.rating ? '#FCD34D' : 'none'} color={s <= review.rating ? '#FCD34D' : '#E5E8EB'} />
                         ))}
                       </div>
-                      <div className="text-[12px] text-[#ABABAB]">{review.users?.nickname || '익명'} · {new Date(review.created_at).toLocaleDateString()}</div>
+                      <div className="text-[12px] text-[#8B95A1]">{review.users?.nickname || '익명'} · {new Date(review.created_at).toLocaleDateString()}</div>
                     </div>
                     {review.user_id === userId && (
                       <button onClick={() => handleDeleteReview(review.id)} className="bg-transparent border-0 cursor-pointer text-[#D1D5DB]">
@@ -982,7 +977,7 @@ export default function Detail() {
                   {tags.length > 0 && (
                     <div className="flex flex-wrap gap-1.5">
                       {tags.map(tag => (
-                        <span key={tag} className="px-2.5 py-1 bg-[#F3F4F6] rounded-full text-[12px] font-bold text-[#374151]">{tag}</span>
+                        <span key={tag} className="px-2.5 py-1 bg-[#F2F4F6] rounded-full text-[12px] font-bold text-[#374151]">{tag}</span>
                       ))}
                     </div>
                   )}
@@ -1008,7 +1003,7 @@ export default function Detail() {
             aria-pressed={isComparing}
             className={`w-12 h-12 rounded-[12px] border-2 flex items-center justify-center flex-shrink-0 ${isComparing ? 'border-[#F5C842] bg-[#FEF9E7]' : 'border-[#EFEFEF] bg-white'}`}
           >
-            <GitCompare size={20} color={isComparing ? '#F5C842' : '#6B6B6B'} />
+            <GitCompare size={20} color={isComparing ? '#F5C842' : '#6B7684'} />
           </button>
           <button
             type="button"

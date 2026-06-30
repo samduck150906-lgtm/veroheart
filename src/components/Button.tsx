@@ -77,9 +77,9 @@ export const Button: React.FC<ButtonProps> = ({
   const getVariantStyles = (): React.CSSProperties => {
     if (isActuallyDisabled) {
       return {
-        backgroundColor: '#F3F4F6', // Neutral soft gray
+        backgroundColor: '#F2F4F6', // Neutral soft gray
         borderColor: theme.colors.border,
-        color: '#9CA3AF', // Muted text gray
+        color: '#8B95A1', // Muted text gray
       };
     }
 

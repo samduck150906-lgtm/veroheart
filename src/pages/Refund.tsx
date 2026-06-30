@@ -4,7 +4,7 @@ export default function Refund() {
   return (
     <div style={{ padding: '20px', paddingTop: '80px', paddingBottom: '100px', lineHeight: 1.65 }}>
       <h1 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '8px' }}>VeRoRo(베로로) 취소 및 환불 안내</h1>
-      <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '20px' }}>시행일: 2026년 4월 12일</p>
+      <p style={{ fontSize: '12px', color: '#6B7684', marginBottom: '20px' }}>시행일: 2026년 4월 12일</p>
 
       <div style={{ fontSize: '13px', color: '#374151' }}>
         <p>
@@ -49,7 +49,7 @@ export default function Refund() {
           법령이 정한 범위 내에서 중도 해지 시 이용 기간에 따른 일할 계산 등을 적용할 수 있습니다.</p>
         <p>② 이미 사용·다운로드된 디지털 콘텐츠 등은 그 성격상 환불이 제한될 수 있습니다.</p>
 
-        <div style={{ marginTop: '32px', padding: '16px', backgroundColor: '#F3F4F6', borderRadius: '12px' }}>
+        <div style={{ marginTop: '32px', padding: '16px', backgroundColor: '#F2F4F6', borderRadius: '12px' }}>
           <p style={{ fontWeight: 'bold', marginBottom: '8px' }}>📞 고객센터 · 사업자 정보</p>
           <p>
             상호 {COMPANY.tradeName} · 대표 {COMPANY.representative}

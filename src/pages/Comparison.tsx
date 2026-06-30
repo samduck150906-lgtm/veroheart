@@ -7,14 +7,8 @@ import { gradeFromScore, getRecommendationBreakdown } from '../utils/score';
 import ProductImage from '../components/ProductImage';
 import { openCoupangForProduct } from '../utils/externalPurchase';
 import { COMPARE_EMPTY, PRE_PURCHASE } from '../copy/ui';
-
-const GRADE_COLORS = {
-  A: { bg: '#E7F8F0', color: '#15B36B' },
-  B: { bg: '#FEF6E0', color: '#E8A800' },
-  C: { bg: '#FFF0ED', color: '#F04452' },
-  D: { bg: '#FFF0ED', color: '#F04452' },
-  F: { bg: '#F2F4F6', color: '#8B95A1' },
-};
+// 등급 색은 단일 토큰(src/theme/tokens.ts)에서만 가져온다.
+import { gradeColor } from '../theme/tokens';
 
 export default function Comparison() {
   const navigate = useNavigate();
@@ -137,10 +131,10 @@ export default function Comparison() {
                 </div>
                 {grade && bd ? (
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                    <span style={{ padding: '3px 8px', borderRadius: '7px', background: GRADE_COLORS[grade]?.bg, color: GRADE_COLORS[grade]?.color, fontSize: '13px', fontWeight: 800 }}>
+                    <span style={{ padding: '3px 8px', borderRadius: '7px', background: gradeColor(grade).bg, color: gradeColor(grade).color, fontSize: '13px', fontWeight: 800 }}>
                       {grade}등급
                     </span>
-                    <span style={{ fontSize: '18px', fontWeight: 900, color: GRADE_COLORS[grade]?.color }}>{bd.total}</span>
+                    <span style={{ fontSize: '18px', fontWeight: 900, color: gradeColor(grade).color }}>{bd.total}</span>
                   </div>
                 ) : null}
               </div>

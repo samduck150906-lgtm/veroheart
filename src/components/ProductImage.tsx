@@ -24,7 +24,7 @@ export default function ProductImage({ src, alt, style, ...props }: ProductImage
           width: '100%',
           height: '100%',
           background: 'linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%)',
-          color: '#94A3B8',
+          color: '#8B95A1',
           fontSize: '11px',
           fontWeight: 800,
           textAlign: 'center',

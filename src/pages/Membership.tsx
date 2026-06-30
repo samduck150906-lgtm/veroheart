@@ -10,9 +10,9 @@ const TIERS = [
     name: 'Free',
     price: 0,
     priceLabel: '무료',
-    color: '#6B7280',
+    color: '#6B7684',
     bg: '#F9FAFB',
-    border: '#E5E7EB',
+    border: '#E5E8EB',
     desc: '기본 성분 분석과 추천을 무료로 이용하세요.',
     features: [
       { text: '반려동물 프로필 1개', included: true },
@@ -186,7 +186,7 @@ export default function Membership() {
                     }
                     <span style={{
                       fontSize: 13.5, fontWeight: f.included ? 600 : 400,
-                      color: f.included ? 'var(--ink)' : '#9CA3AF',
+                      color: f.included ? 'var(--ink)' : '#8B95A1',
                       textDecoration: f.included ? 'none' : 'none',
                     }}>{f.text}</span>
                   </div>

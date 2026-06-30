@@ -202,11 +202,11 @@ export default function CommunityPost() {
               border: `1px solid ${post.has_liked ? '#FECACA' : 'var(--hairline)'}`,
               borderRadius: '99px', padding: '8px 16px', cursor: 'pointer',
               fontSize: '13px', fontWeight: 700,
-              color: post.has_liked ? '#E04452' : 'var(--ink-soft)',
+              color: post.has_liked ? '#F04452' : 'var(--ink-soft)',
               transition: 'all 0.15s',
             }}
           >
-            <ThumbsUp size={15} fill={post.has_liked ? '#E04452' : 'none'} strokeWidth={2.2} />
+            <ThumbsUp size={15} fill={post.has_liked ? '#F04452' : 'none'} strokeWidth={2.2} />
             좋아요 {post.likes_count}
           </button>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 700, color: 'var(--ink-faint)' }}>

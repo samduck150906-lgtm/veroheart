@@ -290,13 +290,13 @@ export default function Login() {
           <div>
             <div style={{
               display: 'flex', alignItems: 'center', gap: '10px',
-              border: fieldErrors.email ? '1.5px solid #EF4444' : '1.5px solid #E5E7EB',
+              border: fieldErrors.email ? '1.5px solid #F04452' : '1.5px solid #E5E8EB',
               borderRadius: '14px', background: '#FFFFFF',
               padding: '0 16px', height: '54px',
               boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
               transition: 'border-color 0.2s',
             }}>
-              <Mail size={18} color="#9CA3AF" style={{ flexShrink: 0 }} />
+              <Mail size={18} color="#8B95A1" style={{ flexShrink: 0 }} />
               <input
                 type="email"
                 placeholder="이메일 주소"
@@ -308,7 +308,7 @@ export default function Login() {
               />
             </div>
             {fieldErrors.email && (
-              <p style={{ margin: '5px 0 0 4px', fontSize: '12px', color: '#EF4444', fontWeight: 600 }}>{fieldErrors.email}</p>
+              <p style={{ margin: '5px 0 0 4px', fontSize: '12px', color: '#F04452', fontWeight: 600 }}>{fieldErrors.email}</p>
             )}
           </div>
 
@@ -316,13 +316,13 @@ export default function Login() {
           <div>
             <div style={{
               display: 'flex', alignItems: 'center', gap: '10px',
-              border: fieldErrors.password ? '1.5px solid #EF4444' : '1.5px solid #E5E7EB',
+              border: fieldErrors.password ? '1.5px solid #F04452' : '1.5px solid #E5E8EB',
               borderRadius: '14px', background: '#FFFFFF',
               padding: '0 16px', height: '54px',
               boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
               transition: 'border-color 0.2s',
             }}>
-              <Lock size={18} color="#9CA3AF" style={{ flexShrink: 0 }} />
+              <Lock size={18} color="#8B95A1" style={{ flexShrink: 0 }} />
               <input
                 type={showPw ? 'text' : 'password'}
                 placeholder="비밀번호 (8자 이상)"
@@ -335,13 +335,13 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => setShowPw(!showPw)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', display: 'inline-flex', flexShrink: 0 }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8B95A1', display: 'inline-flex', flexShrink: 0 }}
               >
                 {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
             {fieldErrors.password && (
-              <p style={{ margin: '5px 0 0 4px', fontSize: '12px', color: '#EF4444', fontWeight: 600 }}>{fieldErrors.password}</p>
+              <p style={{ margin: '5px 0 0 4px', fontSize: '12px', color: '#F04452', fontWeight: 600 }}>{fieldErrors.password}</p>
             )}
           </div>
 
@@ -350,13 +350,13 @@ export default function Login() {
             <div>
               <div style={{
                 display: 'flex', alignItems: 'center', gap: '10px',
-                border: fieldErrors.confirmPassword ? '1.5px solid #EF4444' : '1.5px solid #E5E7EB',
+                border: fieldErrors.confirmPassword ? '1.5px solid #F04452' : '1.5px solid #E5E8EB',
                 borderRadius: '14px', background: '#FFFFFF',
                 padding: '0 16px', height: '54px',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
                 transition: 'border-color 0.2s',
               }}>
-                <Lock size={18} color="#9CA3AF" style={{ flexShrink: 0 }} />
+                <Lock size={18} color="#8B95A1" style={{ flexShrink: 0 }} />
                 <input
                   type={showConfirmPw ? 'text' : 'password'}
                   placeholder="비밀번호 확인"
@@ -369,13 +369,13 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={() => setShowConfirmPw(!showConfirmPw)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', display: 'inline-flex', flexShrink: 0 }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8B95A1', display: 'inline-flex', flexShrink: 0 }}
                 >
                   {showConfirmPw ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
               {fieldErrors.confirmPassword && (
-                <p style={{ margin: '5px 0 0 4px', fontSize: '12px', color: '#EF4444', fontWeight: 600 }}>{fieldErrors.confirmPassword}</p>
+                <p style={{ margin: '5px 0 0 4px', fontSize: '12px', color: '#F04452', fontWeight: 600 }}>{fieldErrors.confirmPassword}</p>
               )}
             </div>
           )}
@@ -392,9 +392,9 @@ export default function Login() {
 
         {/* 소셜 로그인 구분선 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '18px 0' }}>
-          <div style={{ flex: 1, height: '1px', background: '#E5E7EB' }} />
-          <span style={{ fontSize: '12px', color: '#9CA3AF', fontWeight: 600 }}>또는</span>
-          <div style={{ flex: 1, height: '1px', background: '#E5E7EB' }} />
+          <div style={{ flex: 1, height: '1px', background: '#E5E8EB' }} />
+          <span style={{ fontSize: '12px', color: '#8B95A1', fontWeight: 600 }}>또는</span>
+          <div style={{ flex: 1, height: '1px', background: '#E5E8EB' }} />
         </div>
 
         {/* 카카오 로그인 */}

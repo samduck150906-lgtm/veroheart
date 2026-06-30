@@ -139,7 +139,7 @@ export default function KnowledgeNutrients() {
       <p style={{ fontSize: '14px', color: '#64748B', fontWeight: 600, marginBottom: '8px', lineHeight: 1.6 }}>
         베로로는 성분명 자체가 아니라 <strong>"이 성분이 어떤 건강 목적에 쓰이는가"</strong>를 기준으로 라벨링합니다.
       </p>
-      <p style={{ fontSize: '12px', color: '#94A3B8', fontWeight: 600, marginBottom: '28px', lineHeight: 1.5, padding: '10px 14px', background: '#F8FAFC', borderRadius: '12px' }}>
+      <p style={{ fontSize: '12px', color: '#8B95A1', fontWeight: 600, marginBottom: '28px', lineHeight: 1.5, padding: '10px 14px', background: '#F8FAFC', borderRadius: '12px' }}>
         기준: NRC(미국 국립연구위원회) 2006 표준 — 17개 기준 영양소 · 22개 건강 조건별 규칙
       </p>
 
@@ -148,7 +148,7 @@ export default function KnowledgeNutrients() {
         <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', marginBottom: '14px' }}>건강 목적별 기능성 성분</h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {HEALTH_PURPOSES.map(hp => {
-            const style = PURPOSE_STYLE[hp.purpose as keyof typeof PURPOSE_STYLE] ?? { bg: '#F9FAFB', text: '#374151', border: '#E5E7EB', emoji: '•' };
+            const style = PURPOSE_STYLE[hp.purpose as keyof typeof PURPOSE_STYLE] ?? { bg: '#F9FAFB', text: '#374151', border: '#E5E8EB', emoji: '•' };
             return (
               <div
                 key={hp.purpose}
@@ -182,7 +182,7 @@ export default function KnowledgeNutrients() {
                   ))}
                 </div>
                 <p style={{ fontSize: '12px', color: '#475569', fontWeight: 600, lineHeight: 1.5, marginBottom: '4px' }}>{hp.description}</p>
-                <p style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600 }}>{hp.nrcBasis}</p>
+                <p style={{ fontSize: '11px', color: '#8B95A1', fontWeight: 600 }}>{hp.nrcBasis}</p>
               </div>
             );
           })}
@@ -218,7 +218,7 @@ export default function KnowledgeNutrients() {
             </div>
           ))}
         </div>
-        <p style={{ fontSize: '12px', color: '#94A3B8', fontWeight: 600, marginTop: '10px', padding: '8px 12px', background: '#F8FAFC', borderRadius: '10px' }}>
+        <p style={{ fontSize: '12px', color: '#8B95A1', fontWeight: 600, marginTop: '10px', padding: '8px 12px', background: '#F8FAFC', borderRadius: '10px' }}>
           7가지 기준 영양소: 조단백질 · 조지방 · 조섬유 · 조회분 · 수분 · 칼슘 · 인
         </p>
       </section>

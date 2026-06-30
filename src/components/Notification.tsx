@@ -66,7 +66,7 @@ export default function Notification() {
         .font-semibold { font-weight: 600; }
         .text-gray-800 { color: #1f2937; }
         .leading-tight { line-height: 1.25; }
-        .text-gray-400 { color: #9ca3af; }
+        .text-gray-400 { color: #8B95A1; }
         
         .bg-green-50 { background-color: #f0faf4; }
         .border-green-100 { border-color: #d1fae5; }

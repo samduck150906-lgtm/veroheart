@@ -23,7 +23,7 @@ interface IngredientListProps {
 const DOT_COLOR: Record<IngredientSafety, string> = {
   safe:    '#22c55e',
   caution: '#f59e0b',
-  danger:  '#ef4444',
+  danger:  '#F04452',
 };
 
 const DOT_LABEL: Record<IngredientSafety, string> = {
@@ -87,7 +87,7 @@ export default function IngredientList({ ingredients }: IngredientListProps) {
         <div className="ing-legend">
           <span><span className="ing-dot" style={{ background: '#22c55e' }} />{safeCount} 안전</span>
           <span><span className="ing-dot" style={{ background: '#f59e0b' }} />{cautionCount} 주의</span>
-          <span><span className="ing-dot" style={{ background: '#ef4444' }} />{dangerCount} 위험</span>
+          <span><span className="ing-dot" style={{ background: '#F04452' }} />{dangerCount} 위험</span>
         </div>
       </div>
 

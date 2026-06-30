@@ -169,7 +169,7 @@ export default function BottomSheetFilters({
             onClick={onClose}
             style={{
               padding: '8px 16px',
-              background: '#f3f4f6',
+              background: '#F2F4F6',
               border: 'none',
               borderRadius: '6px',
               cursor: 'pointer',
