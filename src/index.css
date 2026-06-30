@@ -69,7 +69,8 @@ body.admin-desktop-mode {
 #root {
   width: 100%;
   max-width: 480px; /* Mobile restriction */
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh; /* definite height so inner .app-main can scroll */
   background-color: var(--bg-color);
   box-shadow: 0 0 40px rgba(0,0,0,0.03);
   position: relative;
@@ -226,9 +227,11 @@ h1, h2, h3, h4, h5, h6 {
 
 .app-main {
   flex: 1;
+  min-height: 0; /* allow flex item to shrink so overflow-y can scroll */
   padding-top: 128px;
   padding-bottom: 104px; /* BottomNav + safe area */
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .bottom-nav {
