@@ -1,7 +1,5 @@
 // @ts-nocheck
 import { useEffect, useState } from 'react';
-import { pickSplashTagline } from './copy/marketing';
-import { VERORO_LOGO_SRC } from './constants/assets';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useStore } from './store/useStore';
 import Layout from './components/Layout';
@@ -45,7 +43,6 @@ import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
   const { initApp, isInitializing, isLoggedIn } = useStore();
-  const [splashLine] = useState(() => pickSplashTagline());
   const adminMode = typeof window !== 'undefined'
     && isAdminExperience(window.location.hostname, window.location.pathname);
   const [showEntrySplash, setShowEntrySplash] = useState(() => !adminMode);
@@ -90,21 +87,7 @@ function App() {
         height: '100vh', background: '#F7F4EE', padding: '32px 24px', textAlign: 'center',
         boxSizing: 'border-box',
       }}>
-        <img
-          src={VERORO_LOGO_SRC}
-          alt="VeRoRo"
-          style={{ height: '128px', width: 'auto', objectFit: 'contain', marginBottom: '26px', display: 'block' }}
-          onError={e => { e.currentTarget.style.display = 'none'; }}
-        />
-        <div style={{
-          width: 72, height: 72, borderRadius: 22,
-          background: 'linear-gradient(135deg, #F5C518 0%, #E8A800 100%)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          marginBottom: 20, boxShadow: '0 8px 24px rgba(245,197,24,0.3)',
-          fontSize: 36,
-        }}>🐾</div>
-        <p style={{ color: '#191F28', fontSize: '17px', fontWeight: 700, lineHeight: 1.55, maxWidth: '280px', margin: '0 0 8px' }}>베로로</p>
-        <p style={{ color: '#8B95A1', fontSize: '14px', fontWeight: 500, margin: '0 0 28px' }}>{splashLine}</p>
+        <p style={{ color: '#191F28', fontSize: '17px', fontWeight: 700, lineHeight: 1.55, maxWidth: '280px', margin: '0 0 28px' }}>베로로</p>
         <div style={{ width: '36px', height: '36px', border: '3px solid rgba(245,197,24,0.3)', borderTopColor: '#F5C518', borderRadius: '50%', animation: 'spin 0.85s linear infinite' }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
