@@ -31,6 +31,14 @@
   /* Transitions */
   --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-smooth: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Surfaces */
+  --surface-elevated: #FFFFFF;
+  --community-tint: #78716c;
+
+  /* Shadows (extended) */
+  --shadow-card: 0 4px 16px rgba(28, 25, 23, 0.06);
+  --nav-shadow: 0 8px 28px rgba(28, 25, 23, 0.08);
 }
 
 * {
