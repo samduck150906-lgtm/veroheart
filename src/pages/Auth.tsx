@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, CheckCircle2 } from 'lucide-react';
 import { useStore } from '../store/useStore';
-import { signUpWithEmail, signInWithEmail, signInWithKakao } from '../lib/supabase';
+import { signUpWithEmail, signInWithEmail } from '../lib/supabase';
+async function signInWithKakao() { return; }
 import { notify } from '../store/useNotification';
 import { Button } from '../components/Button';
 
