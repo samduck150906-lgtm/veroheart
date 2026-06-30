@@ -360,7 +360,7 @@ export default function Analyzer({ initialMode = 'text' }: AnalyzerProps) {
           <span className="text-2xl">🔒</span>
           <div className="flex-1">
             <p className="text-[13px] font-semibold text-[#1A1A1A]">로그인 후 무료로 분석하기</p>
-            <p className="text-[11px] text-[#ABABAB]">AI 분석은 로그인 사용자 전용 기능이에요</p>
+            <p className="text-[11px] text-[#8B95A1]">AI 분석은 로그인 사용자 전용 기능이에요</p>
           </div>
           <button
             type="button"
@@ -1000,7 +1000,7 @@ export default function Analyzer({ initialMode = 'text' }: AnalyzerProps) {
         
         .text-slate-200 { color: #e2e8f0; }
         .text-slate-300 { color: #cbd5e1; }
-        .text-slate-400 { color: #94a3b8; }
+        .text-slate-400 { color: #8B95A1; }
         .text-slate-500 { color: #64748b; }
         .text-slate-600 { color: #475569; }
         .text-slate-700 { color: #334155; }
@@ -1009,7 +1009,7 @@ export default function Analyzer({ initialMode = 'text' }: AnalyzerProps) {
         .text-emerald-600 { color: #059669; }
         .text-emerald-700 { color: #047857; }
         .text-emerald-800 { color: #065f46; }
-        .text-rose-500 { color: #ef4444; }
+        .text-rose-500 { color: #F04452; }
         .text-rose-600 { color: #dc2626; }
         .text-rose-700 { color: #b91c1c; }
         .text-rose-800 { color: #991b1b; }

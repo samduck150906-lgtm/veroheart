@@ -11,6 +11,7 @@ import ProductImage from '../components/ProductImage';
 import { getRecommendationBreakdown, gradeFromScore, calculateCompatibilityScore } from '../utils/score';
 import { getAllergyInfo } from '../utils/productGrade';
 import { displayBrand } from '../utils/brandLabel';
+import { gradeColor } from '../theme/tokens';
 import GradeBadge from '../components/GradeBadge';
 import { notify } from '../store/useNotification';
 import { FAVORITES_EMPTY } from '../copy/ui';
@@ -267,8 +268,7 @@ export default function Profile() {
           <div style={{ padding: '4px 20px 20px' }}>
             {favoriteProducts.length > 0 ? (
               (() => {
-                const GRADE_COLOR = { A: '#15B36B', B: '#6BB04E', C: '#E8A800', D: '#F04452' };
-                const GRADE_BG    = { A: '#ECFDF5', B: '#F0FDE8', C: '#FFFBEB', D: '#FFF1F2' };
+                // 등급 색은 단일 토큰(src/theme/tokens.ts) 사용 — gradeColor(grade).color / .bg
 
                 const scored = favoriteProducts.map(p => ({
                   p,
@@ -297,7 +297,7 @@ export default function Profile() {
                               <span style={{
                                 position: 'absolute', bottom: 4, left: 4,
                                 padding: '1px 6px', borderRadius: 5, fontSize: 10, fontWeight: 800,
-                                background: GRADE_BG[grade], color: GRADE_COLOR[grade],
+                                background: gradeColor(grade).bg, color: gradeColor(grade).color,
                               }}>{grade}</span>
                             )}
                           </div>
@@ -318,7 +318,7 @@ export default function Profile() {
                           {/* score */}
                           {bd && (
                             <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                              <div style={{ fontSize: 20, fontWeight: 900, color: grade ? GRADE_COLOR[grade] : 'var(--ink)', letterSpacing: '-0.02em' }}>
+                              <div style={{ fontSize: 20, fontWeight: 900, color: grade ? gradeColor(grade).color : 'var(--ink)', letterSpacing: '-0.02em' }}>
                                 {bd.total}<span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-faint)' }}>점</span>
                               </div>
                               <div style={{ fontSize: 11.5, color: 'var(--ink-faint)', fontWeight: 600, marginTop: 2 }}>

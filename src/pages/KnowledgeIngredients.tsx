@@ -58,7 +58,7 @@ const SIGNAL_INFO = [
   { level: '주요 가점', color: '#15B36B', bg: '#ECFDF5', text: '#166534', description: '신선 명시 동물성 단백질 (1순위 원료에 이상적)' },
   { level: '보조 가점', color: '#F59E0B', bg: '#FFFBEB', text: '#92400E', description: '명시된 가공 단백, 기능성 영양소, 오메가3 오일' },
   { level: '대체 단백질', color: '#3182F6', bg: '#EFF6FF', text: '#1D4ED8', description: '통 식물성 단백질 (완두·렌틸 등 비가공 두류)' },
-  { level: '중립', color: '#94A3B8', bg: '#F8FAFC', text: '#475569', description: '비타민·미네랄·천연 보존제·물 (긍정도 부정도 아님)' },
+  { level: '중립', color: '#8B95A1', bg: '#F8FAFC', text: '#475569', description: '비타민·미네랄·천연 보존제·물 (긍정도 부정도 아님)' },
   { level: '주의', color: '#F97316', bg: '#FFF7ED', text: '#9A3412', description: '가공 식물단백 (단백 수치 인플레이션 가능), 무명 원료' },
   { level: '강한 주의', color: '#F04452', bg: '#FFF1F2', text: '#BE123C', description: '출처 불명 부산물, 독성·위험 성분' },
 ];
@@ -150,7 +150,7 @@ export default function KnowledgeIngredients() {
         <p style={{ fontSize: '13px', color: '#64748B', fontWeight: 600, marginBottom: '14px' }}>
           제품 상세페이지의 전성분 목록에서 각 원료 옆 점 색상이 이 기준을 따릅니다.
         </p>
-        <div style={{ borderRadius: '16px', overflow: 'hidden', border: '1px solid #F3F4F6' }}>
+        <div style={{ borderRadius: '16px', overflow: 'hidden', border: '1px solid #F2F4F6' }}>
           {SIGNAL_INFO.map((s, idx) => (
             <div
               key={s.level}
@@ -160,7 +160,7 @@ export default function KnowledgeIngredients() {
                 gap: '14px',
                 padding: '14px 16px',
                 background: idx % 2 === 0 ? '#fff' : '#F9FAFB',
-                borderBottom: idx < SIGNAL_INFO.length - 1 ? '1px solid #F3F4F6' : 'none',
+                borderBottom: idx < SIGNAL_INFO.length - 1 ? '1px solid #F2F4F6' : 'none',
               }}
             >
               <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: s.color, flexShrink: 0 }} />
@@ -248,7 +248,7 @@ export default function KnowledgeIngredients() {
               </div>
             ))}
           </div>
-          <p style={{ fontSize: '12px', color: '#94A3B8', fontWeight: 600, marginTop: '12px' }}>
+          <p style={{ fontSize: '12px', color: '#8B95A1', fontWeight: 600, marginTop: '12px' }}>
             충족 기준 수: A+(6/6) · A(5/6) · B+(4/6) · B(3/6) · C(2/6) · 주의(1/6 이하)
           </p>
         </div>

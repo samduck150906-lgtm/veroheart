@@ -10,17 +10,11 @@ import { matchesSpecies, matchesCategory } from '../utils/rankingFilters';
 import { displayBrand } from '../utils/brandLabel';
 import GradeBadge from '../components/GradeBadge';
 import ProductImage from '../components/ProductImage';
+// 등급 색은 단일 토큰(src/theme/tokens.ts)에서만 가져온다.
+import { gradeColor } from '../theme/tokens';
 
 const CATEGORY_FILTERS = ['전체', '사료', '간식', '영양제'];
 const SPECIES_FILTERS = ['전체', '강아지', '고양이'];
-
-const GRADE_COLORS = {
-  A: { bg: '#E7F8F0', color: '#15B36B' },
-  B: { bg: '#FEF6E0', color: '#E8A800' },
-  C: { bg: '#FFF0ED', color: '#F04452' },
-  D: { bg: '#FFF0ED', color: '#F04452' },
-  F: { bg: '#F2F4F6', color: '#8B95A1' },
-};
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 
@@ -309,7 +303,7 @@ export default function Ranking() {
                       <span style={{
                         position: 'absolute', bottom: '3px', left: '3px',
                         padding: '1px 5px', borderRadius: '4px', fontSize: '10px', fontWeight: 800,
-                        background: GRADE_COLORS[grade]?.bg, color: GRADE_COLORS[grade]?.color,
+                        background: gradeColor(grade).bg, color: gradeColor(grade).color,
                       }}>{grade}</span>
                     )}
                   </div>
@@ -318,7 +312,7 @@ export default function Ranking() {
                       <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ink-faint)' }}>{displayBrand(p.brand, p.name)}</span>
                       <span style={{
                         fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4,
-                        background: '#F3F4F6', color: '#6B7280', border: '1px solid #E5E7EB',
+                        background: '#F2F4F6', color: '#6B7684', border: '1px solid #E5E8EB',
                       }}>{p.sponsorLabel || '광고'}</span>
                     </div>
                     <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.35, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>

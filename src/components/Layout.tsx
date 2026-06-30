@@ -139,7 +139,7 @@ export default function Layout() {
                     padding: '0 12px',
                     fontSize: '15px',
                     fontWeight: 700,
-                    color: active ? '#191F28' : '#ABABAB',
+                    color: active ? '#191F28' : '#8B95A1',
                     textDecoration: 'none',
                     letterSpacing: '-0.02em',
                   }}

@@ -64,7 +64,7 @@ export function TossButton({
         : {
             background: '#FFFFFF',
             color: '#4B5563',
-            border: '1px solid #E5E7EB',
+            border: '1px solid #E5E8EB',
           };
 
   return (
@@ -181,7 +181,7 @@ export function TossField({ label, children, helperText, icon, style }: TossFiel
       )}
       {children}
       {helperText && (
-        <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9CA3AF', fontWeight: 600, lineHeight: 1.45 }}>
+        <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#8B95A1', fontWeight: 600, lineHeight: 1.45 }}>
           {helperText}
         </p>
       )}
@@ -259,7 +259,7 @@ export function TossSearchBar({
         padding: '12px 14px',
       }}
     >
-      <SearchIcon size={18} color="#9CA3AF" />
+      <SearchIcon size={18} color="#8B95A1" />
       <input
         type="text"
         value={value}
@@ -281,7 +281,7 @@ export function TossSearchBar({
           onClick={() => onChange('')}
           style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex' }}
         >
-          <X size={16} color="#9CA3AF" />
+          <X size={16} color="#8B95A1" />
         </button>
       )}
       {rightSlot}
@@ -289,7 +289,7 @@ export function TossSearchBar({
         <button
           type="button"
           onClick={onFilterClick}
-          style={{ marginLeft: '12px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#6B7280' }}
+          style={{ marginLeft: '12px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#6B7684' }}
           aria-label="필터 열기"
         >
           <SlidersHorizontal size={18} />
@@ -320,7 +320,7 @@ export function TossInput({
         width: '100%',
         padding: '13px 14px',
         borderRadius: '12px',
-        border: '1px solid #E5E7EB',
+        border: '1px solid #E5E8EB',
         fontSize: '15px',
         outline: 'none',
         background: disabled ? '#F9FAFB' : '#FFFFFF',

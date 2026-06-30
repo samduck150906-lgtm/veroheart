@@ -47,7 +47,7 @@ export default function EntryGate({ onBrowse, onDismissForLogin }: EntryGateProp
         style={{
           fontSize: '14px',
           fontWeight: 600,
-          color: '#6B7280',
+          color: '#6B7684',
           lineHeight: 1.5,
           margin: '0 0 32px',
           maxWidth: '280px',
@@ -89,7 +89,7 @@ export default function EntryGate({ onBrowse, onDismissForLogin }: EntryGateProp
           cursor: 'pointer',
           fontSize: '14px',
           fontWeight: 700,
-          color: '#6B7280',
+          color: '#6B7684',
           textDecoration: 'underline',
           textUnderlineOffset: '3px',
         }}

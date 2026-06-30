@@ -26,7 +26,7 @@ interface ToxicAlertListProps {
 const SEV_META = {
   critical: {
     icon: Skull,
-    color: '#ef4444',
+    color: '#F04452',
     bg: 'rgba(239,68,68,0.08)',
     border: 'rgba(239,68,68,0.3)',
     label: '위험',
@@ -108,7 +108,7 @@ export default function ToxicAlertList({ items }: ToxicAlertListProps) {
   return (
     <div className="toxic-list-wrap">
       <div className="toxic-list-header">
-        <Skull size={18} color="#ef4444" />
+        <Skull size={18} color="#F04452" />
         <h3 className="toxic-list-title">
           위험 성분 분석
           <span className="toxic-count">{items.length}개 발견</span>
