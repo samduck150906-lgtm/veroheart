@@ -6,15 +6,15 @@ import { StyleSheet, ViewStyle, TextStyle } from 'react-native';
 // ==========================================
 
 export interface ThemeColors {
-  primary: string;        // Soft Mint (#81C995)
-  primaryLight: string;   // Soft Mint 10% Opacity
-  warning: string;        // Soft Red (#D93025)
-  warningLight: string;   // Soft Red 10% Opacity
-  background: string;     // Pure White (#FFFFFF)
-  surface: string;        // Soft Off-white (#F8F9FA)
-  textNearBlack: string;  // Bold / Base Text (#111111)
-  textGray: string;       // Secondary / Description Text (#575B5F)
-  textMuted: string;      // Disabled / Placeholder Text (#A0A5AB)
+  primary: string;        // Saffron Gold (#F5C518)
+  primaryLight: string;   // Saffron Gold 12% Opacity
+  warning: string;        // Danger Red (#F04452)
+  warningLight: string;   // Danger Red 10% Opacity
+  background: string;     // Surface White (#FFFFFF)
+  surface: string;        // Gray fill (#F2F4F6)
+  textNearBlack: string;  // Ink-900 / Base Text (#191F28)
+  textGray: string;       // Ink-600 / Description Text (#4E5968)
+  textMuted: string;      // Ink-400 / Placeholder Text (#8B95A1)
   border: string;         // Delicate divider line (#E5E8EB)
 }
 
@@ -64,15 +64,15 @@ export interface AppTheme {
 // ==========================================
 
 const defaultColors: ThemeColors = {
-  primary: '#81C995',
-  primaryLight: 'rgba(129, 201, 149, 0.1)',
-  warning: '#D93025',
-  warningLight: 'rgba(217, 48, 37, 0.1)',
+  primary: '#F5C518',
+  primaryLight: 'rgba(245, 197, 24, 0.12)',
+  warning: '#F04452',
+  warningLight: 'rgba(240, 68, 82, 0.1)',
   background: '#FFFFFF',
-  surface: '#F8F9FA',
-  textNearBlack: '#111111',
-  textGray: '#575B5F',
-  textMuted: '#A0A5AB',
+  surface: '#F2F4F6',
+  textNearBlack: '#191F28',
+  textGray: '#4E5968',
+  textMuted: '#8B95A1',
   border: '#E5E8EB',
 };
 
@@ -88,9 +88,9 @@ const defaultTheme: AppTheme = {
   colors: defaultColors,
   spacing: defaultSpacing,
   borderRadius: {
-    small: 8,
-    medium: 16,
-    large: 24,
+    small: 10,
+    medium: 14,
+    large: 20,
     pill: 999,
   },
   typography: {

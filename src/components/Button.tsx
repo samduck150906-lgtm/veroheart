@@ -87,7 +87,7 @@ export const Button: React.FC<ButtonProps> = ({
       case 'secondary':
         // CHANGED(P2): 앰버 틴트 위 밝은 노랑 글자는 대비(AA) 미달 → 진한 앰버 텍스트로 교체.
         return {
-          backgroundColor: 'rgba(245, 197, 24, 0.14)', // brand tint
+          backgroundColor: 'rgba(245, 197, 24, 0.14)', // primary tint (Saffron Gold 14%)
           borderColor: 'transparent',
           color: '#8A6D00', // deep amber — AA 충족
         };
