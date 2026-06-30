@@ -1,4 +1,4 @@
--- Veroro(베로로) / Petty — 앱(supabase.ts) 기준 통합 스키마
+-- Veroro(베로로) — 앱(supabase.ts) 기준 통합 스키마
 -- idempotent: 기존 객체가 있으면 건너뜀 또는 IF NOT EXISTS
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -24,7 +24,7 @@ END $$;
 -- ─── users ─────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.users (
   id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
-  nickname TEXT NOT NULL DEFAULT 'Petty',
+  nickname TEXT NOT NULL DEFAULT 'VeRoRo',
   avatar_url TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -188,7 +188,7 @@ BEGIN
   INSERT INTO public.users (id, nickname, avatar_url)
   VALUES (
     NEW.id,
-    COALESCE(NEW.raw_user_meta_data->>'full_name', 'Petty' || floor(random() * 1000)::text),
+    COALESCE(NEW.raw_user_meta_data->>'full_name', 'VeRoRo' || floor(random() * 1000)::text),
     COALESCE(NEW.raw_user_meta_data->>'avatar_url', '')
   )
   ON CONFLICT (id) DO NOTHING;

@@ -472,7 +472,7 @@ export default function HomePage() {
           </div>
         </div>
         <p className="mx-auto mt-10 max-w-6xl px-5 text-center text-xs text-ink-800/55 sm:px-6">
-          © {new Date().getFullYear()} VeRoRo · Petty Community. All rights
+          © {new Date().getFullYear()} VeRoRo. All rights
           reserved.
         </p>
       </footer>

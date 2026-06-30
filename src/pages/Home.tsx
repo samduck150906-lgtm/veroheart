@@ -119,7 +119,7 @@ export default function Home() {
       <section className="discovery-brand-bar" aria-label="베로로 브랜드">
         <img src={VERORO_LOGO_SRC} alt="VeRoRo" />
         <div className="discovery-brand-bar-copy">
-          <div className="discovery-brand-bar-kicker">Petty Community</div>
+          <div className="discovery-brand-bar-kicker">VeRoRo</div>
           <div className="discovery-brand-bar-title">성분 분석부터 찐 리뷰까지 — 오늘의 발견</div>
         </div>
       </section>

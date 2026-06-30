@@ -56,9 +56,7 @@ export default function Layout() {
                   textTransform: 'uppercase',
                   marginBottom: '6px',
                 }}
-              >
-                Petty Community
-              </div>
+              >VeRoRo</div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', minWidth: 0 }}>
                 <span
                   style={{

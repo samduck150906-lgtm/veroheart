@@ -55,7 +55,7 @@ function Footer() {
             color: '#292524',
           }}
         >
-          Petty Community powered by VeRoRo
+          VeRoRo
         </div>
 
         <p
