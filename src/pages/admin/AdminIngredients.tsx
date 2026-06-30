@@ -443,23 +443,4 @@ function SelectField({
   );
 }
 
-function TextAreaField({
-  label,
-  value,
-  onChange,
-  className,
-}: {
-  label: string;
-  value?: string;
-  onChange: (value: string) => void;
-  className?: string;
-}) {
-  return (
-    <div className={`admin-form-group ${className || ''}`}>
-      <label>{label}</label>
-      <textarea rows={4} value={value || ''} onChange={(e) => onChange(e.target.value)} />
-    </div>
-  );
-}
-
 export default AdminIngredients;

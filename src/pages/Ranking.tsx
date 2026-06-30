@@ -1,10 +1,10 @@
 // @ts-nocheck
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
-import { Trophy, Dog, Cat, Star, ChevronRight } from 'lucide-react';
+import { Star, ChevronRight, Megaphone } from 'lucide-react';
 import { useStore } from '../store/useStore';
-import { rankProductsForProfile, calculateCompatibilityScore, gradeFromScore } from '../utils/score';
+import { calculateCompatibilityScore, getRecommendationBreakdown, getProductBadges, gradeFromScore, rankProductsForProfile } from '../utils/score';
+import AnalysisBadges from '../components/AnalysisBadges';
 import ProductImage from '../components/ProductImage';
 // 등급 색은 단일 토큰(src/theme/tokens.ts)에서만 가져온다.
 import { gradeColor } from '../theme/tokens';
@@ -118,22 +118,74 @@ export default function Ranking() {
         ))}
       </div>
 
-      {/* ─── 정렬 탭 ─── */}
-      <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px', marginBottom: '18px', scrollbarWidth: 'none' }}>
-        {activeSortTabs.map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => setSortBy(key)}
-            style={{
-              flexShrink: 0, padding: '7px 14px', borderRadius: '99px', border: 'none', cursor: 'pointer',
-              fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap',
-              background: sortBy === key ? 'var(--brand)' : 'var(--fill)',
-              color: sortBy === key ? 'var(--ink-on-brand)' : 'var(--ink-soft)',
-            }}
-          >
-            {label}
-          </button>
-        ))}
+      {/* Ranking List */}
+      <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {ranked.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 40, color: '#B0B8C1' }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>📊</div>
+            <p style={{ fontWeight: 600 }}>해당 카테고리 상품이 없어요</p>
+          </div>
+        ) : ranked.map((product, idx) => {
+          const breakdown = getRecommendationBreakdown(product, profile);
+          const score = hasPetProfile ? breakdown.total : null;
+          const grade = score != null ? gradeFromScore(score) : null;
+          const badges = getProductBadges(breakdown);
+          return (
+            <div
+              key={product.id}
+              onClick={() => navigate(`/product/${product.id}`)}
+              style={{
+                background: '#fff', borderRadius: 16, padding: '14px 16px',
+                boxShadow: idx < 3 ? '0 2px 16px rgba(245,197,24,0.15)' : '0 1px 4px rgba(30,41,59,0.06)',
+                cursor: 'pointer',
+                border: idx < 3 ? '1.5px solid rgba(245,197,24,0.25)' : '1.5px solid transparent',
+                display: 'flex', alignItems: 'center', gap: 14,
+              }}
+            >
+              <div style={{ width: 36, textAlign: 'center', flexShrink: 0 }}>
+                {idx < 3
+                  ? <span style={{ fontSize: 22 }}>{MEDALS[idx]}</span>
+                  : <span style={{ fontSize: 16, fontWeight: 800, color: '#B0B8C1' }}>{idx + 1}</span>
+                }
+              </div>
+              <div style={{ width: 52, height: 52, borderRadius: 12, overflow: 'hidden', background: '#F7F4EE', flexShrink: 0 }}>
+                <ProductImage src={product.imageUrl} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', gap: 5, marginBottom: 4, flexWrap: 'wrap' }}>
+                  {grade && <GradeTag grade={grade} />}
+                  {score != null && (
+                    <span style={{ background: '#F0EDE8', color: '#4E5968', fontWeight: 700, fontSize: 10, borderRadius: 5, padding: '2px 5px' }}>
+                      궁합 {score}%
+                    </span>
+                  )}
+                </div>
+                <div style={{ fontSize: 11, color: '#8B95A1', marginBottom: 1 }}>{product.brand}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#191F28', lineHeight: 1.3 }}>
+                  {product.name.length > 28 ? product.name.slice(0, 28) + '…' : product.name}
+                </div>
+                <AnalysisBadges badges={badges} style={{ marginTop: 4 }} />
+                {product.averageRating > 0 && (
+                  <div style={{ fontSize: 11, color: '#6B7684', marginTop: 3 }}>
+                    ⭐ {Number(product.averageRating).toFixed(1)}
+                    {product.reviewsCount > 0 && ` · ${product.reviewsCount.toLocaleString()}개 리뷰`}
+                  </div>
+                )}
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                {score != null && (
+                  <div style={{ marginBottom: '3px', padding: '2px 7px', borderRadius: '6px', background: 'var(--brand-tint)', display: 'inline-block' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--brand-deep)' }}>궁합 {score}점</span>
+                  </div>
+                )}
+                <div style={{ fontSize: 14, fontWeight: 800, color: '#191F28', marginBottom: 4 }}>
+                  {product.price ? `${product.price.toLocaleString()}원` : ''}
+                </div>
+                <ChevronRight size={16} color="#B0B8C1" />
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* ─── 상품 목록 ─── */}

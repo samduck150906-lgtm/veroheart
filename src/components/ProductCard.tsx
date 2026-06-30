@@ -1,10 +1,11 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Heart, Star } from 'lucide-react';
 import type { Product } from '../types';
 import { useStore } from '../store/useStore';
 import { notify } from '../store/useNotification';
-import { displayBrand } from '../utils/brandLabel';
+import { getRecommendationBreakdown, getProductBadges } from '../utils/score';
 import ProductImage from './ProductImage';
+import AnalysisBadges from './AnalysisBadges';
 
 type ProductCardProps = {
   product: Product;
@@ -28,12 +29,14 @@ const SponsorBadge = ({ label }: { label: string }) => (
 
 export default function ProductCard({
   product,
-  compact = false,
   showHealthTags = true,
   variant = 'horizontal',
 }: ProductCardProps) {
   const { favorites, toggleFavorite, isLoggedIn } = useStore();
   const navigate = useNavigate();
+  const breakdown = getRecommendationBreakdown(product, profile);
+  const score = breakdown.total;
+  const badges = getProductBadges(breakdown);
   const isFav = favorites.includes(product.id);
   const imageSize = compact ? 86 : 100;
 
@@ -99,6 +102,7 @@ export default function ProductCard({
               {product.healthConcerns.join(' · ')}
             </span>
           )}
+          <AnalysisBadges badges={badges} style={{ marginTop: 1 }} />
           {formattedPrice && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginTop: 2 }}>
               <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--ink-faint)' }}>최저가</span>
@@ -145,6 +149,7 @@ export default function ProductCard({
             </span>
           </div>
         )}
+        <AnalysisBadges badges={badges} style={{ marginTop: 2 }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
             <Star size={13} fill="var(--brand)" stroke="var(--brand)" strokeWidth={1.2} />

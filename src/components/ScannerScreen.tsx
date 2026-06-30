@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { AlertTriangle, Camera, Scan, FileText, X, Zap } from 'lucide-react';
+import { AlertTriangle, Camera, Scan, FileText, Zap } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 /**
@@ -32,10 +32,11 @@ export default function ScannerScreen({ onCapture }: ScannerScreenProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const [error,         setError        ] = useState<string | null>(null);
-  const [hasPermission, setHasPermission] = useState(false);
-  const [flashActive,   setFlashActive  ] = useState(false);
-  const [captured,      setCaptured     ] = useState(false);
+  const [error,          setError         ] = useState<string | null>(null);
+  const [hasPermission,  setHasPermission ] = useState(false);
+  const [flashActive,    setFlashActive   ] = useState(false);
+  const [, setCaptured] = useState(false);
+  const [barcodeHint,    setBarcodeHint   ] = useState<string | null>(null);
 
   const scannerMode    = useStore((s) => s.scannerMode);
   const setScannerMode = useStore((s) => s.setScannerMode);

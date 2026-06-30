@@ -1,5 +1,8 @@
 import type { Product, UserPetProfile } from '../types';
 import { toDryMatter, checkCalciumPhosphorusRatio } from '../analysis/nutrition';
+import { findIngredientByName } from '../analysis/ingredientDictionary';
+import { detectDCMRisk, detectProteinInflation } from '../analysis/ingredientQuality';
+import { runBreedDiseaseEngine } from '../analysis/breedDiseaseEngine';
 
 /** 회피(알레르기) 성분 포함 시 궁합 점수 상한 — 추천 등급(C 이상) 불가 */
 export const ALLERGEN_SCORE_CAP = 55;
@@ -35,6 +38,14 @@ export interface RecommendationBreakdown {
   matchedConcerns: string[];
   dangerCount: number;
   cautionCount: number;
+  /** 상위 원료 콩과 식물 과다(DCM 연관) 위험도 */
+  legumeRisk: 'none' | 'watch' | 'danger';
+  /** 식물성 단백 보강(protein inflation) 의심 여부 */
+  proteinInflated: boolean;
+  /** 견종 호발 질환 NRC 정량 기준 위반 개수(profile.breed 기반). 미설정 시 0 */
+  breedRiskFails: number;
+  /** 매칭된 견종명(없으면 null) */
+  breedMatched: string | null;
   reasons: string[];
 }
 
@@ -90,11 +101,39 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
   const cautionCount = product.ingredients.filter((ingredient) => ingredient.riskLevel === 'caution').length;
   const safeCount = product.ingredients.filter((ingredient) => ingredient.riskLevel === 'safe').length;
 
+  // ── 심화 품질 신호 (엔진과 동일 로직 재사용) ──────────────────────
+  // 그레인프리 사료의 콩과 식물 과다(DCM 연관)와 식물성 단백 보강을
+  // 추천 점수의 안전 버킷에도 반영해 분석 화면과 일관성을 맞춘다.
+  const ingForQuality = product.ingredients.map((ingredient, idx) => ({
+    nameKo: ingredient.nameKo,
+    dictEntry:
+      findIngredientByName(ingredient.nameKo) ??
+      (ingredient.nameEn ? findIngredientByName(ingredient.nameEn) : null),
+    position: idx + 1,
+  }));
+  const dcm = detectDCMRisk(ingForQuality);
+  const inflation = detectProteinInflation(ingForQuality);
+
+  // ── 견종 호발 질환 정량 기준 위반 (NRC 2006) ──────────────────────
+  // profile.breed가 있으면 견종별 질환 임계값을 평가해 위반 개수를 안전 점수에 반영.
+  let breedRiskFails = 0;
+  let breedMatched: string | null = null;
+  if (profile.breed && profile.breed.trim()) {
+    const breedResult = runBreedDiseaseEngine(profile.breed.trim(), product);
+    breedMatched = breedResult.breedMatched;
+    breedRiskFails = breedResult.activeDiseases.reduce((sum, d) => sum + d.failCount, 0);
+  }
+
   let safety = 35;
   safety -= dangerCount * 10;
   safety -= cautionCount * 4;
   safety -= allergyHits.length * 18;
+  safety -= Math.min(10, breedRiskFails * 4);
   if (allergyHits.length > 0) safety -= 6;
+  if (dcm.riskLevel === 'danger') safety -= 8;
+  else if (dcm.riskLevel === 'watch') safety -= 3;
+  if (inflation.inflationSignal === 'major') safety -= 5;
+  else if (inflation.inflationSignal === 'minor') safety -= 2;
   safety += Math.min(6, safeCount);
   safety = Math.max(0, Math.min(35, safety));
 
@@ -200,6 +239,15 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
   if (ga && ga.crudeProtein != null && ga.crudeFat != null) {
     reasons.push(nutrition >= 8 ? 'AAFCO 영양 기준 충족' : nutrition >= 5 ? 'AAFCO 영양 기준 일부 충족' : 'AAFCO 영양 기준 미달 항목 있음');
   }
+  if (dcm.riskLevel !== 'none') {
+    reasons.push(`상위 원료 콩과 식물 ${dcm.legumesInTop5.length}종 포함 (DCM 참고)`);
+  }
+  if (inflation.hasInflation) {
+    reasons.push('식물성 단백 보강 의심');
+  }
+  if (breedRiskFails > 0) {
+    reasons.push(`${breedMatched ?? '견종'} 호발 질환 영양기준 ${breedRiskFails}개 항목 미충족`);
+  }
 
   return {
     total,
@@ -217,12 +265,43 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
     matchedConcerns,
     dangerCount,
     cautionCount,
+    legumeRisk: dcm.riskLevel,
+    proteinInflated: inflation.hasInflation,
+    breedRiskFails,
+    breedMatched,
     reasons,
   };
 }
 
 export function calculateCompatibilityScore(product: Product, profile: UserPetProfile): number {
   return getRecommendationBreakdown(product, profile).total;
+}
+
+export interface ProductBadge {
+  label: string;
+  tone: 'good' | 'warn' | 'danger';
+}
+
+/**
+ * 목록(카드)에서 노출할 분석 배지를 생성한다.
+ * 위험 > 주의 > 가점 순으로 우선순위가 높고, 기본 2개까지만 반환한다.
+ * 점수 breakdown을 재사용하므로 카드별 추가 연산이 거의 없다.
+ */
+export function getProductBadges(
+  breakdown: RecommendationBreakdown,
+  options: { max?: number } = {},
+): ProductBadge[] {
+  const badges: ProductBadge[] = [];
+
+  if (breakdown.allergyHits.length > 0) badges.push({ label: '알러지 포함', tone: 'danger' });
+  if (breakdown.dangerCount > 0) badges.push({ label: '위험 성분', tone: 'danger' });
+  if (breakdown.breedRiskFails > 0) badges.push({ label: '견종 주의', tone: 'warn' });
+  if (breakdown.legumeRisk !== 'none') badges.push({ label: 'DCM 주의', tone: 'warn' });
+  if (breakdown.proteinInflated) badges.push({ label: '단백보강 의심', tone: 'warn' });
+  if (breakdown.nutrition >= 8) badges.push({ label: 'AAFCO 충족', tone: 'good' });
+  else if (breakdown.matchedConcerns.length > 0) badges.push({ label: '맞춤 케어', tone: 'good' });
+
+  return badges.slice(0, options.max ?? 2);
 }
 
 export function getCompatibilityBreakdown(product: Product, profile: UserPetProfile): RecommendationBreakdown {
@@ -254,11 +333,10 @@ export function rankProductsForProfile(
     .filter((product) => product.id !== options.excludeProductId)
     .filter((product) => !product.targetPetType || product.targetPetType === expectedPetType || product.targetPetType === 'all')
     .filter((product) => !options.preferredCategory || !product.mainCategory || product.mainCategory === options.preferredCategory)
-    .map((product) => ({
-      product,
-      breakdown: getRecommendationBreakdown(product, profile),
-      score: getRecommendationBreakdown(product, profile).total,
-    }))
+    .map((product) => {
+      const breakdown = getRecommendationBreakdown(product, profile);
+      return { product, breakdown, score: breakdown.total };
+    })
     .sort((a, b) => b.score - a.score);
 
   return ranked.slice(0, options.limit ?? ranked.length);

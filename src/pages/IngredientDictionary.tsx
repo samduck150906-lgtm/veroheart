@@ -1,9 +1,7 @@
 // @ts-nocheck
 import { useMemo, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { Helmet } from 'react-helmet-async';
-import { Search as SearchIcon, X, ChevronRight } from 'lucide-react';
-import { INGREDIENT_DICTIONARY } from '../analysis/ingredientDictionary';
+import { Search as SearchIcon } from 'lucide-react';
+import { INGREDIENT_DICT } from '../copy/ui';
 
 const CATEGORY_LABELS: Record<string, string> = {
   animal_protein: '동물성 단백질',

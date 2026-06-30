@@ -2,6 +2,7 @@ import { Outlet, useLocation, Link, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Search as SearchIcon } from 'lucide-react';
 import BottomNav from './BottomNav';
 import Footer from './Footer';
+import { useStore } from '../store/useStore';
 
 const PAGE_TITLES: Record<string, string> = {
   '/search': '검색',
@@ -33,20 +34,22 @@ const BrandPaw = () => (
   </svg>
 );
 
-function HeaderActions({ onSearch }: { onSearch: () => void }) {
+function HeaderActions({ onSearch, favoriteCount }: { onSearch: () => void; favoriteCount: number }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
       <Link
         to="/profile?tab=favorites"
-        aria-label="찜한 상품"
+        aria-label={`찜한 상품${favoriteCount > 0 ? ` ${favoriteCount}개` : ''}`}
         style={{ position: 'relative', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}
       >
         <span style={{ fontSize: '20px', lineHeight: 1 }}>🐾</span>
-        <span style={{
-          position: 'absolute', top: '4px', right: '2px', minWidth: '16px', height: '16px', padding: '0 4px',
-          borderRadius: '8px', background: 'var(--ink)', color: '#fff', fontSize: '9.5px', fontWeight: 800,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
-        }}>2</span>
+        {favoriteCount > 0 && (
+          <span style={{
+            position: 'absolute', top: '4px', right: '2px', minWidth: '16px', height: '16px', padding: '0 4px',
+            borderRadius: '8px', background: 'var(--ink)', color: '#fff', fontSize: '9.5px', fontWeight: 800,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
+          }}>{favoriteCount > 99 ? '99+' : favoriteCount}</span>
+        )}
       </Link>
       <button
         onClick={onSearch}
@@ -63,6 +66,8 @@ export default function Layout() {
   const navigate = useNavigate();
   const { profile, isLoggedIn } = useStore();
   const location = useLocation();
+  const favorites = useStore((s) => s.favorites);
+  const favoriteCount = favorites?.length ?? 0;
   const path = location.pathname;
 
   const isHome = path === '/';
@@ -107,7 +112,7 @@ export default function Layout() {
                 <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.02em' }}>{title}</span>
               </div>
             )}
-            <HeaderActions onSearch={() => navigate('/search')} />
+            <HeaderActions onSearch={() => navigate('/search')} favoriteCount={favoriteCount} />
           </div>
 
           {/* Home sub-tabs: 홈 / 랭킹 */}

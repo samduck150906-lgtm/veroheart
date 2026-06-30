@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Check } from 'lucide-react';
+import { X } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
 /**

@@ -460,7 +460,7 @@ export const useStore = create<StoreState>((set, get) => ({
     
     try {
       await dbSaveBanner(banner);
-    } catch (err) {
+    } catch {
       console.warn('Could not save banner to DB, saving locally');
     }
     

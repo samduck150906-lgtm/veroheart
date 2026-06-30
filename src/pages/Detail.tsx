@@ -1,34 +1,24 @@
 // @ts-nocheck
-import { useEffect, useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
   GitCompare,
-  Loader2,
   AlertCircle,
   CheckCircle2,
-  ShieldCheck,
   Dog,
   Cat,
   Calendar,
   Layers,
   ExternalLink,
   Shield,
-  MessageSquare,
   Star,
   Trash2,
   Sparkles,
   ChevronRight
 } from 'lucide-react';
-import { 
-  getReviews, 
-  createReview, 
-  deleteReview,
-} from '../lib/supabase';
-import { buildProductConclusion } from '../utils/productConclusion';
-import { getRecommendationBreakdown } from '../utils/score';
+import { getRecommendationBreakdown, gradeFromScore } from '../utils/score';
 import { COUPANG_PARTNERS_DISCLOSURE } from '../constants/coupangPartners';
-import { REVIEW_QUICK_TAGS } from '../constants/reviewTags';
 import { runScoringPipeline } from '../analysis/scoringPipeline';
 import { PURPOSE_STYLE } from '../analysis/nutrientClassification';
 
@@ -38,24 +28,20 @@ const getVerificationMeta = (s: string) => {
   return { bg: 'var(--surface-muted)', color: 'var(--text-muted)', label: '영양 성분 검수 대기' };
 };
 
-interface Ingredient { id: string; riskLevel: string; nameKo: string; nameEn?: string; purpose?: string; description?: string; }
-import { Helmet } from 'react-helmet-async';
 import { useStore } from '../store/useStore';
 import { toDryMatter, calculateCalories } from '../analysis/nutrition';
 import { openCoupangForProduct } from '../utils/externalPurchase';
-import BottomSheet from '../components/BottomSheet';
+import Analyzer from '../components/Analyzer';
 import FeedingGuideCalculator from '../components/FeedingGuideCalculator';
-import ProductImageSlider from '../components/ProductImageSlider';
+import { TossCard } from '../components/TossUI';
+import ProductImage from '../components/ProductImage';
+import BreedNutritionPanel from '../components/BreedNutritionPanel';
 import { CAUTION_INGREDIENT, MEDICAL_DISCLAIMER, PRE_PURCHASE } from '../copy/ui';
-
-const RISK_COLORS = { safe: '#15B36B', caution: '#E8A800', danger: '#F04452' };
-const RISK_BG = { safe: '#E7F8F0', caution: '#FEF6E0', danger: '#FFF0ED' };
-const RISK_LABEL = { safe: '안전', caution: '주의', danger: '위험' };
 
 export default function Detail() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { products, selectedProduct, profile, isLoggedIn, favorites, toggleFavorite, addToComparison, removeFromComparison, comparisonList, userId, trackRecentView } = useStore();
+  const { products, selectedProduct, profile, isLoggedIn, favorites, toggleFavorite, addToComparison } = useStore();
 
   const product = useMemo(() => {
     const found = id ? products.find(p => p.id === id) : null;
@@ -75,19 +61,18 @@ export default function Detail() {
     return () => { active = false; };
   }, [product?.id]);
 
-  const handleScrollTop = () => {
-    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  const ga = product?.guaranteedAnalysis;
 
-  const handleDeleteReview = async (reviewId: string) => {
-    if (!userId) return;
-    try {
-      await deleteReview(reviewId, userId);
-      setReviews(prev => prev.filter(r => r.id !== reviewId));
-    } catch (e) { /* noop */ }
-  };
+  const cautionList = (product?.ingredients || []).filter(i => i.riskLevel === 'caution' || i.riskLevel === 'danger');
 
-  if (isLoadingProducts) {
+  // 제품 칼로리 밀도 계산 (FeedingGuideCalculator 전달용)
+  // ⚠️ 훅은 조기 반환(early return) 이전에 호출해야 한다(Rules of Hooks).
+  const productKcalPer100g = useMemo(() => {
+    if (!product?.guaranteedAnalysis) return 0;
+    return calculateCalories(product.guaranteedAnalysis).kcalPer100g;
+  }, [product?.guaranteedAnalysis]);
+
+  if (!product) {
     return (
       <div
         style={{
@@ -107,58 +92,24 @@ export default function Detail() {
     );
   }
 
-  if (!product) return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: 'calc(100vh - 200px)',
-        padding: '40px 24px',
-        textAlign: 'center',
-      }}
-    >
-      <p style={{ color: 'var(--text-muted)', marginBottom: '16px', fontSize: '14px' }}>
-        제품을 찾을 수 없습니다.
-      </p>
-      <button
-        onClick={() => navigate('/')}
-        style={{
-          padding: '12px 22px',
-          borderRadius: '14px',
-          background: 'var(--text-dark)',
-          color: '#fff',
-          border: 'none',
-          fontWeight: 600,
-          fontSize: '14px',
-          cursor: 'pointer',
-        }}
-      >
-        홈으로 이동
-      </button>
-    </div>
-  );
-
   const report = product ? generateAnalysisReport(product, profile) : null;
-  const conclusion = product && report ? buildProductConclusion(product, profile, report) : null;
   const breakdown = hasPetProfile && product ? getRecommendationBreakdown(product, profile) : null;
   const pipeline = product ? runScoringPipeline(product, profile?.breed || '') : null;
   const isComparing = comparisonList.includes(product?.id || '');
   const verificationMeta = getVerificationMeta(product.verificationStatus);
 
+  // find alternative
+  let alternativeProduct = null;
+  if (report && report.score < 80) {
+    const scoredProducts = products
+      .filter(p => p.id !== product?.id && p.category === product?.category)
+      .map(p => ({ p, score: generateAnalysisReport(p, profile).score }))
+      .sort((a, b) => b.score - a.score);
 
-  // 제품 칼로리 밀도 계산 (FeedingGuideCalculator 전달용)
-  const productKcalPer100g = useMemo(() => {
-    if (!product?.guaranteedAnalysis) return 0;
-    return calculateCalories(product.guaranteedAnalysis).kcalPer100g;
-  }, [product?.guaranteedAnalysis]);
-
-  const getRiskColor = (level: string) => {
-    if (level === 'danger') return '#F04452'; // Toss Red
-    if (level === 'caution') return '#F59E0B'; // Yellow
-    return '#3182F6'; // Toss Blue for safe
-  };
+    if (scoredProducts.length > 0 && scoredProducts[0].score >= 80) {
+      alternativeProduct = scoredProducts[0];
+    }
+  }
 
   // selectedIngredient state moved to top with other hooks
   
@@ -353,6 +304,15 @@ export default function Detail() {
                   ⚠ 알러지 주의
                 </span>
               )}
+            </div>
+          )}
+          {breakdown && breakdown.reasons.length > 0 && (
+            <div style={{ marginTop: '10px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {breakdown.reasons.slice(0, 5).map(r => (
+                <span key={r} style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ink-soft)', background: 'var(--surface)', border: '1px solid var(--hairline)', padding: '3px 9px', borderRadius: '999px' }}>
+                  {r}
+                </span>
+              ))}
             </div>
           )}
         </div>
@@ -841,6 +801,29 @@ export default function Detail() {
           </div>
         )}
 
+        {breakdown && (breakdown.legumeRisk !== 'none' || breakdown.proteinInflated) && (
+          <div style={{
+            display: 'flex', gap: '12px', alignItems: 'flex-start',
+            padding: '16px', borderRadius: '16px', marginBottom: '20px',
+            background: '#FFFBEB', border: '1px solid #FDE68A',
+          }}>
+            <AlertCircle size={20} color="#D97706" style={{ flexShrink: 0, marginTop: '1px' }} />
+            <div>
+              <div style={{ fontSize: '14px', fontWeight: 800, color: '#92400E', marginBottom: '4px' }}>
+                원료 구성에서 참고할 점이 있어요
+              </div>
+              <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#92400E', opacity: 0.85, lineHeight: 1.6 }}>
+                {breakdown.legumeRisk !== 'none' && (
+                  <div>· 상위 원료에 콩과 식물이 많아요. 그레인프리 사료의 콩과 식물 과다는 확장성 심근병증(DCM)과의 연관 가능성이 보고된 바 있어 참고가 필요해요.</div>
+                )}
+                {breakdown.proteinInflated && (
+                  <div>· 가공 식물성 단백이 포함돼 있어요. 단백질 수치가 실제 동물성 비중보다 높아 보일 수 있으니 원료 순위를 함께 확인해 보세요.</div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '12px' }}>
           <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-dark)' }}>수집된 전체 원료표</h3>
           <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 500 }}>총 {product.ingredients?.length}개</div>
@@ -1080,28 +1063,6 @@ export default function Detail() {
       </div>
     </div>
   );
-}
-
-function VetBadge({ riskLevel }: { riskLevel: string }) {
-  if (riskLevel === 'safe') return null;
-  const isDanger = riskLevel === 'danger';
-  return (
-    <div style={{ fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '8px', background: isDanger ? '#FEF2F2' : '#FFFBEB', color: isDanger ? '#991B1B' : '#92400E', border: `1px solid ${isDanger ? '#FECACA' : '#FDE68A'}` }}>
-      {isDanger ? CAUTION_INGREDIENT.danger.badge : CAUTION_INGREDIENT.warning.badge}
-    </div>
-  );
-}
-
-function getVetComment(ingredients: Ingredient[]): string {
-  const dangerCount = ingredients.filter(i => i.riskLevel === 'danger').length;
-  const cautionCount = ingredients.filter(i => i.riskLevel === 'caution').length;
-  if (dangerCount > 0) {
-    return `${dangerCount}가지 주의 성분이 들어 있어요. ${CAUTION_INGREDIENT.danger.hint}`;
-  }
-  if (cautionCount > 0) {
-    return `${cautionCount}가지 성분을 한 번 더 확인해보면 좋겠어요. ${CAUTION_INGREDIENT.warning.hint}`;
-  }
-  return `${CAUTION_INGREDIENT.safe.description} ${CAUTION_INGREDIENT.safe.hint}`;
 }
 
 /** 등록성분량(보증성분) 섹션 — 라벨 표기값 + 건물기준(DMB) 환산 + 추정 칼로리 */

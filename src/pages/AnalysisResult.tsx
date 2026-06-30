@@ -1,34 +1,166 @@
 // @ts-nocheck
-/**
- * AnalysisResult page
- * 사료 분석 결과 전체 페이지 (AI 프리미엄 영양 리포트)
- * - SummaryHeader
- * - NutritionDonutChart
- * - ToxicAlertList
- * - IngredientList
- * - FeedingGuideCalculator
- */
+import { useState, useMemo, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
+import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from 'recharts';
 import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
-import { getRecommendationBreakdown, gradeFromScore } from '../utils/score';
+import { getRecommendationBreakdown, gradeFromScore, calculateCompatibilityScore } from '../utils/score';
+import { calculateCalories } from '../analysis/nutrition';
 import AnalysisSummaryHeader from '../components/AnalysisSummaryHeader';
-import NutritionDonutChart   from '../components/NutritionDonutChart';
-import ToxicAlertList        from '../components/ToxicAlertList';
 import IngredientList        from '../components/IngredientList';
 import FeedingGuideCalculator from '../components/FeedingGuideCalculator';
+import { CAUTION_INGREDIENT, MEDICAL_DISCLAIMER, FEEDING_GUIDE } from '../copy/ui';
+
+const TABS = ['종합', '영양소', '전성분'] as const;
+
+const RISK_COLORS: Record<string, string> = { safe: '#15B36B', caution: '#E8A800', danger: '#F04452' };
+const RISK_BG: Record<string, string> = { safe: '#E7F8F0', caution: '#FEF6E0', danger: '#FDECEE' };
+const RISK_LABEL: Record<string, string> = { safe: '안전', caution: '주의', danger: '위험' };
+
+const LIFE_STAGE_LABEL: Record<string, string> = {
+  '퍼피·키튼': '자견·자묘',
+  '성견·성묘': '성견·성묘',
+  '시니어': '노령',
+};
+
+const GRADE_GAUGE_COLOR: Record<string, string> = {
+  A: '#15B36B', B: '#6BB04E', C: '#E8A800', D: '#F04452', F: '#8B95A1',
+};
+
+const GRADE_LABEL: Record<string, string> = {
+  A: '아주 잘 맞아요', B: '잘 맞는 편이에요', C: '보통이에요', D: '주의가 필요해요', F: '맞지 않아요',
+};
+
+function ScoreGauge({ score, grade }: { score: number; grade: string }) {
+  const color = GRADE_GAUGE_COLOR[grade] ?? '#F5C518';
+  const [fill, setFill] = useState(0);
+  useEffect(() => {
+    const t = setTimeout(() => setFill(score), 150);
+    return () => clearTimeout(t);
+  }, [score]);
+
+  const r = 52;
+  const circumference = 2 * Math.PI * r;
+  const offset = circumference - (fill / 100) * circumference;
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 20, padding: '24px 20px' }}>
+      <div style={{ position: 'relative', width: 128, height: 128, flexShrink: 0 }}>
+        <svg width="128" height="128" style={{ transform: 'rotate(-90deg)' }}>
+          <circle cx="64" cy="64" r={r} fill="none" stroke="var(--fill)" strokeWidth="11" />
+          <circle
+            cx="64" cy="64" r={r} fill="none" stroke={color} strokeWidth="11"
+            strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round"
+            style={{ transition: 'stroke-dashoffset 0.9s cubic-bezier(0.16,1,0.3,1)' }}
+          />
+        </svg>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontSize: 34, fontWeight: 900, color: 'var(--ink)', lineHeight: 1, letterSpacing: '-0.03em' }}>{Math.round(fill)}</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-faint)' }}>/ 100</span>
+        </div>
+      </div>
+      <div style={{ minWidth: 0 }}>
+        <span style={{ display: 'inline-block', background: color, color: '#fff', borderRadius: 8, padding: '4px 12px', fontSize: 15, fontWeight: 900, marginBottom: 8 }}>
+          {grade}등급
+        </span>
+        <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
+          {GRADE_LABEL[grade] ?? '분석 완료'}
+        </div>
+        <div style={{ fontSize: 12.5, color: 'var(--ink-faint)', fontWeight: 600, marginTop: 4, lineHeight: 1.5 }}>
+          우리 아이와의 종합 궁합 점수예요
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function AnalysisResult() {
   const location = useLocation();
   const navigate = useNavigate();
   const { profile, products } = useStore();
 
-  let product = location.state?.product || useStore.getState().selectedProduct;
-  if (!product && products.length > 0) {
-    product = products[0];
-  }
+  const [activeTab, setActiveTab] = useState('종합');
+
+  const productId = location.state?.productId || selectedProduct?.id;
+  const product = useMemo(() => {
+    if (productId) return products.find(p => p.id === productId) || selectedProduct;
+    return selectedProduct || products[0];
+  }, [productId, products, selectedProduct]);
+
+  const hasPetProfile = isLoggedIn && profile?.name && profile.name !== '우리 아이';
+
+  const compatScore = useMemo(() => {
+    if (!product) return 75;
+    if (hasPetProfile) return calculateCompatibilityScore(product, profile);
+    return 75;
+  }, [product, profile, hasPetProfile]);
+
+  const grade = gradeFromScore(compatScore);
+
+  const safeIngredients = (product?.ingredients || []).filter(i => i.riskLevel === 'safe');
+  const cautionIngredients = (product?.ingredients || []).filter(i => i.riskLevel === 'caution');
+  const dangerIngredients = (product?.ingredients || []).filter(i => i.riskLevel === 'danger');
+
+  const allergyConflicts = useMemo(() => {
+    if (!hasPetProfile || !profile?.allergies?.length || !product?.ingredients) return [];
+    const allergies = profile.allergies.map(a => a.toLowerCase());
+    return product.ingredients.filter(ing =>
+      allergies.some(a => (ing.nameKo || '').toLowerCase().includes(a) || (ing.nameEn || '').toLowerCase().includes(a))
+    );
+  }, [product, profile, hasPetProfile]);
+
+  const ga = product?.guaranteedAnalysis;
+  const radarData = ga ? [
+    { subject: '단백질', value: Math.min(100, (ga.crudeProtein || 0) * 2.5) },
+    { subject: '지방', value: Math.min(100, (ga.crudeFat || 0) * 5) },
+    { subject: '섬유', value: Math.min(100, (ga.crudeFiber || 0) * 10) },
+    { subject: '수분', value: Math.min(100, (ga.moisture || 0) * 10) },
+    { subject: '칼슘', value: Math.min(100, (ga.calcium || 0) * 50) },
+  ] : [];
+
+  const basePositives = [
+    safeIngredients.length > 5 ? `안전 성분 ${safeIngredients.length}가지 확인` : null,
+    cautionIngredients.length === 0 && dangerIngredients.length === 0 ? '주의/위험 성분 없음 ✓' : null,
+    allergyConflicts.length === 0 && hasPetProfile ? '알러지 성분 미포함 ✓' : null,
+    ga?.crudeProtein && ga.crudeProtein > 25 ? `고단백 사료 (단백질 ${ga.crudeProtein}%)` : null,
+  ].filter(Boolean) as string[];
+
+  // ── 규칙 엔진(심화 성분 분석) 리포트 — AAFCO·Ca:P·DCM·단백보강 등 ──
+  const report = useMemo(
+    () => (product ? generateAnalysisReport(product, profile) : null),
+    [product, profile],
+  );
+
+  const breakdown = useMemo(
+    () => (product ? getRecommendationBreakdown(product, profile) : null),
+    [product, profile],
+  );
+
+  // 엔진 하이라이트를 화면 종합 탭의 좋은 점/주의 사항에 합친다(중복 제거).
+  const reportPositives = (report?.highlights ?? []).filter(h => h.type === 'positive').map(h => h.text);
+  const reportCautions = (report?.highlights ?? []).filter(h => h.type !== 'positive').map(h => h.text);
+
+  const positives = Array.from(new Set([
+    ...basePositives,
+    ...reportPositives,
+  ]));
+
+  const cautions = Array.from(new Set([
+    cautionIngredients.length > 0 ? `주의 성분 ${cautionIngredients.length}가지: ${cautionIngredients.map(i => i.nameKo).slice(0, 3).join(', ')}` : null,
+    dangerIngredients.length > 0 ? `위험 성분 ${dangerIngredients.length}가지: ${dangerIngredients.map(i => i.nameKo).slice(0, 2).join(', ')}` : null,
+    allergyConflicts.length > 0 ? `알러지 의심 성분: ${allergyConflicts.map(i => i.nameKo).join(', ')}` : null,
+    ...reportCautions,
+  ].filter(Boolean) as string[]));
+
+  // 화면에 직접 쓰이는 파생값들
+  const score = compatScore;
+  const displayIngredients = product?.ingredients ?? [];
+  const lifeStageString = product?.targetLifeStage
+    ? (LIFE_STAGE_LABEL[product.targetLifeStage] ?? product.targetLifeStage)
+    : '전 연령';
+  const kcalPer100g = ga ? calculateCalories(ga).kcalPer100g : (product?.caloriesPer100g ?? 0);
 
   if (!product) {
     return (

@@ -1,39 +1,14 @@
 // @ts-nocheck
-import { useEffect, useMemo, useState, useCallback } from 'react';
-import { Helmet } from 'react-helmet-async';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import {
-  Filter,
-  X,
-  Check,
-  Trash2,
-  Plus,
-  FlaskConical,
-  Dog,
-  Cat,
-  LayoutGrid,
-  Package,
-  SlidersHorizontal,
-  Sparkles,
-  Search as SearchIcon,
-  Database,
-  BookOpen
-} from 'lucide-react';
-import { Helmet } from 'react-helmet-async';
-import ProductCard from '../components/ProductCard';
-import type { Product } from '../types';
-import { TossFilterSection, TossChip, TossButton } from '../components/TossUI';
-import { searchProducts, getAllIngredients } from '../lib/supabase';
+import { useState, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Search as SearchIcon, Heart, FlaskConical, Plus, Trash2, X } from 'lucide-react';
 import { useStore } from '../store/useStore';
-import { displayBrand } from '../utils/brandLabel';
+import { getRecommendationBreakdown, getProductBadges, gradeFromScore } from '../utils/score';
 import ProductImage from '../components/ProductImage';
+import AnalysisBadges from '../components/AnalysisBadges';
 import { TossFilterSection } from '../components/TossUI';
-import { INGREDIENT_DICTIONARY } from '../analysis/ingredientDictionary';
-import STANDARD_FEED_DATA from '../data/standard_feed_data.json';
 
-import { SEARCH_EMPTY, SEARCH_NO_RESULTS, INGREDIENT_DICT } from '../copy/ui';
-
-const CORE_COPY = { ocr: '반려동물의 체질과 알레르기, 건강 고민을 조합하여 딱 맞는 완벽한 한 끼를 찾아보세요.' };
+import { SEARCH_NO_RESULTS, INGREDIENT_DICT } from '../copy/ui';
 
 const TossSearchBar = ({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) => (
   <div style={{ position: 'relative' }}>
@@ -76,23 +51,13 @@ export default function Search() {
   const hasPetProfile = isLoggedIn && profile && profile.id && profile.id !== 'local-profile' && profile.name && profile.name !== '우리 아이';
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const category = resolveCategoryFromSearchParams(searchParams.get('category'));
+  const [searchParams] = useSearchParams();
+  const { products, profile, isLoggedIn, favorites, toggleFavorite } = useStore();
 
   const [query, setQuery] = useState(searchParams.get('query') || '');
   const [speciesFilter, setSpeciesFilter] = useState('전체');
   const [detailFilter, setDetailFilter] = useState<string | null>(null);
   const [sort, setSort] = useState('평점순');
-  const [inCompare, setInCompare] = useState<Record<string, boolean>>({});
-
-  // 제외 성분 필터 모달
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [ingredientSearch, setIngredientSearch] = useState('');
-  const [excludedIngredients, setExcludedIngredients] = useState<string[]>([]);
-
-  // 한국표준사료 성분사전 모달
-  const [isStandardFeedModalOpen, setIsStandardFeedModalOpen] = useState(false);
-  const [standardFeedSearch, setStandardFeedSearch] = useState('');
-
   const favoriteSet = new Set(favorites || []);
 
   const standardFeedData = STANDARD_FEED_DATA as any[];
@@ -369,6 +334,12 @@ export default function Search() {
       ) : (
         <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
           {filtered.map(product => {
+            const breakdown = getRecommendationBreakdown(product, profile);
+            const score = (isLoggedIn && profile?.name && profile.name !== '우리 아이')
+              ? breakdown.total
+              : null;
+            const grade = score != null ? gradeFromScore(score) : null;
+            const badges = getProductBadges(breakdown);
             const isFav = favoriteSet.has(product.id);
             const brandLabel = displayBrand(product.brand, product.name);
             const tags = (product.healthConcerns || []).slice(0, 2);
@@ -395,6 +366,7 @@ export default function Search() {
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#191F28', lineHeight: 1.4, marginBottom: 4 }}>
                     {product.name.length > 30 ? product.name.slice(0, 30) + '…' : product.name}
                   </div>
+                  <AnalysisBadges badges={badges} style={{ marginBottom: 6 }} />
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     {product.averageRating > 0 && <span style={{ fontSize: 12, color: '#6B7684' }}>⭐ {Number(product.averageRating).toFixed(1)}</span>}
                     {product.reviewsCount > 0 && <>

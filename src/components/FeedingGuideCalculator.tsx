@@ -79,8 +79,6 @@ function evaluateFatRisk(
   const FAT_THRESHOLD = 12; // 체중관리 기준 상한 (%)
   const dailyFatG = Math.round(dailyGrams * (fatPercent / 100) * 10) / 10;
   const fatKcal = dailyFatG * 9;
-  const totalKcal = dailyGrams * (fatPercent / 100) * 9
-    + dailyGrams * ((100 - fatPercent) / 100) * 3.5; // rough estimate
   const fatCalPercent = Math.round((fatKcal / (dailyGrams * 3.5 + dailyFatG * (9 - 3.5))) * 100);
 
   const labelFlag = fatPercent > FAT_THRESHOLD ? 'over' : 'ok';

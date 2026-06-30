@@ -38,7 +38,8 @@ import KnowledgeIngredients from './pages/KnowledgeIngredients';
 import KnowledgeNutrients from './pages/KnowledgeNutrients';
 
 function App() {
-  const { initApp, isInitializing, isLoggedIn } = useStore();
+  const { initApp, isInitializing } = useStore();
+  const [splashLine] = useState(() => pickSplashTagline());
   const adminMode = typeof window !== 'undefined'
     && isAdminExperience(window.location.hostname, window.location.pathname);
   const [showEntrySplash, setShowEntrySplash] = useState(() => !adminMode);

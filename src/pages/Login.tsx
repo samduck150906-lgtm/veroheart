@@ -14,7 +14,6 @@ function KakaoIcon() {
     </svg>
   );
 }
-import { HOME_HERO } from '../copy/marketing';
 import { LOGIN } from '../copy/ui';
 import { VERORO_LOGO_SRC } from '../constants/assets';
 import { TossButton } from '../components/TossUI';

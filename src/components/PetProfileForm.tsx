@@ -12,7 +12,6 @@
 import { useState, useEffect } from 'react';
 import { Dog, Cat, ChevronRight, ChevronLeft, Check, Heart } from 'lucide-react';
 import { useStore } from '../store/useStore';
-import type { UserPetProfile } from '../types';
 
 const TOTAL_STEPS = 3;
 
