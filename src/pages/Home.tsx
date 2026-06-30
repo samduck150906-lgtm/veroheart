@@ -10,12 +10,7 @@ import { useStore } from '../store/useStore';
 import { useNavigate } from 'react-router-dom';
 import { Search, ChevronRight, Heart, ScanLine, Trophy, Scale, BookOpen, Star, Camera } from 'lucide-react';
 import ProductImage from '../components/ProductImage';
-import { rankProductsForProfile } from '../utils/score';
-import { getDisplayGrade } from '../utils/productGrade';
 import { displayBrand } from '../utils/brandLabel';
-
-// ===== 디자인 토큰 — 단일 소스(src/theme/tokens.ts) =====
-import { INK, SUB, MUTED, LINE, CARD, CARD_SM, T, gradeColor, scoreColor, scoreLabel } from '../theme/tokens';
 
 const CATEGORY_CHIPS = [
   { icon: '🥣', label: '사료', category: '사료' },
@@ -106,11 +101,8 @@ export default function Home() {
 
   const topRanked = useMemo(() => {
     if (!products.length) return [];
-    if (hasPetProfile) {
-      return rankProductsForProfile(products, profile, { limit: 6 }).map((r) => r.product);
-    }
     return [...products].sort((a, b) => b.averageRating - a.averageRating).slice(0, 6);
-  }, [products, profile, hasPetProfile]);
+  }, [products]);
 
   const rankingTop3 = useMemo(
     () => [...products].sort((a, b) => b.averageRating - a.averageRating).slice(0, 3),
@@ -119,7 +111,6 @@ export default function Home() {
 
   const recentList = useMemo(() => (recentViews?.length ? recentViews : []), [recentViews]);
 
-  const gradeInfoOf = (product) => getDisplayGrade(product, profile, hasPetProfile);
   const favoriteSet = new Set(favorites || []);
   const loading = isLoadingProducts && products.length === 0;
   const RANK_STYLE = [
@@ -189,10 +180,29 @@ export default function Home() {
                 반려동물 등록하기 <ChevronRight size={17} />
               </span>
             </div>
-            <div className="absolute right-4 bottom-3 text-[52px] leading-none pointer-events-none select-none">🐶</div>
-          </button>
-        )}
-      </div>
+            <ChevronRight size={22} className="text-white/90 flex-shrink-0" />
+          </div>
+        </button>
+      ) : (
+        <button
+          onClick={() => navigate(isLoggedIn ? '/pet-profile' : '/login')}
+          className="mx-4 mt-3 mb-1 w-[calc(100%-2rem)] rounded-[20px] overflow-hidden relative block text-left active:scale-[0.99] transition-transform"
+          style={{ background: 'linear-gradient(135deg, #F5C842 0%, #F0A500 100%)', minHeight: 148 }}
+        >
+          <div className="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full" />
+          <div className="absolute -right-2 -bottom-8 w-20 h-20 bg-white/10 rounded-full" />
+          <div className="relative p-5">
+            <p className="text-[12px] font-semibold text-white/75 mb-1">맞춤 사료 추천</p>
+            <p className="text-[21px] font-extrabold text-white leading-snug mb-3">
+              내 아이에게 딱 맞는<br />사료를 찾아드려요 🐾
+            </p>
+            <span className="inline-block bg-white text-[#F0A500] text-[13px] font-bold px-4 py-2 rounded-full shadow-sm">
+              반려동물 등록하기 →
+            </span>
+          </div>
+          <div className="absolute right-5 bottom-3 text-[64px] leading-none opacity-90 pointer-events-none">🐶</div>
+        </button>
+      )}
 
       {/* ===== [2] 퀵액션 4분할 ===== */}
       <div className="px-5 pt-3">
@@ -250,13 +260,24 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ===== [5] 맞춤 추천 ===== */}
-      <section className="pt-7">
-        <SectionHeader
-          title={petName ? `${petName} 맞춤 추천` : '추천 사료'}
-          sub={petName ? 'AI가 분석한 우리 아이 맞춤이에요' : '인기 있는 사료부터 확인해보세요'}
-          onMore={() => navigate('/search')}
-        />
+      {/* ===== [섹션 3] 맞춤 추천 (로딩 스켈레톤 / 빈 상태 처리) ===== */}
+      <section className="mt-5 px-4">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <p className="text-[17px] font-extrabold text-[#1A1A1A]">
+              {petName ? `${petName}에게 잘 맞을 것 같아요` : '추천 사료 모아봤어요'}
+            </p>
+            <p className="text-[12px] text-[#ABABAB] mt-0.5">
+              {petName ? '반려동물 맞춤 추천이에요' : '인기 있는 사료부터 확인해보세요'}
+            </p>
+          </div>
+          <button
+            onClick={() => navigate('/search')}
+            className="text-[13px] font-medium text-[#ABABAB] flex items-center gap-0.5 flex-shrink-0"
+          >
+            전체보기 <ChevronRight size={14} />
+          </button>
+        </div>
 
         {loading ? (
           <div className="grid grid-cols-2 gap-3 px-5">
@@ -265,7 +286,6 @@ export default function Home() {
         ) : topRanked.length > 0 ? (
           <div className="grid grid-cols-2 gap-3 px-5">
             {topRanked.slice(0, 6).map((product) => {
-              const { grade, label } = gradeInfoOf(product);
               const isFav = favoriteSet.has(product.id);
               return (
                 <div
@@ -278,6 +298,13 @@ export default function Home() {
                       카드 둥근 모서리에 잘리지 않도록. 뱃지·하트는 카드 직속 오버레이. */}
                   <div className="relative bg-[#F4F6F8] aspect-square rounded-t-[16px] overflow-hidden">
                     <ProductImage src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleFavorite?.(product.id); }}
+                      aria-label="찜하기"
+                      className="absolute top-2 right-2 w-7 h-7 bg-white/85 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm"
+                    >
+                      <Heart size={14} fill={isFav ? '#F04452' : 'none'} color={isFav ? '#F04452' : '#9A9A9A'} />
+                    </button>
                   </div>
                   <span
                     className="absolute top-2.5 left-2.5 text-white px-2 py-0.5 rounded-full"
@@ -344,40 +371,28 @@ export default function Home() {
                         <div className="h-3 w-1/3 bg-[#EEF1F4] rounded animate-pulse" />
                       </div>
                     </div>
-                  ))
-                : rankingTop3.map((product, index) => {
-                    const { grade } = gradeInfoOf(product);
-                    const rs = RANK_STYLE[index] ?? RANK_STYLE[2];
-                    return (
-                      <div
-                        key={product.id}
-                        onClick={() => navigate(`/product/${product.id}`)}
-                        className="flex items-center gap-3 p-4 active:bg-[#F8FAFB] cursor-pointer"
-                        style={{ borderTop: index ? `1px solid ${LINE}` : 'none' }}
-                      >
-                        <span
-                          className="w-7 h-7 rounded-[9px] flex items-center justify-center flex-shrink-0"
-                          style={{ ...T.body, fontWeight: 800, background: rs.bg, color: rs.fg }}
-                        >
-                          {index + 1}
-                        </span>
-                        <div className="w-12 h-12 rounded-[12px] bg-[#F4F6F8] flex-shrink-0 overflow-hidden">
-                          <ProductImage src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="truncate" style={{ ...T.body, fontWeight: 600 }}>{product.name}</p>
-                          <p className="mt-0.5" style={T.cap}>{product.price ? `${product.price.toLocaleString()}원` : '가격 미정'}</p>
-                        </div>
-                        <span
-                          className="text-white px-2.5 py-1 rounded-full flex-shrink-0"
-                          style={{ ...T.micro, fontWeight: 800, background: gradeColor(grade).color }}
-                        >
-                          {grade === 'pending' ? '분석 중' : `${grade}등급`}
-                        </span>
+                  </div>
+                ))
+              : rankingTop3.map((product, index) => {
+                  return (
+                    <div
+                      key={product.id}
+                      onClick={() => navigate(`/product/${product.id}`)}
+                      className="flex items-center gap-3 p-3.5 active:bg-[#FAF8F4] cursor-pointer"
+                    >
+                      <span className="w-6 text-center text-[18px] flex-shrink-0">{MEDALS[index]}</span>
+                      <div className="w-12 h-12 rounded-[10px] bg-[#F8F8F8] flex-shrink-0 overflow-hidden">
+                        <ProductImage src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
                       </div>
-                    );
-                  })}
-            </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-semibold text-[#1A1A1A] truncate">{product.name}</p>
+                        <p className="text-[12px] text-[#ABABAB]">
+                          {product.price ? `${product.price.toLocaleString()}원` : '가격 미정'}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
           </div>
         </section>
       )}
@@ -388,7 +403,6 @@ export default function Home() {
           <p className="mb-3 px-5" style={T.section}>최근 본 상품</p>
           <div className="flex gap-3 px-5 overflow-x-auto no-scrollbar pb-1">
             {recentList.slice(0, 8).map((product) => {
-              const { grade } = gradeInfoOf(product);
               return (
                 <div
                   key={product.id}

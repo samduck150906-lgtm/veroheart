@@ -1,14 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import type { Product, Ingredient } from '../types';
-import { DEFAULT_USER_PET_PROFILE } from '../types';
+import type { Product } from '../types';
 import { HOME } from '../copy/ui';
 import { matchesSpecies, matchesCategory } from './rankingFilters';
-import { getDisplayGrade, getSafetyScore } from './productGrade';
 import { displayBrand, hasMeaningfulBrand } from './brandLabel';
-
-const ing = (over: Partial<Ingredient> = {}): Ingredient => ({
-  id: 'i', nameKo: '닭고기', nameEn: 'chicken', purpose: '단백질', riskLevel: 'safe', ...over,
-});
 
 const makeProduct = (over: Partial<Product> = {}): Product => ({
   id: 'p1', brand: '테스트', name: '테스트 사료', category: 'food',
@@ -57,33 +51,6 @@ describe('ranking filters (P0-2)', () => {
     expect(matchesCategory(p, '사료')).toBe(true);
     expect(matchesCategory(p, '간식')).toBe(false);
     expect(matchesCategory(p, '전체')).toBe(true);
-  });
-});
-
-// ── P1-3: 등급 배지 + "분석 중" 상태 ──────────────────────────────────
-describe('display grade (P1-3)', () => {
-  it('returns 분석 중 (pending) when no ingredients are analyzed', () => {
-    const info = getDisplayGrade(makeProduct({ ingredients: [] }), null, false);
-    expect(info.grade).toBe('pending');
-    expect(info.label).toBe('분석 중');
-    expect(info.basis).toBe('pending');
-  });
-
-  it('returns a safety grade (no profile) when analyzed', () => {
-    const safe = makeProduct({ ingredients: [ing(), ing({ id: 'i2' })] });
-    const info = getDisplayGrade(safe, null, false);
-    expect(info.basis).toBe('safety');
-    expect(['A', 'B', 'C', 'D']).toContain(info.grade);
-    // 위험 성분이 있으면 안전 점수가 더 낮아야 함
-    const risky = makeProduct({ ingredients: [ing({ riskLevel: 'danger' })] });
-    expect(getSafetyScore(risky)).toBeLessThan(getSafetyScore(safe));
-  });
-
-  it('returns a compatibility grade when a profile is present', () => {
-    const p = makeProduct({ ingredients: [ing()] });
-    const info = getDisplayGrade(p, DEFAULT_USER_PET_PROFILE, true);
-    expect(info.basis).toBe('compatibility');
-    expect(info.score).not.toBeNull();
   });
 });
 

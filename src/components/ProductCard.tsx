@@ -3,10 +3,7 @@ import { Heart, Star } from 'lucide-react';
 import type { Product } from '../types';
 import { useStore } from '../store/useStore';
 import { notify } from '../store/useNotification';
-import { calculateCompatibilityScore } from '../utils/score';
-import { hasRealPetProfile } from '../utils/productGrade';
 import { displayBrand } from '../utils/brandLabel';
-import GradeBadge from './GradeBadge';
 import ProductImage from './ProductImage';
 
 type ProductCardProps = {
@@ -37,10 +34,8 @@ export default function ProductCard({
   rank,
   isSponsorSlot = false,
 }: ProductCardProps) {
-  const { profile, favorites, toggleFavorite, isLoggedIn } = useStore();
+  const { favorites, toggleFavorite, isLoggedIn } = useStore();
   const navigate = useNavigate();
-  const withProfile = hasRealPetProfile(profile, isLoggedIn);
-  const score = withProfile ? calculateCompatibilityScore(product, profile) : null;
   const isFav = favorites.includes(product.id);
   const brandLabel = displayBrand(product.brand, product.name);
 
@@ -93,14 +88,6 @@ export default function ProductCard({
               fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>{rank}</span>
           )}
-          {score != null && (
-            <span style={{
-              position: 'absolute', bottom: 10, left: 10,
-              display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 9px',
-              borderRadius: 999, background: 'var(--brand)', color: 'var(--ink-on-brand)',
-              fontSize: 11.5, fontWeight: 800, boxShadow: 'var(--shadow-sm)',
-            }}>궁합 {score}</span>
-          )}
           <span
             onClick={handleToggleFav}
             style={{
@@ -119,7 +106,6 @@ export default function ProductCard({
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
-            <GradeBadge product={product} profile={profile} withProfile={withProfile} />
             {brandLabel && <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.4, color: 'var(--ink-faint)' }}>{brandLabel}</span>}
             {isSponsorSlot && <SponsorBadge label={product.sponsorLabel || '광고'} />}
           </div>
@@ -174,7 +160,6 @@ export default function ProductCard({
       </div>
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-          <GradeBadge product={product} profile={profile} withProfile={withProfile} />
           {brandLabel && <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.3, color: 'var(--ink-faint)' }}>{brandLabel}</span>}
           {isSponsorSlot && <SponsorBadge label={product.sponsorLabel || '광고'} />}
         </div>
@@ -182,13 +167,6 @@ export default function ProductCard({
           fontSize: 14.5, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.3,
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
         }}>{product.name}</span>
-        {score != null && (
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 1 }}>
-            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--brand-deep)', background: 'var(--brand-tint)', padding: '3px 9px', borderRadius: '8px' }}>
-              궁합 {score}점
-            </span>
-          </div>
-        )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
             <Star size={13} fill="var(--brand)" stroke="var(--brand)" strokeWidth={1.2} />

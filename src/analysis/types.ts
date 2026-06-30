@@ -1,7 +1,7 @@
 /**
  * 베로로(Veroro) 분석 엔진 — 공통 타입 정의
  *
- * 설계 원칙: "AI가 임의로 판단"하지 않는다.
+ * 설계 원칙: 모든 판단은 규칙으로 결정형(deterministic) 수행한다.
  *   라벨 → 성분 사전 매칭 → 규칙 엔진 판단 → 점수 계산 → (마지막에) 설명 생성
  * 이 파일은 규칙 엔진/성분 사전 계층의 단일 타입 소스다.
  */
@@ -194,7 +194,7 @@ export interface AnalysisSection {
   }[];
 }
 
-/** 규칙 엔진 최종 출력 (LLM 설명 생성 이전의 "사실" 결과) */
+/** 규칙 엔진 최종 출력 (설명 생성 이전의 "사실" 결과) */
 export interface RuleEngineResult {
   productId?: string;
   score: number;

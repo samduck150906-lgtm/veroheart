@@ -103,10 +103,10 @@ React + Capacitor (채택)
 ┌────────────────────────────▼────────────────────────────────────────┐
 │                       외부 서비스                                     │
 │                                                                     │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐             │
-│  │  Toss Pay   │  │  쿠팡 파트너스 │  │ Claude API   │             │
-│  │  (결제)      │  │  (제휴링크)   │  │ (성분 설명AI) │             │
-│  └──────────────┘  └──────────────┘  └──────────────┘             │
+│  ┌──────────────┐  ┌──────────────┐                                │
+│  │  Toss Pay   │  │  쿠팡 파트너스 │                                │
+│  │  (결제)      │  │  (제휴링크)   │                                │
+│  └──────────────┘  └──────────────┘                                │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -297,7 +297,6 @@ CREATE TABLE public.analysis_reports (
   compatibility_score integer CHECK (compatibility_score BETWEEN 0 AND 100),
   score_breakdown jsonb,         -- {base:40, allergy:-20, health:+15, ...}
   flags           jsonb,         -- {allergyConflicts:[], cautionIngredients:[], benefits:[]}
-  ai_explanation  text,          -- LLM 생성 설명 (Phase 2)
   created_at      timestamptz DEFAULT now()
 );
 
@@ -1179,7 +1178,6 @@ Week 7
 
 ### P3 — Phase 2 (Later)
 
-- [ ] AI 설명 생성 (Claude API 연동)
 - [ ] 영양소 부족 경고
 - [ ] 브랜드 파트너십 기능
 - [ ] 수의사 추천 배지
@@ -1188,26 +1186,6 @@ Week 7
 ---
 
 ## 12. 추후 확장 방향
-
-### Phase 2: AI 강화 (출시 후 2–3개월)
-
-```typescript
-// Claude API 연동: 성분 분석 설명 자동 생성
-const explanation = await anthropic.messages.create({
-  model: 'claude-sonnet-4-6',
-  messages: [{
-    role: 'user',
-    content: `
-      반려견 정보: ${petSummary}
-      사료 성분: ${ingredientList}
-      궁합 점수: ${score}점
-
-      이 사료가 이 강아지에게 적합한지 수의 영양학 관점에서
-      2–3문장으로 쉽게 설명해줘.
-    `
-  }]
-});
-```
 
 ### Phase 3: 데이터 인프라 (4–6개월)
 
@@ -1224,8 +1202,6 @@ const explanation = await anthropic.messages.create({
 협업 필터링 (비슷한 펫 프로필 → 비슷한 추천)
     ↓
 성분 임베딩 (성분 벡터화 → 유사 제품 추천)
-    ↓
-LLM 기반 개인화 설명 생성
 ```
 
 ### 비즈니스 확장

@@ -7,12 +7,9 @@ import Home from './pages/Home';
 import Search from './pages/Search';
 import Profile from './pages/Profile';
 import Detail from './pages/Detail';
-import Scanner from './pages/Scanner';
 import Community from './pages/Community';
 import Ranking from './pages/Ranking';
 import Comparison from './pages/Comparison';
-import AnalysisResult from './pages/AnalysisResult';
-import ScanResult from './pages/ScanResult';
 import PetProfilePage from './pages/PetProfile';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
@@ -23,7 +20,6 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminIngredients from './pages/admin/AdminIngredients';
 import AdminSettings from './pages/admin/AdminSettings';
-import AdminAnalysis from './pages/admin/AdminAnalysis';
 import AdminSponsors from './pages/admin/AdminSponsors';
 import Membership from './pages/Membership';
 import Notification from './components/Notification';
@@ -103,7 +99,6 @@ function App() {
             <Route path="/" element={<Layout />}>
               <Route index element={<Home />} />
               <Route path="search" element={<Search />} />
-              <Route path="scanner" element={<Scanner />} />
               <Route path="community" element={<Community />} />
               <Route path="community/:postId" element={<CommunityPost />} />
               <Route path="auth" element={<Login />} />
@@ -121,8 +116,6 @@ function App() {
               <Route path="product/:id" element={<Detail />} />
               <Route path="detail/:id" element={<Detail />} />
               <Route path="auth/callback" element={<AuthCallback />} />
-              <Route path="analysis" element={<AnalysisResult />} />
-              <Route path="scan-result" element={<ScanResult />} />
               <Route path="pet-profile" element={<PetProfilePage />} />
               <Route path="brand/:brandName" element={<Brand />} />
               <Route path="event/personality-quiz" element={<PersonalityQuiz />} />
@@ -139,7 +132,6 @@ function App() {
             <Route index element={<AdminDashboard />} />
             <Route path="products" element={<AdminProducts />} />
             <Route path="ingredients" element={<AdminIngredients />} />
-            <Route path="analysis" element={<AdminAnalysis />} />
             <Route path="sponsors" element={<AdminSponsors />} />
             <Route path="settings" element={<AdminSettings />} />
           </Route>

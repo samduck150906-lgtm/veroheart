@@ -17,13 +17,11 @@ const TIERS = [
     features: [
       { text: '반려동물 프로필 1개', included: true },
       { text: '기본 성분 분석 (월 3회)', included: true },
-      { text: '궁합 점수 기본 제공', included: true },
       { text: '상품 랭킹 · 검색', included: true },
       { text: '무제한 성분 분석', included: false },
       { text: '상세 영양 리포트', included: false },
       { text: '유해 성분 즉시 알림', included: false },
       { text: '분석 히스토리 보관', included: false },
-      { text: 'AI 영양 상담 (월 2회)', included: false },
     ],
   },
   {
@@ -41,13 +39,11 @@ const TIERS = [
     features: [
       { text: '반려동물 프로필 3개', included: true },
       { text: '무제한 성분 분석', included: true },
-      { text: '궁합 점수 기본 제공', included: true },
       { text: '상품 랭킹 · 검색', included: true },
       { text: '상세 영양 리포트', included: true },
       { text: '유해 성분 즉시 알림', included: true },
       { text: '분석 히스토리 보관', included: true },
       { text: '신상품 선출시 알림', included: true },
-      { text: 'AI 영양 상담 (월 2회)', included: false },
     ],
   },
   {
@@ -61,17 +57,15 @@ const TIERS = [
     bg: '#F5F3FF',
     border: '#7C3AED',
     badge: '최고',
-    desc: '전문가 수준의 영양 분석과 AI 상담까지.',
+    desc: '전문가 수준의 영양 분석을 모두 누리세요.',
     features: [
       { text: '반려동물 프로필 무제한', included: true },
       { text: '무제한 성분 분석', included: true },
-      { text: '궁합 점수 기본 제공', included: true },
       { text: '상품 랭킹 · 검색', included: true },
       { text: '상세 영양 리포트', included: true },
       { text: '유해 성분 즉시 알림', included: true },
       { text: '분석 히스토리 보관', included: true },
       { text: '신상품 선출시 알림', included: true },
-      { text: 'AI 영양 상담 (월 2회)', included: true },
     ],
   },
 ];

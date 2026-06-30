@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { create } from 'zustand';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
-import type { UserPetProfile, Product, SupabaseOrderWithItems, AnalysisReportRow, Banner, MembershipTier } from '../types';
+import type { UserPetProfile, Product, SupabaseOrderWithItems, Banner, MembershipTier } from '../types';
 import { DEFAULT_USER_PET_PROFILE } from '../types';
 import {
   supabase,
@@ -54,7 +54,7 @@ const DEFAULT_BANNERS: Banner[] = [
   },
   {
     id: 'default-3',
-    title: '동반자 펫 등록하고\n맞춤형 궁합 정보 받기',
+    title: '동반자 펫 등록하고\n맞춤 정보 받기',
     subtitle: '마이펫 정보 입력하러 가기',
     imageUrl: '🐶',
     linkUrl: '/profile',
@@ -89,12 +89,7 @@ interface StoreState {
   updateCartQuantity: (productId: string, quantity: number) => void;
   removeFromCart: (productId: string) => void;
   clearCart: () => void;
-  reports: AnalysisReportRow[];
-  fetchReports: () => Promise<void>;
   logout: () => Promise<void>;
-  // New scanner mode state
-  scannerMode: 'barcode' | 'text';
-  setScannerMode: (mode: 'barcode' | 'text') => void;
   // Banner management
   banners: Banner[];
   fetchBanners: () => Promise<void>;
@@ -112,12 +107,9 @@ export const useStore = create<StoreState>((set, get) => ({
   products: [],
   selectedProduct: null,
   orders: [],
-  reports: [],
   recentViews: [],
   isLoadingProducts: false,
   isInitializing: true,
-  scannerMode: 'barcode' as 'barcode' | 'text',
-  setScannerMode: (mode: 'barcode' | 'text') => set({ scannerMode: mode }),
   banners: DEFAULT_BANNERS,
   membershipTier: 'free' as MembershipTier,
   fetchMembership: async () => {
@@ -138,7 +130,6 @@ export const useStore = create<StoreState>((set, get) => ({
       userId: null,
       isLoggedIn: false,
       orders: [],
-      reports: [],
       favorites: [],
       recentViews: [],
       cart: [],
@@ -247,8 +238,8 @@ export const useStore = create<StoreState>((set, get) => ({
         set({ recentViews: recentData as any[] });
       }
 
-      const { fetchProducts, fetchOrders, fetchReports, fetchBanners, fetchMembership } = get();
-      await Promise.all([fetchProducts(), fetchOrders(), fetchReports(), fetchBanners(), fetchMembership()]);
+      const { fetchProducts, fetchOrders, fetchBanners, fetchMembership } = get();
+      await Promise.all([fetchProducts(), fetchOrders(), fetchBanners(), fetchMembership()]);
       set({ isInitializing: false });
     } catch (err) {
       console.error('initApp err:', err);
@@ -334,18 +325,6 @@ export const useStore = create<StoreState>((set, get) => ({
     }
   },
 
-  fetchReports: async () => {
-    const { userId } = get();
-    if (!userId) return;
-    try {
-      const { getAnalysisReports } = await import('../lib/supabase');
-      const data = await getAnalysisReports(userId);
-      set({ reports: data as AnalysisReportRow[] });
-    } catch (err) {
-      console.error(err);
-    }
-  },
-  
   favorites: [],
   toggleFavorite: async (id) => {
     const { userId, favorites } = get();
@@ -433,7 +412,7 @@ export const useStore = create<StoreState>((set, get) => ({
     try {
       const { signOut } = await import('../lib/supabase');
       await signOut();
-      set({ userId: null, profile: DEFAULT_USER_PET_PROFILE, orders: [], reports: [], cart: [], favorites: [] });
+      set({ userId: null, profile: DEFAULT_USER_PET_PROFILE, orders: [], cart: [], favorites: [] });
     } catch (err) {
       console.error(err);
     }

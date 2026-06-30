@@ -185,22 +185,6 @@ export type SupabaseOrderWithItems = SupabaseOrder & {
   order_items: SupabaseOrderItem[];
 };
 
-/** `analysis_reports` + join `products` (getAnalysisReports select) */
-export type AnalysisReportRow = {
-  id: string;
-  created_at: string;
-  product_id: string | null;
-  analysis_json: {
-    scores?: { final?: number };
-    summary?: string;
-  };
-  products?: {
-    image_url: string | null;
-    name: string;
-    brand_name: string;
-  } | null;
-};
-
 export interface Banner {
   id: string;
   title: string;

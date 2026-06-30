@@ -276,30 +276,6 @@ export async function getProductDetail(productId: string): Promise<Product | nul
   return mapProductFromSupabaseRow(data as SupabaseProductRow);
 }
 
-export async function getProductByBarcode(barcode: string): Promise<Product | null> {
-  if (!isSupabaseConfigured) return null;
-  const { data, error } = await supabase
-    .from('products')
-    .select(`
-      *,
-      product_ingredients (
-        ingredient_id,
-        ingredients (*)
-      ),
-      nutritional_profiles (
-        crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus
-      )
-    `)
-    .eq('barcode', barcode)
-    .single();
-
-  if (error) {
-    if (error.code !== 'PGRST116') console.error('getProductByBarcode error:', error);
-    return null;
-  }
-  return mapProductFromSupabaseRow(data as SupabaseProductRow);
-}
-
 /** 다이어트·체중 관련 태그( DB product_health_concerns 값과 맞추면 매칭됨 ) */
 export const DIET_HEALTH_TAGS = ['비만', '다이어트', '체중', '저칼로리', '체중관리', '다이어트케어'] as const;
 
@@ -424,43 +400,6 @@ export async function clearUserCart(userId: string) {
 
 export async function getOrders(userId: string) {
   const { data } = await supabase.from('orders').select(`*, order_items (*, products (*))`).eq('user_id', userId).order('created_at', { ascending: false });
-  return data || [];
-}
-
-export async function saveAnalysisReport(
-  userId: string,
-  productId: string | null,
-  rawText: string,
-  analysisJson: object
-) {
-  const { data, error } = await supabase.from('analysis_reports').insert({
-    user_id: userId,
-    product_id: productId,
-    raw_text: rawText,
-    analysis_json: analysisJson
-  }).select().single();
-  
-  if (error) {
-    console.error('Failed to save analysis report:', error);
-    return null;
-  }
-  return data;
-}
-
-export async function getAnalysisReports(userId: string) {
-  const { data, error } = await supabase
-    .from('analysis_reports')
-    .select(`
-      *,
-      products (name, brand_name, image_url)
-    `)
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error('Failed to fetch analysis reports:', error);
-    return [];
-  }
   return data || [];
 }
 
@@ -604,79 +543,6 @@ export async function deleteBannerFromDB(bannerId: string) {
 
 
 
-// ─── 분석 엔진 관리자 (규칙 / 미매칭 원료 검수) ───────────────────────
-
-export interface AnalysisRuleRow {
-  id: string;
-  target: string;
-  species: string | null;
-  condition: Record<string, unknown>;
-  severity: string;
-  score_delta: number;
-  title: string;
-  message_template: string;
-  evidence_level: string;
-  is_active: boolean;
-}
-
-export async function getAnalysisRules(): Promise<AnalysisRuleRow[]> {
-  if (!isSupabaseConfigured) return [];
-  const { data, error } = await supabase
-    .from('analysis_rules')
-    .select('*')
-    .order('severity', { ascending: true })
-    .order('score_delta', { ascending: true });
-  if (error) {
-    console.error('getAnalysisRules error:', error);
-    return [];
-  }
-  return (data || []) as AnalysisRuleRow[];
-}
-
-export async function setAnalysisRuleActive(id: string, isActive: boolean) {
-  if (!isSupabaseConfigured) return;
-  const { error } = await supabase
-    .from('analysis_rules')
-    .update({ is_active: isActive, updated_at: new Date().toISOString() })
-    .eq('id', id);
-  if (error) console.error('setAnalysisRuleActive error:', error);
-}
-
-export interface UnmatchedIngredientRow {
-  id: string;
-  normalized_name: string;
-  raw_name: string;
-  occurrences: number;
-  status: 'pending' | 'resolved' | 'ignored';
-  last_seen_at: string;
-}
-
-export async function getUnmatchedIngredients(): Promise<UnmatchedIngredientRow[]> {
-  if (!isSupabaseConfigured) return [];
-  const { data, error } = await supabase
-    .from('unmatched_ingredients')
-    .select('*')
-    .order('occurrences', { ascending: false })
-    .limit(300);
-  if (error) {
-    console.error('getUnmatchedIngredients error:', error);
-    return [];
-  }
-  return (data || []) as UnmatchedIngredientRow[];
-}
-
-export async function setUnmatchedStatus(
-  id: string,
-  status: 'pending' | 'resolved' | 'ignored',
-) {
-  if (!isSupabaseConfigured) return;
-  const { error } = await supabase
-    .from('unmatched_ingredients')
-    .update({ status })
-    .eq('id', id);
-  if (error) console.error('setUnmatchedStatus error:', error);
-}
-
 // ─── 멤버십 / 구독 ───────────────────────────────────────────
 
 import type { MembershipTier } from '../types';
@@ -780,18 +646,6 @@ export async function getMyLikedPostIds(userId: string): Promise<string[]> {
     .select('post_id')
     .eq('user_id', userId);
   return (data ?? []).map((r: any) => r.post_id);
-}
-
-/** 미매칭 원료를 검수 큐에 기록(있으면 카운트 증가). 분석 중 발견 시 호출. */
-export async function logUnmatchedIngredients(rawNames: string[]) {
-  if (!isSupabaseConfigured || rawNames.length === 0) return;
-  await Promise.all(
-    rawNames.map((raw) =>
-      supabase.rpc('log_unmatched_ingredient', { p_raw: raw }).then(({ error }) => {
-        if (error) console.error('logUnmatchedIngredient error:', error);
-      }),
-    ),
-  );
 }
 
 // ─── Community Posts ──────────────────────────────────────────────────────────
