@@ -11,10 +11,11 @@ import ProductCard from '../components/ProductCard';
 import TargetedAd from '../components/TargetedAd';
 import { Helmet } from 'react-helmet-async';
 import {
-  Sparkles,
-  Clock3,
   ChevronRight,
-  Stethoscope,
+  Pencil,
+  Bone,
+  Droplet,
+  ShieldCheck,
   Heart,
   MessageCircle,
   Bell,
@@ -26,15 +27,15 @@ import { TossChip, TossSectionTitle } from '../components/TossUI';
 import ProductImage from '../components/ProductImage';
 import { displayBrand } from '../utils/brandLabel';
 
-const CATEGORY_CHIPS = [
-  { icon: '🥣', label: '사료', category: '사료' },
-  { icon: '🦴', label: '간식', category: '간식' },
-  { icon: '💊', label: '영양제', category: '영양제' },
-  { icon: '🦷', label: '구강', category: '구강관리' },
-  { icon: '🛁', label: '피부·목욕', category: '피부·목욕·위생' },
-  { icon: '👁', label: '눈·귀', category: '눈·귀·민감부위 케어' },
-  { icon: '🪣', label: '배변', category: '배변/모래/패드' },
-  { icon: '🏠', label: '생활용품', category: '생활용품·환경안전' },
+const CATEGORY_GRID = [
+  { name: '사료', label: '사료', emoji: '🐾' },
+  { name: '간식', label: '간식', emoji: '🦴' },
+  { name: '영양제', label: '영양제', emoji: '💊' },
+  { name: '구강관리', label: '구강', emoji: '🦷' },
+  { name: '피부·목욕·위생', label: '피부·목욕', emoji: '🛁' },
+  { name: '눈·귀·민감부위 케어', label: '눈·귀', emoji: '👁' },
+  { name: '배변/모래/패드', label: '배변', emoji: '🪣' },
+  { name: '생활용품·환경안전', label: '생활용품', emoji: '🏠' },
 ];
 
 // 토스식 4분할 퀵액션 — 앱의 핵심 진입점
@@ -93,17 +94,10 @@ export default function Home() {
     return !hasAllergenInIngredients && !hasAllergenInList;
   };
 
-  // 3. Strict Curation Filter for personalRecs (Hero) — exclude trending products
-  const personalRecs = products
-    .filter(p => (p.targetPetType === expectedPetType || p.targetPetType === 'all') && !trendingIds.has(p.id))
-    .filter(allergenFilter)
-    .sort((a, b) => {
-      const aMatches = a.healthConcerns?.filter(c => profile.healthConcerns.includes(c)).length || 0;
-      const bMatches = b.healthConcerns?.filter(c => profile.healthConcerns.includes(c)).length || 0;
-      if (aMatches !== bMatches) return bMatches - aMatches;
-      return (b.averageRating ?? 0) - (a.averageRating ?? 0);
-    })
-    .slice(0, 4);
+  const [scoreExpanded, setScoreExpanded] = useState(false);
+
+  const recent = (recentViews?.length ? recentViews : products).slice(0, 8);
+  const favoriteSet = new Set(favorites || []);
 
   // 4. Backfill personalRecs (also excluding trending)
   if (personalRecs.length < 4) {
@@ -172,38 +166,97 @@ export default function Home() {
         <meta name="description" content="베로로 — 사료 성분 분석과 집사들의 찐 리뷰. 의심 대신 베로로 하세요." />
       </Helmet>
 
-      {/* Pet context card — quiet inline introduction */}
-      <section
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          padding: '16px 20px 8px',
-        }}
-      >
-        <div
-          style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '50%',
-            overflow: 'hidden',
-            background: 'var(--surface-muted)',
-            flexShrink: 0,
-          }}
-        >
-          <img
-            src={profile.species === 'Cat'
-              ? 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=120&auto=format&fit=crop&q=80'
-              : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=120&auto=format&fit=crop&q=80'}
-            alt={`${petName} 프로필`}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
+      {/* ===== Pet Profile Card ===== */}
+      <div>
+        <div style={{ background: 'var(--fill)', borderRadius: '20px', padding: '18px 18px 20px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+            <div style={{
+              width: '60px', height: '60px', borderRadius: '16px', background: '#FEF3C7', flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <span style={{ fontSize: '30px', lineHeight: 1 }}>{profile?.species === 'Cat' ? '🐱' : '🐾'}</span>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ink)' }}>{petName}</div>
+                <button
+                  onClick={() => navigate(hasPetProfile ? '/profile' : '/login')}
+                  aria-label="프로필 수정"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-400)', padding: '2px' }}
+                >
+                  <Pencil size={17} strokeWidth={2} />
+                </button>
+              </div>
+              <div style={{ fontSize: '13.5px', color: 'var(--ink-soft)', fontWeight: 600, marginTop: '2px' }}>
+                {speciesLabel} · {ageLabel} · {weightLabel}
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '9px' }}>
+                <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--danger)', background: 'var(--danger-tint)', padding: '3px 9px', borderRadius: '7px' }}>
+                  {allergyLabel || '닭고기 알러지'}
+                </span>
+                <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--safe)', background: 'var(--safe-tint)', padding: '3px 9px', borderRadius: '7px' }}>
+                  {concernLabel ? `${concernLabel} 관리중` : '관절 건강 양호'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ height: '1px', background: 'var(--hairline-strong)', margin: '16px 0 12px' }} />
+
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--ink-soft)' }}>현재 식단 적합도</span>
+            <span style={{ fontSize: '22px', fontWeight: 900, color: 'var(--ink)' }}>
+              {healthScore}<span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink-400)' }}>/100</span>
+            </span>
+          </div>
+          <div style={{ height: '8px', background: '#E5E8EB', borderRadius: '99px', overflow: 'hidden', marginTop: '8px' }}>
+            <div style={{ width: `${scoreFill}%`, height: '100%', background: 'var(--brand)', borderRadius: '99px', transition: 'width 0.9s cubic-bezier(0.16, 1, 0.3, 1)' }} />
+          </div>
+
+          <button
+            onClick={() => setScoreExpanded(v => !v)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '10px 0 0', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)' }}
+          >
+            점수 산정 근거 보기 {scoreExpanded ? '▲' : '▼'}
+          </button>
+
+          {scoreExpanded && (
+            <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {(profile?.allergies?.length > 0
+                ? [{ label: `${profile.allergies[0]} 알러지 회피`, pts: '+30', color: 'var(--safe)' }]
+                : [{ label: '알러지 성분 없음', pts: '+30', color: 'var(--safe)' }]
+              ).concat(
+                profile?.healthConcerns?.length > 0
+                  ? [{ label: `${profile.healthConcerns[0]} 적합 성분 포함`, pts: '+25', color: 'var(--safe)' }]
+                  : [],
+                [{ label: '체중·활동량 적합', pts: '+20', color: 'var(--safe)' }],
+                profile?.allergies?.length > 1
+                  ? [{ label: '복합 알러지 감점', pts: `-${(profile.allergies.length - 1) * 4}`, color: 'var(--danger)' }]
+                  : []
+              ).map(({ label, pts, color }) => (
+                <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: '10px', background: 'var(--surface)' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--ink-soft)' }}>{label}</span>
+                  <span style={{ fontSize: '13px', fontWeight: 800, color }}>{pts}</span>
+                </div>
+              ))}
+              <p style={{ fontSize: '10.5px', color: 'var(--ink-faint)', fontWeight: 500, lineHeight: 1.5, marginTop: '2px' }}>
+                * 현재 급여 중인 사료를 등록하면 더 정확한 점수를 제공해요.
+              </p>
+            </div>
+          )}
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-dark)', letterSpacing: '-0.01em' }}>
-            {petName}
-            <span style={{ color: 'var(--text-light)', fontWeight: 500, fontSize: '12px', marginLeft: '6px' }}>
-              {petBreed} · {petAge}세
+      </div>
+
+      {/* ===== Category Grid ===== */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', rowGap: '16px', columnGap: '8px' }}>
+        {CATEGORY_GRID.map(({ name, label, emoji }) => (
+          <button
+            key={name}
+            onClick={() => navigate(`/search?category=${encodeURIComponent(name)}`)}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+          >
+            <span style={{ width: '54px', height: '54px', borderRadius: '18px', background: 'var(--fill)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
+              {emoji}
             </span>
           </span>
           <span style={{ fontSize: '11px', color: 'var(--text-light)', fontWeight: 500, marginTop: '2px' }}>

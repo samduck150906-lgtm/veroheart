@@ -37,8 +37,18 @@ export default function ProductCard({
   const isFav = favorites.includes(product.id);
   const imageSize = compact ? 86 : 100;
 
-  const formatPrice = (price: number) =>
-    price >= 1000000 ? `${(price / 10000).toLocaleString()}만원` : `${price.toLocaleString()}원`;
+  const handleToggleFav = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isLoggedIn) {
+      notify.info('로그인하면 찜한 제품을 저장하고 다시 볼 수 있어요.');
+      navigate('/login');
+      return;
+    }
+    toggleFavorite(product.id);
+  };
+
+  const formattedPrice = product.price ? `${product.price.toLocaleString('ko-KR')}원~` : '';
 
   if (variant === 'vertical') {
     return (
@@ -73,109 +83,29 @@ export default function ProductCard({
               alt={product.name}
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
-          </div>
-
-          <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <div
-              style={{
-                fontSize: '11px',
-                color: 'var(--text-light)',
-                fontWeight: 500,
-                letterSpacing: '0.01em',
-              }}
-            >
-              {product.brand}
+          </span>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.4, color: 'var(--ink-faint)' }}>{product.brand}</span>
+          <span style={{
+            fontSize: 14, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.35,
+            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+            height: '38px'
+          }} title={product.name}>
+            {product.name}
+          </span>
+          {showHealthTags && product.healthConcerns && product.healthConcerns.length > 0 && (
+            <span style={{ fontSize: 11.5, color: 'var(--brand-deep)', fontWeight: 600, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {product.healthConcerns.join(' · ')}
+            </span>
+          )}
+          {formattedPrice && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginTop: 2 }}>
+              <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--ink-faint)' }}>최저가</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-soft)' }}>{formattedPrice}</span>
             </div>
-            <div
-              className="line-clamp-2"
-              style={{
-                fontSize: '13px',
-                fontWeight: 600,
-                lineHeight: 1.4,
-                color: 'var(--text-dark)',
-                minHeight: '36px',
-                letterSpacing: '-0.01em',
-              }}
-              title={product.name}
-            >
-              {product.name}
-            </div>
-
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginTop: '2px',
-              }}
-            >
-              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-dark)' }}>
-                {formatPrice(product.price)}
-              </span>
-              <span
-                style={{
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  color: score >= 80 ? 'var(--safe)' : score >= 50 ? 'var(--warning)' : 'var(--danger)',
-                  letterSpacing: '-0.01em',
-                }}
-              >
-                궁합 {score}
-              </span>
-            </div>
-
-            {product.reviewsCount > 0 ? (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '3px',
-                  fontSize: '11px',
-                  color: 'var(--text-light)',
-                  fontWeight: 500,
-                }}
-              >
-                <Star size={10} fill="#94A3B8" color="#94A3B8" strokeWidth={0} />
-                <span>
-                  {product.averageRating.toFixed(1)} ({product.reviewsCount})
-                </span>
-              </div>
-            ) : (
-              <span style={{ fontSize: '11px', color: 'var(--text-light)', fontWeight: 500 }}>
-                첫 리뷰 주인공 되기
-              </span>
-            )}
-          </div>
-        </Link>
-
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            toggleFavorite(product.id);
-          }}
-          aria-label={isFav ? `${product.name} 찜 해제` : `${product.name} 찜하기`}
-          aria-pressed={isFav}
-          style={{
-            position: 'absolute',
-            top: '8px',
-            right: '8px',
-            background: 'rgba(255, 255, 255, 0.92)',
-            border: 'none',
-            cursor: 'pointer',
-            width: '30px',
-            height: '30px',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: isFav ? 'var(--danger)' : 'var(--text-light)',
-            padding: 0,
-          }}
-        >
-          <Heart size={15} fill={isFav ? 'var(--danger)' : 'none'} strokeWidth={isFav ? 0 : 1.8} />
-        </button>
+          )}
+        </div>
       </div>
     );
   }
@@ -193,14 +123,45 @@ export default function ProductCard({
         cursor: 'pointer',
       }}
     >
-      <Link
-        to={`/product/${product.id}`}
-        style={{
-          textDecoration: 'none',
-          color: 'inherit',
-          display: 'flex',
-          gap: compact ? '12px' : '14px',
-        }}
+      {rank != null && (
+        <span style={{
+          width: 22, textAlign: 'center', fontFamily: 'var(--serif)', fontSize: 20,
+          color: rank <= 3 ? 'var(--brand-deep)' : 'var(--ink-faint)', flexShrink: 0
+        }}>{rank}</span>
+      )}
+      <div style={{ width: 78, height: 78, flexShrink: 0, borderRadius: 14, overflow: 'hidden', border: '1px solid var(--hairline)' }}>
+        <ProductImage src={product.imageUrl} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      </div>
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.3, color: 'var(--ink-faint)' }}>{product.brand}</span>
+        <span style={{
+          fontSize: 14.5, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.3,
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+        }}>{product.name}</span>
+        {score != null && (
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 1 }}>
+            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--brand-deep)', background: 'var(--brand-tint)', padding: '3px 9px', borderRadius: '8px' }}>
+              궁합 {score}점
+            </span>
+          </div>
+        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+            <Star size={13} fill="var(--brand)" stroke="var(--brand)" strokeWidth={1.2} />
+            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-soft)' }}>{product.averageRating.toFixed(1)}</span>
+          </span>
+          <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}>리뷰 {product.reviewsCount}</span>
+        </div>
+        {formattedPrice && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 1 }}>
+            <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--ink-faint)' }}>최저가</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-soft)' }}>{formattedPrice}</span>
+          </div>
+        )}
+      </div>
+      <span
+        onClick={handleToggleFav}
+        style={{ alignSelf: 'flex-start', padding: 4, cursor: 'pointer' }}
       >
         <div
           style={{
