@@ -1,9 +1,10 @@
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const migrationPath = fileURLToPath(
-  new URL('../../supabase/migrations/20260630090000_non_destructive_ingredient_schema.sql', import.meta.url),
+const migrationPath = resolve(
+  process.cwd(),
+  'supabase/migrations/20260630090000_non_destructive_ingredient_schema.sql',
 );
 const migration = readFileSync(migrationPath, 'utf8');
 const executableSql = migration.replace(/--.*$/gm, '');
