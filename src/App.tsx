@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { pickSplashTagline } from './copy/marketing';
 import { VERORO_LOGO_SRC } from './constants/assets';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useStore } from './store/useStore';
 import Layout from './components/Layout';
 import Home from './pages/Home';
@@ -13,7 +13,13 @@ import Cart from './pages/Cart';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Refund from './pages/Refund';
-import Auth from './pages/Auth';
+import AuthCallback from './pages/AuthCallback';
+import Login from './pages/Login';
+import Ranking from './pages/Ranking';
+import Brand from './pages/Brand';
+import ViralEvent from './pages/ViralEvent';
+import PersonalityQuiz from './pages/Test';
+import NotFound from './pages/NotFound';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
@@ -95,7 +101,13 @@ function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="search" element={<Search />} />
-          <Route path="auth" element={<Auth />} />
+          <Route path="ranking" element={<Ranking />} />
+          {/* 인증 페이지는 Login으로 일원화 — 구 /auth 링크·북마크는 /login으로 리다이렉트 */}
+          <Route path="auth" element={<Navigate to="/login" replace />} />
+          <Route path="login" element={<Login />} />
+          <Route path="brand/:brandName" element={<Brand />} />
+          <Route path="event/viral" element={<ViralEvent />} />
+          <Route path="event/personality-quiz" element={<PersonalityQuiz />} />
           <Route path="profile" element={<Profile />} />
           <Route path="comparison" element={<Comparison />} />
           <Route path="cart" element={<Cart />} />
@@ -103,7 +115,11 @@ function App() {
           <Route path="terms" element={<Terms />} />
           <Route path="privacy" element={<Privacy />} />
           <Route path="refund" element={<Refund />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
+
+        {/* OAuth 리다이렉트 콜백 (앱 크롬 없이 전체 화면 스피너) */}
+        <Route path="/auth/callback" element={<AuthCallback />} />
 
         {/* Admin CMS Routes — Protected */}
         <Route path="/admin" element={<AdminAuthGuard><AdminLayout /></AdminAuthGuard>}>

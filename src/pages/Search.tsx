@@ -25,6 +25,17 @@ import { Database } from 'lucide-react';
 import { CORE_COPY } from '../copy/marketing';
 import { rankProductsForProfile } from '../utils/score';
 
+interface StandardFeedItem {
+  id: number;
+  name_ko: string;
+  name_en: string;
+  moisture: number;
+  protein: number;
+  fat: number;
+  ash: number;
+  fiber: number;
+}
+
 type PriceBand = 'any' | 'under5k' | 'under10k' | 'under20k' | 'over20k';
 
 const PRICE_BAND_LABELS: { id: PriceBand; label: string }[] = [
@@ -132,7 +143,7 @@ export default function Search() {
     [allIngredients, ingredientSearch, excludedIngredients]
   );
 
-  const filteredStandardFeed = standardFeedData.filter((item: any) => 
+  const filteredStandardFeed = (standardFeedData as StandardFeedItem[]).filter((item) =>
     item.name_ko.toLowerCase().includes(standardFeedSearch.toLowerCase()) ||
     item.name_en.toLowerCase().includes(standardFeedSearch.toLowerCase())
   );
@@ -632,7 +643,7 @@ export default function Search() {
               {filteredStandardFeed.length === 0 ? (
                 <div style={{ padding: '40px', textAlign: 'center', color: '#9CA3AF', fontSize: '14px' }}>검색 결과가 없습니다.</div>
               ) : (
-                filteredStandardFeed.map((item: any, idx: number) => (
+                filteredStandardFeed.map((item, idx: number) => (
                   <div 
                     key={idx}
                     style={{ 

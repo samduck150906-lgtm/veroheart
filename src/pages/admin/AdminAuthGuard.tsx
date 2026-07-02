@@ -1,5 +1,5 @@
-import { useState, useEffect, type ReactNode } from 'react';
-import { ShieldCheck, Lock, Loader2 } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
+import { ShieldCheck, Lock } from 'lucide-react';
 import './admin.css';
 
 // 관리자 아이디/비밀번호 (앱 오너 계정)
@@ -14,24 +14,14 @@ interface AdminAuthGuardProps {
 }
 
 export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  // 관리자 3계정 외 로그인 금지: 세션스토리지 토큰만 검증 (마운트 시 동기 확인)
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    const stored = sessionStorage.getItem('vh_admin_auth');
+    return !!(stored && ADMIN_CREDENTIALS.some((cred) => btoa(`${cred.username}:${cred.password}`) === stored));
+  });
   const [adminId, setAdminId] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [error, setError] = useState('');
-
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = () => {
-    // 관리자 3계정 외 로그인 금지: 세션스토리지 토큰만 검증
-    const stored = sessionStorage.getItem('vh_admin_auth');
-    if (stored && ADMIN_CREDENTIALS.some((cred) => btoa(`${cred.username}:${cred.password}`) === stored)) {
-      setIsAuthenticated(true);
-    }
-    setIsLoading(false);
-  };
 
   const handleAdminLogin = () => {
     const id = adminId.trim();
@@ -48,16 +38,6 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
       setAdminPassword('');
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="admin-auth-page">
-        <Loader2 size={40} style={{ animation: 'spin 1s linear infinite', color: '#a78bfa' }} />
-        <p style={{ marginTop: '14px', color: '#cbd5e1', fontWeight: 700 }}>인증 확인 중...</p>
-        <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
-  }
 
   if (!isAuthenticated) {
     return (

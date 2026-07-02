@@ -120,8 +120,8 @@ const AdminProducts: React.FC = () => {
       }
       setIsModalOpen(false);
       fetchProducts();
-    } catch (err: any) {
-      notify.error(`저장 실패: ${err.message}`);
+    } catch (err) {
+      notify.error(`저장 실패: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 
