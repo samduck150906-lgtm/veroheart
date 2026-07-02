@@ -13,25 +13,12 @@ export const SPLASH_TAGLINES = [
 /** 홈 히어로 (고정 구성) */
 export const HOME_HERO = {
   headline: '우리 아이가 먹는 모든 것, 의심 대신 베로로 하세요.',
-  sub: '집사의 마음은 진심(Vero)이니까, 성분 분석은 베로로가 합니다.',
-  customTable: '로니와 삼덕이의 건강한 식탁을 위한 가장 쉬운 습관',
-  footnote: '세상에 나쁜 성분은 있어도, 나쁜 집사는 없으니까.',
 } as const;
 
 /** 성분 분석 · OCR */
 export const CORE_COPY = {
   ocr: '사료 뒷면 성분표, 사진 한 장이면 충분해요.',
   dangerHighlight: '위험 성분 하이라이트: 빨간색만 피하면 안심이에요.',
-  allergyAlert: '알레르기 주의보! 우리 애가 못 먹는 원료가 포함되어 있어요.',
-  thorough: '성분은 꼼꼼하게, 분석은 깐깐하게.',
-} as const;
-
-/** 리뷰 · 커뮤니티 */
-export const UGC_COPY = {
-  honestReviews: "광고 없는 집사들의 '찐' 리뷰만 모았어요.",
-  palatability: '기호성 체크: 우리 애는 냄새만 맡고 도망갔어요(ㅠㅠ)',
-  allergyList: '같은 알레르기를 가진 집사들의 사료 추천 리스트',
-  settleDown: '사료 유목민 끝! 베로로에서 정착템 찾기',
 } as const;
 
 export function pickSplashTagline(): string {
@@ -120,40 +107,6 @@ export const VIRAL_TEST_CAMPAIGN = {
   ],
 } as const;
 
-/** 인스타 스토리 운영 카피 */
-export const INSTAGRAM_STORY_FLOW = [
-  {
-    slide: 1,
-    title: '우리 집 댕냥이, 성격 유형 한 번에 나옴',
-    body: '2분이면 끝나는 반려동물 성향 테스트',
-    cta: '테스트 하러가기',
-  },
-  {
-    slide: 2,
-    title: '뭘 사야 할지 매번 고민된다면',
-    body: '활동형인지 예민형인지 알면 쇼핑이 쉬워져요.',
-    cta: '행동 관찰 8문항 시작',
-  },
-  {
-    slide: 3,
-    title: '예시 질문',
-    body: '낯선 사람이 오면 우리 애 반응은?',
-    cta: '답하고 다음으로',
-  },
-  {
-    slide: 4,
-    title: '결과 유형 미리보기',
-    body: '국밥형, 깍쟁이형, 인싸형, 철학자형, 간식러버형, 미스터리형',
-    cta: '내 결과 확인',
-  },
-  {
-    slide: 5,
-    title: '맞춤 먹거리 추천까지 한 번에',
-    body: '결과 캡처 후 친구 소환하고 쿠폰 받기',
-    cta: '지금 테스트 시작',
-  },
-] as const;
-
 /** 카카오톡 공유 문구 A/B 테스트 */
 export const KAKAO_SHARE_MESSAGES = [
   '우리 집 애 성향 테스트 해봤는데 소름ㅋㅋ 너네 집도 해봐 👉 [링크]',
@@ -168,38 +121,6 @@ export const KAKAO_SHARE_MESSAGES = [
   '결과 공유하면 쿠폰 준대서 해봄. 생각보다 정확함 [링크]',
 ] as const;
 
-/** 랜딩 페이지 카피 세트 */
-export const VIRAL_LANDING_COPY = {
-  hero: {
-    headline: '우리 아이 성향부터 맞춤 먹거리까지, 2분 만에 끝',
-    sub: '반려동물 성향 테스트로 결과를 확인하고 사료·간식·영양제 추천까지 이어가세요.',
-    ctaPrimary: '지금 테스트 시작',
-    ctaSecondary: '결과 예시 보기',
-  },
-  sections: [
-    {
-      title: '행동 기반 8문항',
-      description: '집사가 매일 보는 행동만으로 쉽게 답하도록 설계했습니다.',
-      cta: '문항 미리보기',
-    },
-    {
-      title: '6가지 결과 유형',
-      description: '재미있는 별명과 함께 성향 설명을 직관적으로 제공합니다.',
-      cta: '유형 확인하기',
-    },
-    {
-      title: '결과별 구매 추천',
-      description: '유형마다 찰떡궁합 카테고리를 매칭해 바로 탐색할 수 있습니다.',
-      cta: '맞춤 추천 받기',
-    },
-  ],
-  share: {
-    title: '결과 공유하면 혜택 지급',
-    description: '결과 카드 공유 후 인증하면 기프티콘/포인트/샘플 이벤트에 참여할 수 있어요.',
-    cta: '공유하고 혜택 받기',
-  },
-} as const;
-
 /** 앱 내 이벤트 운영 설정 */
 export const VIRAL_EVENT_CONFIG = {
   eventTitle: '우리 아이 성향 공유 챌린지',
@@ -211,61 +132,3 @@ export const VIRAL_EVENT_CONFIG = {
   // 운영 시 실제 폼 URL로 교체하세요.
   formUrl: import.meta.env.VITE_VIRAL_EVENT_FORM_URL || 'https://forms.gle/replace-with-your-form',
 } as const;
-
-/** 스토어 상품 묶음명 20종 */
-export const BUNDLE_NAMES = [
-  '국밥형 든든 데일리팩',
-  '안정루틴 밸런스팩',
-  '깍쟁이 예민케어팩',
-  '예민냥 진정 루틴팩',
-  '인싸 활동충전팩',
-  '밖순이/밖돌이 에너지팩',
-  '철학자 저자극 스타터팩',
-  '은둔형 소포장 안심팩',
-  '간식러버 죄책감다운팩',
-  '보상훈련 슬림트릿팩',
-  '미스터리 입맛구조대팩',
-  '기분파 토핑 로테이션팩',
-  '헤어볼 집중 케어팩',
-  '장건강 유산균 데일리팩',
-  '관절튼튼 산책준비팩',
-  '피부코트 윤기회복팩',
-  '면역업 사계절 방어팩',
-  '시니어 부드러운 한끼팩',
-  '초보집사 실패방지팩',
-  '다묘/다견 실속 대용량팩',
-] as const;
-
-/** 15초 릴스 스크립트 3종 */
-export const REELS_SCRIPTS = [
-  {
-    title: '공감형 15초',
-    hook: '사료 고를 때마다 고민된다면?',
-    body: [
-      '행동 관찰 8문항만 답하면',
-      '우리 집 댕냥이 성향이 바로 나오고',
-      '결과별 추천 카테고리까지 한 번에 확인!',
-    ],
-    outro: '지금 테스트하고 결과 공유해보세요.',
-  },
-  {
-    title: '유머형 15초',
-    hook: '우리 애 MBTI 결과: 간식 러버',
-    body: [
-      '집사 폰만 보면 발로 툭툭',
-      '간식 봉지 소리에 초집중',
-      '테스트 결과도 정확해서 빵 터짐',
-    ],
-    outro: '너네 집 댕냥이는 뭐 나오는지 해봐요.',
-  },
-  {
-    title: '전환형 15초',
-    hook: '2분 테스트로 쇼핑 실패 줄이기',
-    body: [
-      '국밥형? 깍쟁이형? 인싸형?',
-      '유형별로 찰떡 사료·간식·영양제 추천',
-      '결과 공유하면 쿠폰 혜택까지',
-    ],
-    outro: '링크 눌러서 바로 시작하세요.',
-  },
-] as const;
