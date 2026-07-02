@@ -12,6 +12,8 @@ import Comparison from './pages/Comparison';
 import Cart from './pages/Cart';
 import AnalysisResult from './pages/AnalysisResult';
 import Scan from './pages/Scan';
+import Ranking from './pages/Ranking';
+import Brand from './pages/Brand';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Refund from './pages/Refund';
@@ -102,6 +104,8 @@ function App() {
           <Route path="comparison" element={<Comparison />} />
           <Route path="cart" element={<Cart />} />
           <Route path="analysis" element={<AnalysisResult />} />
+          <Route path="ranking" element={<Ranking />} />
+          <Route path="brand/:brandName" element={<Brand />} />
           <Route path="product/:id" element={<Detail />} />
           <Route path="terms" element={<Terms />} />
           <Route path="privacy" element={<Privacy />} />
