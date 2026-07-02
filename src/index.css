@@ -48,7 +48,7 @@
 .pdp-skel {
   position: relative;
   overflow: hidden;
-  background: #EEF1F4;
+  background: #DFE4EB;
   border-radius: 12px;
 }
 .pdp-skel::after {
