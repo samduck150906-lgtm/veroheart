@@ -15,12 +15,16 @@
 | 프로덕션 빌드 `vite build` | ✅ 성공 | ✅ 성공 |
 | ESLint (`npm run lint`) | 117 errors | **0 errors** ✅ |
 | `@ts-nocheck` (src/) | 15개 파일 | **0** |
+| 브라우저 스모크(헤드리스 Chromium) | — | **전 라우트 렌더 확인** ✅ |
 
 **핵심 결과**
 - 라이브(실제 배포되는) 앱에서 **실제 런타임 크래시 버그 1건**을 찾아 수정했습니다. (`Detail` 페이지의 조건부 Hook 호출)
 - **끊어져 있던 네비게이션 5건 복구**: 랭킹/로그인/브랜드/이벤트/성향퀴즈 페이지가 완성돼 있었으나 라우트가 없어
   하단 내비 "랭킹" 탭·로그인 버튼 등 링크가 깨져 있던 것을 라우팅 연결로 수정(4.e).
+- **법적 페이지 이중 서빙 버그 수정(§8)**: `/terms`·`/privacy`·`/refund`가 접근 경로에 따라 서로 다른 문서를
+  보여주던 것을, 정적 HTML을 삭제해 React 정본으로 일원화.
 - 라이브 코드의 린트 오류를 전부 정리하고, 저장소 전체 `npm run lint`을 **0 errors**로 만들었습니다.
+- **헤드리스 브라우저 스모크 테스트**로 전 라우트가 런타임 에러 없이 렌더됨을 확인(§8).
 - **가장 큰 구조적 문제 발견**: `src/` 파일의 상당수가 라우팅/임포트되지 않는 **dead/미연결 파일**이며, 그 중 15개는 `// @ts-nocheck` 로 **수십 개의 실제 컴파일 에러를 숨기고** 있었습니다. 이 파일들은 배포 번들에 포함되지 않기 때문에 지금까지 빌드가 통과했습니다.
 
 ---
@@ -155,6 +159,32 @@ lint를 완전히 없애기 위해, 어디서도 쓰이지 않던 다음 고아 
 4. 남은 "미사용" 컴포넌트/유틸(4.f) 정리 여부 결정 — WIP일 수 있어 유지 중.
 5. `/auth`(Auth)와 `/login`(Login) 두 인증 페이지가 공존 — 하나로 정리 검토 권장.
 6. `Home`의 `/event/personality-quiz` 외에 추가 미구현 경로 없음(전수 대조 완료).
-7. 번들 크기: 메인 청크 655KB(gzip 187KB) — 라우트 단위 `React.lazy` 코드 스플리팅 권장.
-8. 서브프로젝트(`landing/`, `react-native-theme/`, `supabase/functions/`)는 각자 자체 lint 설정 권장.
-9. OAuth 실제 구현: `Auth.tsx`의 `signInWithKakao`는 현재 no-op 스텁 → 실제 `supabase.auth.signInWithOAuth` 연결 필요.
+7. ✅ (완료) 법적 페이지 이중 서빙 제거 → React 정본으로 일원화(§8).
+8. 번들 크기: 메인 청크 655KB(gzip 187KB) — 라우트 단위 `React.lazy` 코드 스플리팅 권장.
+9. 서브프로젝트(`landing/`, `react-native-theme/`, `supabase/functions/`)는 각자 자체 lint 설정 권장.
+10. OAuth 실제 구현: `Auth.tsx`의 `signInWithKakao`는 현재 no-op 스텁 → 실제 `supabase.auth.signInWithOAuth` 연결 필요.
+
+---
+
+## 8. 런타임 검증(헤드리스 브라우저 스모크) + 법적 페이지 이중화 수정
+
+### 8.a 전 라우트 스모크 테스트
+프로덕션 빌드를 `vite preview`로 서빙하고 헤드리스 Chromium(Playwright)으로 전 라우트를 로드해
+콘솔/페이지 런타임 에러와 렌더 여부를 확인했습니다.
+- **새로 연결한 5개 페이지(`/ranking`,`/login`,`/brand/:brandName`,`/event/viral`,`/event/personality-quiz`)
+  전부 런타임 에러 0으로 정상 렌더** — 라우팅 수정이 실제 브라우저에서 동작함을 확인.
+- `/product/:id`(미존재 id), 404 catch-all, `/admin` 인증 게이트도 정상.
+- (참고) 이 샌드박스는 Supabase 호스트가 불통이라 SPA 부팅에 수 초가 걸리며, `/cart`는 비로그인 시
+  `/login`으로 리다이렉트되는 정상 동작임.
+
+### 8.b 🔴 [버그] 법적 페이지가 접근 경로에 따라 다른 문서를 노출 → 수정
+- **증상**: `/terms`·`/privacy`·`/refund`에 대해 **React 컴포넌트**(`src/pages/*`)와
+  **정적 HTML**(`public/*.html`)이 둘 다 존재. Netlify/preview는 정적 파일을 SPA fallback보다 먼저
+  서빙하므로:
+  - Footer의 `<Link to="/terms">`(클라이언트 라우팅) → **React 최신본**(약관 13개 조항)
+  - `/terms` 직접 접속·새로고침·검색 크롤러 → **정적 구버전 HTML**(8개 조항)
+  → 같은 URL이 **서로 다른 법적 문서**를 노출(내용 실제 상이).
+- **수정**: 사용자 결정에 따라 정적 `public/{terms,privacy,refund}.html` 삭제 →
+  모든 접근 경로가 React 정본으로 통일. 브라우저로 `/terms`가 React 13개-조항 본문(시행일 2026-04-12)을
+  렌더함을 재확인.
+- (`public/fishbone-*.html`은 법적 문서가 아니며 이번 범위 밖이라 유지.)
