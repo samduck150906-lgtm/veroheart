@@ -1,6 +1,10 @@
 -- READ-ONLY PREFLIGHT. Production project reference: nlutpmjloryqdomgbqrr.
 -- Run this file by itself. It reads metadata only and does not apply the Phase 1 migration.
 -- No credentials beyond an already-open Supabase SQL Editor session are required.
+-- Current automatic best result: REVIEW_REQUIRED. The migration version row is
+-- intentionally not read. PREFLIGHT_PASS is reserved for a future automatic
+-- migration-history integration. Do not apply the migration until a human verifies
+-- that version 20260630090000 is not already recorded.
 
 WITH
 required_prerequisites(check_order, table_name) AS (
@@ -176,7 +180,10 @@ checks AS (
 
   SELECT
     60,
-    CASE WHEN hs.history_relation IS NULL THEN 'WARN' ELSE 'PASS' END,
+    CASE
+      WHEN hs.history_relation IS NULL OR NOT hs.has_version_column THEN 'WARN'
+      ELSE 'PASS'
+    END,
     'migration_history_relation',
     CASE
       WHEN hs.history_relation IS NULL THEN 'supabase_migrations.schema_migrations is not visible.'
@@ -185,7 +192,7 @@ checks AS (
     END,
     CASE
       WHEN hs.history_relation IS NULL THEN 'Confirm migration tracking outside this query before proceeding.'
-      WHEN NOT hs.has_version_column THEN 'Review the migration history schema before proceeding.'
+      WHEN NOT hs.has_version_column THEN 'Review the migration history schema and locate its version field before proceeding.'
       ELSE 'Continue with the separate version-record review below.'
     END
   FROM history_state hs
