@@ -10,6 +10,8 @@ import Profile from './pages/Profile';
 import Detail from './pages/Detail';
 import Comparison from './pages/Comparison';
 import Cart from './pages/Cart';
+import AnalysisResult from './pages/AnalysisResult';
+import Scan from './pages/Scan';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Refund from './pages/Refund';
@@ -99,11 +101,15 @@ function App() {
           <Route path="profile" element={<Profile />} />
           <Route path="comparison" element={<Comparison />} />
           <Route path="cart" element={<Cart />} />
+          <Route path="analysis" element={<AnalysisResult />} />
           <Route path="product/:id" element={<Detail />} />
           <Route path="terms" element={<Terms />} />
           <Route path="privacy" element={<Privacy />} />
           <Route path="refund" element={<Refund />} />
         </Route>
+
+        {/* Immersive full-screen scanner (앱 헤더/네비 없이 카메라 전체화면) */}
+        <Route path="/scan" element={<Scan />} />
 
         {/* Admin CMS Routes — Protected */}
         <Route path="/admin" element={<AdminAuthGuard><AdminLayout /></AdminAuthGuard>}>

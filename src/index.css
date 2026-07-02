@@ -256,6 +256,37 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 8px 28px rgba(28, 25, 23, 0.08);
 }
 
+/* 중앙 스캔 FAB — 하단 바 위로 볼록하게 떠오르는 진입점 */
+.scan-fab {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  margin-top: -22px; /* 바 위로 볼록 */
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--text-dark);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  text-decoration: none;
+  box-shadow: 0 8px 20px rgba(229, 206, 0, 0.45), 0 2px 6px rgba(28, 25, 23, 0.12);
+  border: 3px solid #fff;
+  transition: transform var(--transition-fast);
+}
+
+.scan-fab:active {
+  transform: scale(0.94);
+}
+
+.scan-fab-label {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
 .bottom-nav-item {
   min-width: 60px;
   padding: 8px 4px;

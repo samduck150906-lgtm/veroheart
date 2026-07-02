@@ -1,0 +1,261 @@
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
+import { ArrowLeft, Search as SearchIcon, Barcode, FileText, Zap, ZapOff } from 'lucide-react';
+import { useStore } from '../store/useStore';
+
+type Mode = 'barcode' | 'text';
+type CamState = 'idle' | 'starting' | 'live' | 'denied' | 'unavailable';
+
+export default function Scan() {
+  const navigate = useNavigate();
+  const { products } = useStore();
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const detectorRef = useRef<any>(null);
+  const handledRef = useRef(false);
+
+  const [mode, setMode] = useState<Mode>('barcode');
+  const [camState, setCamState] = useState<CamState>('idle');
+  const [torchOn, setTorchOn] = useState(false);
+  const [detected, setDetected] = useState<string | null>(null);
+
+  const stopCamera = useCallback(() => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = null;
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+  }, []);
+
+  const handleBarcode = useCallback(
+    (code: string) => {
+      if (handledRef.current) return;
+      handledRef.current = true;
+      setDetected(code);
+      stopCamera();
+      // 데이터 모델에 바코드→상품 매핑이 아직 없어, 로드된 상품에서 우선 매칭 후 검색으로 인계
+      const match = products.find((p) => p.id === code);
+      if (match) {
+        navigate(`/product/${match.id}`);
+      } else {
+        navigate(`/search?q=${encodeURIComponent(code)}`);
+      }
+    },
+    [products, navigate, stopCamera],
+  );
+
+  const scanLoop = useCallback(() => {
+    const video = videoRef.current;
+    const detector = detectorRef.current;
+    if (!video || !detector || handledRef.current) return;
+    detector
+      .detect(video)
+      .then((codes: any[]) => {
+        if (codes && codes.length > 0 && codes[0].rawValue) {
+          handleBarcode(String(codes[0].rawValue));
+          return;
+        }
+        rafRef.current = requestAnimationFrame(scanLoop);
+      })
+      .catch(() => {
+        rafRef.current = requestAnimationFrame(scanLoop);
+      });
+  }, [handleBarcode]);
+
+  const startCamera = useCallback(async () => {
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      setCamState('unavailable');
+      return;
+    }
+    setCamState('starting');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } },
+        audio: false,
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play().catch(() => {});
+      }
+      setCamState('live');
+
+      const BD = (window as any).BarcodeDetector;
+      if (mode === 'barcode' && BD) {
+        try {
+          detectorRef.current = new BD({
+            formats: ['ean_13', 'ean_8', 'code_128', 'upc_a', 'upc_e', 'qr_code'],
+          });
+          rafRef.current = requestAnimationFrame(scanLoop);
+        } catch {
+          detectorRef.current = null;
+        }
+      }
+    } catch (err: any) {
+      if (err?.name === 'NotAllowedError' || err?.name === 'SecurityError') setCamState('denied');
+      else setCamState('unavailable');
+    }
+  }, [mode, scanLoop]);
+
+  useEffect(() => {
+    handledRef.current = false;
+    startCamera();
+    return () => stopCamera();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
+
+  const toggleTorch = useCallback(async () => {
+    const track = streamRef.current?.getVideoTracks()[0];
+    if (!track) return;
+    try {
+      await track.applyConstraints({ advanced: [{ torch: !torchOn } as any] });
+      setTorchOn((v) => !v);
+    } catch {
+      /* torch 미지원 기기 */
+    }
+  }, [torchOn]);
+
+  const boxSize = mode === 'barcode' ? { w: '78%', h: '26%' } : { w: '86%', h: '60%' };
+  const showLive = camState === 'live' || camState === 'starting';
+  const showFallback = camState === 'denied' || camState === 'unavailable';
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: '#0B0D10', zIndex: 30, overflow: 'hidden' }}>
+      <Helmet>
+        <title>스캔 | 베로로</title>
+        <meta name="description" content="바코드를 스캔하거나 성분표를 촬영해 AI 분석을 시작하세요." />
+      </Helmet>
+      <style>{`@keyframes veroScanLine { 0%{top:6%} 50%{top:90%} 100%{top:6%} }`}</style>
+
+      {/* Camera preview */}
+      {showLive && (
+        <video
+          ref={videoRef}
+          playsInline
+          muted
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+      )}
+
+      {/* Dim + guide frame */}
+      {showLive && (
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)' }}>
+          <div
+            style={{
+              position: 'absolute', left: '50%', top: '44%', transform: 'translate(-50%,-50%)',
+              width: boxSize.w, height: boxSize.h, borderRadius: 20,
+              boxShadow: '0 0 0 100vmax rgba(0,0,0,0.45)', overflow: 'hidden',
+            }}
+          >
+            {/* corner brackets */}
+            {[
+              { top: 0, left: 0, borderWidth: '3px 0 0 3px' },
+              { top: 0, right: 0, borderWidth: '3px 3px 0 0' },
+              { bottom: 0, left: 0, borderWidth: '0 0 3px 3px' },
+              { bottom: 0, right: 0, borderWidth: '0 3px 3px 0' },
+            ].map((c, i) => (
+              <span key={i} style={{ position: 'absolute', width: 26, height: 26, borderStyle: 'solid', borderColor: '#FEE500', borderRadius: 4, ...c }} />
+            ))}
+            {/* scan line */}
+            {mode === 'barcode' && (
+              <span style={{ position: 'absolute', left: '6%', right: '6%', height: 2, background: 'linear-gradient(90deg,transparent,#FEE500,transparent)', animation: 'veroScanLine 2.4s ease-in-out infinite' }} />
+            )}
+          </div>
+
+          <p style={{ position: 'absolute', left: 0, right: 0, top: 'calc(44% + 22vh)', textAlign: 'center', color: '#fff', fontSize: 14, fontWeight: 700, padding: '0 32px', textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}>
+            {mode === 'barcode'
+              ? (detectorRef.current ? '제품 뒷면 바코드를 프레임 안에 맞춰주세요' : '바코드 자동 인식이 지원되지 않는 기기예요. 아래에서 직접 검색해 주세요')
+              : '성분표 전체가 프레임 안에 들어오도록 맞춰주세요'}
+          </p>
+        </div>
+      )}
+
+      {/* Fallback (권한 거부 / 미지원) */}
+      {showFallback && (
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center', color: '#fff' }}>
+          <Barcode size={44} color="#FEE500" style={{ marginBottom: 18 }} />
+          <p style={{ fontSize: 17, fontWeight: 800, margin: 0 }}>
+            {camState === 'denied' ? '카메라 권한이 필요해요' : '이 기기에서는 카메라 스캔을 쓸 수 없어요'}
+          </p>
+          <p style={{ fontSize: 13, opacity: 0.75, margin: '8px 0 24px', lineHeight: 1.6 }}>
+            {camState === 'denied'
+              ? '설정에서 카메라 접근을 허용하거나, 제품명으로 직접 검색해 분석할 수 있어요.'
+              : '제품명으로 직접 검색해 분석을 시작해 보세요.'}
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate('/search')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 24px', borderRadius: 16, border: 'none', background: '#FEE500', color: '#191F28', fontSize: 15, fontWeight: 900, cursor: 'pointer' }}
+          >
+            <SearchIcon size={18} /> 직접 검색하기
+          </button>
+        </div>
+      )}
+
+      {/* Top bar */}
+      <div style={{ position: 'absolute', top: 'calc(12px + env(safe-area-inset-top,0px))', left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px' }}>
+        <button
+          type="button"
+          onClick={() => { stopCamera(); navigate(-1); }}
+          aria-label="닫기"
+          style={{ width: 40, height: 40, borderRadius: 999, border: 'none', background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+        >
+          <ArrowLeft size={20} />
+        </button>
+        {showLive && (
+          <button
+            type="button"
+            onClick={toggleTorch}
+            aria-label="플래시"
+            style={{ width: 40, height: 40, borderRadius: 999, border: 'none', background: torchOn ? '#FEE500' : 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', color: torchOn ? '#191F28' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          >
+            {torchOn ? <Zap size={19} /> : <ZapOff size={19} />}
+          </button>
+        )}
+      </div>
+
+      {/* Mode toggle + search */}
+      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 'calc(28px + env(safe-area-inset-bottom,0px))', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '0 24px' }}>
+        {detected && (
+          <div style={{ color: '#fff', fontSize: 13, fontWeight: 700, opacity: 0.9 }}>인식됨: {detected}</div>
+        )}
+        <div style={{ display: 'inline-flex', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)', borderRadius: 999, padding: 4 }}>
+          {([
+            { id: 'barcode' as const, label: '바코드', Icon: Barcode },
+            { id: 'text' as const, label: '성분표', Icon: FileText },
+          ]).map(({ id, label, Icon }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => { if (id !== mode) { handledRef.current = false; setDetected(null); setMode(id); } }}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px', borderRadius: 999, border: 'none', cursor: 'pointer',
+                fontSize: 13.5, fontWeight: 800,
+                background: mode === id ? '#fff' : 'transparent',
+                color: mode === id ? '#191F28' : 'rgba(255,255,255,0.85)',
+              }}
+            >
+              <Icon size={16} /> {label}
+            </button>
+          ))}
+        </div>
+
+        {mode === 'text' && showLive && (
+          <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12.5, fontWeight: 600, textAlign: 'center', margin: 0, lineHeight: 1.5 }}>
+            성분표 자동 인식(OCR)은 준비 중이에요. 지금은 제품명으로 검색해 분석할 수 있어요.
+          </p>
+        )}
+
+        <button
+          type="button"
+          onClick={() => { stopCamera(); navigate('/search'); }}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#fff', background: 'none', border: 'none', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', opacity: 0.9 }}
+        >
+          <SearchIcon size={16} /> 제품명으로 직접 검색
+        </button>
+      </div>
+    </div>
+  );
+}
