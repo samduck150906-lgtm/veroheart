@@ -323,44 +323,44 @@ export default function Login() {
           {isLoading ? '처리 중...' : mode === 'login' ? '로그인' : '회원가입'}
         </TossButton>
 
-        <TossSectionBlock title="이메일 인증" style={{ marginBottom: '14px', borderRadius: '12px', background: '#EFF6FF', border: '1px solid #BFDBFE' }}>
-          <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 800, color: '#1E40AF' }}>이메일 인증</p>
-          <p style={{ margin: '0 0 10px', fontSize: '12px', color: '#1D4ED8', lineHeight: 1.5, fontWeight: 600 }}>
-            가입 직후 또는 로그인이 안 될 때, 아래 버튼으로 인증 메일을 다시 보낼 수 있어요. 스팸함도 꼭 확인해 주세요.
-          </p>
-          <button
-            type="button"
-            onClick={() => void handleResendVerification()}
-            disabled={resendLoading || resendCooldown > 0}
-            style={{
-              width: '100%',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              padding: '12px',
-              borderRadius: '10px',
-              border: '1px solid #93C5FD',
-              background: '#fff',
-              color: '#1D4ED8',
-              fontWeight: 800,
-              fontSize: '13px',
-              cursor: resendLoading || resendCooldown > 0 ? 'not-allowed' : 'pointer',
-              opacity: resendLoading || resendCooldown > 0 ? 0.65 : 1,
-            }}
-          >
-            <RefreshCw size={16} style={{ animation: resendLoading ? 'spin 0.85s linear infinite' : undefined }} />
-            {resendCooldown > 0 ? `${resendCooldown}초 후 다시 보내기` : '인증 메일 다시 보내기'}
-          </button>
-        </TossSectionBlock>
+        {mode === 'login' && (
+          <TossSectionBlock title="이메일 인증" style={{ marginBottom: '14px', borderRadius: '12px', background: '#EFF6FF', border: '1px solid #BFDBFE' }}>
+            <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 800, color: '#1E40AF' }}>이메일 인증</p>
+            <p style={{ margin: '0 0 10px', fontSize: '12px', color: '#1D4ED8', lineHeight: 1.5, fontWeight: 600 }}>
+              가입 직후 또는 로그인이 안 될 때, 아래 버튼으로 인증 메일을 다시 보낼 수 있어요. 스팸함도 꼭 확인해 주세요.
+            </p>
+            <button
+              type="button"
+              onClick={() => void handleResendVerification()}
+              disabled={resendLoading || resendCooldown > 0}
+              style={{
+                width: '100%',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                padding: '12px',
+                borderRadius: '10px',
+                border: '1px solid #93C5FD',
+                background: '#fff',
+                color: '#1D4ED8',
+                fontWeight: 800,
+                fontSize: '13px',
+                cursor: resendLoading || resendCooldown > 0 ? 'not-allowed' : 'pointer',
+                opacity: resendLoading || resendCooldown > 0 ? 0.65 : 1,
+              }}
+            >
+              <RefreshCw size={16} style={{ animation: resendLoading ? 'spin 0.85s linear infinite' : undefined }} />
+              {resendCooldown > 0 ? `${resendCooldown}초 후 다시 보내기` : '인증 메일 다시 보내기'}
+            </button>
+          </TossSectionBlock>
+        )}
 
-        {(pendingVerification || mode === 'signup') && (
+        {pendingVerification && (
           <div style={{ marginBottom: '12px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-            <TossChip active>{pendingVerification ? '인증 대기' : '가입 안내'}</TossChip>
+            <TossChip active>인증 대기</TossChip>
             <p style={{ margin: 0, fontSize: '11px', color: '#92400E', lineHeight: 1.5, fontWeight: 600, width: '100%' }}>
-              {pendingVerification
-                ? '인증이 끝나면 로그인 탭에서 같은 이메일로 로그인해 주세요.'
-                : '회원가입 후 메일 인증이 필요할 수 있어요. 메일이 안 오면 재전송 버튼을 눌러 주세요.'}
+              인증이 끝나면 로그인 탭에서 같은 이메일로 로그인해 주세요.
             </p>
           </div>
         )}

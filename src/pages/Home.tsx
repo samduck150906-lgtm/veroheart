@@ -21,7 +21,6 @@ import {
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { HOME_CATEGORY_ITEMS } from '../constants/productCategories';
-import { VERORO_LOGO_SRC } from '../constants/assets';
 import {
   RISING_KEYWORDS,
   EDITORIAL_TOPICS,
@@ -108,14 +107,6 @@ export default function Home() {
         </title>
         <meta name="description" content="베로로 — 사료 성분 분석과 집사들의 찐 리뷰. 의심 대신 베로로 하세요." />
       </Helmet>
-
-      <section className="discovery-brand-bar" aria-label="베로로 브랜드">
-        <img src={VERORO_LOGO_SRC} alt="VeRoRo" />
-        <div className="discovery-brand-bar-copy">
-          <div className="discovery-brand-bar-kicker">VeRoRo</div>
-          <div className="discovery-brand-bar-title">성분 분석부터 찐 리뷰까지 — 오늘의 발견</div>
-        </div>
-      </section>
 
       <section className="ui-hero-panel" style={{ padding: '18px', marginBottom: '16px' }}>
         <button
