@@ -4,10 +4,13 @@
 
 DO $$
 DECLARE
-  item record;
-  actual_count integer;
+  table_name text;
+  object_name text;
+  row_count bigint;
   actual_names text[];
-  new_tables constant text[] := ARRAY[
+  missing_names text[];
+  item record;
+  new_tables text[] := ARRAY[
     'analysis_engine_versions',
     'canonical_ingredients',
     'canonical_ingredient_aliases',
@@ -20,40 +23,44 @@ DECLARE
     'canonical_ingredient_allergen_map',
     'canonical_ingredient_review_queue'
   ];
+  required_constraints text[] := ARRAY[
+    'analysis_engine_versions_pkey',
+    'canonical_ingredients_pkey',
+    'canonical_ingredient_aliases_pkey',
+    'ingredient_evidence_sources_pkey',
+    'canonical_ingredient_evidence_pkey',
+    'canonical_analysis_rules_pkey',
+    'canonical_analysis_rule_evidence_pkey',
+    'product_ingredient_label_sets_pkey',
+    'product_ingredient_label_items_pkey',
+    'canonical_ingredient_allergen_map_pkey',
+    'canonical_ingredient_review_queue_pkey',
+    'analysis_engine_versions_version_key',
+    'canonical_ingredients_normalized_key',
+    'canonical_ingredients_name_ko_key',
+    'canonical_ingredient_aliases_normalized_key',
+    'canonical_ingredient_evidence_unique',
+    'canonical_analysis_rules_version_key',
+    'product_ingredient_label_items_order_key'
+  ];
+  required_indexes text[] := ARRAY[
+    'idx_canonical_ingredients_legacy_id',
+    'idx_canonical_ingredient_aliases_ingredient',
+    'idx_canonical_ingredient_aliases_normalized',
+    'idx_ingredient_evidence_sources_doi',
+    'idx_canonical_ingredient_evidence_source',
+    'idx_canonical_analysis_rules_active',
+    'idx_product_ingredient_label_sets_product',
+    'idx_product_ingredient_label_sets_one_current',
+    'idx_product_ingredient_label_items_legacy',
+    'idx_product_ingredient_label_items_canonical',
+    'idx_canonical_ingredient_allergen_allergen',
+    'idx_canonical_ingredient_review_queue_status',
+    'idx_canonical_ingredient_review_queue_open_text'
+  ];
 BEGIN
-  -- All 11 additive tables must exist and have RLS enabled.
-  FOREACH item IN ARRAY new_tables
-  LOOP
-    NULL;
-  END LOOP;
-EXCEPTION
-  WHEN datatype_mismatch THEN
-    -- PostgreSQL cannot FOREACH a record over text[]. The real checks below use SELECT loops.
-    RAISE;
-END
-$$;
-
-DO $$
-DECLARE
-  table_name text;
-  row_count bigint;
-  actual_names text[];
-  item record;
-BEGIN
-  FOR table_name IN
-    SELECT unnest(ARRAY[
-      'analysis_engine_versions',
-      'canonical_ingredients',
-      'canonical_ingredient_aliases',
-      'ingredient_evidence_sources',
-      'canonical_ingredient_evidence',
-      'canonical_analysis_rules',
-      'canonical_analysis_rule_evidence',
-      'product_ingredient_label_sets',
-      'product_ingredient_label_items',
-      'canonical_ingredient_allergen_map',
-      'canonical_ingredient_review_queue'
-    ])
+  -- All 11 additive tables must exist, be empty, and have RLS enabled.
+  FOREACH table_name IN ARRAY new_tables
   LOOP
     IF to_regclass(format('public.%I', table_name)) IS NULL THEN
       RAISE EXCEPTION 'Missing Phase 1 table: public.%', table_name;
@@ -65,6 +72,7 @@ BEGIN
       JOIN pg_namespace n ON n.oid = c.relnamespace
       WHERE n.nspname = 'public'
         AND c.relname = table_name
+        AND c.relkind = 'r'
         AND c.relrowsecurity
     ) THEN
       RAISE EXCEPTION 'RLS is not enabled on public.%', table_name;
@@ -76,7 +84,7 @@ BEGIN
     END IF;
   END LOOP;
 
-  -- Exactly the ten intended public SELECT policies must exist. The review queue has none.
+  -- Exactly the ten intended public SELECT policies must exist.
   FOR item IN
     SELECT * FROM (VALUES
       ('analysis_engine_versions', 'analysis_engine_versions_read'),
@@ -100,20 +108,13 @@ BEGIN
         AND p.cmd = 'SELECT'
         AND p.qual = 'true'
     ) THEN
-      RAISE EXCEPTION 'Missing or incorrect public read policy %.%','public.' || item.table_name, item.policy_name;
+      RAISE EXCEPTION 'Missing or incorrect SELECT policy public.%.%', item.table_name, item.policy_name;
     END IF;
   END LOOP;
 
   SELECT count(*) INTO row_count
   FROM pg_policies p
-  WHERE p.schemaname = 'public'
-    AND p.tablename = ANY (ARRAY[
-      'analysis_engine_versions', 'canonical_ingredients', 'canonical_ingredient_aliases',
-      'ingredient_evidence_sources', 'canonical_ingredient_evidence', 'canonical_analysis_rules',
-      'canonical_analysis_rule_evidence', 'product_ingredient_label_sets',
-      'product_ingredient_label_items', 'canonical_ingredient_allergen_map',
-      'canonical_ingredient_review_queue'
-    ]);
+  WHERE p.schemaname = 'public' AND p.tablename = ANY (new_tables);
   IF row_count <> 10 THEN
     RAISE EXCEPTION 'Expected exactly 10 Phase 1 policies, found %.', row_count;
   END IF;
@@ -125,7 +126,7 @@ BEGIN
     RAISE EXCEPTION 'The review queue must not have a client policy.';
   END IF;
 
-  -- Validate every Phase 1 foreign key by child column, parent table, and parent column.
+  -- Validate all 17 foreign keys by child column, parent table, and parent column.
   FOR item IN
     SELECT * FROM (VALUES
       ('canonical_ingredients', 'legacy_ingredient_id', 'ingredients', 'id'),
@@ -175,78 +176,57 @@ BEGIN
   JOIN pg_namespace n ON n.oid = child.relnamespace
   WHERE c.contype = 'f'
     AND n.nspname = 'public'
-    AND child.relname = ANY (ARRAY[
-      'analysis_engine_versions', 'canonical_ingredients', 'canonical_ingredient_aliases',
-      'ingredient_evidence_sources', 'canonical_ingredient_evidence', 'canonical_analysis_rules',
-      'canonical_analysis_rule_evidence', 'product_ingredient_label_sets',
-      'product_ingredient_label_items', 'canonical_ingredient_allergen_map',
-      'canonical_ingredient_review_queue'
-    ]);
+    AND child.relname = ANY (new_tables);
   IF row_count <> 17 THEN
     RAISE EXCEPTION 'Expected exactly 17 Phase 1 foreign keys, found %.', row_count;
   END IF;
 
-  -- Required primary and unique constraints.
-  FOR item IN
-    SELECT * FROM (VALUES
-      ('analysis_engine_versions', 'analysis_engine_versions_pkey'),
-      ('canonical_ingredients', 'canonical_ingredients_pkey'),
-      ('canonical_ingredient_aliases', 'canonical_ingredient_aliases_pkey'),
-      ('ingredient_evidence_sources', 'ingredient_evidence_sources_pkey'),
-      ('canonical_ingredient_evidence', 'canonical_ingredient_evidence_pkey'),
-      ('canonical_analysis_rules', 'canonical_analysis_rules_pkey'),
-      ('canonical_analysis_rule_evidence', 'canonical_analysis_rule_evidence_pkey'),
-      ('product_ingredient_label_sets', 'product_ingredient_label_sets_pkey'),
-      ('product_ingredient_label_items', 'product_ingredient_label_items_pkey'),
-      ('canonical_ingredient_allergen_map', 'canonical_ingredient_allergen_map_pkey'),
-      ('canonical_ingredient_review_queue', 'canonical_ingredient_review_queue_pkey'),
-      ('analysis_engine_versions', 'analysis_engine_versions_version_key'),
-      ('canonical_ingredients', 'canonical_ingredients_normalized_key'),
-      ('canonical_ingredients', 'canonical_ingredients_name_ko_key'),
-      ('canonical_ingredient_aliases', 'canonical_ingredient_aliases_normalized_key'),
-      ('canonical_ingredient_evidence', 'canonical_ingredient_evidence_unique'),
-      ('canonical_analysis_rules', 'canonical_analysis_rules_version_key'),
-      ('product_ingredient_label_items', 'product_ingredient_label_items_order_key')
-    ) AS expected(table_name, constraint_name)
+  SELECT array_agg(required_name ORDER BY required_name) INTO missing_names
+  FROM unnest(required_constraints) AS required_name
+  WHERE NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint c
+    JOIN pg_class t ON t.oid = c.conrelid
+    JOIN pg_namespace n ON n.oid = t.relnamespace
+    WHERE n.nspname = 'public'
+      AND t.relname = ANY (new_tables)
+      AND c.conname = required_name
+      AND c.contype IN ('p', 'u')
+  );
+  IF missing_names IS NOT NULL THEN
+    RAISE EXCEPTION 'Missing Phase 1 primary/unique constraints: %', missing_names;
+  END IF;
+
+  FOREACH object_name IN ARRAY required_indexes
   LOOP
-    IF NOT EXISTS (
-      SELECT 1
-      FROM pg_constraint c
-      JOIN pg_class t ON t.oid = c.conrelid
-      JOIN pg_namespace n ON n.oid = t.relnamespace
-      WHERE n.nspname = 'public'
-        AND t.relname = item.table_name
-        AND c.conname = item.constraint_name
-        AND c.contype IN ('p', 'u')
-    ) THEN
-      RAISE EXCEPTION 'Missing primary/unique constraint public.%.%', item.table_name, item.constraint_name;
+    IF to_regclass(format('public.%I', object_name)) IS NULL THEN
+      RAISE EXCEPTION 'Missing Phase 1 index public.%', object_name;
     END IF;
   END LOOP;
 
-  -- Required supporting indexes, including the two partial unique indexes.
-  FOR item IN
-    SELECT unnest(ARRAY[
-      'idx_canonical_ingredients_legacy_id',
-      'idx_canonical_ingredient_aliases_ingredient',
-      'idx_canonical_ingredient_aliases_normalized',
-      'idx_ingredient_evidence_sources_doi',
-      'idx_canonical_ingredient_evidence_source',
-      'idx_canonical_analysis_rules_active',
-      'idx_product_ingredient_label_sets_product',
-      'idx_product_ingredient_label_sets_one_current',
-      'idx_product_ingredient_label_items_legacy',
-      'idx_product_ingredient_label_items_canonical',
-      'idx_canonical_ingredient_allergen_allergen',
-      'idx_canonical_ingredient_review_queue_status',
-      'idx_canonical_ingredient_review_queue_open_text'
-    ]) AS index_name
-  LOOP
-    IF to_regclass(format('public.%I', item.index_name)) IS NULL THEN
-      RAISE EXCEPTION 'Missing Phase 1 index public.%', item.index_name;
-    END IF;
-  END LOOP;
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_index i
+    JOIN pg_class c ON c.oid = i.indexrelid
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public'
+      AND c.relname = 'idx_product_ingredient_label_sets_one_current'
+      AND i.indisunique
+      AND i.indpred IS NOT NULL
+  ) OR NOT EXISTS (
+    SELECT 1
+    FROM pg_index i
+    JOIN pg_class c ON c.oid = i.indexrelid
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public'
+      AND c.relname = 'idx_canonical_ingredient_review_queue_open_text'
+      AND i.indisunique
+      AND i.indpred IS NOT NULL
+  ) THEN
+    RAISE EXCEPTION 'A required partial unique index is not unique or has no predicate.';
+  END IF;
 
-  -- Bootstrap sentinels and table shapes must remain unchanged.
+  -- Bootstrap sentinels and minimal table shapes must remain unchanged.
   IF (SELECT count(*) FROM public.products) <> 1
      OR NOT EXISTS (
        SELECT 1 FROM public.products
@@ -276,9 +256,9 @@ BEGIN
       ('allergens', ARRAY['code', 'id']::text[])
     ) AS expected(table_name, column_names)
   LOOP
-    SELECT array_agg(column_name ORDER BY column_name) INTO actual_names
+    SELECT array_agg(column_name::text ORDER BY column_name) INTO actual_names
     FROM information_schema.columns
-    WHERE table_schema = 'public' AND table_name = item.table_name;
+    WHERE table_schema = 'public' AND information_schema.columns.table_name = item.table_name;
     IF actual_names IS DISTINCT FROM item.column_names THEN
       RAISE EXCEPTION 'Bootstrap table public.% changed. Expected columns %, found %.', item.table_name, item.column_names, actual_names;
     END IF;
@@ -294,6 +274,18 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'A bootstrap id column is no longer UUID.';
   END IF;
+
+  FOREACH object_name IN ARRAY ARRAY['products_pkey', 'ingredients_pkey', 'allergens_pkey', 'allergens_code_key']
+  LOOP
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_constraint c
+      JOIN pg_class t ON t.oid = c.conrelid
+      JOIN pg_namespace n ON n.oid = t.relnamespace
+      WHERE n.nspname = 'public' AND c.conname = object_name AND c.contype IN ('p', 'u')
+    ) THEN
+      RAISE EXCEPTION 'Bootstrap constraint % was removed or changed.', object_name;
+    END IF;
+  END LOOP;
 
   RAISE NOTICE 'PASS: Phase 1 migration created 11 empty tables with expected RLS, policies, FKs, constraints, indexes, and untouched sentinels.';
 END
