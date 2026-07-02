@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { ArrowLeft, Search as SearchIcon, Barcode, FileText, Zap, ZapOff } from 'lucide-react';
+import { ArrowLeft, Search as SearchIcon, Barcode, FileText, Zap, ZapOff, Camera } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { getProductByBarcode } from '../lib/supabase';
+import { extractTextFromImage } from '../analysis/ocr';
 
 type Mode = 'barcode' | 'text';
 type CamState = 'idle' | 'starting' | 'live' | 'denied' | 'unavailable';
@@ -13,6 +14,7 @@ export default function Scan() {
   const { products } = useStore();
 
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number | null>(null);
   const detectorRef = useRef<any>(null);
@@ -22,6 +24,7 @@ export default function Scan() {
   const [camState, setCamState] = useState<CamState>('idle');
   const [torchOn, setTorchOn] = useState(false);
   const [detected, setDetected] = useState<string | null>(null);
+  const [ocr, setOcr] = useState<{ busy: boolean; label: string; ratio: number }>({ busy: false, label: '', ratio: 0 });
 
   const stopCamera = useCallback(() => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -53,6 +56,38 @@ export default function Scan() {
     },
     [products, navigate, stopCamera],
   );
+
+  // 성분표 촬영 → OCR → 분석 화면으로 텍스트 전달
+  const captureAndOcr = useCallback(async () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas || ocr.busy) return;
+    const w = video.videoWidth;
+    const h = video.videoHeight;
+    if (!w || !h) return;
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0, w, h);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+
+    setOcr({ busy: true, label: '인식 준비 중', ratio: 0 });
+    try {
+      const text = await extractTextFromImage(dataUrl, {
+        langs: 'kor+eng',
+        onProgress: (p) => setOcr({ busy: true, label: p.label, ratio: p.ratio }),
+      });
+      stopCamera();
+      navigate('/scan-result', { state: { ingredientText: text } });
+    } catch (err) {
+      console.error('[Scan] OCR 실패:', err);
+      setOcr({ busy: false, label: '', ratio: 0 });
+      // 실패 시에도 분석 화면(직접 입력)으로 이동
+      stopCamera();
+      navigate('/scan-result', { state: { ingredientText: '' } });
+    }
+  }, [ocr.busy, navigate, stopCamera]);
 
   const scanLoop = useCallback(() => {
     const video = videoRef.current;
@@ -251,9 +286,18 @@ export default function Scan() {
         </div>
 
         {mode === 'text' && showLive && (
-          <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12.5, fontWeight: 600, textAlign: 'center', margin: 0, lineHeight: 1.5 }}>
-            성분표 자동 인식(OCR)은 준비 중이에요. 지금은 제품명으로 검색해 분석할 수 있어요.
-          </p>
+          <button
+            type="button"
+            onClick={captureAndOcr}
+            aria-label="성분표 촬영"
+            style={{
+              width: 68, height: 68, borderRadius: '50%', border: '4px solid rgba(255,255,255,0.9)',
+              background: '#FEE500', color: '#191F28', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', boxShadow: '0 6px 18px rgba(0,0,0,0.35)',
+            }}
+          >
+            <Camera size={26} />
+          </button>
         )}
 
         <button
@@ -264,6 +308,25 @@ export default function Scan() {
           <SearchIcon size={16} /> 제품명으로 직접 검색
         </button>
       </div>
+
+      {/* OCR 진행 오버레이 */}
+      {ocr.busy && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{ position: 'absolute', inset: 0, zIndex: 20, background: 'rgba(11,13,16,0.82)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center', color: '#fff' }}
+        >
+          <div style={{ width: 52, height: 52, borderRadius: '50%', border: '4px solid rgba(255,255,255,0.25)', borderTopColor: '#FEE500', animation: 'veroSpin 0.9s linear infinite', marginBottom: 18 }} />
+          <p style={{ fontSize: 15, fontWeight: 800, margin: 0 }}>{ocr.label || '성분표 인식 중'}</p>
+          <p style={{ fontSize: 12, opacity: 0.7, margin: '6px 0 16px' }}>처음 인식할 때는 한글 데이터를 받느라 잠시 걸릴 수 있어요</p>
+          <div style={{ width: '100%', maxWidth: 260, height: 8, borderRadius: 999, background: 'rgba(255,255,255,0.2)', overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${Math.round(Math.max(0.05, ocr.ratio) * 100)}%`, background: '#FEE500', borderRadius: 999, transition: 'width 0.25s ease' }} />
+          </div>
+        </div>
+      )}
+
+      {/* 캡처용 캔버스(숨김) */}
+      <canvas ref={canvasRef} style={{ display: 'none' }} />
     </div>
   );
 }
