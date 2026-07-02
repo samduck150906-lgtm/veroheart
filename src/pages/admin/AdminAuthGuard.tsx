@@ -1,43 +1,58 @@
-import { useState, type ReactNode } from 'react';
-import { ShieldCheck, Lock } from 'lucide-react';
+import { useState, useEffect, type ReactNode } from 'react';
+import { ShieldCheck, Lock, Loader2 } from 'lucide-react';
+import { adminWrite } from '../../lib/supabase';
 import './admin.css';
-
-// 관리자 아이디/비밀번호 (앱 오너 계정)
-const ADMIN_CREDENTIALS = [
-  { username: 'rumi', password: 'fnalfnal' },
-  { username: 'young', password: 'duddlduddl' },
-  { username: 'jeong', password: 'wjddlwjddl' },
-] as const;
 
 interface AdminAuthGuardProps {
   children: ReactNode;
 }
 
 export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
-  // 관리자 3계정 외 로그인 금지: 세션스토리지 토큰만 검증 (마운트 시 동기 확인)
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    const stored = sessionStorage.getItem('vh_admin_auth');
-    return !!(stored && ADMIN_CREDENTIALS.some((cred) => btoa(`${cred.username}:${cred.password}`) === stored));
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [adminId, setAdminId] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleAdminLogin = () => {
+  useEffect(() => {
+    // 로그인 시 서버 검증을 통과한 토큰만 저장되므로, 존재하면 세션 유지
+    if (sessionStorage.getItem('vh_admin_auth')) setIsAuthenticated(true);
+    setIsLoading(false);
+  }, []);
+
+  const handleAdminLogin = async () => {
     const id = adminId.trim();
     const pw = adminPassword.trim();
-    const matched = ADMIN_CREDENTIALS.find(
-      (cred) => cred.username === id && cred.password === pw
-    );
-    if (matched) {
-      sessionStorage.setItem('vh_admin_auth', btoa(`${matched.username}:${matched.password}`));
+    if (!id || !pw) {
+      setError('아이디와 비밀번호를 입력해 주세요.');
+      return;
+    }
+    // 자격증명은 클라이언트에 두지 않는다. 입력값으로 토큰을 만들어 서버(Edge Function)가 검증한다.
+    const token = btoa(`${id}:${pw}`);
+    setIsSubmitting(true);
+    setError('');
+    try {
+      await adminWrite('verifyAdmin', {}, token);
+      sessionStorage.setItem('vh_admin_auth', token);
       setIsAuthenticated(true);
-      setError('');
-    } else {
+    } catch {
       setError('관리자 인증에 실패했습니다.');
       setAdminPassword('');
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="admin-auth-page">
+        <Loader2 size={40} style={{ animation: 'spin 1s linear infinite', color: '#a78bfa' }} />
+        <p style={{ marginTop: '14px', color: '#cbd5e1', fontWeight: 700 }}>인증 확인 중...</p>
+        <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return (
@@ -88,8 +103,8 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
 
           {error && <p className="admin-auth-error">{error}</p>}
 
-          <button onClick={handleAdminLogin} className="admin-auth-submit">
-            인증하기
+          <button onClick={handleAdminLogin} className="admin-auth-submit" disabled={isSubmitting}>
+            {isSubmitting ? '인증 중…' : '인증하기'}
           </button>
 
           <div style={{ marginTop: '16px', fontSize: '12px', color: '#64748b', lineHeight: 1.6 }}>

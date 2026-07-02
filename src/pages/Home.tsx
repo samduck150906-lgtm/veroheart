@@ -139,21 +139,25 @@ export default function Home() {
         </button>
         <button
           type="button"
-          disabled
-          title="준비 중"
-          className="ui-search-shortcut"
+          onClick={() => navigate('/scan')}
           style={{
             width: '100%',
+            display: 'flex',
+            alignItems: 'center',
             justifyContent: 'center',
             gap: '10px',
             marginTop: '10px',
-            opacity: 0.55,
-            cursor: 'not-allowed',
-            borderStyle: 'dashed',
+            minHeight: '54px',
+            border: 'none',
+            borderRadius: '16px',
+            cursor: 'pointer',
+            background: 'var(--primary)',
+            color: 'var(--text-dark)',
+            boxShadow: '0 8px 20px rgba(229, 206, 0, 0.35)',
           }}
         >
-          <ScanLine size={20} color="#9CA3AF" />
-          <span style={{ fontSize: '14px', fontWeight: 700, color: '#6B7280' }}>바코드 스캔 · 준비 중</span>
+          <ScanLine size={20} />
+          <span style={{ fontSize: '15px', fontWeight: 900 }}>바코드 스캔으로 바로 분석</span>
         </button>
       </section>
 

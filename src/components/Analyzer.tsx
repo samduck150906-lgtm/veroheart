@@ -7,12 +7,12 @@ import { saveAnalysisReport } from '../lib/supabase';
 import { CORE_COPY } from '../copy/marketing';
 import { calculateCompatibilityScore } from '../utils/score';
 
-export default function Analyzer() {
+export default function Analyzer({ initialText = '' }: { initialText?: string } = {}) {
   const navigate = useNavigate();
   const { userId, isLoggedIn, selectedProduct, products, profile } = useStore();
   const [animal, setAnimal] = useState<'dog' | 'cat'>('dog');
   const [productType, setProductType] = useState('food');
-  const [ingredientText, setIngredientText] = useState('');
+  const [ingredientText, setIngredientText] = useState(initialText);
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResponse | null>(null);
   const [error, setError] = useState('');

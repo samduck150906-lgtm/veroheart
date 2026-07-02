@@ -10,16 +10,19 @@ import Profile from './pages/Profile';
 import Detail from './pages/Detail';
 import Comparison from './pages/Comparison';
 import Cart from './pages/Cart';
+import AnalysisResult from './pages/AnalysisResult';
+import Scan from './pages/Scan';
+import Ranking from './pages/Ranking';
+import Brand from './pages/Brand';
+import Login from './pages/Login';
+import ViralEvent from './pages/ViralEvent';
+import ScanResult from './pages/ScanResult';
+import Test from './pages/Test';
+import NotFound from './pages/NotFound';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Refund from './pages/Refund';
 import AuthCallback from './pages/AuthCallback';
-import Login from './pages/Login';
-import Ranking from './pages/Ranking';
-import Brand from './pages/Brand';
-import ViralEvent from './pages/ViralEvent';
-import PersonalityQuiz from './pages/Test';
-import NotFound from './pages/NotFound';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
@@ -107,10 +110,12 @@ function App() {
           <Route path="login" element={<Login />} />
           <Route path="brand/:brandName" element={<Brand />} />
           <Route path="event/viral" element={<ViralEvent />} />
-          <Route path="event/personality-quiz" element={<PersonalityQuiz />} />
+          <Route path="event/personality-quiz" element={<Test />} />
           <Route path="profile" element={<Profile />} />
           <Route path="comparison" element={<Comparison />} />
           <Route path="cart" element={<Cart />} />
+          <Route path="analysis" element={<AnalysisResult />} />
+          <Route path="scan-result" element={<ScanResult />} />
           <Route path="product/:id" element={<Detail />} />
           <Route path="terms" element={<Terms />} />
           <Route path="privacy" element={<Privacy />} />
@@ -120,6 +125,9 @@ function App() {
 
         {/* OAuth 리다이렉트 콜백 (앱 크롬 없이 전체 화면 스피너) */}
         <Route path="/auth/callback" element={<AuthCallback />} />
+
+        {/* Immersive full-screen scanner (앱 헤더/네비 없이 카메라 전체화면) */}
+        <Route path="/scan" element={<Scan />} />
 
         {/* Admin CMS Routes — Protected */}
         <Route path="/admin" element={<AdminAuthGuard><AdminLayout /></AdminAuthGuard>}>

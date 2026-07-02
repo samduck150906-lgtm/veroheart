@@ -143,9 +143,9 @@ export default function Layout() {
         <div className="animate-fade-in" style={{ paddingBottom: '20px' }}>
           <Outlet />
         </div>
+        {!shouldHideFooter && <Footer />}
       </main>
 
-      {!shouldHideFooter && <Footer />}
       <BottomNav />
     </div>
   );
