@@ -292,12 +292,12 @@ export function StickyScoreBar({ score, name, visible, progress }: { score: numb
   );
 }
 
-/* ─── AI 종합 의견 (3줄, spec §16b) ─── */
-export function AiVerdictCard({ lines }: { lines: { icon: ReactNode; text: string }[] }) {
+/* ─── 종합 의견 (3줄, 규칙 기반, spec §16b) ─── */
+export function AiVerdictCard({ lines, title = '🧪 성분 종합 의견' }: { lines: { icon: ReactNode; text: string }[]; title?: string }) {
   return (
-    <section aria-label="AI 종합 의견" style={{ background: 'var(--pdp-surface,#fff)', borderRadius: 24, padding: 20, marginBottom: 16, boxShadow: 'var(--pdp-e2,0 8px 24px rgba(15,23,42,.06))' }}>
+    <section aria-label="성분 종합 의견" style={{ background: 'var(--pdp-surface,#fff)', borderRadius: 24, padding: 20, marginBottom: 16, boxShadow: 'var(--pdp-e2,0 8px 24px rgba(15,23,42,.06))' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 16, fontWeight: 800, color: 'var(--pdp-ink,#0F172A)', marginBottom: 14 }}>
-        🧠 AI 종합 의견
+        {title}
       </div>
       <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 }}>
         {lines.slice(0, 3).map((l, i) => (

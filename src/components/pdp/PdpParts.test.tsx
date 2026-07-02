@@ -103,7 +103,7 @@ describe('PDP redesign parts', () => {
         { icon: <ShieldCheck size={16} />, text: '결론: 로니 적합도 95% — 추천합니다.' },
       ]} />
     );
-    expect(html).toContain('AI 종합 의견');
+    expect(html).toContain('성분 종합 의견');
     expect(html).toContain('매우 안전');
     expect(html).toContain('추천합니다.');
   });
