@@ -31,6 +31,61 @@
   /* Transitions */
   --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-smooth: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ── Semantic tokens (신규 컴포넌트가 참조하는 단일 진실원천, 스펙 §11) ── */
+  --surface: #FFFFFF;
+  --surface-alt: #F2F4F6;
+  --text: #191F28;
+  --text-sub: #8B95A1;
+  --text-weak: #B0B8C1;
+  --line: #E5E8EB;
+  --safe-strong: #15B36B;  --safe-bg: #E7F8F0;
+  --caution-strong: #E8A800; --caution-bg: #FEF6E0;
+  --danger-strong: #F04452;  --danger-bg: #FDECEE;
+  --grade-a: #15B36B; --grade-b: #6BB04E; --grade-c: #E8A800; --grade-d: #F04452; --grade-f: #8B95A1;
+
+  /* Skeleton shimmer 색 */
+  --skeleton-base: #EEF1F4;
+  --skeleton-sheen: #F7F9FB;
+}
+
+/* ── Dark theme tokens (data-theme="dark"에서만 적용, 앱 전면 적용은 후속) ── */
+:root[data-theme="dark"] {
+  --surface: #161A20;
+  --surface-alt: #1E232B;
+  --text: #F2F4F6;
+  --text-sub: #A7B0BC;
+  --text-weak: #6B7482;
+  --line: #2A303A;
+  --safe-strong: #3AD08A;  --safe-bg: #0E2A1E;
+  --caution-strong: #F5C24B; --caution-bg: #2A2410;
+  --danger-strong: #FF6B75;  --danger-bg: #2A1416;
+  --skeleton-base: #232A33;
+  --skeleton-sheen: #2C343E;
+}
+
+/* ── Skeleton shimmer ── */
+.vero-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--skeleton-base);
+}
+.vero-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, var(--skeleton-sheen), transparent);
+  animation: veroShimmer 1.2s ease-in-out infinite;
+}
+@keyframes veroShimmer { 100% { transform: translateX(100%); } }
+
+.vero-spin { animation: veroSpin 0.9s linear infinite; }
+@keyframes veroSpin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .vero-skeleton::after { animation: none; }
+  .vero-spin { animation-duration: 1.6s; }
 }
 
 * {

@@ -16,6 +16,8 @@ import {
   Search as SearchIcon,
 } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
+import StateView from '../components/StateView';
+import { ProductGridSkeleton } from '../components/Skeleton';
 import type { Product } from '../types';
 import { TossFilterSection, TossSearchBar, TossChip, TossButton } from '../components/TossUI';
 import { searchProducts, getAllIngredients } from '../lib/supabase';
@@ -434,6 +436,8 @@ export default function Search() {
           </div>
         )}
 
+        {isLoading && displayResults.length === 0 && <ProductGridSkeleton count={6} />}
+
         <div className="ui-grid-2">
           {displayResults.map(({ product, breakdown, score }) => (
             <div key={product.id}>
@@ -450,10 +454,13 @@ export default function Search() {
         </div>
         
         {displayResults.length === 0 && !isLoading && (
-          <div className="ui-info-card" style={{ textAlign: 'center', padding: '56px 18px', color: '#9CA3AF' }}>
-            검색 결과가 없습니다.<br />
-            검색어를 바꾸거나 상세 필터를 넓혀 보세요.
-          </div>
+          <StateView
+            variant="empty"
+            title="검색 결과가 없어요"
+            description="검색어를 바꾸거나 상세 필터를 넓혀 보세요."
+            action={{ label: '상세 필터 조정', onClick: () => setIsFilterOpen(true) }}
+            minHeight={280}
+          />
         )}
       </div>
 

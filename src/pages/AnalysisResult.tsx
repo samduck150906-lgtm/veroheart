@@ -11,6 +11,7 @@ import {
   type CompatibilityGrade,
 } from '../utils/score';
 import BottomSheet from '../components/BottomSheet';
+import StateView from '../components/StateView';
 import type { Ingredient, Product } from '../types';
 
 /* ── 등급·위험도 시각 토큰 (신호등) ───────────────────────── */
@@ -240,17 +241,12 @@ export default function AnalysisResult() {
 
   if (!product) {
     return (
-      <div style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', textAlign: 'center' }}>
-        <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-dark)', marginBottom: 8 }}>분석할 제품이 없어요</p>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 24 }}>상품 상세에서 ‘AI 정밀 분석’을 눌러 주세요.</p>
-        <button
-          type="button"
-          onClick={() => navigate('/search')}
-          style={{ padding: '12px 24px', borderRadius: 14, border: 'none', background: 'var(--primary)', color: 'var(--text-dark)', fontWeight: 800, cursor: 'pointer' }}
-        >
-          상품 탐색하기
-        </button>
-      </div>
+      <StateView
+        variant="empty"
+        title="분석할 제품이 없어요"
+        description="상품 상세에서 ‘AI 정밀 분석’을 눌러 주세요."
+        action={{ label: '상품 탐색하기', onClick: () => navigate('/search') }}
+      />
     );
   }
 
