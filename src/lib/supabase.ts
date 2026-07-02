@@ -102,34 +102,6 @@ export async function saveUserPet(petData: Partial<SupabasePet>) {
 }
 
 // Products
-function mapProduct(p: any): Product {
-  return {
-    id: p.id,
-    brand: p.brand_name,
-    name: p.name,
-    category: p.product_type,
-    mainCategory: p.main_category,
-    subCategory: p.sub_category,
-    targetPetType: p.target_pet_type as any,
-    targetLifeStage: p.target_life_stage,
-    formulation: p.formulation,
-    healthConcerns: p.product_health_concerns,
-    hasRiskFactors: p.has_risk_factors,
-    price: p.min_price || 0,
-    imageUrl: p.image_url || 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&q=80',
-    coupangLink: p.product_url,
-    ingredients: p.product_ingredients?.map((pi: any) => ({
-      id: pi.ingredients?.id || '',
-      nameKo: pi.ingredients?.name_ko || '',
-      nameEn: pi.ingredients?.name_en || '',
-      riskLevel: pi.ingredients?.risk_level || 'safe',
-      purpose: pi.ingredients?.description || ''
-    })) || [],
-    reviewsCount: p.review_count || 0,
-    averageRating: p.avg_rating || 0
-  };
-}
-
 export async function getProducts(): Promise<Product[]> {
   if (!isSupabaseConfigured) return [];
   const { data, error } = await supabase.from('products').select(`

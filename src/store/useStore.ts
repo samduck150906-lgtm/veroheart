@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
+import type { AuthChangeEvent, RealtimeChannel, Session } from '@supabase/supabase-js';
 import type { UserPetProfile, Product, SupabaseOrderWithItems, AnalysisReportRow } from '../types';
 import { DEFAULT_USER_PET_PROFILE } from '../types';
 import {
@@ -21,7 +21,7 @@ import {
 } from '../lib/supabase';
 import { mapProductFromSupabaseRow } from '../lib/supabaseRowTypes';
 
-let adminDataSyncChannel: any = null;
+let adminDataSyncChannel: RealtimeChannel | null = null;
 let adminDataSyncTimer: ReturnType<typeof setTimeout> | null = null;
 
 interface StoreState {
