@@ -4,7 +4,7 @@
 
 DO $$
 DECLARE
-  table_name text;
+  phase_table_name text;
   object_name text;
   row_count bigint;
   actual_names text[];
@@ -36,7 +36,7 @@ DECLARE
     'canonical_ingredient_allergen_map_pkey',
     'canonical_ingredient_review_queue_pkey',
     'analysis_engine_versions_version_key',
-    'canonical_ingredients_normalized_key',
+    'canonical_ingredients_normalized_key_key',
     'canonical_ingredients_name_ko_key',
     'canonical_ingredient_aliases_normalized_key',
     'canonical_ingredient_evidence_unique',
@@ -60,10 +60,10 @@ DECLARE
   ];
 BEGIN
   -- All 11 additive tables must exist, be empty, and have RLS enabled.
-  FOREACH table_name IN ARRAY new_tables
+  FOREACH phase_table_name IN ARRAY new_tables
   LOOP
-    IF to_regclass(format('public.%I', table_name)) IS NULL THEN
-      RAISE EXCEPTION 'Missing Phase 1 table: public.%', table_name;
+    IF to_regclass(format('public.%I', phase_table_name)) IS NULL THEN
+      RAISE EXCEPTION 'Missing Phase 1 table: public.%', phase_table_name;
     END IF;
 
     IF NOT EXISTS (
@@ -71,16 +71,16 @@ BEGIN
       FROM pg_class c
       JOIN pg_namespace n ON n.oid = c.relnamespace
       WHERE n.nspname = 'public'
-        AND c.relname = table_name
+        AND c.relname = phase_table_name
         AND c.relkind = 'r'
         AND c.relrowsecurity
     ) THEN
-      RAISE EXCEPTION 'RLS is not enabled on public.%', table_name;
+      RAISE EXCEPTION 'RLS is not enabled on public.%', phase_table_name;
     END IF;
 
-    EXECUTE format('SELECT count(*) FROM public.%I', table_name) INTO row_count;
+    EXECUTE format('SELECT count(*) FROM public.%I', phase_table_name) INTO row_count;
     IF row_count <> 0 THEN
-      RAISE EXCEPTION 'Expected public.% to be empty, found % rows.', table_name, row_count;
+      RAISE EXCEPTION 'Expected public.% to be empty, found % rows.', phase_table_name, row_count;
     END IF;
   END LOOP;
 
@@ -120,8 +120,8 @@ BEGIN
   END IF;
 
   IF EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE schemaname = 'public' AND tablename = 'canonical_ingredient_review_queue'
+    SELECT 1 FROM pg_policies p
+    WHERE p.schemaname = 'public' AND p.tablename = 'canonical_ingredient_review_queue'
   ) THEN
     RAISE EXCEPTION 'The review queue must not have a client policy.';
   END IF;
@@ -181,8 +181,8 @@ BEGIN
     RAISE EXCEPTION 'Expected exactly 17 Phase 1 foreign keys, found %.', row_count;
   END IF;
 
-  SELECT array_agg(required_name ORDER BY required_name) INTO missing_names
-  FROM unnest(required_constraints) AS required_name
+  SELECT array_agg(required.required_name ORDER BY required.required_name) INTO missing_names
+  FROM unnest(required_constraints) AS required(required_name)
   WHERE NOT EXISTS (
     SELECT 1
     FROM pg_constraint c
@@ -190,7 +190,7 @@ BEGIN
     JOIN pg_namespace n ON n.oid = t.relnamespace
     WHERE n.nspname = 'public'
       AND t.relname = ANY (new_tables)
-      AND c.conname = required_name
+      AND c.conname = required.required_name
       AND c.contype IN ('p', 'u')
   );
   IF missing_names IS NOT NULL THEN
@@ -256,9 +256,9 @@ BEGIN
       ('allergens', ARRAY['code', 'id']::text[])
     ) AS expected(table_name, column_names)
   LOOP
-    SELECT array_agg(column_name::text ORDER BY column_name) INTO actual_names
-    FROM information_schema.columns
-    WHERE table_schema = 'public' AND information_schema.columns.table_name = item.table_name;
+    SELECT array_agg(isc.column_name::text ORDER BY isc.column_name) INTO actual_names
+    FROM information_schema.columns AS isc
+    WHERE isc.table_schema = 'public' AND isc.table_name = item.table_name;
     IF actual_names IS DISTINCT FROM item.column_names THEN
       RAISE EXCEPTION 'Bootstrap table public.% changed. Expected columns %, found %.', item.table_name, item.column_names, actual_names;
     END IF;
@@ -266,11 +266,11 @@ BEGIN
 
   IF EXISTS (
     SELECT 1
-    FROM information_schema.columns
-    WHERE table_schema = 'public'
-      AND table_name IN ('products', 'ingredients', 'allergens')
-      AND column_name = 'id'
-      AND data_type <> 'uuid'
+    FROM information_schema.columns AS isc
+    WHERE isc.table_schema = 'public'
+      AND isc.table_name IN ('products', 'ingredients', 'allergens')
+      AND isc.column_name = 'id'
+      AND isc.data_type <> 'uuid'
   ) THEN
     RAISE EXCEPTION 'A bootstrap id column is no longer UUID.';
   END IF;
