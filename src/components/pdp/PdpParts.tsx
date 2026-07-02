@@ -12,6 +12,9 @@ import {
   GitCompare,
   Heart,
   ExternalLink,
+  RefreshCw,
+  WifiOff,
+  Inbox,
 } from 'lucide-react';
 
 /* ────────────────────────────────────────────────────────────
@@ -35,12 +38,16 @@ export interface GradeMeta {
 /** 0–100 score → letter grade + semantic color band (spec §9.3 / §29). */
 function gradeFromScore(score: number): GradeMeta {
   const s = Math.max(0, Math.min(100, Math.round(score)));
-  if (s >= 90) return { grade: 'A+', tone: 'excellent', fg: '#15803D', bg: '#ECFDF5', ring: '#16A34A', label: '매우 안전' };
-  if (s >= 85) return { grade: 'A', tone: 'excellent', fg: '#15803D', bg: '#ECFDF5', ring: '#22C55E', label: '안전' };
-  if (s >= 75) return { grade: 'B', tone: 'good', fg: '#16A34A', bg: '#F0FDF4', ring: '#4ADE80', label: '대체로 안전' };
-  if (s >= 60) return { grade: 'C', tone: 'caution', fg: '#B45309', bg: '#FFFBEB', ring: '#F59E0B', label: '확인 필요' };
-  if (s >= 45) return { grade: 'D', tone: 'caution', fg: '#B45309', bg: '#FFFBEB', ring: '#F97316', label: '주의' };
-  return { grade: 'F', tone: 'danger', fg: '#B91C1C', bg: '#FEF2F2', ring: '#EF4444', label: '비추천' };
+  const safe = { fg: 'var(--pdp-safe-fg)', bg: 'var(--pdp-safe-bg)' };
+  const good = { fg: 'var(--pdp-good-fg)', bg: 'var(--pdp-good-bg)' };
+  const caution = { fg: 'var(--pdp-caution-fg)', bg: 'var(--pdp-caution-bg)' };
+  const danger = { fg: 'var(--pdp-danger-fg)', bg: 'var(--pdp-danger-bg)' };
+  if (s >= 90) return { grade: 'A+', tone: 'excellent', ...safe, ring: '#16A34A', label: '매우 안전' };
+  if (s >= 85) return { grade: 'A', tone: 'excellent', ...safe, ring: '#22C55E', label: '안전' };
+  if (s >= 75) return { grade: 'B', tone: 'good', ...good, ring: '#4ADE80', label: '대체로 안전' };
+  if (s >= 60) return { grade: 'C', tone: 'caution', ...caution, ring: '#F59E0B', label: '확인 필요' };
+  if (s >= 45) return { grade: 'D', tone: 'caution', ...caution, ring: '#F97316', label: '주의' };
+  return { grade: 'F', tone: 'danger', ...danger, ring: '#EF4444', label: '비추천' };
 }
 
 /** Count-up that respects prefers-reduced-motion (spec §13). */
@@ -143,11 +150,11 @@ export interface GlanceTileData {
 }
 
 const TONE_TILE: Record<string, { fg: string; bg: string }> = {
-  excellent: { fg: '#15803D', bg: '#ECFDF5' },
-  good: { fg: '#16A34A', bg: '#F0FDF4' },
-  caution: { fg: '#B45309', bg: '#FFFBEB' },
-  danger: { fg: '#B91C1C', bg: '#FEF2F2' },
-  neutral: { fg: '#334155', bg: '#F1F5F9' },
+  excellent: { fg: 'var(--pdp-safe-fg)', bg: 'var(--pdp-safe-bg)' },
+  good: { fg: 'var(--pdp-good-fg)', bg: 'var(--pdp-good-bg)' },
+  caution: { fg: 'var(--pdp-caution-fg)', bg: 'var(--pdp-caution-bg)' },
+  danger: { fg: 'var(--pdp-danger-fg)', bg: 'var(--pdp-danger-bg)' },
+  neutral: { fg: 'var(--pdp-neutral-fg)', bg: 'var(--pdp-neutral-bg)' },
 };
 
 export function GlanceGrid({ tiles }: { tiles: GlanceTileData[] }) {
@@ -210,10 +217,10 @@ export function FitForPetCard({ petName, percent, chips, reasons }: { petName: s
 /* ─── Risk dual-encoding (icon + color + label) — color-blind safe (spec §12) ─── */
 type Risk = 'safe' | 'caution' | 'danger';
 function riskMeta(level: Risk | undefined, isAllergy?: boolean) {
-  if (isAllergy) return { icon: <Ban size={16} strokeWidth={2.4} />, label: '알레르기', fg: '#B45309', bg: '#FFFBEB', line: '#FDE68A' };
-  if (level === 'danger') return { icon: <OctagonAlert size={16} strokeWidth={2.4} />, label: '위험', fg: '#B91C1C', bg: '#FEF2F2', line: '#FECACA' };
-  if (level === 'caution') return { icon: <AlertTriangle size={16} strokeWidth={2.4} />, label: '주의', fg: '#B45309', bg: '#FFFBEB', line: '#FDE68A' };
-  return { icon: <ShieldCheck size={16} strokeWidth={2.4} />, label: '안전', fg: '#15803D', bg: '#ECFDF5', line: 'transparent' };
+  if (isAllergy) return { icon: <Ban size={16} strokeWidth={2.4} />, label: '알레르기', fg: 'var(--pdp-caution-fg)', bg: 'var(--pdp-caution-bg)', line: 'var(--pdp-caution-line,#FDE68A)' };
+  if (level === 'danger') return { icon: <OctagonAlert size={16} strokeWidth={2.4} />, label: '위험', fg: 'var(--pdp-danger-fg)', bg: 'var(--pdp-danger-bg)', line: 'var(--pdp-danger-line,#FECACA)' };
+  if (level === 'caution') return { icon: <AlertTriangle size={16} strokeWidth={2.4} />, label: '주의', fg: 'var(--pdp-caution-fg)', bg: 'var(--pdp-caution-bg)', line: 'var(--pdp-caution-line,#FDE68A)' };
+  return { icon: <ShieldCheck size={16} strokeWidth={2.4} />, label: '안전', fg: 'var(--pdp-safe-fg)', bg: 'var(--pdp-safe-bg)', line: 'transparent' };
 }
 
 export interface IngredientLike {
@@ -570,6 +577,59 @@ export function FaqAccordion({ items, title = '자주 묻는 질문', ai = false
         })}
       </div>
     </section>
+  );
+}
+
+/* ─── Empty state (spec §23) ─── */
+export function EmptyState({ emoji = '🐾', title, desc, actionLabel, onAction }: { emoji?: string; title: string; desc?: string; actionLabel?: string; onAction?: () => void }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '36px 24px', background: 'var(--pdp-surface,#fff)', borderRadius: 20, boxShadow: 'var(--pdp-e1,0 1px 2px rgba(15,23,42,.04))' }}>
+      <div style={{ width: 56, height: 56, borderRadius: 18, background: 'var(--pdp-surface-soft,#F7F8FA)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, marginBottom: 14 }} aria-hidden>
+        {emoji || <Inbox size={24} />}
+      </div>
+      <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--pdp-ink,#0F172A)' }}>{title}</p>
+      {desc ? <p style={{ margin: '6px 0 0', fontSize: 13.5, fontWeight: 500, color: 'var(--pdp-ink-muted,#475569)', lineHeight: 1.55 }}>{desc}</p> : null}
+      {actionLabel && onAction ? (
+        <button type="button" onClick={onAction} style={{ marginTop: 18, height: 44, padding: '0 20px', borderRadius: 14, border: 'none', background: 'var(--pdp-ink,#0F172A)', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>{actionLabel}</button>
+      ) : null}
+    </div>
+  );
+}
+
+/* ─── Error state (spec §24) ─── */
+export function ErrorState({ title = '정보를 불러오지 못했어요', desc = '잠시 후 다시 시도해 주세요.', onRetry }: { title?: string; desc?: string; onRetry?: () => void }) {
+  return (
+    <div role="alert" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '36px 24px', background: 'var(--pdp-surface,#fff)', borderRadius: 20, boxShadow: 'var(--pdp-e1,0 1px 2px rgba(15,23,42,.04))' }}>
+      <div style={{ width: 56, height: 56, borderRadius: 18, background: 'var(--pdp-danger-bg,#FEF2F2)', color: 'var(--pdp-danger-fg,#B91C1C)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }} aria-hidden>
+        <AlertTriangle size={24} />
+      </div>
+      <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--pdp-ink,#0F172A)' }}>{title}</p>
+      <p style={{ margin: '6px 0 0', fontSize: 13.5, fontWeight: 500, color: 'var(--pdp-ink-muted,#475569)', lineHeight: 1.55 }}>{desc}</p>
+      {onRetry ? (
+        <button type="button" onClick={onRetry} style={{ marginTop: 18, height: 44, padding: '0 20px', borderRadius: 14, border: '1px solid var(--pdp-line,#E5E8EB)', background: 'var(--pdp-surface,#fff)', color: 'var(--pdp-ink,#0F172A)', fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <RefreshCw size={16} /> 다시 시도
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+/* ─── Offline banner (Dynamic-Island style, spec §24) ─── */
+export function OfflineBanner({ online }: { online: boolean }) {
+  return (
+    <div
+      role="status"
+      aria-hidden={online}
+      style={{
+        position: 'fixed', top: 10, left: '50%', transform: `translateX(-50%) translateY(${online ? '-140%' : '0'})`,
+        zIndex: 40, transition: 'transform 280ms cubic-bezier(0.2,0,0,1)',
+        display: 'inline-flex', alignItems: 'center', gap: 8,
+        padding: '9px 16px', borderRadius: 999, background: '#0F172A', color: '#fff',
+        fontSize: 13, fontWeight: 700, boxShadow: '0 8px 24px rgba(0,0,0,.28)',
+      }}
+    >
+      <WifiOff size={15} /> 오프라인 · 저장된 정보를 표시 중
+    </div>
   );
 }
 

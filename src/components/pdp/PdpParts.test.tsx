@@ -15,6 +15,9 @@ import {
   NutritionCard,
   ReviewSummaryCard,
   FaqAccordion,
+  EmptyState,
+  ErrorState,
+  OfflineBanner,
   type GlanceTileData,
   type AltCardData,
   type RadarAxis,
@@ -161,5 +164,25 @@ describe('PDP redesign parts', () => {
     // AI 모드 타이틀
     expect(renderToStaticMarkup(<FaqAccordion items={items} ai />)).toContain('AI에게 물어보기');
     expect(renderToStaticMarkup(<FaqAccordion items={[]} />)).toBe('');
+  });
+
+  it('EmptyState: 제목/설명/액션을 렌더한다', () => {
+    const html = renderToStaticMarkup(<EmptyState emoji="🔍" title="제품을 찾을 수 없어요" desc="삭제된 제품일 수 있어요." actionLabel="홈으로" onAction={() => {}} />);
+    expect(html).toContain('제품을 찾을 수 없어요');
+    expect(html).toContain('삭제된 제품일 수 있어요.');
+    expect(html).toContain('홈으로');
+  });
+
+  it('ErrorState: 기본 문구와 재시도 버튼을 렌더한다', () => {
+    const html = renderToStaticMarkup(<ErrorState onRetry={() => {}} />);
+    expect(html).toContain('정보를 불러오지 못했어요');
+    expect(html).toContain('다시 시도');
+    expect(html).toContain('role="alert"');
+  });
+
+  it('OfflineBanner: 오프라인 안내 문구를 담는다', () => {
+    const html = renderToStaticMarkup(<OfflineBanner online={false} />);
+    expect(html).toContain('오프라인');
+    expect(html).toContain('저장된 정보를 표시 중');
   });
 });

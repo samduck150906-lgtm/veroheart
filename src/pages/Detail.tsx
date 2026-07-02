@@ -40,6 +40,8 @@ import {
   NutritionCard,
   ReviewSummaryCard,
   FaqAccordion,
+  EmptyState,
+  OfflineBanner,
   type GlanceTileData,
   type AltCardData,
   type RadarAxis,
@@ -90,6 +92,15 @@ export default function Detail() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedIngredient, setSelectedIngredient] = useState<(Ingredient & { description?: string }) | null>(null);
   const [scrollY, setScrollY] = useState(0);
+  const [online, setOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine));
+
+  useEffect(() => {
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener('online', on);
+    window.addEventListener('offline', off);
+    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
+  }, []);
 
   useEffect(() => {
     if (id) {
@@ -142,9 +153,15 @@ export default function Detail() {
   }
 
   if (!product) return (
-    <div className="text-center p-12">
-      <p className="text-gray-500">제품을 찾을 수 없습니다.</p>
-      <button onClick={() => navigate('/')} className="mt-4 text-primary font-bold">홈으로 이동</button>
+    <div className="detail-page-root" style={{ padding: '40px 0' }}>
+      <OfflineBanner online={online} />
+      <EmptyState
+        emoji={online ? '🔍' : '📡'}
+        title={online ? '제품을 찾을 수 없어요' : '오프라인 상태예요'}
+        desc={online ? '주소가 변경되었거나 삭제된 제품일 수 있어요.' : '연결이 복구되면 다시 불러올게요.'}
+        actionLabel="홈으로 이동"
+        onAction={() => navigate('/')}
+      />
     </div>
   );
 
@@ -328,6 +345,7 @@ export default function Detail() {
         <meta name="description" content={`${product.brand}의 ${product.name} 전성분 분석 결과 및 구매`} />
       </Helmet>
 
+      <OfflineBanner online={online} />
       <StickyScoreBar score={safetyScore} name={product.name} visible={showStickyScore} progress={scrollProgress} />
 
       {conclusion && (

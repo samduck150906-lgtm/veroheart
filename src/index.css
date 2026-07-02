@@ -42,6 +42,34 @@
   --pdp-e1: 0 1px 2px rgba(15,23,42,.04);
   --pdp-e2: 0 8px 24px rgba(15,23,42,.06);
   --pdp-e3: 0 16px 40px rgba(15,23,42,.10);
+  /* 시맨틱 안전 스케일 (light) */
+  --pdp-safe-fg: #15803D;   --pdp-safe-bg: #ECFDF5;
+  --pdp-good-fg: #16A34A;   --pdp-good-bg: #F0FDF4;
+  --pdp-caution-fg: #B45309; --pdp-caution-bg: #FFFBEB; --pdp-caution-line: #FDE68A;
+  --pdp-danger-fg: #B91C1C;  --pdp-danger-bg: #FEF2F2;  --pdp-danger-line: #FECACA;
+  --pdp-neutral-fg: #334155; --pdp-neutral-bg: #F1F5F9;
+}
+
+/* PDP 다크모드 토큰 페어링 (docs/PDP_Redesign_Spec.md §25) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --pdp-ink: #F1F5F9;
+    --pdp-ink-muted: #B6C2D2;
+    --pdp-ink-faint: #7C8AA0;
+    --pdp-line: #232B36;
+    --pdp-surface: #151A21;
+    --pdp-surface-soft: #0E1217;
+    --pdp-e1: 0 1px 2px rgba(0,0,0,.4);
+    --pdp-e2: 0 8px 24px rgba(0,0,0,.5);
+    --pdp-e3: 0 16px 40px rgba(0,0,0,.6);
+    --pdp-safe-fg: #4ADE80;   --pdp-safe-bg: rgba(34,197,94,.16);
+    --pdp-good-fg: #4ADE80;   --pdp-good-bg: rgba(34,197,94,.12);
+    --pdp-caution-fg: #FBBF24; --pdp-caution-bg: rgba(245,158,11,.16); --pdp-caution-line: rgba(245,158,11,.35);
+    --pdp-danger-fg: #F87171;  --pdp-danger-bg: rgba(239,68,68,.16);  --pdp-danger-line: rgba(239,68,68,.35);
+    --pdp-neutral-fg: #CBD5E1; --pdp-neutral-bg: rgba(148,163,184,.16);
+  }
+  .pdp-skel { background: #232B36; }
+  .pdp-skel::after { background: linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent); }
 }
 
 /* PDP skeleton shimmer (docs/PDP_Redesign_Spec.md §22) */
