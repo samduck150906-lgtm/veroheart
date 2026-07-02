@@ -14,6 +14,8 @@ import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Refund from './pages/Refund';
 import Auth from './pages/Auth';
+import AuthCallback from './pages/AuthCallback';
+import NotFound from './pages/NotFound';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
@@ -103,7 +105,11 @@ function App() {
           <Route path="terms" element={<Terms />} />
           <Route path="privacy" element={<Privacy />} />
           <Route path="refund" element={<Refund />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
+
+        {/* OAuth 리다이렉트 콜백 (앱 크롬 없이 전체 화면 스피너) */}
+        <Route path="/auth/callback" element={<AuthCallback />} />
 
         {/* Admin CMS Routes — Protected */}
         <Route path="/admin" element={<AdminAuthGuard><AdminLayout /></AdminAuthGuard>}>
