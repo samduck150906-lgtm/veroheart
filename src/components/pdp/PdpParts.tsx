@@ -198,7 +198,7 @@ export function FitForPetCard({ petName, percent, chips, reasons }: { petName: s
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: reasons.length ? 12 : 0 }}>
         {chips.map((c, i) => (
-          <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '6px 10px', borderRadius: 999, background: '#F1F5F9', color: '#334155', fontSize: 12.5, fontWeight: 700 }}>
+          <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '6px 10px', borderRadius: 999, background: 'var(--pdp-neutral-bg,#F1F5F9)', color: 'var(--pdp-neutral-fg,#334155)', fontSize: 12.5, fontWeight: 700 }}>
             <Check size={13} strokeWidth={2.6} /> {c}
           </span>
         ))}
@@ -534,7 +534,7 @@ export function ReviewSummaryCard({ ratings, topTags, summary }: { ratings: numb
       {topTags.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16 }}>
           {topTags.map((t, i) => (
-            <span key={i} style={{ padding: '6px 12px', borderRadius: 999, background: '#F1F5F9', color: '#334155', fontSize: 12.5, fontWeight: 700 }}>{t}</span>
+            <span key={i} style={{ padding: '6px 12px', borderRadius: 999, background: 'var(--pdp-neutral-bg,#F1F5F9)', color: 'var(--pdp-neutral-fg,#334155)', fontSize: 12.5, fontWeight: 700 }}>{t}</span>
           ))}
         </div>
       )}
