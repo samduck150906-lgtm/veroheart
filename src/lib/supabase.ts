@@ -20,6 +20,32 @@ export const supabase = createClient(
   isSupabaseConfigured ? supabaseKey : 'public-anon-key'
 );
 
+/**
+ * 관리자 쓰기 프록시 호출. anon 키로는 RLS에 막혀 쓸 수 없으므로,
+ * service_role로 동작하는 admin-write Edge Function을 통해 쓴다.
+ * 관리자 토큰(sessionStorage 'vh_admin_auth')을 x-admin-token 헤더로 전달해 서버가 검증한다.
+ */
+export async function adminWrite<T = any>(
+  action: string,
+  data: Record<string, unknown> = {},
+): Promise<T> {
+  const token =
+    typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('vh_admin_auth') ?? '' : '';
+  const res = await fetch(`${supabaseUrl}/functions/v1/admin-write`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: supabaseKey,
+      Authorization: `Bearer ${supabaseKey}`,
+      'x-admin-token': token,
+    },
+    body: JSON.stringify({ action, ...data }),
+  });
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((payload as { error?: string })?.error || `요청 실패 (${res.status})`);
+  return payload as T;
+}
+
 // Auth, User functions (Omitted for brevity, but I will keep them same as before)
 // ... keeping them all for a complete file rewrite ...
 

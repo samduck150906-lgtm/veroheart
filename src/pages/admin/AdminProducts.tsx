@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { supabase } from '../../lib/supabase';
+import { supabase, adminWrite } from '../../lib/supabase';
 import { Plus, Search, Edit2, Trash2, X } from 'lucide-react';
 import { notify } from '../../store/useNotification';
 
@@ -167,40 +167,27 @@ const AdminProducts: React.FC = () => {
       has_risk_factors: normalizeCommaValues(currentProduct.has_risk_factors),
     };
 
+    // 보장성분: 입력값이 하나라도 있을 때만 함께 전송(숫자로 변환)
+    const hasNutrition = NUTRITION_FIELDS.some(({ key }) => nutrition[key].trim() !== '');
+    const num = (s: string) => {
+      const n = parseFloat(s);
+      return Number.isFinite(n) ? n : 0;
+    };
+    const nutritionPayload = hasNutrition
+      ? {
+          crude_protein: num(nutrition.crude_protein),
+          crude_fat: num(nutrition.crude_fat),
+          crude_fiber: num(nutrition.crude_fiber),
+          crude_ash: num(nutrition.crude_ash),
+          moisture: num(nutrition.moisture),
+          calcium: num(nutrition.calcium),
+          phosphorus: num(nutrition.phosphorus),
+        }
+      : null;
+
     try {
-      let productId = currentProduct.id;
-      if (productId) {
-        const { error } = await supabase.from('products').update(payload).eq('id', productId);
-        if (error) throw error;
-      } else {
-        const { data, error } = await supabase.from('products').insert([payload]).select('id').single();
-        if (error) throw error;
-        productId = data?.id;
-      }
-
-      // 보장성분(nutritional_profiles) — 입력값이 하나라도 있으면 upsert
-      const hasNutrition = NUTRITION_FIELDS.some(({ key }) => nutrition[key].trim() !== '');
-      if (hasNutrition && productId) {
-        const num = (s: string) => {
-          const n = parseFloat(s);
-          return Number.isFinite(n) ? n : 0;
-        };
-        const { error: npErr } = await supabase.from('nutritional_profiles').upsert(
-          {
-            product_id: productId,
-            crude_protein: num(nutrition.crude_protein),
-            crude_fat: num(nutrition.crude_fat),
-            crude_fiber: num(nutrition.crude_fiber),
-            crude_ash: num(nutrition.crude_ash),
-            moisture: num(nutrition.moisture),
-            calcium: num(nutrition.calcium),
-            phosphorus: num(nutrition.phosphorus),
-          },
-          { onConflict: 'product_id' },
-        );
-        if (npErr) throw npErr;
-      }
-
+      // anon 키로는 RLS에 막히므로 service_role Edge Function 프록시로 쓴다
+      await adminWrite('saveProduct', { product: payload, nutrition: nutritionPayload });
       notify.success(currentProduct.id ? '제품 정보가 수정되었습니다.' : '신규 제품이 등록되었습니다.');
       setIsModalOpen(false);
       fetchProducts();
@@ -211,9 +198,10 @@ const AdminProducts: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('정말 삭제하시겠습니까?')) return;
-    const { error } = await supabase.from('products').delete().eq('id', id);
-    if (error) {
-      notify.error(`삭제 실패: ${error.message}`);
+    try {
+      await adminWrite('deleteProduct', { id });
+    } catch (err: any) {
+      notify.error(`삭제 실패: ${err.message}`);
       return;
     }
     notify.success('제품이 삭제되었습니다.');
