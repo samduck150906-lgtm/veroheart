@@ -256,6 +256,83 @@ export function IngredientCard({ ing, onOpen }: { ing: IngredientLike; onOpen: (
   );
 }
 
+/* ─── Sticky top score bar + scroll progress (spec §21, P0-3) ─── */
+export function StickyScoreBar({ score, name, visible, progress }: { score: number; name: string; visible: boolean; progress: number }) {
+  const meta = gradeFromScore(score);
+  return (
+    <div
+      aria-hidden={!visible}
+      style={{
+        position: 'fixed', top: 0, left: '50%', transform: `translateX(-50%) translateY(${visible ? '0' : '-110%'})`,
+        width: '100%', maxWidth: 480, zIndex: 20, transition: 'transform 240ms cubic-bezier(0.2,0,0,1)',
+        background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+        borderBottom: '1px solid var(--pdp-line,#E5E8EB)',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 999, background: meta.bg, color: meta.fg, fontWeight: 900, fontSize: 14, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
+          {Math.round(score)} <span style={{ fontSize: 12 }}>{meta.grade}</span>
+        </span>
+        <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--pdp-ink,#0F172A)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</span>
+      </div>
+      <div style={{ height: 3, background: 'transparent' }}>
+        <div style={{ width: `${Math.max(0, Math.min(100, progress))}%`, height: '100%', background: meta.ring, transition: 'width 80ms linear' }} />
+      </div>
+    </div>
+  );
+}
+
+/* ─── AI 종합 의견 (3줄, spec §16b) ─── */
+export function AiVerdictCard({ lines }: { lines: { icon: ReactNode; text: string }[] }) {
+  return (
+    <section aria-label="AI 종합 의견" style={{ background: 'var(--pdp-surface,#fff)', borderRadius: 24, padding: 20, marginBottom: 16, boxShadow: 'var(--pdp-e2,0 8px 24px rgba(15,23,42,.06))' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 16, fontWeight: 800, color: 'var(--pdp-ink,#0F172A)', marginBottom: 14 }}>
+        🧠 AI 종합 의견
+      </div>
+      <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {lines.slice(0, 3).map((l, i) => (
+          <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+            <span style={{ flexShrink: 0, marginTop: 1, color: 'var(--pdp-ink-faint,#94A3B8)' }}>{l.icon}</span>
+            <span style={{ fontSize: 14.5, fontWeight: 600, color: 'var(--pdp-ink-muted,#475569)', lineHeight: 1.55 }}>{l.text}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/* ─── PDP skeleton (spec §22) ─── */
+function SkelBox({ w, h, r = 12, mb = 0 }: { w: string | number; h: number; r?: number; mb?: number }) {
+  return <div className="pdp-skel" style={{ width: w, height: h, borderRadius: r, marginBottom: mb }} />;
+}
+export function PdpSkeleton() {
+  return (
+    <div aria-hidden style={{ padding: '4px 0 96px' }}>
+      <SkelBox w="100%" h={240} r={24} mb={20} />
+      <SkelBox w="55%" h={16} mb={8} />
+      <SkelBox w="80%" h={26} mb={20} />
+      {/* gauge card */}
+      <div style={{ background: 'var(--pdp-surface,#fff)', borderRadius: 24, padding: 24, marginBottom: 16, boxShadow: 'var(--pdp-e2)' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
+          <div className="pdp-skel" style={{ width: 132, height: 132, borderRadius: 999 }} />
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'center' }}><SkelBox w={140} h={20} r={999} /></div>
+      </div>
+      {/* glance grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
+        {Array.from({ length: 6 }).map((_, i) => <SkelBox key={i} w="100%" h={58} r={16} />)}
+      </div>
+      {/* fit */}
+      <div style={{ background: 'var(--pdp-surface,#fff)', borderRadius: 24, padding: 20, marginBottom: 16, boxShadow: 'var(--pdp-e2)' }}>
+        <SkelBox w="50%" h={18} mb={14} />
+        <SkelBox w="100%" h={10} r={999} mb={14} />
+        <SkelBox w="70%" h={14} />
+      </div>
+      {Array.from({ length: 3 }).map((_, i) => <SkelBox key={i} w="100%" h={72} r={16} mb={10} />)}
+    </div>
+  );
+}
+
 /* ─── Sticky bottom CTA bar (spec §21) ─── */
 export function StickyCtaBar({
   price,

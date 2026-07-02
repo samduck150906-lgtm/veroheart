@@ -8,6 +8,9 @@ import {
   FitForPetCard,
   IngredientCard,
   StickyCtaBar,
+  StickyScoreBar,
+  AiVerdictCard,
+  PdpSkeleton,
   type GlanceTileData,
 } from './PdpParts';
 
@@ -73,5 +76,30 @@ describe('PDP redesign parts', () => {
       <StickyCtaBar price={29900} isFav={false} isComparing={false} onFav={() => {}} onCompare={() => {}} onBuy={() => {}} />
     );
     expect(html).toContain('29,900원 · 구매하기');
+  });
+
+  it('StickyScoreBar: 점수/등급/제품명이 렌더된다', () => {
+    const html = renderToStaticMarkup(<StickyScoreBar score={92} name="미니 인도어 어덜트" visible progress={40} />);
+    expect(html).toContain('92');
+    expect(html).toContain('A+');
+    expect(html).toContain('미니 인도어 어덜트');
+  });
+
+  it('AiVerdictCard: 최대 3줄의 종합 의견을 렌더한다', () => {
+    const html = renderToStaticMarkup(
+      <AiVerdictCard lines={[
+        { icon: <ShieldCheck size={16} />, text: '안전성: 위험 성분 없음 — 매우 안전' },
+        { icon: <ShieldCheck size={16} />, text: '성분 구성: 안전 성분 12개' },
+        { icon: <ShieldCheck size={16} />, text: '결론: 로니 적합도 95% — 추천합니다.' },
+      ]} />
+    );
+    expect(html).toContain('AI 종합 의견');
+    expect(html).toContain('매우 안전');
+    expect(html).toContain('추천합니다.');
+  });
+
+  it('PdpSkeleton: 크래시 없이 스켈레톤 플레이스홀더를 렌더한다', () => {
+    const html = renderToStaticMarkup(<PdpSkeleton />);
+    expect(html).toContain('pdp-skel');
   });
 });

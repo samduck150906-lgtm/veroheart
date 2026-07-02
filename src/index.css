@@ -44,6 +44,26 @@
   --pdp-e3: 0 16px 40px rgba(15,23,42,.10);
 }
 
+/* PDP skeleton shimmer (docs/PDP_Redesign_Spec.md §22) */
+.pdp-skel {
+  position: relative;
+  overflow: hidden;
+  background: #EEF1F4;
+  border-radius: 12px;
+}
+.pdp-skel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.65), transparent);
+  animation: pdp-shimmer 1.4s infinite;
+}
+@keyframes pdp-shimmer { 100% { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) {
+  .pdp-skel::after { animation: none; }
+}
+
 * {
   box-sizing: border-box;
   margin: 0;

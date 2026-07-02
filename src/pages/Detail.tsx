@@ -3,12 +3,12 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
   ChevronUp,
-  Loader2,
   AlertCircle,
   Shield,
   ShieldCheck,
   AlertTriangle,
   Ban,
+  Check,
   Flame,
   Globe,
   Dog,
@@ -34,6 +34,9 @@ import {
   FitForPetCard,
   IngredientCard,
   StickyCtaBar,
+  StickyScoreBar,
+  AiVerdictCard,
+  PdpSkeleton,
   type GlanceTileData,
 } from '../components/pdp/PdpParts';
 import { REVIEW_QUICK_TAGS } from '../constants/reviewTags';
@@ -80,6 +83,7 @@ export default function Detail() {
   const [reviewTags, setReviewTags] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedIngredient, setSelectedIngredient] = useState<(Ingredient & { description?: string }) | null>(null);
+  const [scrollY, setScrollY] = useState(0);
 
   useEffect(() => {
     if (id) {
@@ -88,6 +92,14 @@ export default function Detail() {
       getReviews(id).then(setReviews);
     }
   }, [id, fetchProductDetail, trackRecentView]);
+
+  // Sticky Score 노출 + 스크롤 진행률 (spec §21 P0)
+  useEffect(() => {
+    const onScroll = () => setScrollY(window.scrollY || 0);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const toggleReviewTag = (tag: string) => {
     setReviewTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
@@ -120,12 +132,7 @@ export default function Detail() {
   };
 
   if (isLoadingProducts) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
-        <p className="mt-4 text-gray-500 font-medium">제품 정보를 불러오는 중입니다...</p>
-      </div>
-    );
+    return <div className="detail-page-root"><PdpSkeleton /></div>;
   }
 
   if (!product) return (
@@ -165,6 +172,29 @@ export default function Detail() {
     `${profile.age}살`,
     ...(profile.healthConcerns || []).slice(0, 2),
   ].filter(Boolean) as string[];
+
+  // Sticky Score 노출/진행률
+  const showStickyScore = scrollY > 420;
+  const scrollMax = typeof document !== 'undefined' ? Math.max(1, document.documentElement.scrollHeight - window.innerHeight) : 1;
+  const scrollProgress = Math.min(100, (scrollY / scrollMax) * 100);
+
+  // AI 종합 의견 3줄 (breakdown 기반, 신규 데이터 불필요)
+  const safeCount = product.ingredients?.filter(i => i.riskLevel === 'safe').length ?? 0;
+  const gradeLabel = safetyScore >= 85 ? '매우 안전' : safetyScore >= 75 ? '대체로 안전' : safetyScore >= 60 ? '확인 필요' : '주의';
+  const verdictLines = [
+    {
+      icon: <ShieldCheck size={16} />,
+      text: `안전성: ${breakdown.dangerCount === 0 ? '위험 성분 없음' : `위험 성분 ${breakdown.dangerCount}개`}${breakdown.cautionCount ? `, 주의 ${breakdown.cautionCount}개` : ''} — ${gradeLabel} 등급입니다.`,
+    },
+    {
+      icon: <Flame size={16} />,
+      text: `성분 구성: 안전 성분 ${safeCount}개${breakdown.allergyHits.length ? `, ${profile.name}의 회피 성분 ${breakdown.allergyHits.join('·')} 포함` : ', 등록된 알레르기 성분 없음'}.`,
+    },
+    {
+      icon: <Check size={16} />,
+      text: `결론: ${profile.name} 적합도 ${breakdown.total}% — ${breakdown.total >= 75 ? '추천합니다.' : breakdown.total >= 60 ? '급여 시 소량부터 확인하세요.' : '대체 상품을 함께 검토하세요.'}`,
+    },
+  ];
 
   // find alternative
   let alternativeProduct = null;
@@ -212,6 +242,8 @@ export default function Detail() {
         <title>{product.name} - 베로로</title>
         <meta name="description" content={`${product.brand}의 ${product.name} 전성분 분석 결과 및 구매`} />
       </Helmet>
+
+      <StickyScoreBar score={safetyScore} name={product.name} visible={showStickyScore} progress={scrollProgress} />
 
       {conclusion && (
         <section
@@ -415,8 +447,10 @@ export default function Detail() {
         </div>
       </section>
 
+      <AiVerdictCard lines={verdictLines} />
+
       {/* Bottom Sheet for Ingredient Details */}
-      <BottomSheet 
+      <BottomSheet
         isOpen={!!selectedIngredient} 
         onClose={() => setSelectedIngredient(null)}
         title={selectedIngredient?.nameKo || ''}
