@@ -167,6 +167,34 @@ export async function getProductDetail(productId: string): Promise<Product | nul
   return mapProductFromSupabaseRow(data as SupabaseProductRow);
 }
 
+/**
+ * 바코드로 상품 1건 조회. DB에 `products.barcode` 컬럼이 있어야 매칭된다.
+ * 컬럼이 없거나 조회 오류 시(신규 도입 전 단계) 조용히 null을 반환해
+ * 호출부(스캐너)가 검색 폴백으로 이어가도록 한다.
+ */
+export async function getProductByBarcode(barcode: string): Promise<Product | null> {
+  if (!isSupabaseConfigured || !barcode) return null;
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select(`
+        *,
+        product_ingredients (
+          ingredient_id,
+          ingredients (*)
+        )
+      `)
+      .eq('barcode', barcode)
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !data) return null;
+    return mapProductFromSupabaseRow(data as SupabaseProductRow);
+  } catch {
+    return null;
+  }
+}
+
 /** 다이어트·체중 관련 태그( DB product_health_concerns 값과 맞추면 매칭됨 ) */
 export const DIET_HEALTH_TAGS = ['비만', '다이어트', '체중', '저칼로리', '체중관리', '다이어트케어'] as const;
 

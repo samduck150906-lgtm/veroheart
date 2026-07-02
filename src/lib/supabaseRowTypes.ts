@@ -18,6 +18,7 @@ export type SupabaseProductRow = {
   verified_at?: string | null;
   coupang_product_id?: string | null;
   coupang_link?: string | null;
+  barcode?: string | null;
   min_price?: number | null;
   image_url?: string | null;
   review_count?: number | null;
@@ -92,6 +93,7 @@ export function mapProductFromSupabaseRow(p: SupabaseProductRow): Product {
     verifiedAt: p.verified_at || undefined,
     coupangProductId: p.coupang_product_id || undefined,
     coupangLink: p.coupang_link?.trim() || undefined,
+    barcode: p.barcode ?? undefined,
     price: p.min_price ?? 0,
     imageUrl:
       p.image_url ||

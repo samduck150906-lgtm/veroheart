@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { ArrowLeft, Search as SearchIcon, Barcode, FileText, Zap, ZapOff } from 'lucide-react';
 import { useStore } from '../store/useStore';
+import { getProductByBarcode } from '../lib/supabase';
 
 type Mode = 'barcode' | 'text';
 type CamState = 'idle' | 'starting' | 'live' | 'denied' | 'unavailable';
@@ -30,18 +31,25 @@ export default function Scan() {
   }, []);
 
   const handleBarcode = useCallback(
-    (code: string) => {
+    async (code: string) => {
       if (handledRef.current) return;
       handledRef.current = true;
       setDetected(code);
       stopCamera();
-      // 데이터 모델에 바코드→상품 매핑이 아직 없어, 로드된 상품에서 우선 매칭 후 검색으로 인계
-      const match = products.find((p) => p.id === code);
-      if (match) {
-        navigate(`/product/${match.id}`);
-      } else {
-        navigate(`/search?q=${encodeURIComponent(code)}`);
+      // 1) 이미 로드된 상품의 바코드와 즉시 매칭
+      const local = products.find((p) => p.barcode === code);
+      if (local) {
+        navigate(`/product/${local.id}`);
+        return;
       }
+      // 2) DB 조회 (products.barcode 컬럼이 있으면 매칭)
+      const remote = await getProductByBarcode(code);
+      if (remote) {
+        navigate(`/product/${remote.id}`);
+        return;
+      }
+      // 3) 폴백: 바코드를 검색어로 넘겨 검색 화면으로 인계
+      navigate(`/search?q=${encodeURIComponent(code)}`);
     },
     [products, navigate, stopCamera],
   );

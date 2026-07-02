@@ -40,6 +40,8 @@ export interface Product {
   coupangProductId?: string | null;
   /** 파트너스 등 수동 발급 전체 URL — 있으면 구매 버튼이 이 주소로 이동 */
   coupangLink?: string | null;
+  /** 제품 바코드(EAN/UPC). 스캔→상품 매핑에 사용. DB `products.barcode` 컬럼 필요 */
+  barcode?: string;
 }
 
 export const DEFAULT_USER_PET_PROFILE: UserPetProfile = {
