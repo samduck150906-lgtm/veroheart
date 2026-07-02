@@ -17,6 +17,7 @@ interface Product {
   has_risk_factors?: string[];
   image_url: string;
   min_price: number;
+  barcode?: string;
 }
 
 const MAIN_CATEGORIES = [
@@ -102,6 +103,8 @@ const AdminProducts: React.FC = () => {
       formulation: (currentProduct.formulation || '').trim() || null,
       target_pet_type: (currentProduct.target_pet_type || 'dog').trim(),
       image_url: (currentProduct.image_url || '').trim(),
+      // 빈 문자열은 부분 유니크 인덱스에서 충돌하므로 null로 정규화
+      barcode: (currentProduct.barcode || '').trim() || null,
       min_price: Number.isFinite(Number(currentProduct.min_price)) ? Math.max(0, Number(currentProduct.min_price)) : 0,
       target_life_stage: normalizeCommaValues(currentProduct.target_life_stage),
       product_health_concerns: normalizeCommaValues(currentProduct.product_health_concerns),
@@ -282,6 +285,11 @@ const AdminProducts: React.FC = () => {
                 label="이미지 URL"
                 value={currentProduct.image_url}
                 onChange={(value) => setCurrentProduct({ ...currentProduct, image_url: value })}
+              />
+              <InputField
+                label="바코드 (EAN/UPC)"
+                value={currentProduct.barcode}
+                onChange={(value) => setCurrentProduct({ ...currentProduct, barcode: value })}
               />
               <SelectField
                 label="메인 카테고리"
