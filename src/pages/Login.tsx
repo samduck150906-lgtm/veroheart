@@ -4,7 +4,6 @@ import { Mail, Lock, Eye, EyeOff, ArrowLeft, RefreshCw, Check, X } from 'lucide-
 import { supabase } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import { notify } from '../store/useNotification';
-import { HOME_HERO } from '../copy/marketing';
 import { VERORO_LOGO_SRC } from '../constants/assets';
 import { TossButton, TossCard, TossChip, TossInput, TossField, TossSectionBlock } from '../components/TossUI';
 
@@ -201,7 +200,6 @@ export default function Login() {
           <h1 style={{ fontSize: '18px', fontWeight: 800, color: '#111827', margin: '0 0 6px', lineHeight: 1.35 }}>
             {mode === 'login' ? '이메일로 로그인' : '이메일로 회원가입'}
           </h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.55 }}>{HOME_HERO.sub}</p>
         </div>
 
         <div style={{ display: 'flex', backgroundColor: 'rgba(250, 204, 21, 0.2)', borderRadius: '14px', padding: '4px', marginBottom: '22px' }}>

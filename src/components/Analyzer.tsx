@@ -162,7 +162,6 @@ export default function Analyzer({ initialText = '' }: { initialText?: string } 
         <Zap className="text-blue-500" /> AI 정밀 성분 분석
       </h2>
       <p className="text-sm text-gray-600 font-medium mb-4 leading-relaxed">{CORE_COPY.ocr}</p>
-      <p className="text-xs text-gray-500 font-semibold mb-4">{CORE_COPY.thorough}</p>
       <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs font-medium text-slate-600">
         실제 출시 환경에서는 로그인 사용자만 사용할 수 있으며, 지나치게 짧거나 긴 성분표는 분석이 제한됩니다.
       </div>
