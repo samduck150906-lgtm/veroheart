@@ -3,15 +3,18 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
   ChevronUp,
-  GitCompare,
   Loader2,
   AlertCircle,
   Shield,
+  ShieldCheck,
+  AlertTriangle,
+  Ban,
+  Flame,
+  Globe,
   Dog,
   Cat,
   Calendar,
   Layers,
-  ExternalLink,
   Star,
   Trash2,
   MessageSquare,
@@ -24,6 +27,15 @@ import BottomSheet from '../components/BottomSheet';
 import { TossCard } from '../components/TossUI';
 import { getReviews, createReview, deleteReview } from '../lib/supabase';
 import { buildProductConclusion } from '../utils/productConclusion';
+import { getCompatibilityBreakdown } from '../utils/score';
+import {
+  ScoreGauge,
+  GlanceGrid,
+  FitForPetCard,
+  IngredientCard,
+  StickyCtaBar,
+  type GlanceTileData,
+} from '../components/pdp/PdpParts';
 import { REVIEW_QUICK_TAGS } from '../constants/reviewTags';
 
 interface Ingredient { nameKo: string; nameEn?: string; purpose?: string; riskLevel?: string; isAllergy?: boolean; }
@@ -50,6 +62,8 @@ export default function Detail() {
     products,
     userId,
     trackRecentView,
+    favorites,
+    toggleFavorite,
   } = useStore();
 
   type ReviewRow = {
@@ -124,7 +138,33 @@ export default function Detail() {
   const report = product ? generateAnalysisReport(product, profile) : null;
   const conclusion = product && report ? buildProductConclusion(product, profile, report) : null;
   const isComparing = comparisonList.includes(product?.id || '');
+  const isFav = favorites.includes(product?.id || '');
   const verificationMeta = getVerificationMeta(product.verificationStatus);
+
+  // ── PDP 판단 스택 데이터 (점수 게이지 · 요약 · 우리 아이 적합도) ──
+  const breakdown = getCompatibilityBreakdown(product, profile);
+  const safetyScore = report ? report.score : breakdown.total;
+  const petTypeLabel = product.targetPetType === 'cat' ? '고양이용' : product.targetPetType === 'all' ? '공용' : '강아지용';
+  const glanceTiles: GlanceTileData[] = [
+    breakdown.dangerCount > 0
+      ? { icon: <AlertTriangle size={18} />, label: '안전도', value: `위험 ${breakdown.dangerCount}개`, tone: 'danger' }
+      : breakdown.cautionCount > 0
+        ? { icon: <AlertTriangle size={18} />, label: '안전도', value: `주의 ${breakdown.cautionCount}개`, tone: 'caution' }
+        : { icon: <ShieldCheck size={18} />, label: '안전도', value: '위험 성분 없음', tone: 'excellent' },
+    breakdown.allergyHits.length > 0
+      ? { icon: <Ban size={18} />, label: '알레르기', value: `${breakdown.allergyHits.length}개 주의`, tone: 'danger' }
+      : { icon: <Ban size={18} />, label: '알레르기', value: '해당 없음', tone: 'excellent' },
+    { icon: <Dog size={18} />, label: '추천 대상', value: petTypeLabel, tone: 'neutral' },
+    { icon: <Calendar size={18} />, label: '생애주기', value: (product.targetLifeStage && product.targetLifeStage[0]) || '전연령', tone: 'neutral' },
+    { icon: <Flame size={18} />, label: '제형', value: product.formulation || '건식', tone: 'neutral' },
+    { icon: <Globe size={18} />, label: '제조', value: product.manufacturerName || product.brand, tone: 'neutral' },
+  ];
+  const fitChips = [
+    profile.name,
+    profile.species === 'Cat' ? '고양이' : '강아지',
+    `${profile.age}살`,
+    ...(profile.healthConcerns || []).slice(0, 2),
+  ].filter(Boolean) as string[];
 
   // find alternative
   let alternativeProduct = null;
@@ -167,7 +207,7 @@ export default function Detail() {
   }
 
   return (
-    <div className="animate-fade-in detail-page-root" style={{ paddingBottom: '40px' }}>
+    <div className="animate-fade-in detail-page-root" style={{ paddingBottom: '96px' }}>
       <Helmet>
         <title>{product.name} - 베로로</title>
         <meta name="description" content={`${product.brand}의 ${product.name} 전성분 분석 결과 및 구매`} />
@@ -238,6 +278,11 @@ export default function Detail() {
         <img src={product.imageUrl} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </div>
 
+      {/* ── 3초 판단 스택: 점수 게이지 · 핵심 요약 · 우리 아이 적합도 ── */}
+      <ScoreGauge score={safetyScore} oneLiner={report?.summary} />
+      <GlanceGrid tiles={glanceTiles} />
+      <FitForPetCard petName={profile.name} percent={breakdown.total} chips={fitChips} reasons={breakdown.reasons} />
+
       <TossCard style={{ marginBottom: '24px', padding: '20px' }}>
         <div style={{ marginBottom: '8px', fontSize: '13px', color: 'var(--text-light)', fontWeight: 700 }}>{product.brand}</div>
         <h1 style={{ fontSize: '26px', lineHeight: 1.3, marginBottom: '14px', fontWeight: 900 }}>{product.name}</h1>
@@ -279,38 +324,6 @@ export default function Detail() {
           )}
         </div>
       </TossCard>
-
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
-        <button className="btn btn-outline" style={{ flex: 1, height: '56px', borderRadius: 'var(--border-radius-md)' }} onClick={() => {
-          if (isComparing) { removeFromComparison(product.id); } else { addToComparison(product.id); }
-        }}>
-          <GitCompare size={20} />
-          <span style={{ marginLeft: '4px' }}>비교</span>
-        </button>
-        
-        {product.coupangLink ? (
-          <a 
-            href={product.coupangLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-primary"
-            style={{ 
-              flex: 2, borderRadius: 'var(--border-radius-md)', 
-              fontWeight: 800, fontSize: '17px', display: 'flex', alignItems: 'center', 
-              justifyContent: 'center', gap: '8px', textDecoration: 'none'
-            }}
-          >
-            🚀 쿠팡 최저가 구매 <ExternalLink size={18} />
-          </a>
-        ) : (
-          <button className="btn btn-primary" style={{ flex: 2, borderRadius: 'var(--border-radius-md)', fontWeight: 800, fontSize: '17px', gap: '8px' }} onClick={() => {
-            addToCart(product.id, 1);
-            navigate('/checkout');
-          }}>
-            바로 구매하기
-          </button>
-        )}
-      </div>
 
       {alternativeProduct && (
         <div className="card" style={{ backgroundColor: 'var(--bg-color)', marginBottom: '40px' }}>
@@ -381,50 +394,24 @@ export default function Detail() {
           <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 500 }}>총 {product.ingredients?.length}개</div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {product.ingredients?.map(ing => {
-            const isAllergy = profile.allergies.some(a => 
-              ing.nameKo.includes(a) || (ing.nameEn && ing.nameEn.toLowerCase().includes(a.toLowerCase()))
-            );
-            const isDanger = isAllergy || ing.riskLevel === 'danger';
-            const isCaution = !isDanger && ing.riskLevel === 'caution';
-
-            return (
-              <button 
-                key={ing.id} 
-                onClick={() => setSelectedIngredient({ ...ing, isAllergy })}
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '16px', borderRadius: 'var(--border-radius-md)', 
-                  background: 'var(--bg-color)', border: 'none', cursor: 'pointer', textAlign: 'left',
-                  transition: 'background-color 0.2s', width: '100%'
-                }}
-                className="hover:bg-gray-50 active:bg-gray-100"
-              >
-                <div>
-                  <div style={{ fontWeight: isDanger || isCaution ? 800 : 600, fontSize: '16px', color: isDanger ? '#F04452' : (isCaution ? '#F59E0B' : 'var(--text-dark)') }}>
-                    {ing.nameKo}
-                  </div>
-                  <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px', fontWeight: 500 }}>{ing.purpose}</div>
-                </div>
-                {isDanger && (
-                  <div style={{ background: '#FEE2E2', color: '#F04452', padding: '6px 12px', borderRadius: '12px', fontSize: '13px', fontWeight: 800 }}>
-                    {isAllergy ? '알레르기 위험' : '주의 성분'}
-                  </div>
-                )}
-                {isCaution && (
-                  <div style={{ background: '#FEF3C7', color: '#D97706', padding: '6px 12px', borderRadius: '12px', fontSize: '13px', fontWeight: 800 }}>
-                    확인 필요
-                  </div>
-                )}
-                {!isDanger && !isCaution && (
-                  <div style={{ fontSize: '13px', color: 'var(--text-light)', fontWeight: 600 }}>
-                    안전
-                  </div>
-                )}
-              </button>
-            );
-          })}
+        <div>
+          {(product.ingredients ?? [])
+            .map(ing => {
+              const isAllergy = profile.allergies.some(a =>
+                ing.nameKo.includes(a) || (ing.nameEn && ing.nameEn.toLowerCase().includes(a.toLowerCase()))
+              );
+              // 위험/알레르기 → 주의 → 안전 순으로 정렬(판단이 먼저 보이도록)
+              const rank = isAllergy || ing.riskLevel === 'danger' ? 0 : ing.riskLevel === 'caution' ? 1 : 2;
+              return { ing, isAllergy, rank };
+            })
+            .sort((a, b) => a.rank - b.rank)
+            .map(({ ing, isAllergy }) => (
+              <IngredientCard
+                key={ing.id}
+                ing={{ ...ing, isAllergy }}
+                onOpen={() => setSelectedIngredient({ ...ing, isAllergy })}
+              />
+            ))}
         </div>
       </section>
 
@@ -585,6 +572,16 @@ export default function Detail() {
       </p>
 
       <Analyzer />
+
+      <StickyCtaBar
+        price={product.price}
+        isFav={isFav}
+        isComparing={isComparing}
+        onFav={() => toggleFavorite(product.id)}
+        onCompare={() => { if (isComparing) { removeFromComparison(product.id); } else { addToComparison(product.id); } }}
+        buyHref={product.coupangLink}
+        onBuy={() => { addToCart(product.id, 1); navigate('/cart'); }}
+      />
     </div>
   );
 }

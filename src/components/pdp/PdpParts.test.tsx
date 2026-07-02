@@ -1,0 +1,77 @@
+import React from 'react';
+import { describe, it, expect } from 'vitest';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { ShieldCheck } from 'lucide-react';
+import {
+  ScoreGauge,
+  GlanceGrid,
+  FitForPetCard,
+  IngredientCard,
+  StickyCtaBar,
+  type GlanceTileData,
+} from './PdpParts';
+
+/** 재설계된 PDP 파트가 mock 데이터로 올바른 콘텐츠를 렌더하는지 검증. */
+describe('PDP redesign parts', () => {
+  it('ScoreGauge: 점수→등급/라벨/한줄이 렌더된다', () => {
+    const html = renderToStaticMarkup(<ScoreGauge score={92} oneLiner="단백질 품질이 우수합니다." />);
+    expect(html).toContain('A+');
+    expect(html).toContain('매우 안전');
+    expect(html).toContain('단백질 품질이 우수합니다.');
+    expect(html).toContain('AI 안전점수');
+  });
+
+  it('gradeFromScore 밴드: 60점→C/확인 필요, 40점→F/비추천', () => {
+    expect(renderToStaticMarkup(<ScoreGauge score={62} />)).toContain('확인 필요');
+    expect(renderToStaticMarkup(<ScoreGauge score={40} />)).toContain('비추천');
+  });
+
+  it('GlanceGrid: 각 타일의 라벨/값이 렌더된다', () => {
+    const tiles: GlanceTileData[] = [
+      { icon: <ShieldCheck size={18} />, label: '안전도', value: '위험 성분 없음', tone: 'excellent' },
+      { icon: <ShieldCheck size={18} />, label: '알레르기', value: '해당 없음', tone: 'excellent' },
+    ];
+    const html = renderToStaticMarkup(<GlanceGrid tiles={tiles} />);
+    expect(html).toContain('안전도');
+    expect(html).toContain('위험 성분 없음');
+    expect(html).toContain('해당 없음');
+  });
+
+  it('FitForPetCard: 이름/퍼센트/칩/근거가 렌더된다', () => {
+    const html = renderToStaticMarkup(
+      <FitForPetCard petName="로니" percent={95} chips={['말티즈', '4살']} reasons={['위험/주의 성분이 거의 없음']} />
+    );
+    // 숫자는 count-up(초기 0→목표)으로 애니메이션되므로 정적 콘텐츠로 검증
+    expect(html).toContain('로니');
+    expect(html).toContain('적합도');
+    expect(html).toContain('말티즈');
+    expect(html).toContain('4살');
+    expect(html).toContain('위험/주의 성분이 거의 없음');
+  });
+
+  it('IngredientCard: 위험 성분은 위험 배지, 안전 성분은 안전 배지(이중 부호화)', () => {
+    const danger = renderToStaticMarkup(
+      <IngredientCard ing={{ nameKo: 'BHA', purpose: '합성 산화방지제', riskLevel: 'danger' }} onOpen={() => {}} />
+    );
+    expect(danger).toContain('BHA');
+    expect(danger).toContain('위험');
+
+    const safe = renderToStaticMarkup(
+      <IngredientCard ing={{ nameKo: '닭고기', purpose: '동물성 단백질', riskLevel: 'safe' }} onOpen={() => {}} />
+    );
+    expect(safe).toContain('닭고기');
+    expect(safe).toContain('안전');
+
+    const allergy = renderToStaticMarkup(
+      <IngredientCard ing={{ nameKo: '닭', riskLevel: 'safe', isAllergy: true }} onOpen={() => {}} />
+    );
+    expect(allergy).toContain('알레르기');
+  });
+
+  it('StickyCtaBar: 가격이 포맷되어 구매 라벨에 노출된다', () => {
+    const html = renderToStaticMarkup(
+      <StickyCtaBar price={29900} isFav={false} isComparing={false} onFav={() => {}} onCompare={() => {}} onBuy={() => {}} />
+    );
+    expect(html).toContain('29,900원 · 구매하기');
+  });
+});
