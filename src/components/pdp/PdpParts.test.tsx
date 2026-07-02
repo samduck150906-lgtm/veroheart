@@ -13,9 +13,12 @@ import {
   PdpSkeleton,
   AltProductCarousel,
   NutritionCard,
+  ReviewSummaryCard,
+  FaqAccordion,
   type GlanceTileData,
   type AltCardData,
   type RadarAxis,
+  type QaItem,
 } from './PdpParts';
 
 /** 재설계된 PDP 파트가 mock 데이터로 올바른 콘텐츠를 렌더하는지 검증. */
@@ -133,5 +136,30 @@ describe('PDP redesign parts', () => {
     expect(html).toContain('단백질');
     expect(html).toContain('%'); // 구성비 퍼센트
     expect(html).toContain('영양 균형'); // 레이더 섹션
+  });
+
+  it('ReviewSummaryCard: 평균 별점·분포·태그·요약이 렌더된다 (리뷰 0이면 숨김)', () => {
+    const html = renderToStaticMarkup(
+      <ReviewSummaryCard ratings={[5, 5, 4, 3, 5]} topTags={['기호성 좋아요 3']} summary="후기 5개 요약 · 평균 4.4점" />
+    );
+    expect(html).toContain('4.4'); // 평균
+    expect(html).toContain('5개'); // 총 개수
+    expect(html).toContain('기호성 좋아요 3');
+    expect(html).toContain('후기 5개 요약');
+    expect(renderToStaticMarkup(<ReviewSummaryCard ratings={[]} topTags={[]} />)).toBe('');
+  });
+
+  it('FaqAccordion: 첫 항목이 열린 채로 질문/답변을 렌더한다', () => {
+    const items: QaItem[] = [
+      { q: '보관은 어떻게 하나요?', a: '밀폐용기에 담아 서늘한 곳에 보관하세요.' },
+      { q: '급여량은?', a: '체중 기준으로 계산해요.' },
+    ];
+    const html = renderToStaticMarkup(<FaqAccordion items={items} />);
+    expect(html).toContain('자주 묻는 질문');
+    expect(html).toContain('보관은 어떻게 하나요?');
+    expect(html).toContain('밀폐용기'); // 첫 항목 기본 열림
+    // AI 모드 타이틀
+    expect(renderToStaticMarkup(<FaqAccordion items={items} ai />)).toContain('AI에게 물어보기');
+    expect(renderToStaticMarkup(<FaqAccordion items={[]} />)).toBe('');
   });
 });

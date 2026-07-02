@@ -6,6 +6,9 @@ import {
   Ban,
   Check,
   ChevronRight,
+  ChevronDown,
+  Star,
+  Sparkles,
   GitCompare,
   Heart,
   ExternalLink,
@@ -481,6 +484,91 @@ export function NutritionCard({ data, radar }: { data: import('../../types').Nut
           <NutritionRadar axes={radar} />
         </>
       )}
+    </section>
+  );
+}
+
+/* ─── Review summary + rating distribution (spec §20) ─── */
+export function ReviewSummaryCard({ ratings, topTags, summary }: { ratings: number[]; topTags: string[]; summary?: string }) {
+  const total = ratings.length;
+  if (total === 0) return null;
+  const avg = ratings.reduce((s, r) => s + r, 0) / total;
+  const counts = [5, 4, 3, 2, 1].map((star) => ratings.filter((r) => Math.round(r) === star).length);
+  return (
+    <section aria-label="리뷰 요약" style={{ background: 'var(--pdp-surface,#fff)', borderRadius: 24, padding: 20, marginBottom: 16, boxShadow: 'var(--pdp-e2,0 8px 24px rgba(15,23,42,.06))' }}>
+      {summary ? (
+        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 16 }}>
+          <span style={{ flexShrink: 0, color: '#7C3AED' }}><Sparkles size={18} /></span>
+          <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--pdp-ink-muted,#475569)', lineHeight: 1.55 }}>{summary}</p>
+        </div>
+      ) : null}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+        <div style={{ textAlign: 'center', flexShrink: 0 }}>
+          <div style={{ fontSize: 34, fontWeight: 900, color: 'var(--pdp-ink,#0F172A)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{avg.toFixed(1)}</div>
+          <div style={{ display: 'flex', gap: 1, justifyContent: 'center', margin: '4px 0 2px' }}>
+            {[0, 1, 2, 3, 4].map((i) => (
+              <Star key={i} size={13} color="#FBBF24" fill={i < Math.round(avg) ? '#FBBF24' : 'none'} />
+            ))}
+          </div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--pdp-ink-faint,#94A3B8)' }}>{total.toLocaleString()}개</div>
+        </div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
+          {counts.map((c, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--pdp-ink-faint,#94A3B8)', width: 20 }}>{5 - i}점</span>
+              <span style={{ flex: 1, height: 7, borderRadius: 999, background: 'var(--pdp-line,#E5E8EB)', overflow: 'hidden' }}>
+                <span style={{ display: 'block', width: `${total ? (c / total) * 100 : 0}%`, height: '100%', background: '#FBBF24', borderRadius: 999 }} />
+              </span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--pdp-ink-faint,#94A3B8)', width: 26, textAlign: 'right' }}>{total ? Math.round((c / total) * 100) : 0}%</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      {topTags.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16 }}>
+          {topTags.map((t, i) => (
+            <span key={i} style={{ padding: '6px 12px', borderRadius: 999, background: '#F1F5F9', color: '#334155', fontSize: 12.5, fontWeight: 700 }}>{t}</span>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+/* ─── FAQ / AI Q&A accordion (spec §14 FAQ, §14 AI Q&A) ─── */
+export interface QaItem { q: string; a: string }
+export function FaqAccordion({ items, title = '자주 묻는 질문', ai = false }: { items: QaItem[]; title?: string; ai?: boolean }) {
+  const [open, setOpen] = useState<number | null>(0);
+  if (!items.length) return null;
+  return (
+    <section aria-label={title} style={{ marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 16, fontWeight: 800, color: 'var(--pdp-ink,#0F172A)', marginBottom: 14 }}>
+        {ai ? '🤖 AI에게 물어보기' : '❓ 자주 묻는 질문'}
+      </div>
+      <div style={{ background: 'var(--pdp-surface,#fff)', borderRadius: 20, boxShadow: 'var(--pdp-e1,0 1px 2px rgba(15,23,42,.04))', overflow: 'hidden' }}>
+        {items.map((it, i) => {
+          const isOpen = open === i;
+          return (
+            <div key={i} style={{ borderTop: i === 0 ? 'none' : '1px solid var(--pdp-line,#E5E8EB)' }}>
+              <button
+                type="button"
+                aria-expanded={isOpen}
+                onClick={() => setOpen(isOpen ? null : i)}
+                style={{ width: '100%', textAlign: 'left', cursor: 'pointer', background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: 10, padding: '16px 18px' }}
+              >
+                <span style={{ flexShrink: 0, color: ai ? '#7C3AED' : 'var(--pdp-ink-faint,#94A3B8)' }}>
+                  {ai ? <Sparkles size={16} /> : <span style={{ fontWeight: 900, fontSize: 15 }}>Q</span>}
+                </span>
+                <span style={{ flex: 1, fontSize: 14.5, fontWeight: 700, color: 'var(--pdp-ink,#0F172A)' }}>{it.q}</span>
+                <ChevronDown size={18} color="var(--pdp-ink-faint,#94A3B8)" style={{ flexShrink: 0, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 200ms' }} />
+              </button>
+              {isOpen && (
+                <p style={{ margin: 0, padding: '0 18px 18px 44px', fontSize: 14, fontWeight: 500, color: 'var(--pdp-ink-muted,#475569)', lineHeight: 1.6 }}>{it.a}</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </section>
   );
 }

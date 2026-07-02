@@ -38,9 +38,12 @@ import {
   PdpSkeleton,
   AltProductCarousel,
   NutritionCard,
+  ReviewSummaryCard,
+  FaqAccordion,
   type GlanceTileData,
   type AltCardData,
   type RadarAxis,
+  type QaItem,
 } from '../components/pdp/PdpParts';
 import { REVIEW_QUICK_TAGS } from '../constants/reviewTags';
 
@@ -261,6 +264,62 @@ export default function Detail() {
     }
     return { headline: `${profile.name}가 안심하고 먹을 수 있어요!`, headlineColor: '#191F28' };
   })();
+
+  // ── 리뷰 요약(별점 분포·태그) — 실제 reviews 데이터에서 파생 ──
+  const reviewRatings = reviews.map(r => r.rating);
+  const reviewTagCounts = new Map<string, number>();
+  for (const r of reviews) {
+    const first = r.content.split('\n')[0];
+    if (first.startsWith('#')) {
+      for (const t of first.replace(/^#\s*/, '').split('·').map(s => s.trim()).filter(Boolean)) {
+        reviewTagCounts.set(t, (reviewTagCounts.get(t) ?? 0) + 1);
+      }
+    }
+  }
+  const topReviewTags = [...reviewTagCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([t, c]) => `${t} ${c}`);
+  const avgRating = reviewRatings.length ? reviewRatings.reduce((s, r) => s + r, 0) / reviewRatings.length : 0;
+  const reviewSummary = reviews.length
+    ? `후기 ${reviews.length}개 요약 · 평균 ${avgRating.toFixed(1)}점${topReviewTags.length ? ` · 자주 언급: ${topReviewTags.slice(0, 3).map(t => t.replace(/\s\d+$/, '')).join(', ')}` : ''}`
+    : undefined;
+
+  // ── FAQ (제품·프로필 반영) ──
+  const faqItems: QaItem[] = [
+    {
+      q: `${profile.name}가 먹어도 되나요?`,
+      a: breakdown.allergyHits.length
+        ? `${profile.name}의 회피 성분(${breakdown.allergyHits.join(', ')})이 포함돼 있어 권장하지 않아요. 대체 상품을 확인해 주세요.`
+        : `적합도 ${breakdown.total}%로 ${breakdown.total >= 75 ? '권장할 만해요' : '급여 시 소량부터 반응을 확인하세요'}. 위험 성분은 ${breakdown.dangerCount}개, 주의 성분은 ${breakdown.cautionCount}개입니다.`,
+    },
+    {
+      q: '급여량은 어떻게 정하나요?',
+      a: feedingGrams
+        ? `${profile.weightKg}kg 기준 하루 약 ${feedingGrams}g(평균 활동량)을 권장해요. 활동량·중성화 여부에 따라 ±10% 조정하세요.`
+        : '프로필에 몸무게를 입력하면 체중 기반 권장 급여량을 계산해 드려요.',
+    },
+    { q: '보관은 어떻게 하나요?', a: '개봉 후에는 밀폐용기에 담아 직사광선을 피해 서늘한 곳에 보관하고, 4~6주 이내에 급여하는 것을 권장해요.' },
+    { q: '기존 사료와 섞어 급여해도 되나요?', a: '전환 시 7~10일에 걸쳐 새 사료 비율을 25%→50%→75%→100%로 천천히 늘려 주면 소화기 부담을 줄일 수 있어요.' },
+  ];
+
+  // ── AI Q&A (제품 데이터 기반 룰형 답변) ──
+  const topProtein = product.ingredients?.find(i => i.riskLevel === 'safe' && /고기|육|치킨|비프|연어|칠면조|오리|양고기/.test(i.nameKo));
+  const aiQaItems: QaItem[] = [
+    {
+      q: '주요 단백질원이 무엇인가요?',
+      a: topProtein ? `주요 단백질원은 ${topProtein.nameKo}이며 ${topProtein.purpose || '동물성 단백질'}로 분류돼요.` : '성분표 기준 뚜렷한 동물성 단백질원이 확인되지 않아요. 전성분을 확인해 주세요.',
+    },
+    {
+      q: '가장 주의할 성분은 무엇인가요?',
+      a: dangerIngs.length ? `위험 등급 성분: ${dangerIngs.map(i => i.nameKo).join(', ')}. 장기·다량 섭취 시 주의하세요.`
+        : cautionIngs.length ? `주의 등급 성분: ${cautionIngs.map(i => i.nameKo).join(', ')}. 대부분 권장량 이하에서는 안전해요.`
+        : '현재 성분표 기준 위험·주의 성분은 없어요.',
+    },
+    {
+      q: `${profile.name}의 건강 고민에 도움이 되나요?`,
+      a: profile.healthConcerns.length
+        ? (breakdown.matchedConcerns.length ? `등록한 고민(${profile.healthConcerns.join(', ')}) 중 ${breakdown.matchedConcerns.join(', ')}와 연관된 성분이 있어요.` : `등록한 고민(${profile.healthConcerns.join(', ')})과 직접 연관된 성분은 확인되지 않았어요. 수의사와 상담을 권장해요.`)
+        : '프로필에 건강 고민을 등록하면 맞춤 분석을 제공해 드려요.',
+    },
+  ];
 
   return (
     <div className="animate-fade-in detail-page-root" style={{ paddingBottom: '96px' }}>
@@ -520,6 +579,8 @@ export default function Detail() {
           키워드만 골라도 돼요. {profile.name}와 비슷한 아이 집사의 글을 모아보려면 태그를 활용해 보세요.
         </p>
 
+        <ReviewSummaryCard ratings={reviewRatings} topTags={topReviewTags} summary={reviewSummary} />
+
         {/* 리뷰 작성 */}
         <div style={{ background: '#F9FAFB', borderRadius: '20px', padding: '20px', marginBottom: '24px', border: '1px solid #F3F4F6' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
@@ -616,6 +677,9 @@ export default function Detail() {
       >
         {COUPANG_PARTNERS_DISCLOSURE}
       </p>
+
+      <FaqAccordion items={aiQaItems} ai title="AI에게 물어보기" />
+      <FaqAccordion items={faqItems} />
 
       <Analyzer />
 
