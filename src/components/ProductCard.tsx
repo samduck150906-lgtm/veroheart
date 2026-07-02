@@ -10,6 +10,8 @@ type ProductCardProps = {
   showHealthTags?: boolean;
   /** 세로형(이미지 상단) 카드. 2열 그리드(검색·브랜드)에서 카드 크기를 통일하기 위해 사용 */
   grid?: boolean;
+  /** 그리드 카드 안에 표시할 한 줄 추천 사유(검색 추천순). 있으면 태그 대신 노출 */
+  note?: string;
 };
 
 export default function ProductCard({
@@ -17,6 +19,7 @@ export default function ProductCard({
   compact = false,
   showHealthTags = true,
   grid = false,
+  note,
 }: ProductCardProps) {
   const { profile, favorites, toggleFavorite } = useStore();
   const score = calculateCompatibilityScore(product, profile);
@@ -85,9 +88,21 @@ export default function ProductCard({
               {product.name}
             </div>
 
-            {showHealthTags && (
-              <div style={{ display: 'flex', gap: '4px', flexWrap: 'nowrap', overflow: 'hidden', marginTop: '6px', minHeight: '20px' }}>
-                {healthTags.map(tag => (
+            {/* 메타 행: 추천 사유(note) > 건강 태그 순으로 1줄 고정 높이 */}
+            <div style={{ marginTop: '6px', minHeight: '22px', display: 'flex', alignItems: 'center', gap: '4px', overflow: 'hidden' }}>
+              {note ? (
+                <span
+                  style={{
+                    fontSize: '10.5px', fontWeight: 700, color: '#5B21B6',
+                    background: '#F5F3FF', border: '1px solid #E9D5FF',
+                    borderRadius: '8px', padding: '3px 8px', maxWidth: '100%',
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  }}
+                >
+                  {note}
+                </span>
+              ) : (
+                showHealthTags && healthTags.map(tag => (
                   <span
                     key={`${product.id}-${tag}`}
                     style={{
@@ -98,9 +113,9 @@ export default function ProductCard({
                   >
                     {tag}
                   </span>
-                ))}
-              </div>
-            )}
+                ))
+              )}
+            </div>
 
             <div style={{ marginTop: 'auto', paddingTop: '8px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '3px', marginBottom: '4px' }}>
@@ -108,7 +123,7 @@ export default function ProductCard({
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>({product.reviewsCount})</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
-                <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 700 }}>
+                <span style={{ fontSize: '14px', color: '#111827', fontWeight: 800 }}>
                   {product.price.toLocaleString()}원
                 </span>
                 <div

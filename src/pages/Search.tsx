@@ -450,17 +450,13 @@ export default function Search() {
         {isLoading && displayResults.length === 0 && <ProductGridSkeleton count={6} />}
 
         <div className="ui-grid-2" style={{ alignItems: 'stretch' }}>
-          {displayResults.map(({ product, breakdown, score }) => (
-            <div key={product.id} style={{ display: 'flex', flexDirection: 'column' }}>
-              <ProductCard product={product} grid />
-              {breakdown && score != null && (
-                <div style={{ marginTop: '8px', padding: '0 4px', fontSize: '12px', color: '#66707C', lineHeight: 1.55 }}>
-                  <strong style={{ color: '#111827' }}>{score}점 추천</strong>
-                  {' · '}
-                  {breakdown.reasons.slice(0, 2).join(' · ')}
-                </div>
-              )}
-            </div>
+          {displayResults.map(({ product, breakdown }) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              grid
+              note={breakdown?.reasons[0]}
+            />
           ))}
         </div>
         
