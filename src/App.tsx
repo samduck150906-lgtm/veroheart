@@ -14,6 +14,10 @@ import AnalysisResult from './pages/AnalysisResult';
 import Scan from './pages/Scan';
 import Ranking from './pages/Ranking';
 import Brand from './pages/Brand';
+import Login from './pages/Login';
+import ViralEvent from './pages/ViralEvent';
+import Test from './pages/Test';
+import NotFound from './pages/NotFound';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Refund from './pages/Refund';
@@ -107,9 +111,13 @@ function App() {
           <Route path="ranking" element={<Ranking />} />
           <Route path="brand/:brandName" element={<Brand />} />
           <Route path="product/:id" element={<Detail />} />
+          <Route path="login" element={<Login />} />
+          <Route path="event/viral" element={<ViralEvent />} />
+          <Route path="event/personality-quiz" element={<Test />} />
           <Route path="terms" element={<Terms />} />
           <Route path="privacy" element={<Privacy />} />
           <Route path="refund" element={<Refund />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
 
         {/* Immersive full-screen scanner (앱 헤더/네비 없이 카메라 전체화면) */}

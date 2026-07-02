@@ -316,7 +316,7 @@ export default function Detail() {
         ) : (
           <button className="btn btn-primary" style={{ flex: 2, borderRadius: 'var(--border-radius-md)', fontWeight: 800, fontSize: '17px', gap: '8px' }} onClick={() => {
             addToCart(product.id, 1);
-            navigate('/checkout');
+            navigate('/cart');
           }}>
             바로 구매하기
           </button>
