@@ -15,6 +15,11 @@ import Privacy from './pages/Privacy';
 import Refund from './pages/Refund';
 import Auth from './pages/Auth';
 import AuthCallback from './pages/AuthCallback';
+import Login from './pages/Login';
+import Ranking from './pages/Ranking';
+import Brand from './pages/Brand';
+import ViralEvent from './pages/ViralEvent';
+import PersonalityQuiz from './pages/Test';
 import NotFound from './pages/NotFound';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -97,7 +102,12 @@ function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="search" element={<Search />} />
+          <Route path="ranking" element={<Ranking />} />
           <Route path="auth" element={<Auth />} />
+          <Route path="login" element={<Login />} />
+          <Route path="brand/:brandName" element={<Brand />} />
+          <Route path="event/viral" element={<ViralEvent />} />
+          <Route path="event/personality-quiz" element={<PersonalityQuiz />} />
           <Route path="profile" element={<Profile />} />
           <Route path="comparison" element={<Comparison />} />
           <Route path="cart" element={<Cart />} />

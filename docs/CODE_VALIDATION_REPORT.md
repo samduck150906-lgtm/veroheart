@@ -18,8 +18,10 @@
 
 **핵심 결과**
 - 라이브(실제 배포되는) 앱에서 **실제 런타임 크래시 버그 1건**을 찾아 수정했습니다. (`Detail` 페이지의 조건부 Hook 호출)
-- 라이브 코드의 린트 오류를 전부 정리했습니다(안전한 수정만).
-- **가장 큰 구조적 문제 발견**: `src/` 파일의 상당수가 라우팅/임포트되지 않는 **dead code(고아 파일)** 이며, 그 중 15개는 `// @ts-nocheck` 로 **수십 개의 실제 컴파일 에러를 숨기고** 있었습니다. 이 파일들은 배포 번들에 포함되지 않기 때문에 지금까지 빌드가 통과했습니다.
+- **끊어져 있던 네비게이션 5건 복구**: 랭킹/로그인/브랜드/이벤트/성향퀴즈 페이지가 완성돼 있었으나 라우트가 없어
+  하단 내비 "랭킹" 탭·로그인 버튼 등 링크가 깨져 있던 것을 라우팅 연결로 수정(4.e).
+- 라이브 코드의 린트 오류를 전부 정리하고, 저장소 전체 `npm run lint`을 **0 errors**로 만들었습니다.
+- **가장 큰 구조적 문제 발견**: `src/` 파일의 상당수가 라우팅/임포트되지 않는 **dead/미연결 파일**이며, 그 중 15개는 `// @ts-nocheck` 로 **수십 개의 실제 컴파일 에러를 숨기고** 있었습니다. 이 파일들은 배포 번들에 포함되지 않기 때문에 지금까지 빌드가 통과했습니다.
 
 ---
 
@@ -96,12 +98,29 @@ lint를 완전히 없애기 위해, 어디서도 쓰이지 않던 다음 고아 
 `pages/admin/AdminSponsors.tsx`, `components/AnimatedNumber.tsx`, `utils/useCountUp.ts`
 (뒤 두 개는 서로만 참조하던 죽은 애니메이션 유틸).
 
-### 4.e 남겨둔 "정상이지만 미사용" 고아 파일 (삭제하지 않음)
-문법·타입 정상 + lint 무오류라 유지: `pages/{Test,Login,Ranking,Brand,ViralEvent}.tsx`,
-`components/{DesktopBanner,AnalysisBadges,ProductImageSlider}.tsx`,
+### 4.e 🔴 [중요] 라우트 누락으로 끊겨 있던 페이지 5개 → 연결(실제 네비게이션 버그 수정)
+"미사용 고아"로 분류했던 페이지 상당수가 실제로는 **완성돼 있으나 라우트만 등록 안 된** 페이지였고,
+라이브 UI가 이미 그 경로로 링크하고 있어 **클릭 시 깨져(빈 화면/404)** 있었습니다. 해당 링크가 존재하므로
+삭제가 아니라 **라우팅 연결**로 처리했습니다.
+
+| 페이지 | 연결한 라우트 | 이미 존재하던(깨져 있던) 링크 |
+|--------|---------------|-------------------------------|
+| `Ranking` | `/ranking` | 하단 내비 **"랭킹" 탭**, `Home` CTA 3곳, `Layout` 타이틀맵 |
+| `Login` | `/login` | `Profile`·`Detail`(2)·`Cart` 로그인 버튼, `Layout` 푸터 숨김 대상 |
+| `Brand` | `/brand/:brandName` | `Home`·`Detail`의 브랜드 링크 |
+| `ViralEvent` | `/event/viral` | `Analyzer` 공유 URL·버튼 |
+| `Test`(성향 퀴즈) | `/event/personality-quiz` | `Home` 퀴즈 진입, `ViralEvent` 공유 대상 |
+
+→ 연결 후 라이브 네비게이션 경로 전수 대조 결과 **끊긴 링크 0건**. 타입체크·테스트(52)·빌드·lint 모두 green.
+
+### 4.f 남겨둔 "미사용" 컴포넌트/유틸 (삭제하지 않음)
+페이지와 달리 라우트로 연결되지 않고, 어디에도 import되지 않은 파일들. lint 오류 없음, 번들에도 미포함
+(tree-shaken). "만들어 두고 아직 안 붙인" WIP일 수 있어 임의 삭제하지 않고 유지:
+`components/{DesktopBanner,AnalysisBadges,ProductImageSlider,FishboneDiagram}.tsx`,
 `analysis/{scoringPipeline,adapter}.ts`, `utils/{fishboneData,petFoodScorer}.ts`,
-`types/analysisSchemaV2.ts`, `theme/tokens.ts`, `lib/canonicalIngredientTypes.ts` 등.
-필요 시 별도 요청으로 정리 가능.
+`types/analysisSchemaV2.ts`, `lib/canonicalIngredientTypes.ts`.
+필요 시 별도 요청으로 삭제 가능.
+(`theme/tokens.ts`는 `Button`/`ThemeProvider`가 사용 → 유지 확정.)
 
 ---
 
@@ -131,8 +150,11 @@ lint를 완전히 없애기 위해, 어디서도 쓰이지 않던 다음 고아 
 
 ## 7. 권장 후속 조치
 1. ✅ (완료) 깨진 dead 파일 18개 삭제, 필수 3개(`ErrorBoundary`/`NotFound`/`AuthCallback`) 연결.
-2. ✅ (완료) 루트 eslint를 웹앱 범위로 분리 → `npm run lint` **0 errors**.
-3. 남은 "정상 미사용" 고아 파일(4.e) 정리 여부 결정 — 원하면 별도 요청 시 삭제.
-4. 번들 크기: 메인 청크 655KB(gzip 187KB) — 라우트 단위 `React.lazy` 코드 스플리팅 권장.
-5. 서브프로젝트(`landing/`, `react-native-theme/`, `supabase/functions/`)는 각자 자체 lint 설정 권장.
-6. OAuth 실제 구현: `Auth.tsx`의 `signInWithKakao`는 현재 no-op 스텁 → 실제 `supabase.auth.signInWithOAuth` 연결 필요.
+2. ✅ (완료) 라우트 누락으로 끊긴 페이지 5개(`Ranking`/`Login`/`Brand`/`ViralEvent`/`Test`) 연결 → 네비게이션 복구.
+3. ✅ (완료) 루트 eslint를 웹앱 범위로 분리 → `npm run lint` **0 errors**.
+4. 남은 "미사용" 컴포넌트/유틸(4.f) 정리 여부 결정 — WIP일 수 있어 유지 중.
+5. `/auth`(Auth)와 `/login`(Login) 두 인증 페이지가 공존 — 하나로 정리 검토 권장.
+6. `Home`의 `/event/personality-quiz` 외에 추가 미구현 경로 없음(전수 대조 완료).
+7. 번들 크기: 메인 청크 655KB(gzip 187KB) — 라우트 단위 `React.lazy` 코드 스플리팅 권장.
+8. 서브프로젝트(`landing/`, `react-native-theme/`, `supabase/functions/`)는 각자 자체 lint 설정 권장.
+9. OAuth 실제 구현: `Auth.tsx`의 `signInWithKakao`는 현재 no-op 스텁 → 실제 `supabase.auth.signInWithOAuth` 연결 필요.
