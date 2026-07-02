@@ -109,7 +109,7 @@ Supabase products + product_ingredients + ingredients(중앙 risk_level)
 
 ### 기타 판정 관련 사항
 
-- **AI 자유 판정 여부**: 규칙 엔진·점수기에는 없음(주석 "LLM은 어떤 판단도 하지 않는다", `ruleEngine.ts:6`). 단 `src/analysis/explanation.ts`에 `LlmExplanationGenerator`(설명문 생성 전용)가 존재 — 판정이 아닌 문구 생성용.
+- **생성형 자유 판정 여부**: 없음. 모든 위험/안전 판정과 점수는 규칙 엔진(`ruleEngine.ts`)이 계산하며, 설명 문구도 이 출력에서 규칙적으로 파생된다. AI/LLM은 사용하지 않는다.
 - **정보 없는 성분 처리(불일치)**:
   - 규칙 엔진: 미매칭 → `unknowns`로 분류, 투명도 −5점, 스캐너 경로에서 검수 큐에 기록 → **판단 보류**
   - `score.ts`: 미등록은 위험도 없으므로 사실상 **안전(safeCount에 기여)**

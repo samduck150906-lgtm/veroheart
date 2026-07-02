@@ -32,7 +32,7 @@
 | 영양 밸런스 | **데이터·차트 없음**(과거 FeedingGuide는 dead code로 제거됨) | ☆☆☆☆☆ |
 | 대체상품 | 같은 카테고리 1개만 조건부 노출. 캐러셀·유형(저렴/최고/수의사) 없음 | ★☆☆☆☆ |
 | 가격비교 | `coupangLink` 단일 채널. 네이버/펫샵/최저가 비교 없음 | ★☆☆☆☆ |
-| 리뷰 | 별점·태그·목록 존재. **AI 요약·별점분포·사진리뷰 없음** | ★★☆☆☆ |
+| 리뷰 | 별점·태그·목록 존재. **요약·별점분포·사진리뷰 없음** | ★★☆☆☆ |
 | CTA | 비교/구매 버튼이 본문 인라인 → **하단 고정(sticky) 아님** → 스크롤 중 구매 유실 | ★★☆☆☆ |
 | 상태 UX | Skeleton/Empty/Error/Offline 미비. 로딩은 스피너 1종 | ★☆☆☆☆ |
 | 접근성 | 색만으로 위험 전달(색약 취약), 폰트 하드코딩, 대비 미검증 구간 존재 | ★★☆☆☆ |
@@ -51,7 +51,7 @@
 - P1-5. 영양 밸런스 시각화 전무(도넛/레이더).
 - P1-6. 대체상품이 빈약(1개, 유형 구분 없음).
 - P1-7. 가격비교 채널 단일.
-- P1-8. 리뷰에 AI 요약·분포·사진 없음.
+- P1-8. 리뷰에 요약·분포·사진 없음.
 - P1-9. 성분에 근거수준/신뢰도/출처 없음 → 신뢰 저하.
 - P2-10. Skeleton/Empty/Error/Offline 상태 미설계.
 - P2-11. 스크롤 위치 감각(진행률)·Sticky Score 없음.
@@ -79,21 +79,21 @@
 ```
 PDP
 ├─ A. Hero (이미지·브랜드·제품명·용량·가격·평점·리뷰수·즐겨찾기·공유)
-├─ B. AI Safety Score (원형 게이지 · 등급 · 한 줄 요약)   ← 최상위 시선
+├─ B. Safety Score (원형 게이지 · 등급 · 한 줄 요약)   ← 최상위 시선
 ├─ C. At-a-Glance 요약 그리드 (안전/위험/알레르기/추천·비추천/연령/칼로리/제조국)
-├─ D. AI 한 줄 분석
+├─ D. 한 줄 분석
 ├─ E. 우리 아이 적합도 (프로필 기준 %, 근거)
 ├─ F. 좋은 성분 (카드: 아이콘·효능·근거수준·신뢰도)
 ├─ G. 주의 성분 (Orange, 위험도·이유·장기섭취·권장량·민감견)
 ├─ H. 원재료 분석 (Chip/Tag/Stack → 탭 시 Bottom Sheet)
 ├─ I. 영양 밸런스 (도넛 + 레이더)
-├─ J. AI 종합 의견 (3줄)
+├─ J. 종합 의견 (3줄)
 ├─ K. 대체 상품 (가로 캐러셀: 더 건강/더 저렴/동가 최고/수의사추천)
 ├─ L. 가격 비교 (쿠팡·네이버·펫샵 · 최저가 강조)
-├─ M. 리뷰 (AI 요약·별점분포·사진/영상)
+├─ M. 리뷰 (요약·별점분포·사진/영상)
 ├─ N. FAQ (Accordion)
-├─ O. AI Q&A (질문→AI 답변)
-└─ Floating: Sticky Score(collapse) · Floating AI · Compare · 하단 고정 CTA
+├─ O. Q&A (자주 묻는 질문·답변)
+└─ Floating: Sticky Score(collapse) · Floating 액션 · Compare · 하단 고정 CTA
 ```
 
 **노출 규칙:** B·D·E는 데이터 없어도 스켈레톤/기본값으로 항상 노출. I·L·O는 데이터 의존 → 없으면 섹션 자체 숨김(빈 카드 금지).
@@ -105,7 +105,7 @@ PDP
 - **캔버스:** 모바일 우선, 콘텐츠 최대폭 **480px** 중앙 정렬(현 앱과 동일), 데스크톱은 좌측 이미지/우측 정보 2컬럼(≥960px)로 확장.
 - **그리드:** 4pt 베이스 · 8pt 그리드. 좌우 세이프 패딩 **20px**.
 - **레이어(z-index):**
-  - z0 콘텐츠 스크롤 · z10 Sticky Score(상단 pin) · z20 Floating AI/Compare(우하단) · z30 하단 고정 CTA · z40 Bottom Sheet/Scrim · z50 토스트/Dynamic-Island 상태.
+  - z0 콘텐츠 스크롤 · z10 Sticky Score(상단 pin) · z20 Floating 액션/Compare(우하단) · z30 하단 고정 CTA · z40 Bottom Sheet/Scrim · z50 토스트/Dynamic-Island 상태.
 - **세로 리듬:** 섹션 간 24px, 카드 내부 16px, 요소 간 8~12px.
 - **Sticky 영역 높이:** 상단 Sticky Score 56px, 하단 CTA 72px(+세이프에어리어). 스크롤 콘텐츠는 `padding-bottom: 96px`로 CTA 겹침 방지.
 
@@ -125,7 +125,7 @@ PDP
 │  ★4.7 (1,284)     29,900원   │
 │                        ♡  ⤴  │
 ├──────────────────────────────┤
-│      ◯  AI 안전점수           │
+│      ◯  안전점수           │
 │    ╭─92─╮   A       매우 안전 │  ← 원형 게이지 (초록)
 │    ╰────╯                     │
 │  "대부분의 반려동물에게 추천" │
@@ -134,7 +134,7 @@ PDP
 │ [🚫 알레르기 없음][🎯 성견]   │
 │ [🔥 372kcal/100g][🌍 프랑스]  │
 ├──────────────────────────────┤
-│ 🤖 "알레르기 유발 성분이 없고 │  AI 한 줄
+│ "알레르기 유발 성분이 없고 │  한 줄
 │     단백질 품질이 우수합니다." │
 ├──────────────────────────────┤
 │ 🐶 우리 아이 적합도  95%      │  개인화
@@ -152,19 +152,19 @@ PDP
 ├──────────────────────────────┤
 │ 📊 영양 밸런스  (도넛+레이더) │
 ├──────────────────────────────┤
-│ 🧠 AI 종합 (3줄)             │
+│ 🧠 종합 (3줄)             │
 ├──────────────────────────────┤
 │ 🔄 대체 상품  →→→ (캐러셀)    │
 ├──────────────────────────────┤
 │ 💰 가격 비교 · 최저가 강조    │
 ├──────────────────────────────┤
-│ 💬 리뷰 · AI요약 · 분포 · 사진│
+│ 💬 리뷰 · 요약 · 분포 · 사진│
 ├──────────────────────────────┤
 │ ❓ FAQ (Accordion)           │
-│ 🤖 AI에게 질문하기            │
+│ 질문하기            │
 └──────────────────────────────┘
 [  ♡  |  비교  |  29,900원 · 구매하기  ]  ← 하단 고정 CTA
-                                   ◎ AI  (Floating)
+                                   ◎ 분석  (Floating)
 ```
 
 ---
@@ -176,7 +176,7 @@ PDP
 | `ScoreGauge` | 원형 게이지+등급+라벨 | CustomPaint / `CircularProgressIndicator` 커스텀 | 신규 |
 | `StickyScoreBar` | 상단 압축 점수 | SliverPersistentHeader | 신규 |
 | `GlanceGrid` / `GlanceTile` | 요약 타일 | GridView + Card | 신규 |
-| `AiInsightCard` | AI 한 줄/3줄 | Card + Row(icon) | `conclusion` 재활용 |
+| `InsightCard` | 한 줄/3줄 | Card + Row(icon) | `conclusion` 재활용 |
 | `FitForPetCard` | 적합도%+칩 | Card + Wrap(Chip) | `headline` 확장 |
 | `IngredientCard` (good) | 성분 카드 | Card | 신규 |
 | `CautionIngredientCard` | 주의 성분 | Card(amber) | 부분 존재 |
@@ -187,7 +187,7 @@ PDP
 | `PriceCompareRow` | 가격 채널 | Card + Row | `coupangLink` 확장 |
 | `ReviewSummary` / `RatingDistribution` / `PhotoReviewStrip` | 리뷰 | 다양 | 목록만 존재 |
 | `FaqAccordion` | FAQ | ExpansionTile | 신규 |
-| `AiQnA` | AI 질문 | TextField + 카드 | 신규 |
+| `QnA` | 자주 묻는 질문 | TextField + 카드 | 신규 |
 | `StickyCtaBar` | 하단 CTA | bottomNavigationBar | 인라인→고정 |
 | `FloatingAi` / `CompareFab` | 플로팅 | FloatingActionButton | 부분 존재 |
 | `SectionHeader` | 섹션 제목 | Row(icon+title+count) | 존재 |
@@ -281,7 +281,7 @@ space-5 20  space-6 24  space-8 32  space-10 40  space-12 48
 ## 12. 아이콘 시스템
 
 - 라이브러리: **lucide**(현 앱과 동일) — line, 2px stroke, 24 기본(작게 16/20, 크게 28).
-- 세만틱 매핑: 안전 `shield-check`, 주의 `alert-triangle`, 위험 `octagon-alert`, 알레르기 `ban`, 칼로리 `flame`, 제조국 `globe`, 연령 `calendar`, 단백질 `beef`, 곡물 `wheat`, 지방 `droplet`, 수의사 `stethoscope`, AI `sparkles`, 가격 `tag`, 최저가 `badge-percent`.
+- 세만틱 매핑: 안전 `shield-check`, 주의 `alert-triangle`, 위험 `octagon-alert`, 알레르기 `ban`, 칼로리 `flame`, 제조국 `globe`, 연령 `calendar`, 단백질 `beef`, 곡물 `wheat`, 지방 `droplet`, 수의사 `stethoscope`, 분석 `sparkles`, 가격 `tag`, 최저가 `badge-percent`.
 - 색약 대응: 아이콘 형태 자체로 의미 구분(색 의존 금지) — 안전=방패, 주의=삼각, 위험=팔각.
 - 컨테이너 아이콘은 40 원형 tint 배경 + 20 아이콘.
 
@@ -339,26 +339,26 @@ space-5 20  space-6 24  space-8 32  space-10 40  space-12 48
 
 ---
 
-## 16. AI 분석 카드 설계
+## 16. 성분 분석 카드 설계
 
 두 종류.
 
-**(a) AI 한 줄 카드 (섹션 D)**
+**(a) 한 줄 카드 (섹션 D)**
 ```
 [✨] "알레르기 유발 성분이 없고 단백질 품질이 우수한 프리미엄 간식입니다."
 ```
 - 배경 surface, 좌측 sparkles 40 원형 tint, 텍스트 Callout 15/600, 1~2줄.
 - 톤 다이내믹: 안전=green tint / 주의=amber tint / 위험=red tint.
 
-**(b) AI 종합 의견 (섹션 J, 3줄)**
+**(b) 종합 의견 (섹션 J, 3줄)**
 ```
-🧠 AI 종합
+🧠 종합
 1. 안전성: 위험 성분 0, 주의 1(산화방지제) — 대부분 반려동물에 적합.
 2. 영양: 단백질 32% 우수, 지방 적정, 곡물 free.
 3. 결론: 말티즈·성견·슬개골 케어에 추천. 닭 알레르기견은 대체상품 확인.
 ```
 - 각 줄 아이콘 불릿, 최대 3줄, "왜"까지 한 문장. 근거는 §8 EvidenceBadge로.
-- 데이터 소스: `generateAnalysisReport()`(score/highlights/summary) + 프로필 매칭 규칙. LLM 사용 시 스트리밍 타이핑 애니메이션(reduced-motion 시 즉시).
+- 데이터 소스: `generateAnalysisReport()`(score/highlights/summary) + 프로필 매칭 규칙. 규칙 기반 파생값이라 계산 즉시 표시한다(스트리밍 없음).
 
 ---
 
@@ -414,7 +414,7 @@ space-5 20  space-6 24  space-8 32  space-10 40  space-12 48
 
 ## 20. 리뷰 UX
 
-- **AI 리뷰 요약:** 상단 카드 "리뷰 1,284개 요약: 기호성 좋음 82%, 배변 개선 언급 다수, 알갱이 크다는 의견 소수." (감성 태그 chip)
+- **리뷰 요약:** 상단 카드 "리뷰 1,284개 요약: 기호성 좋음 82%, 배변 개선 언급 다수, 알갱이 크다는 의견 소수." (감성 태그 chip)
 - **별점 분포:** 5→1 가로 바 + 비율%. 평균 별점 큰 숫자.
 - **필터:** 전체 / 사진 / 우리 견종 / 최신 / 별점.
 - **사진·영상 리뷰:** 가로 썸네일 스트립, 탭 시 풀스크린 갤러리(반려동물 사진 크게). 영상은 인라인 뮤트 오토프리뷰.
@@ -488,7 +488,7 @@ space-5 20  space-6 24  space-8 32  space-10 40  space-12 48
 Scaffold(
   extendBody: true,
   bottomNavigationBar: StickyCtaBar(product: p),      // 하단 고정 CTA
-  floatingActionButton: FloatingAiButton(),           // Floating AI
+  floatingActionButton: FloatingActionButton(),           // Floating 액션
   body: RefreshIndicator(                              // Pull-to-refresh
     onRefresh: rescore,
     child: CustomScrollView(
@@ -500,7 +500,7 @@ Scaffold(
         ),
         SliverToBoxAdapter(child: ScoreGauge(score: s, grade: g)),
         SliverToBoxAdapter(child: GlanceGrid(tiles)),  // GridView.count 2열
-        SliverToBoxAdapter(child: AiInsightCard.oneLine(text)),
+        SliverToBoxAdapter(child: InsightCard.oneLine(text)),
         SliverToBoxAdapter(child: FitForPetCard(profile, fit)),
         SliverList(delegate: ...GoodIngredientCards),
         SliverList(delegate: ...CautionIngredientCards),
@@ -511,7 +511,7 @@ Scaffold(
         SliverToBoxAdapter(child: PriceCompareList()),
         SliverToBoxAdapter(child: ReviewSection()),
         SliverToBoxAdapter(child: FaqAccordion()),      // ExpansionTile
-        SliverToBoxAdapter(child: AiQnA()),
+        SliverToBoxAdapter(child: QnA()),
         SliverPadding(padding: EdgeInsets.only(bottom: 96)),
       ],
     ),
@@ -551,7 +551,7 @@ void openSheet(i) => showModalBottomSheet(
    ├─ ▸ AltCarousel             [AL →, clip, gap 12] : AltCard ×n
    ├─ ▸ PriceCompare
    ├─ ▸ Reviews
-   ├─ ▸ FAQ / AiQnA
+   ├─ ▸ FAQ / QnA
    └─ ▸ Spacer 96
    ⌾ Overlay: StickyCTA(pin bottom) · FloatingAI · Compare
 ```
@@ -624,13 +624,13 @@ void openSheet(i) => showModalBottomSheet(
 ## 30. 경쟁 우위 UX 개선 아이디어 50 (P0/P1/P2)
 
 ### P0 — 3초 판단·전환 직결 (반드시)
-1. **AI Safety Score 게이지 히어로 승격**(계산값 즉시 시각화).
+1. **Safety Score 게이지 히어로 승격**(계산값 즉시 시각화).
 2. **하단 고정 CTA**(가격+구매+찜+비교).
 3. **상단 Sticky Score**(스크롤 시 점수 상시 노출).
 4. **우리 아이 적합도 %** + 근거 칩(프로필 연동).
 5. **위험 이중 부호화**(색+아이콘형태+라벨) — 색약 안전.
 6. **At-a-Glance 요약 그리드**(핵심 8지표 1스크린).
-7. **AI 한 줄 판정**(톤 다이내믹).
+7. **한 줄 판정**(톤 다이내믹).
 8. 주의성분 **Orange 규칙**(공포 아닌 주의).
 9. **Skeleton + 레이아웃시프트 0**.
 10. **섹션 인라인 에러 + 안전 fail-safe**("확인 불가" 명시).
@@ -645,15 +645,15 @@ void openSheet(i) => showModalBottomSheet(
 17. **영양 도넛+레이더**(fl_chart).
 18. **대체상품 캐러셀 4유형**(건강/저렴/동가최고/수의사).
 19. **가격비교 3채널+최저가 강조**.
-20. **리뷰 AI 요약**(감성 태그).
+20. **리뷰 요약**(감성 태그).
 21. **별점 분포 바** + 필터(우리 견종).
 22. **사진/영상 리뷰 갤러리**(반려동물 크게).
-23. **AI 종합 3줄**(왜까지).
+23. **종합 3줄**(왜까지).
 24. **성분 Smart Bottom Sheet 2디텐트**.
 25. **Ingredient Highlight**(칩↔본문 연동 하이라이트).
 26. **원재료 Chip/Tag/Stack** 시각화.
-27. **Floating AI 버튼**(어디서든 질문).
-28. **AI Q&A**("신장질환도 되나요?").
+27. **Floating 액션 버튼**(어디서든 질문).
+28. **Q&A**("신장질환도 되나요?").
 29. **FAQ Accordion**(질환·급여·보관).
 30. **검수/근거 신뢰 배지**(verificationStatus 확장).
 31. **알레르기 개인 경고 배너**(프로필 알레르기 hit 시 상단 고정).
@@ -677,7 +677,7 @@ void openSheet(i) => showModalBottomSheet(
 47. **공유 카드 자동생성**(점수 인포그래픽 이미지, 카카오 공유).
 48. **오프라인 캐시 열람**(마지막 조회 제품).
 49. **접근성 프로필**(큰 글씨/고대비 모드 원탭).
-50. **AI 개인 추천 피드로 회귀**(비추천 시 대체 3종 홈 노출).
+50. **개인 추천 피드로 회귀**(비추천 시 대체 3종 홈 노출).
 
 ---
 
