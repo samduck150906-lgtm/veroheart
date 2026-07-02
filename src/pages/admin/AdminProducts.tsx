@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { supabase } from '../../lib/supabase';
+import { supabase, adminWrite } from '../../lib/supabase';
 import { Plus, Search, Edit2, Trash2, X } from 'lucide-react';
 import { notify } from '../../store/useNotification';
 
@@ -17,7 +17,34 @@ interface Product {
   has_risk_factors?: string[];
   image_url: string;
   min_price: number;
+  barcode?: string;
+  kcal_per_100g?: number;
 }
+
+/** nutritional_profiles(보장성분) 입력 폼 — 값은 문자열로 다루고 저장 시 숫자로 변환 */
+type NutritionForm = {
+  crude_protein: string;
+  crude_fat: string;
+  crude_fiber: string;
+  crude_ash: string;
+  moisture: string;
+  calcium: string;
+  phosphorus: string;
+};
+
+const EMPTY_NUTRITION: NutritionForm = {
+  crude_protein: '', crude_fat: '', crude_fiber: '', crude_ash: '', moisture: '', calcium: '', phosphorus: '',
+};
+
+const NUTRITION_FIELDS: { key: keyof NutritionForm; label: string }[] = [
+  { key: 'crude_protein', label: '조단백질 (%)' },
+  { key: 'crude_fat', label: '조지방 (%)' },
+  { key: 'crude_fiber', label: '조섬유 (%)' },
+  { key: 'crude_ash', label: '조회분 (%)' },
+  { key: 'moisture', label: '수분 (%)' },
+  { key: 'calcium', label: '칼슘 (%)' },
+  { key: 'phosphorus', label: '인 (%)' },
+];
 
 const MAIN_CATEGORIES = [
   '사료',
@@ -39,6 +66,7 @@ const AdminProducts: React.FC = () => {
   const [activeTab, setActiveTab] = useState('전체');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Partial<Product>>({});
+  const [nutrition, setNutrition] = useState<NutritionForm>(EMPTY_NUTRITION);
 
   useEffect(() => {
     fetchProducts();
@@ -79,7 +107,32 @@ const AdminProducts: React.FC = () => {
       has_risk_factors: [],
       min_price: 0,
     });
+    setNutrition(EMPTY_NUTRITION);
     setIsModalOpen(true);
+  };
+
+  const openEditModal = async (p: Product) => {
+    setCurrentProduct(p);
+    setNutrition(EMPTY_NUTRITION);
+    setIsModalOpen(true);
+    // 기존 보장성분 로드(있으면 폼에 채움)
+    const { data } = await supabase
+      .from('nutritional_profiles')
+      .select('*')
+      .eq('product_id', p.id)
+      .maybeSingle();
+    if (data) {
+      const s = (v: unknown) => (v === null || v === undefined ? '' : String(v));
+      setNutrition({
+        crude_protein: s(data.crude_protein),
+        crude_fat: s(data.crude_fat),
+        crude_fiber: s(data.crude_fiber),
+        crude_ash: s(data.crude_ash),
+        moisture: s(data.moisture),
+        calcium: s(data.calcium),
+        phosphorus: s(data.phosphorus),
+      });
+    }
   };
 
   const handleSave = async () => {
@@ -102,22 +155,40 @@ const AdminProducts: React.FC = () => {
       formulation: (currentProduct.formulation || '').trim() || null,
       target_pet_type: (currentProduct.target_pet_type || 'dog').trim(),
       image_url: (currentProduct.image_url || '').trim(),
+      // 빈 문자열은 부분 유니크 인덱스에서 충돌하므로 null로 정규화
+      barcode: (currentProduct.barcode || '').trim() || null,
+      kcal_per_100g:
+        Number.isFinite(Number(currentProduct.kcal_per_100g)) && Number(currentProduct.kcal_per_100g) > 0
+          ? Number(currentProduct.kcal_per_100g)
+          : null,
       min_price: Number.isFinite(Number(currentProduct.min_price)) ? Math.max(0, Number(currentProduct.min_price)) : 0,
       target_life_stage: normalizeCommaValues(currentProduct.target_life_stage),
       product_health_concerns: normalizeCommaValues(currentProduct.product_health_concerns),
       has_risk_factors: normalizeCommaValues(currentProduct.has_risk_factors),
     };
 
+    // 보장성분: 입력값이 하나라도 있을 때만 함께 전송(숫자로 변환)
+    const hasNutrition = NUTRITION_FIELDS.some(({ key }) => nutrition[key].trim() !== '');
+    const num = (s: string) => {
+      const n = parseFloat(s);
+      return Number.isFinite(n) ? n : 0;
+    };
+    const nutritionPayload = hasNutrition
+      ? {
+          crude_protein: num(nutrition.crude_protein),
+          crude_fat: num(nutrition.crude_fat),
+          crude_fiber: num(nutrition.crude_fiber),
+          crude_ash: num(nutrition.crude_ash),
+          moisture: num(nutrition.moisture),
+          calcium: num(nutrition.calcium),
+          phosphorus: num(nutrition.phosphorus),
+        }
+      : null;
+
     try {
-      if (currentProduct.id) {
-        const { error } = await supabase.from('products').update(payload).eq('id', currentProduct.id);
-        if (error) throw error;
-        notify.success('제품 정보가 수정되었습니다.');
-      } else {
-        const { error } = await supabase.from('products').insert([payload]);
-        if (error) throw error;
-        notify.success('신규 제품이 등록되었습니다.');
-      }
+      // anon 키로는 RLS에 막히므로 service_role Edge Function 프록시로 쓴다
+      await adminWrite('saveProduct', { product: payload, nutrition: nutritionPayload });
+      notify.success(currentProduct.id ? '제품 정보가 수정되었습니다.' : '신규 제품이 등록되었습니다.');
       setIsModalOpen(false);
       fetchProducts();
     } catch (err: any) {
@@ -127,9 +198,10 @@ const AdminProducts: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('정말 삭제하시겠습니까?')) return;
-    const { error } = await supabase.from('products').delete().eq('id', id);
-    if (error) {
-      notify.error(`삭제 실패: ${error.message}`);
+    try {
+      await adminWrite('deleteProduct', { id });
+    } catch (err: any) {
+      notify.error(`삭제 실패: ${err.message}`);
       return;
     }
     notify.success('제품이 삭제되었습니다.');
@@ -225,10 +297,7 @@ const AdminProducts: React.FC = () => {
                     <div className="admin-actions">
                       <button
                         className="admin-icon-btn edit"
-                        onClick={() => {
-                          setCurrentProduct(p);
-                          setIsModalOpen(true);
-                        }}
+                        onClick={() => openEditModal(p)}
                         aria-label="제품 수정"
                       >
                         <Edit2 size={14} />
@@ -283,6 +352,11 @@ const AdminProducts: React.FC = () => {
                 value={currentProduct.image_url}
                 onChange={(value) => setCurrentProduct({ ...currentProduct, image_url: value })}
               />
+              <InputField
+                label="바코드 (EAN/UPC)"
+                value={currentProduct.barcode}
+                onChange={(value) => setCurrentProduct({ ...currentProduct, barcode: value })}
+              />
               <SelectField
                 label="메인 카테고리"
                 value={currentProduct.main_category}
@@ -319,6 +393,26 @@ const AdminProducts: React.FC = () => {
                   })
                 }
               />
+
+              {/* 보장성분(영양) — 입력 시 분석 결과가 "실측"으로 표시됨 */}
+              <div className="admin-form-span-2" style={{ marginTop: 8, fontSize: 13, fontWeight: 800, color: '#475569' }}>
+                보장성분 (입력 시 분석 결과가 실측으로 표시돼요)
+              </div>
+              <InputField
+                label="100g당 열량 (kcal)"
+                type="number"
+                value={currentProduct.kcal_per_100g}
+                onChange={(value) => setCurrentProduct({ ...currentProduct, kcal_per_100g: Number(value || 0) })}
+              />
+              {NUTRITION_FIELDS.map(({ key, label }) => (
+                <InputField
+                  key={key}
+                  label={label}
+                  type="number"
+                  value={nutrition[key]}
+                  onChange={(value) => setNutrition((prev) => ({ ...prev, [key]: value }))}
+                />
+              ))}
             </div>
 
             <div className="admin-modal-footer">

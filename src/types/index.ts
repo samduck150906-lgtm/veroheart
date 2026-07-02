@@ -1,3 +1,5 @@
+import type { GuaranteedAnalysis } from '../analysis/types';
+
 export interface UserPetProfile {
   id: string;
   name: string;
@@ -40,6 +42,12 @@ export interface Product {
   coupangProductId?: string | null;
   /** 파트너스 등 수동 발급 전체 URL — 있으면 구매 버튼이 이 주소로 이동 */
   coupangLink?: string | null;
+  /** 제품 바코드(EAN/UPC). 스캔→상품 매핑에 사용. DB `products.barcode` 컬럼 필요 */
+  barcode?: string;
+  /** 보장성분(라벨 실측치) — DB nutritional_profiles에서 매핑 */
+  guaranteedAnalysis?: GuaranteedAnalysis;
+  /** 100g당 열량(kcal) — DB products.kcal_per_100g */
+  caloriesPer100g?: number;
 }
 
 export const DEFAULT_USER_PET_PROFILE: UserPetProfile = {

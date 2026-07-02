@@ -316,7 +316,7 @@ export default function Detail() {
         ) : (
           <button className="btn btn-primary" style={{ flex: 2, borderRadius: 'var(--border-radius-md)', fontWeight: 800, fontSize: '17px', gap: '8px' }} onClick={() => {
             addToCart(product.id, 1);
-            navigate('/checkout');
+            navigate('/cart');
           }}>
             바로 구매하기
           </button>
@@ -594,6 +594,21 @@ export default function Detail() {
       >
         {COUPANG_PARTNERS_DISCLOSURE}
       </p>
+
+      {product && (
+        <button
+          type="button"
+          onClick={() => navigate('/analysis', { state: { productId: product.id } })}
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+            margin: '8px 0 4px', padding: '16px', borderRadius: '18px', border: 'none', cursor: 'pointer',
+            background: 'var(--primary)', color: 'var(--text-dark)', fontSize: '15px', fontWeight: 900,
+            boxShadow: '0 8px 20px rgba(229, 206, 0, 0.35)',
+          }}
+        >
+          ✨ AI 정밀 분석 리포트 보기
+        </button>
+      )}
 
       <Analyzer />
     </div>

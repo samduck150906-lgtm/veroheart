@@ -12,7 +12,6 @@ function Footer() {
         color: '#78716c',
         fontSize: '9px',
         lineHeight: 1.45,
-        marginTop: 'auto',
       }}
     >
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>

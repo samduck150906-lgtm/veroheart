@@ -1,5 +1,17 @@
 import type { Product, UserPetProfile } from '../types';
 
+/** 궁합 등급 — 점수(0~100)를 사용자에게 보여줄 A~F 등급으로 매핑한 단일 진실원천 */
+export type CompatibilityGrade = 'A' | 'B' | 'C' | 'D' | 'F';
+
+/** 0~100 점수 → A~F 등급. AnalysisResult·AnalysisSummaryHeader가 공유한다. */
+export function gradeFromScore(score: number): CompatibilityGrade {
+  if (score >= 85) return 'A';
+  if (score >= 70) return 'B';
+  if (score >= 55) return 'C';
+  if (score >= 40) return 'D';
+  return 'F';
+}
+
 export interface ProductBadge {
   label: string;
   tone: 'good' | 'warn' | 'danger';
