@@ -24,7 +24,6 @@ import { searchProducts, getAllIngredients } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import standardFeedData from '../data/standard_feed_data.json';
 import { Database } from 'lucide-react';
-import { CORE_COPY } from '../copy/marketing';
 import { rankProductsForProfile } from '../utils/score';
 
 interface StandardFeedItem {
@@ -236,7 +235,6 @@ export default function Search() {
               취향 기반 탐색
             </span>
             <h2 style={{ fontSize: '22px', fontWeight: 900, marginBottom: '6px' }}>조건을 조합해 정확하게 좁혀보세요</h2>
-            <p style={{ fontSize: '13px', lineHeight: 1.55, color: '#66707C' }}>{CORE_COPY.ocr}</p>
           </div>
         </div>
 

@@ -1123,46 +1123,6 @@ button:active {
 }
 
 /* Discovery — big-app style surfaces */
-.discovery-brand-bar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  margin-bottom: 14px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, #fde68a 0%, #fef3c7 100%);
-  border: 1px solid rgba(217, 119, 6, 0.25);
-}
-
-.discovery-brand-bar img {
-  height: 36px;
-  width: auto;
-  object-fit: contain;
-  display: block;
-  filter: drop-shadow(0 2px 4px rgba(120, 53, 15, 0.15));
-}
-
-.discovery-brand-bar-copy {
-  min-width: 0;
-  flex: 1;
-}
-
-.discovery-brand-bar-kicker {
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  color: #92400E;
-  text-transform: uppercase;
-}
-
-.discovery-brand-bar-title {
-  margin-top: 2px;
-  font-size: 13px;
-  font-weight: 800;
-  color: #78350F;
-  line-height: 1.4;
-}
-
 .discovery-tabs {
   display: flex;
   gap: 8px;

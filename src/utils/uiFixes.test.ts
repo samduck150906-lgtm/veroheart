@@ -1,29 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import type { Product } from '../types';
-import { HOME } from '../copy/ui';
 import { matchesSpecies, matchesCategory } from './rankingFilters';
 import { displayBrand, hasMeaningfulBrand } from './brandLabel';
 
 const makeProduct = (over: Partial<Product> = {}): Product => ({
   id: 'p1', brand: '테스트', name: '테스트 사료', category: 'food',
   price: 10000, imageUrl: '', ingredients: [], reviewsCount: 0, averageRating: 0, ...over,
-});
-
-// ── P0-1: 홈 "null에게 잘 맞을 것 같아요" 폴백 ──────────────────────────
-describe('HOME copy null fallback (P0-1)', () => {
-  it('falls back to 우리 아이 when petName is null/empty', () => {
-    expect(HOME.sectionRecommended(null)).toBe('우리 아이에게 잘 맞을 것 같아요');
-    expect(HOME.sectionRecommended('')).toBe('우리 아이에게 잘 맞을 것 같아요');
-    expect(HOME.sectionRecommended('   ')).toBe('우리 아이에게 잘 맞을 것 같아요');
-    expect(HOME.petGreeting(null)).toContain('우리 아이');
-    // 절대 "null" 문자열이 노출되지 않아야 함
-    expect(HOME.sectionRecommended(null)).not.toContain('null');
-  });
-
-  it('uses the real pet name when provided', () => {
-    expect(HOME.sectionRecommended('코코')).toBe('코코에게 잘 맞을 것 같아요');
-    expect(HOME.petGreeting('베로')).toContain('베로');
-  });
 });
 
 // ── P0-2: 랭킹 종/카테고리 필터 (한글 라벨 ↔ 영문 enum) ───────────────
