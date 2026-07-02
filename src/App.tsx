@@ -29,6 +29,7 @@ import AdminProducts from './pages/admin/AdminProducts';
 import AdminIngredients from './pages/admin/AdminIngredients';
 import AdminSettings from './pages/admin/AdminSettings';
 import Notification from './components/Notification';
+import ErrorBoundary from './components/ErrorBoundary';
 import AdminAuthGuard from './pages/admin/AdminAuthGuard';
 import EntryGate from './components/EntryGate';
 import { markEntryGateDone, readEntryGateDone } from './lib/entryGateStorage';
@@ -100,6 +101,7 @@ function App() {
   return (
     <BrowserRouter>
       <Notification />
+      <ErrorBoundary>
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
@@ -133,6 +135,7 @@ function App() {
           <Route path="settings" element={<AdminSettings />} />
         </Route>
       </Routes>
+      </ErrorBoundary>
 
       {!adminMode && entryGateOpen && (
         <div
