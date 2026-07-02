@@ -24,7 +24,6 @@ import {
 import { useNavigate, Link } from 'react-router-dom';
 import { MOCK_EVENTS } from '../lib/supabase';
 import { HOME_CATEGORY_ITEMS } from '../constants/productCategories';
-import { VERORO_LOGO_SRC } from '../constants/assets';
 import {
   RISING_KEYWORDS,
   EDITORIAL_TOPICS,
@@ -116,14 +115,6 @@ export default function Home() {
         <meta name="description" content="베로로 — 사료 성분 분석과 집사들의 찐 리뷰. 의심 대신 베로로 하세요." />
       </Helmet>
 
-      <section className="discovery-brand-bar" aria-label="베로로 브랜드">
-        <img src={VERORO_LOGO_SRC} alt="VeRoRo" />
-        <div className="discovery-brand-bar-copy">
-          <div className="discovery-brand-bar-kicker">VeRoRo</div>
-          <div className="discovery-brand-bar-title">성분 분석부터 찐 리뷰까지 — 오늘의 발견</div>
-        </div>
-      </section>
-
       <section className="ui-hero-panel" style={{ padding: '18px', marginBottom: '16px' }}>
         <button
           type="button"
@@ -139,21 +130,25 @@ export default function Home() {
         </button>
         <button
           type="button"
-          disabled
-          title="준비 중"
-          className="ui-search-shortcut"
+          onClick={() => navigate('/scan')}
           style={{
             width: '100%',
+            display: 'flex',
+            alignItems: 'center',
             justifyContent: 'center',
             gap: '10px',
             marginTop: '10px',
-            opacity: 0.55,
-            cursor: 'not-allowed',
-            borderStyle: 'dashed',
+            minHeight: '54px',
+            border: 'none',
+            borderRadius: '16px',
+            cursor: 'pointer',
+            background: 'var(--primary)',
+            color: 'var(--text-dark)',
+            boxShadow: '0 8px 20px rgba(229, 206, 0, 0.35)',
           }}
         >
-          <ScanLine size={20} color="#9CA3AF" />
-          <span style={{ fontSize: '14px', fontWeight: 700, color: '#6B7280' }}>바코드 스캔 · 준비 중</span>
+          <ScanLine size={20} />
+          <span style={{ fontSize: '15px', fontWeight: 900 }}>바코드 스캔으로 바로 분석</span>
         </button>
       </section>
 

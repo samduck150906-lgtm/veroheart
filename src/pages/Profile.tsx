@@ -207,7 +207,7 @@ export default function Profile() {
         <button 
           className="btn btn-primary" 
           style={{ width: '100%', maxWidth: '320px', padding: '16px', borderRadius: '20px', fontWeight: 800, fontSize: '16px' }}
-          onClick={() => navigate('/auth')}
+          onClick={() => navigate('/login')}
         >
           로그인 / 회원가입 하기
         </button>

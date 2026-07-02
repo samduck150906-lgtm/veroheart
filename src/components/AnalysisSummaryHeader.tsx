@@ -25,6 +25,7 @@ const GRADE_META: Record<AnalysisGrade, { color: string; bg: string; label: stri
   B: { color: '#6BB04E', bg: 'rgba(107,176,78,0.12)', label: 'B등급' },
   C: { color: '#E8A800', bg: 'rgba(232,168,0,0.12)',  label: 'C등급' },
   D: { color: '#F04452', bg: 'rgba(240,68,82,0.12)',  label: 'D등급' },
+  F: { color: '#8B95A1', bg: 'rgba(139,149,161,0.12)', label: 'F등급' },
 };
 
 export default function AnalysisSummaryHeader({

@@ -1,3 +1,5 @@
+import type { GuaranteedAnalysis } from '../analysis/types';
+
 export interface UserPetProfile {
   id: string;
   name: string;
@@ -15,6 +17,20 @@ export interface Ingredient {
   nameEn: string;
   purpose: string;
   riskLevel: 'safe' | 'caution' | 'danger';
+}
+
+/** 보장성분 기반 영양 밸런스 (도넛=구성비 %, 레이더=균형 점수). 전부 선택. */
+export interface NutritionData {
+  /** 구성비(%) — 도넛 차트용. 합이 100 근처면 이상적 */
+  protein?: number;
+  fat?: number;
+  fiber?: number;
+  moisture?: number;
+  ash?: number;
+  carb?: number;
+  /** 균형 점수(0~100) — 레이더 차트용 보강 축(선택) */
+  vitaminScore?: number;
+  mineralScore?: number;
 }
 
 export interface Product {
@@ -40,6 +56,14 @@ export interface Product {
   coupangProductId?: string | null;
   /** 파트너스 등 수동 발급 전체 URL — 있으면 구매 버튼이 이 주소로 이동 */
   coupangLink?: string | null;
+  /** 보장성분 영양 밸런스 — 있을 때만 영양 섹션 노출 */
+  nutrition?: NutritionData;
+  /** 제품 바코드(EAN/UPC). 스캔→상품 매핑에 사용. DB `products.barcode` 컬럼 필요 */
+  barcode?: string;
+  /** 보장성분(라벨 실측치) — DB nutritional_profiles에서 매핑 */
+  guaranteedAnalysis?: GuaranteedAnalysis;
+  /** 100g당 열량(kcal) — DB products.kcal_per_100g */
+  caloriesPer100g?: number;
 }
 
 export const DEFAULT_USER_PET_PROFILE: UserPetProfile = {

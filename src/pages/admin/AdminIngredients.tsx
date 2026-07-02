@@ -20,6 +20,19 @@ interface Ingredient {
   category?: string;
 }
 
+type RiskLevel = Ingredient['risk_level'];
+
+interface StandardFeedItem {
+  id: number;
+  name_ko: string;
+  name_en: string;
+  moisture: number;
+  protein: number;
+  fat: number;
+  ash: number;
+  fiber: number;
+}
+
 const INGREDIENT_CATEGORIES = [
   '단백질원',
   '탄수화물원',
@@ -104,8 +117,8 @@ const AdminIngredients: React.FC = () => {
       }
       setIsModalOpen(false);
       fetchIngredients();
-    } catch (err: any) {
-      notify.error(`저장 실패: ${err.message}`);
+    } catch (err) {
+      notify.error(`저장 실패: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 
@@ -122,12 +135,12 @@ const AdminIngredients: React.FC = () => {
   };
 
 
-  const filteredStandardFeed = standardFeedData.filter((item: any) => 
+  const filteredStandardFeed = (standardFeedData as StandardFeedItem[]).filter((item) =>
     item.name_ko.toLowerCase().includes(standardFeedSearch.toLowerCase()) ||
     item.name_en.toLowerCase().includes(standardFeedSearch.toLowerCase())
   );
 
-  const handleSelectStandardFeed = (item: any) => {
+  const handleSelectStandardFeed = (item: StandardFeedItem) => {
     setCurrentIngredient({
       ...currentIngredient,
       name_ko: item.name_ko,
@@ -304,10 +317,10 @@ const AdminIngredients: React.FC = () => {
               <div>
                 <label style={{ fontSize: '13px', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '12px' }}>위험도 레벨*</label>
                 <div style={{ display: 'flex', gap: '12px' }}>
-                  {['safe', 'caution', 'danger'].map(level => (
+                  {(['safe', 'caution', 'danger'] as RiskLevel[]).map(level => (
                     <button
                       key={level}
-                      onClick={() => setCurrentIngredient({...currentIngredient, risk_level: level as any})}
+                      onClick={() => setCurrentIngredient({...currentIngredient, risk_level: level})}
                       style={{
                         flex: 1, padding: '16px', borderRadius: '16px', border: '2px solid',
                         transition: '0.2s', cursor: 'pointer', fontSize: '14px', fontWeight: 800,
@@ -371,7 +384,7 @@ const AdminIngredients: React.FC = () => {
               {filteredStandardFeed.length === 0 ? (
                 <div style={{ padding: '40px', textAlign: 'center', color: '#9CA3AF' }}>검색 결과가 없습니다.</div>
               ) : (
-                filteredStandardFeed.map((item: any, idx: number) => (
+                filteredStandardFeed.map((item, idx: number) => (
                   <div 
                     key={idx}
                     onClick={() => handleSelectStandardFeed(item)}
@@ -438,25 +451,6 @@ function SelectField({
           </option>
         ))}
       </select>
-    </div>
-  );
-}
-
-function TextAreaField({
-  label,
-  value,
-  onChange,
-  className,
-}: {
-  label: string;
-  value?: string;
-  onChange: (value: string) => void;
-  className?: string;
-}) {
-  return (
-    <div className={`admin-form-group ${className || ''}`}>
-      <label>{label}</label>
-      <textarea rows={4} value={value || ''} onChange={(e) => onChange(e.target.value)} />
     </div>
   );
 }

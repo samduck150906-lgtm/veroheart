@@ -16,6 +16,8 @@ import {
   Search as SearchIcon,
 } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
+import StateView from '../components/StateView';
+import { ProductGridSkeleton } from '../components/Skeleton';
 import type { Product } from '../types';
 import { TossFilterSection, TossSearchBar, TossChip, TossButton } from '../components/TossUI';
 import { searchProducts, getAllIngredients } from '../lib/supabase';
@@ -24,6 +26,17 @@ import standardFeedData from '../data/standard_feed_data.json';
 import { Database } from 'lucide-react';
 import { CORE_COPY } from '../copy/marketing';
 import { rankProductsForProfile } from '../utils/score';
+
+interface StandardFeedItem {
+  id: number;
+  name_ko: string;
+  name_en: string;
+  moisture: number;
+  protein: number;
+  fat: number;
+  ash: number;
+  fiber: number;
+}
 
 type PriceBand = 'any' | 'under5k' | 'under10k' | 'under20k' | 'over20k';
 
@@ -85,7 +98,7 @@ export default function Search() {
     );
   };
 
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(() => searchParams.get('q') ?? '');
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [sortBy, setSortBy] = useState<'default' | 'price_asc' | 'price_desc' | 'rating'>('default');
@@ -132,7 +145,7 @@ export default function Search() {
     [allIngredients, ingredientSearch, excludedIngredients]
   );
 
-  const filteredStandardFeed = standardFeedData.filter((item: any) => 
+  const filteredStandardFeed = (standardFeedData as StandardFeedItem[]).filter((item) =>
     item.name_ko.toLowerCase().includes(standardFeedSearch.toLowerCase()) ||
     item.name_en.toLowerCase().includes(standardFeedSearch.toLowerCase())
   );
@@ -434,6 +447,8 @@ export default function Search() {
           </div>
         )}
 
+        {isLoading && displayResults.length === 0 && <ProductGridSkeleton count={6} />}
+
         <div className="ui-grid-2">
           {displayResults.map(({ product, breakdown, score }) => (
             <div key={product.id}>
@@ -450,10 +465,13 @@ export default function Search() {
         </div>
         
         {displayResults.length === 0 && !isLoading && (
-          <div className="ui-info-card" style={{ textAlign: 'center', padding: '56px 18px', color: '#9CA3AF' }}>
-            검색 결과가 없습니다.<br />
-            검색어를 바꾸거나 상세 필터를 넓혀 보세요.
-          </div>
+          <StateView
+            variant="empty"
+            title="검색 결과가 없어요"
+            description="검색어를 바꾸거나 상세 필터를 넓혀 보세요."
+            action={{ label: '상세 필터 조정', onClick: () => setIsFilterOpen(true) }}
+            minHeight={280}
+          />
         )}
       </div>
 
@@ -632,7 +650,7 @@ export default function Search() {
               {filteredStandardFeed.length === 0 ? (
                 <div style={{ padding: '40px', textAlign: 'center', color: '#9CA3AF', fontSize: '14px' }}>검색 결과가 없습니다.</div>
               ) : (
-                filteredStandardFeed.map((item: any, idx: number) => (
+                filteredStandardFeed.map((item, idx: number) => (
                   <div 
                     key={idx}
                     style={{ 

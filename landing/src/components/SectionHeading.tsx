@@ -13,22 +13,24 @@ export function SectionHeading({
   description,
   align = "center",
 }: Props) {
-  const alignClass = align === "center" ? "text-center mx-auto" : "text-left";
+  const alignClass =
+    align === "center" ? "text-center mx-auto items-center" : "text-left items-start";
   return (
-    <div className={`mb-10 max-w-2xl ${alignClass}`}>
+    <div className={`mb-12 flex max-w-2xl flex-col ${alignClass}`}>
       {kicker && (
-        <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-gold-deep">
+        <span className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-gold-muted/70 bg-gold-soft/70 px-3.5 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-gold-darker">
+          <span className="h-1.5 w-1.5 rounded-full bg-gold-gradient" />
           {kicker}
-        </p>
+        </span>
       )}
       <h2
         id={id}
-        className="text-2xl font-bold tracking-tight text-ink-900 sm:text-3xl"
+        className="text-balance text-3xl font-extrabold leading-tight tracking-tight text-ink-900 sm:text-[2.15rem]"
       >
         {title}
       </h2>
       {description && (
-        <p className="mt-3 text-base leading-relaxed text-ink-800/80">
+        <p className="mt-4 text-pretty text-base leading-relaxed text-ink-800/75 sm:text-lg">
           {description}
         </p>
       )}

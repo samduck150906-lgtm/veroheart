@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { pickSplashTagline } from './copy/marketing';
 import { VERORO_LOGO_SRC } from './constants/assets';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useStore } from './store/useStore';
 import Layout from './components/Layout';
 import Home from './pages/Home';
@@ -10,16 +10,26 @@ import Profile from './pages/Profile';
 import Detail from './pages/Detail';
 import Comparison from './pages/Comparison';
 import Cart from './pages/Cart';
+import AnalysisResult from './pages/AnalysisResult';
+import Scan from './pages/Scan';
+import Ranking from './pages/Ranking';
+import Brand from './pages/Brand';
+import Login from './pages/Login';
+import ViralEvent from './pages/ViralEvent';
+import ScanResult from './pages/ScanResult';
+import Test from './pages/Test';
+import NotFound from './pages/NotFound';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Refund from './pages/Refund';
-import Auth from './pages/Auth';
+import AuthCallback from './pages/AuthCallback';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminIngredients from './pages/admin/AdminIngredients';
 import AdminSettings from './pages/admin/AdminSettings';
 import Notification from './components/Notification';
+import ErrorBoundary from './components/ErrorBoundary';
 import AdminAuthGuard from './pages/admin/AdminAuthGuard';
 import EntryGate from './components/EntryGate';
 import { markEntryGateDone, readEntryGateDone } from './lib/entryGateStorage';
@@ -91,19 +101,35 @@ function App() {
   return (
     <BrowserRouter>
       <Notification />
+      <ErrorBoundary>
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="search" element={<Search />} />
-          <Route path="auth" element={<Auth />} />
+          <Route path="ranking" element={<Ranking />} />
+          {/* 인증 페이지는 Login으로 일원화 — 구 /auth 링크·북마크는 /login으로 리다이렉트 */}
+          <Route path="auth" element={<Navigate to="/login" replace />} />
+          <Route path="login" element={<Login />} />
+          <Route path="brand/:brandName" element={<Brand />} />
+          <Route path="event/viral" element={<ViralEvent />} />
+          <Route path="event/personality-quiz" element={<Test />} />
           <Route path="profile" element={<Profile />} />
           <Route path="comparison" element={<Comparison />} />
           <Route path="cart" element={<Cart />} />
+          <Route path="analysis" element={<AnalysisResult />} />
+          <Route path="scan-result" element={<ScanResult />} />
           <Route path="product/:id" element={<Detail />} />
           <Route path="terms" element={<Terms />} />
           <Route path="privacy" element={<Privacy />} />
           <Route path="refund" element={<Refund />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
+
+        {/* OAuth 리다이렉트 콜백 (앱 크롬 없이 전체 화면 스피너) */}
+        <Route path="/auth/callback" element={<AuthCallback />} />
+
+        {/* Immersive full-screen scanner (앱 헤더/네비 없이 카메라 전체화면) */}
+        <Route path="/scan" element={<Scan />} />
 
         {/* Admin CMS Routes — Protected */}
         <Route path="/admin" element={<AdminAuthGuard><AdminLayout /></AdminAuthGuard>}>
@@ -113,6 +139,7 @@ function App() {
           <Route path="settings" element={<AdminSettings />} />
         </Route>
       </Routes>
+      </ErrorBoundary>
 
       {!adminMode && entryGateOpen && (
         <div

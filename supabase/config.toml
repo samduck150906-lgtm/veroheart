@@ -261,6 +261,10 @@ max_frequency = "5s"
 [functions.analyze-ingredients]
 verify_jwt = true
 
+# 관리자 쓰기 프록시 — 관리자는 Supabase 인증 사용자가 아니라 x-admin-token으로 자체 검증
+[functions.admin-write]
+verify_jwt = false
+
 # This hook runs before a new user is created and allows developers to reject the request based on the incoming user object.
 # [auth.hook.before_user_created]
 # enabled = true
