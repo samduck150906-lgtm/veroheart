@@ -23,7 +23,7 @@ HEADERS = {
 }
 
 def upsert_ingredient(name):
-    # Upsert logic for an ingredient (basic stub)
+    # 성분(ingredient) upsert: 존재하면 id 반환, 없으면 생성
     name = name.strip()
     # Check if exists
     res = requests.get(f"{API_URL}/ingredients?name_ko=eq.{name}", headers=HEADERS)

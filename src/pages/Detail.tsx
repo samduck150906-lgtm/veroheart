@@ -21,7 +21,6 @@ import {
 import { Helmet } from 'react-helmet-async';
 import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
-import Analyzer from '../components/Analyzer';
 import BottomSheet from '../components/BottomSheet';
 import { TossCard } from '../components/TossUI';
 import { getReviews, createReview, deleteReview } from '../lib/supabase';
@@ -34,7 +33,7 @@ import {
   IngredientCard,
   StickyCtaBar,
   StickyScoreBar,
-  AiVerdictCard,
+  VerdictCard,
   PdpSkeleton,
   AltProductCarousel,
   NutritionCard,
@@ -199,7 +198,7 @@ export default function Detail() {
   const scrollMax = typeof document !== 'undefined' ? Math.max(1, document.documentElement.scrollHeight - window.innerHeight) : 1;
   const scrollProgress = Math.min(100, (scrollY / scrollMax) * 100);
 
-  // AI 종합 의견 3줄 (breakdown 기반, 신규 데이터 불필요)
+  // 종합 의견 3줄 (breakdown 기반, 신규 데이터 불필요)
   const safeCount = product.ingredients?.filter(i => i.riskLevel === 'safe').length ?? 0;
   const gradeLabel = safetyScore >= 85 ? '매우 안전' : safetyScore >= 75 ? '대체로 안전' : safetyScore >= 60 ? '확인 필요' : '주의';
   const verdictLines = [
@@ -259,7 +258,7 @@ export default function Detail() {
     if (!profile.weightKg) return null;
     const rer = 70 * Math.pow(profile.weightKg, 0.75);
     const der = rer * 1.6; // Average adult multiplier
-    const kcalPerKg = 3500; // Mock average
+    const kcalPerKg = 3500; // 건식 사료 평균 칼로리 밀도(추정 기본값)
     const grams = (der / kcalPerKg) * 1000;
     return Math.round(grams);
   };
@@ -494,7 +493,7 @@ export default function Detail() {
 
       {product.nutrition && <NutritionCard data={product.nutrition} radar={nutritionRadar} />}
 
-      <AiVerdictCard lines={verdictLines} />
+      <VerdictCard lines={verdictLines} />
 
       <AltProductCarousel items={altCards} onOpen={(pid) => navigate(`/product/${pid}`)} />
 
@@ -655,8 +654,6 @@ export default function Detail() {
       >
         {COUPANG_PARTNERS_DISCLOSURE}
       </p>
-
-      <Analyzer />
 
       <StickyCtaBar
         price={product.price}

@@ -7,8 +7,6 @@ import {
   Sparkles,
   Clock3,
   ChevronRight,
-  X,
-  Tag,
   Flame,
   Stethoscope,
   Wallet,
@@ -22,7 +20,6 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
-import { MOCK_EVENTS } from '../lib/supabase';
 import { HOME_CATEGORY_ITEMS } from '../constants/productCategories';
 import { VERORO_LOGO_SRC } from '../constants/assets';
 import {
@@ -39,7 +36,6 @@ import { TossChip, TossSectionTitle } from '../components/TossUI';
 export default function Home() {
   const { products, profile, recentViews, isLoggedIn } = useStore();
   const navigate = useNavigate();
-  const [closedEvents, setClosedEvents] = useState<string[]>([]);
   const [topicTab, setTopicTab] = useState<typeof TOPIC_TABS[number]['id']>('realtime');
   const [dealMsLeft, setDealMsLeft] = useState(() => msUntilHour(TODAYS_DEAL.endsAtHour));
 
@@ -49,9 +45,6 @@ export default function Home() {
     const id = window.setInterval(tick, 1000);
     return () => window.clearInterval(id);
   }, []);
-
-  const visibleEvents = MOCK_EVENTS.filter((e) => !closedEvents.includes(e.id));
-  const featuredEvent = visibleEvents[0];
 
   const personalRecs = useMemo(
     () =>
@@ -506,40 +499,6 @@ export default function Home() {
         </section>
       )}
 
-      {featuredEvent && (
-        <section style={{ marginBottom: '26px' }}>
-          <TossSectionTitle
-            title="커뮤니티 공지"
-            subtitle="놓치기 쉬운 이벤트와 쿠폰 소식을 한 번에"
-            style={{ marginBottom: '12px' }}
-          />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {visibleEvents.map((ev) => (
-              <div key={ev.id} className="ui-list-card" style={{ alignItems: 'flex-start', position: 'relative' }}>
-                <div className="ui-icon-pill" style={{ background: 'rgba(245, 158, 11, 0.14)', flexShrink: 0 }}>
-                  <Tag size={18} color="#B45309" />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
-                    <span className="ui-badge ui-badge-dark">{ev.badge}</span>
-                    {ev.code && <span className="ui-badge ui-badge-soft">{ev.code}</span>}
-                  </div>
-                  <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-dark)', marginBottom: '4px' }}>{ev.title}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500, lineHeight: 1.55 }}>{ev.desc}</div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setClosedEvents((prev) => [...prev, ev.id])}
-                  style={{ position: 'absolute', top: '12px', right: '12px', background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF' }}
-                  aria-label="공지 닫기"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
     </div>
   );
 }

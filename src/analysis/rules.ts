@@ -4,7 +4,7 @@
  * 규칙은 코드/DB 어디서나 동일한 형태(AnalysisRule)로 평가된다.
  * 추후 단계에서 이 배열을 DB(analysis_rules) 시드로 옮기고 관리자 검수를 붙인다.
  *
- * LLM은 판단하지 않는다. 위험/안전 판정은 전적으로 이 규칙들이 한다.
+ * 위험/안전 판정은 전적으로 이 규칙들이 한다.
  */
 import type { AnalysisRule } from './types';
 

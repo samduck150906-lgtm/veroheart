@@ -16,7 +16,6 @@ import Ranking from './pages/Ranking';
 import Brand from './pages/Brand';
 import Login from './pages/Login';
 import ViralEvent from './pages/ViralEvent';
-import ScanResult from './pages/ScanResult';
 import Test from './pages/Test';
 import NotFound from './pages/NotFound';
 import Terms from './pages/Terms';
@@ -117,7 +116,6 @@ function App() {
           <Route path="comparison" element={<Comparison />} />
           <Route path="cart" element={<Cart />} />
           <Route path="analysis" element={<AnalysisResult />} />
-          <Route path="scan-result" element={<ScanResult />} />
           <Route path="product/:id" element={<Detail />} />
           <Route path="terms" element={<Terms />} />
           <Route path="privacy" element={<Privacy />} />

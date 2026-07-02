@@ -31,8 +31,8 @@ class Aafco2024OnlineMigration:
         logger.info("🚀 AAFCO 2024 식이섬유 무중단 마이그레이션 프로세스를 가동합니다.")
         
         if not psycopg2:
-            logger.warning("[psycopg2 누락] RDB 드라이버가 존재하지 않아 모의 마이그레이션 시뮬레이션으로 대체합니다.")
-            return self._run_mock_migration()
+            logger.error("[psycopg2 누락] RDB 드라이버가 없어 마이그레이션을 실행할 수 없습니다. 'pip install psycopg2-binary' 설치 후 다시 실행하세요.")
+            return -1
 
         conn = None
         try:
@@ -128,38 +128,6 @@ class Aafco2024OnlineMigration:
         finally:
             if conn:
                 conn.close()
-
-    def _run_mock_migration(self) -> int:
-        """RDB 드라이버가 없을 때 작동하는 시뮬레이션 마이그레이션 모듈"""
-        mock_db = [
-            {"id": "row_1", "crude_fiber": 3.0, "moisture": 10.0, "total_dietary_fiber": None},
-            {"id": "row_2", "crude_fiber": 2.5, "moisture": 8.0, "total_dietary_fiber": None},
-            {"id": "row_3", "crude_fiber": 4.5, "moisture": 75.0, "total_dietary_fiber": None} # 습식 사료 예시
-        ]
-
-        logger.info(f"🎯 [Mock] 시뮬레이션 대상 행: {len(mock_db)}건 검출")
-        
-        migrated = 0
-        for row in mock_db:
-            fiber = row["crude_fiber"]
-            moisture = row["moisture"]
-            
-            # 보정 수식 가동
-            dry_matter = (100.0 - moisture) / 100.0
-            dmb_fiber = fiber / dry_matter
-            estimated_tdf = round(dmb_fiber * 1.6 * dry_matter, 2)
-            
-            row["total_dietary_fiber"] = estimated_tdf
-            migrated += 1
-            
-            logger.info(
-                f"   [마이그레이션 완료] ID: {row['id']} | "
-                f"기존 조섬유: {fiber}% (수분: {moisture}%) -> "
-                f"AAFCO 2024 총 식이섬유 보정치: {estimated_tdf}%"
-            )
-
-        logger.info(f"🎉 [Mock] 데이터 마이그레이션 시뮬레이션 완료: 총 {migrated}건 성공")
-        return migrated
 
 
 # 로컬 가동 테스트

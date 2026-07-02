@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { AuthChangeEvent, RealtimeChannel, Session } from '@supabase/supabase-js';
-import type { UserPetProfile, Product, SupabaseOrderWithItems, AnalysisReportRow } from '../types';
+import type { UserPetProfile, Product, SupabaseOrderWithItems } from '../types';
 import { DEFAULT_USER_PET_PROFILE } from '../types';
 import {
   supabase,
@@ -51,8 +51,6 @@ interface StoreState {
   updateCartQuantity: (productId: string, quantity: number) => void;
   removeFromCart: (productId: string) => void;
   clearCart: () => void;
-  reports: AnalysisReportRow[];
-  fetchReports: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -63,7 +61,6 @@ export const useStore = create<StoreState>((set, get) => ({
   products: [],
   selectedProduct: null,
   orders: [],
-  reports: [],
   recentViews: [],
   isLoadingProducts: false,
   isInitializing: true,
@@ -74,7 +71,6 @@ export const useStore = create<StoreState>((set, get) => ({
       userId: null,
       isLoggedIn: false,
       orders: [],
-      reports: [],
       favorites: [],
       recentViews: [],
       cart: [],
@@ -174,8 +170,8 @@ export const useStore = create<StoreState>((set, get) => ({
         set({ recentViews: mapped });
       }
 
-      const { fetchProducts, fetchOrders, fetchReports } = get();
-      await Promise.all([fetchProducts(), fetchOrders(), fetchReports()]);
+      const { fetchProducts, fetchOrders } = get();
+      await Promise.all([fetchProducts(), fetchOrders()]);
       set({ isInitializing: false });
     } catch (err) {
       console.error('initApp err:', err);
@@ -250,18 +246,6 @@ export const useStore = create<StoreState>((set, get) => ({
     }
   },
 
-  fetchReports: async () => {
-    const { userId } = get();
-    if (!userId) return;
-    try {
-      const { getAnalysisReports } = await import('../lib/supabase');
-      const data = await getAnalysisReports(userId);
-      set({ reports: data as AnalysisReportRow[] });
-    } catch (err) {
-      console.error(err);
-    }
-  },
-  
   favorites: [],
   toggleFavorite: async (id) => {
     const { userId, favorites } = get();
@@ -349,7 +333,7 @@ export const useStore = create<StoreState>((set, get) => ({
     try {
       const { signOut } = await import('../lib/supabase');
       await signOut();
-      set({ userId: null, profile: DEFAULT_USER_PET_PROFILE, orders: [], reports: [], cart: [], favorites: [] });
+      set({ userId: null, profile: DEFAULT_USER_PET_PROFILE, orders: [], cart: [], favorites: [] });
     } catch (err) {
       console.error(err);
     }

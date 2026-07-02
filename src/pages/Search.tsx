@@ -253,7 +253,7 @@ export default function Search() {
             사람이 검수한 데이터 우선
           </div>
           <p style={{ margin: 0, fontSize: '12px', lineHeight: 1.55, color: '#66707C', fontWeight: 600 }}>
-            검색과 추천은 직접 정리한 제조사/성분 데이터와 프로필 기준으로 계산하며, AI는 해석 보조에만 사용됩니다.
+            검색과 추천은 직접 정리한 제조사/성분 데이터와 프로필 기준으로 계산합니다.
           </p>
         </div>
 

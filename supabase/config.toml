@@ -91,8 +91,6 @@ enabled = true
 port = 54323
 # External URL of the API server that frontend connects to.
 api_url = "http://127.0.0.1"
-# OpenAI API Key to use for Supabase AI in the Supabase Studio.
-openai_api_key = "env(OPENAI_API_KEY)"
 
 # Email testing server. Emails sent with the local dev setup are not actually sent - rather, they
 # are monitored, and you can view the emails that would have been sent from the web interface.
@@ -257,9 +255,6 @@ max_frequency = "5s"
 # timebox = "24h"
 # Force log out if the user has been inactive longer than the specified duration.
 # inactivity_timeout = "8h"
-
-[functions.analyze-ingredients]
-verify_jwt = true
 
 # 관리자 쓰기 프록시 — 관리자는 Supabase 인증 사용자가 아니라 x-admin-token으로 자체 검증
 [functions.admin-write]

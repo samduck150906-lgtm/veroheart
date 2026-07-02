@@ -322,7 +322,7 @@ export default function HomePage() {
                       성분표 촬영
                     </p>
                     <p className="mt-1 text-center text-[11px] leading-relaxed text-ink-800/70">
-                      AI가 유해·알레르기 주의 성분을 즉시 정리합니다.
+                      유해·알레르기 주의 성분을 성분 데이터와 대조해 즉시 정리합니다.
                     </p>
                   </div>
                 </PhoneMockup>

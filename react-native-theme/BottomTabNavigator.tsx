@@ -13,7 +13,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useTheme } from './ThemeProvider';
 
 // -------------------------------------------------------------
-// Mock Screens & Stack Navigation Structure
+// Demo Screens & Stack Navigation Structure
 // -------------------------------------------------------------
 
 // 1. Common Product Detail Page (PDP) screen shared between stacks
@@ -66,7 +66,7 @@ function HomeScreen({ navigation }: any) {
       <TouchableOpacity
         activeOpacity={0.9}
         onPress={() => navigation.navigate('ProductDetail', { productId: 'choco-premium-dog-food' })}
-        style={[styles.mockCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+        style={[styles.demoCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
       >
         <Text style={{ fontWeight: '800', color: colors.textNearBlack, fontSize: 14 }}>
           🍖 초코의 눈물 자국 개선 민트 생육 사료
@@ -95,7 +95,7 @@ function SearchScreen({ navigation }: any) {
       <TouchableOpacity
         activeOpacity={0.9}
         onPress={() => navigation.navigate('ProductDetail', { productId: 'cat-grainfree-salmon' })}
-        style={[styles.mockCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+        style={[styles.demoCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
       >
         <Text style={{ fontWeight: '800', color: colors.textNearBlack, fontSize: 14 }}>
           🐟 냥이 전용 그레인프리 허브 연어 사료
@@ -141,7 +141,7 @@ function SearchStackNavigator() {
 // BottomTabNavigator & Custom FAB Button
 // -------------------------------------------------------------
 
-// Lucide-like lightweight Vector Icon Mock components for mobile
+// Lucide-like lightweight Vector Icon components for mobile
 const TabIcon = ({ name, color, size = 22 }: { name: string; color: string; size?: number }) => {
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 20,
   },
-  mockCard: {
+  demoCard: {
     width: '100%',
     padding: 16,
     borderRadius: 18,

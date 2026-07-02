@@ -79,7 +79,7 @@ function useCountUp(to: number, durationMs = 800): number {
   return value;
 }
 
-/* ─── AI Safety Score gauge (spec §16 hero) ─── */
+/* ─── Safety Score gauge (spec §16 hero) ─── */
 export function ScoreGauge({ score, oneLiner }: { score: number; oneLiner?: string }) {
   const meta = gradeFromScore(score);
   const shown = useCountUp(score);
@@ -94,7 +94,7 @@ export function ScoreGauge({ score, oneLiner }: { score: number; oneLiner?: stri
 
   return (
     <section
-      aria-label="AI 안전점수"
+      aria-label="안전점수"
       style={{
         background: 'var(--pdp-surface, #fff)',
         borderRadius: 24,
@@ -105,7 +105,7 @@ export function ScoreGauge({ score, oneLiner }: { score: number; oneLiner?: stri
       }}
     >
       <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--pdp-ink-faint,#94A3B8)', letterSpacing: '0.02em', marginBottom: 12 }}>
-        AI 안전점수
+        안전점수
       </div>
       <div style={{ position: 'relative', width: 132, height: 132, margin: '0 auto' }}>
         <svg width="132" height="132" viewBox="0 0 132 132" style={{ transform: 'rotate(-90deg)' }} aria-hidden>
@@ -292,12 +292,12 @@ export function StickyScoreBar({ score, name, visible, progress }: { score: numb
   );
 }
 
-/* ─── AI 종합 의견 (3줄, spec §16b) ─── */
-export function AiVerdictCard({ lines }: { lines: { icon: ReactNode; text: string }[] }) {
+/* ─── 종합 의견 (3줄, spec §16b) ─── */
+export function VerdictCard({ lines }: { lines: { icon: ReactNode; text: string }[] }) {
   return (
-    <section aria-label="AI 종합 의견" style={{ background: 'var(--pdp-surface,#fff)', borderRadius: 24, padding: 20, marginBottom: 16, boxShadow: 'var(--pdp-e2,0 8px 24px rgba(15,23,42,.06))' }}>
+    <section aria-label="종합 의견" style={{ background: 'var(--pdp-surface,#fff)', borderRadius: 24, padding: 20, marginBottom: 16, boxShadow: 'var(--pdp-e2,0 8px 24px rgba(15,23,42,.06))' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 16, fontWeight: 800, color: 'var(--pdp-ink,#0F172A)', marginBottom: 14 }}>
-        🧠 AI 종합 의견
+        📋 종합 의견
       </div>
       <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 }}>
         {lines.slice(0, 3).map((l, i) => (
@@ -542,15 +542,15 @@ export function ReviewSummaryCard({ ratings, topTags, summary }: { ratings: numb
   );
 }
 
-/* ─── FAQ / AI Q&A accordion (spec §14 FAQ, §14 AI Q&A) ─── */
+/* ─── FAQ accordion (spec §14 FAQ) ─── */
 export interface QaItem { q: string; a: string }
-export function FaqAccordion({ items, title = '자주 묻는 질문', ai = false }: { items: QaItem[]; title?: string; ai?: boolean }) {
+export function FaqAccordion({ items, title = '자주 묻는 질문' }: { items: QaItem[]; title?: string }) {
   const [open, setOpen] = useState<number | null>(0);
   if (!items.length) return null;
   return (
     <section aria-label={title} style={{ marginBottom: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 16, fontWeight: 800, color: 'var(--pdp-ink,#0F172A)', marginBottom: 14 }}>
-        {ai ? '🤖 AI에게 물어보기' : '❓ 자주 묻는 질문'}
+        ❓ 자주 묻는 질문
       </div>
       <div style={{ background: 'var(--pdp-surface,#fff)', borderRadius: 20, boxShadow: 'var(--pdp-e1,0 1px 2px rgba(15,23,42,.04))', overflow: 'hidden' }}>
         {items.map((it, i) => {
@@ -563,8 +563,8 @@ export function FaqAccordion({ items, title = '자주 묻는 질문', ai = false
                 onClick={() => setOpen(isOpen ? null : i)}
                 style={{ width: '100%', textAlign: 'left', cursor: 'pointer', background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: 10, padding: '16px 18px' }}
               >
-                <span style={{ flexShrink: 0, color: ai ? '#7C3AED' : 'var(--pdp-ink-faint,#94A3B8)' }}>
-                  {ai ? <Sparkles size={16} /> : <span style={{ fontWeight: 900, fontSize: 15 }}>Q</span>}
+                <span style={{ flexShrink: 0, color: 'var(--pdp-ink-faint,#94A3B8)' }}>
+                  <span style={{ fontWeight: 900, fontSize: 15 }}>Q</span>
                 </span>
                 <span style={{ flex: 1, fontSize: 14.5, fontWeight: 700, color: 'var(--pdp-ink,#0F172A)' }}>{it.q}</span>
                 <ChevronDown size={18} color="var(--pdp-ink-faint,#94A3B8)" style={{ flexShrink: 0, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 200ms' }} />

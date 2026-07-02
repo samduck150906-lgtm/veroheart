@@ -9,7 +9,7 @@ import {
   IngredientCard,
   StickyCtaBar,
   StickyScoreBar,
-  AiVerdictCard,
+  VerdictCard,
   PdpSkeleton,
   AltProductCarousel,
   NutritionCard,
@@ -24,14 +24,14 @@ import {
   type QaItem,
 } from './PdpParts';
 
-/** 재설계된 PDP 파트가 mock 데이터로 올바른 콘텐츠를 렌더하는지 검증. */
+/** 재설계된 PDP 파트가 예시 데이터로 올바른 콘텐츠를 렌더하는지 검증. */
 describe('PDP redesign parts', () => {
   it('ScoreGauge: 점수→등급/라벨/한줄이 렌더된다', () => {
     const html = renderToStaticMarkup(<ScoreGauge score={92} oneLiner="단백질 품질이 우수합니다." />);
     expect(html).toContain('A+');
     expect(html).toContain('매우 안전');
     expect(html).toContain('단백질 품질이 우수합니다.');
-    expect(html).toContain('AI 안전점수');
+    expect(html).toContain('안전점수');
   });
 
   it('gradeFromScore 밴드: 60점→C/확인 필요, 40점→F/비추천', () => {
@@ -95,15 +95,15 @@ describe('PDP redesign parts', () => {
     expect(html).toContain('미니 인도어 어덜트');
   });
 
-  it('AiVerdictCard: 최대 3줄의 종합 의견을 렌더한다', () => {
+  it('VerdictCard: 최대 3줄의 종합 의견을 렌더한다', () => {
     const html = renderToStaticMarkup(
-      <AiVerdictCard lines={[
+      <VerdictCard lines={[
         { icon: <ShieldCheck size={16} />, text: '안전성: 위험 성분 없음 — 매우 안전' },
         { icon: <ShieldCheck size={16} />, text: '성분 구성: 안전 성분 12개' },
         { icon: <ShieldCheck size={16} />, text: '결론: 로니 적합도 95% — 추천합니다.' },
       ]} />
     );
-    expect(html).toContain('AI 종합 의견');
+    expect(html).toContain('종합 의견');
     expect(html).toContain('매우 안전');
     expect(html).toContain('추천합니다.');
   });
@@ -161,8 +161,6 @@ describe('PDP redesign parts', () => {
     expect(html).toContain('자주 묻는 질문');
     expect(html).toContain('보관은 어떻게 하나요?');
     expect(html).toContain('밀폐용기'); // 첫 항목 기본 열림
-    // AI 모드 타이틀
-    expect(renderToStaticMarkup(<FaqAccordion items={items} ai />)).toContain('AI에게 물어보기');
     expect(renderToStaticMarkup(<FaqAccordion items={[]} />)).toBe('');
   });
 

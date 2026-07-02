@@ -272,7 +272,7 @@ export default function AnalysisResult() {
       <StateView
         variant="empty"
         title="분석할 제품이 없어요"
-        description="상품 상세에서 ‘AI 정밀 분석’을 눌러 주세요."
+        description="상품을 선택하면 성분 분석 결과를 볼 수 있어요."
         action={{ label: '상품 탐색하기', onClick: () => navigate('/search') }}
       />
     );
@@ -281,8 +281,8 @@ export default function AnalysisResult() {
   return (
     <div style={{ padding: '0 16px 120px' }}>
       <Helmet>
-        <title>{product.name} AI 분석 결과 | 베로로</title>
-        <meta name="description" content={`${product.name} AI 성분 분석 결과 — ${grade}등급`} />
+        <title>{product.name} 성분 분석 결과 | 베로로</title>
+        <meta name="description" content={`${product.name} 성분 분석 결과 — ${grade}등급`} />
       </Helmet>
 
       <style>{`@keyframes veroFadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }`}</style>
@@ -296,7 +296,7 @@ export default function AnalysisResult() {
         >
           <ArrowLeft size={22} />
         </button>
-        <span style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-dark)' }}>AI 영양 리포트</span>
+        <span style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-dark)' }}>영양 리포트</span>
       </header>
 
       {/* Product card */}

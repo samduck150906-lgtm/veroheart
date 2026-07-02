@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
-import { User, ChevronRight, Calendar, ShoppingBag, FileText, Activity, LogOut, LogIn, Heart } from 'lucide-react';
+import { User, ChevronRight, Calendar, ShoppingBag, LogOut, LogIn, Heart } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { TossCard, TossButton, TossChip, TossInput, TossSectionTitle } from '../components/TossUI';
 import ProductCard from '../components/ProductCard';
@@ -19,8 +19,8 @@ const allergyOptions = ['닭고기', '소고기', '연어', '곡물', '인공색
 const concernOptions = ['피부·모질', '관절', '소화기', '비만·다이어트', '신장·비뇨기', '심장', '면역', '눈', '구강'];
 
 export default function Profile() {
-  const { userId, isLoggedIn, profile, updateProfile, orders, fetchOrders, reports, fetchReports, logout, favorites, products } = useStore();
-  const [activeTab, setActiveTab] = useState<'info' | 'favorites' | 'orders' | 'reports'>('info');
+  const { userId, isLoggedIn, profile, updateProfile, orders, fetchOrders, logout, favorites, products } = useStore();
+  const [activeTab, setActiveTab] = useState<'info' | 'favorites' | 'orders'>('info');
   const [formData, setFormData] = useState(profile);
   const [profileStep, setProfileStep] = useState(0);
   const navigate = useNavigate();
@@ -30,8 +30,7 @@ export default function Profile() {
   useEffect(() => {
     if (!userId) return;
     if (activeTab === 'orders') fetchOrders();
-    if (activeTab === 'reports') fetchReports();
-  }, [activeTab, fetchOrders, fetchReports, userId]);
+  }, [activeTab, fetchOrders, userId]);
 
   const handleSignOut = async () => {
     await logout();
@@ -236,7 +235,6 @@ export default function Profile() {
           { key: 'info', label: '프로필 설정' },
           { key: 'favorites', label: `찜 목록 ${favorites.length > 0 ? `(${favorites.length})` : ''}` },
           { key: 'orders', label: '주문 내역' },
-          { key: 'reports', label: '분석 리포트' },
         ] as const).map(tab => (
           <TossChip key={tab.key} label={tab.label} active={activeTab === tab.key} onClick={() => setActiveTab(tab.key)} />
         ))}
@@ -371,68 +369,6 @@ export default function Profile() {
               </div>
               <p style={{ color: '#9CA3AF', fontSize: '15px' }}>아직 주문 내역이 없습니다.</p>
               <Link to="/" style={{ color: 'var(--primary)', fontWeight: 700, marginTop: '12px', display: 'inline-block', textDecoration: 'none' }}>첫 쇼핑 시작하기</Link>
-            </div>
-          )}
-        </div>
-      ) : activeTab === 'reports' ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {reports && reports.length > 0 ? (
-            reports.map(report => {
-              const result = report.analysis_json;
-              const product = report.products; // linked product
-              const scoreColor = result.scores?.final >= 80 ? '#10B981' : (result.scores?.final >= 60 ? '#F59E0B' : '#EF4444');
-
-              return (
-                <div key={report.id} className="card" style={{ padding: '20px', border: '1px solid #EEF0F3', borderRadius: '20px', backgroundColor: '#fff' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px dashed #E5E7EB' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Calendar size={16} color="var(--text-muted)" />
-                      <span style={{ fontSize: '14px', color: 'var(--text-dark)', fontWeight: 600 }}>{new Date(report.created_at).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                  
-                  <div style={{ display: 'flex', gap: '16px' }}>
-                    {product ? (
-                      <img src={product.image_url} alt={product.name} style={{ width: '80px', height: '80px', borderRadius: '12px', objectFit: 'cover', border: '1px solid #F3F4F6' }} />
-                    ) : (
-                      <div style={{ width: '80px', height: '80px', borderRadius: '12px', backgroundColor: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <FileText color="#9CA3AF" />
-                      </div>
-                    )}
-                    
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>{product ? product.brand_name : '임의 분석'}</div>
-                      <div style={{ fontSize: '16px', fontWeight: 800, margin: '4px 0', color: '#1F2937' }}>{product ? product.name : 'OCR 추출 성분 분석'}</div>
-                      <div style={{ fontSize: '13px', color: '#6B7280', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                        {result.summary}
-                      </div>
-                    </div>
-                    
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                      <div style={{ 
-                        width: '50px', height: '50px', borderRadius: '50%', border: `3px solid ${scoreColor}`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', color: scoreColor, fontWeight: 900, fontSize: '16px'
-                      }}>
-                        {result.scores?.final?.toFixed(0) || 0}
-                      </div>
-                    </div>
-                  </div>
-
-                  {product && (
-                    <Link to={`/product/${report.product_id}`} style={{ display: 'block', marginTop: '16px', padding: '12px', textAlign: 'center', backgroundColor: '#F9FAFB', borderRadius: '12px', fontSize: '14px', fontWeight: 700, color: '#4B5563', textDecoration: 'none' }}>
-                      해당 제품 상세보기
-                    </Link>
-                  )}
-                </div>
-              );
-            })
-          ) : (
-            <div style={{ textAlign: 'center', padding: '100px 20px', backgroundColor: '#F9FAFB', borderRadius: '24px' }}>
-              <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                <Activity color="#D1D5DB" size={32} />
-              </div>
-              <p style={{ color: '#9CA3AF', fontSize: '15px' }}>저장된 분석 리포트가 없습니다.</p>
-              <Link to="/search" style={{ color: 'var(--primary)', fontWeight: 700, marginTop: '12px', display: 'inline-block', textDecoration: 'none' }}>사료 검색 및 분석하기</Link>
             </div>
           )}
         </div>

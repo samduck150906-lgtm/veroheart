@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { ArrowLeft, Search as SearchIcon, Barcode, FileText, Zap, ZapOff, Camera } from 'lucide-react';
+import { ArrowLeft, Search as SearchIcon, Barcode, Zap, ZapOff } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { getProductByBarcode } from '../lib/supabase';
-import { extractTextFromImage } from '../analysis/ocr';
 
-type Mode = 'barcode' | 'text';
 type CamState = 'idle' | 'starting' | 'live' | 'denied' | 'unavailable';
 
 export default function Scan() {
@@ -14,17 +12,14 @@ export default function Scan() {
   const { products } = useStore();
 
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number | null>(null);
   const detectorRef = useRef<any>(null);
   const handledRef = useRef(false);
 
-  const [mode, setMode] = useState<Mode>('barcode');
   const [camState, setCamState] = useState<CamState>('idle');
   const [torchOn, setTorchOn] = useState(false);
   const [detected, setDetected] = useState<string | null>(null);
-  const [ocr, setOcr] = useState<{ busy: boolean; label: string; ratio: number }>({ busy: false, label: '', ratio: 0 });
 
   const stopCamera = useCallback(() => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -56,38 +51,6 @@ export default function Scan() {
     },
     [products, navigate, stopCamera],
   );
-
-  // 성분표 촬영 → OCR → 분석 화면으로 텍스트 전달
-  const captureAndOcr = useCallback(async () => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas || ocr.busy) return;
-    const w = video.videoWidth;
-    const h = video.videoHeight;
-    if (!w || !h) return;
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.drawImage(video, 0, 0, w, h);
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
-
-    setOcr({ busy: true, label: '인식 준비 중', ratio: 0 });
-    try {
-      const text = await extractTextFromImage(dataUrl, {
-        langs: 'kor+eng',
-        onProgress: (p) => setOcr({ busy: true, label: p.label, ratio: p.ratio }),
-      });
-      stopCamera();
-      navigate('/scan-result', { state: { ingredientText: text } });
-    } catch (err) {
-      console.error('[Scan] OCR 실패:', err);
-      setOcr({ busy: false, label: '', ratio: 0 });
-      // 실패 시에도 분석 화면(직접 입력)으로 이동
-      stopCamera();
-      navigate('/scan-result', { state: { ingredientText: '' } });
-    }
-  }, [ocr.busy, navigate, stopCamera]);
 
   const scanLoop = useCallback(() => {
     const video = videoRef.current;
@@ -126,7 +89,7 @@ export default function Scan() {
       setCamState('live');
 
       const BD = (window as any).BarcodeDetector;
-      if (mode === 'barcode' && BD) {
+      if (BD) {
         try {
           detectorRef.current = new BD({
             formats: ['ean_13', 'ean_8', 'code_128', 'upc_a', 'upc_e', 'qr_code'],
@@ -140,14 +103,14 @@ export default function Scan() {
       if (err?.name === 'NotAllowedError' || err?.name === 'SecurityError') setCamState('denied');
       else setCamState('unavailable');
     }
-  }, [mode, scanLoop]);
+  }, [scanLoop]);
 
   useEffect(() => {
     handledRef.current = false;
     startCamera();
     return () => stopCamera();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode]);
+  }, []);
 
   const toggleTorch = useCallback(async () => {
     const track = streamRef.current?.getVideoTracks()[0];
@@ -160,7 +123,6 @@ export default function Scan() {
     }
   }, [torchOn]);
 
-  const boxSize = mode === 'barcode' ? { w: '78%', h: '26%' } : { w: '86%', h: '60%' };
   const showLive = camState === 'live' || camState === 'starting';
   const showFallback = camState === 'denied' || camState === 'unavailable';
 
@@ -168,7 +130,7 @@ export default function Scan() {
     <div style={{ position: 'fixed', inset: 0, background: '#0B0D10', zIndex: 30, overflow: 'hidden' }}>
       <Helmet>
         <title>스캔 | 베로로</title>
-        <meta name="description" content="바코드를 스캔하거나 성분표를 촬영해 AI 분석을 시작하세요." />
+        <meta name="description" content="바코드를 스캔해 제품 성분 분석을 확인하세요." />
       </Helmet>
       <style>{`@keyframes veroScanLine { 0%{top:6%} 50%{top:90%} 100%{top:6%} }`}</style>
 
@@ -188,7 +150,7 @@ export default function Scan() {
           <div
             style={{
               position: 'absolute', left: '50%', top: '44%', transform: 'translate(-50%,-50%)',
-              width: boxSize.w, height: boxSize.h, borderRadius: 20,
+              width: '78%', height: '26%', borderRadius: 20,
               boxShadow: '0 0 0 100vmax rgba(0,0,0,0.45)', overflow: 'hidden',
             }}
           >
@@ -202,15 +164,13 @@ export default function Scan() {
               <span key={i} style={{ position: 'absolute', width: 26, height: 26, borderStyle: 'solid', borderColor: '#FEE500', borderRadius: 4, ...c }} />
             ))}
             {/* scan line */}
-            {mode === 'barcode' && (
-              <span style={{ position: 'absolute', left: '6%', right: '6%', height: 2, background: 'linear-gradient(90deg,transparent,#FEE500,transparent)', animation: 'veroScanLine 2.4s ease-in-out infinite' }} />
-            )}
+            <span style={{ position: 'absolute', left: '6%', right: '6%', height: 2, background: 'linear-gradient(90deg,transparent,#FEE500,transparent)', animation: 'veroScanLine 2.4s ease-in-out infinite' }} />
           </div>
 
           <p style={{ position: 'absolute', left: 0, right: 0, top: 'calc(44% + 22vh)', textAlign: 'center', color: '#fff', fontSize: 14, fontWeight: 700, padding: '0 32px', textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}>
-            {mode === 'barcode'
-              ? (detectorRef.current ? '제품 뒷면 바코드를 프레임 안에 맞춰주세요' : '바코드 자동 인식이 지원되지 않는 기기예요. 아래에서 직접 검색해 주세요')
-              : '성분표 전체가 프레임 안에 들어오도록 맞춰주세요'}
+            {detectorRef.current
+              ? '제품 뒷면 바코드를 프레임 안에 맞춰주세요'
+              : '바코드 자동 인식이 지원되지 않는 기기예요. 아래에서 직접 검색해 주세요'}
           </p>
         </div>
       )}
@@ -259,47 +219,11 @@ export default function Scan() {
         )}
       </div>
 
-      {/* Mode toggle + search */}
+      {/* Bottom bar: 인식 결과 + 직접 검색 */}
       <div style={{ position: 'absolute', left: 0, right: 0, bottom: 'calc(28px + env(safe-area-inset-bottom,0px))', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '0 24px' }}>
         {detected && (
           <div style={{ color: '#fff', fontSize: 13, fontWeight: 700, opacity: 0.9 }}>인식됨: {detected}</div>
         )}
-        <div style={{ display: 'inline-flex', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)', borderRadius: 999, padding: 4 }}>
-          {([
-            { id: 'barcode' as const, label: '바코드', Icon: Barcode },
-            { id: 'text' as const, label: '성분표', Icon: FileText },
-          ]).map(({ id, label, Icon }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => { if (id !== mode) { handledRef.current = false; setDetected(null); setMode(id); } }}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px', borderRadius: 999, border: 'none', cursor: 'pointer',
-                fontSize: 13.5, fontWeight: 800,
-                background: mode === id ? '#fff' : 'transparent',
-                color: mode === id ? '#191F28' : 'rgba(255,255,255,0.85)',
-              }}
-            >
-              <Icon size={16} /> {label}
-            </button>
-          ))}
-        </div>
-
-        {mode === 'text' && showLive && (
-          <button
-            type="button"
-            onClick={captureAndOcr}
-            aria-label="성분표 촬영"
-            style={{
-              width: 68, height: 68, borderRadius: '50%', border: '4px solid rgba(255,255,255,0.9)',
-              background: '#FEE500', color: '#191F28', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', boxShadow: '0 6px 18px rgba(0,0,0,0.35)',
-            }}
-          >
-            <Camera size={26} />
-          </button>
-        )}
-
         <button
           type="button"
           onClick={() => { stopCamera(); navigate('/search'); }}
@@ -308,25 +232,6 @@ export default function Scan() {
           <SearchIcon size={16} /> 제품명으로 직접 검색
         </button>
       </div>
-
-      {/* OCR 진행 오버레이 */}
-      {ocr.busy && (
-        <div
-          role="status"
-          aria-live="polite"
-          style={{ position: 'absolute', inset: 0, zIndex: 20, background: 'rgba(11,13,16,0.82)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center', color: '#fff' }}
-        >
-          <div style={{ width: 52, height: 52, borderRadius: '50%', border: '4px solid rgba(255,255,255,0.25)', borderTopColor: '#FEE500', animation: 'veroSpin 0.9s linear infinite', marginBottom: 18 }} />
-          <p style={{ fontSize: 15, fontWeight: 800, margin: 0 }}>{ocr.label || '성분표 인식 중'}</p>
-          <p style={{ fontSize: 12, opacity: 0.7, margin: '6px 0 16px' }}>처음 인식할 때는 한글 데이터를 받느라 잠시 걸릴 수 있어요</p>
-          <div style={{ width: '100%', maxWidth: 260, height: 8, borderRadius: 999, background: 'rgba(255,255,255,0.2)', overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${Math.round(Math.max(0.05, ocr.ratio) * 100)}%`, background: '#FEE500', borderRadius: 999, transition: 'width 0.25s ease' }} />
-          </div>
-        </div>
-      )}
-
-      {/* 캡처용 캔버스(숨김) */}
-      <canvas ref={canvasRef} style={{ display: 'none' }} />
     </div>
   );
 }
