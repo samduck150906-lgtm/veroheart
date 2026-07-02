@@ -333,6 +333,158 @@ export function PdpSkeleton() {
   );
 }
 
+/* ─── Alternative products carousel (spec §18, 4 types) ─── */
+export interface AltCardData {
+  id: string;
+  brand: string;
+  name: string;
+  imageUrl: string;
+  score: number;
+  deltaScore: number;
+  price: number;
+  deltaPrice: number;
+  tag: string;
+  tagTone: SafetyTone | 'neutral';
+}
+
+function AltCard({ a, onOpen }: { a: AltCardData; onOpen: (id: string) => void }) {
+  const meta = gradeFromScore(a.score);
+  const tagColor = TONE_TILE[a.tagTone] ?? TONE_TILE.neutral;
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(a.id)}
+      style={{
+        flex: '0 0 auto', width: 220, scrollSnapAlign: 'start', textAlign: 'left', cursor: 'pointer',
+        background: 'var(--pdp-surface,#fff)', border: '1px solid var(--pdp-line,#E5E8EB)', borderRadius: 20, padding: 12,
+        boxShadow: 'var(--pdp-e1,0 1px 2px rgba(15,23,42,.04))',
+      }}
+    >
+      <span style={{ display: 'inline-block', fontSize: 11.5, fontWeight: 800, color: tagColor.fg, background: tagColor.bg, padding: '4px 10px', borderRadius: 999, marginBottom: 10 }}>{a.tag}</span>
+      <div style={{ height: 96, borderRadius: 14, marginBottom: 10, background: '#F1F5F9', overflow: 'hidden' }}>
+        <img src={a.imageUrl} alt={a.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      </div>
+      <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--pdp-ink-faint,#94A3B8)' }}>{a.brand}</div>
+      <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--pdp-ink,#0F172A)', lineHeight: 1.35, height: 38, overflow: 'hidden' }}>{a.name}</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 900, color: meta.fg, background: meta.bg, padding: '3px 8px', borderRadius: 999 }}>
+          {Math.round(a.score)}점
+          {a.deltaScore > 0 && <span style={{ fontSize: 11 }}>▲{a.deltaScore}</span>}
+        </span>
+        <span style={{ textAlign: 'right' }}>
+          <span style={{ display: 'block', fontSize: 14, fontWeight: 900, color: 'var(--pdp-ink,#0F172A)' }}>{a.price.toLocaleString()}원</span>
+          {a.deltaPrice < 0 && <span style={{ fontSize: 11, fontWeight: 800, color: '#16A34A' }}>{a.deltaPrice.toLocaleString()}원</span>}
+        </span>
+      </div>
+    </button>
+  );
+}
+
+export function AltProductCarousel({ items, onOpen }: { items: AltCardData[]; onOpen: (id: string) => void }) {
+  if (!items.length) return null;
+  return (
+    <section aria-label="대체 상품" style={{ marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 16, fontWeight: 800, color: 'var(--pdp-ink,#0F172A)', marginBottom: 14 }}>
+        🔄 이런 대체 상품은 어때요?
+      </div>
+      <div style={{ display: 'flex', gap: 12, overflowX: 'auto', scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch', padding: '2px 20px 6px', margin: '0 -20px' }}>
+        {items.map((a) => <AltCard key={a.id} a={a} onOpen={onOpen} />)}
+      </div>
+    </section>
+  );
+}
+
+/* ─── Nutrition balance: donut (구성비) + radar (균형) — SVG, no deps (spec §I) ─── */
+const MACRO: { key: keyof import('../../types').NutritionData; label: string; color: string }[] = [
+  { key: 'protein', label: '단백질', color: '#16A34A' },
+  { key: 'fat', label: '지방', color: '#F59E0B' },
+  { key: 'carb', label: '탄수화물', color: '#3182F6' },
+  { key: 'fiber', label: '식이섬유', color: '#22C55E' },
+  { key: 'moisture', label: '수분', color: '#38BDF8' },
+  { key: 'ash', label: '회분', color: '#94A3B8' },
+];
+
+function NutritionDonut({ data }: { data: import('../../types').NutritionData }) {
+  const slices = MACRO.map((m) => ({ ...m, value: Number(data[m.key] ?? 0) })).filter((s) => s.value > 0);
+  const total = slices.reduce((s, x) => s + x.value, 0) || 1;
+  const R = 52;
+  const C = 2 * Math.PI * R;
+  // 누적 오프셋을 가변 변수 없이 prefix-sum으로 계산
+  const fracs = slices.map((s) => s.value / total);
+  const offsets = fracs.map((_, i) => fracs.slice(0, i).reduce((a, b) => a + b, 0));
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+      <svg width="128" height="128" viewBox="0 0 128 128" style={{ transform: 'rotate(-90deg)', flexShrink: 0 }} aria-hidden>
+        <circle cx="64" cy="64" r={R} fill="none" stroke="var(--pdp-line,#E5E8EB)" strokeWidth="16" />
+        {slices.map((s, i) => {
+          const dash = fracs[i] * C;
+          return (
+            <circle key={i} cx="64" cy="64" r={R} fill="none" stroke={s.color} strokeWidth="16"
+              strokeDasharray={`${dash} ${C - dash}`} strokeDashoffset={-offsets[i] * C} />
+          );
+        })}
+      </svg>
+      <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 7, flex: 1 }}>
+        {slices.map((s, i) => (
+          <li key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700, color: 'var(--pdp-ink-muted,#475569)' }}>
+            <span style={{ width: 10, height: 10, borderRadius: 3, background: s.color, flexShrink: 0 }} />
+            <span style={{ flex: 1 }}>{s.label}</span>
+            <span style={{ color: 'var(--pdp-ink,#0F172A)', fontWeight: 800 }}>{Math.round((s.value / total) * 100)}%</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+export interface RadarAxis { label: string; value: number } // value 0~100
+function NutritionRadar({ axes }: { axes: RadarAxis[] }) {
+  const N = axes.length;
+  const size = 200, cx = size / 2, cy = size / 2, R = 72;
+  const pt = (i: number, r: number) => {
+    const ang = (-90 + (i * 360) / N) * (Math.PI / 180);
+    return [cx + r * Math.cos(ang), cy + r * Math.sin(ang)];
+  };
+  const rings = [0.25, 0.5, 0.75, 1];
+  const poly = axes.map((a, i) => pt(i, (Math.max(0, Math.min(100, a.value)) / 100) * R).join(',')).join(' ');
+  return (
+    <svg width="100%" height="220" viewBox={`0 0 ${size} ${size + 20}`} aria-hidden style={{ display: 'block' }}>
+      {rings.map((ring, ri) => (
+        <polygon key={ri} points={axes.map((_, i) => pt(i, ring * R).join(',')).join(' ')} fill="none" stroke="var(--pdp-line,#E5E8EB)" strokeWidth="1" />
+      ))}
+      {axes.map((_, i) => {
+        const [x, y] = pt(i, R);
+        return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="var(--pdp-line,#E5E8EB)" strokeWidth="1" />;
+      })}
+      <polygon points={poly} fill="rgba(22,163,74,0.16)" stroke="#16A34A" strokeWidth="2" />
+      {axes.map((a, i) => {
+        const [x, y] = pt(i, R + 14);
+        return (
+          <text key={i} x={x} y={y} fontSize="11" fontWeight="700" fill="#475569" textAnchor="middle" dominantBaseline="middle">{a.label}</text>
+        );
+      })}
+    </svg>
+  );
+}
+
+export function NutritionCard({ data, radar }: { data: import('../../types').NutritionData; radar: RadarAxis[] }) {
+  return (
+    <section aria-label="영양 밸런스" style={{ background: 'var(--pdp-surface,#fff)', borderRadius: 24, padding: 20, marginBottom: 16, boxShadow: 'var(--pdp-e2,0 8px 24px rgba(15,23,42,.06))' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 16, fontWeight: 800, color: 'var(--pdp-ink,#0F172A)', marginBottom: 16 }}>
+        📊 영양 밸런스
+      </div>
+      <NutritionDonut data={data} />
+      {radar.length >= 3 && (
+        <>
+          <div style={{ height: 1, background: 'var(--pdp-line,#E5E8EB)', margin: '18px 0 6px' }} />
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--pdp-ink-faint,#94A3B8)', marginBottom: 4 }}>영양 균형</div>
+          <NutritionRadar axes={radar} />
+        </>
+      )}
+    </section>
+  );
+}
+
 /* ─── Sticky bottom CTA bar (spec §21) ─── */
 export function StickyCtaBar({
   price,

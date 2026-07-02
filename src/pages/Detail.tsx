@@ -3,7 +3,6 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
   ChevronUp,
-  AlertCircle,
   Shield,
   ShieldCheck,
   AlertTriangle,
@@ -37,7 +36,11 @@ import {
   StickyScoreBar,
   AiVerdictCard,
   PdpSkeleton,
+  AltProductCarousel,
+  NutritionCard,
   type GlanceTileData,
+  type AltCardData,
+  type RadarAxis,
 } from '../components/pdp/PdpParts';
 import { REVIEW_QUICK_TAGS } from '../constants/reviewTags';
 
@@ -196,18 +199,42 @@ export default function Detail() {
     },
   ];
 
-  // find alternative
-  let alternativeProduct = null;
-  if (report && report.score < 80) {
-    const scoredProducts = products
-      .filter(p => p.id !== product?.id && p.category === product?.category)
-      .map(p => ({ p, score: generateAnalysisReport(p, profile).score }))
-      .sort((a, b) => b.score - a.score);
-    
-    if (scoredProducts.length > 0 && scoredProducts[0].score >= 80) {
-      alternativeProduct = scoredProducts[0];
-    }
-  }
+  // ── 대체 상품 4유형 (더 건강 / 더 저렴 / 같은 가격 최고 / 전문가 검수) ──
+  const currentScore = report ? report.score : breakdown.total;
+  const expectedPet = profile.species === 'Cat' ? 'cat' : 'dog';
+  const altPool = products
+    .filter(p => p.id !== product.id && p.category === product.category && (!p.targetPetType || p.targetPetType === expectedPet || p.targetPetType === 'all'))
+    .map(p => ({ p, score: generateAnalysisReport(p, profile).score }));
+  const altUsed = new Set<string>();
+  const altCards: AltCardData[] = [];
+  const pickAlt = (cands: { p: typeof product; score: number }[], tag: string, tagTone: AltCardData['tagTone']) => {
+    const c = cands.find(x => !altUsed.has(x.p.id));
+    if (!c) return;
+    altUsed.add(c.p.id);
+    altCards.push({
+      id: c.p.id, brand: c.p.brand, name: c.p.name, imageUrl: c.p.imageUrl,
+      score: c.score, deltaScore: Math.max(0, Math.round(c.score - currentScore)),
+      price: c.p.price, deltaPrice: c.p.price - product.price, tag, tagTone,
+    });
+  };
+  pickAlt(altPool.filter(x => x.score > currentScore).sort((a, b) => b.score - a.score), '더 건강해요', 'excellent');
+  pickAlt(altPool.filter(x => x.p.price < product.price && x.score >= 60).sort((a, b) => a.p.price - b.p.price), '더 저렴해요', 'good');
+  pickAlt(altPool.filter(x => Math.abs(x.p.price - product.price) <= product.price * 0.2).sort((a, b) => b.score - a.score), '같은 가격 최고', 'neutral');
+  pickAlt(altPool.filter(x => x.p.verificationStatus === 'verified' && x.score >= 75).sort((a, b) => b.score - a.score), '전문가 검수 ✓', 'neutral');
+
+  // 영양 레이더 축 (product.nutrition 있을 때만) — 매크로%를 0~100 스케일로 정규화
+  const nz = (v: number | undefined, max: number) => Math.min(100, Math.round(((v ?? 0) / max) * 100));
+  const nutritionRadar: RadarAxis[] = product.nutrition
+    ? [
+        { label: '단백질', value: nz(product.nutrition.protein, 40) },
+        { label: '지방', value: nz(product.nutrition.fat, 25) },
+        { label: '탄수화물', value: nz(product.nutrition.carb, 60) },
+        { label: '식이섬유', value: nz(product.nutrition.fiber, 15) },
+        { label: '수분', value: nz(product.nutrition.moisture, 12) },
+        { label: '비타민', value: product.nutrition.vitaminScore ?? 0 },
+        { label: '미네랄', value: product.nutrition.mineralScore ?? 0 },
+      ]
+    : [];
 
   // DER Calculation
   const getFeedingAmount = () => {
@@ -221,20 +248,19 @@ export default function Detail() {
   const feedingGrams = getFeedingAmount();
 
   // Create Toss-style Headline Data
-  let headline = `${profile.name}가 안심하고 먹을 수 있어요!`;
-  let headlineColor = '#191F28';
   const dangerIngs = product.ingredients?.filter(i => i.riskLevel === 'danger') || [];
   const cautionIngs = product.ingredients?.filter(i => i.riskLevel === 'caution') || [];
   const allergyIngs = product.ingredients?.filter(ing => profile.allergies.some(a => ing.nameKo.includes(a) || (ing.nameEn && ing.nameEn.toLowerCase().includes(a.toLowerCase())))) || [];
-  
-  if (allergyIngs.length > 0 || dangerIngs.length > 0) {
-    const count = new Set([...allergyIngs, ...dangerIngs]).size;
-    headline = `주의 성분이 ${count}개 발견됐어요`;
-    headlineColor = '#F04452'; // Toss Red
-  } else if (cautionIngs.length > 0) {
-    headline = `확인해야 할 성분이 ${cautionIngs.length}개 있어요`;
-    headlineColor = '#F59E0B';
-  }
+  const { headline, headlineColor } = (() => {
+    if (allergyIngs.length > 0 || dangerIngs.length > 0) {
+      const count = new Set([...allergyIngs, ...dangerIngs]).size;
+      return { headline: `주의 성분이 ${count}개 발견됐어요`, headlineColor: '#F04452' };
+    }
+    if (cautionIngs.length > 0) {
+      return { headline: `확인해야 할 성분이 ${cautionIngs.length}개 있어요`, headlineColor: '#F59E0B' };
+    }
+    return { headline: `${profile.name}가 안심하고 먹을 수 있어요!`, headlineColor: '#191F28' };
+  })();
 
   return (
     <div className="animate-fade-in detail-page-root" style={{ paddingBottom: '96px' }}>
@@ -357,24 +383,6 @@ export default function Detail() {
         </div>
       </TossCard>
 
-      {alternativeProduct && (
-        <div className="card" style={{ backgroundColor: 'var(--bg-color)', marginBottom: '40px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--danger)', fontWeight: 800, marginBottom: '8px' }}>
-            <AlertCircle size={20} /> 앗! 이 사료는 아이와 맞지 않을 수 있어요.
-          </div>
-          <p style={{ fontSize: '15px', color: 'var(--text-dark)', marginBottom: '16px', lineHeight: 1.5 }}>
-            대신 <b>{profile.name}</b>와(과) 궁합이 <b style={{ color: 'var(--safe)' }}>{alternativeProduct.score}점</b>인 이 사료는 어떠세요?
-          </p>
-          <button 
-            className="btn btn-outline"
-            style={{ width: '100%', borderRadius: 'var(--border-radius-sm)', fontWeight: 700 }}
-            onClick={() => navigate(`/product/${alternativeProduct?.p.id}`)}
-          >
-            {alternativeProduct.p.brand} {alternativeProduct.p.name} 보러가기
-          </button>
-        </div>
-      )}
-
       {/* 일일 급여량 계산기 */}
       <section className="card" style={{ marginBottom: '40px' }}>
         <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-dark)' }}>
@@ -447,7 +455,11 @@ export default function Detail() {
         </div>
       </section>
 
+      {product.nutrition && <NutritionCard data={product.nutrition} radar={nutritionRadar} />}
+
       <AiVerdictCard lines={verdictLines} />
+
+      <AltProductCarousel items={altCards} onOpen={(pid) => navigate(`/product/${pid}`)} />
 
       {/* Bottom Sheet for Ingredient Details */}
       <BottomSheet

@@ -11,7 +11,11 @@ import {
   StickyScoreBar,
   AiVerdictCard,
   PdpSkeleton,
+  AltProductCarousel,
+  NutritionCard,
   type GlanceTileData,
+  type AltCardData,
+  type RadarAxis,
 } from './PdpParts';
 
 /** 재설계된 PDP 파트가 mock 데이터로 올바른 콘텐츠를 렌더하는지 검증. */
@@ -101,5 +105,33 @@ describe('PDP redesign parts', () => {
   it('PdpSkeleton: 크래시 없이 스켈레톤 플레이스홀더를 렌더한다', () => {
     const html = renderToStaticMarkup(<PdpSkeleton />);
     expect(html).toContain('pdp-skel');
+  });
+
+  it('AltProductCarousel: 유형 태그·점수·가격이 카드에 렌더된다', () => {
+    const items: AltCardData[] = [
+      { id: 'a1', brand: '오리젠', name: '오리지널', imageUrl: 'x', score: 96, deltaScore: 8, price: 26900, deltaPrice: -3000, tag: '더 건강해요', tagTone: 'excellent' },
+      { id: 'a2', brand: '나우', name: '스몰브리드', imageUrl: 'x', score: 82, deltaScore: 0, price: 19900, deltaPrice: -10000, tag: '더 저렴해요', tagTone: 'good' },
+    ];
+    const html = renderToStaticMarkup(<AltProductCarousel items={items} onOpen={() => {}} />);
+    expect(html).toContain('더 건강해요');
+    expect(html).toContain('더 저렴해요');
+    expect(html).toContain('96점');
+    expect(html).toContain('26,900원');
+    // 빈 배열이면 렌더하지 않음
+    expect(renderToStaticMarkup(<AltProductCarousel items={[]} onOpen={() => {}} />)).toBe('');
+  });
+
+  it('NutritionCard: 도넛 구성비%와 레이더 축 라벨이 렌더된다', () => {
+    const radar: RadarAxis[] = [
+      { label: '단백질', value: 80 }, { label: '지방', value: 60 }, { label: '탄수화물', value: 50 },
+      { label: '식이섬유', value: 40 }, { label: '수분', value: 70 },
+    ];
+    const html = renderToStaticMarkup(
+      <NutritionCard data={{ protein: 32, fat: 16, carb: 40, fiber: 4, moisture: 8 }} radar={radar} />
+    );
+    expect(html).toContain('영양 밸런스');
+    expect(html).toContain('단백질');
+    expect(html).toContain('%'); // 구성비 퍼센트
+    expect(html).toContain('영양 균형'); // 레이더 섹션
   });
 });
