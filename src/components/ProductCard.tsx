@@ -4,6 +4,17 @@ import type { Product } from '../types';
 import { useStore } from '../store/useStore';
 import { calculateCompatibilityScore } from '../utils/score';
 
+/** 추천 사유 문구의 톤(신호등)을 판정해 pill 색상을 정한다. */
+function noteToneStyle(note: string): { color: string; background: string; borderColor: string } {
+  if (note.includes('회피 성분') || note.includes('위험 성분'))
+    return { color: '#B91C1C', background: '#FEF2F2', borderColor: '#FECACA' }; // 위험(빨강)
+  if (note.includes('주의 성분') || note.includes('재검토') || note.includes('검수 대기'))
+    return { color: '#B45309', background: '#FFFBEB', borderColor: '#FDE68A' }; // 주의(주황)
+  if (note.includes('거의 없음') || note.includes('고민과 연관') || note.includes('검수 완료'))
+    return { color: '#15803D', background: '#F0FDF4', borderColor: '#BBF7D0' }; // 긍정(초록)
+  return { color: '#475569', background: '#F1F5F9', borderColor: '#E2E8F0' }; // 중립(슬레이트)
+}
+
 type ProductCardProps = {
   product: Product;
   compact?: boolean;
@@ -93,8 +104,10 @@ export default function ProductCard({
               {note ? (
                 <span
                   style={{
-                    fontSize: '10.5px', fontWeight: 700, color: '#5B21B6',
-                    background: '#F5F3FF', border: '1px solid #E9D5FF',
+                    fontSize: '10.5px', fontWeight: 700,
+                    color: noteToneStyle(note).color,
+                    background: noteToneStyle(note).background,
+                    border: `1px solid ${noteToneStyle(note).borderColor}`,
                     borderRadius: '8px', padding: '3px 8px', maxWidth: '100%',
                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                   }}
