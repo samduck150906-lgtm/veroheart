@@ -5,7 +5,6 @@ import { Trophy, TrendingUp, Star, Dog, Cat, ShieldCheck, MessageSquare, Sparkle
 import { useStore } from '../store/useStore';
 import type { Product } from '../types';
 import { calculateCompatibilityScore, getProductRecommendationInsights } from '../utils/score';
-import { UGC_COPY } from '../copy/marketing';
 import { TossChip, TossSectionTitle } from '../components/TossUI';
 
 const TABS = [
@@ -77,9 +76,6 @@ export default function Ranking() {
           ranking board
         </span>
         <h1 style={{ fontSize: '25px', fontWeight: 900, marginBottom: '8px' }}>지금 많이 보는 제품 랭킹</h1>
-        <p style={{ fontSize: '14px', color: '#67707C', lineHeight: 1.6, marginBottom: '14px' }}>
-          {UGC_COPY.settleDown}
-        </p>
         <div className="ui-grid-3">
           <div className="ui-info-card" style={{ padding: '16px' }}>
             <div className="ui-icon-pill" style={{ marginBottom: '10px' }}><Star size={16} color="#F59E0B" /></div>
