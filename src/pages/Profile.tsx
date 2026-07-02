@@ -61,7 +61,7 @@ export default function Profile() {
           <TossInput
             value={formData.name}
             onChange={(value) => setFormData({ ...formData, name: value })}
-            placeholder="예: 로니"
+            placeholder="반려동물 이름을 입력하세요"
           />
         );
       case 1:

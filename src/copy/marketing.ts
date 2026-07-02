@@ -6,7 +6,7 @@
 export const SPLASH_TAGLINES = [
   '우리 아이가 먹는 모든 것, 의심 대신 베로로 하세요.',
   '집사의 마음은 진심(Vero)이니까, 성분 분석은 베로로가 합니다.',
-  '로니와 삼덕이의 건강한 식탁을 위한 가장 쉬운 습관',
+  '우리 아이의 건강한 식탁을 위한 가장 쉬운 습관',
   '세상에 나쁜 성분은 있어도, 나쁜 집사는 없으니까.',
 ] as const;
 
@@ -14,7 +14,7 @@ export const SPLASH_TAGLINES = [
 export const HOME_HERO = {
   headline: '우리 아이가 먹는 모든 것, 의심 대신 베로로 하세요.',
   sub: '집사의 마음은 진심(Vero)이니까, 성분 분석은 베로로가 합니다.',
-  customTable: '로니와 삼덕이의 건강한 식탁을 위한 가장 쉬운 습관',
+  customTable: '우리 아이의 건강한 식탁을 위한 가장 쉬운 습관',
   footnote: '세상에 나쁜 성분은 있어도, 나쁜 집사는 없으니까.',
 } as const;
 
