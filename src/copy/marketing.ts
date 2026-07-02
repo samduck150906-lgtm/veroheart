@@ -15,12 +15,6 @@ export const HOME_HERO = {
   headline: '우리 아이가 먹는 모든 것, 의심 대신 베로로 하세요.',
 } as const;
 
-/** 성분 분석 · OCR */
-export const CORE_COPY = {
-  ocr: '사료 뒷면 성분표, 사진 한 장이면 충분해요.',
-  dangerHighlight: '위험 성분 하이라이트: 빨간색만 피하면 안심이에요.',
-} as const;
-
 export function pickSplashTagline(): string {
   const i = Math.floor(Math.random() * SPLASH_TAGLINES.length);
   return SPLASH_TAGLINES[i];
