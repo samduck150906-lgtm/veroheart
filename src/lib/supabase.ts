@@ -155,7 +155,8 @@ export async function getProductDetail(productId: string): Promise<Product | nul
       product_ingredients (
         ingredient_id,
         ingredients (*)
-      )
+      ),
+      nutritional_profiles (*)
     `)
     .eq('id', productId)
     .single();
@@ -182,7 +183,8 @@ export async function getProductByBarcode(barcode: string): Promise<Product | nu
         product_ingredients (
           ingredient_id,
           ingredients (*)
-        )
+        ),
+        nutritional_profiles (*)
       `)
       .eq('barcode', barcode)
       .limit(1)

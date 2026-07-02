@@ -10,6 +10,7 @@ import {
   calculateCompatibilityScore,
   type CompatibilityGrade,
 } from '../utils/score';
+import { calculateCalories, checkCalciumPhosphorusRatio } from '../analysis/nutrition';
 import BottomSheet from '../components/BottomSheet';
 import StateView from '../components/StateView';
 import type { Ingredient, Product } from '../types';
@@ -151,7 +152,11 @@ export default function AnalysisResult() {
 
   const productId: string | undefined = location.state?.productId || selectedProduct?.id;
   const product = useMemo<Product | undefined>(() => {
-    if (productId) return products.find((p) => p.id === productId) || selectedProduct || undefined;
+    if (productId) {
+      // 상세 조회로 채워진 selectedProduct가 보장성분(GA)까지 갖고 있으므로 우선한다
+      if (selectedProduct?.id === productId) return selectedProduct;
+      return products.find((p) => p.id === productId) || selectedProduct || undefined;
+    }
     return selectedProduct || products[0];
   }, [productId, products, selectedProduct]);
 
@@ -204,16 +209,39 @@ export default function AnalysisResult() {
     return Array.from(new Set([...base, ...fromReport]));
   }, [cautionIngredients, dangerIngredients, breakdown, report]);
 
-  // ── 영양 추정 (라벨 데이터가 없어 형태 기반 근사) ──
+  // ── 영양 구성: 보장성분(실측)이 있으면 사용, 없으면 형태 기반 추정 ──
   const nutrition = useMemo(() => {
+    const ga = product?.guaranteedAnalysis;
+    if (ga && ((ga.crudeProtein ?? 0) > 0 || (ga.crudeFat ?? 0) > 0)) {
+      const protein = ga.crudeProtein ?? 0;
+      const fat = ga.crudeFat ?? 0;
+      const fiber = ga.crudeFiber ?? 0;
+      const ash = ga.crudeAsh ?? 0;
+      const moisture = ga.moisture ?? 0;
+      const carbs = Math.max(0, 100 - protein - fat - fiber - ash - moisture);
+      const others = Math.max(0, 100 - protein - fat - carbs);
+      const kcal = product?.caloriesPer100g || calculateCalories(ga).kcalPer100g;
+      return {
+        protein: Math.round(protein),
+        fat: Math.round(fat),
+        carbs: Math.round(carbs),
+        others: Math.round(others),
+        kcal: Math.round(kcal),
+        measured: true,
+        capNote: checkCalciumPhosphorusRatio(ga),
+      };
+    }
     const name = product?.name ?? '';
     const cat = product?.category ?? '';
     const form = product?.formulation ?? '';
     const isWet = form.includes('습식') || cat.includes('습식') || /캔|수프/.test(name);
     const isSnack = cat.includes('간식') || /져키|껌|츄/.test(name);
-    if (isWet) return { protein: 10, fat: 5, carbs: 5, others: 80, kcal: 95 };
-    if (isSnack) return { protein: 15, fat: 5, carbs: 54, others: 26, kcal: 320 };
-    return { protein: 30, fat: 16, carbs: 31, others: 23, kcal: 390 };
+    const base = isWet
+      ? { protein: 10, fat: 5, carbs: 5, others: 80, kcal: 95 }
+      : isSnack
+        ? { protein: 15, fat: 5, carbs: 54, others: 26, kcal: 320 }
+        : { protein: 30, fat: 16, carbs: 31, others: 23, kcal: 390 };
+    return { ...base, measured: false, capNote: null as string | null };
   }, [product]);
 
   const lifeStage = product?.targetLifeStage?.length ? product.targetLifeStage.join(', ') : '전 연령';
@@ -371,16 +399,33 @@ export default function AnalysisResult() {
       {activeTab === '영양소' && (
         <div style={{ display: 'grid', gap: 16 }}>
           <div style={{ background: '#fff', border: '1px solid rgba(28,25,23,0.06)', borderRadius: 16, padding: 18 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-dark)', marginBottom: 14 }}>영양 구성</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-dark)' }}>영양 구성</span>
+              <span style={{
+                fontSize: 11, fontWeight: 800, borderRadius: 999, padding: '4px 10px',
+                background: nutrition.measured ? RISK.safe.bg : 'var(--secondary)',
+                color: nutrition.measured ? RISK.safe.color : 'var(--text-muted)',
+              }}>
+                {nutrition.measured ? '보장성분 실측' : '형태 기반 추정'}
+              </span>
+            </div>
             <NutritionDonut n={nutrition} />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--secondary)', borderRadius: 16, padding: 18 }}>
             <div style={{ fontSize: 32, fontWeight: 900, color: 'var(--text-dark)', letterSpacing: '-0.03em' }}>{nutrition.kcal}</div>
             <div>
               <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-dark)' }}>kcal / 100g</div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginTop: 2 }}>제품 형태 기준 추정 열량이에요</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginTop: 2 }}>
+                {nutrition.measured ? '라벨 보장성분 기준 열량이에요' : '제품 형태 기준 추정 열량이에요'}
+              </div>
             </div>
           </div>
+          {nutrition.capNote && (
+            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: RISK.caution.bg, borderRadius: 16, padding: 14 }}>
+              <AlertCircle size={18} color={RISK.caution.color} style={{ flexShrink: 0, marginTop: 1 }} />
+              <span style={{ fontSize: 12.5, fontWeight: 600, color: '#92400E', lineHeight: 1.5 }}>{nutrition.capNote}</span>
+            </div>
+          )}
         </div>
       )}
 

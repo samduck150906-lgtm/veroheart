@@ -23,7 +23,20 @@ export type SupabaseProductRow = {
   image_url?: string | null;
   review_count?: number | null;
   avg_rating?: number | null;
+  kcal_per_100g?: number | string | null;
   product_ingredients?: SupabaseProductIngredientRow[] | null;
+  /** 1:1 관계 — PostgREST가 배열 또는 단일 객체로 반환할 수 있어 둘 다 허용 */
+  nutritional_profiles?: SupabaseNutritionalProfileRow | SupabaseNutritionalProfileRow[] | null;
+};
+
+export type SupabaseNutritionalProfileRow = {
+  crude_protein?: number | string | null;
+  crude_fat?: number | string | null;
+  crude_fiber?: number | string | null;
+  crude_ash?: number | string | null;
+  moisture?: number | string | null;
+  calcium?: number | string | null;
+  phosphorus?: number | string | null;
 };
 
 export type SupabaseProductIngredientRow = {
@@ -65,9 +78,28 @@ export function mapIngredientFromJoin(pi: SupabaseProductIngredientRow): Ingredi
   };
 }
 
+/** numeric(문자열/숫자/널) → number | undefined */
+function toNum(v: number | string | null | undefined): number | undefined {
+  if (v === null || v === undefined || v === '') return undefined;
+  const n = typeof v === 'number' ? v : parseFloat(v);
+  return Number.isFinite(n) ? n : undefined;
+}
+
 export function mapProductFromSupabaseRow(p: SupabaseProductRow): Product {
   const ingredients: Ingredient[] =
     p.product_ingredients?.map((pi) => mapIngredientFromJoin(pi)) ?? [];
+  const np = Array.isArray(p.nutritional_profiles) ? p.nutritional_profiles[0] : p.nutritional_profiles;
+  const guaranteedAnalysis = np
+    ? {
+        crudeProtein: toNum(np.crude_protein),
+        crudeFat: toNum(np.crude_fat),
+        crudeFiber: toNum(np.crude_fiber),
+        crudeAsh: toNum(np.crude_ash),
+        moisture: toNum(np.moisture),
+        calcium: toNum(np.calcium),
+        phosphorus: toNum(np.phosphorus),
+      }
+    : undefined;
   const targetPet = p.target_pet_type;
   const targetPetType: Product['targetPetType'] =
     targetPet === 'dog' || targetPet === 'cat' || targetPet === 'all' ? targetPet : undefined;
@@ -94,6 +126,8 @@ export function mapProductFromSupabaseRow(p: SupabaseProductRow): Product {
     coupangProductId: p.coupang_product_id || undefined,
     coupangLink: p.coupang_link?.trim() || undefined,
     barcode: p.barcode ?? undefined,
+    guaranteedAnalysis,
+    caloriesPer100g: toNum(p.kcal_per_100g),
     price: p.min_price ?? 0,
     imageUrl:
       p.image_url ||
