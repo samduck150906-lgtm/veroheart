@@ -157,7 +157,7 @@ lint를 완전히 없애기 위해, 어디서도 쓰이지 않던 다음 고아 
 2. ✅ (완료) 라우트 누락으로 끊긴 페이지 5개(`Ranking`/`Login`/`Brand`/`ViralEvent`/`Test`) 연결 → 네비게이션 복구.
 3. ✅ (완료) 루트 eslint를 웹앱 범위로 분리 → `npm run lint` **0 errors**.
 4. 남은 "미사용" 컴포넌트/유틸(4.f) 정리 여부 결정 — WIP일 수 있어 유지 중.
-5. `/auth`(Auth)와 `/login`(Login) 두 인증 페이지가 공존 — 하나로 정리 검토 권장.
+5. ✅ (완료) `/auth`(Auth)·`/login`(Login) 인증 페이지 이원화 → `Login` 정본으로 통합(§9).
 6. `Home`의 `/event/personality-quiz` 외에 추가 미구현 경로 없음(전수 대조 완료).
 7. ✅ (완료) 법적 페이지 이중 서빙 제거 → React 정본으로 일원화(§8).
 8. 번들 크기: 메인 청크 655KB(gzip 187KB) — 라우트 단위 `React.lazy` 코드 스플리팅 권장.
@@ -188,3 +188,20 @@ lint를 완전히 없애기 위해, 어디서도 쓰이지 않던 다음 고아 
   모든 접근 경로가 React 정본으로 통일. 브라우저로 `/terms`가 React 13개-조항 본문(시행일 2026-04-12)을
   렌더함을 재확인.
 - (`public/fishbone-*.html`은 법적 문서가 아니며 이번 범위 밖이라 유지.)
+
+---
+
+## 9. 인증 페이지 통합 (Auth → Login 일원화)
+
+- **문제**: 인증 페이지가 둘 존재 — `/auth`(`Auth.tsx`, 간단형)와 `/login`(`Login.tsx`, 완성형).
+  진입점마다 달라 UX 불일치(EntryGate·Profile은 `/auth`, Detail·Cart는 `/login`). 게다가 `Auth.tsx`의
+  "카카오로 계속하기" 버튼은 `signInWithKakao` no-op 스텁 + `finally` 부재로 **클릭 시 "카카오 로그인 중..."
+  에서 영구 멈추는 깨진 버튼**이었음.
+- **수정(사용자 결정)**: 더 완성도 높은 `Login`을 정본으로 통합.
+  - `Auth.tsx` 삭제.
+  - `/auth` 라우트는 `<Navigate to="/login" replace/>`로 리다이렉트(구 링크·북마크 호환).
+  - `/auth`로 이동하던 코드 3곳(`EntryGate`, `Profile`, `AuthCallback`) → `/login`으로 변경.
+- **검증**: 브라우저에서 `/auth` 접속 시 `/login`으로 리다이렉트되고 로그인 화면이 렌더됨을 확인(에러 0).
+- (참고) 깨져 있던 카카오 스텁 버튼은 통합 과정에서 제거됨. 실제 카카오 로그인이 필요하면 §7-10의
+  OAuth 구현으로 `Login`에 정상 소셜 버튼을 추가하는 것을 권장. `lib/supabase`의
+  `signUpWithEmail`/`signInWithEmail`은 이제 미사용이나(Login은 `supabase.auth` 직접 호출) export로 남겨둠.

@@ -24,7 +24,7 @@ export default function AuthCallback() {
 
       if (error || !data.session) {
         notify.error('로그인에 실패했습니다. 다시 시도해주세요.');
-        navigate('/auth', { replace: true });
+        navigate('/login', { replace: true });
         return;
       }
 
