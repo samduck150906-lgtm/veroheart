@@ -69,28 +69,8 @@ function Footer() {
           {COUPANG_PARTNERS_DISCLOSURE}
         </p>
 
-        <div
-          style={{
-            fontSize: '8.5px',
-            lineHeight: 1.4,
-            color: '#938D88',
-          }}
-        >
-          <p style={{ margin: '0 0 1px' }}>
-            상호 {COMPANY.tradeName} · 대표자 {COMPANY.representative} · 사업자등록번호 {COMPANY.bizRegNo} · 통신판매업{' '}
-            {COMPANY.mailOrderBizNo}
-          </p>
-          <p style={{ margin: 0 }}>
-            주소 {COMPANY.address} · 연락처{' '}
-            <a href={COMPANY.phoneTelHref} style={{ color: 'inherit', textDecoration: 'none' }}>
-              {COMPANY.phone}
-            </a>{' '}
-            · 이메일{' '}
-            <a href={`mailto:${COMPANY.email}`} style={{ color: 'inherit', textDecoration: 'none' }}>
-              {COMPANY.email}
-            </a>{' '}
-            · © {COMPANY.tradeName}
-          </p>
+        <div style={{ fontSize: '8.5px', lineHeight: 1.4, color: '#938D88' }}>
+          © {COMPANY.tradeName}
         </div>
       </div>
     </footer>
