@@ -68,6 +68,7 @@ export default function Detail() {
   const [reviewContent, setReviewContent] = useState('');
   const [reviewTags, setReviewTags] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedIngredient, setSelectedIngredient] = useState<any>(null);
   const isFav = favorites.includes(id || '');
 
   useEffect(() => {
@@ -159,8 +160,6 @@ export default function Detail() {
     return '#3182F6'; // Toss Blue for safe
   };
 
-  const [selectedIngredient, setSelectedIngredient] = useState<any>(null);
-  
   // Create Toss-style Headline Data
   let headline = `${profile.name}가 안심하고 먹을 수 있어요!`;
   let headlineColor = '#191F28';
