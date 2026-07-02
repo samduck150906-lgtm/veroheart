@@ -26,6 +26,8 @@ import { TossCard } from '../components/TossUI';
 import { getReviews, createReview, deleteReview } from '../lib/supabase';
 import { buildProductConclusion } from '../utils/productConclusion';
 import { getCompatibilityBreakdown } from '../utils/score';
+import { analyzeFeed } from '../analysis/feedAnalysis';
+import FeedAnalysisCard from '../components/FeedAnalysisCard';
 import {
   ScoreGauge,
   GlanceGrid,
@@ -253,16 +255,9 @@ export default function Detail() {
       ]
     : [];
 
-  // DER Calculation
-  const getFeedingAmount = () => {
-    if (!profile.weightKg) return null;
-    const rer = 70 * Math.pow(profile.weightKg, 0.75);
-    const der = rer * 1.6; // Average adult multiplier
-    const kcalPerKg = 3500; // 건식 사료 평균 칼로리 밀도(추정 기본값)
-    const grams = (der / kcalPerKg) * 1000;
-    return Math.round(grams);
-  };
-  const feedingGrams = getFeedingAmount();
+  // 사료성분 분석(규칙 기반) — 급여량은 제품 실제 열량 기반으로 계산
+  const feed = analyzeFeed(product, profile);
+  const feedingGrams = feed.feeding?.gramsPerDay ?? null;
 
   // Create Toss-style Headline Data
   const dangerIngs = product.ingredients?.filter(i => i.riskLevel === 'danger') || [];
@@ -430,8 +425,10 @@ export default function Detail() {
               하루 약 {feedingGrams}g
             </div>
             <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-              {profile.weightKg}kg 기준 (평균 활동량 적용)<br/>
-              <span style={{ fontSize: '12px', opacity: 0.8 }}>*평균 칼로리(3500kcal/kg) 기준 추정치입니다.</span>
+              {profile.weightKg}kg · {profile.age <= 1 ? '성장기' : profile.age >= 8 ? '노령' : '성체 유지'} 기준 (RER×{profile.age <= 1 ? '2.5' : profile.age >= 8 ? '1.4' : '1.6'})<br/>
+              <span style={{ fontSize: '12px', opacity: 0.8 }}>
+                *{feed.feeding?.measured ? `라벨 열량 ${feed.feeding.kcalPer100g}kcal/100g` : `추정 열량 ${feed.feeding?.kcalPer100g ?? 380}kcal/100g`} 기준 · 하루 필요 열량 약 {feed.feeding?.derKcal ?? 0}kcal
+              </span>
             </p>
           </div>
         ) : (
@@ -456,14 +453,8 @@ export default function Detail() {
           {headline}
         </h2>
         
-        {/* Nutrition Summary */}
-        <div style={{ backgroundColor: 'var(--secondary)', padding: '20px', borderRadius: 'var(--border-radius-lg)', marginBottom: '32px' }}>
-          <p style={{ fontSize: '15px', color: 'var(--text-dark)', fontWeight: 600, lineHeight: 1.6 }}>
-            {profile.healthConcerns.includes('비만') 
-              ? "다이어트가 필요한 아이에겐 지방 수치가 다소 높으니 급여량을 10% 줄여주세요." 
-              : "조단백질이 풍부하여 근육 형성과 에너지 보충에 아주 좋습니다."}
-          </p>
-        </div>
+        {/* 사료성분 분석 (규칙 기반 · 보장성분 + 원재료 실제 데이터) */}
+        <FeedAnalysisCard product={product} profile={profile} />
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '16px' }}>
           <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-dark)' }}>전성분 상세</h3>
