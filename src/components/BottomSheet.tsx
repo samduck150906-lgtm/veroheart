@@ -13,6 +13,8 @@ export default function BottomSheet({ isOpen, onClose, title, children }: Bottom
 
   useEffect(() => {
     if (isOpen) {
+      // 열릴 때 즉시 마운트(등장) → 닫힐 때는 트랜지션 후 언마운트. 의도된 enter/exit 패턴.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsRendered(true);
       document.body.style.overflow = 'hidden';
     } else {

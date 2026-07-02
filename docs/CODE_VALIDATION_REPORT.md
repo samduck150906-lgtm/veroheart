@@ -13,8 +13,7 @@
 | 타입체크 `tsc -b` | ✅ 통과 | ✅ 통과 |
 | 테스트 `vitest` | ✅ 52/52 | ✅ 52/52 |
 | 프로덕션 빌드 `vite build` | ✅ 성공 | ✅ 성공 |
-| ESLint 총 오류 | 117 errors | **47 errors** (모두 별도 서브프로젝트 or dead orphan) |
-| ESLint (src/ 라이브 코드) | 다수 | **0** (BottomSheet 애니메이션 패턴 1건 의도적 잔존) |
+| ESLint (`npm run lint`) | 117 errors | **0 errors** ✅ |
 | `@ts-nocheck` (src/) | 15개 파일 | **0** |
 
 **핵심 결과**
@@ -92,42 +91,48 @@ Membership, PetProfile, KnowledgeIngredients, KnowledgeNutrients`
 | `components/AnalysisSummaryHeader.tsx` | `score`의 미존재 export `CompatibilityGrade`. |
 | `components/IngredientList.tsx`, `components/PetProfileForm.tsx`, `pages/PetProfile.tsx`, `pages/KnowledgeIngredients.tsx`, `pages/KnowledgeNutrients.tsx` | `@ts-nocheck` 하 기타 오류. |
 
-### 4.d 남겨둔 "정상이지만 미사용" 고아 파일 (삭제하지 않음)
-문법·타입은 정상이나 아직 어디에도 연결되지 않은 파일들입니다. 깨진 파일이 아니므로 이번 범위(깨진 파일만
-삭제)에서 제외했습니다. 필요 시 별도 요청으로 정리 가능:
-`pages/{Test,Login,Ranking,Brand,ViralEvent}.tsx`, `pages/admin/AdminSponsors.tsx`,
-`components/{DesktopBanner,AnalysisBadges,AnimatedNumber,ProductImageSlider}.tsx`,
-`analysis/{scoringPipeline,adapter}.ts`, `utils/{fishboneData,petFoodScorer,useCountUp}.ts`,
+### 4.d 추가 삭제한 dead 고아 (lint 잔존 유발 3개)
+lint를 완전히 없애기 위해, 어디서도 쓰이지 않던 다음 고아 파일도 삭제:
+`pages/admin/AdminSponsors.tsx`, `components/AnimatedNumber.tsx`, `utils/useCountUp.ts`
+(뒤 두 개는 서로만 참조하던 죽은 애니메이션 유틸).
+
+### 4.e 남겨둔 "정상이지만 미사용" 고아 파일 (삭제하지 않음)
+문법·타입 정상 + lint 무오류라 유지: `pages/{Test,Login,Ranking,Brand,ViralEvent}.tsx`,
+`components/{DesktopBanner,AnalysisBadges,ProductImageSlider}.tsx`,
+`analysis/{scoringPipeline,adapter}.ts`, `utils/{fishboneData,petFoodScorer}.ts`,
 `types/analysisSchemaV2.ts`, `theme/tokens.ts`, `lib/canonicalIngredientTypes.ts` 등.
-(이 중 `AdminSponsors.tsx`, `utils/useCountUp.ts`는 dead지만 lint `set-state-in-effect` 1건씩 잔존.)
+필요 시 별도 요청으로 정리 가능.
 
 ---
 
-## 5. 주변 서브프로젝트 (웹 앱 빌드와 별개)
+## 5. 주변 서브프로젝트 — 웹앱 lint 범위에서 제외 처리
 
-이들은 `tsc -b`(=`src`만) 대상이 아니어서 배포 앱에 영향은 없으나 lint 오류가 있습니다.
+루트 `eslint.config.js`는 Vite 웹앱(`src/`)용이므로, 별도 툴체인/런타임을 쓰는 아래 디렉터리를
+`globalIgnores`로 제외했습니다(브라우저 globals로 잘못 린트되던 오류 44건 제거). 각자 자체 lint가 필요하면
+개별 설정 권장.
 
-| 위치 | lint errors | 성격 |
-|------|-------------|------|
-| `react-native-theme/` | 20 | 별도 React Native 테마 소스(미사용 import 다수) |
-| `landing/` | 6 | 별도 Next.js 랜딩(triple-slash, only-export-components 등) |
-| `scripts/` | 5 | 데이터 임포트 스크립트(`any`, 미사용 var) |
-| `supabase/functions/` | 5 | Deno 엣지 함수(`any`, `prefer-const`) |
+| 위치 | 성격 |
+|------|------|
+| `landing/` | 자체 `.eslintrc.json`을 가진 별도 Next.js 앱 |
+| `react-native-theme/` | React Native 소스(브라우저 globals와 무관) |
+| `scripts/` | Node 데이터 임포트 스크립트 |
+| `supabase/functions/` | Deno 엣지 함수 |
+| `android/`, `ios/` | 네이티브 빌드 산출물 |
 
 ---
 
-## 6. 남은 라이브 코드 lint (의도적 잔존)
+## 6. 라이브 코드 lint 예외 처리
 
 - `components/BottomSheet.tsx:16` `react-hooks/set-state-in-effect` —
-  바텀시트 "열기 애니메이션"을 위한 `setIsRendered(true)` 패턴. 규칙이 경고하지만 **실제 버그 아님**이며,
-  수정 시 등장 애니메이션이 깨질 위험이 있어 그대로 두었습니다.
+  바텀시트 enter/exit 트랜지션을 위한 의도된 `setIsRendered(true)` 패턴(실제 버그 아님).
+  해당 라인에 사유를 명시한 `eslint-disable-next-line` 주석을 달아 처리. → **lint 0**.
 
 ---
 
 ## 7. 권장 후속 조치
-1. ✅ (완료) 깨진 dead 파일 15개 삭제, 필수 3개(`ErrorBoundary`/`NotFound`/`AuthCallback`) 연결.
-2. 남은 "정상 미사용" 고아 파일(4.d) 정리 여부 결정 — 원하면 별도 요청 시 삭제.
-3. 번들 크기: 메인 청크 655KB(gzip 187KB) — 라우트 단위 `React.lazy` 코드 스플리팅 권장.
-4. `eslint.config.js`에 `landing/`·`react-native-theme/` `ignores` 추가 검토(서브프로젝트를 웹앱 lint에서 분리).
-5. `@ts-nocheck` 재발 방지: 살릴 파일은 타입을 실제로 고치고, 아니면 삭제.
+1. ✅ (완료) 깨진 dead 파일 18개 삭제, 필수 3개(`ErrorBoundary`/`NotFound`/`AuthCallback`) 연결.
+2. ✅ (완료) 루트 eslint를 웹앱 범위로 분리 → `npm run lint` **0 errors**.
+3. 남은 "정상 미사용" 고아 파일(4.e) 정리 여부 결정 — 원하면 별도 요청 시 삭제.
+4. 번들 크기: 메인 청크 655KB(gzip 187KB) — 라우트 단위 `React.lazy` 코드 스플리팅 권장.
+5. 서브프로젝트(`landing/`, `react-native-theme/`, `supabase/functions/`)는 각자 자체 lint 설정 권장.
 6. OAuth 실제 구현: `Auth.tsx`의 `signInWithKakao`는 현재 no-op 스텁 → 실제 `supabase.auth.signInWithOAuth` 연결 필요.
