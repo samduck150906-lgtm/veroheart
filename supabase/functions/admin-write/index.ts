@@ -86,6 +86,11 @@ serve(async (req) => {
     const body = await req.json();
     const action = body?.action;
 
+    // 로그인 검증 전용 — 토큰 게이트를 통과했다는 것 자체가 유효한 관리자
+    if (action === 'verifyAdmin') {
+      return json({ ok: true }, 200, cors);
+    }
+
     if (action === 'saveProduct') {
       const product = pick(body.product ?? {}, PRODUCT_COLUMNS);
       if (!product.name || !product.brand_name) {

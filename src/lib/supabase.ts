@@ -28,9 +28,11 @@ export const supabase = createClient(
 export async function adminWrite<T = any>(
   action: string,
   data: Record<string, unknown> = {},
+  tokenOverride?: string,
 ): Promise<T> {
   const token =
-    typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('vh_admin_auth') ?? '' : '';
+    tokenOverride ??
+    (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('vh_admin_auth') ?? '' : '');
   const res = await fetch(`${supabaseUrl}/functions/v1/admin-write`, {
     method: 'POST',
     headers: {
