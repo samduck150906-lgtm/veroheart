@@ -25,11 +25,11 @@ export function Skeleton({
   );
 }
 
-/** 제품 카드 스켈레톤 — ProductCard와 동일 비율(이미지 정사각 + 2줄 텍스트) */
+/** 제품 카드 스켈레톤 — ProductCard 그리드형과 동일 비율(이미지 16:9 + 2줄 텍스트) */
 export function ProductCardSkeleton() {
   return (
     <div style={{ display: 'grid', gap: 8 }}>
-      <Skeleton height={0} style={{ paddingBottom: '100%', height: 0 }} radius={18} />
+      <Skeleton height={0} style={{ paddingBottom: '56.25%', height: 0 }} radius={14} />
       <Skeleton width="40%" height={11} />
       <Skeleton width="90%" height={14} />
       <Skeleton width="60%" height={14} />
