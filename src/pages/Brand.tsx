@@ -120,8 +120,8 @@ export default function Brand() {
             등록된 제품이 없습니다.
           </div>
         ) : (
-          <div className="ui-grid-2">
-            {brandProducts.map(p => <ProductCard key={p.id} product={p} />)}
+          <div className="ui-grid-2" style={{ alignItems: 'stretch' }}>
+            {brandProducts.map(p => <ProductCard key={p.id} product={p} grid />)}
           </div>
         )}
       </section>
