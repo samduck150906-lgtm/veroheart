@@ -7,9 +7,9 @@ function Footer() {
     <footer
       style={{
         padding: '12px 20px 14px',
-        background: 'rgba(250, 250, 249, 0.96)',
-        borderTop: '1px solid rgba(28, 25, 23, 0.08)',
-        color: '#78716c',
+        background: 'var(--surface-alt)',
+        borderTop: '1px solid rgba(128, 128, 140, 0.14)',
+        color: 'var(--text-muted)',
         fontSize: '9px',
         lineHeight: 1.45,
       }}
@@ -26,21 +26,21 @@ function Footer() {
         >
           <Link
             to="/terms"
-            style={{ fontSize: '10px', color: '#57534e', textDecoration: 'none', fontWeight: 600 }}
+            style={{ fontSize: '10px', color: 'var(--text-dark)', textDecoration: 'none', fontWeight: 600 }}
           >
             이용약관
           </Link>
-          <span style={{ color: '#d6d3d1' }}>|</span>
+          <span style={{ color: 'var(--line)' }}>|</span>
           <Link
             to="/privacy"
-            style={{ fontSize: '10px', color: '#57534e', textDecoration: 'none', fontWeight: 600 }}
+            style={{ fontSize: '10px', color: 'var(--text-dark)', textDecoration: 'none', fontWeight: 600 }}
           >
             개인정보처리방침
           </Link>
-          <span style={{ color: '#d6d3d1' }}>|</span>
+          <span style={{ color: 'var(--line)' }}>|</span>
           <Link
             to="/refund"
-            style={{ fontSize: '10px', color: '#57534e', textDecoration: 'none', fontWeight: 600 }}
+            style={{ fontSize: '10px', color: 'var(--text-dark)', textDecoration: 'none', fontWeight: 600 }}
           >
             취소 및 환불 안내
           </Link>
@@ -51,7 +51,7 @@ function Footer() {
             marginBottom: '8px',
             fontSize: '11px',
             fontWeight: 600,
-            color: '#292524',
+            color: 'var(--text-dark)',
           }}
         >
           VeRoRo
@@ -63,13 +63,13 @@ function Footer() {
             fontSize: '10px',
             lineHeight: 1.45,
             fontWeight: 600,
-            color: '#6B6560',
+            color: 'var(--text-muted)',
           }}
         >
           {COUPANG_PARTNERS_DISCLOSURE}
         </p>
 
-        <div style={{ fontSize: '8.5px', lineHeight: 1.4, color: '#938D88' }}>
+        <div style={{ fontSize: '8.5px', lineHeight: 1.4, color: 'var(--text-muted)' }}>
           © {COMPANY.tradeName}
         </div>
       </div>

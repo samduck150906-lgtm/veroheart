@@ -77,8 +77,8 @@ export default function Profile() {
                   borderRadius: '16px',
                   fontSize: '15px',
                   fontWeight: 800,
-                  border: formData.species === sp ? 'none' : '1px solid #E5E7EB',
-                  backgroundColor: formData.species === sp ? 'var(--primary-dark)' : '#fff',
+                  border: formData.species === sp ? 'none' : '1px solid var(--line)',
+                  backgroundColor: formData.species === sp ? 'var(--primary-dark)' : 'var(--surface-elevated)',
                   color: formData.species === sp ? '#fff' : 'var(--text-dark)',
                   cursor: 'pointer',
                 }}
@@ -105,9 +105,9 @@ export default function Profile() {
                   borderRadius: '999px',
                   fontSize: '14px',
                   fontWeight: 700,
-                  border: formData.age === age ? 'none' : '1px solid #E5E7EB',
-                  backgroundColor: formData.age === age ? 'var(--primary)' : '#fff',
-                  color: formData.age === age ? '#111827' : 'var(--text-dark)',
+                  border: formData.age === age ? 'none' : '1px solid var(--line)',
+                  backgroundColor: formData.age === age ? 'var(--primary)' : 'var(--surface-elevated)',
+                  color: formData.age === age ? 'var(--text-dark)' : 'var(--text-dark)',
                   cursor: 'pointer',
                 }}
               >
@@ -130,7 +130,7 @@ export default function Profile() {
               }}
               placeholder="예: 5.2"
             />
-            <span style={{ fontSize: '14px', fontWeight: 700, color: '#64748B' }}>kg</span>
+            <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-muted)' }}>kg</span>
           </div>
         );
       case 4:
@@ -146,8 +146,8 @@ export default function Profile() {
                   borderRadius: '999px',
                   fontSize: '14px',
                   fontWeight: 600,
-                  border: formData.allergies.includes(opt) ? 'none' : '1px solid #E5E7EB',
-                  backgroundColor: formData.allergies.includes(opt) ? 'var(--danger)' : '#fff',
+                  border: formData.allergies.includes(opt) ? 'none' : '1px solid var(--line)',
+                  backgroundColor: formData.allergies.includes(opt) ? 'var(--danger)' : 'var(--surface-elevated)',
                   color: formData.allergies.includes(opt) ? '#fff' : 'var(--text-dark)',
                   cursor: 'pointer',
                 }}
@@ -170,8 +170,8 @@ export default function Profile() {
                   borderRadius: '999px',
                   fontSize: '14px',
                   fontWeight: 600,
-                  border: formData.healthConcerns.includes(opt) ? 'none' : '1px solid #E5E7EB',
-                  backgroundColor: formData.healthConcerns.includes(opt) ? 'var(--primary-dark)' : '#fff',
+                  border: formData.healthConcerns.includes(opt) ? 'none' : '1px solid var(--line)',
+                  backgroundColor: formData.healthConcerns.includes(opt) ? 'var(--primary-dark)' : 'var(--surface-elevated)',
                   color: formData.healthConcerns.includes(opt) ? '#fff' : 'var(--text-dark)',
                   cursor: 'pointer',
                 }}
@@ -194,8 +194,8 @@ export default function Profile() {
   if (!userId) {
     return (
       <div className="animate-fade-in" style={{ padding: '40px 20px', minHeight: '80vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-        <div style={{ width: '80px', height: '80px', borderRadius: '24px', backgroundColor: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
-          <User size={40} color="#D1D5DB" />
+        <div style={{ width: '80px', height: '80px', borderRadius: '24px', backgroundColor: 'var(--surface-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
+          <User size={40} color="var(--line)" />
         </div>
         <h2 style={{ fontSize: '24px', fontWeight: 900, color: 'var(--text-dark)', marginBottom: '12px' }}>
           로그인이 필요해요
@@ -247,9 +247,9 @@ export default function Profile() {
               {favoriteProducts.map(p => <ProductCard key={p.id} product={p} />)}
             </div>
           ) : (
-            <div style={{ textAlign: 'center', padding: '100px 20px', backgroundColor: '#F9FAFB', borderRadius: '24px' }}>
-              <Heart color="#D1D5DB" size={40} style={{ margin: '0 auto 16px' }} />
-              <p style={{ color: '#9CA3AF', fontSize: '15px' }}>찜한 제품이 없습니다.</p>
+            <div style={{ textAlign: 'center', padding: '100px 20px', backgroundColor: 'var(--surface-alt)', borderRadius: '24px' }}>
+              <Heart color="var(--line)" size={40} style={{ margin: '0 auto 16px' }} />
+              <p style={{ color: 'var(--text-muted)', fontSize: '15px' }}>찜한 제품이 없습니다.</p>
               <Link to="/search" style={{ color: 'var(--primary)', fontWeight: 700, marginTop: '12px', display: 'inline-block', textDecoration: 'none' }}>제품 탐색하기</Link>
             </div>
           )}
@@ -261,7 +261,7 @@ export default function Profile() {
               <User color="#fff" size={22} />
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '11px', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.06em', marginBottom: '4px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.06em', marginBottom: '4px' }}>
                 마이 펫 · {profileStep + 1} / {stepCount}
               </div>
               <TossSectionTitle title={step.title} style={{ marginBottom: '0' }} />
@@ -272,7 +272,7 @@ export default function Profile() {
             style={{
               height: '4px',
               borderRadius: '999px',
-              background: '#EEF2F6',
+              background: 'var(--surface-alt)',
               marginBottom: '24px',
               overflow: 'hidden',
             }}
@@ -288,7 +288,7 @@ export default function Profile() {
             />
           </div>
 
-          <p style={{ margin: '0 0 22px', fontSize: '16px', fontWeight: 700, color: '#334155', lineHeight: 1.5 }}>
+          <p style={{ margin: '0 0 22px', fontSize: '16px', fontWeight: 700, color: 'var(--text-dark)', lineHeight: 1.5 }}>
             {step.prompt}
           </p>
 
@@ -317,7 +317,7 @@ export default function Profile() {
             변경 사항 저장
           </button>
           
-          <div style={{ marginTop: '32px', borderTop: '1px solid #E5E8EB', paddingTop: '24px' }}>
+          <div style={{ marginTop: '32px', borderTop: '1px solid var(--line)', paddingTop: '24px' }}>
             <button 
               onClick={handleLogout}
               style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}
@@ -330,8 +330,8 @@ export default function Profile() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {orders.length > 0 ? (
             orders.map(order => (
-              <div key={order.id} className="card" style={{ padding: '20px', border: '1px solid #EEF0F3' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px dashed #E5E7EB' }}>
+              <div key={order.id} className="card" style={{ padding: '20px', border: '1px solid var(--surface-alt)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px dashed var(--line)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <Calendar size={16} color="var(--text-muted)" />
                     <span style={{ fontSize: '14px', color: 'var(--text-dark)', fontWeight: 600 }}>{new Date(order.created_at).toLocaleDateString()}</span>
@@ -348,7 +348,7 @@ export default function Profile() {
                         <div style={{ fontSize: '14px', fontWeight: 700, margin: '2px 0' }}>{item.products.name}</div>
                         <div style={{ fontSize: '13px', fontWeight: 600 }}>{item.price_at_purchase.toLocaleString()}원 · {item.quantity}개</div>
                       </div>
-                      <ChevronRight size={20} color="#9CA3AF" style={{ alignSelf: 'center' }} />
+                      <ChevronRight size={20} color="var(--text-muted)" style={{ alignSelf: 'center' }} />
                     </Link>
                   ))}
                 </div>
@@ -356,18 +356,18 @@ export default function Profile() {
                 {/* 배송 타임라인 */}
                 <DeliveryTimeline status={order.status} />
 
-                <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #F3F4F6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--surface-alt)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>총 결제 금액</span>
                   <span style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-dark)' }}>{order.total_amount.toLocaleString()}원</span>
                 </div>
               </div>
             ))
           ) : (
-            <div style={{ textAlign: 'center', padding: '100px 20px', backgroundColor: '#F9FAFB', borderRadius: '24px' }}>
-              <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                <ShoppingBag color="#D1D5DB" size={32} />
+            <div style={{ textAlign: 'center', padding: '100px 20px', backgroundColor: 'var(--surface-alt)', borderRadius: '24px' }}>
+              <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'var(--surface-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', boxShadow: 'var(--shadow-card)' }}>
+                <ShoppingBag color="var(--text-muted)" size={32} />
               </div>
-              <p style={{ color: '#9CA3AF', fontSize: '15px' }}>아직 주문 내역이 없습니다.</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '15px' }}>아직 주문 내역이 없습니다.</p>
               <Link to="/" style={{ color: 'var(--primary)', fontWeight: 700, marginTop: '12px', display: 'inline-block', textDecoration: 'none' }}>첫 쇼핑 시작하기</Link>
             </div>
           )}
@@ -404,23 +404,23 @@ function DeliveryTimeline({ status }: { status: string }) {
   const currentIdx = DELIVERY_STEPS.findIndex(s => s.key === status);
   const activeIdx = currentIdx === -1 ? 0 : currentIdx;
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0', marginTop: '20px', padding: '16px', background: '#F9FAFB', borderRadius: '14px' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0', marginTop: '20px', padding: '16px', background: 'var(--surface-alt)', borderRadius: '14px' }}>
       {DELIVERY_STEPS.map((step, idx) => (
         <div key={step.key} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 'none' }}>
             <div style={{
               width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              backgroundColor: idx <= activeIdx ? 'var(--primary-dark)' : '#E5E7EB',
-              color: idx <= activeIdx ? '#fff' : '#9CA3AF', fontSize: '12px', fontWeight: 800
+              backgroundColor: idx <= activeIdx ? 'var(--primary-dark)' : 'var(--line)',
+              color: idx <= activeIdx ? '#fff' : 'var(--text-muted)', fontSize: '12px', fontWeight: 800
             }}>
               {idx < activeIdx ? '✓' : idx + 1}
             </div>
-            <span style={{ fontSize: '10px', fontWeight: 600, marginTop: '4px', color: idx <= activeIdx ? 'var(--primary-dark)' : '#9CA3AF', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: '10px', fontWeight: 600, marginTop: '4px', color: idx <= activeIdx ? 'var(--primary-dark)' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>
               {step.label}
             </span>
           </div>
           {idx < DELIVERY_STEPS.length - 1 && (
-            <div style={{ flex: 1, height: '2px', backgroundColor: idx < activeIdx ? 'var(--primary-dark)' : '#E5E7EB', margin: '0 2px', marginBottom: '14px' }} />
+            <div style={{ flex: 1, height: '2px', backgroundColor: idx < activeIdx ? 'var(--primary-dark)' : 'var(--line)', margin: '0 2px', marginBottom: '14px' }} />
           )}
         </div>
       ))}

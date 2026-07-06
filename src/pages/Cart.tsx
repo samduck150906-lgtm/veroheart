@@ -33,11 +33,11 @@ export default function Cart() {
   if (cartItems.length === 0) {
     return (
       <div style={{ textAlign: 'center', padding: '100px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <div style={{ width: '120px', height: '120px', borderRadius: '50%', backgroundColor: '#F2F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
+        <div style={{ width: '120px', height: '120px', borderRadius: '50%', backgroundColor: 'var(--surface-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
           <img src="https://cdn-icons-png.flaticon.com/512/825/825590.png" alt="Empty Cart" style={{ width: '60px', opacity: 0.6 }} />
         </div>
-        <h3 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '8px', color: '#1F2937' }}>장바구니가 텅 비었어요!</h3>
-        <p style={{ marginBottom: '32px', color: '#6B7684', fontSize: '15px' }}>우리 아이와 궁합이 잘 맞는 사료를<br/>먼저 찾아볼까요?</p>
+        <h3 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '8px', color: 'var(--text-dark)' }}>장바구니가 텅 비었어요!</h3>
+        <p style={{ marginBottom: '32px', color: 'var(--text-muted)', fontSize: '15px' }}>우리 아이와 궁합이 잘 맞는 사료를<br/>먼저 찾아볼까요?</p>
         <button 
           className="btn btn-primary" 
           style={{ padding: '16px 32px', borderRadius: '16px', fontWeight: 800, fontSize: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', border: 'none', cursor: 'pointer' }}
@@ -52,7 +52,7 @@ export default function Cart() {
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '100px' }}>
       <h2 style={{ fontSize: '24px', marginBottom: '8px' }}>장바구니</h2>
-      <p style={{ fontSize: '13px', color: '#64748B', marginBottom: '12px', lineHeight: 1.5, fontWeight: 600 }}>
+      <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '12px', lineHeight: 1.5, fontWeight: 600 }}>
         베로로는 결제를 받지 않습니다. 담아둔 상품은 쿠팡에서 이어서 확인·구매할 수 있습니다(쿠팡파트너스).
       </p>
       <p
@@ -60,12 +60,12 @@ export default function Cart() {
           fontSize: '11px',
           lineHeight: 1.5,
           fontWeight: 600,
-          color: '#64748B',
+          color: 'var(--text-muted)',
           marginBottom: '24px',
           padding: '10px 12px',
-          background: '#F8FAFC',
+          background: 'var(--surface-alt)',
           borderRadius: '12px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--line)',
         }}
       >
         {COUPANG_PARTNERS_DISCLOSURE}
@@ -130,9 +130,9 @@ export default function Cart() {
           bottom: '84px',
           zIndex: 9,
           padding: '12px 20px calc(12px + env(safe-area-inset-bottom, 0px))',
-          background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.92) 18%, #fff 100%)',
+          background: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, var(--bg-gradient) 32%)',
           boxShadow: '0 -8px 24px rgba(0,0,0,0.06)',
-          borderTop: '1px solid rgba(0,0,0,0.06)',
+          borderTop: '1px solid rgba(128,128,140,0.12)',
         }}
       >
         <button
