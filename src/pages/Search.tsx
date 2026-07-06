@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import StateView from '../components/StateView';
+import BottomSheet from '../components/BottomSheet';
 import { ProductGridSkeleton } from '../components/Skeleton';
 import type { Product } from '../types';
 import { TossFilterSection, TossSearchBar, TossChip, TossButton } from '../components/TossUI';
@@ -626,14 +627,31 @@ export default function Search() {
         )}
       </div>
 
-      {isFilterOpen && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', justifyContent: 'flex-end' }}>
-          <div className="animate-slide-in-right" style={{ width: '85%', maxWidth: '400px', backgroundColor: '#fff', height: '100%', overflowY: 'auto', padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-              <h2 style={{ fontSize: '22px', fontWeight: 800 }}>상세 필터</h2>
-              <button type="button" onClick={() => setIsFilterOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
-            </div>
-
+      <BottomSheet
+        isOpen={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        title="상세 필터"
+        headerRight={activeFilterCount > 0 ? <span className="filter-count">{activeFilterCount}</span> : undefined}
+        footer={
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button
+              type="button"
+              onClick={resetFilters}
+              style={{ flex: 1, padding: '16px', borderRadius: '16px', border: '1px solid #E5E7EB', background: 'var(--surface-elevated)', color: 'var(--text-dark)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer' }}
+            >
+              <Trash2 size={18} /> 초기화
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsFilterOpen(false)}
+              className="ui-press"
+              style={{ flex: 2, padding: '16px', borderRadius: '16px', background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)', color: '#fff', fontWeight: 800, border: 'none', cursor: 'pointer' }}
+            >
+              {isLoading ? '불러오는 중…' : `${displayResults.length.toLocaleString()}개 결과 보기`}
+            </button>
+          </div>
+        }
+      >
             <TossFilterSection title="반려동물">
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 <FilterChip label="전체" selected={filters.targetPetType === ''} onClick={() => setFilters({ ...filters, targetPetType: '' })} />
@@ -765,14 +783,7 @@ export default function Search() {
               )}
               <p style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '6px' }}>선택한 성분이 포함된 제품은 검색에서 제외됩니다.</p>
             </TossFilterSection>
-
-            <div style={{ position: 'sticky', bottom: 0, paddingTop: '40px', paddingBottom: '24px', backgroundColor: '#fff', display: 'flex', gap: '12px' }}>
-              <button type="button" onClick={resetFilters} style={{ flex: 1, padding: '18px', borderRadius: '16px', border: '1px solid #E5E7EB', backgroundColor: '#fff', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}><Trash2 size={18} /> 초기화</button>
-              <button type="button" onClick={() => setIsFilterOpen(false)} style={{ flex: 2, padding: '18px', borderRadius: '16px', background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)', color: '#fff', fontWeight: 800, border: 'none', cursor: 'pointer' }}>결과 보기</button>
-            </div>
-          </div>
-        </div>
-      )}
+      </BottomSheet>
 
       {/* Standard Feed Modal */}
       {isStandardFeedModalOpen && (

@@ -242,6 +242,7 @@ export default function Home() {
               >
                 <span className={`rising-rank${item.rank <= 3 ? ' top3' : ''}`}>{item.rank}</span>
                 <span className="rising-keyword">{item.keyword}</span>
+                {item.series && <Sparkline data={item.series} trend={item.trend} />}
                 <KeywordTrendBadge item={item} />
               </button>
             ))}
@@ -506,6 +507,38 @@ export default function Home() {
       )}
 
     </div>
+  );
+}
+
+/** 급상승 키워드 24시간 추이 미니 그래프 (상승=빨강 / 하강=파랑 / 보합=회색) */
+function Sparkline({ data, trend }: { data: number[]; trend: typeof RISING_KEYWORDS[number]['trend'] }) {
+  if (data.length < 2) return null;
+  const w = 44;
+  const h = 18;
+  const pad = 2;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const span = max - min || 1;
+  const stepX = (w - pad * 2) / (data.length - 1);
+  const points = data.map((v, i) => {
+    const x = pad + i * stepX;
+    const y = pad + (h - pad * 2) * (1 - (v - min) / span);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  const color = trend === 'up' || trend === 'new' ? '#EF4444' : trend === 'down' ? '#2563EB' : '#94A3B8';
+  const last = points[points.length - 1].split(',');
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden style={{ flexShrink: 0, overflow: 'visible' }}>
+      <polyline
+        points={points.join(' ')}
+        fill="none"
+        stroke={color}
+        strokeWidth={1.6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx={last[0]} cy={last[1]} r={1.8} fill={color} />
+    </svg>
   );
 }
 
