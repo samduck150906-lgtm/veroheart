@@ -271,7 +271,7 @@ export default function Detail() {
     if (cautionIngs.length > 0) {
       return { headline: `확인해야 할 성분이 ${cautionIngs.length}개 있어요`, headlineColor: '#F59E0B' };
     }
-    return { headline: `${profile.name}가 안심하고 먹을 수 있어요!`, headlineColor: '#191F28' };
+    return { headline: `${profile.name}가 안심하고 먹을 수 있어요!`, headlineColor: 'var(--text-dark)' };
   })();
 
   // ── 리뷰 요약(별점 분포·태그) — 실제 reviews 데이터에서 파생 ──
@@ -311,17 +311,17 @@ export default function Detail() {
             borderRadius: '22px',
             background:
               conclusion.tone === 'alert'
-                ? 'linear-gradient(145deg, #FEF2F2 0%, #FFF 100%)'
+                ? 'var(--pdp-danger-bg)'
                 : conclusion.tone === 'match'
-                  ? 'linear-gradient(145deg, #ECFDF5 0%, #FFF 100%)'
-                  : 'linear-gradient(145deg, #FFFBEB 0%, #FFF 100%)',
+                  ? 'var(--pdp-safe-bg)'
+                  : 'var(--pdp-caution-bg)',
             border:
               conclusion.tone === 'alert'
-                ? '1px solid #FECACA'
+                ? '1px solid var(--pdp-danger-line)'
                 : conclusion.tone === 'match'
-                  ? '1px solid #BBF7D0'
-                  : '1px solid #FDE68A',
-            boxShadow: '0 8px 28px rgba(15, 23, 42, 0.06)',
+                  ? '1px solid rgba(21, 179, 107, 0.3)'
+                  : '1px solid var(--pdp-caution-line)',
+            boxShadow: 'var(--pdp-e2)',
           }}
         >
           <p
@@ -329,7 +329,7 @@ export default function Detail() {
               margin: '0 0 8px',
               fontSize: '20px',
               fontWeight: 900,
-              color: '#0F172A',
+              color: 'var(--pdp-ink)',
               lineHeight: 1.35,
               letterSpacing: '-0.02em',
             }}
@@ -337,7 +337,7 @@ export default function Detail() {
             {conclusion.headline}
           </p>
           {conclusion.subline ? (
-            <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#475569', lineHeight: 1.55 }}>
+            <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--pdp-ink-muted)', lineHeight: 1.55 }}>
               {conclusion.subline}
             </p>
           ) : null}
@@ -529,28 +529,28 @@ export default function Detail() {
 
       {/* 브랜드 바로가기 */}
       <div style={{ marginBottom: '32px' }}>
-        <Link to={`/brand/${encodeURIComponent(product.brand)}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: '#F9FAFB', borderRadius: '16px', textDecoration: 'none', color: '#111827', border: '1px solid #F3F4F6' }}>
+        <Link to={`/brand/${encodeURIComponent(product.brand)}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: 'var(--surface-alt)', borderRadius: '16px', textDecoration: 'none', color: 'var(--text-dark)', border: '1px solid var(--surface-alt)' }}>
           <div>
-            <div style={{ fontSize: '12px', color: '#6B7280', fontWeight: 600, marginBottom: '2px' }}>브랜드</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '2px' }}>브랜드</div>
             <div style={{ fontSize: '16px', fontWeight: 800 }}>{product.brand}의 다른 제품 보기</div>
           </div>
-          <ArrowLeft size={18} style={{ transform: 'rotate(180deg)', color: '#9CA3AF' }} />
+          <ArrowLeft size={18} style={{ transform: 'rotate(180deg)', color: 'var(--text-muted)' }} />
         </Link>
       </div>
 
       {/* 리뷰 섹션 */}
       <section style={{ marginBottom: '40px' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 900, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px', color: '#0F172A' }}>
-          <MessageSquare size={20} /> 후기 <span style={{ color: '#94A3B8', fontWeight: 700 }}>{reviews.length}</span>
+        <h2 style={{ fontSize: '18px', fontWeight: 900, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-dark)' }}>
+          <MessageSquare size={20} /> 후기 <span style={{ color: 'var(--text-muted)', fontWeight: 700 }}>{reviews.length}</span>
         </h2>
-        <p style={{ fontSize: '12px', color: '#94A3B8', marginBottom: '16px', fontWeight: 600 }}>
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '16px', fontWeight: 600 }}>
           키워드만 골라도 돼요. {profile.name}와 비슷한 아이 집사의 글을 모아보려면 태그를 활용해 보세요.
         </p>
 
         <ReviewSummaryCard ratings={reviewRatings} topTags={topReviewTags} summary={reviewSummary} />
 
         {/* 리뷰 작성 */}
-        <div style={{ background: '#F9FAFB', borderRadius: '20px', padding: '20px', marginBottom: '24px', border: '1px solid #F3F4F6' }}>
+        <div style={{ background: 'var(--surface-alt)', borderRadius: '20px', padding: '20px', marginBottom: '24px', border: '1px solid var(--surface-alt)' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
             {REVIEW_QUICK_TAGS.map((tag) => (
               <button
@@ -562,9 +562,9 @@ export default function Detail() {
                   borderRadius: '999px',
                   fontSize: '13px',
                   fontWeight: 700,
-                  border: reviewTags.includes(tag) ? 'none' : '1px solid #E5E7EB',
-                  background: reviewTags.includes(tag) ? '#111827' : '#fff',
-                  color: reviewTags.includes(tag) ? '#fff' : '#374151',
+                  border: reviewTags.includes(tag) ? 'none' : '1px solid var(--line)',
+                  background: reviewTags.includes(tag) ? 'var(--text-dark)' : 'var(--surface-elevated)',
+                  color: reviewTags.includes(tag) ? 'var(--bg-color)' : 'var(--text-muted)',
                   cursor: 'pointer',
                 }}
               >
@@ -575,7 +575,7 @@ export default function Detail() {
           <div style={{ display: 'flex', gap: '4px', marginBottom: '12px' }}>
             {[1, 2, 3, 4, 5].map(star => (
               <button key={star} onClick={() => setReviewRating(star)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}>
-                <Star size={24} fill={star <= reviewRating ? '#FCD34D' : 'none'} color={star <= reviewRating ? '#FCD34D' : '#D1D5DB'} />
+                <Star size={24} fill={star <= reviewRating ? '#FCD34D' : 'none'} color={star <= reviewRating ? '#FCD34D' : 'var(--line)'} />
               </button>
             ))}
           </div>
@@ -584,15 +584,15 @@ export default function Detail() {
             onChange={e => setReviewContent(e.target.value)}
             placeholder={userId ? '한 줄 덧붙이기 (선택)' : '로그인 후 작성'}
             disabled={!userId}
-            style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid #E5E7EB', fontSize: '14px', outline: 'none', resize: 'none', height: '80px', boxSizing: 'border-box', background: userId ? '#fff' : '#F3F4F6' }}
+            style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid var(--line)', fontSize: '14px', outline: 'none', resize: 'none', height: '80px', boxSizing: 'border-box', color: 'var(--text-dark)', background: userId ? 'var(--surface-elevated)' : 'var(--surface-alt)' }}
           />
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
             {userId ? (
-              <button onClick={handleSubmitReview} disabled={isSubmitting || !reviewContent.trim()} style={{ padding: '12px 24px', background: '#111827', color: '#fff', borderRadius: '12px', fontWeight: 700, fontSize: '14px', border: 'none', cursor: 'pointer', opacity: isSubmitting || !reviewContent.trim() ? 0.5 : 1 }}>
+              <button onClick={handleSubmitReview} disabled={isSubmitting || !reviewContent.trim()} style={{ padding: '12px 24px', background: 'var(--text-dark)', color: 'var(--bg-color)', borderRadius: '12px', fontWeight: 700, fontSize: '14px', border: 'none', cursor: 'pointer', opacity: isSubmitting || !reviewContent.trim() ? 0.5 : 1 }}>
                 {isSubmitting ? '등록 중...' : '리뷰 등록'}
               </button>
             ) : (
-              <Link to="/login" style={{ padding: '12px 24px', background: '#111827', color: '#fff', borderRadius: '12px', fontWeight: 700, fontSize: '14px', textDecoration: 'none' }}>
+              <Link to="/login" style={{ padding: '12px 24px', background: 'var(--text-dark)', color: 'var(--bg-color)', borderRadius: '12px', fontWeight: 700, fontSize: '14px', textDecoration: 'none' }}>
                 로그인하고 리뷰 쓰기
               </Link>
             )}
@@ -602,29 +602,29 @@ export default function Detail() {
         {/* 리뷰 목록 */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {reviews.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '48px 20px', color: '#9CA3AF', background: '#F9FAFB', borderRadius: '16px' }}>
+            <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-muted)', background: 'var(--surface-alt)', borderRadius: '16px' }}>
               아직 리뷰가 없습니다. 첫 리뷰를 작성해보세요!
             </div>
           ) : reviews.map(review => (
-            <div key={review.id} style={{ padding: '16px 20px', background: '#fff', border: '1px solid #F3F4F6', borderRadius: '16px' }}>
+            <div key={review.id} style={{ padding: '16px 20px', background: 'var(--surface-elevated)', border: '1px solid var(--line)', borderRadius: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                 <div>
                   <div style={{ display: 'flex', gap: '2px', marginBottom: '4px' }}>
                     {[1, 2, 3, 4, 5].map(s => (
-                      <Star key={s} size={14} fill={s <= review.rating ? '#FCD34D' : 'none'} color={s <= review.rating ? '#FCD34D' : '#E5E7EB'} />
+                      <Star key={s} size={14} fill={s <= review.rating ? '#FCD34D' : 'none'} color={s <= review.rating ? '#FCD34D' : 'var(--line)'} />
                     ))}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#9CA3AF' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                     {review.users?.nickname || '익명'} · {new Date(review.created_at).toLocaleDateString()}
                   </div>
                 </div>
                 {review.user_id === userId && (
-                  <button onClick={() => handleDeleteReview(review.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#D1D5DB' }}>
+                  <button onClick={() => handleDeleteReview(review.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--line)' }}>
                     <Trash2 size={16} />
                   </button>
                 )}
               </div>
-              <p style={{ fontSize: '14px', color: '#374151', lineHeight: 1.6, margin: 0 }}>{review.content}</p>
+              <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>{review.content}</p>
             </div>
           ))}
         </div>
@@ -637,9 +637,9 @@ export default function Detail() {
           fontSize: '11px',
           lineHeight: 1.55,
           fontWeight: 600,
-          color: '#64748B',
+          color: 'var(--text-muted)',
           textAlign: 'center',
-          background: '#F1F5F9',
+          background: 'var(--surface-alt)',
           borderRadius: '14px',
         }}
       >
