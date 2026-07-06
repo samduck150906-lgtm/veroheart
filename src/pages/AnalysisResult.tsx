@@ -45,7 +45,7 @@ function ScoreRing({ score, grade }: { score: number; grade: CompatibilityGrade 
     <div style={{ display: 'flex', alignItems: 'center', gap: 20, padding: '20px 4px' }}>
       <div style={{ position: 'relative', width: 128, height: 128, flexShrink: 0 }}>
         <svg width="128" height="128" style={{ transform: 'rotate(-90deg)' }}>
-          <circle cx="64" cy="64" r={r} fill="none" stroke="#EFF1F4" strokeWidth="11" />
+          <circle cx="64" cy="64" r={r} fill="none" stroke="var(--line)" strokeWidth="11" />
           <circle
             cx="64" cy="64" r={r} fill="none" stroke={color} strokeWidth="11"
             strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round"
@@ -300,7 +300,7 @@ export default function AnalysisResult() {
       </header>
 
       {/* Product card */}
-      <div style={{ display: 'flex', gap: 14, alignItems: 'center', background: '#fff', border: '1px solid rgba(28,25,23,0.06)', borderRadius: 20, padding: 14, boxShadow: 'var(--shadow-sm)' }}>
+      <div style={{ display: 'flex', gap: 14, alignItems: 'center', background: 'var(--surface-elevated)', border: '1px solid rgba(28,25,23,0.06)', borderRadius: 20, padding: 14, boxShadow: 'var(--shadow-sm)' }}>
         <img
           src={product.imageUrl}
           alt={product.name}
@@ -324,7 +324,7 @@ export default function AnalysisResult() {
           style={{ width: '100%', textAlign: 'left', background: 'rgba(254,229,0,0.14)', border: '1px solid rgba(229,206,0,0.35)', borderRadius: 16, padding: 14, marginBottom: 4, cursor: 'pointer', display: 'flex', gap: 10, alignItems: 'center' }}
         >
           <Sparkles size={18} color="var(--primary-dark)" style={{ flexShrink: 0 }} />
-          <span style={{ fontSize: 13, fontWeight: 700, color: '#6B5E00', lineHeight: 1.5 }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-dark)', lineHeight: 1.5 }}>
             우리 아이 프로필을 등록하면 알레르기·건강 고민까지 반영한 <b>맞춤 점수</b>를 볼 수 있어요.
           </span>
         </button>
@@ -367,7 +367,7 @@ export default function AnalysisResult() {
             style={{
               flex: 1, padding: '9px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
               fontSize: 13.5, fontWeight: 800,
-              background: activeTab === t ? '#fff' : 'transparent',
+              background: activeTab === t ? 'var(--surface-elevated)' : 'transparent',
               color: activeTab === t ? 'var(--text-dark)' : 'var(--text-muted)',
               boxShadow: activeTab === t ? '0 1px 4px rgba(0,0,0,0.06)' : 'none',
               transition: 'all 0.15s ease',
@@ -382,7 +382,7 @@ export default function AnalysisResult() {
       {activeTab === '종합' && (
         <div style={{ display: 'grid', gap: 16 }}>
           {report?.summary && (
-            <div style={{ background: '#fff', border: '1px solid rgba(28,25,23,0.06)', borderRadius: 16, padding: 16, fontSize: 14, fontWeight: 700, color: 'var(--text-dark)', lineHeight: 1.6 }}>
+            <div style={{ background: 'var(--surface-elevated)', border: '1px solid rgba(28,25,23,0.06)', borderRadius: 16, padding: 16, fontSize: 14, fontWeight: 700, color: 'var(--text-dark)', lineHeight: 1.6 }}>
               {report.summary}
             </div>
           )}
@@ -398,7 +398,7 @@ export default function AnalysisResult() {
       {/* Tab: 영양소 */}
       {activeTab === '영양소' && (
         <div style={{ display: 'grid', gap: 16 }}>
-          <div style={{ background: '#fff', border: '1px solid rgba(28,25,23,0.06)', borderRadius: 16, padding: 18 }}>
+          <div style={{ background: 'var(--surface-elevated)', border: '1px solid rgba(28,25,23,0.06)', borderRadius: 16, padding: 18 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
               <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-dark)' }}>영양 구성</span>
               <span style={{
@@ -431,7 +431,7 @@ export default function AnalysisResult() {
 
       {/* Tab: 전성분 */}
       {activeTab === '전성분' && (
-        <div style={{ background: '#fff', border: '1px solid rgba(28,25,23,0.06)', borderRadius: 16, padding: 16 }}>
+        <div style={{ background: 'var(--surface-elevated)', border: '1px solid rgba(28,25,23,0.06)', borderRadius: 16, padding: 16 }}>
           <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 12 }}>성분을 탭하면 상세 정보를 볼 수 있어요</div>
           <div style={{ display: 'grid', gap: 8 }}>
             {ingredients.length === 0 && (
@@ -506,7 +506,7 @@ export default function AnalysisResult() {
 /* ── 재사용 소블록 ───────────────────────────────────────── */
 function InfoBlock({ title, color, items, empty }: { title: string; color: string; items: string[]; empty: string }) {
   return (
-    <div style={{ background: '#fff', border: '1px solid rgba(28,25,23,0.06)', borderRadius: 16, padding: 16 }}>
+    <div style={{ background: 'var(--surface-elevated)', border: '1px solid rgba(28,25,23,0.06)', borderRadius: 16, padding: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
         <span style={{ width: 8, height: 8, borderRadius: 999, background: color }} />
         <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-dark)' }}>{title}</span>

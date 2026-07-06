@@ -168,7 +168,7 @@ export function TossField({ label, children, helperText, icon, style }: TossFiel
       )}
       {children}
       {helperText && (
-        <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9CA3AF', fontWeight: 600, lineHeight: 1.45 }}>
+        <p style={{ margin: '6px 0 0', fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, lineHeight: 1.45 }}>
           {helperText}
         </p>
       )}

@@ -12,11 +12,11 @@ export default function Comparison() {
   if (products.length === 0) {
     return (
       <div style={{ textAlign: 'center', padding: '100px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <div style={{ width: '120px', height: '120px', borderRadius: '50%', backgroundColor: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
+        <div style={{ width: '120px', height: '120px', borderRadius: '50%', backgroundColor: 'var(--surface-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
           <img src="https://cdn-icons-png.flaticon.com/512/9322/9322127.png" alt="Empty Comparison" style={{ width: '60px', opacity: 0.6 }} />
         </div>
-        <h3 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '8px', color: '#1F2937' }}>비교함이 비어있습니다.</h3>
-        <p style={{ marginBottom: '32px', color: '#6B7280', fontSize: '15px' }}>마음에 드는 사료들을 담아<br/>어떤 점이 다른지 꼼꼼히 비교해보세요!</p>
+        <h3 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '8px', color: 'var(--text-dark)' }}>비교함이 비어있습니다.</h3>
+        <p style={{ marginBottom: '32px', color: 'var(--text-muted)', fontSize: '15px' }}>마음에 드는 사료들을 담아<br/>어떤 점이 다른지 꼼꼼히 비교해보세요!</p>
         <button 
           className="btn btn-primary" 
           style={{ padding: '16px 32px', borderRadius: '16px', fontWeight: 800, fontSize: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', border: 'none', cursor: 'pointer' }}
@@ -36,7 +36,7 @@ export default function Comparison() {
           compare
         </span>
         <h2 style={{ fontSize: '25px', marginBottom: '8px', fontWeight: 900 }}>제품 비교 ({products.length}/4)</h2>
-        <p style={{ fontSize: '14px', color: '#67707C', lineHeight: 1.6 }}>
+        <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
           가격, 평점, 주의 성분, 맞춤 궁합을 한 자리에서 비교해 더 빠르게 결정해보세요.
         </p>
       </section>
@@ -44,17 +44,17 @@ export default function Comparison() {
       <div className="ui-grid-3" style={{ marginBottom: '18px' }}>
         <div className="ui-info-card" style={{ padding: '16px' }}>
           <div className="ui-icon-pill" style={{ marginBottom: '10px' }}><ShieldCheck size={16} color="#10B981" /></div>
-          <div style={{ fontSize: '12px', color: '#8A9099', fontWeight: 700 }}>비교 기준</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 700 }}>비교 기준</div>
           <div style={{ fontSize: '14px', fontWeight: 800, marginTop: '4px' }}>주의 성분과 안전 비율</div>
         </div>
         <div className="ui-info-card" style={{ padding: '16px' }}>
           <div className="ui-icon-pill" style={{ marginBottom: '10px' }}><Star size={16} color="#F59E0B" /></div>
-          <div style={{ fontSize: '12px', color: '#8A9099', fontWeight: 700 }}>비교 기준</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 700 }}>비교 기준</div>
           <div style={{ fontSize: '14px', fontWeight: 800, marginTop: '4px' }}>평점과 리뷰 반응</div>
         </div>
         <div className="ui-info-card" style={{ padding: '16px' }}>
           <div className="ui-icon-pill" style={{ marginBottom: '10px' }}><ShoppingBag size={16} color="var(--primary-dark)" /></div>
-          <div style={{ fontSize: '12px', color: '#8A9099', fontWeight: 700 }}>비교 기준</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 700 }}>비교 기준</div>
           <div style={{ fontSize: '14px', fontWeight: 800, marginTop: '4px' }}>{profile.name} 맞춤 궁합 점수</div>
         </div>
       </div>
@@ -71,9 +71,9 @@ export default function Comparison() {
               <button 
                 onClick={() => removeFromComparison(p.id)}
                 style={{
-                  position: 'absolute', top: '8px', right: '8px', background: '#fff',
+                  position: 'absolute', top: '8px', right: '8px', background: 'var(--surface-elevated)', color: 'var(--text-dark)',
                   border: 'none', borderRadius: '50%', padding: '4px', cursor: 'pointer',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  boxShadow: 'var(--shadow-card)'
                 }}
               ><X size={16} /></button>
               
@@ -95,7 +95,7 @@ export default function Comparison() {
                 <span className="ui-badge ui-badge-soft">안전 {safeRatio}%</span>
               </div>
 
-              <div style={{ borderTop: '1px solid #eee', paddingTop: '12px', fontSize: '13px' }}>
+              <div style={{ borderTop: '1px solid var(--line)', paddingTop: '12px', fontSize: '13px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                   <span style={{ color: 'var(--text-muted)' }}>가격</span>
                   <span style={{ fontWeight: 600 }}>{p.price.toLocaleString()}원</span>

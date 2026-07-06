@@ -184,7 +184,7 @@ export default function Login() {
         <button
           type="button"
           onClick={() => navigate(-1)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: '#374151', fontWeight: 600 }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-dark)', fontWeight: 600 }}
         >
           <ArrowLeft size={20} /> 뒤로
         </button>
@@ -197,7 +197,7 @@ export default function Login() {
             alt="VeRoRo"
             style={{ height: '48px', width: 'auto', maxWidth: 'min(280px, 100%)', objectFit: 'contain', margin: '0 auto 14px', display: 'block' }}
           />
-          <h1 style={{ fontSize: '18px', fontWeight: 800, color: '#111827', margin: '0 0 6px', lineHeight: 1.35 }}>
+          <h1 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-dark)', margin: '0 0 6px', lineHeight: 1.35 }}>
             {mode === 'login' ? '이메일로 로그인' : '이메일로 회원가입'}
           </h1>
         </div>
@@ -220,8 +220,8 @@ export default function Login() {
                 fontWeight: 700,
                 fontSize: '15px',
                 transition: 'all 0.2s',
-                background: mode === m ? '#fff' : 'transparent',
-                color: mode === m ? '#111827' : '#9CA3AF',
+                background: mode === m ? 'var(--surface-elevated)' : 'transparent',
+                color: mode === m ? 'var(--text-dark)' : 'var(--text-muted)',
                 boxShadow: mode === m ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
               }}
             >
@@ -231,7 +231,7 @@ export default function Login() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '16px' }}>
-          <TossField icon={<Mail size={18} color="#9CA3AF" />}>
+          <TossField icon={<Mail size={18} color="var(--text-muted)" />}>
             <TossInput
               type="email"
               placeholder="이메일 주소"
@@ -240,7 +240,7 @@ export default function Login() {
               style={{ border: 'none', padding: '0', background: 'transparent', fontSize: '16px' }}
             />
           </TossField>
-          <TossField icon={<Lock size={18} color="#9CA3AF" />}>
+          <TossField icon={<Lock size={18} color="var(--text-muted)" />}>
             <TossInput
               type={showPw ? 'text' : 'password'}
               placeholder="비밀번호"
@@ -251,7 +251,7 @@ export default function Login() {
             <button
               type="button"
               onClick={() => setShowPw(!showPw)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', display: 'inline-flex' }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'inline-flex' }}
             >
               {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
@@ -260,7 +260,7 @@ export default function Login() {
 
         <div style={{ display: 'none' }}>
           <div style={{ position: 'relative' }}>
-            <Mail size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+            <Mail size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
             <input
               type="email"
               placeholder="이메일 주소"
@@ -268,11 +268,11 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-              style={{ width: '100%', padding: '16px 16px 16px 46px', borderRadius: '14px', border: '1px solid #E5E7EB', fontSize: '16px', outline: 'none', boxSizing: 'border-box' }}
+              style={{ width: '100%', padding: '16px 16px 16px 46px', borderRadius: '14px', border: '1px solid var(--line)', fontSize: '16px', outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
           <div style={{ position: 'relative' }}>
-            <Lock size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+            <Lock size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
             <input
               type={showPw ? 'text' : 'password'}
               placeholder="비밀번호"
@@ -280,12 +280,12 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-              style={{ width: '100%', padding: '16px 46px 16px 46px', borderRadius: '14px', border: '1px solid #E5E7EB', fontSize: '16px', outline: 'none', boxSizing: 'border-box' }}
+              style={{ width: '100%', padding: '16px 46px 16px 46px', borderRadius: '14px', border: '1px solid var(--line)', fontSize: '16px', outline: 'none', boxSizing: 'border-box' }}
             />
             <button
               type="button"
               onClick={() => setShowPw(!showPw)}
-              style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF' }}
+              style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
             >
               {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
@@ -294,14 +294,14 @@ export default function Login() {
 
         {mode === 'signup' && (
           <TossCard style={{ marginBottom: '18px', padding: '12px 14px', borderRadius: '12px' }}>
-            <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 800, color: '#374151' }}>비밀번호 정책</p>
+            <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 800, color: 'var(--text-dark)' }}>비밀번호 정책</p>
             <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'grid', gap: '6px' }}>
               {PASSWORD_RULES.map((rule) => {
                 const ok = rule.test(password);
                 return (
                   <li
                     key={rule.id}
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: ok ? '#059669' : '#6B7280', fontWeight: 600 }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: ok ? '#059669' : 'var(--text-muted)', fontWeight: 600 }}
                   >
                     {ok ? <Check size={14} strokeWidth={2.5} /> : <X size={14} strokeWidth={2.5} />}
                     {rule.label}
@@ -357,13 +357,13 @@ export default function Login() {
         {pendingVerification && (
           <div style={{ marginBottom: '12px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
             <TossChip active>인증 대기</TossChip>
-            <p style={{ margin: 0, fontSize: '11px', color: '#92400E', lineHeight: 1.5, fontWeight: 600, width: '100%' }}>
+            <p style={{ margin: 0, fontSize: '11px', color: 'var(--caution-strong)', lineHeight: 1.5, fontWeight: 600, width: '100%' }}>
               인증이 끝나면 로그인 탭에서 같은 이메일로 로그인해 주세요.
             </p>
           </div>
         )}
 
-        <p style={{ margin: 0, textAlign: 'center', fontSize: '12px', color: '#9CA3AF', lineHeight: 1.5 }}>
+        <p style={{ margin: 0, textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
           소셜 로그인 없이 이메일과 비밀번호만 사용합니다.
         </p>
       </div>
