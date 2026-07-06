@@ -14,6 +14,8 @@ import {
   SlidersHorizontal,
   Sparkles,
   Search as SearchIcon,
+  Clock,
+  TrendingUp,
 } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import StateView from '../components/StateView';
@@ -49,6 +51,34 @@ const PRICE_BAND_LABELS: { id: PriceBand; label: string }[] = [
 
 function resolveCategoryFromSearchParams(category: string | null): string {
   return category ?? '전체';
+}
+
+/** 인기 검색어(급상승) — 홈과 동일 데이터 소스 재사용 상위 8개 */
+const POPULAR_KEYWORDS = ['관절 영양제', '저알러지 사료', '그레인프리', '시니어 강아지', '노령묘 습식', '수제 간식', '치석 제거', '프로바이오틱스'];
+
+/** 추천 키워드(증상·목적) chip */
+const SYMPTOM_KEYWORDS = ['눈물', '알러지', '다이어트', '관절', '피부', '노령견', '치석', '소화'];
+
+const RECENT_KEY = 'vh_recent_searches';
+const RECENT_MAX = 8;
+
+function loadRecentSearches(): string[] {
+  try {
+    const raw = localStorage.getItem(RECENT_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr.filter((v) => typeof v === 'string').slice(0, RECENT_MAX) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRecentSearches(list: string[]) {
+  try {
+    localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, RECENT_MAX)));
+  } catch {
+    /* localStorage 미지원/차단 시 무시 */
+  }
 }
 
 const LIFE_STAGE_OPTIONS = [
@@ -98,6 +128,7 @@ export default function Search() {
   };
 
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '');
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => loadRecentSearches());
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [sortBy, setSortBy] = useState<'default' | 'price_asc' | 'price_desc' | 'rating'>('default');
@@ -165,6 +196,14 @@ export default function Search() {
           priceMax,
         });
         setSearchResults(results);
+        if (query.trim() && results.length > 0) {
+          const t = query.trim();
+          setRecentSearches((prev) => {
+            const next = [t, ...prev.filter((v) => v !== t)].slice(0, RECENT_MAX);
+            saveRecentSearches(next);
+            return next;
+          });
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -225,6 +264,46 @@ export default function Search() {
     setFilters(f => ({ ...f, targetPetType: p }));
   };
 
+  const recordRecent = (term: string) => {
+    const t = term.trim();
+    if (!t) return;
+    setRecentSearches((prev) => {
+      const next = [t, ...prev.filter((v) => v !== t)].slice(0, RECENT_MAX);
+      saveRecentSearches(next);
+      return next;
+    });
+  };
+
+  const removeRecent = (term: string) => {
+    setRecentSearches((prev) => {
+      const next = prev.filter((v) => v !== term);
+      saveRecentSearches(next);
+      return next;
+    });
+  };
+
+  const clearRecent = () => {
+    setRecentSearches([]);
+    saveRecentSearches([]);
+  };
+
+  const applyKeyword = (kw: string) => {
+    setQuery(kw);
+    recordRecent(kw);
+  };
+
+  /** 활성 필터 개수 — 상세 필터 버튼 배지에 노출 */
+  const activeFilterCount =
+    (filters.targetLifeStage ? 1 : 0) +
+    (filters.formulation ? 1 : 0) +
+    (filters.subCategory ? 1 : 0) +
+    filters.healthConcerns.length +
+    (filters.dietPreset ? 1 : 0) +
+    (filters.priceBand !== 'any' ? 1 : 0) +
+    excludedIngredients.length;
+
+  const showDiscovery = query.trim() === '';
+
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '100px' }}>
       <section className="ui-hero-panel" style={{ marginBottom: '18px', padding: '18px' }}>
@@ -262,6 +341,84 @@ export default function Search() {
             placeholder="상품명, 브랜드, 성분명으로 검색"
           />
         </div>
+
+        {/* 최근 검색 (검색어 없을 때만) */}
+        {showDiscovery && recentSearches.length > 0 && (
+          <div style={{ marginBottom: '14px' }}>
+            <div className="search-block-label">
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                <Clock size={13} /> 최근 검색
+              </span>
+              <button type="button" className="search-chip-clear" onClick={clearRecent}>전체 삭제</button>
+            </div>
+            <div className="search-chip-row">
+              {recentSearches.map((term) => (
+                <span key={term} className="search-chip search-chip--recent">
+                  <button
+                    type="button"
+                    onClick={() => applyKeyword(term)}
+                    style={{ border: 'none', background: 'none', padding: 0, font: 'inherit', color: 'inherit', cursor: 'pointer' }}
+                  >
+                    {term}
+                  </button>
+                  <button
+                    type="button"
+                    className="search-chip-remove"
+                    onClick={() => removeRecent(term)}
+                    aria-label={`${term} 최근 검색 삭제`}
+                  >
+                    <X size={13} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 추천 키워드 (증상·목적) */}
+        <div style={{ marginBottom: showDiscovery ? '14px' : '0' }}>
+          <div className="search-block-label">
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+              <Sparkles size={13} /> 추천 키워드
+            </span>
+          </div>
+          <div className="search-chip-row">
+            {SYMPTOM_KEYWORDS.map((kw) => (
+              <button
+                key={kw}
+                type="button"
+                className="search-chip search-chip--symptom"
+                onClick={() => applyKeyword(kw)}
+              >
+                #{kw}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 인기 검색어 (검색어 없을 때만) */}
+        {showDiscovery && (
+          <div style={{ marginTop: '14px', marginBottom: '2px' }}>
+            <div className="search-block-label">
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                <TrendingUp size={13} /> 인기 검색어
+              </span>
+            </div>
+            <div className="search-chip-row">
+              {POPULAR_KEYWORDS.map((kw, i) => (
+                <button
+                  key={kw}
+                  type="button"
+                  className="search-chip"
+                  onClick={() => applyKeyword(kw)}
+                >
+                  <span className={`search-chip-rank${i < 3 ? ' top3' : ''}`}>{i + 1}</span>
+                  {kw}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div style={{ marginBottom: '14px' }}>
           <p style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '0.04em' }}>반려동물</p>
@@ -369,6 +526,7 @@ export default function Search() {
           <TossButton variant={filterButtonActive ? 'soft' : 'outline'} onClick={() => setIsFilterOpen(true)} style={{ width: 'auto', height: '40px', padding: '0 14px' }}>
             <SlidersHorizontal size={16} />
             상세 필터
+            {activeFilterCount > 0 && <span className="filter-count">{activeFilterCount}</span>}
           </TossButton>
           <button
             type="button"
@@ -420,17 +578,16 @@ export default function Search() {
       </section>
 
       <div style={{ marginTop: '12px' }}>
-        <div className="ui-list-card" style={{ marginBottom: '16px', padding: '16px 18px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '14px', color: '#6B7280' }}>
-            총 <strong style={{ color: '#111827' }}>{displayResults.length}</strong>개의 상품
+        <div className="search-sticky-bar">
+          <span style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 600 }}>
+            총 <strong style={{ color: 'var(--text-dark)', fontWeight: 900 }}>{displayResults.length}</strong>개의 상품
             {isLoading && <span style={{ marginLeft: '8px', fontSize: '12px' }}>불러오는 중…</span>}
-            </span>
-            <span className="ui-badge ui-badge-soft">
-              <Filter size={12} />
-              {sortBy === 'default' ? '프로필 추천순' : filterButtonActive ? '필터 적용 중' : '정렬 적용 중'}
-            </span>
-          </div>
+          </span>
+          <span className="ui-badge ui-badge-soft">
+            <Filter size={12} />
+            {sortBy === 'default' ? '프로필 추천순' : filterButtonActive ? '필터 적용 중' : '정렬 적용 중'}
+            {activeFilterCount > 0 && ` · ${activeFilterCount}`}
+          </span>
         </div>
 
         {sortBy === 'default' && displayResults.length > 0 && (

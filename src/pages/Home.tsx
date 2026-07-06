@@ -11,13 +11,15 @@ import {
   Stethoscope,
   Wallet,
   Search,
-  Heart,
   MessageCircle,
   ScanLine,
   ArrowUp,
   ArrowDown,
   Minus,
   ArrowRight,
+  FlaskConical,
+  PawPrint,
+  Pill,
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { HOME_CATEGORY_ITEMS } from '../constants/productCategories';
@@ -91,11 +93,30 @@ export default function Home() {
   const topCommunityPicks = trendingProducts.slice(0, 3);
   const countdown = splitCountdown(dealMsLeft);
 
+  const petLabel = isLoggedIn && profile.name ? profile.name : '우리 아이';
+  const greeting = useMemo(() => {
+    const h = new Date().getHours();
+    if (h < 6) return '늦은 밤이네요';
+    if (h < 11) return '좋은 아침이에요';
+    if (h < 17) return '안녕하세요';
+    return '좋은 저녁이에요';
+  }, []);
+
   const goSearchWith = (query: string) =>
     navigate({
       pathname: '/search',
       search: query ? `?query=${encodeURIComponent(query)}` : '',
     });
+
+  const goCategory = (name: string) =>
+    navigate({ pathname: '/search', search: `?category=${encodeURIComponent(name)}` });
+
+  const quickActions = [
+    { key: 'scan', label: '성분 분석', icon: FlaskConical, tint: 'rgba(21, 179, 107, 0.12)', color: '#15803D', onClick: () => navigate('/scan') },
+    { key: 'pet', label: '우리 아이 등록', icon: PawPrint, tint: 'rgba(219, 39, 119, 0.12)', color: '#DB2777', onClick: () => navigate('/profile') },
+    { key: 'popular', label: '인기 사료', icon: Flame, tint: 'rgba(239, 68, 68, 0.12)', color: '#EF4444', onClick: () => navigate('/ranking') },
+    { key: 'supplement', label: '영양제 추천', icon: Pill, tint: 'rgba(37, 99, 235, 0.12)', color: '#2563EB', onClick: () => goCategory('영양제') },
+  ];
 
   return (
     <div>
@@ -108,41 +129,47 @@ export default function Home() {
         <meta name="description" content="베로로 — 사료 성분 분석과 집사들의 찐 리뷰. 의심 대신 베로로 하세요." />
       </Helmet>
 
-      <section className="ui-hero-panel" style={{ padding: '18px', marginBottom: '16px' }}>
+      {/* Hero — 인사 + 검색/스캔 CTA를 한눈에 (3초 안에 무엇을 할지 전달) */}
+      <section className="home-hero" style={{ marginBottom: '16px' }}>
+        <span className="home-hero-greeting">
+          <PawPrint size={15} /> {greeting}, {petLabel} 보호자님
+        </span>
+        <h1 className="home-hero-title">
+          오늘도 <b>건강한 한 끼</b>를<br />함께 찾아드릴게요
+        </h1>
         <button
           type="button"
-          className="ui-search-shortcut"
+          className="home-hero-search ui-press"
           onClick={() => navigate('/search')}
-          style={{ width: '100%', justifyContent: 'space-between', minHeight: '52px' }}
         >
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '12px', color: '#4B5563', fontSize: '15px', fontWeight: 600 }}>
+          <span className="home-hero-search-label">
             <Search size={20} color="#7C6F9C" />
-            궁금한 사료나 간식 이름을 검색해 보세요
+            사료·간식 이름이나 성분을 검색
           </span>
           <ChevronRight size={18} color="#9CA3AF" />
         </button>
         <button
           type="button"
+          className="home-hero-scan ui-press"
           onClick={() => navigate('/scan')}
-          style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '10px',
-            marginTop: '10px',
-            minHeight: '54px',
-            border: 'none',
-            borderRadius: '16px',
-            cursor: 'pointer',
-            background: 'var(--primary)',
-            color: 'var(--text-dark)',
-            boxShadow: '0 8px 20px rgba(229, 206, 0, 0.35)',
-          }}
         >
           <ScanLine size={20} />
-          <span style={{ fontSize: '15px', fontWeight: 900 }}>바코드 스캔으로 바로 분석</span>
+          바코드 스캔으로 바로 분석
         </button>
+      </section>
+
+      {/* 빠른 액션 — 핵심 진입점 4개 */}
+      <section style={{ marginBottom: '22px' }}>
+        <div className="quick-actions">
+          {quickActions.map(({ key, label, icon: Icon, tint, color, onClick }) => (
+            <button key={key} type="button" className="quick-action ui-press" onClick={onClick}>
+              <span className="quick-action-icon" style={{ background: tint, color }}>
+                <Icon size={22} />
+              </span>
+              <span className="quick-action-label">{label}</span>
+            </button>
+          ))}
+        </div>
       </section>
 
       {/* 카테고리 퀵 스트립 — 상단으로 승격 */}
@@ -349,39 +376,27 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 빠른 시작 (2x2) */}
+      {/* 성향 테스트 프로모 — 개인화 시작점 */}
       <section style={{ marginBottom: '22px' }}>
-        <TossSectionTitle title="빠른 시작" style={{ marginBottom: '12px' }} />
-        <div className="ui-grid-2">
-          <button
-            type="button"
-            className="ui-action-card"
-            onClick={() => navigate('/event/personality-quiz')}
-            style={{ background: '#FFFFFF' }}
-          >
-            <span className="ui-icon-pill" style={{ background: 'rgba(37, 99, 235, 0.12)', marginBottom: '12px' }}>
-              <MessageCircle size={18} color="#2563EB" />
+        <button
+          type="button"
+          className="ui-action-card ui-press"
+          onClick={() => navigate('/event/personality-quiz')}
+          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '14px', padding: '18px' }}
+        >
+          <span className="ui-icon-pill" style={{ background: 'rgba(37, 99, 235, 0.12)', width: '46px', height: '46px', borderRadius: '15px', flexShrink: 0 }}>
+            <MessageCircle size={22} color="#2563EB" />
+          </span>
+          <span style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+            <span style={{ display: 'block', fontSize: '15px', fontWeight: 800, color: 'var(--text-dark)', marginBottom: '3px' }}>
+              {petLabel} 성향 테스트
             </span>
-            <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '4px' }}>성향 테스트</div>
-            <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500, lineHeight: 1.5 }}>
-              우리 아이의 취향 키워드를 3분 안에
-            </p>
-          </button>
-          <button
-            type="button"
-            className="ui-action-card"
-            onClick={() => navigate('/profile')}
-            style={{ background: '#FFFFFF' }}
-          >
-            <span className="ui-icon-pill" style={{ background: 'rgba(219, 39, 119, 0.12)', marginBottom: '12px' }}>
-              <Heart size={18} color="#DB2777" />
+            <span style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500, lineHeight: 1.5 }}>
+              3분이면 취향 키워드로 맞춤 추천이 정확해져요
             </span>
-            <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '4px' }}>마이 펫</div>
-            <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500, lineHeight: 1.5 }}>
-              종·연령·건강 고민을 한 번에 관리
-            </p>
-          </button>
-        </div>
+          </span>
+          <ChevronRight size={20} color="#9CA3AF" style={{ flexShrink: 0 }} />
+        </button>
       </section>
 
       {topCommunityPicks.length > 0 && (

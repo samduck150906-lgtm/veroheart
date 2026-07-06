@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Heart } from 'lucide-react';
+import { Heart, ShieldCheck, Star } from 'lucide-react';
 import type { Product } from '../types';
 import { useStore } from '../store/useStore';
 import { calculateCompatibilityScore } from '../utils/score';
@@ -62,11 +62,13 @@ export default function ProductCard({
   );
 
   // ── 세로형(그리드) 카드: 이미지 상단 + 텍스트 하단, 높이 통일 ──
+  const isVerified = product.verificationStatus === 'verified';
+
   if (grid) {
     const healthTags = (product.healthConcerns ?? []).slice(0, 2);
     return (
       <div
-        className="card"
+        className="card ui-press"
         style={{ position: 'relative', padding: '12px', height: '100%', display: 'flex', flexDirection: 'column' }}
       >
         <Link
@@ -75,7 +77,8 @@ export default function ProductCard({
         >
           <div
             style={{
-              width: '100%', aspectRatio: '16 / 9', borderRadius: '14px',
+              position: 'relative',
+              width: '100%', aspectRatio: '1 / 1', borderRadius: '14px',
               overflow: 'hidden', marginBottom: '10px',
               boxShadow: '0 4px 14px rgba(43, 38, 36, 0.08)',
             }}
@@ -83,8 +86,23 @@ export default function ProductCard({
             <img
               src={product.imageUrl}
               alt={product.name}
+              loading="lazy"
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
+            {isVerified && (
+              <span
+                style={{
+                  position: 'absolute', top: '8px', left: '8px',
+                  display: 'inline-flex', alignItems: 'center', gap: '3px',
+                  padding: '3px 8px', borderRadius: '999px',
+                  background: 'rgba(21, 179, 107, 0.95)', color: '#fff',
+                  fontSize: '9.5px', fontWeight: 800, letterSpacing: '-0.01em',
+                  boxShadow: '0 2px 6px rgba(21, 179, 107, 0.35)',
+                }}
+              >
+                <ShieldCheck size={10} strokeWidth={2.5} /> 검수완료
+              </span>
+            )}
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
@@ -131,13 +149,14 @@ export default function ProductCard({
             </div>
 
             <div style={{ marginTop: 'auto', paddingTop: '8px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '3px', marginBottom: '4px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 800 }}>★ {product.averageRating}</span>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>({product.reviewsCount})</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
+                <Star size={12} fill="#F59E0B" color="#F59E0B" />
+                <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-dark)' }}>{product.averageRating}</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>리뷰 {product.reviewsCount.toLocaleString()}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
-                <span style={{ fontSize: '14px', color: '#111827', fontWeight: 800 }}>
-                  {product.price.toLocaleString()}원
+                <span style={{ fontSize: '15px', color: 'var(--text-dark)', fontWeight: 900, letterSpacing: '-0.02em' }}>
+                  {product.price.toLocaleString()}<span style={{ fontSize: '12px', fontWeight: 700 }}>원</span>
                 </span>
                 <div
                   style={{
@@ -163,19 +182,34 @@ export default function ProductCard({
   const imageSize = compact ? 86 : 100;
 
   return (
-    <div className="card" style={{ position: 'relative', marginBottom: compact ? 0 : '16px' }}>
+    <div className="card ui-press" style={{ position: 'relative', marginBottom: compact ? 0 : '16px' }}>
       <Link to={`/product/${product.id}`} style={{
         textDecoration: 'none', color: 'inherit',
         display: 'flex', gap: compact ? '12px' : '16px'
       }}>
         <div style={{
+          position: 'relative',
           width: `${imageSize}px`, height: `${imageSize}px`, borderRadius: '16px',
           overflow: 'hidden', flexShrink: 0,
           boxShadow: '0 4px 14px rgba(43, 38, 36, 0.08)',
         }}>
-          <img src={product.imageUrl} alt={product.name} style={{
+          <img src={product.imageUrl} alt={product.name} loading="lazy" style={{
             width: '100%', height: '100%', objectFit: 'cover'
           }} />
+          {isVerified && (
+            <span
+              style={{
+                position: 'absolute', top: '6px', left: '6px',
+                display: 'inline-flex', alignItems: 'center',
+                padding: '3px', borderRadius: '999px',
+                background: 'rgba(21, 179, 107, 0.95)', color: '#fff',
+                boxShadow: '0 2px 6px rgba(21, 179, 107, 0.35)',
+              }}
+              aria-label="검수 완료 제품"
+            >
+              <ShieldCheck size={11} strokeWidth={2.5} />
+            </span>
+          )}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: 1, paddingRight: '30px' }}>
@@ -206,8 +240,9 @@ export default function ProductCard({
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span style={{ fontSize: '14px', fontWeight: 800 }}>★ {product.averageRating}</span>
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>({product.reviewsCount})</span>
+              <Star size={13} fill="#F59E0B" color="#F59E0B" />
+              <span style={{ fontSize: '14px', fontWeight: 800 }}>{product.averageRating}</span>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>({product.reviewsCount.toLocaleString()})</span>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
