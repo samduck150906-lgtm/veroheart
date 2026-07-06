@@ -1,38 +1,53 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { pickSplashTagline } from './copy/marketing';
 import { VERORO_LOGO_SRC } from './constants/assets';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useStore } from './store/useStore';
 import Layout from './components/Layout';
 import Home from './pages/Home';
-import Search from './pages/Search';
-import Profile from './pages/Profile';
-import Detail from './pages/Detail';
-import Comparison from './pages/Comparison';
-import Cart from './pages/Cart';
-import AnalysisResult from './pages/AnalysisResult';
-import Scan from './pages/Scan';
-import Ranking from './pages/Ranking';
-import Brand from './pages/Brand';
-import Login from './pages/Login';
-import ViralEvent from './pages/ViralEvent';
-import Test from './pages/Test';
-import NotFound from './pages/NotFound';
-import Terms from './pages/Terms';
-import Privacy from './pages/Privacy';
-import Refund from './pages/Refund';
-import AuthCallback from './pages/AuthCallback';
-import AdminLayout from './pages/admin/AdminLayout';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminProducts from './pages/admin/AdminProducts';
-import AdminIngredients from './pages/admin/AdminIngredients';
-import AdminSettings from './pages/admin/AdminSettings';
 import Notification from './components/Notification';
 import ErrorBoundary from './components/ErrorBoundary';
-import AdminAuthGuard from './pages/admin/AdminAuthGuard';
 import EntryGate from './components/EntryGate';
 import { markEntryGateDone, readEntryGateDone } from './lib/entryGateStorage';
 import { isAdminExperience, toggleAdminDesktopMode } from './utils/adminHost';
+
+// 첫 진입 화면(Home)만 즉시 로드하고, 나머지 라우트는 코드 스플릿으로 지연 로드한다.
+// 관리자 라우트는 일반 사용자 번들에서 완전히 분리된다.
+const Search = lazy(() => import('./pages/Search'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Detail = lazy(() => import('./pages/Detail'));
+const Comparison = lazy(() => import('./pages/Comparison'));
+const Cart = lazy(() => import('./pages/Cart'));
+const AnalysisResult = lazy(() => import('./pages/AnalysisResult'));
+const Scan = lazy(() => import('./pages/Scan'));
+const Ranking = lazy(() => import('./pages/Ranking'));
+const Brand = lazy(() => import('./pages/Brand'));
+const Login = lazy(() => import('./pages/Login'));
+const ViralEvent = lazy(() => import('./pages/ViralEvent'));
+const Test = lazy(() => import('./pages/Test'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+const Terms = lazy(() => import('./pages/Terms'));
+const Privacy = lazy(() => import('./pages/Privacy'));
+const Refund = lazy(() => import('./pages/Refund'));
+const AuthCallback = lazy(() => import('./pages/AuthCallback'));
+const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const AdminProducts = lazy(() => import('./pages/admin/AdminProducts'));
+const AdminIngredients = lazy(() => import('./pages/admin/AdminIngredients'));
+const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
+const AdminAuthGuard = lazy(() => import('./pages/admin/AdminAuthGuard'));
+
+/** 라우트 전환 중 표시할 최소 로딩 인디케이터 — 레이아웃 시프트 없이 중앙에 고정 */
+function RouteFallback() {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+      <div
+        className="vero-spin"
+        style={{ width: '32px', height: '32px', border: '3px solid rgba(250, 204, 21, 0.3)', borderTopColor: 'var(--primary-dark)', borderRadius: '50%' }}
+      />
+    </div>
+  );
+}
 
 function App() {
   const { initApp, isInitializing, isLoggedIn } = useStore();
@@ -101,6 +116,7 @@ function App() {
     <BrowserRouter>
       <Notification />
       <ErrorBoundary>
+      <Suspense fallback={<RouteFallback />}>
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
@@ -137,6 +153,7 @@ function App() {
           <Route path="settings" element={<AdminSettings />} />
         </Route>
       </Routes>
+      </Suspense>
       </ErrorBoundary>
 
       {!adminMode && entryGateOpen && (
