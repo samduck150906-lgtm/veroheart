@@ -10,10 +10,10 @@ export function TossCard({ children, style }: TossCardProps) {
   return (
     <section
       style={{
-        background: '#FFFFFF',
+        background: 'var(--surface-elevated)',
         borderRadius: '20px',
-        border: '1px solid rgba(28, 25, 23, 0.08)',
-        boxShadow: '0 1px 3px rgba(28, 25, 23, 0.06)',
+        border: '1px solid rgba(128, 128, 140, 0.14)',
+        boxShadow: 'var(--shadow-card)',
         ...style,
       }}
     >
@@ -62,9 +62,9 @@ export function TossButton({
             border: '1px solid #FCD34D',
           }
         : {
-            background: '#FFFFFF',
-            color: '#4B5563',
-            border: '1px solid #E5E7EB',
+            background: 'var(--surface-elevated)',
+            color: 'var(--text-muted)',
+            border: '1px solid var(--line)',
           };
 
   return (
@@ -114,9 +114,9 @@ export function TossChip({
       style={{
         padding: size === 'sm' ? '6px 10px' : '8px 12px',
         borderRadius: '999px',
-        border: isActive ? '1px solid #F59E0B' : '1px solid #E5E7EB',
-        background: isActive ? '#FFFBEB' : '#FFFFFF',
-        color: isActive ? '#92400E' : '#6B7280',
+        border: isActive ? '1px solid #F59E0B' : '1px solid var(--line)',
+        background: isActive ? '#FFFBEB' : 'var(--surface-elevated)',
+        color: isActive ? '#92400E' : 'var(--text-muted)',
         fontSize: size === 'sm' ? '11px' : '12px',
         fontWeight: 500,
         cursor: 'pointer',
@@ -139,8 +139,8 @@ export function TossSectionTitle({ title, subtitle, right, style }: TossSectionT
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '10px', ...style }}>
       <div>
-        <h2 style={{ margin: 0, fontSize: '17px', fontWeight: 600, color: '#292524', lineHeight: 1.35 }}>{title}</h2>
-        {subtitle && <p style={{ margin: '4px 0 0', fontSize: '12px', fontWeight: 500, color: '#78716c' }}>{subtitle}</p>}
+        <h2 style={{ margin: 0, fontSize: '17px', fontWeight: 600, color: 'var(--text-dark)', lineHeight: 1.35 }}>{title}</h2>
+        {subtitle && <p style={{ margin: '4px 0 0', fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)' }}>{subtitle}</p>}
       </div>
       {right}
     </div>
@@ -159,7 +159,7 @@ export function TossField({ label, children, helperText, icon, style }: TossFiel
   return (
     <div style={{ marginBottom: '14px', ...style }}>
       {(label || icon) && (
-        <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#44403c', marginBottom: '8px' }}>
+        <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-dark)', marginBottom: '8px' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
             {icon}
             {label}
@@ -240,9 +240,9 @@ export function TossSearchBar({
         display: 'flex',
         alignItems: 'center',
         borderRadius: '16px',
-        background: '#FFFFFF',
-        border: '1px solid rgba(28, 25, 23, 0.08)',
-        boxShadow: '0 1px 2px rgba(28, 25, 23, 0.05)',
+        background: 'var(--surface-elevated)',
+        border: '1px solid rgba(128, 128, 140, 0.16)',
+        boxShadow: 'var(--shadow-card)',
         padding: '12px 14px',
       }}
     >
@@ -259,7 +259,7 @@ export function TossSearchBar({
           width: '100%',
           marginLeft: '10px',
           fontSize: '15px',
-          color: '#1F2937',
+          color: 'var(--text-dark)',
         }}
       />
       {value && (
@@ -307,11 +307,11 @@ export function TossInput({
         width: '100%',
         padding: '13px 14px',
         borderRadius: '12px',
-        border: '1px solid #E5E7EB',
+        border: '1px solid var(--line)',
         fontSize: '15px',
         outline: 'none',
-        background: disabled ? '#F9FAFB' : '#FFFFFF',
-        color: '#1F2937',
+        background: disabled ? 'var(--surface-alt)' : 'var(--surface-elevated)',
+        color: 'var(--text-dark)',
         boxSizing: 'border-box',
         ...style,
       }}

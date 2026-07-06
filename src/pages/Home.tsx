@@ -317,8 +317,8 @@ export default function Home() {
             marginBottom: '18px',
             padding: '18px',
             borderRadius: '18px',
-            background: '#ffffff',
-            border: '1px solid rgba(28, 25, 23, 0.08)',
+            background: 'var(--surface-elevated)',
+            border: '1px solid rgba(128, 128, 140, 0.16)',
             boxShadow: 'var(--shadow-card)',
           }}
         >
@@ -424,7 +424,7 @@ export default function Home() {
                 type="button"
                 className="ui-list-card"
                 onClick={() => navigate(`/product/${product.id}`)}
-                style={{ textAlign: 'left', background: '#FFFFFF', border: 'none', cursor: 'pointer' }}
+                style={{ textAlign: 'left', background: 'var(--surface-elevated)', border: 'none', cursor: 'pointer' }}
               >
                 <div className="ui-rank-index">{index + 1}</div>
                 <img

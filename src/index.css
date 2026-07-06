@@ -123,7 +123,49 @@
   --shadow-card-hover: 0 12px 30px -10px rgba(0, 0, 0, 0.55);
   --nav-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
   --shadow-pop: 0 18px 44px -18px rgba(0, 0, 0, 0.6);
+
+  /* 레거시 토큰 오버라이드 — 대부분 컴포넌트가 이 토큰을 참조하므로 한 번에 전환된다 */
+  --secondary: #1E232B;
+  --accent: #FF6B75;
+  --text-dark: #F2F4F6;
+  --text-muted: #A7B0BC;
+  --text-light: #7C8896;
+  --bg-color: #161A20;
+  --bg-gradient: #0E1217;
 }
+
+/* ── Dark: 셸 크롬(반투명 흰색으로 하드코딩된 곳) 오버라이드 ── */
+:root[data-theme="dark"] .glass {
+  background: rgba(20, 24, 30, 0.86);
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+:root[data-theme="dark"] .glass-nav,
+:root[data-theme="dark"] .bottom-nav-community {
+  background: rgba(22, 26, 32, 0.94);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+:root[data-theme="dark"] .app-icon-button {
+  background: rgba(30, 35, 43, 0.95);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #C7CED8;
+}
+:root[data-theme="dark"] .bottom-nav-item-active {
+  background: rgba(234, 179, 8, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(234, 179, 8, 0.28);
+}
+:root[data-theme="dark"] .scan-fab { border-color: #161A20; }
+:root[data-theme="dark"] .search-chip--symptom {
+  background: rgba(59, 130, 246, 0.16);
+  border-color: rgba(59, 130, 246, 0.32);
+  color: #93C5FD;
+}
+:root[data-theme="dark"] .rising-trend--up   { background: rgba(239,68,68,.18); color: #FCA5A5; }
+:root[data-theme="dark"] .rising-trend--down { background: rgba(59,130,246,.18); color: #93C5FD; }
+:root[data-theme="dark"] .rising-trend--new  { background: rgba(245,158,11,.18); color: #FCD34D; }
+:root[data-theme="dark"] .rising-trend--flat { background: rgba(148,163,184,.16); color: #CBD5E1; }
+:root[data-theme="dark"] .rising-rank { color: #FCD34D; }
+:root[data-theme="dark"] .discovery-tabs { background: #1E232B; border-color: rgba(255,255,255,0.06); }
+:root[data-theme="dark"] .discovery-tab.active { background: #FEF3C7; color: #1C1917; }
 
 /* PDP skeleton shimmer (docs/PDP_Redesign_Spec.md §22) */
 .pdp-skel {
@@ -897,7 +939,7 @@ button:active {
 }
 
 .ui-hero-panel {
-  background: #ffffff;
+  background: var(--surface-elevated);
   border: 1px solid rgba(28, 25, 23, 0.08);
   border-radius: 20px;
   box-shadow: var(--shadow-card);
@@ -984,7 +1026,7 @@ button:active {
   align-items: center;
   gap: 10px;
   padding: 14px 16px;
-  background: #fff;
+  background: var(--surface-elevated);
   border-radius: 14px;
   border: 1px solid rgba(28, 25, 23, 0.08);
   color: var(--text-muted);
@@ -1015,7 +1057,7 @@ button:active {
 .ui-info-card,
 .ui-action-card,
 .ui-list-card {
-  background: #ffffff;
+  background: var(--surface-elevated);
   border: 1px solid rgba(28, 25, 23, 0.07);
   border-radius: 16px;
   box-shadow: var(--shadow-card);
@@ -1049,7 +1091,7 @@ button:active {
 }
 
 .ui-category-card {
-  background: #fff;
+  background: var(--surface-elevated);
   border-radius: 16px;
   padding: 12px 10px;
   box-shadow: var(--shadow-card);
@@ -1109,7 +1151,7 @@ button:active {
   padding: 10px 14px;
   border-radius: 12px;
   border: 1px solid #e7e5e4;
-  background: #fff;
+  background: var(--surface-elevated);
   color: #57534e;
   cursor: pointer;
 }
@@ -1121,7 +1163,7 @@ button:active {
   border: 1px solid #e5e7eb;
   font-size: 15px;
   outline: none;
-  background: #fff;
+  background: var(--surface-elevated);
 }
 
 .ui-checkout-step {
@@ -1184,7 +1226,7 @@ button:active {
   grid-template-columns: 1fr 1fr;
   gap: 6px 18px;
   padding: 16px 18px;
-  background: #ffffff;
+  background: var(--surface-elevated);
   border: 1px solid rgba(28, 25, 23, 0.07);
   border-radius: 18px;
   box-shadow: var(--shadow-card);
@@ -1349,7 +1391,7 @@ button:active {
   gap: 10px;
   padding: 10px 14px 10px 10px;
   border-radius: 16px;
-  background: #ffffff;
+  background: var(--surface-elevated);
   border: 1px solid rgba(28, 25, 23, 0.07);
   box-shadow: var(--shadow-card);
   text-decoration: none;
@@ -1397,7 +1439,7 @@ button:active {
   gap: 14px;
   padding: 18px;
   border-radius: 20px;
-  background: #fff;
+  background: var(--surface-elevated);
   border: 1px solid rgba(28, 25, 23, 0.07);
   box-shadow: var(--shadow-card);
   text-align: left;
@@ -1451,7 +1493,7 @@ button:active {
   padding: 12px 6px 10px;
   border: 1px solid rgba(28, 25, 23, 0.06);
   border-radius: 16px;
-  background: #fff;
+  background: var(--surface-elevated);
   cursor: pointer;
   color: var(--text-dark);
   font-size: 11px;
