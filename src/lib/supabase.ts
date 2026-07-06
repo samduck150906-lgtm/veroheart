@@ -25,7 +25,7 @@ export const supabase = createClient(
  * service_role로 동작하는 admin-write Edge Function을 통해 쓴다.
  * 관리자 토큰(sessionStorage 'vh_admin_auth')을 x-admin-token 헤더로 전달해 서버가 검증한다.
  */
-export async function adminWrite<T = any>(
+export async function adminWrite<T = unknown>(
   action: string,
   data: Record<string, unknown> = {},
   tokenOverride?: string,
