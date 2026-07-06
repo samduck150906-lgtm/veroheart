@@ -184,22 +184,27 @@ export default function Home() {
           style={{ marginBottom: '10px' }}
         />
         <div className="compact-category-strip">
-          {HOME_CATEGORY_ITEMS.slice(0, 8).map((item) => (
-            <button
-              key={item.name}
-              type="button"
-              className="compact-category-btn"
-              onClick={() =>
-                navigate({
-                  pathname: '/search',
-                  search: `?category=${encodeURIComponent(item.name)}`,
-                })
-              }
-            >
-              <span className="compact-category-emoji" aria-hidden>{item.emoji}</span>
-              <span>{item.name}</span>
-            </button>
-          ))}
+          {HOME_CATEGORY_ITEMS.slice(0, 8).map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.name}
+                type="button"
+                className="compact-category-btn ui-press"
+                onClick={() =>
+                  navigate({
+                    pathname: '/search',
+                    search: `?category=${encodeURIComponent(item.name)}`,
+                  })
+                }
+              >
+                <span className="compact-category-icon" style={{ background: item.tint, color: item.color }} aria-hidden>
+                  <Icon size={22} strokeWidth={2} />
+                </span>
+                <span>{item.name}</span>
+              </button>
+            );
+          })}
         </div>
       </section>
 

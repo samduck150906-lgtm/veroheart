@@ -1460,8 +1460,15 @@ button:active {
   text-align: center;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
-.compact-category-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-card); }
-.compact-category-emoji { font-size: 24px; line-height: 1; }
+.compact-category-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
 
 /* ============================================================
    Home / Search redesign (2026) — press feedback, greeting hero,
