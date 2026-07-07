@@ -3,7 +3,6 @@ import { useSearchParams } from 'react-router-dom';
 import {
   Filter,
   X,
-  Check,
   Trash2,
   Plus,
   FlaskConical,
@@ -28,6 +27,8 @@ import { useStore } from '../store/useStore';
 import standardFeedData from '../data/standard_feed_data.json';
 import { Database } from 'lucide-react';
 import { rankProductsForProfile } from '../utils/score';
+import FilterChip from '../components/ui/FilterChip';
+import { COMPANY } from '../constants/companyInfo';
 
 interface StandardFeedItem {
   id: number;
@@ -620,8 +621,19 @@ export default function Search() {
           <StateView
             variant="empty"
             title="검색 결과가 없어요"
-            description="검색어를 바꾸거나 상세 필터를 넓혀 보세요."
+            description="검색어를 바꾸거나 상세 필터를 넓혀 보세요. 찾는 제품이 아직 없다면 등록을 요청해 주세요."
             action={{ label: '상세 필터 조정', onClick: () => setIsFilterOpen(true) }}
+            secondaryAction={{
+              label: '＋ 제품 등록 요청하기',
+              onClick: () => {
+                const q = query.trim();
+                const subject = encodeURIComponent(`[제품 등록 요청] ${q}`.trim());
+                const body = encodeURIComponent(
+                  `등록을 요청하는 제품명: ${q}\n브랜드/용량(선택): \n제품 링크(선택): \n\n※ 베로로 검색에서 찾을 수 없어 등록을 요청합니다.`,
+                );
+                window.location.href = `mailto:${COMPANY.email}?subject=${subject}&body=${body}`;
+              },
+            }}
             minHeight={280}
           />
         )}
@@ -857,21 +869,3 @@ export default function Search() {
   );
 }
 
-function FilterChip({ label, selected, onClick }: { label: string, selected: boolean, onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        padding: '10px 20px', borderRadius: '24px', fontSize: '14px', border: '1px solid',
-        borderColor: selected ? 'var(--primary)' : 'var(--line)',
-        backgroundColor: selected ? 'var(--primary)' : 'transparent',
-        color: selected ? '#191F28' : 'var(--text-muted)', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
-        display: 'flex', alignItems: 'center', gap: '4px'
-      }}
-    >
-      {selected && <Check size={16} />}
-      {label}
-    </button>
-  );
-}

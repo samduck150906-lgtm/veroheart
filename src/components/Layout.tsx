@@ -11,6 +11,10 @@ export default function Layout() {
   const location = useLocation();
   const hideFooterOn = ['/login'];
   const shouldHideFooter = hideFooterOn.some((path) => location.pathname.startsWith(path));
+  // 상품 상세는 하단에 고정 구매 CTA(StickyCtaBar)를 쓰므로 전역 BottomNav를 숨겨
+  // 구매 버튼이 네비게이션에 가려지지 않게 한다. (헤더의 검색/장바구니로 이동 가능)
+  const hideBottomNavOn = ['/product/'];
+  const shouldHideBottomNav = hideBottomNavOn.some((path) => location.pathname.startsWith(path));
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
   return (
@@ -78,7 +82,7 @@ export default function Layout() {
         {!shouldHideFooter && <Footer />}
       </main>
 
-      <BottomNav />
+      {!shouldHideBottomNav && <BottomNav />}
     </div>
   );
 }
