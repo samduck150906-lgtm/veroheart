@@ -304,6 +304,7 @@ export default function AnalysisResult() {
         <img
           src={product.imageUrl}
           alt={product.name}
+          decoding="async"
           onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png'; }}
           style={{ width: 64, height: 64, borderRadius: 14, objectFit: 'cover', background: 'var(--secondary)', flexShrink: 0 }}
         />

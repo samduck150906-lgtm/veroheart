@@ -81,6 +81,8 @@ export default function Cart() {
             <img
               src={item.imageUrl}
               alt={item.name}
+              loading="lazy"
+              decoding="async"
               style={{ width: '80px', height: '80px', borderRadius: '8px', objectFit: 'cover' }}
             />
             <div style={{ flex: 1 }}>

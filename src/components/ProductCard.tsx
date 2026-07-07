@@ -87,6 +87,7 @@ export default function ProductCard({
               src={product.imageUrl}
               alt={product.name}
               loading="lazy"
+              decoding="async"
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
             {isVerified && (
@@ -193,7 +194,7 @@ export default function ProductCard({
           overflow: 'hidden', flexShrink: 0,
           boxShadow: '0 4px 14px rgba(43, 38, 36, 0.08)',
         }}>
-          <img src={product.imageUrl} alt={product.name} loading="lazy" style={{
+          <img src={product.imageUrl} alt={product.name} loading="lazy" decoding="async" style={{
             width: '100%', height: '100%', objectFit: 'cover'
           }} />
           {isVerified && (

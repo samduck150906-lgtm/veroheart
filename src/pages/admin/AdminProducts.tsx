@@ -273,7 +273,7 @@ const AdminProducts: React.FC = () => {
                 <tr key={p.id}>
                   <td>
                     <div className="admin-item-cell">
-                      <img src={p.image_url} alt={p.name} />
+                      <img src={p.image_url} alt={p.name} loading="lazy" decoding="async" />
                       <div>
                         <div className="admin-item-main">{p.name}</div>
                         <div className="admin-item-sub">

@@ -372,7 +372,7 @@ function AltCard({ a, onOpen }: { a: AltCardData; onOpen: (id: string) => void }
     >
       <span style={{ display: 'inline-block', fontSize: 11.5, fontWeight: 800, color: tagColor.fg, background: tagColor.bg, padding: '4px 10px', borderRadius: 999, marginBottom: 10 }}>{a.tag}</span>
       <div style={{ height: 96, borderRadius: 14, marginBottom: 10, background: 'var(--pdp-surface-soft)', overflow: 'hidden' }}>
-        <img src={a.imageUrl} alt={a.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <img src={a.imageUrl} alt={a.name} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </div>
       <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--pdp-ink-faint,var(--pdp-ink-faint))' }}>{a.brand}</div>
       <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--pdp-ink,var(--pdp-ink))', lineHeight: 1.35, height: 38, overflow: 'hidden' }}>{a.name}</div>

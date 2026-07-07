@@ -162,7 +162,7 @@ export default function Ranking() {
                 )}
               </div>
 
-              <img src={product.imageUrl} alt={product.name} style={{ width: '72px', height: '72px', borderRadius: '18px', objectFit: 'cover', flexShrink: 0 }} />
+              <img src={product.imageUrl} alt={product.name} loading="lazy" decoding="async" style={{ width: '72px', height: '72px', borderRadius: '18px', objectFit: 'cover', flexShrink: 0 }} />
 
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '4px' }}>{product.brand}</div>

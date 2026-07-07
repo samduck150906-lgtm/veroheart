@@ -430,6 +430,8 @@ export default function Home() {
                 <img
                   src={product.imageUrl}
                   alt={product.name}
+                  loading="lazy"
+                  decoding="async"
                   style={{ width: '62px', height: '62px', borderRadius: '18px', objectFit: 'cover', flexShrink: 0 }}
                 />
                 <div style={{ minWidth: 0, flex: 1 }}>
@@ -503,7 +505,7 @@ export default function Home() {
           <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
             {recentViews.slice(0, 6).map((p) => (
               <div key={p.id} onClick={() => navigate(`/product/${p.id}`)} style={{ flexShrink: 0, width: '124px', cursor: 'pointer' }}>
-                <img src={p.imageUrl} alt={p.name} style={{ width: '124px', height: '124px', borderRadius: '18px', objectFit: 'cover', marginBottom: '8px', boxShadow: 'var(--shadow-sm)' }} />
+                <img src={p.imageUrl} alt={p.name} loading="lazy" decoding="async" style={{ width: '124px', height: '124px', borderRadius: '18px', objectFit: 'cover', marginBottom: '8px', boxShadow: 'var(--shadow-sm)' }} />
                 <div className="line-clamp-2" style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-dark)', lineHeight: 1.45 }}>{p.name}</div>
               </div>
             ))}
