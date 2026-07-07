@@ -175,6 +175,11 @@ describe('Phase 1 production preflight contract', () => {
     );
   });
 
+  it('casts pg_catalog char fields before concatenating them into text details', () => {
+    expect(sql).toContain("cls.relkind::text");
+    expect(sql).not.toMatch(/\|\|\s*cls\.relkind\s*\|\|/);
+  });
+
   it('keeps the migration version check as an unconditional warning', () => {
     expect(sql).toMatch(
       /61,\s*'WARN',\s*'migration_version_20260630090000'/,

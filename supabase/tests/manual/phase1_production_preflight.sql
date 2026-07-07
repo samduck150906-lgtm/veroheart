@@ -219,7 +219,7 @@ checks AS (
     'phase_table_name_' || pt.table_name,
     CASE
       WHEN cls.oid IS NULL THEN 'No public relation named ' || pt.table_name || ' exists.'
-      ELSE 'Name collision: public.' || pt.table_name || ' already exists as relkind ' || cls.relkind || '.'
+      ELSE 'Name collision: public.' || pt.table_name || ' already exists as relkind ' || cls.relkind::text || '.'
     END,
     CASE
       WHEN cls.oid IS NULL THEN 'No action required.'
