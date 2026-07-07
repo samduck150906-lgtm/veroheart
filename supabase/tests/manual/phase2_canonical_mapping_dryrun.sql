@@ -38,7 +38,7 @@ normalized_groups AS (
     li.normalized_key,
     COUNT(*) AS ingredient_count,
     pg_catalog.string_agg(COALESCE(li.name_ko, li.name_en, li.id::text), ' | ' ORDER BY COALESCE(li.name_ko, li.name_en, li.id::text)) AS examples,
-    COUNT(*) FILTER (WHERE li.risk_level IN ('warning', 'danger', 'caution')) AS caution_count
+    COUNT(*) FILTER (WHERE li.risk_level::text IN ('warning', 'danger', 'caution')) AS caution_count
   FROM legacy_ingredients li
   WHERE li.normalized_key IS NOT NULL
   GROUP BY li.normalized_key
@@ -113,7 +113,7 @@ risk_review_candidates AS (
     li.id,
     COALESCE(li.name_ko, li.name_en, li.id::text) AS ingredient_name,
     CASE
-      WHEN li.risk_level IN ('warning', 'danger', 'caution') THEN 'legacy risk_level=' || li.risk_level
+      WHEN li.risk_level::text IN ('warning', 'danger', 'caution') THEN 'legacy risk_level=' || li.risk_level::text
       WHEN EXISTS (
         SELECT 1
         FROM high_risk_terms hrt
@@ -127,7 +127,7 @@ risk_review_candidates AS (
       ELSE 'review candidate'
     END AS reason
   FROM legacy_ingredients li
-  WHERE li.risk_level IN ('warning', 'danger', 'caution')
+  WHERE li.risk_level::text IN ('warning', 'danger', 'caution')
      OR EXISTS (
        SELECT 1
        FROM high_risk_terms hrt

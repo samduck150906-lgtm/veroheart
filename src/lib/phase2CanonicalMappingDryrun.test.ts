@@ -79,6 +79,12 @@ describe('Phase 2 canonical mapping dry-run contract', () => {
     }
   });
 
+  it('casts legacy risk_level enum values before string comparisons and concatenation', () => {
+    expect(sql).not.toMatch(/\bli\.risk_level\s+IN\s*\(/i);
+    expect(sql).toMatch(/\bli\.risk_level::text\s+IN\s*\(/i);
+    expect(sql).toContain("'legacy risk_level=' || li.risk_level::text");
+  });
+
   it('documents dangerous substring and allergen review behavior', () => {
     expect(sql).toContain('포도');
     expect(sql).toContain('포도씨유');
