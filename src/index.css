@@ -64,29 +64,44 @@
   /* Skeleton shimmer 색 */
   --skeleton-base: #EEF1F4;
   --skeleton-sheen: #F7F9FB;
+
+  /* ── Elevation & surface (이전엔 참조만 되고 정의가 없어 그림자/배경이 렌더링되지 않던 토큰) ── */
+  --surface-elevated: #FFFFFF;
+  --shadow-card: 0 2px 10px rgba(17, 24, 39, 0.045);
+  --shadow-card-hover: 0 10px 26px -10px rgba(17, 24, 39, 0.16);
+  --nav-shadow: 0 8px 28px rgba(28, 25, 23, 0.08);
+  --shadow-pop: 0 18px 44px -20px rgba(17, 24, 39, 0.35);
+
+  /* ── 8pt spacing scale (모든 간격의 단일 출처) ── */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
 }
 
-/* PDP 다크모드 토큰 페어링 (docs/PDP_Redesign_Spec.md §25) */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --pdp-ink: #F1F5F9;
-    --pdp-ink-muted: #B6C2D2;
-    --pdp-ink-faint: #7C8AA0;
-    --pdp-line: #232B36;
-    --pdp-surface: #151A21;
-    --pdp-surface-soft: #0E1217;
-    --pdp-e1: 0 1px 2px rgba(0,0,0,.4);
-    --pdp-e2: 0 8px 24px rgba(0,0,0,.5);
-    --pdp-e3: 0 16px 40px rgba(0,0,0,.6);
-    --pdp-safe-fg: #4ADE80;   --pdp-safe-bg: rgba(34,197,94,.16);
-    --pdp-good-fg: #4ADE80;   --pdp-good-bg: rgba(34,197,94,.12);
-    --pdp-caution-fg: #FBBF24; --pdp-caution-bg: rgba(245,158,11,.16); --pdp-caution-line: rgba(245,158,11,.35);
-    --pdp-danger-fg: #F87171;  --pdp-danger-bg: rgba(239,68,68,.16);  --pdp-danger-line: rgba(239,68,68,.35);
-    --pdp-neutral-fg: #CBD5E1; --pdp-neutral-bg: rgba(148,163,184,.16);
-  }
-  .pdp-skel { background: #232B36; }
-  .pdp-skel::after { background: linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent); }
+/* PDP 다크모드 토큰 페어링 — 앱 테마 토글(data-theme)에 연동 (docs/PDP_Redesign_Spec.md §25) */
+:root[data-theme="dark"] {
+  --pdp-ink: #F1F5F9;
+  --pdp-ink-muted: #B6C2D2;
+  --pdp-ink-faint: #7C8AA0;
+  --pdp-line: #232B36;
+  --pdp-surface: #151A21;
+  --pdp-surface-soft: #0E1217;
+  --pdp-e1: 0 1px 2px rgba(0,0,0,.4);
+  --pdp-e2: 0 8px 24px rgba(0,0,0,.5);
+  --pdp-e3: 0 16px 40px rgba(0,0,0,.6);
+  --pdp-safe-fg: #4ADE80;   --pdp-safe-bg: rgba(34,197,94,.16);
+  --pdp-good-fg: #4ADE80;   --pdp-good-bg: rgba(34,197,94,.12);
+  --pdp-caution-fg: #FBBF24; --pdp-caution-bg: rgba(245,158,11,.16); --pdp-caution-line: rgba(245,158,11,.35);
+  --pdp-danger-fg: #F87171;  --pdp-danger-bg: rgba(239,68,68,.16);  --pdp-danger-line: rgba(239,68,68,.35);
+  --pdp-neutral-fg: #CBD5E1; --pdp-neutral-bg: rgba(148,163,184,.16);
 }
+:root[data-theme="dark"] .pdp-skel { background: #232B36; }
+:root[data-theme="dark"] .pdp-skel::after { background: linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent); }
 
 /* ── Dark theme tokens (data-theme="dark"에서만 적용, 앱 전면 적용은 후속) ── */
 :root[data-theme="dark"] {
@@ -101,7 +116,54 @@
   --danger-strong: #FF6B75;  --danger-bg: #2A1416;
   --skeleton-base: #232A33;
   --skeleton-sheen: #2C343E;
+  --surface-elevated: #161A20;
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.4);
+  --shadow-card-hover: 0 12px 30px -10px rgba(0, 0, 0, 0.55);
+  --nav-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+  --shadow-pop: 0 18px 44px -18px rgba(0, 0, 0, 0.6);
+
+  /* 레거시 토큰 오버라이드 — 대부분 컴포넌트가 이 토큰을 참조하므로 한 번에 전환된다 */
+  --secondary: #1E232B;
+  --accent: #FF6B75;
+  --text-dark: #F2F4F6;
+  --text-muted: #A7B0BC;
+  --text-light: #7C8896;
+  --bg-color: #161A20;
+  --bg-gradient: #0E1217;
 }
+
+/* ── Dark: 셸 크롬(반투명 흰색으로 하드코딩된 곳) 오버라이드 ── */
+:root[data-theme="dark"] .glass {
+  background: rgba(20, 24, 30, 0.86);
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+:root[data-theme="dark"] .glass-nav,
+:root[data-theme="dark"] .bottom-nav-community {
+  background: rgba(22, 26, 32, 0.94);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+:root[data-theme="dark"] .app-icon-button {
+  background: rgba(30, 35, 43, 0.95);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #C7CED8;
+}
+:root[data-theme="dark"] .bottom-nav-item-active {
+  background: rgba(234, 179, 8, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(234, 179, 8, 0.28);
+}
+:root[data-theme="dark"] .scan-fab { border-color: #161A20; }
+:root[data-theme="dark"] .search-chip--symptom {
+  background: rgba(59, 130, 246, 0.16);
+  border-color: rgba(59, 130, 246, 0.32);
+  color: #93C5FD;
+}
+:root[data-theme="dark"] .rising-trend--up   { background: rgba(239,68,68,.18); color: #FCA5A5; }
+:root[data-theme="dark"] .rising-trend--down { background: rgba(59,130,246,.18); color: #93C5FD; }
+:root[data-theme="dark"] .rising-trend--new  { background: rgba(245,158,11,.18); color: #FCD34D; }
+:root[data-theme="dark"] .rising-trend--flat { background: rgba(148,163,184,.16); color: #CBD5E1; }
+:root[data-theme="dark"] .rising-rank { color: #FCD34D; }
+:root[data-theme="dark"] .discovery-tabs { background: #1E232B; border-color: rgba(255,255,255,0.06); }
+:root[data-theme="dark"] .discovery-tab.active { background: #FEF3C7; color: #1C1917; }
 
 /* PDP skeleton shimmer (docs/PDP_Redesign_Spec.md §22) */
 .pdp-skel {
@@ -875,7 +937,7 @@ button:active {
 }
 
 .ui-hero-panel {
-  background: #ffffff;
+  background: var(--surface-elevated);
   border: 1px solid rgba(28, 25, 23, 0.08);
   border-radius: 20px;
   box-shadow: var(--shadow-card);
@@ -931,7 +993,7 @@ button:active {
 }
 
 .ui-badge-muted {
-  background: #f5f5f4;
+  background: var(--surface-alt);
   color: #57534e;
 }
 
@@ -962,7 +1024,7 @@ button:active {
   align-items: center;
   gap: 10px;
   padding: 14px 16px;
-  background: #fff;
+  background: var(--surface-elevated);
   border-radius: 14px;
   border: 1px solid rgba(28, 25, 23, 0.08);
   color: var(--text-muted);
@@ -993,7 +1055,7 @@ button:active {
 .ui-info-card,
 .ui-action-card,
 .ui-list-card {
-  background: #ffffff;
+  background: var(--surface-elevated);
   border: 1px solid rgba(28, 25, 23, 0.07);
   border-radius: 16px;
   box-shadow: var(--shadow-card);
@@ -1027,7 +1089,7 @@ button:active {
 }
 
 .ui-category-card {
-  background: #fff;
+  background: var(--surface-elevated);
   border-radius: 16px;
   padding: 12px 10px;
   box-shadow: var(--shadow-card);
@@ -1045,7 +1107,7 @@ button:active {
   width: 100%;
   aspect-ratio: 1 / 1;
   border-radius: 14px;
-  background: #fafaf9;
+  background: var(--surface-alt);
   font-size: 24px;
   margin-bottom: 10px;
 }
@@ -1054,7 +1116,7 @@ button:active {
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: #f5f5f4;
+  background: var(--surface-alt);
 }
 
 .ui-rank-index {
@@ -1087,7 +1149,7 @@ button:active {
   padding: 10px 14px;
   border-radius: 12px;
   border: 1px solid #e7e5e4;
-  background: #fff;
+  background: var(--surface-elevated);
   color: #57534e;
   cursor: pointer;
 }
@@ -1099,7 +1161,7 @@ button:active {
   border: 1px solid #e5e7eb;
   font-size: 15px;
   outline: none;
-  background: #fff;
+  background: var(--surface-elevated);
 }
 
 .ui-checkout-step {
@@ -1162,7 +1224,7 @@ button:active {
   grid-template-columns: 1fr 1fr;
   gap: 6px 18px;
   padding: 16px 18px;
-  background: #ffffff;
+  background: var(--surface-elevated);
   border: 1px solid rgba(28, 25, 23, 0.07);
   border-radius: 18px;
   box-shadow: var(--shadow-card);
@@ -1327,7 +1389,7 @@ button:active {
   gap: 10px;
   padding: 10px 14px 10px 10px;
   border-radius: 16px;
-  background: #ffffff;
+  background: var(--surface-elevated);
   border: 1px solid rgba(28, 25, 23, 0.07);
   box-shadow: var(--shadow-card);
   text-decoration: none;
@@ -1375,7 +1437,7 @@ button:active {
   gap: 14px;
   padding: 18px;
   border-radius: 20px;
-  background: #fff;
+  background: var(--surface-elevated);
   border: 1px solid rgba(28, 25, 23, 0.07);
   box-shadow: var(--shadow-card);
   text-align: left;
@@ -1429,7 +1491,7 @@ button:active {
   padding: 12px 6px 10px;
   border: 1px solid rgba(28, 25, 23, 0.06);
   border-radius: 16px;
-  background: #fff;
+  background: var(--surface-elevated);
   cursor: pointer;
   color: var(--text-dark);
   font-size: 11px;
@@ -1438,8 +1500,265 @@ button:active {
   text-align: center;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
-.compact-category-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-card); }
-.compact-category-emoji { font-size: 24px; line-height: 1; }
+.compact-category-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   Home / Search redesign (2026) — press feedback, greeting hero,
+   quick actions, search discovery chips, sticky filter bar.
+   All tokens above (:root) so light/dark follow automatically.
+   ============================================================ */
+
+/* Universal tap-scale + hover lift for interactive surfaces */
+.ui-press {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  will-change: transform;
+}
+.ui-press:hover { transform: translateY(-2px); box-shadow: var(--shadow-card-hover); }
+.ui-press:active { transform: scale(0.975); }
+@media (prefers-reduced-motion: reduce) {
+  .ui-press:hover { transform: none; }
+  .ui-press:active { transform: none; }
+}
+
+/* Focus visibility (접근성 AA) — 키보드 포커스 링 통일 */
+.ui-press:focus-visible,
+.quick-action:focus-visible,
+.search-chip:focus-visible,
+.home-hero-search:focus-visible,
+.home-hero-scan:focus-visible {
+  outline: 2px solid var(--primary-dark);
+  outline-offset: 2px;
+}
+
+/* ── Greeting hero ── */
+.home-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 20px 18px;
+  border-radius: 22px;
+  background:
+    radial-gradient(120% 120% at 100% 0%, rgba(254, 229, 0, 0.18) 0%, transparent 52%),
+    var(--surface-elevated);
+  border: 1px solid rgba(28, 25, 23, 0.08);
+  box-shadow: var(--shadow-card);
+}
+.home-hero-greeting {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.home-hero-title {
+  margin: 0 0 16px;
+  font-size: 21px;
+  line-height: 1.34;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-dark);
+}
+.home-hero-title b { color: var(--primary-dark); font-weight: 800; }
+.home-hero-search {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 52px;
+  padding: 0 16px;
+  border-radius: 16px;
+  background: var(--surface-elevated);
+  border: 1px solid rgba(28, 25, 23, 0.1);
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  color: var(--text-muted);
+}
+.home-hero-search-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #4B5563;
+}
+.home-hero-scan {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 52px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  background: var(--primary);
+  color: var(--text-dark);
+  font-size: 15px;
+  font-weight: 800;
+  box-shadow: 0 8px 20px rgba(229, 206, 0, 0.35);
+}
+
+/* ── Quick actions (2x2 / 4-up) ── */
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.quick-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 6px 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(28, 25, 23, 0.06);
+  background: var(--surface-elevated);
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  color: var(--text-dark);
+}
+.quick-action-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.quick-action-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  letter-spacing: -0.01em;
+}
+
+/* ── Search discovery: recent + popular + symptom chips ── */
+.search-block-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+  margin-bottom: 10px;
+}
+.search-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.search-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(28, 25, 23, 0.1);
+  background: var(--surface-elevated);
+  color: var(--text-dark);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform var(--transition-fast), border-color var(--transition-fast);
+}
+.search-chip:active { transform: scale(0.95); }
+.search-chip .search-chip-rank {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--primary-dark);
+  font-variant-numeric: tabular-nums;
+}
+.search-chip .search-chip-rank.top3 { color: #DC2626; }
+.search-chip--symptom {
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.2);
+  color: #1D4ED8;
+}
+.search-chip--recent { padding-right: 8px; }
+.search-chip-remove {
+  display: inline-flex;
+  border: none;
+  background: none;
+  padding: 2px;
+  margin-left: 1px;
+  cursor: pointer;
+  color: var(--text-light);
+  border-radius: 999px;
+}
+.search-chip-clear {
+  border: none;
+  background: none;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-light);
+  cursor: pointer;
+}
+
+/* ── Sticky result bar (탐색 결과 헤더) ── */
+.search-sticky-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  background: color-mix(in srgb, var(--surface-elevated) 88%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(28, 25, 23, 0.07);
+  box-shadow: var(--shadow-card);
+}
+.filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 2px;
+  border-radius: 999px;
+  background: var(--primary-dark);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Bottom nav active glow polish ── */
+.bottom-nav-item-active .bottom-nav-icon-wrap::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(234, 179, 8, 0.25) 0%, transparent 70%);
+  z-index: -1;
+}
+.bottom-nav-item .bottom-nav-icon-wrap svg {
+  transition: transform var(--transition-fast);
+}
+.bottom-nav-item-active .bottom-nav-icon-wrap svg {
+  transform: translateY(-1px) scale(1.06);
+}
 
 /* Admin SaaS UI */
 .admin-page-stack {

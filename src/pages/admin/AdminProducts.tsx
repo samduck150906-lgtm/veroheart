@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase, adminWrite } from '../../lib/supabase';
 import { Plus, Search, Edit2, Trash2, X } from 'lucide-react';
 import { notify } from '../../store/useNotification';
@@ -68,11 +68,7 @@ const AdminProducts: React.FC = () => {
   const [currentProduct, setCurrentProduct] = useState<Partial<Product>>({});
   const [nutrition, setNutrition] = useState<NutritionForm>(EMPTY_NUTRITION);
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('products')
@@ -87,7 +83,13 @@ const AdminProducts: React.FC = () => {
 
     setProducts((data || []) as Product[]);
     setLoading(false);
-  };
+  }, []);
+
+  useEffect(() => {
+    // 마운트 시 제품 목록을 로드한다. 로딩 상태 갱신은 의도된 동작이다.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchProducts();
+  }, [fetchProducts]);
 
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
@@ -200,8 +202,8 @@ const AdminProducts: React.FC = () => {
     if (!window.confirm('정말 삭제하시겠습니까?')) return;
     try {
       await adminWrite('deleteProduct', { id });
-    } catch (err: any) {
-      notify.error(`삭제 실패: ${err.message}`);
+    } catch (err) {
+      notify.error(`삭제 실패: ${err instanceof Error ? err.message : String(err)}`);
       return;
     }
     notify.success('제품이 삭제되었습니다.');
@@ -271,7 +273,7 @@ const AdminProducts: React.FC = () => {
                 <tr key={p.id}>
                   <td>
                     <div className="admin-item-cell">
-                      <img src={p.image_url} alt={p.name} />
+                      <img src={p.image_url} alt={p.name} loading="lazy" decoding="async" />
                       <div>
                         <div className="admin-item-main">{p.name}</div>
                         <div className="admin-item-sub">

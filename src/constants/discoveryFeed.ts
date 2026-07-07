@@ -8,20 +8,22 @@ export interface RisingKeyword {
   keyword: string;
   trend: KeywordTrend;
   delta?: number;
+  /** 24시간 검색 추이(미니 그래프용, 상대값) */
+  series?: number[];
 }
 
 /** 홈 상단에 노출되는 실시간 급상승 탐색 키워드 (24시간 롤링). */
 export const RISING_KEYWORDS: RisingKeyword[] = [
-  { rank: 1, keyword: '관절 영양제', trend: 'up', delta: 4 },
-  { rank: 2, keyword: '저알러지 사료', trend: 'up', delta: 2 },
-  { rank: 3, keyword: '그레인프리', trend: 'flat' },
-  { rank: 4, keyword: '시니어 강아지', trend: 'new' },
-  { rank: 5, keyword: '노령묘 습식', trend: 'up', delta: 3 },
-  { rank: 6, keyword: '요로결석 예방', trend: 'down', delta: 1 },
-  { rank: 7, keyword: '수제 간식', trend: 'new' },
-  { rank: 8, keyword: '오리젠', trend: 'flat' },
-  { rank: 9, keyword: '치석 제거', trend: 'up', delta: 2 },
-  { rank: 10, keyword: '프로바이오틱스', trend: 'down', delta: 3 },
+  { rank: 1, keyword: '관절 영양제', trend: 'up', delta: 4, series: [4, 5, 4, 6, 7, 9, 12] },
+  { rank: 2, keyword: '저알러지 사료', trend: 'up', delta: 2, series: [6, 6, 7, 6, 8, 9, 11] },
+  { rank: 3, keyword: '그레인프리', trend: 'flat', series: [7, 8, 7, 8, 7, 8, 7] },
+  { rank: 4, keyword: '시니어 강아지', trend: 'new', series: [1, 1, 2, 3, 5, 8, 10] },
+  { rank: 5, keyword: '노령묘 습식', trend: 'up', delta: 3, series: [3, 4, 5, 5, 6, 8, 9] },
+  { rank: 6, keyword: '요로결석 예방', trend: 'down', delta: 1, series: [9, 8, 8, 7, 6, 6, 5] },
+  { rank: 7, keyword: '수제 간식', trend: 'new', series: [1, 2, 2, 4, 6, 7, 9] },
+  { rank: 8, keyword: '오리젠', trend: 'flat', series: [6, 7, 6, 7, 6, 7, 6] },
+  { rank: 9, keyword: '치석 제거', trend: 'up', delta: 2, series: [4, 4, 5, 6, 6, 7, 8] },
+  { rank: 10, keyword: '프로바이오틱스', trend: 'down', delta: 3, series: [10, 9, 8, 7, 6, 5, 4] },
 ];
 
 export interface EditorialTopic {

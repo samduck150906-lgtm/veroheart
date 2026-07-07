@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * AnalysisSummaryHeader
  * 분석 결과 페이지 최상단 컴포넌트

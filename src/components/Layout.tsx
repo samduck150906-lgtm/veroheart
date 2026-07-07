@@ -2,6 +2,7 @@ import { Outlet, useLocation, Link, useNavigate } from 'react-router-dom';
 import { Bell, Search, ShoppingBag } from 'lucide-react';
 import BottomNav from './BottomNav';
 import Footer from './Footer';
+import ThemeToggle from './ThemeToggle';
 import { VERORO_LOGO_SRC } from '../constants/assets';
 import { useStore } from '../store/useStore';
 export default function Layout() {
@@ -35,6 +36,7 @@ export default function Layout() {
             >
               <Search size={18} />
             </button>
+            <ThemeToggle />
             <button
               type="button"
               className="app-icon-button"

@@ -14,9 +14,12 @@ import {
   SlidersHorizontal,
   Sparkles,
   Search as SearchIcon,
+  Clock,
+  TrendingUp,
 } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import StateView from '../components/StateView';
+import BottomSheet from '../components/BottomSheet';
 import { ProductGridSkeleton } from '../components/Skeleton';
 import type { Product } from '../types';
 import { TossFilterSection, TossSearchBar, TossChip, TossButton } from '../components/TossUI';
@@ -49,6 +52,34 @@ const PRICE_BAND_LABELS: { id: PriceBand; label: string }[] = [
 
 function resolveCategoryFromSearchParams(category: string | null): string {
   return category ?? '전체';
+}
+
+/** 인기 검색어(급상승) — 홈과 동일 데이터 소스 재사용 상위 8개 */
+const POPULAR_KEYWORDS = ['관절 영양제', '저알러지 사료', '그레인프리', '시니어 강아지', '노령묘 습식', '수제 간식', '치석 제거', '프로바이오틱스'];
+
+/** 추천 키워드(증상·목적) chip */
+const SYMPTOM_KEYWORDS = ['눈물', '알러지', '다이어트', '관절', '피부', '노령견', '치석', '소화'];
+
+const RECENT_KEY = 'vh_recent_searches';
+const RECENT_MAX = 8;
+
+function loadRecentSearches(): string[] {
+  try {
+    const raw = localStorage.getItem(RECENT_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr.filter((v) => typeof v === 'string').slice(0, RECENT_MAX) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRecentSearches(list: string[]) {
+  try {
+    localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, RECENT_MAX)));
+  } catch {
+    /* localStorage 미지원/차단 시 무시 */
+  }
 }
 
 const LIFE_STAGE_OPTIONS = [
@@ -98,6 +129,7 @@ export default function Search() {
   };
 
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '');
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => loadRecentSearches());
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [sortBy, setSortBy] = useState<'default' | 'price_asc' | 'price_desc' | 'rating'>('default');
@@ -165,6 +197,14 @@ export default function Search() {
           priceMax,
         });
         setSearchResults(results);
+        if (query.trim() && results.length > 0) {
+          const t = query.trim();
+          setRecentSearches((prev) => {
+            const next = [t, ...prev.filter((v) => v !== t)].slice(0, RECENT_MAX);
+            saveRecentSearches(next);
+            return next;
+          });
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -225,6 +265,46 @@ export default function Search() {
     setFilters(f => ({ ...f, targetPetType: p }));
   };
 
+  const recordRecent = (term: string) => {
+    const t = term.trim();
+    if (!t) return;
+    setRecentSearches((prev) => {
+      const next = [t, ...prev.filter((v) => v !== t)].slice(0, RECENT_MAX);
+      saveRecentSearches(next);
+      return next;
+    });
+  };
+
+  const removeRecent = (term: string) => {
+    setRecentSearches((prev) => {
+      const next = prev.filter((v) => v !== term);
+      saveRecentSearches(next);
+      return next;
+    });
+  };
+
+  const clearRecent = () => {
+    setRecentSearches([]);
+    saveRecentSearches([]);
+  };
+
+  const applyKeyword = (kw: string) => {
+    setQuery(kw);
+    recordRecent(kw);
+  };
+
+  /** 활성 필터 개수 — 상세 필터 버튼 배지에 노출 */
+  const activeFilterCount =
+    (filters.targetLifeStage ? 1 : 0) +
+    (filters.formulation ? 1 : 0) +
+    (filters.subCategory ? 1 : 0) +
+    filters.healthConcerns.length +
+    (filters.dietPreset ? 1 : 0) +
+    (filters.priceBand !== 'any' ? 1 : 0) +
+    excludedIngredients.length;
+
+  const showDiscovery = query.trim() === '';
+
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '100px' }}>
       <section className="ui-hero-panel" style={{ marginBottom: '18px', padding: '18px' }}>
@@ -243,14 +323,14 @@ export default function Search() {
             marginBottom: '14px',
             padding: '12px 14px',
             borderRadius: '16px',
-            background: '#FFFFFF',
-            border: '1px solid rgba(124, 111, 156, 0.16)',
+            background: 'var(--surface-alt)',
+            border: '1px solid rgba(124, 111, 156, 0.2)',
           }}
         >
-          <div style={{ fontSize: '12px', fontWeight: 800, color: '#5B21B6', marginBottom: '4px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 800, color: '#8B7CF6', marginBottom: '4px' }}>
             사람이 검수한 데이터 우선
           </div>
-          <p style={{ margin: 0, fontSize: '12px', lineHeight: 1.55, color: '#66707C', fontWeight: 600 }}>
+          <p style={{ margin: 0, fontSize: '12px', lineHeight: 1.55, color: 'var(--text-muted)', fontWeight: 600 }}>
             검색과 추천은 직접 정리한 제조사/성분 데이터와 프로필 기준으로 계산합니다.
           </p>
         </div>
@@ -262,6 +342,84 @@ export default function Search() {
             placeholder="상품명, 브랜드, 성분명으로 검색"
           />
         </div>
+
+        {/* 최근 검색 (검색어 없을 때만) */}
+        {showDiscovery && recentSearches.length > 0 && (
+          <div style={{ marginBottom: '14px' }}>
+            <div className="search-block-label">
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                <Clock size={13} /> 최근 검색
+              </span>
+              <button type="button" className="search-chip-clear" onClick={clearRecent}>전체 삭제</button>
+            </div>
+            <div className="search-chip-row">
+              {recentSearches.map((term) => (
+                <span key={term} className="search-chip search-chip--recent">
+                  <button
+                    type="button"
+                    onClick={() => applyKeyword(term)}
+                    style={{ border: 'none', background: 'none', padding: 0, font: 'inherit', color: 'inherit', cursor: 'pointer' }}
+                  >
+                    {term}
+                  </button>
+                  <button
+                    type="button"
+                    className="search-chip-remove"
+                    onClick={() => removeRecent(term)}
+                    aria-label={`${term} 최근 검색 삭제`}
+                  >
+                    <X size={13} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 추천 키워드 (증상·목적) */}
+        <div style={{ marginBottom: showDiscovery ? '14px' : '0' }}>
+          <div className="search-block-label">
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+              <Sparkles size={13} /> 추천 키워드
+            </span>
+          </div>
+          <div className="search-chip-row">
+            {SYMPTOM_KEYWORDS.map((kw) => (
+              <button
+                key={kw}
+                type="button"
+                className="search-chip search-chip--symptom"
+                onClick={() => applyKeyword(kw)}
+              >
+                #{kw}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 인기 검색어 (검색어 없을 때만) */}
+        {showDiscovery && (
+          <div style={{ marginTop: '14px', marginBottom: '2px' }}>
+            <div className="search-block-label">
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                <TrendingUp size={13} /> 인기 검색어
+              </span>
+            </div>
+            <div className="search-chip-row">
+              {POPULAR_KEYWORDS.map((kw, i) => (
+                <button
+                  key={kw}
+                  type="button"
+                  className="search-chip"
+                  onClick={() => applyKeyword(kw)}
+                >
+                  <span className={`search-chip-rank${i < 3 ? ' top3' : ''}`}>{i + 1}</span>
+                  {kw}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div style={{ marginBottom: '14px' }}>
           <p style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '0.04em' }}>반려동물</p>
@@ -306,9 +464,9 @@ export default function Search() {
                 style={{
                   flexShrink: 0,
                   padding: '8px 12px', borderRadius: '999px', fontSize: '12px', fontWeight: 700,
-                  border: filters.priceBand === id ? 'none' : '1px solid #E5E7EB',
-                  backgroundColor: filters.priceBand === id ? 'var(--primary)' : '#fff',
-                  color: filters.priceBand === id ? '#fff' : '#4B5563',
+                  border: filters.priceBand === id ? 'none' : '1px solid var(--line)',
+                  backgroundColor: filters.priceBand === id ? 'var(--primary)' : 'var(--surface-elevated)',
+                  color: filters.priceBand === id ? '#191F28' : 'var(--text-muted)',
                   cursor: 'pointer',
                 }}
               >
@@ -326,9 +484,9 @@ export default function Search() {
               onClick={() => setFilters(f => ({ ...f, dietPreset: !f.dietPreset }))}
               style={{
                 padding: '8px 14px', borderRadius: '999px', fontSize: '12px', fontWeight: 700,
-                border: filters.dietPreset ? 'none' : '1px solid #E5E7EB',
-                backgroundColor: filters.dietPreset ? 'var(--primary)' : '#fff',
-                color: filters.dietPreset ? '#fff' : '#4B5563', cursor: 'pointer',
+                border: filters.dietPreset ? 'none' : '1px solid var(--line)',
+                backgroundColor: filters.dietPreset ? 'var(--primary)' : 'var(--surface-elevated)',
+                color: filters.dietPreset ? '#191F28' : 'var(--text-muted)', cursor: 'pointer',
               }}
             >
               다이어트·체중
@@ -343,9 +501,9 @@ export default function Search() {
               }
               style={{
                 padding: '8px 14px', borderRadius: '999px', fontSize: '12px', fontWeight: 700,
-                border: filters.targetLifeStage === '시니어' ? 'none' : '1px solid #E5E7EB',
-                backgroundColor: filters.targetLifeStage === '시니어' ? 'var(--primary)' : '#fff',
-                color: filters.targetLifeStage === '시니어' ? '#fff' : '#4B5563', cursor: 'pointer',
+                border: filters.targetLifeStage === '시니어' ? 'none' : '1px solid var(--line)',
+                backgroundColor: filters.targetLifeStage === '시니어' ? 'var(--primary)' : 'var(--surface-elevated)',
+                color: filters.targetLifeStage === '시니어' ? '#191F28' : 'var(--text-muted)', cursor: 'pointer',
               }}
             >
               노령(시니어)
@@ -369,6 +527,7 @@ export default function Search() {
           <TossButton variant={filterButtonActive ? 'soft' : 'outline'} onClick={() => setIsFilterOpen(true)} style={{ width: 'auto', height: '40px', padding: '0 14px' }}>
             <SlidersHorizontal size={16} />
             상세 필터
+            {activeFilterCount > 0 && <span className="filter-count">{activeFilterCount}</span>}
           </TossButton>
           <button
             type="button"
@@ -392,9 +551,9 @@ export default function Search() {
               }}
               style={{
                 padding: '10px 18px', borderRadius: '24px', fontSize: '14px', whiteSpace: 'nowrap',
-                border: category === cat.name ? 'none' : '1px solid #E5E7EB',
-                backgroundColor: category === cat.name ? 'var(--primary)' : '#fff',
-                color: category === cat.name ? '#fff' : '#4B5563',
+                border: category === cat.name ? 'none' : '1px solid var(--line)',
+                backgroundColor: category === cat.name ? 'var(--primary)' : 'var(--surface-elevated)',
+                color: category === cat.name ? '#191F28' : 'var(--text-muted)',
                 cursor: 'pointer', fontWeight: 600, transition: 'all 0.2s',
                 display: 'flex', alignItems: 'center', gap: '8px'
               }}
@@ -420,17 +579,16 @@ export default function Search() {
       </section>
 
       <div style={{ marginTop: '12px' }}>
-        <div className="ui-list-card" style={{ marginBottom: '16px', padding: '16px 18px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '14px', color: '#6B7280' }}>
-            총 <strong style={{ color: '#111827' }}>{displayResults.length}</strong>개의 상품
+        <div className="search-sticky-bar">
+          <span style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 600 }}>
+            총 <strong style={{ color: 'var(--text-dark)', fontWeight: 900 }}>{displayResults.length}</strong>개의 상품
             {isLoading && <span style={{ marginLeft: '8px', fontSize: '12px' }}>불러오는 중…</span>}
-            </span>
-            <span className="ui-badge ui-badge-soft">
-              <Filter size={12} />
-              {sortBy === 'default' ? '프로필 추천순' : filterButtonActive ? '필터 적용 중' : '정렬 적용 중'}
-            </span>
-          </div>
+          </span>
+          <span className="ui-badge ui-badge-soft">
+            <Filter size={12} />
+            {sortBy === 'default' ? '프로필 추천순' : filterButtonActive ? '필터 적용 중' : '정렬 적용 중'}
+            {activeFilterCount > 0 && ` · ${activeFilterCount}`}
+          </span>
         </div>
 
         {sortBy === 'default' && displayResults.length > 0 && (
@@ -439,7 +597,7 @@ export default function Search() {
             <div style={{ fontSize: '16px', fontWeight: 900, color: 'var(--text-dark)', marginBottom: '6px' }}>
               {profile.name} 프로필 기반 추천순
             </div>
-            <div style={{ fontSize: '13px', color: '#66707C', lineHeight: 1.6 }}>
+            <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
               검수 완료 여부, 알레르기 회피, 건강 고민 매칭, 리뷰 신뢰도, 가격 적정성, 종/연령 적합도를 함께 반영해 정렬합니다.
             </div>
           </div>
@@ -469,14 +627,31 @@ export default function Search() {
         )}
       </div>
 
-      {isFilterOpen && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', justifyContent: 'flex-end' }}>
-          <div className="animate-slide-in-right" style={{ width: '85%', maxWidth: '400px', backgroundColor: '#fff', height: '100%', overflowY: 'auto', padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-              <h2 style={{ fontSize: '22px', fontWeight: 800 }}>상세 필터</h2>
-              <button type="button" onClick={() => setIsFilterOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
-            </div>
-
+      <BottomSheet
+        isOpen={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        title="상세 필터"
+        headerRight={activeFilterCount > 0 ? <span className="filter-count">{activeFilterCount}</span> : undefined}
+        footer={
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button
+              type="button"
+              onClick={resetFilters}
+              style={{ flex: 1, padding: '16px', borderRadius: '16px', border: '1px solid #E5E7EB', background: 'var(--surface-elevated)', color: 'var(--text-dark)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer' }}
+            >
+              <Trash2 size={18} /> 초기화
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsFilterOpen(false)}
+              className="ui-press"
+              style={{ flex: 2, padding: '16px', borderRadius: '16px', background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)', color: '#fff', fontWeight: 800, border: 'none', cursor: 'pointer' }}
+            >
+              {isLoading ? '불러오는 중…' : `${displayResults.length.toLocaleString()}개 결과 보기`}
+            </button>
+          </div>
+        }
+      >
             <TossFilterSection title="반려동물">
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 <FilterChip label="전체" selected={filters.targetPetType === ''} onClick={() => setFilters({ ...filters, targetPetType: '' })} />
@@ -523,8 +698,8 @@ export default function Search() {
                 onClick={() => setFilters(f => ({ ...f, dietPreset: !f.dietPreset }))}
                 style={{
                   width: '100%', textAlign: 'left', padding: '14px 16px', borderRadius: '14px',
-                  border: filters.dietPreset ? '2px solid var(--primary)' : '1px solid #E5E7EB',
-                  background: filters.dietPreset ? 'rgba(250, 204, 21, 0.16)' : '#fff', cursor: 'pointer', fontWeight: 700, color: '#374151',
+                  border: filters.dietPreset ? '2px solid var(--primary)' : '1px solid var(--line)',
+                  background: filters.dietPreset ? 'rgba(250, 204, 21, 0.16)' : 'var(--surface-alt)', cursor: 'pointer', fontWeight: 700, color: 'var(--text-dark)',
                 }}
               >
                 {filters.dietPreset ? '✓ ' : ''}다이어트·저칼로리·체중 관련 상품 우선 (태그 일치)
@@ -585,11 +760,11 @@ export default function Search() {
                   placeholder="제외할 성분 검색..."
                   value={ingredientSearch}
                   onChange={e => setIngredientSearch(e.target.value)}
-                  style={{ width: '100%', padding: '12px 12px 12px 36px', borderRadius: '12px', border: '1px solid #E5E7EB', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '12px 12px 12px 36px', borderRadius: '12px', border: '1px solid var(--line)', fontSize: '14px', outline: 'none', boxSizing: 'border-box', background: 'var(--surface-alt)', color: 'var(--text-dark)' }}
                 />
               </div>
               {ingredientSearch && (
-                <div style={{ maxHeight: '160px', overflowY: 'auto', border: '1px solid #E5E7EB', borderRadius: '12px', background: '#fff' }}>
+                <div style={{ maxHeight: '160px', overflowY: 'auto', border: '1px solid var(--line)', borderRadius: '12px', background: 'var(--surface-elevated)' }}>
                   {filteredIngList.length === 0 ? (
                     <div style={{ padding: '12px', fontSize: '13px', color: '#9CA3AF', textAlign: 'center' }}>검색 결과 없음</div>
                   ) : filteredIngList.map(ing => (
@@ -597,7 +772,7 @@ export default function Search() {
                       key={ing.id}
                       type="button"
                       onClick={() => { setExcludedIngredients(prev => [...prev, ing.name_ko]); setIngredientSearch(''); }}
-                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', borderBottom: '1px solid #F3F4F6' }}
+                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: 'var(--text-dark)', borderBottom: '1px solid var(--line)' }}
                     >
                       <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: ing.risk_level === 'danger' ? '#EF4444' : ing.risk_level === 'caution' ? '#F59E0B' : '#10B981', flexShrink: 0 }} />
                       {ing.name_ko}
@@ -608,19 +783,12 @@ export default function Search() {
               )}
               <p style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '6px' }}>선택한 성분이 포함된 제품은 검색에서 제외됩니다.</p>
             </TossFilterSection>
-
-            <div style={{ position: 'sticky', bottom: 0, paddingTop: '40px', paddingBottom: '24px', backgroundColor: '#fff', display: 'flex', gap: '12px' }}>
-              <button type="button" onClick={resetFilters} style={{ flex: 1, padding: '18px', borderRadius: '16px', border: '1px solid #E5E7EB', backgroundColor: '#fff', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}><Trash2 size={18} /> 초기화</button>
-              <button type="button" onClick={() => setIsFilterOpen(false)} style={{ flex: 2, padding: '18px', borderRadius: '16px', background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)', color: '#fff', fontWeight: 800, border: 'none', cursor: 'pointer' }}>결과 보기</button>
-            </div>
-          </div>
-        </div>
-      )}
+      </BottomSheet>
 
       {/* Standard Feed Modal */}
       {isStandardFeedModalOpen && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="animate-scale-in" style={{ width: '90%', maxWidth: '500px', backgroundColor: '#fff', borderRadius: '24px', padding: '24px', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
+          <div className="animate-scale-in" style={{ width: '90%', maxWidth: '500px', backgroundColor: 'var(--surface-elevated)', borderRadius: '24px', padding: '24px', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div>
                 <h2 style={{ fontSize: '18px', fontWeight: 900 }}>한국표준사료 성분사전</h2>
@@ -657,25 +825,25 @@ export default function Search() {
                       <div style={{ fontSize: '12px', color: '#6B7280' }}>{item.name_en || '-'}</div>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginTop: '4px' }}>
-                      <div style={{ background: '#F3F4F6', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
+                      <div style={{ background: 'var(--surface-alt)', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
                         <div style={{ fontSize: '10px', color: '#6B7280', fontWeight: 600 }}>조단백질</div>
-                        <div style={{ fontSize: '13px', color: '#111827', fontWeight: 800 }}>{item.protein}%</div>
+                        <div style={{ fontSize: '13px', color: 'var(--text-dark)', fontWeight: 800 }}>{item.protein}%</div>
                       </div>
-                      <div style={{ background: '#F3F4F6', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
+                      <div style={{ background: 'var(--surface-alt)', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
                         <div style={{ fontSize: '10px', color: '#6B7280', fontWeight: 600 }}>조지방</div>
-                        <div style={{ fontSize: '13px', color: '#111827', fontWeight: 800 }}>{item.fat}%</div>
+                        <div style={{ fontSize: '13px', color: 'var(--text-dark)', fontWeight: 800 }}>{item.fat}%</div>
                       </div>
-                      <div style={{ background: '#F3F4F6', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
+                      <div style={{ background: 'var(--surface-alt)', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
                         <div style={{ fontSize: '10px', color: '#6B7280', fontWeight: 600 }}>수분</div>
-                        <div style={{ fontSize: '13px', color: '#111827', fontWeight: 800 }}>{item.moisture}%</div>
+                        <div style={{ fontSize: '13px', color: 'var(--text-dark)', fontWeight: 800 }}>{item.moisture}%</div>
                       </div>
-                      <div style={{ background: '#F3F4F6', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
+                      <div style={{ background: 'var(--surface-alt)', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
                         <div style={{ fontSize: '10px', color: '#6B7280', fontWeight: 600 }}>조섬유</div>
-                        <div style={{ fontSize: '13px', color: '#111827', fontWeight: 800 }}>{item.fiber}%</div>
+                        <div style={{ fontSize: '13px', color: 'var(--text-dark)', fontWeight: 800 }}>{item.fiber}%</div>
                       </div>
-                      <div style={{ background: '#F3F4F6', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
+                      <div style={{ background: 'var(--surface-alt)', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
                         <div style={{ fontSize: '10px', color: '#6B7280', fontWeight: 600 }}>조회분</div>
-                        <div style={{ fontSize: '13px', color: '#111827', fontWeight: 800 }}>{item.ash}%</div>
+                        <div style={{ fontSize: '13px', color: 'var(--text-dark)', fontWeight: 800 }}>{item.ash}%</div>
                       </div>
                     </div>
                   </div>
@@ -696,9 +864,9 @@ function FilterChip({ label, selected, onClick }: { label: string, selected: boo
       onClick={onClick}
       style={{
         padding: '10px 20px', borderRadius: '24px', fontSize: '14px', border: '1px solid',
-        borderColor: selected ? 'var(--primary)' : '#E5E7EB',
+        borderColor: selected ? 'var(--primary)' : 'var(--line)',
         backgroundColor: selected ? 'var(--primary)' : 'transparent',
-        color: selected ? '#fff' : '#4B5563', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
+        color: selected ? '#191F28' : 'var(--text-muted)', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
         display: 'flex', alignItems: 'center', gap: '4px'
       }}
     >

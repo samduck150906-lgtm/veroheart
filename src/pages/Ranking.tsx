@@ -64,7 +64,7 @@ export default function Ranking() {
     safest: [...copy].sort((a, b) => safeScore(b) - safeScore(a))[0],
   };
 
-  const medalColors = ['#F59E0B', '#94A3B8', '#CD7C2E'];
+  const medalColors = ['#F59E0B', 'var(--text-muted)', '#CD7C2E'];
 
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '80px' }}>
@@ -79,17 +79,17 @@ export default function Ranking() {
         <div className="ui-grid-3">
           <div className="ui-info-card" style={{ padding: '16px' }}>
             <div className="ui-icon-pill" style={{ marginBottom: '10px' }}><Star size={16} color="#F59E0B" /></div>
-            <div style={{ fontSize: '12px', color: '#8A9099', fontWeight: 700, marginBottom: '4px' }}>평점 우수</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '4px' }}>평점 우수</div>
               <div style={{ fontSize: '14px', fontWeight: 800, lineHeight: 1.45 }}>{heroStats.topRated?.name ?? '데이터 준비 중'}</div>
           </div>
           <div className="ui-info-card" style={{ padding: '16px' }}>
             <div className="ui-icon-pill" style={{ marginBottom: '10px' }}><MessageSquare size={16} color="#3B82F6" /></div>
-            <div style={{ fontSize: '12px', color: '#8A9099', fontWeight: 700, marginBottom: '4px' }}>리뷰 최다</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '4px' }}>리뷰 최다</div>
             <div style={{ fontSize: '14px', fontWeight: 800, lineHeight: 1.45 }}>{heroStats.mostReviewed?.name ?? '데이터 준비 중'}</div>
           </div>
           <div className="ui-info-card" style={{ padding: '16px' }}>
             <div className="ui-icon-pill" style={{ marginBottom: '10px' }}><ShieldCheck size={16} color="#10B981" /></div>
-            <div style={{ fontSize: '12px', color: '#8A9099', fontWeight: 700, marginBottom: '4px' }}>안전 성분</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '4px' }}>안전 성분</div>
             <div style={{ fontSize: '14px', fontWeight: 800, lineHeight: 1.45 }}>{heroStats.safest?.name ?? '데이터 준비 중'}</div>
           </div>
         </div>
@@ -158,17 +158,17 @@ export default function Ranking() {
                 {idx < 3 ? (
                   <div style={{ fontSize: '24px' }}>{['🥇', '🥈', '🥉'][idx]}</div>
                 ) : (
-                  <span style={{ fontSize: '18px', fontWeight: 900, color: '#D1D5DB', fontStyle: 'italic' }}>{idx + 1}</span>
+                  <span style={{ fontSize: '18px', fontWeight: 900, color: 'var(--line)', fontStyle: 'italic' }}>{idx + 1}</span>
                 )}
               </div>
 
-              <img src={product.imageUrl} alt={product.name} style={{ width: '72px', height: '72px', borderRadius: '18px', objectFit: 'cover', flexShrink: 0 }} />
+              <img src={product.imageUrl} alt={product.name} loading="lazy" decoding="async" style={{ width: '72px', height: '72px', borderRadius: '18px', objectFit: 'cover', flexShrink: 0 }} />
 
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '11px', color: '#9CA3AF', fontWeight: 700, marginBottom: '4px' }}>{product.brand}</div>
-                <div style={{ fontSize: '15px', fontWeight: 800, color: '#111827', lineHeight: 1.45, marginBottom: '8px' }}>{product.name}</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '4px' }}>{product.brand}</div>
+                <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-dark)', lineHeight: 1.45, marginBottom: '8px' }}>{product.name}</div>
                 <div style={{ display: 'flex', gap: '8px', marginTop: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '12px', color: '#6B7280', display: 'flex', alignItems: 'center', gap: '2px', fontWeight: 700 }}>
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '2px', fontWeight: 700 }}>
                     <Star size={11} fill="#FCD34D" color="#FCD34D" /> {product.averageRating}
                   </span>
                   <span className="ui-badge ui-badge-muted">리뷰 {product.reviewsCount}</span>
@@ -183,7 +183,7 @@ export default function Ranking() {
 
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                   {sortBy === 'compatibility' && (
-                    <div style={{ fontSize: '20px', fontWeight: 900, color: score >= 80 ? '#10B981' : score >= 50 ? '#F59E0B' : '#EF4444' }}>{score}<span style={{ fontSize: '11px', color: '#9CA3AF' }}>점</span></div>
+                    <div style={{ fontSize: '20px', fontWeight: 900, color: score >= 80 ? '#10B981' : score >= 50 ? '#F59E0B' : '#EF4444' }}>{score}<span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>점</span></div>
                   )}
                 {sortBy === 'rating' && (
                   <div style={{ fontSize: '20px', fontWeight: 900, color: '#F59E0B' }}>{product.averageRating}</div>
@@ -194,9 +194,9 @@ export default function Ranking() {
                 {sortBy === 'safe' && (
                   <div style={{ fontSize: '20px', fontWeight: 900, color: '#10B981' }}>{safeRatio}%</div>
                 )}
-                <div style={{ fontSize: '11px', color: '#9CA3AF' }}>{product.price?.toLocaleString()}원</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{product.price?.toLocaleString()}원</div>
                 {sortBy === 'compatibility' && (
-                  <div style={{ marginTop: '6px', fontSize: '10px', color: '#667085', maxWidth: '120px', lineHeight: 1.35 }}>
+                  <div style={{ marginTop: '6px', fontSize: '10px', color: 'var(--text-muted)', maxWidth: '120px', lineHeight: 1.35 }}>
                     {getProductRecommendationInsights(product, profile).reasons[0] || '프로필 기준 추천'}
                   </div>
                 )}
@@ -205,7 +205,7 @@ export default function Ranking() {
           );
         })}
         {ranked.length === 0 && (
-          <div className="ui-info-card" style={{ textAlign: 'center', padding: '80px 20px', color: '#9CA3AF' }}>
+          <div className="ui-info-card" style={{ textAlign: 'center', padding: '80px 20px', color: 'var(--text-muted)' }}>
             <TrendingUp size={40} style={{ margin: '0 auto 12px', opacity: 0.3 }} />
             <p>제품이 없습니다.</p>
           </div>

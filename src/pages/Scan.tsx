@@ -7,6 +7,17 @@ import { getProductByBarcode } from '../lib/supabase';
 
 type CamState = 'idle' | 'starting' | 'live' | 'denied' | 'unavailable';
 
+/** 실험적 BarcodeDetector API — 표준 TS 타입이 없어 필요한 부분만 선언한다. */
+interface DetectedBarcode {
+  rawValue: string;
+}
+interface BarcodeDetectorLike {
+  detect(source: CanvasImageSource): Promise<DetectedBarcode[]>;
+}
+interface BarcodeDetectorCtor {
+  new (options?: { formats: string[] }): BarcodeDetectorLike;
+}
+
 export default function Scan() {
   const navigate = useNavigate();
   const { products } = useStore();
@@ -14,7 +25,7 @@ export default function Scan() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number | null>(null);
-  const detectorRef = useRef<any>(null);
+  const detectorRef = useRef<BarcodeDetectorLike | null>(null);
   const handledRef = useRef(false);
 
   const [camState, setCamState] = useState<CamState>('idle');
@@ -58,7 +69,7 @@ export default function Scan() {
     if (!video || !detector || handledRef.current) return;
     detector
       .detect(video)
-      .then((codes: any[]) => {
+      .then((codes: DetectedBarcode[]) => {
         if (codes && codes.length > 0 && codes[0].rawValue) {
           handleBarcode(String(codes[0].rawValue));
           return;
@@ -88,7 +99,7 @@ export default function Scan() {
       }
       setCamState('live');
 
-      const BD = (window as any).BarcodeDetector;
+      const BD = (window as unknown as { BarcodeDetector?: BarcodeDetectorCtor }).BarcodeDetector;
       if (BD) {
         try {
           detectorRef.current = new BD({
@@ -99,8 +110,9 @@ export default function Scan() {
           detectorRef.current = null;
         }
       }
-    } catch (err: any) {
-      if (err?.name === 'NotAllowedError' || err?.name === 'SecurityError') setCamState('denied');
+    } catch (err) {
+      const name = err instanceof DOMException ? err.name : '';
+      if (name === 'NotAllowedError' || name === 'SecurityError') setCamState('denied');
       else setCamState('unavailable');
     }
   }, [scanLoop]);
@@ -116,7 +128,9 @@ export default function Scan() {
     const track = streamRef.current?.getVideoTracks()[0];
     if (!track) return;
     try {
-      await track.applyConstraints({ advanced: [{ torch: !torchOn } as any] });
+      await track.applyConstraints({
+        advanced: [{ torch: !torchOn } as unknown as MediaTrackConstraintSet],
+      });
       setTorchOn((v) => !v);
     } catch {
       /* torch 미지원 기기 */

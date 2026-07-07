@@ -104,12 +104,12 @@ export function ScoreGauge({ score, oneLiner }: { score: number; oneLiner?: stri
         textAlign: 'center',
       }}
     >
-      <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--pdp-ink-faint,#94A3B8)', letterSpacing: '0.02em', marginBottom: 12 }}>
+      <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--pdp-ink-faint,var(--pdp-ink-faint))', letterSpacing: '0.02em', marginBottom: 12 }}>
         안전점수
       </div>
       <div style={{ position: 'relative', width: 132, height: 132, margin: '0 auto' }}>
         <svg width="132" height="132" viewBox="0 0 132 132" style={{ transform: 'rotate(-90deg)' }} aria-hidden>
-          <circle cx="66" cy="66" r={R} fill="none" stroke="var(--pdp-line,#E5E8EB)" strokeWidth="12" />
+          <circle cx="66" cy="66" r={R} fill="none" stroke="var(--pdp-line,var(--pdp-line))" strokeWidth="12" />
           <circle
             cx="66"
             cy="66"
@@ -124,10 +124,10 @@ export function ScoreGauge({ score, oneLiner }: { score: number; oneLiner?: stri
           />
         </svg>
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ fontSize: 38, fontWeight: 900, lineHeight: 1, color: 'var(--pdp-ink,#0F172A)', fontVariantNumeric: 'tabular-nums' }}>
+          <div style={{ fontSize: 38, fontWeight: 900, lineHeight: 1, color: 'var(--pdp-ink,var(--pdp-ink))', fontVariantNumeric: 'tabular-nums' }}>
             {shown}
           </div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--pdp-ink-faint,#94A3B8)' }}>/ 100</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--pdp-ink-faint,var(--pdp-ink-faint))' }}>/ 100</div>
         </div>
       </div>
       <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 14, padding: '6px 14px', borderRadius: 999, background: meta.bg, color: meta.fg }}>
@@ -135,7 +135,7 @@ export function ScoreGauge({ score, oneLiner }: { score: number; oneLiner?: stri
         <span style={{ fontSize: 14, fontWeight: 800 }}>{meta.label}</span>
       </div>
       {oneLiner ? (
-        <p style={{ margin: '14px 4px 0', fontSize: 15, fontWeight: 600, color: 'var(--pdp-ink-muted,#475569)', lineHeight: 1.5 }}>{oneLiner}</p>
+        <p style={{ margin: '14px 4px 0', fontSize: 15, fontWeight: 600, color: 'var(--pdp-ink-muted,var(--pdp-ink-muted))', lineHeight: 1.5 }}>{oneLiner}</p>
       ) : null}
     </section>
   );
@@ -168,8 +168,8 @@ export function GlanceGrid({ tiles }: { tiles: GlanceTileData[] }) {
               {t.icon}
             </span>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--pdp-ink-faint,#94A3B8)' }}>{t.label}</div>
-              <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--pdp-ink,#0F172A)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.value}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--pdp-ink-faint,var(--pdp-ink-faint))' }}>{t.label}</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--pdp-ink,var(--pdp-ink))', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.value}</div>
             </div>
           </div>
         );
@@ -188,17 +188,17 @@ export function FitForPetCard({ petName, percent, chips, reasons }: { petName: s
       style={{ background: 'var(--pdp-surface,#fff)', borderRadius: 24, padding: 20, marginBottom: 16, boxShadow: 'var(--pdp-e2,0 8px 24px rgba(15,23,42,.06))' }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 16, fontWeight: 800, color: 'var(--pdp-ink,#0F172A)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 16, fontWeight: 800, color: 'var(--pdp-ink,var(--pdp-ink))' }}>
           🐶 {petName} 적합도
         </div>
         <div style={{ fontSize: 24, fontWeight: 900, color: meta.fg, fontVariantNumeric: 'tabular-nums' }}>{shown}%</div>
       </div>
-      <div style={{ height: 10, borderRadius: 999, background: 'var(--pdp-line,#E5E8EB)', overflow: 'hidden', marginBottom: 14 }}>
+      <div style={{ height: 10, borderRadius: 999, background: 'var(--pdp-line,var(--pdp-line))', overflow: 'hidden', marginBottom: 14 }}>
         <div style={{ width: `${shown}%`, height: '100%', borderRadius: 999, background: meta.ring, transition: 'width 700ms cubic-bezier(0.05,0.7,0.1,1)' }} />
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: reasons.length ? 12 : 0 }}>
         {chips.map((c, i) => (
-          <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '6px 10px', borderRadius: 999, background: 'var(--pdp-neutral-bg,#F1F5F9)', color: 'var(--pdp-neutral-fg,#334155)', fontSize: 12.5, fontWeight: 700 }}>
+          <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '6px 10px', borderRadius: 999, background: 'var(--pdp-neutral-bg,var(--pdp-surface-soft))', color: 'var(--pdp-neutral-fg,var(--pdp-ink-muted))', fontSize: 12.5, fontWeight: 700 }}>
             <Check size={13} strokeWidth={2.6} /> {c}
           </span>
         ))}
@@ -206,7 +206,7 @@ export function FitForPetCard({ petName, percent, chips, reasons }: { petName: s
       {reasons.length > 0 && (
         <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
           {reasons.slice(0, 3).map((r, i) => (
-            <li key={i} style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--pdp-ink-muted,#475569)', lineHeight: 1.5 }}>· {r}</li>
+            <li key={i} style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--pdp-ink-muted,var(--pdp-ink-muted))', lineHeight: 1.5 }}>· {r}</li>
           ))}
         </ul>
       )}
@@ -243,7 +243,7 @@ export function IngredientCard({ ing, onOpen }: { ing: IngredientLike; onOpen: (
         display: 'flex', alignItems: 'center', gap: 12,
         padding: 16, borderRadius: 16, marginBottom: 10,
         background: 'var(--pdp-surface,#fff)',
-        border: m.line === 'transparent' ? '1px solid var(--pdp-line,#E5E8EB)' : `1px solid ${m.line}`,
+        border: m.line === 'transparent' ? '1px solid var(--pdp-line,var(--pdp-line))' : `1px solid ${m.line}`,
         boxShadow: 'var(--pdp-e1,0 1px 2px rgba(15,23,42,.04))',
       }}
     >
@@ -252,16 +252,16 @@ export function IngredientCard({ ing, onOpen }: { ing: IngredientLike; onOpen: (
       </span>
       <span style={{ flex: 1, minWidth: 0 }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--pdp-ink,#0F172A)' }}>{ing.nameKo}</span>
+          <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--pdp-ink,var(--pdp-ink))' }}>{ing.nameKo}</span>
           <span style={{ fontSize: 11, fontWeight: 800, color: m.fg, background: m.bg, padding: '2px 8px', borderRadius: 999 }}>{m.label}</span>
         </span>
         {ing.purpose ? (
-          <span style={{ display: 'block', marginTop: 3, fontSize: 13, fontWeight: 500, color: 'var(--pdp-ink-muted,#475569)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span style={{ display: 'block', marginTop: 3, fontSize: 13, fontWeight: 500, color: 'var(--pdp-ink-muted,var(--pdp-ink-muted))', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {ing.purpose}
           </span>
         ) : null}
       </span>
-      <ChevronRight size={18} color="var(--pdp-ink-faint,#94A3B8)" />
+      <ChevronRight size={18} color="var(--pdp-ink-faint,var(--pdp-ink-faint))" />
     </button>
   );
 }
@@ -276,14 +276,14 @@ export function StickyScoreBar({ score, name, visible, progress }: { score: numb
         position: 'fixed', top: 0, left: '50%', transform: `translateX(-50%) translateY(${visible ? '0' : '-110%'})`,
         width: '100%', maxWidth: 480, zIndex: 20, transition: 'transform 240ms cubic-bezier(0.2,0,0,1)',
         background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
-        borderBottom: '1px solid var(--pdp-line,#E5E8EB)',
+        borderBottom: '1px solid var(--pdp-line,var(--pdp-line))',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px' }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 999, background: meta.bg, color: meta.fg, fontWeight: 900, fontSize: 14, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
           {Math.round(score)} <span style={{ fontSize: 12 }}>{meta.grade}</span>
         </span>
-        <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--pdp-ink,#0F172A)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</span>
+        <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--pdp-ink,var(--pdp-ink))', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</span>
       </div>
       <div style={{ height: 3, background: 'transparent' }}>
         <div style={{ width: `${Math.max(0, Math.min(100, progress))}%`, height: '100%', background: meta.ring, transition: 'width 80ms linear' }} />
@@ -296,14 +296,14 @@ export function StickyScoreBar({ score, name, visible, progress }: { score: numb
 export function VerdictCard({ lines }: { lines: { icon: ReactNode; text: string }[] }) {
   return (
     <section aria-label="종합 의견" style={{ background: 'var(--pdp-surface,#fff)', borderRadius: 24, padding: 20, marginBottom: 16, boxShadow: 'var(--pdp-e2,0 8px 24px rgba(15,23,42,.06))' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 16, fontWeight: 800, color: 'var(--pdp-ink,#0F172A)', marginBottom: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 16, fontWeight: 800, color: 'var(--pdp-ink,var(--pdp-ink))', marginBottom: 14 }}>
         📋 종합 의견
       </div>
       <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 }}>
         {lines.slice(0, 3).map((l, i) => (
           <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-            <span style={{ flexShrink: 0, marginTop: 1, color: 'var(--pdp-ink-faint,#94A3B8)' }}>{l.icon}</span>
-            <span style={{ fontSize: 14.5, fontWeight: 600, color: 'var(--pdp-ink-muted,#475569)', lineHeight: 1.55 }}>{l.text}</span>
+            <span style={{ flexShrink: 0, marginTop: 1, color: 'var(--pdp-ink-faint,var(--pdp-ink-faint))' }}>{l.icon}</span>
+            <span style={{ fontSize: 14.5, fontWeight: 600, color: 'var(--pdp-ink-muted,var(--pdp-ink-muted))', lineHeight: 1.55 }}>{l.text}</span>
           </li>
         ))}
       </ul>
@@ -366,23 +366,23 @@ function AltCard({ a, onOpen }: { a: AltCardData; onOpen: (id: string) => void }
       onClick={() => onOpen(a.id)}
       style={{
         flex: '0 0 auto', width: 220, scrollSnapAlign: 'start', textAlign: 'left', cursor: 'pointer',
-        background: 'var(--pdp-surface,#fff)', border: '1px solid var(--pdp-line,#E5E8EB)', borderRadius: 20, padding: 12,
+        background: 'var(--pdp-surface,#fff)', border: '1px solid var(--pdp-line,var(--pdp-line))', borderRadius: 20, padding: 12,
         boxShadow: 'var(--pdp-e1,0 1px 2px rgba(15,23,42,.04))',
       }}
     >
       <span style={{ display: 'inline-block', fontSize: 11.5, fontWeight: 800, color: tagColor.fg, background: tagColor.bg, padding: '4px 10px', borderRadius: 999, marginBottom: 10 }}>{a.tag}</span>
-      <div style={{ height: 96, borderRadius: 14, marginBottom: 10, background: '#F1F5F9', overflow: 'hidden' }}>
-        <img src={a.imageUrl} alt={a.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      <div style={{ height: 96, borderRadius: 14, marginBottom: 10, background: 'var(--pdp-surface-soft)', overflow: 'hidden' }}>
+        <img src={a.imageUrl} alt={a.name} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </div>
-      <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--pdp-ink-faint,#94A3B8)' }}>{a.brand}</div>
-      <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--pdp-ink,#0F172A)', lineHeight: 1.35, height: 38, overflow: 'hidden' }}>{a.name}</div>
+      <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--pdp-ink-faint,var(--pdp-ink-faint))' }}>{a.brand}</div>
+      <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--pdp-ink,var(--pdp-ink))', lineHeight: 1.35, height: 38, overflow: 'hidden' }}>{a.name}</div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 900, color: meta.fg, background: meta.bg, padding: '3px 8px', borderRadius: 999 }}>
           {Math.round(a.score)}점
           {a.deltaScore > 0 && <span style={{ fontSize: 11 }}>▲{a.deltaScore}</span>}
         </span>
         <span style={{ textAlign: 'right' }}>
-          <span style={{ display: 'block', fontSize: 14, fontWeight: 900, color: 'var(--pdp-ink,#0F172A)' }}>{a.price.toLocaleString()}원</span>
+          <span style={{ display: 'block', fontSize: 14, fontWeight: 900, color: 'var(--pdp-ink,var(--pdp-ink))' }}>{a.price.toLocaleString()}원</span>
           {a.deltaPrice < 0 && <span style={{ fontSize: 11, fontWeight: 800, color: '#16A34A' }}>{a.deltaPrice.toLocaleString()}원</span>}
         </span>
       </div>
@@ -394,7 +394,7 @@ export function AltProductCarousel({ items, onOpen }: { items: AltCardData[]; on
   if (!items.length) return null;
   return (
     <section aria-label="대체 상품" style={{ marginBottom: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 16, fontWeight: 800, color: 'var(--pdp-ink,#0F172A)', marginBottom: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 16, fontWeight: 800, color: 'var(--pdp-ink,var(--pdp-ink))', marginBottom: 14 }}>
         🔄 이런 대체 상품은 어때요?
       </div>
       <div style={{ display: 'flex', gap: 12, overflowX: 'auto', scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch', padding: '2px 20px 6px', margin: '0 -20px' }}>
@@ -411,7 +411,7 @@ const MACRO: { key: keyof import('../../types').NutritionData; label: string; co
   { key: 'carb', label: '탄수화물', color: '#3182F6' },
   { key: 'fiber', label: '식이섬유', color: '#22C55E' },
   { key: 'moisture', label: '수분', color: '#38BDF8' },
-  { key: 'ash', label: '회분', color: '#94A3B8' },
+  { key: 'ash', label: '회분', color: 'var(--pdp-ink-faint)' },
 ];
 
 function NutritionDonut({ data }: { data: import('../../types').NutritionData }) {
@@ -425,7 +425,7 @@ function NutritionDonut({ data }: { data: import('../../types').NutritionData })
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
       <svg width="128" height="128" viewBox="0 0 128 128" style={{ transform: 'rotate(-90deg)', flexShrink: 0 }} aria-hidden>
-        <circle cx="64" cy="64" r={R} fill="none" stroke="var(--pdp-line,#E5E8EB)" strokeWidth="16" />
+        <circle cx="64" cy="64" r={R} fill="none" stroke="var(--pdp-line,var(--pdp-line))" strokeWidth="16" />
         {slices.map((s, i) => {
           const dash = fracs[i] * C;
           return (
@@ -436,10 +436,10 @@ function NutritionDonut({ data }: { data: import('../../types').NutritionData })
       </svg>
       <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 7, flex: 1 }}>
         {slices.map((s, i) => (
-          <li key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700, color: 'var(--pdp-ink-muted,#475569)' }}>
+          <li key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700, color: 'var(--pdp-ink-muted,var(--pdp-ink-muted))' }}>
             <span style={{ width: 10, height: 10, borderRadius: 3, background: s.color, flexShrink: 0 }} />
             <span style={{ flex: 1 }}>{s.label}</span>
-            <span style={{ color: 'var(--pdp-ink,#0F172A)', fontWeight: 800 }}>{Math.round((s.value / total) * 100)}%</span>
+            <span style={{ color: 'var(--pdp-ink,var(--pdp-ink))', fontWeight: 800 }}>{Math.round((s.value / total) * 100)}%</span>
           </li>
         ))}
       </ul>
@@ -460,17 +460,17 @@ function NutritionRadar({ axes }: { axes: RadarAxis[] }) {
   return (
     <svg width="100%" height="220" viewBox={`0 0 ${size} ${size + 20}`} aria-hidden style={{ display: 'block' }}>
       {rings.map((ring, ri) => (
-        <polygon key={ri} points={axes.map((_, i) => pt(i, ring * R).join(',')).join(' ')} fill="none" stroke="var(--pdp-line,#E5E8EB)" strokeWidth="1" />
+        <polygon key={ri} points={axes.map((_, i) => pt(i, ring * R).join(',')).join(' ')} fill="none" stroke="var(--pdp-line,var(--pdp-line))" strokeWidth="1" />
       ))}
       {axes.map((_, i) => {
         const [x, y] = pt(i, R);
-        return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="var(--pdp-line,#E5E8EB)" strokeWidth="1" />;
+        return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="var(--pdp-line,var(--pdp-line))" strokeWidth="1" />;
       })}
       <polygon points={poly} fill="rgba(22,163,74,0.16)" stroke="#16A34A" strokeWidth="2" />
       {axes.map((a, i) => {
         const [x, y] = pt(i, R + 14);
         return (
-          <text key={i} x={x} y={y} fontSize="11" fontWeight="700" fill="#475569" textAnchor="middle" dominantBaseline="middle">{a.label}</text>
+          <text key={i} x={x} y={y} fontSize="11" fontWeight="700" fill="var(--pdp-ink-muted)" textAnchor="middle" dominantBaseline="middle">{a.label}</text>
         );
       })}
     </svg>
@@ -480,14 +480,14 @@ function NutritionRadar({ axes }: { axes: RadarAxis[] }) {
 export function NutritionCard({ data, radar }: { data: import('../../types').NutritionData; radar: RadarAxis[] }) {
   return (
     <section aria-label="영양 밸런스" style={{ background: 'var(--pdp-surface,#fff)', borderRadius: 24, padding: 20, marginBottom: 16, boxShadow: 'var(--pdp-e2,0 8px 24px rgba(15,23,42,.06))' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 16, fontWeight: 800, color: 'var(--pdp-ink,#0F172A)', marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 16, fontWeight: 800, color: 'var(--pdp-ink,var(--pdp-ink))', marginBottom: 16 }}>
         📊 영양 밸런스
       </div>
       <NutritionDonut data={data} />
       {radar.length >= 3 && (
         <>
-          <div style={{ height: 1, background: 'var(--pdp-line,#E5E8EB)', margin: '18px 0 6px' }} />
-          <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--pdp-ink-faint,#94A3B8)', marginBottom: 4 }}>영양 균형</div>
+          <div style={{ height: 1, background: 'var(--pdp-line,var(--pdp-line))', margin: '18px 0 6px' }} />
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--pdp-ink-faint,var(--pdp-ink-faint))', marginBottom: 4 }}>영양 균형</div>
           <NutritionRadar axes={radar} />
         </>
       )}
@@ -506,27 +506,27 @@ export function ReviewSummaryCard({ ratings, topTags, summary }: { ratings: numb
       {summary ? (
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 16 }}>
           <span style={{ flexShrink: 0, color: '#7C3AED' }}><Sparkles size={18} /></span>
-          <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--pdp-ink-muted,#475569)', lineHeight: 1.55 }}>{summary}</p>
+          <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--pdp-ink-muted,var(--pdp-ink-muted))', lineHeight: 1.55 }}>{summary}</p>
         </div>
       ) : null}
       <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
         <div style={{ textAlign: 'center', flexShrink: 0 }}>
-          <div style={{ fontSize: 34, fontWeight: 900, color: 'var(--pdp-ink,#0F172A)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{avg.toFixed(1)}</div>
+          <div style={{ fontSize: 34, fontWeight: 900, color: 'var(--pdp-ink,var(--pdp-ink))', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{avg.toFixed(1)}</div>
           <div style={{ display: 'flex', gap: 1, justifyContent: 'center', margin: '4px 0 2px' }}>
             {[0, 1, 2, 3, 4].map((i) => (
               <Star key={i} size={13} color="#FBBF24" fill={i < Math.round(avg) ? '#FBBF24' : 'none'} />
             ))}
           </div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--pdp-ink-faint,#94A3B8)' }}>{total.toLocaleString()}개</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--pdp-ink-faint,var(--pdp-ink-faint))' }}>{total.toLocaleString()}개</div>
         </div>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
           {counts.map((c, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--pdp-ink-faint,#94A3B8)', width: 20 }}>{5 - i}점</span>
-              <span style={{ flex: 1, height: 7, borderRadius: 999, background: 'var(--pdp-line,#E5E8EB)', overflow: 'hidden' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--pdp-ink-faint,var(--pdp-ink-faint))', width: 20 }}>{5 - i}점</span>
+              <span style={{ flex: 1, height: 7, borderRadius: 999, background: 'var(--pdp-line,var(--pdp-line))', overflow: 'hidden' }}>
                 <span style={{ display: 'block', width: `${total ? (c / total) * 100 : 0}%`, height: '100%', background: '#FBBF24', borderRadius: 999 }} />
               </span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--pdp-ink-faint,#94A3B8)', width: 26, textAlign: 'right' }}>{total ? Math.round((c / total) * 100) : 0}%</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--pdp-ink-faint,var(--pdp-ink-faint))', width: 26, textAlign: 'right' }}>{total ? Math.round((c / total) * 100) : 0}%</span>
             </div>
           ))}
         </div>
@@ -534,7 +534,7 @@ export function ReviewSummaryCard({ ratings, topTags, summary }: { ratings: numb
       {topTags.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16 }}>
           {topTags.map((t, i) => (
-            <span key={i} style={{ padding: '6px 12px', borderRadius: 999, background: 'var(--pdp-neutral-bg,#F1F5F9)', color: 'var(--pdp-neutral-fg,#334155)', fontSize: 12.5, fontWeight: 700 }}>{t}</span>
+            <span key={i} style={{ padding: '6px 12px', borderRadius: 999, background: 'var(--pdp-neutral-bg,var(--pdp-surface-soft))', color: 'var(--pdp-neutral-fg,var(--pdp-ink-muted))', fontSize: 12.5, fontWeight: 700 }}>{t}</span>
           ))}
         </div>
       )}
@@ -549,28 +549,28 @@ export function FaqAccordion({ items, title = '자주 묻는 질문' }: { items:
   if (!items.length) return null;
   return (
     <section aria-label={title} style={{ marginBottom: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 16, fontWeight: 800, color: 'var(--pdp-ink,#0F172A)', marginBottom: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 16, fontWeight: 800, color: 'var(--pdp-ink,var(--pdp-ink))', marginBottom: 14 }}>
         ❓ 자주 묻는 질문
       </div>
       <div style={{ background: 'var(--pdp-surface,#fff)', borderRadius: 20, boxShadow: 'var(--pdp-e1,0 1px 2px rgba(15,23,42,.04))', overflow: 'hidden' }}>
         {items.map((it, i) => {
           const isOpen = open === i;
           return (
-            <div key={i} style={{ borderTop: i === 0 ? 'none' : '1px solid var(--pdp-line,#E5E8EB)' }}>
+            <div key={i} style={{ borderTop: i === 0 ? 'none' : '1px solid var(--pdp-line,var(--pdp-line))' }}>
               <button
                 type="button"
                 aria-expanded={isOpen}
                 onClick={() => setOpen(isOpen ? null : i)}
                 style={{ width: '100%', textAlign: 'left', cursor: 'pointer', background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: 10, padding: '16px 18px' }}
               >
-                <span style={{ flexShrink: 0, color: 'var(--pdp-ink-faint,#94A3B8)' }}>
+                <span style={{ flexShrink: 0, color: 'var(--pdp-ink-faint,var(--pdp-ink-faint))' }}>
                   <span style={{ fontWeight: 900, fontSize: 15 }}>Q</span>
                 </span>
-                <span style={{ flex: 1, fontSize: 14.5, fontWeight: 700, color: 'var(--pdp-ink,#0F172A)' }}>{it.q}</span>
-                <ChevronDown size={18} color="var(--pdp-ink-faint,#94A3B8)" style={{ flexShrink: 0, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 200ms' }} />
+                <span style={{ flex: 1, fontSize: 14.5, fontWeight: 700, color: 'var(--pdp-ink,var(--pdp-ink))' }}>{it.q}</span>
+                <ChevronDown size={18} color="var(--pdp-ink-faint,var(--pdp-ink-faint))" style={{ flexShrink: 0, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 200ms' }} />
               </button>
               {isOpen && (
-                <p style={{ margin: 0, padding: '0 18px 18px 44px', fontSize: 14, fontWeight: 500, color: 'var(--pdp-ink-muted,#475569)', lineHeight: 1.6 }}>{it.a}</p>
+                <p style={{ margin: 0, padding: '0 18px 18px 44px', fontSize: 14, fontWeight: 500, color: 'var(--pdp-ink-muted,var(--pdp-ink-muted))', lineHeight: 1.6 }}>{it.a}</p>
               )}
             </div>
           );
@@ -584,13 +584,13 @@ export function FaqAccordion({ items, title = '자주 묻는 질문' }: { items:
 export function EmptyState({ emoji = '🐾', title, desc, actionLabel, onAction }: { emoji?: string; title: string; desc?: string; actionLabel?: string; onAction?: () => void }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '36px 24px', background: 'var(--pdp-surface,#fff)', borderRadius: 20, boxShadow: 'var(--pdp-e1,0 1px 2px rgba(15,23,42,.04))' }}>
-      <div style={{ width: 56, height: 56, borderRadius: 18, background: 'var(--pdp-surface-soft,#F7F8FA)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, marginBottom: 14 }} aria-hidden>
+      <div style={{ width: 56, height: 56, borderRadius: 18, background: 'var(--pdp-surface-soft,var(--pdp-surface-soft))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, marginBottom: 14 }} aria-hidden>
         {emoji || <Inbox size={24} />}
       </div>
-      <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--pdp-ink,#0F172A)' }}>{title}</p>
-      {desc ? <p style={{ margin: '6px 0 0', fontSize: 13.5, fontWeight: 500, color: 'var(--pdp-ink-muted,#475569)', lineHeight: 1.55 }}>{desc}</p> : null}
+      <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--pdp-ink,var(--pdp-ink))' }}>{title}</p>
+      {desc ? <p style={{ margin: '6px 0 0', fontSize: 13.5, fontWeight: 500, color: 'var(--pdp-ink-muted,var(--pdp-ink-muted))', lineHeight: 1.55 }}>{desc}</p> : null}
       {actionLabel && onAction ? (
-        <button type="button" onClick={onAction} style={{ marginTop: 18, height: 44, padding: '0 20px', borderRadius: 14, border: 'none', background: 'var(--pdp-ink,#0F172A)', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>{actionLabel}</button>
+        <button type="button" onClick={onAction} style={{ marginTop: 18, height: 44, padding: '0 20px', borderRadius: 14, border: 'none', background: 'var(--pdp-ink,var(--pdp-ink))', color: 'var(--pdp-surface)', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>{actionLabel}</button>
       ) : null}
     </div>
   );
@@ -603,10 +603,10 @@ export function ErrorState({ title = '정보를 불러오지 못했어요', desc
       <div style={{ width: 56, height: 56, borderRadius: 18, background: 'var(--pdp-danger-bg,#FEF2F2)', color: 'var(--pdp-danger-fg,#B91C1C)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }} aria-hidden>
         <AlertTriangle size={24} />
       </div>
-      <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--pdp-ink,#0F172A)' }}>{title}</p>
-      <p style={{ margin: '6px 0 0', fontSize: 13.5, fontWeight: 500, color: 'var(--pdp-ink-muted,#475569)', lineHeight: 1.55 }}>{desc}</p>
+      <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--pdp-ink,var(--pdp-ink))' }}>{title}</p>
+      <p style={{ margin: '6px 0 0', fontSize: 13.5, fontWeight: 500, color: 'var(--pdp-ink-muted,var(--pdp-ink-muted))', lineHeight: 1.55 }}>{desc}</p>
       {onRetry ? (
-        <button type="button" onClick={onRetry} style={{ marginTop: 18, height: 44, padding: '0 20px', borderRadius: 14, border: '1px solid var(--pdp-line,#E5E8EB)', background: 'var(--pdp-surface,#fff)', color: 'var(--pdp-ink,#0F172A)', fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+        <button type="button" onClick={onRetry} style={{ marginTop: 18, height: 44, padding: '0 20px', borderRadius: 14, border: '1px solid var(--pdp-line,var(--pdp-line))', background: 'var(--pdp-surface,#fff)', color: 'var(--pdp-ink,var(--pdp-ink))', fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
           <RefreshCw size={16} /> 다시 시도
         </button>
       ) : null}
@@ -624,7 +624,7 @@ export function OfflineBanner({ online }: { online: boolean }) {
         position: 'fixed', top: 10, left: '50%', transform: `translateX(-50%) translateY(${online ? '-140%' : '0'})`,
         zIndex: 40, transition: 'transform 280ms cubic-bezier(0.2,0,0,1)',
         display: 'inline-flex', alignItems: 'center', gap: 8,
-        padding: '9px 16px', borderRadius: 999, background: '#0F172A', color: '#fff',
+        padding: '9px 16px', borderRadius: 999, background: 'var(--pdp-ink)', color: 'var(--pdp-surface)',
         fontSize: 13, fontWeight: 700, boxShadow: '0 8px 24px rgba(0,0,0,.28)',
       }}
     >
@@ -662,26 +662,26 @@ export function StickyCtaBar({
         display: 'flex', alignItems: 'center', gap: 10,
         padding: '12px 16px calc(12px + env(safe-area-inset-bottom, 0px))',
         background: 'var(--pdp-surface,#fff)',
-        borderTop: '1px solid var(--pdp-line,#E5E8EB)',
+        borderTop: '1px solid var(--pdp-line,var(--pdp-line))',
         boxShadow: '0 -8px 28px rgba(15,23,42,.08)',
       }}
     >
       <button type="button" onClick={onFav} aria-pressed={isFav} aria-label="찜하기"
-        style={{ width: 48, height: 48, flexShrink: 0, borderRadius: 14, border: '1px solid var(--pdp-line,#E5E8EB)', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-        <Heart size={22} color={isFav ? '#F04452' : '#94A3B8'} fill={isFav ? '#F04452' : 'none'} />
+        style={{ width: 48, height: 48, flexShrink: 0, borderRadius: 14, border: '1px solid var(--pdp-line,var(--pdp-line))', background: 'var(--pdp-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+        <Heart size={22} color={isFav ? '#F04452' : 'var(--pdp-ink-faint)'} fill={isFav ? '#F04452' : 'none'} />
       </button>
       <button type="button" onClick={onCompare} aria-pressed={isComparing} aria-label="비교 담기"
-        style={{ width: 48, height: 48, flexShrink: 0, borderRadius: 14, border: '1px solid var(--pdp-line,#E5E8EB)', background: isComparing ? '#EFF6FF' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-        <GitCompare size={20} color={isComparing ? '#1D4ED8' : '#334155'} />
+        style={{ width: 48, height: 48, flexShrink: 0, borderRadius: 14, border: '1px solid var(--pdp-line,var(--pdp-line))', background: isComparing ? 'var(--pdp-safe-bg)' : 'var(--pdp-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+        <GitCompare size={20} color={isComparing ? '#1D4ED8' : 'var(--pdp-ink-muted)'} />
       </button>
       {buyHref ? (
         <a href={buyHref} target="_blank" rel="noopener noreferrer"
-          style={{ flex: 1, height: 48, borderRadius: 14, background: 'var(--primary,#FEE500)', color: '#191919', fontWeight: 900, fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, textDecoration: 'none' }}>
+          style={{ flex: 1, height: 48, borderRadius: 14, background: 'var(--primary,#FEE500)', color: 'var(--pdp-ink)', fontWeight: 900, fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, textDecoration: 'none' }}>
           {priceLabel} <ExternalLink size={17} />
         </a>
       ) : (
         <button type="button" onClick={onBuy}
-          style={{ flex: 1, height: 48, borderRadius: 14, border: 'none', background: 'var(--primary,#FEE500)', color: '#191919', fontWeight: 900, fontSize: 16, cursor: 'pointer' }}>
+          style={{ flex: 1, height: 48, borderRadius: 14, border: 'none', background: 'var(--primary,#FEE500)', color: 'var(--pdp-ink)', fontWeight: 900, fontSize: 16, cursor: 'pointer' }}>
           {priceLabel}
         </button>
       )}
