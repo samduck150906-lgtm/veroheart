@@ -64,7 +64,7 @@ substring_pairs AS (
    AND longer.normalized_key IS NOT NULL
    AND pg_catalog.length(shorter.normalized_key) >= 2
    AND pg_catalog.length(shorter.normalized_key) < pg_catalog.length(longer.normalized_key)
-   AND pg_catalog.position(shorter.normalized_key IN longer.normalized_key) > 0
+   AND pg_catalog.strpos(longer.normalized_key, shorter.normalized_key) > 0
 ),
 high_risk_terms(term) AS (
   VALUES
@@ -79,34 +79,31 @@ high_risk_terms(term) AS (
     ('마카다미아'),
     ('알코올')
 ),
+normalized_allergens AS (
+  SELECT
+    al.id,
+    COALESCE(al.display_name_ko, al.code) AS allergen_name,
+    NULLIF(
+      pg_catalog.regexp_replace(
+        pg_catalog.lower(COALESCE(al.display_name_ko, al.code)),
+        '[^0-9a-z가-힣]+',
+        '',
+        'g'
+      ),
+      ''
+    ) AS normalized_key
+  FROM public.allergens al
+),
 allergen_name_matches AS (
   SELECT DISTINCT
     li.id,
     COALESCE(li.name_ko, li.name_en, li.id::text) AS ingredient_name,
-    COALESCE(al.display_name_ko, al.code) AS allergen_name
+    na.allergen_name
   FROM legacy_ingredients li
-  JOIN public.allergens al
+  JOIN normalized_allergens na
     ON li.normalized_key IS NOT NULL
-   AND NULLIF(
-     pg_catalog.regexp_replace(
-       pg_catalog.lower(COALESCE(al.display_name_ko, al.code)),
-       '[^0-9a-z가-힣]+',
-       '',
-       'g'
-     ),
-     ''
-   ) IS NOT NULL
-   AND pg_catalog.position(
-     NULLIF(
-       pg_catalog.regexp_replace(
-         pg_catalog.lower(COALESCE(al.display_name_ko, al.code)),
-         '[^0-9a-z가-힣]+',
-         '',
-         'g'
-       ),
-       ''
-     ) IN li.normalized_key
-   ) > 0
+   AND na.normalized_key IS NOT NULL
+   AND pg_catalog.strpos(li.normalized_key, na.normalized_key) > 0
 ),
 risk_review_candidates AS (
   SELECT DISTINCT
@@ -117,7 +114,7 @@ risk_review_candidates AS (
       WHEN EXISTS (
         SELECT 1
         FROM high_risk_terms hrt
-        WHERE pg_catalog.position(hrt.term IN COALESCE(li.name_ko, li.name_en, '')) > 0
+        WHERE pg_catalog.strpos(COALESCE(li.name_ko, li.name_en, ''), hrt.term) > 0
       ) THEN 'high-risk term candidate'
       WHEN EXISTS (
         SELECT 1
@@ -131,7 +128,7 @@ risk_review_candidates AS (
      OR EXISTS (
        SELECT 1
        FROM high_risk_terms hrt
-       WHERE pg_catalog.position(hrt.term IN COALESCE(li.name_ko, li.name_en, '')) > 0
+       WHERE pg_catalog.strpos(COALESCE(li.name_ko, li.name_en, ''), hrt.term) > 0
      )
      OR EXISTS (
        SELECT 1

@@ -85,6 +85,12 @@ describe('Phase 2 canonical mapping dry-run contract', () => {
     expect(sql).toContain("'legacy risk_level=' || li.risk_level::text");
   });
 
+  it('uses strpos instead of schema-qualified position special syntax', () => {
+    expect(sql).not.toMatch(/\bpg_catalog\.position\s*\(/i);
+    expect(sql).not.toMatch(/\bposition\s*\([^)]*\bIN\b[^)]*\)/i);
+    expect(sql).toContain('pg_catalog.strpos(');
+  });
+
   it('documents dangerous substring and allergen review behavior', () => {
     expect(sql).toContain('포도');
     expect(sql).toContain('포도씨유');
