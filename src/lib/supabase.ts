@@ -215,6 +215,8 @@ export async function searchProducts(
     targetPetType?: '' | 'dog' | 'cat' | 'all';
     priceMin?: number;
     priceMax?: number;
+    /** 정확 일치 브랜드 필터 (products.brand_name) */
+    brand?: string;
   } = {}
 ): Promise<Product[]> {
   if (!isSupabaseConfigured) return [];
@@ -253,6 +255,10 @@ export async function searchProducts(
 
   if (filters.formulation) {
     builder = builder.eq('formulation', filters.formulation);
+  }
+
+  if (filters.brand) {
+    builder = builder.eq('brand_name', filters.brand);
   }
 
   let healthOverlap: string[] = [...(filters.healthConcerns || [])];
