@@ -11,6 +11,11 @@ import {
   type CompatibilityGrade,
 } from '../utils/score';
 import { calculateCalories, checkCalciumPhosphorusRatio } from '../analysis/nutrition';
+import { runScoringPipeline, type ScoringPipelineResult } from '../analysis/scoringPipeline';
+import { findIngredientByName } from '../analysis/ingredientDictionary';
+import { classifyIngredientQuality } from '../analysis/ingredientQuality';
+import { PURPOSE_STYLE } from '../analysis/nutrientClassification';
+import type { IngredientCategory } from '../analysis/types';
 import BottomSheet from '../components/BottomSheet';
 import StateView from '../components/StateView';
 import type { Ingredient, Product } from '../types';
@@ -27,6 +32,29 @@ const RISK = {
   caution: { color: '#E8A800', bg: '#FEF6E0', label: '주의' },
   danger:  { color: '#F04452', bg: '#FDECEE', label: '위험' },
 } as const;
+
+/* ── 원료 품질 등급 색상 (성분 사전 기반, 궁합 점수와 별개) ─────────── */
+const RAW_GRADE_COLOR: Record<string, string> = {
+  'A+': '#15B36B', A: '#15B36B', 'B+': '#3182F6', B: '#3182F6', C: '#E8A800', 주의: '#F04452',
+};
+
+/* ── 성분 사전 카테고리 → 한국어 라벨 ─────────────────────────────── */
+const CATEGORY_LABEL: Record<IngredientCategory, string> = {
+  animal_protein: '동물성 단백질',
+  processed_protein: '가공 단백질',
+  animal_fat: '동물성 지방',
+  carbohydrate: '탄수화물',
+  legume: '콩류',
+  vegetable: '채소',
+  fruit: '과일',
+  oil: '오일·지방',
+  additive: '첨가물',
+  preservative: '보존료',
+  vitamin_mineral: '비타민·미네랄',
+  probiotic: '유산균',
+  sweetener: '감미료',
+  unknown: '기타',
+};
 
 /* ── 점수 링 (3초 판정 히어로) ───────────────────────────── */
 function ScoreRing({ score, grade }: { score: number; grade: CompatibilityGrade }) {
@@ -185,6 +213,12 @@ export default function AnalysisResult() {
     [product, profile],
   );
 
+  // ── 잠들어 있던 성분 품질·기능성·안전 엔진을 결과 화면에 연결 ──
+  const pipeline = useMemo<ScoringPipelineResult | null>(
+    () => (product && (product.ingredients?.length ?? 0) > 0 ? runScoringPipeline(product) : null),
+    [product],
+  );
+
   const capped = Boolean(breakdown && (breakdown.allergyHits.length > 0 || breakdown.dangerCount > 0));
 
   // ── 좋은 점 / 주의 사항 (엔진 하이라이트 + 파생값, 중복 제거) ──
@@ -204,10 +238,12 @@ export default function AnalysisResult() {
       cautionIngredients.length > 0 ? `주의 성분 ${cautionIngredients.length}가지: ${cautionIngredients.map((i) => i.nameKo).slice(0, 3).join(', ')}` : null,
       dangerIngredients.length > 0 ? `위험 성분 ${dangerIngredients.length}가지: ${dangerIngredients.map((i) => i.nameKo).slice(0, 2).join(', ')}` : null,
       breakdown && breakdown.allergyHits.length > 0 ? `알레르기 의심: ${breakdown.allergyHits.join(', ')}` : null,
+      pipeline?.hasDCMRisk ? `상위 원료의 콩류(${pipeline.dcmLegumes.join(', ')})와 확장성 심근병증(DCM)의 연관성이 논의되고 있어요` : null,
+      pipeline?.hasProteinInflation ? `식물성 단백(${pipeline.inflationDetails.join(', ')})이 단백질 수치를 실제보다 높여 보이게 할 수 있어요` : null,
     ].filter(Boolean) as string[];
     const fromReport = (report?.highlights ?? []).filter((h) => h.type !== 'positive').map((h) => h.text);
     return Array.from(new Set([...base, ...fromReport]));
-  }, [cautionIngredients, dangerIngredients, breakdown, report]);
+  }, [cautionIngredients, dangerIngredients, breakdown, report, pipeline]);
 
   // ── 영양 구성: 보장성분(실측)이 있으면 사용, 없으면 형태 기반 추정 ──
   const nutrition = useMemo(() => {
@@ -387,6 +423,7 @@ export default function AnalysisResult() {
               {report.summary}
             </div>
           )}
+          {pipeline && <IngredientEvidenceCard pipeline={pipeline} />}
           <InfoBlock title="좋은 점" color={RISK.safe.color} items={positives} empty="특별히 강조할 좋은 점을 찾지 못했어요." />
           <InfoBlock title="주의 사항" color={RISK.caution.color} items={cautions} empty="주의할 점은 발견되지 않았어요." />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -483,22 +520,9 @@ export default function AnalysisResult() {
         </button>
       </div>
 
-      {/* Ingredient detail sheet */}
+      {/* Ingredient detail sheet — 성분 사전 근거·설명·분류 */}
       <BottomSheet isOpen={Boolean(selectedIng)} onClose={() => setSelectedIng(null)} title={selectedIng?.nameKo ?? '성분 정보'}>
-        {selectedIng && (
-          <div style={{ display: 'grid', gap: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 12, fontWeight: 800, color: (RISK[selectedIng.riskLevel] ?? RISK.safe).color, background: (RISK[selectedIng.riskLevel] ?? RISK.safe).bg, borderRadius: 999, padding: '5px 12px' }}>
-                {(RISK[selectedIng.riskLevel] ?? RISK.safe).label} 성분
-              </span>
-              {selectedIng.nameEn && <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>{selectedIng.nameEn}</span>}
-            </div>
-            <div>
-              <div style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--text-muted)', marginBottom: 4 }}>역할</div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-dark)', lineHeight: 1.6 }}>{selectedIng.purpose || '원료'}</div>
-            </div>
-          </div>
-        )}
+        {selectedIng && <IngredientDetail ing={selectedIng} />}
       </BottomSheet>
     </div>
   );
@@ -539,6 +563,96 @@ function TargetCard({ title, tone, items }: { title: string; tone: 'good' | 'bad
           <li key={i} style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-dark)', lineHeight: 1.45 }}>{t}</li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+/* ── 원료 품질 근거 카드 (성분 사전 기반 · 궁합 점수와 별개) ────────── */
+export function IngredientEvidenceCard({ pipeline }: { pipeline: ScoringPipelineResult }) {
+  const gradeColor = RAW_GRADE_COLOR[pipeline.rawMaterialGrade] ?? '#8B95A1';
+  const hasStrengths = pipeline.strengths.length > 0;
+  const hasFunctional = pipeline.functionalIngredients.length > 0;
+  return (
+    <div style={{ background: 'var(--surface-elevated)', border: '1px solid rgba(28,25,23,0.06)', borderRadius: 16, padding: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+        <Sparkles size={16} color="var(--text-muted)" />
+        <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-dark)' }}>원료 품질 근거</span>
+      </div>
+      <div style={{ fontSize: 11.5, color: 'var(--text-light)', fontWeight: 600, lineHeight: 1.5, marginBottom: 14 }}>
+        위 궁합 점수와 별개로, 원료 자체의 품질을 성분 사전 기준으로 평가했어요.
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: hasStrengths || hasFunctional ? 14 : 0 }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 44, height: 44, padding: '0 12px', borderRadius: 12, background: gradeColor, color: '#fff', fontSize: 18, fontWeight: 900, flexShrink: 0 }}>
+          {pipeline.rawMaterialGrade}
+        </span>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-dark)' }}>원료 품질 {pipeline.rawMaterialGrade}등급</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginTop: 2 }}>
+            품질 지표 {pipeline.ingredientScoreDisplay} · 기준 {pipeline.rawMaterialCriteriaScore}/6 충족
+          </div>
+        </div>
+      </div>
+
+      {hasStrengths && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: hasFunctional ? 14 : 0 }}>
+          {pipeline.strengths.map((s) => (
+            <span key={s} style={{ fontSize: 12, fontWeight: 700, color: RISK.safe.color, background: RISK.safe.bg, borderRadius: 999, padding: '5px 11px' }}>✓ {s}</span>
+          ))}
+        </div>
+      )}
+
+      {hasFunctional && (
+        <div>
+          <div style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--text-muted)', marginBottom: 8 }}>기능성 성분</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {pipeline.functionalIngredients.map((fi) => {
+              const st = PURPOSE_STYLE[fi.purposes[0]];
+              return (
+                <span
+                  key={fi.name}
+                  title={fi.purposes.join(', ')}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700, color: st.text, background: st.bg, border: `1px solid ${st.border}`, borderRadius: 999, padding: '5px 10px' }}
+                >
+                  <span aria-hidden>{st.emoji}</span>{fi.name}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── 성분 상세 — 사전 설명·분류·품질등급·출처 근거 ─────────────────── */
+export function IngredientDetail({ ing }: { ing: Ingredient }) {
+  const dict = findIngredientByName(ing.nameKo);
+  const quality = classifyIngredientQuality(ing.nameKo, dict);
+  const r = RISK[ing.riskLevel] ?? RISK.safe;
+  const desc = dict?.explanation || quality.description;
+  return (
+    <div style={{ display: 'grid', gap: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 12, fontWeight: 800, color: r.color, background: r.bg, borderRadius: 999, padding: '5px 12px' }}>{r.label} 성분</span>
+        <span style={{ fontSize: 12, fontWeight: 800, color: quality.color, background: 'var(--secondary)', borderRadius: 999, padding: '5px 12px' }}>{quality.label}</span>
+        {ing.nameEn && <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>{ing.nameEn}</span>}
+      </div>
+      <SheetBlock title="설명">{desc}</SheetBlock>
+      {ing.purpose && <SheetBlock title="역할">{ing.purpose}</SheetBlock>}
+      {dict && <SheetBlock title="분류">{CATEGORY_LABEL[dict.category]}</SheetBlock>}
+      <div style={{ fontSize: 11, color: 'var(--text-light)', fontWeight: 600, lineHeight: 1.5 }}>
+        분류·설명은 베로로 성분 사전(수의·영양 가이드라인 기반) 기준이며 참고용이에요.
+      </div>
+    </div>
+  );
+}
+
+function SheetBlock({ title, children }: { title: string; children: string }) {
+  return (
+    <div>
+      <div style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--text-muted)', marginBottom: 4 }}>{title}</div>
+      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-dark)', lineHeight: 1.6 }}>{children}</div>
     </div>
   );
 }
