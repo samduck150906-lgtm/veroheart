@@ -24,20 +24,20 @@ import type { Ingredient, Product } from '../types';
 
 /* ── 등급·위험도 시각 토큰 (신호등) ───────────────────────── */
 const GRADE_COLOR: Record<CompatibilityGrade, string> = {
-  A: '#15B36B', B: '#6BB04E', C: '#E8A800', D: '#F04452', F: '#8B95A1',
+  A: 'var(--grade-a)', B: 'var(--grade-b)', C: 'var(--grade-c)', D: 'var(--grade-d)', F: 'var(--grade-f)',
 };
 const GRADE_LABEL: Record<CompatibilityGrade, string> = {
   A: '아주 잘 맞아요', B: '잘 맞는 편이에요', C: '보통이에요', D: '주의가 필요해요', F: '맞지 않아요',
 };
 const RISK = {
-  safe:    { color: '#15B36B', bg: '#E7F8F0', label: '안전' },
-  caution: { color: '#E8A800', bg: '#FEF6E0', label: '주의' },
-  danger:  { color: '#F04452', bg: '#FDECEE', label: '위험' },
+  safe:    { color: 'var(--safe-strong)', bg: 'var(--safe-bg)', label: '안전' },
+  caution: { color: 'var(--caution-strong)', bg: 'var(--caution-bg)', label: '주의' },
+  danger:  { color: 'var(--danger-strong)', bg: 'var(--danger-bg)', label: '위험' },
 } as const;
 
 /* ── 원료 품질 등급 색상 (성분 사전 기반, 궁합 점수와 별개) ─────────── */
 const RAW_GRADE_COLOR: Record<string, string> = {
-  'A+': '#15B36B', A: '#15B36B', 'B+': '#3182F6', B: '#3182F6', C: '#E8A800', 주의: '#F04452',
+  'A+': 'var(--grade-a)', A: 'var(--grade-a)', 'B+': 'var(--safe)', B: 'var(--safe)', C: 'var(--grade-c)', 주의: 'var(--danger-strong)',
 };
 
 /* ── 성분 사전 카테고리 → 한국어 라벨 ─────────────────────────────── */
@@ -381,16 +381,16 @@ export default function AnalysisResult() {
         <div style={{
           display: 'flex', gap: 12, alignItems: 'flex-start', padding: 16, borderRadius: 16, marginBottom: 4,
           background: breakdown.allergyHits.length > 0 ? RISK.danger.bg : RISK.caution.bg,
-          border: `1px solid ${breakdown.allergyHits.length > 0 ? '#FECDD3' : '#FDE68A'}`,
+          border: `1px solid ${breakdown.allergyHits.length > 0 ? 'var(--danger-line)' : 'var(--caution-line)'}`,
         }}>
           <AlertCircle size={20} color={breakdown.allergyHits.length > 0 ? RISK.danger.color : RISK.caution.color} style={{ flexShrink: 0, marginTop: 1 }} />
           <div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: breakdown.allergyHits.length > 0 ? '#BE123C' : '#92400E', marginBottom: 4 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: breakdown.allergyHits.length > 0 ? 'var(--danger-strong)' : 'var(--caution-strong)', marginBottom: 4 }}>
               {breakdown.allergyHits.length > 0
                 ? `${breakdown.allergyHits.join(', ')}이(가) 들어 있어요`
                 : `주의가 필요한 성분 ${breakdown.dangerCount}개 포함`}
             </div>
-            <div style={{ fontSize: 12.5, fontWeight: 600, color: breakdown.allergyHits.length > 0 ? '#BE123C' : '#92400E', opacity: 0.85, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 600, color: breakdown.allergyHits.length > 0 ? 'var(--danger-strong)' : 'var(--caution-strong)', opacity: 0.85, lineHeight: 1.5 }}>
               {breakdown.allergyHits.length > 0
                 ? `${profile.name}는 이 성분을 피하는 게 좋아요. 급여 전 수의사와 상담해 주세요.`
                 : '장기 급여 시 주의가 필요해요. 수의사와 상담을 권장해요.'}
@@ -471,7 +471,7 @@ export default function AnalysisResult() {
           {nutrition.capNote && (
             <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: RISK.caution.bg, borderRadius: 16, padding: 14 }}>
               <AlertCircle size={18} color={RISK.caution.color} style={{ flexShrink: 0, marginTop: 1 }} />
-              <span style={{ fontSize: 12.5, fontWeight: 600, color: '#92400E', lineHeight: 1.5 }}>{nutrition.capNote}</span>
+              <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--caution-strong)', lineHeight: 1.5 }}>{nutrition.capNote}</span>
             </div>
           )}
         </div>
@@ -637,15 +637,15 @@ export function IngredientEvidenceCard({ pipeline }: { pipeline: ScoringPipeline
 
 /* ── 질환별 맞춤 분석 (프로필 건강 고민 × NRC 정량 규칙) ─────────────── */
 const RULE_STATUS = {
-  pass: { color: '#15B36B', bg: '#E7F8F0', label: '충족' },
-  fail: { color: '#F04452', bg: '#FDECEE', label: '기준 밖' },
-  unknown: { color: '#8B95A1', bg: '#F2F4F6', label: '정보 없음' },
+  pass: { color: 'var(--safe-strong)', bg: 'var(--safe-bg)', label: '충족' },
+  fail: { color: 'var(--danger-strong)', bg: 'var(--danger-bg)', label: '기준 밖' },
+  unknown: { color: 'var(--text-sub)', bg: 'var(--surface-alt)', label: '정보 없음' },
 } as const;
 
 function diseaseTone(r: ActiveDiseaseResult) {
-  if (r.failCount > 0) return { color: '#B45309', bg: '#FEF6E0', label: '주의 필요' };
-  if (r.passCount > 0) return { color: '#15B36B', bg: '#E7F8F0', label: '잘 맞아요' };
-  return { color: '#8B95A1', bg: '#F2F4F6', label: '정보 부족' };
+  if (r.failCount > 0) return { color: 'var(--caution-strong)', bg: 'var(--caution-bg)', label: '주의 필요' };
+  if (r.passCount > 0) return { color: 'var(--safe-strong)', bg: 'var(--safe-bg)', label: '잘 맞아요' };
+  return { color: 'var(--text-sub)', bg: 'var(--surface-alt)', label: '정보 부족' };
 }
 
 export function DiseaseFitCard({ results, petName }: { results: ActiveDiseaseResult[]; petName: string }) {

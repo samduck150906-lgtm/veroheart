@@ -17,8 +17,8 @@ export default function PetSafetyAlert({
 
   const hasDanger = scan.dangerNames.length > 0;
   const tone = hasDanger
-    ? { bg: '#FDECEE', border: '#FECDD3', text: '#BE123C' }
-    : { bg: '#FEF6E0', border: '#FDE68A', text: '#92400E' };
+    ? { bg: 'var(--danger-bg)', border: 'var(--danger-line)', text: 'var(--danger-strong)' }
+    : { bg: 'var(--caution-bg)', border: 'var(--caution-line)', text: 'var(--caution-strong)' };
 
   const names = [...scan.dangerNames, ...scan.allergenNames];
   const shown = names.slice(0, 3).join(' · ');
@@ -57,7 +57,7 @@ export default function PetSafetyAlert({
                 loading="lazy"
                 decoding="async"
                 onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png'; }}
-                style={{ width: '64px', height: '64px', borderRadius: '14px', objectFit: 'cover', background: '#fff', border: `1px solid ${tone.border}` }}
+                style={{ width: '64px', height: '64px', borderRadius: '14px', objectFit: 'cover', background: 'var(--surface-elevated)', border: `1px solid ${tone.border}` }}
               />
               <div style={{ fontSize: '10.5px', fontWeight: 700, color: tone.text, marginTop: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {f.hits[0]}
