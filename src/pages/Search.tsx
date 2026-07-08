@@ -3,7 +3,6 @@ import { useSearchParams } from 'react-router-dom';
 import {
   Filter,
   X,
-  Check,
   Trash2,
   Plus,
   FlaskConical,
@@ -28,6 +27,9 @@ import { useStore } from '../store/useStore';
 import standardFeedData from '../data/standard_feed_data.json';
 import { Database } from 'lucide-react';
 import { rankProductsForProfile } from '../utils/score';
+import FilterChip from '../components/ui/FilterChip';
+import { COMPANY } from '../constants/companyInfo';
+import { buildSearchSuggestions, deriveBrandOptions, type Suggestion } from '../utils/searchSuggestions';
 
 interface StandardFeedItem {
   id: number;
@@ -112,7 +114,7 @@ function defaultPetFromProfile(profile: { species?: string } | undefined): '' | 
 }
 
 export default function Search() {
-  const { profile } = useStore();
+  const { profile, products } = useStore();
   const [searchParams, setSearchParams] = useSearchParams();
   const category = resolveCategoryFromSearchParams(searchParams.get('category'));
 
@@ -140,10 +142,14 @@ export default function Search() {
     targetLifeStage: '',
     formulation: '',
     subCategory: '',
+    brand: '',
     healthConcerns: [] as string[],
     dietPreset: false,
     priceBand: 'any' as PriceBand,
   });
+
+  const [showSuggest, setShowSuggest] = useState(false);
+  const brandOptions = useMemo(() => deriveBrandOptions(products), [products]);
 
   const priceMin = filters.priceBand === 'over20k' ? 20000 : undefined;
   const priceMax = filters.priceBand === 'under5k' ? 5000
@@ -157,10 +163,16 @@ export default function Search() {
   const [allIngredients, setAllIngredients] = useState<{ id: string; name_ko: string; risk_level: string }[]>([]);
   const [ingredientSearch, setIngredientSearch] = useState('');
 
+  const suggestions = useMemo<Suggestion[]>(
+    () => buildSearchSuggestions(query, products, allIngredients),
+    [query, products, allIngredients],
+  );
+
   const filterButtonActive =
     filters.targetLifeStage !== '' ||
     filters.formulation !== '' ||
     filters.subCategory !== '' ||
+    filters.brand !== '' ||
     filters.healthConcerns.length > 0 ||
     filters.dietPreset ||
     filters.priceBand !== 'any' ||
@@ -191,6 +203,7 @@ export default function Search() {
           targetLifeStage: filters.targetLifeStage || undefined,
           formulation: filters.formulation || undefined,
           subCategory: filters.subCategory || undefined,
+          brand: filters.brand || undefined,
           healthConcerns: filters.healthConcerns,
           dietPreset: filters.dietPreset,
           priceMin,
@@ -253,6 +266,7 @@ export default function Search() {
       targetLifeStage: '',
       formulation: '',
       subCategory: '',
+      brand: '',
       healthConcerns: [],
       dietPreset: false,
       priceBand: 'any',
@@ -291,6 +305,23 @@ export default function Search() {
   const applyKeyword = (kw: string) => {
     setQuery(kw);
     recordRecent(kw);
+    setShowSuggest(false);
+  };
+
+  const handleQueryChange = (v: string) => {
+    setQuery(v);
+    setShowSuggest(true);
+  };
+
+  const applySuggestion = (s: Suggestion) => {
+    if (s.kind === 'brand') {
+      setFilters((f) => ({ ...f, brand: s.label }));
+      setQuery('');
+    } else {
+      setQuery(s.label);
+    }
+    recordRecent(s.label);
+    setShowSuggest(false);
   };
 
   /** 활성 필터 개수 — 상세 필터 버튼 배지에 노출 */
@@ -298,6 +329,7 @@ export default function Search() {
     (filters.targetLifeStage ? 1 : 0) +
     (filters.formulation ? 1 : 0) +
     (filters.subCategory ? 1 : 0) +
+    (filters.brand ? 1 : 0) +
     filters.healthConcerns.length +
     (filters.dietPreset ? 1 : 0) +
     (filters.priceBand !== 'any' ? 1 : 0) +
@@ -338,9 +370,12 @@ export default function Search() {
         <div style={{ marginBottom: '14px' }}>
           <TossSearchBar
             value={query}
-            onChange={setQuery}
+            onChange={handleQueryChange}
             placeholder="상품명, 브랜드, 성분명으로 검색"
           />
+          {showSuggest && query.trim() !== '' && suggestions.length > 0 && (
+            <SearchSuggestionList suggestions={suggestions} onPick={applySuggestion} />
+          )}
         </div>
 
         {/* 최근 검색 (검색어 없을 때만) */}
@@ -620,8 +655,19 @@ export default function Search() {
           <StateView
             variant="empty"
             title="검색 결과가 없어요"
-            description="검색어를 바꾸거나 상세 필터를 넓혀 보세요."
+            description="검색어를 바꾸거나 상세 필터를 넓혀 보세요. 찾는 제품이 아직 없다면 등록을 요청해 주세요."
             action={{ label: '상세 필터 조정', onClick: () => setIsFilterOpen(true) }}
+            secondaryAction={{
+              label: '＋ 제품 등록 요청하기',
+              onClick: () => {
+                const q = query.trim();
+                const subject = encodeURIComponent(`[제품 등록 요청] ${q}`.trim());
+                const body = encodeURIComponent(
+                  `등록을 요청하는 제품명: ${q}\n브랜드/용량(선택): \n제품 링크(선택): \n\n※ 베로로 검색에서 찾을 수 없어 등록을 요청합니다.`,
+                );
+                window.location.href = `mailto:${COMPANY.email}?subject=${subject}&body=${body}`;
+              },
+            }}
             minHeight={280}
           />
         )}
@@ -726,6 +772,23 @@ export default function Search() {
                 ))}
               </div>
             </TossFilterSection>
+
+            {brandOptions.length > 0 && (
+              <TossFilterSection title="브랜드">
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {brandOptions.map((brand) => (
+                    <FilterChip
+                      key={brand}
+                      label={brand}
+                      selected={filters.brand === brand}
+                      onClick={() =>
+                        setFilters((f) => ({ ...f, brand: f.brand === brand ? '' : brand }))
+                      }
+                    />
+                  ))}
+                </div>
+              </TossFilterSection>
+            )}
 
             <TossFilterSection title="건강 고민 (복수 선택 · OR)">
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -857,21 +920,82 @@ export default function Search() {
   );
 }
 
-function FilterChip({ label, selected, onClick }: { label: string, selected: boolean, onClick: () => void }) {
+/* ── 검색 자동완성 드롭다운 (브랜드·제품·성분 제안) ─────────────────── */
+const SUGGEST_BADGE: Record<Suggestion['kind'], string> = {
+  brand: '브랜드',
+  product: '제품',
+  ingredient: '성분',
+};
+
+function riskDotColor(risk?: string): string {
+  if (risk === 'danger') return '#EF4444';
+  if (risk === 'caution' || risk === 'warning') return '#F59E0B';
+  return '#10B981';
+}
+
+export function SearchSuggestionList({
+  suggestions,
+  onPick,
+}: {
+  suggestions: Suggestion[];
+  onPick: (s: Suggestion) => void;
+}) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <div
+      role="listbox"
+      aria-label="검색 제안"
       style={{
-        padding: '10px 20px', borderRadius: '24px', fontSize: '14px', border: '1px solid',
-        borderColor: selected ? 'var(--primary)' : 'var(--line)',
-        backgroundColor: selected ? 'var(--primary)' : 'transparent',
-        color: selected ? '#191F28' : 'var(--text-muted)', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
-        display: 'flex', alignItems: 'center', gap: '4px'
+        marginTop: '8px',
+        borderRadius: '14px',
+        border: '1px solid var(--line)',
+        background: 'var(--surface-elevated)',
+        boxShadow: 'var(--shadow-card)',
+        overflow: 'hidden',
       }}
     >
-      {selected && <Check size={16} />}
-      {label}
-    </button>
+      {suggestions.map((s, i) => {
+        const Icon = s.kind === 'brand' ? Package : s.kind === 'ingredient' ? FlaskConical : SearchIcon;
+        return (
+          <button
+            key={`${s.kind}:${s.label}`}
+            type="button"
+            role="option"
+            aria-selected={false}
+            onClick={() => onPick(s)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              width: '100%',
+              padding: '11px 14px',
+              background: 'none',
+              border: 'none',
+              borderTop: i === 0 ? 'none' : '1px solid var(--surface-alt)',
+              cursor: 'pointer',
+              textAlign: 'left',
+              color: 'var(--text-dark)',
+            }}
+          >
+            {s.kind === 'ingredient' ? (
+              <span style={{ width: 16, display: 'inline-flex', justifyContent: 'center', flexShrink: 0 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: riskDotColor(s.risk) }} />
+              </span>
+            ) : (
+              <Icon size={16} color="#9CA3AF" style={{ flexShrink: 0 }} />
+            )}
+            <span style={{ flex: 1, minWidth: 0, fontSize: '14px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {s.label}
+              {s.kind === 'product' && s.brand && (
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500, marginLeft: '6px' }}>{s.brand}</span>
+              )}
+            </span>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', background: 'var(--surface-alt)', borderRadius: '999px', padding: '3px 9px', flexShrink: 0 }}>
+              {SUGGEST_BADGE[s.kind]}
+            </span>
+          </button>
+        );
+      })}
+    </div>
   );
 }
+

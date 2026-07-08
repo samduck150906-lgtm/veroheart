@@ -213,27 +213,27 @@ export function matchBreedToDiseases(breedInput: string): { breedMatched: string
 
 // ── 메인 엔진 ────────────────────────────────────────────────────────────
 
-export function runBreedDiseaseEngine(
-  breed: string,
-  product: {
-    ingredients?: Array<{ nameKo: string; nameEn?: string }>;
-    guaranteedAnalysis?: {
-      crudeProtein?: number; crudeFat?: number; crudeFiber?: number;
-      crudeAsh?: number; moisture?: number; calcium?: number; phosphorus?: number;
-      taurine?: number;
-    };
-  },
-): BreedDiseaseResult {
-  const { breedMatched, diseaseIds } = matchBreedToDiseases(breed);
+interface ProductForDiseaseEval {
+  ingredients?: Array<{ nameKo: string; nameEn?: string }>;
+  guaranteedAnalysis?: {
+    crudeProtein?: number; crudeFat?: number; crudeFiber?: number;
+    crudeAsh?: number; moisture?: number; calcium?: number; phosphorus?: number;
+    taurine?: number;
+  };
+}
 
-  if (diseaseIds.length === 0) {
-    return { breedMatched, diseaseIds: [], activeDiseases: [] };
-  }
-
+/**
+ * 주어진 질환 ID 집합에 대해 정량 규칙 + 보조 성분 갭을 평가한다.
+ * 견종 매칭(runBreedDiseaseEngine)과 사용자 건강 고민(프로필) 양쪽에서 공용.
+ */
+export function evaluateDiseases(
+  diseaseIds: string[],
+  product: ProductForDiseaseEval,
+): ActiveDiseaseResult[] {
   const nutrients = computeFromGA(product.guaranteedAnalysis);
   const ingredientNames = (product.ingredients ?? []).map(i => i.nameKo + ' ' + (i.nameEn ?? ''));
 
-  const activeDiseases: ActiveDiseaseResult[] = diseaseIds
+  return diseaseIds
     .map(id => DISEASE_MAP[id])
     .filter(Boolean)
     .map(disease => {
@@ -247,6 +247,17 @@ export function runBreedDiseaseEngine(
 
       return { disease, ruleChecks, passCount, failCount, unknownCount, supplementGaps };
     });
+}
 
-  return { breedMatched, diseaseIds, activeDiseases };
+export function runBreedDiseaseEngine(
+  breed: string,
+  product: ProductForDiseaseEval,
+): BreedDiseaseResult {
+  const { breedMatched, diseaseIds } = matchBreedToDiseases(breed);
+
+  if (diseaseIds.length === 0) {
+    return { breedMatched, diseaseIds: [], activeDiseases: [] };
+  }
+
+  return { breedMatched, diseaseIds, activeDiseases: evaluateDiseases(diseaseIds, product) };
 }

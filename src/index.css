@@ -56,9 +56,9 @@
   --text-sub: #8B95A1;
   --text-weak: #B0B8C1;
   --line: #E5E8EB;
-  --safe-strong: #15B36B;  --safe-bg: #E7F8F0;
-  --caution-strong: #E8A800; --caution-bg: #FEF6E0;
-  --danger-strong: #F04452;  --danger-bg: #FDECEE;
+  --safe-strong: #15B36B;  --safe-bg: #E7F8F0;   --safe-line: #C7EBD9;
+  --caution-strong: #E8A800; --caution-bg: #FEF6E0; --caution-line: #FDE68A;
+  --danger-strong: #F04452;  --danger-bg: #FDECEE;  --danger-line: #FECDD3;
   --grade-a: #15B36B; --grade-b: #6BB04E; --grade-c: #E8A800; --grade-d: #F04452; --grade-f: #8B95A1;
 
   /* Skeleton shimmer 색 */
@@ -111,9 +111,9 @@
   --text-sub: #A7B0BC;
   --text-weak: #6B7482;
   --line: #2A303A;
-  --safe-strong: #3AD08A;  --safe-bg: #0E2A1E;
-  --caution-strong: #F5C24B; --caution-bg: #2A2410;
-  --danger-strong: #FF6B75;  --danger-bg: #2A1416;
+  --safe-strong: #3AD08A;  --safe-bg: #0E2A1E;   --safe-line: rgba(58,208,138,.28);
+  --caution-strong: #F5C24B; --caution-bg: #2A2410; --caution-line: rgba(245,194,75,.30);
+  --danger-strong: #FF6B75;  --danger-bg: #2A1416;  --danger-line: rgba(255,107,117,.30);
   --skeleton-base: #232A33;
   --skeleton-sheen: #2C343E;
   --surface-elevated: #161A20;
@@ -322,7 +322,10 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .animate-fade-in {
-  animation: fadeIn var(--transition-smooth) forwards;
+  /* forwards 미사용: 애니메이션 종료 후 잔존 transform(matrix identity)을 남기지 않는다.
+     잔존 transform은 position:fixed 자식(예: 상세페이지 구매 CTA 바)의 기준을
+     뷰포트가 아닌 이 래퍼로 바꿔 하단 고정 바가 화면에서 사라지게 만든다. */
+  animation: fadeIn var(--transition-smooth);
 }
 
 .animate-fade-in-up {

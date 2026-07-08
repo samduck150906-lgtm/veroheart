@@ -17,6 +17,7 @@ import {
   Star,
   Trash2,
   MessageSquare,
+  Share2,
 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { useStore } from '../store/useStore';
@@ -24,6 +25,7 @@ import { generateAnalysisReport } from '../utils/analysis';
 import BottomSheet from '../components/BottomSheet';
 import { TossCard } from '../components/TossUI';
 import { getReviews, createReview, deleteReview } from '../lib/supabase';
+import { notify } from '../store/useNotification';
 import { buildProductConclusion } from '../utils/productConclusion';
 import { getCompatibilityBreakdown } from '../utils/score';
 import { analyzeFeed } from '../analysis/feedAnalysis';
@@ -145,6 +147,22 @@ export default function Detail() {
 
   const handleScrollTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleShare = async () => {
+    if (!product) return;
+    const url = typeof window !== 'undefined' ? window.location.href : '';
+    const title = [product.brand, product.name].filter(Boolean).join(' ');
+    try {
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        await navigator.share({ title: 'VeRoRo', text: `${title} · 베로로 성분 분석`, url });
+      } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(url);
+        notify.success('제품 링크를 복사했어요');
+      }
+    } catch {
+      /* 사용자가 공유 시트를 닫은 경우 등은 조용히 무시 */
+    }
   };
 
   if (isLoadingProducts) {
@@ -352,6 +370,14 @@ export default function Detail() {
           aria-label="뒤로 가기"
         >
           <ArrowLeft size={24} strokeWidth={2.25} aria-hidden />
+        </button>
+        <button
+          type="button"
+          className="detail-scroll-top-fab"
+          onClick={handleShare}
+          aria-label="공유하기"
+        >
+          <Share2 size={20} strokeWidth={2.25} aria-hidden />
         </button>
         <button
           type="button"

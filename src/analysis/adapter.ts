@@ -111,3 +111,28 @@ export function toProductForAnalysis(product: Product): ProductForAnalysis {
 export function toIngredientNames(product: Product): string[] {
   return (product.ingredients ?? []).map((i) => i.nameKo).filter(Boolean);
 }
+
+/**
+ * 프로필 건강 고민 라벨(Profile 화면의 concernOptions) → 질환 엔진 diseaseId.
+ * 매핑되지 않는 항목(예: '면역')은 대응 질환 카테고리가 없어 건너뛴다.
+ */
+const CONCERN_TO_DISEASE_ID: Record<string, string> = {
+  '피부·모질': 'skin',
+  관절: 'joint',
+  소화기: 'gut',
+  '비만·다이어트': 'weight',
+  '신장·비뇨기': 'kidney',
+  심장: 'heart',
+  눈: 'eye',
+  구강: 'dental',
+};
+
+/** 건강 고민 라벨 배열을 질환 ID 배열로 변환한다(중복 제거, 알 수 없는 항목 제외). */
+export function concernsToDiseaseIds(concerns: string[] | undefined): string[] {
+  const ids = new Set<string>();
+  for (const c of concerns ?? []) {
+    const id = CONCERN_TO_DISEASE_ID[c.trim()];
+    if (id) ids.add(id);
+  }
+  return [...ids];
+}
