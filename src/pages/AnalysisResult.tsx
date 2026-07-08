@@ -12,6 +12,8 @@ import {
 } from '../utils/score';
 import { calculateCalories, checkCalciumPhosphorusRatio } from '../analysis/nutrition';
 import { runScoringPipeline, type ScoringPipelineResult } from '../analysis/scoringPipeline';
+import { evaluateDiseases, type ActiveDiseaseResult } from '../analysis/breedDiseaseEngine';
+import { concernsToDiseaseIds } from '../analysis/adapter';
 import { findIngredientByName } from '../analysis/ingredientDictionary';
 import { classifyIngredientQuality } from '../analysis/ingredientQuality';
 import { PURPOSE_STYLE } from '../analysis/nutrientClassification';
@@ -219,6 +221,13 @@ export default function AnalysisResult() {
     [product],
   );
 
+  // ── 우리 아이 건강 고민 → 질환별 NRC 정량 규칙 평가 ──
+  const diseaseResults = useMemo<ActiveDiseaseResult[]>(() => {
+    if (!product) return [];
+    const ids = concernsToDiseaseIds(profile.healthConcerns);
+    return ids.length ? evaluateDiseases(ids, product) : [];
+  }, [product, profile.healthConcerns]);
+
   const capped = Boolean(breakdown && (breakdown.allergyHits.length > 0 || breakdown.dangerCount > 0));
 
   // ── 좋은 점 / 주의 사항 (엔진 하이라이트 + 파생값, 중복 제거) ──
@@ -424,6 +433,7 @@ export default function AnalysisResult() {
             </div>
           )}
           {pipeline && <IngredientEvidenceCard pipeline={pipeline} />}
+          {diseaseResults.length > 0 && <DiseaseFitCard results={diseaseResults} petName={profile.name} />}
           <InfoBlock title="좋은 점" color={RISK.safe.color} items={positives} empty="특별히 강조할 좋은 점을 찾지 못했어요." />
           <InfoBlock title="주의 사항" color={RISK.caution.color} items={cautions} empty="주의할 점은 발견되지 않았어요." />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -619,6 +629,94 @@ export function IngredientEvidenceCard({ pipeline }: { pipeline: ScoringPipeline
               );
             })}
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── 질환별 맞춤 분석 (프로필 건강 고민 × NRC 정량 규칙) ─────────────── */
+const RULE_STATUS = {
+  pass: { color: '#15B36B', bg: '#E7F8F0', label: '충족' },
+  fail: { color: '#F04452', bg: '#FDECEE', label: '기준 밖' },
+  unknown: { color: '#8B95A1', bg: '#F2F4F6', label: '정보 없음' },
+} as const;
+
+function diseaseTone(r: ActiveDiseaseResult) {
+  if (r.failCount > 0) return { color: '#B45309', bg: '#FEF6E0', label: '주의 필요' };
+  if (r.passCount > 0) return { color: '#15B36B', bg: '#E7F8F0', label: '잘 맞아요' };
+  return { color: '#8B95A1', bg: '#F2F4F6', label: '정보 부족' };
+}
+
+export function DiseaseFitCard({ results, petName }: { results: ActiveDiseaseResult[]; petName: string }) {
+  const name = petName && petName !== '우리 아이' ? petName : '우리 아이';
+  return (
+    <div style={{ background: 'var(--surface-elevated)', border: '1px solid rgba(28,25,23,0.06)', borderRadius: 16, padding: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+        <span aria-hidden style={{ fontSize: 16 }}>🩺</span>
+        <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-dark)' }}>{name} 건강 고민 맞춤 분석</span>
+      </div>
+      <div style={{ fontSize: 11.5, color: 'var(--text-light)', fontWeight: 600, lineHeight: 1.5, marginBottom: 14 }}>
+        등록한 건강 고민에 대해 영양 가이드라인(NRC 기준) 규칙을 점검했어요. 참고용이며 수의 진단을 대체하지 않아요.
+      </div>
+      <div style={{ display: 'grid', gap: 12 }}>
+        {results.map((r) => <DiseaseRow key={r.disease.id} r={r} />)}
+      </div>
+    </div>
+  );
+}
+
+function DiseaseRow({ r }: { r: ActiveDiseaseResult }) {
+  const tone = diseaseTone(r);
+  const { disease, ruleChecks, supplementGaps } = r;
+  const hasBody = ruleChecks.length > 0 || supplementGaps.length > 0 || Boolean(disease.clinicalNote);
+  return (
+    <div style={{ background: 'var(--secondary)', borderRadius: 14, padding: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: hasBody ? 10 : 0 }}>
+        <span aria-hidden style={{ fontSize: 16 }}>{disease.emoji}</span>
+        <span style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--text-dark)', flex: 1 }}>{disease.name}</span>
+        <span style={{ fontSize: 11, fontWeight: 800, color: tone.color, background: tone.bg, borderRadius: 999, padding: '4px 10px' }}>{tone.label}</span>
+      </div>
+
+      {ruleChecks.length > 0 ? (
+        <div style={{ display: 'grid', gap: 7 }}>
+          {ruleChecks.map((rc, i) => {
+            const st = RULE_STATUS[rc.status];
+            return (
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                <span style={{ width: 8, height: 8, borderRadius: 999, background: st.color, flexShrink: 0, marginTop: 5 }} />
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text-dark)' }}>{rc.rule.displayName}</span>
+                    <span style={{ fontSize: 10.5, fontWeight: 800, color: st.color, background: st.bg, borderRadius: 999, padding: '2px 8px' }}>{st.label}</span>
+                  </div>
+                  <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text-muted)', lineHeight: 1.45, marginTop: 2 }}>{rc.message}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+          정량 기준 대신 아래 권장 성분으로 관리를 안내해요.
+        </div>
+      )}
+
+      {supplementGaps.length > 0 && (
+        <div style={{ marginTop: 10 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', marginBottom: 6 }}>이런 성분이 더 있으면 도움돼요</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {supplementGaps.map((s) => (
+              <span key={s} style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text-dark)', background: 'var(--surface-elevated)', border: '1px solid var(--line)', borderRadius: 999, padding: '4px 10px' }}>{s}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {disease.clinicalNote && (
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginTop: 10 }}>
+          <AlertCircle size={14} color={RISK.caution.color} style={{ flexShrink: 0, marginTop: 1 }} />
+          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', lineHeight: 1.45 }}>{disease.clinicalNote}</span>
         </div>
       )}
     </div>

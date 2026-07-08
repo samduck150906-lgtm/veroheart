@@ -1,8 +1,9 @@
 import React from 'react';
 import { describe, it, expect } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { IngredientEvidenceCard, IngredientDetail } from './AnalysisResult';
+import { IngredientEvidenceCard, IngredientDetail, DiseaseFitCard } from './AnalysisResult';
 import { runScoringPipeline } from '../analysis/scoringPipeline';
+import { evaluateDiseases } from '../analysis/breedDiseaseEngine';
 import type { Ingredient, Product } from '../types';
 
 /**
@@ -65,5 +66,19 @@ describe('AnalysisResult — 성분 상세(성분 사전 근거)', () => {
     const html = renderToStaticMarkup(<IngredientDetail ing={ing('희귀원료XYZ', 'rareXYZ', 'caution')} />);
     expect(html).toContain('주의 성분');
     expect(html).toContain('설명');
+  });
+});
+
+describe('AnalysisResult — 질환별 맞춤 분석 카드', () => {
+  const results = evaluateDiseases(['kidney', 'joint'], product);
+
+  it('질환명·정량 규칙·상태·보조 성분 추천·임상 노트를 렌더한다', () => {
+    const html = renderToStaticMarkup(<DiseaseFitCard results={results} petName="로니" />);
+    expect(html).toContain('로니 건강 고민 맞춤 분석');
+    expect(html).toContain('신장 건강');
+    expect(html).toContain('관절 건강');
+    expect(html).toContain('인(P)'); // 정량 규칙명
+    expect(html).toContain('이런 성분이 더 있으면 도움돼요'); // 보조 성분 추천
+    expect(html).toContain('수의사'); // 신장 임상 노트
   });
 });
