@@ -33,6 +33,8 @@ import {
 import { msUntilHour, splitCountdown, pad2 } from '../utils/countdown';
 import type { Product } from '../types';
 import { TossChip, TossSectionTitle } from '../components/TossUI';
+import PetSafetyAlert from '../components/PetSafetyAlert';
+import type { PetSafetyScan } from '../utils/petSafety';
 
 export default function Home() {
   const { products, profile, recentViews, isLoggedIn } = useStore();
@@ -92,6 +94,24 @@ export default function Home() {
 
   const topCommunityPicks = trendingProducts.slice(0, 3);
   const countdown = splitCountdown(dealMsLeft);
+
+  // 최근 본 제품에서 우리 아이 회피·위험 성분 스캔 (홈 상단 경고 배너).
+  // 성분 사전은 무거우므로, 최근 본 제품이 있을 때만 동적 import로 지연 로드해
+  // 첫 진입(eager) 홈 번들에 사전이 딸려오지 않도록 한다.
+  const [safetyScan, setSafetyScan] = useState<PetSafetyScan | null>(null);
+  useEffect(() => {
+    if (recentViews.length === 0) {
+      setSafetyScan(null);
+      return;
+    }
+    let cancelled = false;
+    import('../utils/petSafety').then(({ scanIngredientRisks }) => {
+      if (!cancelled) setSafetyScan(scanIngredientRisks(recentViews, profile));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [recentViews, profile]);
 
   const petLabel = isLoggedIn && profile.name ? profile.name : '우리 아이';
   const greeting = useMemo(() => {
@@ -157,6 +177,15 @@ export default function Home() {
           바코드 스캔으로 바로 분석
         </button>
       </section>
+
+      {/* 위험 성분 경고 — 최근 본 제품에서 회피·위험 성분 감지 시 노출 */}
+      {safetyScan && (
+        <PetSafetyAlert
+          scan={safetyScan}
+          petName={profile.name}
+          onOpen={(id) => navigate(`/product/${id}`)}
+        />
+      )}
 
       {/* 빠른 액션 — 핵심 진입점 4개 */}
       <section style={{ marginBottom: '22px' }}>
