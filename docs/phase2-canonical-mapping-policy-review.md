@@ -15,6 +15,8 @@ The next step is mapping policy review, not data migration. This document define
 
 No database write is authorized by this document.
 
+This policy review does not require operating Supabase access or SQL execution. It also does not authorize migration changes, runtime or scoring changes, Edge Function changes, `.env` changes, or secret changes.
+
 ## A. Review-Approved Alias Candidates
 
 The following cases may be treated as review-approved alias candidates after human approval. They must not be applied automatically in this phase.
