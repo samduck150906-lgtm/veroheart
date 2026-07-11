@@ -82,6 +82,16 @@ The rehearsal SQL does not attach aliases to unmarked preexisting canonical rows
 
 If rollback sees unmarked existing rows, it leaves those rows untouched by design.
 
+## Troubleshooting
+
+A prior sandbox run of PR #21 returned `SANDBOX_REHEARSAL_REVIEW_REQUIRED` with `0` canonical and `0` alias counts, even though follow-up inspection showed marker-owned canonical rows existed. Rollback also returned `SANDBOX_REHEARSAL_ROLLBACK_REVIEW_REQUIRED` with a nonzero remaining count, while post-rollback inspection showed cleanup had actually succeeded.
+
+That was caused by a PostgreSQL data-modifying CTE snapshot issue: DML CTEs and sibling summary CTEs in the same statement may not observe rows inserted or deleted earlier in that statement.
+
+If you see `0/0` rehearsal counts or rollback remaining counts that conflict with the deleted counts, stop and use the fixed PR version of these SQL files.
+
+Do not manually insert aliases to "complete" the rehearsal. The repository SQL must be corrected and rerun in the sandbox.
+
 ## Production Gate
 
 Before any future production migration:
