@@ -45,6 +45,53 @@ const decisionValues = [
 
 const reviewStatuses = ['todo', 'reviewing', 'approved', 'blocked'] as const;
 
+const approvedLowRiskAliasRows = [
+  ['MAP-DRAFT-001', '건조비트펄프'],
+  ['MAP-DRAFT-002', '오메가3지방산'],
+  ['MAP-DRAFT-003', '감자전분'],
+  ['MAP-DRAFT-004', '건조맥주효모'],
+  ['MAP-DRAFT-005', '녹차추출물'],
+  ['MAP-DRAFT-011', '맥주효모'],
+  ['MAP-DRAFT-012', '비타민e'],
+  ['MAP-DRAFT-013', '비트펄프'],
+  ['MAP-DRAFT-015', '오메가6지방산'],
+  ['MAP-DRAFT-018', '코코넛오일'],
+  ['MAP-DRAFT-019', '타피오카전분'],
+  ['MAP-DRAFT-020', '토마토박'],
+  ['MAP-DRAFT-021', '프락토올리고당'],
+  ['MAP-DRAFT-024', '혼합토코페롤'],
+] as const;
+
+const excludedAliasRows = [
+  ['MAP-DRAFT-006', '닭간'],
+  ['MAP-DRAFT-007', '닭간분말'],
+  ['MAP-DRAFT-008', '닭연골'],
+  ['MAP-DRAFT-009', '닭지방'],
+  ['MAP-DRAFT-010', '동물성지방'],
+  ['MAP-DRAFT-014', '소르빈산칼륨'],
+  ['MAP-DRAFT-016', '증점다당류'],
+  ['MAP-DRAFT-017', '천연색소'],
+  ['MAP-DRAFT-022', '프로필렌글리콜'],
+  ['MAP-DRAFT-023', '향미증진제'],
+] as const;
+
+function tableRow(reviewId: string) {
+  const row = draft
+    .split('\n')
+    .find((line) => line.startsWith(`| ${reviewId} |`));
+
+  expect(row, `missing row for ${reviewId}`).toBeDefined();
+  return row ?? '';
+}
+
+function rowStatus(reviewId: string) {
+  const cells = tableRow(reviewId)
+    .split('|')
+    .map((cell) => cell.trim());
+
+  return cells[12];
+}
+
 describe('Phase 2-2.5 mapping decision draft', () => {
   it('exists as a repository document', () => {
     expect(existsSync(draftPath)).toBe(true);
@@ -74,6 +121,32 @@ describe('Phase 2-2.5 mapping decision draft', () => {
     for (const status of reviewStatuses) {
       expect(draft).toContain(status);
     }
+  });
+
+  it('marks exactly the approved low-risk alias candidates as approved', () => {
+    for (const [reviewId, key] of approvedLowRiskAliasRows) {
+      expect(tableRow(reviewId)).toContain(key);
+      expect(rowStatus(reviewId)).toBe('approved');
+    }
+  });
+
+  it('keeps animal, allergen, additive, preservative, colorant, and risk-related candidates unapproved', () => {
+    for (const [reviewId, key] of excludedAliasRows) {
+      expect(tableRow(reviewId)).toContain(key);
+      expect(rowStatus(reviewId)).not.toBe('approved');
+    }
+  });
+
+  it('keeps global substring and risk policy rows blocked where required', () => {
+    expect(rowStatus('MAP-DRAFT-SUBSTRING-GLOBAL')).toBe('blocked');
+    expect(rowStatus('MAP-DRAFT-RISK-DANGER')).toBe('blocked');
+    expect(rowStatus('MAP-DRAFT-RISK-CAUTION')).toBe('blocked');
+    expect(rowStatus('MAP-DRAFT-ADDITIVES')).toBe('blocked');
+  });
+
+  it('states approved rows are sandbox rehearsal candidates, not production migration approval', () => {
+    expect(draft).toMatch(/approved.*sandbox rehearsal candidates only/i);
+    expect(draft).toMatch(/not production migration approval/i);
   });
 
   it('states the draft does not authorize database writes, migrations, or operating Supabase SQL execution', () => {

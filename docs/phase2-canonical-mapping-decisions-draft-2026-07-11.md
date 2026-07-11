@@ -33,38 +33,56 @@ This draft is based on the Phase 2 production dry-run and Phase 2-2 policy revie
 
 The dry-run has no link-integrity block, but it is not migration-ready. The next step is human decision review, not data migration.
 
+## Low-Risk Alias Approval Summary
+
+This update approves 14 low-risk alias candidates as sandbox rehearsal candidates only. Approval here is not production migration approval.
+
+Approval criteria:
+
+- exact normalized-key duplicate group;
+- spacing, hyphen, or simple notation variant;
+- no immediate animal, allergen, risk, additive, preservative, or colorant evidence concern.
+
+Exclusion criteria:
+
+- animal/allergen-linked candidates;
+- additive, preservative, colorant, or risk-related candidates;
+- broad or ambiguous ingredient categories.
+
+Approved rows still require sandbox rehearsal, backup/PITR confirmation, and explicit approval before any future operating migration. No approved row authorizes database writes from this document.
+
 ## Normalized-Key Candidate Decision Draft
 
 These 24 normalized-key candidate groups are initial decision rows. Most are spacing, hyphen, or simple notation variants, so the starting `proposed_decision` is `APPROVE_ALIAS`.
 
-This is not approval. Every row starts as `review_status=todo`; no row may be migrated until a reviewer changes it to `approved` and the acceptance criteria are satisfied.
+Rows with `review_status=approved` are sandbox rehearsal candidates only. Rows with `review_status=todo`, `review_status=reviewing`, or `review_status=blocked` are not migration candidates.
 
 | review_id | source_section | legacy_names | normalized_key | proposed_decision | canonical_name_ko | alias_names | separate_canonical_reason | risk_policy | allergen_policy | evidence_required | review_status | reviewer_notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| MAP-DRAFT-001 | normalized_key_candidates | 건조 비트 펄프 / 건조 비트펄프 / 건조비트펄프 | 건조비트펄프 | APPROVE_ALIAS | 건조 비트 펄프 | 건조 비트펄프 / 건조비트펄프 |  | draft only until source reviewed | not applicable | canonical spelling/source review | todo | spacing variant candidate; not approved |
-| MAP-DRAFT-002 | normalized_key_candidates | 오메가 3 지방산 / 오메가-3 지방산 / 오메가3 지방산 | 오메가3지방산 | APPROVE_ALIAS | 오메가 3 지방산 | 오메가-3 지방산 / 오메가3 지방산 |  | draft only until source reviewed | not applicable | canonical spelling/source review | todo | hyphen and spacing variant candidate; not approved |
-| MAP-DRAFT-003 | normalized_key_candidates | 감자 전분 / 감자전분 | 감자전분 | APPROVE_ALIAS | 감자 전분 | 감자전분 |  | draft only until source reviewed | not applicable | canonical spelling/source review | todo | spacing variant candidate; not approved |
-| MAP-DRAFT-004 | normalized_key_candidates | 건조 맥주 효모 / 건조 맥주효모 | 건조맥주효모 | APPROVE_ALIAS | 건조 맥주 효모 | 건조 맥주효모 |  | draft only until source reviewed | not applicable | canonical spelling/source review | todo | spacing variant candidate; not approved |
-| MAP-DRAFT-005 | normalized_key_candidates | 녹차 추출물 / 녹차추출물 | 녹차추출물 | APPROVE_ALIAS | 녹차 추출물 | 녹차추출물 |  | draft only until source reviewed | not applicable | canonical spelling/source review | todo | spacing variant candidate; not approved |
+| MAP-DRAFT-001 | normalized_key_candidates | 건조 비트 펄프 / 건조 비트펄프 / 건조비트펄프 | 건조비트펄프 | APPROVE_ALIAS | 건조 비트 펄프 | 건조 비트펄프 / 건조비트펄프 |  | draft only until source reviewed | not applicable | canonical spelling/source review | approved | approved as sandbox rehearsal candidate only; not production migration approval |
+| MAP-DRAFT-002 | normalized_key_candidates | 오메가 3 지방산 / 오메가-3 지방산 / 오메가3 지방산 | 오메가3지방산 | APPROVE_ALIAS | 오메가 3 지방산 | 오메가-3 지방산 / 오메가3 지방산 |  | draft only until source reviewed | not applicable | canonical spelling/source review | approved | approved as sandbox rehearsal candidate only; not production migration approval |
+| MAP-DRAFT-003 | normalized_key_candidates | 감자 전분 / 감자전분 | 감자전분 | APPROVE_ALIAS | 감자 전분 | 감자전분 |  | draft only until source reviewed | not applicable | canonical spelling/source review | approved | approved as sandbox rehearsal candidate only; not production migration approval |
+| MAP-DRAFT-004 | normalized_key_candidates | 건조 맥주 효모 / 건조 맥주효모 | 건조맥주효모 | APPROVE_ALIAS | 건조 맥주 효모 | 건조 맥주효모 |  | draft only until source reviewed | not applicable | canonical spelling/source review | approved | approved as sandbox rehearsal candidate only; not production migration approval |
+| MAP-DRAFT-005 | normalized_key_candidates | 녹차 추출물 / 녹차추출물 | 녹차추출물 | APPROVE_ALIAS | 녹차 추출물 | 녹차추출물 |  | draft only until source reviewed | not applicable | canonical spelling/source review | approved | approved as sandbox rehearsal candidate only; not production migration approval |
 | MAP-DRAFT-006 | normalized_key_candidates | 닭 간 / 닭간 | 닭간 | APPROVE_ALIAS | 닭 간 | 닭간 |  | draft only until source reviewed | manual_review if allergen-linked | canonical spelling/source review | todo | spacing variant candidate; not approved |
 | MAP-DRAFT-007 | normalized_key_candidates | 닭 간 분말 / 닭간 분말 | 닭간분말 | APPROVE_ALIAS | 닭 간 분말 | 닭간 분말 |  | draft only until source reviewed | manual_review if allergen-linked | canonical spelling/source review | todo | spacing variant candidate; not approved |
 | MAP-DRAFT-008 | normalized_key_candidates | 닭 연골 / 닭연골 | 닭연골 | APPROVE_ALIAS | 닭 연골 | 닭연골 |  | draft only until source reviewed | manual_review if allergen-linked | canonical spelling/source review | todo | spacing variant candidate; not approved |
 | MAP-DRAFT-009 | normalized_key_candidates | 닭 지방 / 닭지방 | 닭지방 | APPROVE_ALIAS | 닭 지방 | 닭지방 |  | draft only until source reviewed | manual_review if allergen-linked | canonical spelling/source review | todo | spacing variant candidate; not approved |
 | MAP-DRAFT-010 | normalized_key_candidates | 동물성 지방 / 동물성지방 | 동물성지방 | APPROVE_ALIAS | 동물성 지방 | 동물성지방 |  | draft only until source reviewed | manual_review | canonical spelling/source review | todo | broad animal-derived term; not approved |
-| MAP-DRAFT-011 | normalized_key_candidates | 맥주 효모 / 맥주효모 | 맥주효모 | APPROVE_ALIAS | 맥주 효모 | 맥주효모 |  | draft only until source reviewed | not applicable | canonical spelling/source review | todo | spacing variant candidate; not approved |
-| MAP-DRAFT-012 | normalized_key_candidates | 비타민 E / 비타민E | 비타민e | APPROVE_ALIAS | 비타민 E | 비타민E |  | draft only until source reviewed | not applicable | canonical spelling/source review | todo | spacing variant candidate; not approved |
-| MAP-DRAFT-013 | normalized_key_candidates | 비트 펄프 / 비트펄프 | 비트펄프 | APPROVE_ALIAS | 비트 펄프 | 비트펄프 |  | draft only until source reviewed | not applicable | canonical spelling/source review | todo | spacing variant candidate; not approved |
+| MAP-DRAFT-011 | normalized_key_candidates | 맥주 효모 / 맥주효모 | 맥주효모 | APPROVE_ALIAS | 맥주 효모 | 맥주효모 |  | draft only until source reviewed | not applicable | canonical spelling/source review | approved | approved as sandbox rehearsal candidate only; not production migration approval |
+| MAP-DRAFT-012 | normalized_key_candidates | 비타민 E / 비타민E | 비타민e | APPROVE_ALIAS | 비타민 E | 비타민E |  | draft only until source reviewed | not applicable | canonical spelling/source review | approved | approved as sandbox rehearsal candidate only; not production migration approval |
+| MAP-DRAFT-013 | normalized_key_candidates | 비트 펄프 / 비트펄프 | 비트펄프 | APPROVE_ALIAS | 비트 펄프 | 비트펄프 |  | draft only until source reviewed | not applicable | canonical spelling/source review | approved | approved as sandbox rehearsal candidate only; not production migration approval |
 | MAP-DRAFT-014 | normalized_key_candidates | 소르빈산 칼륨 / 소르빈산칼륨 | 소르빈산칼륨 | APPROVE_ALIAS | 소르빈산 칼륨 | 소르빈산칼륨 |  | NEEDS_EVIDENCE before active risk rule | not applicable | canonical spelling/source review | todo | preservative-related candidate; not approved |
-| MAP-DRAFT-015 | normalized_key_candidates | 오메가 6 지방산 / 오메가-6 지방산 | 오메가6지방산 | APPROVE_ALIAS | 오메가 6 지방산 | 오메가-6 지방산 |  | draft only until source reviewed | not applicable | canonical spelling/source review | todo | hyphen and spacing variant candidate; not approved |
+| MAP-DRAFT-015 | normalized_key_candidates | 오메가 6 지방산 / 오메가-6 지방산 | 오메가6지방산 | APPROVE_ALIAS | 오메가 6 지방산 | 오메가-6 지방산 |  | draft only until source reviewed | not applicable | canonical spelling/source review | approved | approved as sandbox rehearsal candidate only; not production migration approval |
 | MAP-DRAFT-016 | normalized_key_candidates | 증점 다당류 / 증점다당류 | 증점다당류 | APPROVE_ALIAS | 증점 다당류 | 증점다당류 |  | draft only until source reviewed | not applicable | canonical spelling/source review | todo | additive category candidate; not approved |
 | MAP-DRAFT-017 | normalized_key_candidates | 천연 색소 / 천연색소 | 천연색소 | APPROVE_ALIAS | 천연 색소 | 천연색소 |  | NEEDS_EVIDENCE before active risk rule | not applicable | canonical spelling/source review | todo | colorant category candidate; not approved |
-| MAP-DRAFT-018 | normalized_key_candidates | 코코넛 오일 / 코코넛오일 | 코코넛오일 | APPROVE_ALIAS | 코코넛 오일 | 코코넛오일 |  | draft only until source reviewed | not applicable | canonical spelling/source review | todo | spacing variant candidate; not approved |
-| MAP-DRAFT-019 | normalized_key_candidates | 타피오카 전분 / 타피오카전분 | 타피오카전분 | APPROVE_ALIAS | 타피오카 전분 | 타피오카전분 |  | draft only until source reviewed | not applicable | canonical spelling/source review | todo | spacing variant candidate; not approved |
-| MAP-DRAFT-020 | normalized_key_candidates | 토마토 박 / 토마토박 | 토마토박 | APPROVE_ALIAS | 토마토 박 | 토마토박 |  | draft only until source reviewed | not applicable | canonical spelling/source review | todo | spacing variant candidate; not approved |
-| MAP-DRAFT-021 | normalized_key_candidates | 프락토-올리고당 / 프락토올리고당 | 프락토올리고당 | APPROVE_ALIAS | 프락토올리고당 | 프락토-올리고당 |  | draft only until source reviewed | not applicable | canonical spelling/source review | todo | hyphen variant candidate; not approved |
+| MAP-DRAFT-018 | normalized_key_candidates | 코코넛 오일 / 코코넛오일 | 코코넛오일 | APPROVE_ALIAS | 코코넛 오일 | 코코넛오일 |  | draft only until source reviewed | not applicable | canonical spelling/source review | approved | approved as sandbox rehearsal candidate only; not production migration approval |
+| MAP-DRAFT-019 | normalized_key_candidates | 타피오카 전분 / 타피오카전분 | 타피오카전분 | APPROVE_ALIAS | 타피오카 전분 | 타피오카전분 |  | draft only until source reviewed | not applicable | canonical spelling/source review | approved | approved as sandbox rehearsal candidate only; not production migration approval |
+| MAP-DRAFT-020 | normalized_key_candidates | 토마토 박 / 토마토박 | 토마토박 | APPROVE_ALIAS | 토마토 박 | 토마토박 |  | draft only until source reviewed | not applicable | canonical spelling/source review | approved | approved as sandbox rehearsal candidate only; not production migration approval |
+| MAP-DRAFT-021 | normalized_key_candidates | 프락토-올리고당 / 프락토올리고당 | 프락토올리고당 | APPROVE_ALIAS | 프락토올리고당 | 프락토-올리고당 |  | draft only until source reviewed | not applicable | canonical spelling/source review | approved | approved as sandbox rehearsal candidate only; not production migration approval |
 | MAP-DRAFT-022 | normalized_key_candidates | 프로필렌 글리콜 / 프로필렌글리콜 | 프로필렌글리콜 | APPROVE_ALIAS | 프로필렌 글리콜 | 프로필렌글리콜 |  | NEEDS_EVIDENCE before active risk rule | not applicable | canonical spelling/source review | todo | additive-related candidate; not approved |
 | MAP-DRAFT-023 | normalized_key_candidates | 향미 증진제 / 향미증진제 | 향미증진제 | APPROVE_ALIAS | 향미 증진제 | 향미증진제 |  | NEEDS_EVIDENCE before active risk rule | not applicable | canonical spelling/source review | todo | additive category candidate; not approved |
-| MAP-DRAFT-024 | normalized_key_candidates | 혼합 토코페롤 / 혼합토코페롤 | 혼합토코페롤 | APPROVE_ALIAS | 혼합 토코페롤 | 혼합토코페롤 |  | draft only until source reviewed | not applicable | canonical spelling/source review | todo | spacing variant candidate; not approved |
+| MAP-DRAFT-024 | normalized_key_candidates | 혼합 토코페롤 / 혼합토코페롤 | 혼합토코페롤 | APPROVE_ALIAS | 혼합 토코페롤 | 혼합토코페롤 |  | draft only until source reviewed | not applicable | canonical spelling/source review | approved | approved as sandbox rehearsal candidate only; not production migration approval |
 
 ## Substring-Risk Global Decision
 
