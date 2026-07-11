@@ -2,6 +2,8 @@
 -- DO NOT RUN ON PRODUCTION.
 -- Forbidden production project ref: nlutpmjloryqdomgbqrr.
 -- Read-only verification for Phase 2 low-risk alias sandbox rehearsal.
+-- Verification is marker-aware: approved keys must be owned by the sandbox rehearsal marker.
+-- Unmarked preexisting canonical rows for approved keys are treated as a failed rehearsal state.
 
 WITH
 approved_canonical_candidates(normalized_key) AS (
@@ -67,6 +69,14 @@ excluded_candidates(normalized_key) AS (
     ('프로필렌글리콜'),
     ('향미증진제')
 ),
+preexisting_unmarked_canonical AS (
+  SELECT ci.id, ci.normalized_key
+  FROM public.canonical_ingredients ci
+  JOIN approved_canonical_candidates acc
+    ON acc.normalized_key = ci.normalized_key
+  WHERE COALESCE(ci.category, '') <> 'phase2_low_risk_alias_rehearsal'
+    AND COALESCE(ci.description, '') <> 'SANDBOX ONLY Phase 2 low-risk alias rehearsal marker. DO NOT RUN ON PRODUCTION nlutpmjloryqdomgbqrr.'
+),
 canonical_state AS (
   SELECT
     acc.normalized_key,
@@ -74,6 +84,8 @@ canonical_state AS (
   FROM approved_canonical_candidates acc
   LEFT JOIN public.canonical_ingredients ci
     ON ci.normalized_key = acc.normalized_key
+   AND ci.category = 'phase2_low_risk_alias_rehearsal'
+   AND ci.description = 'SANDBOX ONLY Phase 2 low-risk alias rehearsal marker. DO NOT RUN ON PRODUCTION nlutpmjloryqdomgbqrr.'
 ),
 alias_state AS (
   SELECT
@@ -83,6 +95,8 @@ alias_state AS (
   FROM approved_alias_candidates aac
   LEFT JOIN public.canonical_ingredients ci
     ON ci.normalized_key = aac.normalized_key
+   AND ci.category = 'phase2_low_risk_alias_rehearsal'
+   AND ci.description = 'SANDBOX ONLY Phase 2 low-risk alias rehearsal marker. DO NOT RUN ON PRODUCTION nlutpmjloryqdomgbqrr.'
   LEFT JOIN public.canonical_ingredient_aliases cia
     ON cia.canonical_ingredient_id = ci.id
    AND cia.normalized_alias = aac.normalized_alias
@@ -105,6 +119,8 @@ forbidden_related_rows AS (
   FROM public.canonical_analysis_rules car
   JOIN public.canonical_ingredients ci
     ON ci.id = car.canonical_ingredient_id
+   AND ci.category = 'phase2_low_risk_alias_rehearsal'
+   AND ci.description = 'SANDBOX ONLY Phase 2 low-risk alias rehearsal marker. DO NOT RUN ON PRODUCTION nlutpmjloryqdomgbqrr.'
   JOIN approved_canonical_candidates acc
     ON acc.normalized_key = ci.normalized_key
   UNION ALL
@@ -112,6 +128,8 @@ forbidden_related_rows AS (
   FROM public.canonical_ingredient_allergen_map ciam
   JOIN public.canonical_ingredients ci
     ON ci.id = ciam.canonical_ingredient_id
+   AND ci.category = 'phase2_low_risk_alias_rehearsal'
+   AND ci.description = 'SANDBOX ONLY Phase 2 low-risk alias rehearsal marker. DO NOT RUN ON PRODUCTION nlutpmjloryqdomgbqrr.'
   JOIN approved_canonical_candidates acc
     ON acc.normalized_key = ci.normalized_key
   UNION ALL
@@ -119,6 +137,8 @@ forbidden_related_rows AS (
   FROM public.product_ingredient_label_items pili
   JOIN public.canonical_ingredients ci
     ON ci.id = pili.canonical_ingredient_id
+   AND ci.category = 'phase2_low_risk_alias_rehearsal'
+   AND ci.description = 'SANDBOX ONLY Phase 2 low-risk alias rehearsal marker. DO NOT RUN ON PRODUCTION nlutpmjloryqdomgbqrr.'
   JOIN approved_canonical_candidates acc
     ON acc.normalized_key = ci.normalized_key
   UNION ALL
@@ -137,6 +157,7 @@ summary AS (
       FROM excluded_state
       WHERE canonical_ingredient_id IS NOT NULL OR alias_id IS NOT NULL
     ) AS excluded_found_count,
+    (SELECT COUNT(*) FROM preexisting_unmarked_canonical) AS preexisting_unmarked_canonical_count,
     (SELECT COALESCE(SUM(row_count), 0) FROM forbidden_related_rows) AS forbidden_related_row_count
 )
 SELECT
@@ -145,6 +166,7 @@ SELECT
     WHEN summary.canonical_found_count = summary.expected_canonical_count
      AND summary.alias_found_count = summary.expected_alias_count
      AND summary.excluded_found_count = 0
+     AND summary.preexisting_unmarked_canonical_count = 0
      AND summary.forbidden_related_row_count = 0
     THEN 'PASS'
     ELSE 'BLOCK'
@@ -154,11 +176,13 @@ SELECT
   summary.expected_alias_count,
   summary.alias_found_count,
   summary.excluded_found_count,
+  summary.preexisting_unmarked_canonical_count,
   summary.forbidden_related_row_count,
   CASE
     WHEN summary.canonical_found_count = summary.expected_canonical_count
      AND summary.alias_found_count = summary.expected_alias_count
      AND summary.excluded_found_count = 0
+     AND summary.preexisting_unmarked_canonical_count = 0
      AND summary.forbidden_related_row_count = 0
     THEN 'SANDBOX_REHEARSAL_VERIFIED'
     ELSE 'SANDBOX_REHEARSAL_FAILED'

@@ -30,28 +30,36 @@ Excluded:
 
 1. Confirm the sandbox project ref.
    - Stop if the project ref is `nlutpmjloryqdomgbqrr`.
+   - Do not set the rehearsal confirmation setting in production.
 2. Confirm Phase 1 canonical schema exists in the sandbox.
    - Required tables include `canonical_ingredients`, `canonical_ingredient_aliases`, and `analysis_engine_versions`.
-3. Run:
+3. In the same SQL session where you will run rehearsal or rollback, set the sandbox-only confirmation after checking the project ref:
+
+   ```sql
+   SET app.phase2_alias_sandbox_rehearsal_confirm = 'SANDBOX_ONLY_CONFIRMED_NOT_PRODUCTION';
+   ```
+
+   Never run this `SET` command in production project `nlutpmjloryqdomgbqrr`.
+4. Run:
 
    ```text
    supabase/tests/manual/phase2_alias_sandbox_rehearsal.sql
    ```
 
-4. Run:
+5. Run:
 
    ```text
    supabase/tests/manual/phase2_alias_sandbox_verify.sql
    ```
 
-5. Save the result table as CSV or text.
-6. If the sandbox needs cleanup, run:
+6. Save the result table as CSV or text.
+7. If the sandbox needs cleanup, keep the same sandbox-confirmed SQL session or repeat step 3 in a new sandbox session, then run:
 
    ```text
    supabase/tests/manual/phase2_alias_sandbox_rollback.sql
    ```
 
-7. Optionally rerun verify after rollback to confirm the sandbox state.
+8. Optionally rerun verify after rollback to confirm the sandbox state.
 
 ## Expected Rehearsal Result
 
@@ -70,7 +78,9 @@ If the verify result is `SANDBOX_REHEARSAL_FAILED`, stop and inspect the failing
 
 Rollback is marker-based. It removes rows marked as `phase2_low_risk_alias_rehearsal` and leaves unmarked existing sandbox rows alone.
 
-If a sandbox already had matching canonical rows without the marker before rehearsal, rollback may intentionally leave those existing rows untouched.
+The rehearsal SQL does not attach aliases to unmarked preexisting canonical rows. If a sandbox already has matching canonical rows without the rehearsal marker, rehearsal should return `SANDBOX_REHEARSAL_REVIEW_REQUIRED` and stop before alias insertion.
+
+If rollback sees unmarked existing rows, it leaves those rows untouched by design.
 
 ## Production Gate
 

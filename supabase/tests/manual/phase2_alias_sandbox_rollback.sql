@@ -2,8 +2,18 @@
 -- DO NOT RUN ON PRODUCTION.
 -- Forbidden production project ref: nlutpmjloryqdomgbqrr.
 -- Marker-based rollback for Phase 2 low-risk alias sandbox rehearsal.
+-- It refuses to run unless the operator sets app.phase2_alias_sandbox_rehearsal_confirm in a sandbox session.
 
 BEGIN;
+
+DO $$
+BEGIN
+  IF current_setting('app.phase2_alias_sandbox_rehearsal_confirm', true)
+     IS DISTINCT FROM 'SANDBOX_ONLY_CONFIRMED_NOT_PRODUCTION' THEN
+    RAISE EXCEPTION
+      'Refusing to run Phase 2 alias sandbox rollback: set app.phase2_alias_sandbox_rehearsal_confirm only in a sandbox project. Do not run on production nlutpmjloryqdomgbqrr.';
+  END IF;
+END $$;
 
 WITH
 approved_canonical_candidates(normalized_key) AS (

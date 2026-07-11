@@ -74,6 +74,17 @@ describe('Phase 2 alias sandbox rehearsal kit', () => {
     expect(runbook).toContain('nlutpmjloryqdomgbqrr');
   });
 
+  it('requires a sandbox confirmation guard for write SQL without setting it inside the files', () => {
+    for (const sql of [rehearsalSql, rollbackSql]) {
+      expect(sql).toContain("current_setting('app.phase2_alias_sandbox_rehearsal_confirm', true)");
+      expect(sql).toContain('SANDBOX_ONLY_CONFIRMED_NOT_PRODUCTION');
+      expect(sql).not.toMatch(/^\s*SET\s+app\.phase2_alias_sandbox_rehearsal_confirm\b/im);
+    }
+    expect(runbook).toContain(
+      "SET app.phase2_alias_sandbox_rehearsal_confirm = 'SANDBOX_ONLY_CONFIRMED_NOT_PRODUCTION';",
+    );
+  });
+
   it('mentions the production ref only as a forbidden target', () => {
     for (const line of allSql.split('\n').filter((entry) => entry.includes('nlutpmjloryqdomgbqrr'))) {
       expect(line).toMatch(/Forbidden|DO NOT RUN ON PRODUCTION/i);
@@ -120,6 +131,18 @@ describe('Phase 2 alias sandbox rehearsal kit', () => {
     expect(rehearsalSql).not.toContain('product_ingredient_label');
   });
 
+  it('blocks unmarked canonical conflicts and inserts aliases only against marker-owned rows', () => {
+    expect(rehearsalSql).toContain('preexisting_unmarked_canonical');
+    expect(rehearsalSql).toMatch(/WHERE\s+NOT\s+EXISTS\s*\(\s*SELECT\s+1\s+FROM\s+preexisting_unmarked_canonical\s*\)/i);
+    expect(rehearsalSql).toContain('marker_owned_canonical');
+    expect(rehearsalSql).toMatch(/JOIN\s+marker_owned_canonical\s+moc/i);
+    expect(rehearsalSql).toContain("ci.category = 'phase2_low_risk_alias_rehearsal'");
+    expect(rehearsalSql).toContain(
+      "ci.description = 'SANDBOX ONLY Phase 2 low-risk alias rehearsal marker. DO NOT RUN ON PRODUCTION nlutpmjloryqdomgbqrr.'",
+    );
+    expect(runbook).toMatch(/does not attach aliases to unmarked preexisting canonical rows/i);
+  });
+
   it('verifies approved keys, excluded keys, and forbidden related tables', () => {
     for (const key of approvedKeys) {
       expect(verifySql).toContain(key);
@@ -131,6 +154,8 @@ describe('Phase 2 alias sandbox rehearsal kit', () => {
     expect(verifySql).toContain('canonical_ingredient_allergen_map');
     expect(verifySql).toContain('product_ingredient_label_items');
     expect(verifySql).toContain('product_ingredient_label_sets');
+    expect(verifySql).toContain('preexisting_unmarked_canonical');
+    expect(verifySql).toContain('preexisting_unmarked_canonical_count');
     expect(verifySql).toContain('SANDBOX_REHEARSAL_VERIFIED');
     expect(verifySql).toContain('SANDBOX_REHEARSAL_FAILED');
   });
@@ -139,6 +164,8 @@ describe('Phase 2 alias sandbox rehearsal kit', () => {
     expect(rollbackSql).toContain('phase2_low_risk_alias_rehearsal');
     expect(rollbackSql).toContain('approved_canonical_candidates');
     expect(rollbackSql).toContain('sandbox-phase2-low-risk-alias-rehearsal-2026-07-11');
+    expect(rollbackSql).toContain('marked_canonical');
+    expect(rollbackSql).toContain("ci.category = 'phase2_low_risk_alias_rehearsal'");
     expect(rollbackSql).toMatch(/DELETE\s+FROM\s+public\.canonical_ingredient_aliases/i);
     expect(rollbackSql).toMatch(/DELETE\s+FROM\s+public\.canonical_ingredients/i);
     expect(rollbackSql).toContain('SANDBOX_REHEARSAL_ROLLED_BACK');
