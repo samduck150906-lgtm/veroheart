@@ -66,9 +66,15 @@ Preflight should return:
 ```text
 section: phase2_alias_production_preflight
 severity: PASS
+analysis_marker_exact_count: 0 or 1
+analysis_marker_conflict_count: 0
 expected_canonical_count: 14
+existing_marker_owned_canonical_count: 0 or 14
+marker_owned_canonical_mismatch_count: 0
 preexisting_unmarked_canonical_count: 0
 expected_alias_count: 30
+existing_marker_owned_alias_count: 0 or 30
+marker_owned_alias_mismatch_count: 0
 preexisting_alias_conflict_count: 0
 forbidden_related_row_count: 0
 final_assessment: PRODUCTION_PREFLIGHT_READY
@@ -79,10 +85,14 @@ Apply should return:
 ```text
 section: phase2_alias_production_apply
 severity: PASS
+analysis_marker_exact_count: 1
+analysis_marker_conflict_count: 0
 expected_canonical_count: 14
 inserted_or_available_canonical_count: 14
+marker_owned_canonical_mismatch_count: 0
 expected_alias_count: 30
 inserted_or_available_alias_count: 30
+marker_owned_alias_mismatch_count: 0
 preexisting_unmarked_canonical_count: 0
 preexisting_alias_conflict_count: 0
 final_assessment: PRODUCTION_ALIAS_SEED_READY_FOR_VERIFY
@@ -93,6 +103,14 @@ Verify should return:
 ```text
 section: phase2_alias_production_verify
 severity: PASS
+analysis_marker_exact_count: 1
+analysis_marker_conflict_count: 0
+expected_canonical_count: 14
+canonical_found_count: 14
+marker_owned_canonical_mismatch_count: 0
+expected_alias_count: 30
+alias_found_count: 30
+marker_owned_alias_mismatch_count: 0
 final_assessment: PRODUCTION_ALIAS_SEED_VERIFIED
 ```
 
@@ -101,6 +119,8 @@ Rollback, if explicitly approved and needed, should return:
 ```text
 section: phase2_alias_production_rollback
 severity: PASS
+analysis_marker_conflict_count: 0
+non_seed_marker_owned_alias_count: 0
 remaining_marker_owned_canonical_count: 0
 final_assessment: PRODUCTION_ALIAS_SEED_ROLLED_BACK
 ```
@@ -113,6 +133,10 @@ Stop immediately if any of these occur:
 - Any count differs from the expected count.
 - Any unmarked canonical conflict exists.
 - Any alias conflict exists.
+- Any analysis marker conflict exists.
+- Any marker-owned canonical mismatch exists.
+- Any marker-owned alias mismatch exists.
+- Any non-seed marker-owned alias exists during rollback.
 - Any forbidden related row exists.
 - Any output suggests runtime/scoring behavior would change.
 

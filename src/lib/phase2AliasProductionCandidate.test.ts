@@ -61,6 +61,8 @@ const productionCategory = 'phase2_low_risk_alias_seed_2026_07_12';
 const productionDescription =
   'Production candidate Phase 2 low-risk alias seed. Sandbox verified in PR #23. No risk/scoring semantics.';
 const productionVersion = 'phase2-low-risk-alias-seed-2026-07-12';
+const productionAnalysisDescription =
+  'Production candidate marker for Phase 2 low-risk alias seed. Sandbox verified in PR #23. No risk/scoring semantics.';
 
 function insertValuesBody(sql: string, tableName: string) {
   const pattern = new RegExp(`INSERT INTO ${tableName}[\\s\\S]*?\\)\\s*VALUES([\\s\\S]*?);`);
@@ -134,6 +136,22 @@ describe('Phase 2 low-risk alias production candidate kit', () => {
     }
     expect(applySql).toContain(productionVersion);
     expect(rollbackSql).toContain(productionVersion);
+    expect(allCandidateText).toContain(productionAnalysisDescription);
+  });
+
+  it('detects exact analysis_engine_versions marker conflicts', () => {
+    for (const sql of [preflightSql, applySql, verifySql, rollbackSql]) {
+      expect(sql).toContain('analysis_marker_conflict_count');
+      expect(sql).toContain('phase2-low-risk-alias-seed-2026-07-12');
+      expect(sql).toContain(productionAnalysisDescription);
+      expect(sql).toContain("aev.status = 'draft'");
+      expect(sql).toContain("aev.ruleset_checksum = 'phase2-low-risk-alias-seed-2026-07-12'");
+    }
+    for (const sql of [preflightSql, applySql, verifySql]) {
+      expect(sql).toContain('analysis_marker_exact_count');
+    }
+    expect(applySql).toMatch(/RAISE EXCEPTION[\s\S]*marker conflicts/i);
+    expect(rollbackSql).toContain('phase2_alias_production_rollback_analysis_marker_conflicts');
   });
 
   it('applies exactly the approved 14 canonical candidates and 30 aliases', () => {
@@ -154,6 +172,35 @@ describe('Phase 2 low-risk alias production candidate kit', () => {
     }
     expect([...canonicalBody.matchAll(/\('([^']+)',\s*'[^']+'\)/g)]).toHaveLength(14);
     expect([...aliasBody.matchAll(/\('([^']+)',\s*'[^']+',\s*'[^']+',\s*(?:true|false)\)/g)]).toHaveLength(30);
+  });
+
+  it('requires exact canonical name, category, description, and draft status for canonical counts', () => {
+    for (const sql of [preflightSql, applySql, verifySql]) {
+      expect(sql).toContain('marker_owned_canonical_mismatch_count');
+      expect(sql).toContain('marker_owned_canonical_mismatch');
+      expect(sql).toContain('canonical_name_ko');
+      expect(sql).toContain(productionCategory);
+      expect(sql).toContain(productionDescription);
+      expect(sql).toContain("ci.status = 'draft'");
+    }
+    expect(applySql).toMatch(/RAISE EXCEPTION[\s\S]*canonical mismatches/i);
+    expect(applySql).toContain('inserted_or_available_canonical_count');
+    expect(verifySql).toContain('canonical_found_count');
+  });
+
+  it('requires exact alias text, normalized alias, language, type, and preferred flag for alias counts', () => {
+    for (const sql of [preflightSql, applySql, verifySql]) {
+      expect(sql).toContain('marker_owned_alias_mismatch_count');
+      expect(sql).toContain('marker_owned_alias_mismatch');
+      expect(sql).toContain('alias_text');
+      expect(sql).toContain('normalized_alias');
+      expect(sql).toContain("cia.language_code = 'ko'");
+      expect(sql).toContain("cia.alias_type = 'label'");
+      expect(sql).toContain('is_preferred');
+    }
+    expect(applySql).toMatch(/RAISE EXCEPTION[\s\S]*alias mismatches/i);
+    expect(applySql).toContain('inserted_or_available_alias_count');
+    expect(verifySql).toContain('alias_found_count');
   });
 
   it('does not insert excluded animal, allergen, additive, or risk candidates', () => {
@@ -211,12 +258,27 @@ describe('Phase 2 low-risk alias production candidate kit', () => {
     expect(rollbackSql).toContain('PRODUCTION_ALIAS_SEED_ROLLBACK_BLOCKED');
   });
 
+  it('rolls back only the approved 30 aliases and blocks non-seed marker-owned aliases', () => {
+    const rollbackAliasBody = insertValuesBody(
+      rollbackSql,
+      'phase2_alias_production_rollback_alias_candidates',
+    );
+    expect([...rollbackAliasBody.matchAll(/\('([^']+)',\s*'[^']+',\s*'[^']+',\s*(?:true|false)\)/g)]).toHaveLength(30);
+    expect(rollbackSql).toContain('phase2_alias_production_rollback_alias_delete_targets');
+    expect(rollbackSql).toContain('phase2_alias_production_rollback_non_seed_marker_owned_aliases');
+    expect(rollbackSql).toContain('non_seed_marker_owned_alias_count');
+    expect(rollbackSql).toMatch(/LEFT JOIN\s+phase2_alias_production_rollback_alias_delete_targets\s+target/i);
+    expect(rollbackSql).toMatch(/NOT\s+EXISTS\s*\(\s*SELECT\s+1\s+FROM\s+phase2_alias_production_rollback_non_seed_marker_owned_aliases\s*\)/i);
+  });
+
   it('separates DML from final summaries to avoid data-modifying CTE snapshot issues', () => {
     const aliasInsertIndex = applySql.indexOf('INSERT INTO public.canonical_ingredient_aliases');
     const applySummaryIndex = applySql.indexOf("SELECT\n  'phase2_alias_production_apply'");
     expect(aliasInsertIndex).toBeGreaterThan(-1);
     expect(applySummaryIndex).toBeGreaterThan(aliasInsertIndex);
-    expect(applySql.slice(applySummaryIndex)).toContain('FROM public.canonical_ingredients ci');
+    expect(applySql.slice(applySummaryIndex)).toContain(
+      'FROM phase2_alias_production_marker_owned_canonical',
+    );
     expect(applySql.slice(applySummaryIndex)).toContain('FROM public.canonical_ingredient_aliases cia');
     expect(applySql).not.toMatch(/^\s*WITH\b[\s\S]*INSERT\s+INTO\s+public\.[\s\S]*inserted_or_available/im);
 
