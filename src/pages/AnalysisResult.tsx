@@ -6,7 +6,7 @@ import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
 import {
   getRecommendationBreakdown,
-  gradeFromScore,
+  resolveDisplayVerdict,
   calculateCompatibilityScore,
   type CompatibilityGrade,
 } from '../utils/score';
@@ -199,17 +199,28 @@ export default function AnalysisResult() {
   const cautionIngredients = ingredients.filter((i) => i.riskLevel === 'caution');
   const dangerIngredients = ingredients.filter((i) => i.riskLevel === 'danger');
 
-  const score = useMemo(() => {
+  const rawScore = useMemo(() => {
     if (!product) return 75;
     if (hasPetProfile) return calculateCompatibilityScore(product, profile);
     return generateAnalysisReport(product, profile).score;
   }, [product, profile, hasPetProfile]);
-  const grade = gradeFromScore(score);
 
   const breakdown = useMemo(
     () => (product && hasPetProfile ? getRecommendationBreakdown(product, profile) : null),
     [product, profile, hasPetProfile],
   );
+
+  // 알레르기·위험 성분이 있으면 표시 점수/등급을 하드캡해 히어로가 경고 배너와
+  // 모순되지 않게 한다. 랭킹용 원점수(rawScore)는 그대로 두고 표시값만 조정한다.
+  const verdict = useMemo(
+    () => resolveDisplayVerdict(rawScore, {
+      allergyHits: breakdown?.allergyHits.length ?? 0,
+      dangerCount: dangerIngredients.length,
+    }),
+    [rawScore, breakdown, dangerIngredients.length],
+  );
+  const score = verdict.score;
+  const grade = verdict.grade;
   const report = useMemo(
     () => (product ? generateAnalysisReport(product, profile) : null),
     [product, profile],

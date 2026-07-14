@@ -12,6 +12,47 @@ export function gradeFromScore(score: number): CompatibilityGrade {
   return 'F';
 }
 
+/** 하드캡 사유 — 알레르기(회피 성분)가 위험 성분보다 우선한다. */
+export type VerdictCapReason = 'allergy' | 'danger' | null;
+
+export interface DisplayVerdict {
+  /** 화면에 표시할 점수(하드캡 반영). 랭킹용 원점수와 별개다. */
+  score: number;
+  grade: CompatibilityGrade;
+  /** 상한선이 실제로 원점수를 끌어내렸을 때에만 사유를 채운다. */
+  capReason: VerdictCapReason;
+}
+
+/**
+ * 결과 화면 히어로에 표시할 "판정"을 계산한다.
+ *
+ * 문제: 궁합 점수는 알레르기·위험 성분이 있어도 부분 감점만 되므로, 회피 성분이
+ * 들어 있는데도 "A등급 · 아주 잘 맞아요"(초록)로 표시되어 바로 아래 빨간 경고
+ * 배너와 정면으로 모순될 수 있다. (사용자 신뢰를 깨는 대표적 결함)
+ *
+ * 해결: 랭킹에 쓰이는 원점수(calculateCompatibilityScore)는 그대로 두고,
+ * 결과 화면에 "표시"되는 점수/등급만 상한선으로 하드캡한다.
+ *  - 회피(알레르기) 성분 존재 → 최대 D("주의가 필요해요"). 알레르기 매칭은
+ *    부분일치라 오탐 여지가 있어 F("맞지 않아요")까지 단정하지 않는다.
+ *  - 위험 성분 존재(알레르기는 없음) → 최대 C("보통이에요").
+ * 원점수가 이미 상한선보다 낮으면 그대로 둔다(점수를 올리지 않는다).
+ */
+export function resolveDisplayVerdict(
+  rawScore: number,
+  opts: { allergyHits?: number; dangerCount?: number } = {},
+): DisplayVerdict {
+  const safeRaw = Number.isFinite(rawScore) ? Math.max(0, Math.min(100, rawScore)) : 0;
+  const hasAllergy = (opts.allergyHits ?? 0) > 0;
+  const hasDanger = (opts.dangerCount ?? 0) > 0;
+
+  const ceiling = hasAllergy ? 54 : hasDanger ? 69 : 100;
+  const score = Math.min(safeRaw, ceiling);
+  const capReason: VerdictCapReason =
+    score < safeRaw ? (hasAllergy ? 'allergy' : 'danger') : null;
+
+  return { score, grade: gradeFromScore(score), capReason };
+}
+
 export interface ProductBadge {
   label: string;
   tone: 'good' | 'warn' | 'danger';
