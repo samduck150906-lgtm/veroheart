@@ -120,6 +120,7 @@ Rollback, if explicitly approved and needed, should return:
 section: phase2_alias_production_rollback
 severity: PASS
 analysis_marker_conflict_count: 0
+forbidden_related_row_count: 0
 non_seed_marker_owned_alias_count: 0
 remaining_marker_owned_canonical_count: 0
 final_assessment: PRODUCTION_ALIAS_SEED_ROLLED_BACK

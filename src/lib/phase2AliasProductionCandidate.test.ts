@@ -242,6 +242,9 @@ describe('Phase 2 low-risk alias production candidate kit', () => {
   it('keeps rollback marker-limited and blocks when forbidden related rows exist', () => {
     expect(rollbackSql).toContain('phase2_alias_production_rollback_marker_owned_canonical');
     expect(rollbackSql).toContain('phase2_alias_production_rollback_forbidden_related_rows');
+    expect(rollbackSql).toMatch(
+      /analysis_marker_conflict_count,\s*forbidden_related_row_count,\s*non_seed_marker_owned_alias_count/s,
+    );
     for (const relation of [
       'canonical_analysis_rules',
       'canonical_ingredient_allergen_map',

@@ -253,6 +253,7 @@ SELECT
   deleted_marker_count,
   remaining_marker_owned_canonical_count,
   analysis_marker_conflict_count,
+  forbidden_related_row_count,
   non_seed_marker_owned_alias_count,
   CASE
     WHEN analysis_marker_conflict_count = 0
