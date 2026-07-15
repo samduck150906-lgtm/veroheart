@@ -81,11 +81,25 @@ describe('PDP redesign parts', () => {
     expect(allergy).toContain('알레르기');
   });
 
-  it('StickyCtaBar: 가격이 포맷되어 구매 라벨에 노출된다', () => {
+  it('StickyCtaBar: 직행 링크가 없으면 "구매"가 아니라 장바구니 담기로 표시(오인 방지)', () => {
     const html = renderToStaticMarkup(
       <StickyCtaBar price={29900} isFav={false} isComparing={false} onFav={() => {}} onCompare={() => {}} onBuy={() => {}} />
     );
-    expect(html).toContain('29,900원 · 구매하기');
+    expect(html).toContain('29,900원 · 장바구니 담기');
+    expect(html).not.toContain('구매하기');
+  });
+
+  it('StickyCtaBar: 검증된 직행 링크가 있으면 외부 링크 + 전달된 구매 문구를 노출한다', () => {
+    const html = renderToStaticMarkup(
+      <StickyCtaBar
+        price={29900} isFav={false} isComparing={false}
+        onFav={() => {}} onCompare={() => {}} onBuy={() => {}}
+        buyHref="https://coupa.ng/abcd" buyLabel="최저가 보러가기"
+      />
+    );
+    expect(html).toContain('href="https://coupa.ng/abcd"');
+    expect(html).toContain('29,900원 · 최저가 보러가기');
+    expect(html).toContain('target="_blank"');
   });
 
   it('StickyScoreBar: 점수/등급/제품명이 렌더된다', () => {

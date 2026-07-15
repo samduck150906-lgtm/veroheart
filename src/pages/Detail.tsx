@@ -28,6 +28,7 @@ import { getReviews, createReview, deleteReview } from '../lib/supabase';
 import { notify } from '../store/useNotification';
 import { buildProductConclusion } from '../utils/productConclusion';
 import { getCompatibilityBreakdown } from '../utils/score';
+import { resolveProductPurchase } from '../utils/productLinks';
 import { analyzeFeed } from '../analysis/feedAnalysis';
 import FeedAnalysisCard from '../components/FeedAnalysisCard';
 import {
@@ -309,6 +310,8 @@ export default function Detail() {
     ? `후기 ${reviews.length}개 요약 · 평균 ${avgRating.toFixed(1)}점${topReviewTags.length ? ` · 자주 언급: ${topReviewTags.slice(0, 3).map(t => t.replace(/\s\d+$/, '')).join(', ')}` : ''}`
     : undefined;
 
+  // 구매 링크 결정(검증·안전) — 검증된 상품별 직행 링크만 "구매", 나머지는 검색/장바구니
+  const purchase = resolveProductPurchase(product);
 
   return (
     <div className="animate-fade-in detail-page-root" style={{ paddingBottom: '96px' }}>
@@ -678,7 +681,8 @@ export default function Detail() {
         isComparing={isComparing}
         onFav={() => toggleFavorite(product.id)}
         onCompare={() => { if (isComparing) { removeFromComparison(product.id); } else { addToComparison(product.id); } }}
-        buyHref={product.coupangLink}
+        buyHref={purchase.isDirect ? purchase.url : null}
+        buyLabel={purchase.ctaLabel}
         onBuy={() => { addToCart(product.id, 1); navigate('/cart'); }}
       />
     </div>
