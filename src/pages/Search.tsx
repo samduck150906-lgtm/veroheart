@@ -131,6 +131,12 @@ export default function Search() {
   };
 
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '');
+  // URL 의 ?q= 가 바뀌면(급상승 키워드 재클릭·뒤로/앞으로 이동) 검색어를 동기화한다.
+  // 입력 중에는 URL q 를 바꾸지 않으므로(카테고리만 동기화) 타이핑과 충돌하지 않는다.
+  const qParam = searchParams.get('q') ?? '';
+  useEffect(() => {
+    if (qParam) setQuery(qParam);
+  }, [qParam]);
   const [recentSearches, setRecentSearches] = useState<string[]>(() => loadRecentSearches());
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);

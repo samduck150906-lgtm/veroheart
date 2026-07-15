@@ -122,10 +122,12 @@ export default function Home() {
     return '좋은 저녁이에요';
   }, []);
 
+  // 검색 페이지는 ?q= 파라미터를 읽는다(Search.tsx). 과거 ?query= 는 매칭되지 않아
+  // 빈 검색 화면으로 빠지는 버그가 있었다.
   const goSearchWith = (query: string) =>
     navigate({
       pathname: '/search',
-      search: query ? `?query=${encodeURIComponent(query)}` : '',
+      search: query ? `?q=${encodeURIComponent(query)}` : '',
     });
 
   const goCategory = (name: string) =>

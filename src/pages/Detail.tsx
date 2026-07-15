@@ -29,6 +29,7 @@ import { notify } from '../store/useNotification';
 import { buildProductConclusion } from '../utils/productConclusion';
 import { getCompatibilityBreakdown } from '../utils/score';
 import { resolveProductPurchase } from '../utils/productLinks';
+import { getAppScrollEl, getAppScrollTop, scrollAppToTop } from '../utils/scroll';
 import { analyzeFeed } from '../analysis/feedAnalysis';
 import FeedAnalysisCard from '../components/FeedAnalysisCard';
 import {
@@ -113,12 +114,21 @@ export default function Detail() {
   }, [id, fetchProductDetail, trackRecentView]);
 
   // Sticky Score 노출 + 스크롤 진행률 (spec §21 P0)
+  // 스크롤 영역은 window 가 아니라 .app-main 컨테이너다(app shell: one scroll area).
   useEffect(() => {
-    const onScroll = () => setScrollY(window.scrollY || 0);
-    window.addEventListener('scroll', onScroll, { passive: true });
+    const el = getAppScrollEl();
+    const target: HTMLElement | Window = el ?? window;
+    const onScroll = () => setScrollY(getAppScrollTop());
+    target.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => target.removeEventListener('scroll', onScroll);
   }, []);
+
+  // §13: 새 상품 진입 시 항상 최상단에서 시작. 명시적 hash(#섹션)가 있으면 예외.
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.hash) return;
+    scrollAppToTop(false); // 즉시 이동(진입 점프감 방지)
+  }, [id]);
 
   const toggleReviewTag = (tag: string) => {
     setReviewTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
@@ -147,7 +157,7 @@ export default function Detail() {
   };
 
   const handleScrollTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    scrollAppToTop(true); // reduced-motion 사용자는 유틸이 즉시 이동으로 처리
   };
 
   const handleShare = async () => {
@@ -382,14 +392,16 @@ export default function Detail() {
         >
           <Share2 size={20} strokeWidth={2.25} aria-hidden />
         </button>
-        <button
-          type="button"
-          className="detail-scroll-top-fab"
-          onClick={handleScrollTop}
-          aria-label="맨 위로 이동"
-        >
-          <ChevronUp size={22} strokeWidth={2.4} aria-hidden />
-        </button>
+        {scrollY > 320 && (
+          <button
+            type="button"
+            className="detail-scroll-top-fab"
+            onClick={handleScrollTop}
+            aria-label="맨 위로 이동"
+          >
+            <ChevronUp size={22} strokeWidth={2.4} aria-hidden />
+          </button>
+        )}
       </div>
 
       <div style={{ position: 'relative', width: '100%', height: '320px', borderRadius: '24px', overflow: 'hidden', marginBottom: '20px', boxShadow: '0 16px 40px -12px rgb(0 0 0 / 0.12)' }}>
