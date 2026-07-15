@@ -5,6 +5,8 @@ import { Trophy, TrendingUp, Star, Dog, Cat, ShieldCheck, MessageSquare, Sparkle
 import { useStore } from '../store/useStore';
 import type { Product } from '../types';
 import { calculateCompatibilityScore, getProductRecommendationInsights } from '../utils/score';
+import { normalizeProductDisplayName } from '../utils/productDisplay';
+import ProductPrice from '../components/product/ProductPrice';
 import { TossChip, TossSectionTitle } from '../components/TossUI';
 
 const TABS = [
@@ -166,7 +168,7 @@ export default function Ranking() {
 
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '4px' }}>{product.brand}</div>
-                <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-dark)', lineHeight: 1.45, marginBottom: '8px' }}>{product.name}</div>
+                <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-dark)', lineHeight: 1.45, marginBottom: '8px', wordBreak: 'break-word' }}>{normalizeProductDisplayName(product)}</div>
                 <div style={{ display: 'flex', gap: '8px', marginTop: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
                   <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '2px', fontWeight: 700 }}>
                     <Star size={11} fill="#FCD34D" color="#FCD34D" /> {product.averageRating}
@@ -194,7 +196,7 @@ export default function Ranking() {
                 {sortBy === 'safe' && (
                   <div style={{ fontSize: '20px', fontWeight: 900, color: '#10B981' }}>{safeRatio}%</div>
                 )}
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{product.price?.toLocaleString()}원</div>
+                <ProductPrice value={product.price} size={11} weight={600} color="var(--text-muted)" />
                 {sortBy === 'compatibility' && (
                   <div style={{ marginTop: '6px', fontSize: '10px', color: 'var(--text-muted)', maxWidth: '120px', lineHeight: 1.35 }}>
                     {getProductRecommendationInsights(product, profile).reasons[0] || '프로필 기준 추천'}
