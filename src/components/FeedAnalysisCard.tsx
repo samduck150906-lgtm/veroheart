@@ -129,13 +129,33 @@ export default function FeedAnalysisCard({ product, profile }: { product: Produc
       {/* 원료 품질 체크리스트 */}
       <div style={{ marginBottom: 14 }}>
         <div style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--pdp-ink)', marginBottom: 2 }}>원료 품질 체크</div>
-        <ChecklistRow ok={iq.firstIsAnimalProtein} label="제1원료가 동물성 단백질" value={iq.firstIsAnimalProtein ? (iq.firstIngredient ?? '예') : '아니오'} />
-        <ChecklistRow ok={iq.animalProteins.length > 0} label="동물성 단백질 원료" value={`${iq.animalProteins.length}종`} />
-        <ChecklistRow ok={iq.artificial.length === 0} label="합성 첨가물(색소·보존료 등)" value={iq.artificial.length === 0 ? '없음' : `${iq.artificial.length}개`} />
-        <ChecklistRow ok={iq.byProducts.length === 0} label="부산물 원료" value={iq.byProducts.length === 0 ? '없음' : '포함'} />
-        <ChecklistRow ok={iq.fillers.length < 2} label="곡물·충전제 계열" value={iq.fillers.length === 0 ? '없음' : `${iq.fillers.length}개`} />
-        <ChecklistRow neutral ok={iq.functional.length > 0} label="기능성 원료(유산균·오메가 등)" value={`${iq.functional.length}종`} />
-        <ChecklistRow neutral ok label="안전 / 주의 / 위험 성분" value={`${iq.safeCount} / ${iq.cautionCount} / ${iq.dangerCount}`} />
+        {iq.total === 0 ? (
+          // 원재료 데이터 미등록 시 빨간 X("아니오"/"없음")로 미포함을 단정하지 않는다.
+          // 데이터 부족과 실제 미포함은 다르다 → 중립 안내로 표시.
+          <div
+            style={{
+              display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: 8, padding: '12px 14px',
+              borderRadius: 12, background: 'var(--pdp-surface-soft)', color: 'var(--pdp-ink-muted)',
+              fontSize: 12.5, fontWeight: 600, lineHeight: 1.55,
+            }}
+          >
+            <span style={{ flexShrink: 0, fontSize: 13, fontWeight: 900, marginTop: 1 }}>·</span>
+            <span>
+              원재료 정보가 아직 등록되지 않아 <b>동물성 단백질·첨가물·기능성 원료</b>는 확인하기 어려워요.
+              (정보가 없다는 뜻이지, 없다는 판정이 아니에요)
+            </span>
+          </div>
+        ) : (
+          <>
+            <ChecklistRow ok={iq.firstIsAnimalProtein} label="제1원료가 동물성 단백질" value={iq.firstIsAnimalProtein ? (iq.firstIngredient ?? '예') : '아니오'} />
+            <ChecklistRow ok={iq.animalProteins.length > 0} label="동물성 단백질 원료" value={`${iq.animalProteins.length}종`} />
+            <ChecklistRow ok={iq.artificial.length === 0} label="합성 첨가물(색소·보존료 등)" value={iq.artificial.length === 0 ? '없음' : `${iq.artificial.length}개`} />
+            <ChecklistRow ok={iq.byProducts.length === 0} label="부산물 원료" value={iq.byProducts.length === 0 ? '없음' : '포함'} />
+            <ChecklistRow ok={iq.fillers.length < 2} label="곡물·충전제 계열" value={iq.fillers.length === 0 ? '없음' : `${iq.fillers.length}개`} />
+            <ChecklistRow neutral ok={iq.functional.length > 0} label="기능성 원료(유산균·오메가 등)" value={iq.functional.length > 0 ? `${iq.functional.length}종` : '미확인'} />
+            <ChecklistRow neutral ok label="안전 / 주의 / 위험 성분" value={`${iq.safeCount} / ${iq.cautionCount} / ${iq.dangerCount}`} />
+          </>
+        )}
       </div>
 
       {/* 좋은 점 / 주의할 점 */}
