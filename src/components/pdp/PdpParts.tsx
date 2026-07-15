@@ -383,7 +383,7 @@ function AltCard({ a, onOpen }: { a: AltCardData; onOpen: (id: string) => void }
           {a.deltaScore > 0 && <span style={{ fontSize: 11 }}>▲{a.deltaScore}</span>}
         </span>
         <span style={{ textAlign: 'right' }}>
-          <span style={{ display: 'block', fontSize: 14, fontWeight: 900, color: 'var(--pdp-ink,var(--pdp-ink))' }}>{a.price.toLocaleString()}원</span>
+          <span style={{ display: 'block', fontSize: 14, fontWeight: 900, color: 'var(--pdp-ink,var(--pdp-ink))', whiteSpace: 'nowrap' }}>{formatKRW(a.price)}</span>
           {a.deltaPrice < 0 && <span style={{ fontSize: 11, fontWeight: 800, color: '#16A34A' }}>{a.deltaPrice.toLocaleString()}원</span>}
         </span>
       </div>

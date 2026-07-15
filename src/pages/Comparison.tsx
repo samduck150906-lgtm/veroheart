@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { calculateCompatibilityScore } from '../utils/score';
+import { normalizeProductDisplayName } from '../utils/productDisplay';
+import ProductPrice from '../components/product/ProductPrice';
 import { X, GitCompare, ShieldCheck, Star, ShoppingBag } from 'lucide-react';
 
 export default function Comparison() {
@@ -82,7 +84,7 @@ export default function Comparison() {
               </div>
               
               <div style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: 700 }}>{p.brand}</div>
-              <div style={{ fontSize: '16px', fontWeight: 800, margin: '4px 0 12px', lineHeight: 1.4, minHeight: '44px' }}>{p.name}</div>
+              <div style={{ fontSize: '16px', fontWeight: 800, margin: '4px 0 12px', lineHeight: 1.4, minHeight: '44px', wordBreak: 'break-word' }}>{normalizeProductDisplayName(p)}</div>
               
               <div style={{ padding: '14px', background: 'rgba(31,222,145,0.1)', borderRadius: '14px', textAlign: 'center', marginBottom: '14px' }}>
                 <div style={{ fontSize: '12px', color: 'var(--primary-dark)', fontWeight: 700 }}>{profile.name} 궁합 점수</div>
@@ -98,7 +100,7 @@ export default function Comparison() {
               <div style={{ borderTop: '1px solid var(--line)', paddingTop: '12px', fontSize: '13px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                   <span style={{ color: 'var(--text-muted)' }}>가격</span>
-                  <span style={{ fontWeight: 600 }}>{p.price.toLocaleString()}원</span>
+                  <ProductPrice value={p.price} size={13} weight={600} />
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                   <span style={{ color: 'var(--text-muted)' }}>평점</span>
