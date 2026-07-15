@@ -6,7 +6,7 @@ export function AnalysisPreview() {
   return (
     <section
       id="analysis-preview"
-      className="border-b border-ink-800/10 bg-white py-20 sm:py-24"
+      className="bg-sand py-20 sm:py-28"
       aria-labelledby="analysis-preview-heading"
     >
       <div className="mx-auto max-w-6xl px-5 sm:px-6">
@@ -21,54 +21,44 @@ export function AnalysisPreview() {
 
         <div className="mx-auto max-w-md">
           <Reveal>
-            <div className="rounded-3xl border border-ink-800/10 bg-cream-50 p-6 sm:p-7">
-              <div className="flex items-center justify-between">
-                <span className="rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-ink-800/55 shadow-card">
-                  예시 데이터
-                </span>
-                <span className="text-[11px] font-medium text-ink-800/45">
-                  코코 · 고양이 · 4세
-                </span>
+            <div className="rounded-2xl bg-paper p-6 sm:p-8">
+              <div className="flex items-center justify-between text-xs font-semibold text-ink-500">
+                <span>예시 데이터</span>
+                <span>코코 · 고양이 · 4세</span>
               </div>
 
               <div className="mt-5 flex items-center gap-3">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-safe-soft text-safe-deep">
-                  <ShieldCheckIcon className="h-5 w-5" />
-                </span>
-                <h3 className="text-lg font-extrabold leading-snug text-ink-900 sm:text-xl">
+                <ShieldCheckIcon className="h-6 w-6 shrink-0 text-safe-deep" />
+                <h3 className="text-xl font-extrabold leading-snug tracking-tightest text-ink-950">
                   코코에게 대체로 잘 맞아요
                 </h3>
               </div>
 
-              <ul className="mt-5 space-y-3 text-sm leading-relaxed text-ink-800/85">
-                <li className="flex gap-2">
+              <ul className="mt-6 space-y-3.5 text-sm leading-relaxed text-ink-900">
+                <li className="flex gap-2.5">
                   <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-safe-deep" />
                   연어가 첫 번째 원료로 확인됐어요.
                 </li>
-                <li className="flex gap-2">
+                <li className="flex gap-2.5">
                   <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-safe-deep" />
                   등록된 알레르기(닭고기)와 겹치는 원료는 발견되지 않았어요.
                 </li>
-                <li className="flex gap-2">
+                <li className="flex gap-2.5">
                   <InfoIcon className="mt-0.5 h-4 w-4 shrink-0 text-caution-deep" />
                   오메가 지방산 함량은 라벨에 공개되어 있지 않아 &lsquo;정보
                   부족&rsquo;으로 표시했어요.
                 </li>
               </ul>
 
-              <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-ink-800/10 pt-5">
-                <span className="rounded-lg bg-white px-2.5 py-1 text-[11px] font-medium text-ink-800/60 shadow-card">
-                  주요 원료: 연어, 현미, 완두단백
-                </span>
-                <span className="rounded-lg bg-white px-2.5 py-1 text-[11px] font-medium text-ink-800/60 shadow-card">
-                  데이터 신뢰도: 라벨 공개 정보 기준
-                </span>
+              <div className="mt-6 space-y-1.5 border-t border-ink-950/10 pt-5 text-xs text-ink-500">
+                <p>주요 원료: 연어, 현미, 완두단백</p>
+                <p>데이터 신뢰도: 라벨 공개 정보 기준</p>
               </div>
             </div>
           </Reveal>
 
           <Reveal delayMs={60}>
-            <p className="mt-4 text-center text-xs leading-relaxed text-ink-800/50">
+            <p className="mt-4 text-center text-xs leading-relaxed text-ink-500">
               위 화면은 서비스 구조를 보여주기 위한 예시입니다. 실제 분석
               결과는 제품 라벨 정보와 반려동물 프로필에 따라 달라집니다.
             </p>

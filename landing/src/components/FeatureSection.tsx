@@ -40,7 +40,7 @@ export function FeatureSection() {
   return (
     <section
       id="features"
-      className="border-b border-ink-800/10 bg-cream-50 py-20 sm:py-24"
+      className="bg-paper py-20 sm:py-28"
       aria-labelledby="features-heading"
     >
       <div className="mx-auto max-w-6xl px-5 sm:px-6">
@@ -52,17 +52,15 @@ export function FeatureSection() {
             description="성분 확인부터 비교까지, 식단 결정에 필요한 만큼만."
           />
         </Reveal>
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f, i) => (
             <Reveal key={f.title} delayMs={i * 60}>
-              <div className="h-full rounded-2xl border border-ink-800/10 bg-white p-6">
-                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gold-soft text-gold-darkest">
-                  <f.icon className="h-5 w-5" />
-                </span>
-                <h3 className="mt-4 text-base font-bold text-ink-900">
+              <div>
+                <f.icon className="h-6 w-6 text-accent" />
+                <h3 className="mt-4 text-base font-bold text-ink-950">
                   {f.title}
                 </h3>
-                <p className="mt-2 text-sm leading-relaxed text-ink-800/75">
+                <p className="mt-2 text-sm leading-relaxed text-ink-700">
                   {f.body}
                 </p>
               </div>

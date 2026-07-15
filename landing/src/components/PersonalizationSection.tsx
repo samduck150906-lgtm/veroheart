@@ -14,14 +14,13 @@ export function PersonalizationSection() {
   return (
     <section
       id="personalization"
-      className="border-b border-ink-800/10 bg-white py-20 sm:py-24"
+      className="bg-paper py-20 sm:py-28"
       aria-labelledby="personalization-heading"
     >
       <div className="mx-auto max-w-6xl px-5 sm:px-6">
-        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
           <Reveal>
             <SectionHeading
-              align="left"
               kicker="맞춤 분석"
               id="personalization-heading"
               title="모든 반려동물에게 같은 답을 보여주지 않아요."
@@ -30,25 +29,23 @@ export function PersonalizationSection() {
           </Reveal>
 
           <Reveal delayMs={100}>
-            <div className="mx-auto w-full max-w-sm rounded-3xl border border-ink-800/10 bg-cream-50 p-6">
-              <div className="flex items-center justify-between">
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-800/50">
-                  <PawIcon className="h-4 w-4 text-gold-deep" />
+            <div className="mx-auto w-full max-w-sm rounded-2xl bg-sand p-6">
+              <div className="flex items-center justify-between text-xs font-semibold text-ink-500">
+                <span className="inline-flex items-center gap-1.5">
+                  <PawIcon className="h-4 w-4 text-accent" />
                   반려동물 프로필
                 </span>
-                <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-ink-800/50 shadow-card">
-                  데모 프로필
-                </span>
+                <span>데모 프로필</span>
               </div>
-              <dl className="mt-5 divide-y divide-ink-800/10">
+              <dl className="mt-5 divide-y divide-ink-950/10">
                 {PROFILE_FIELDS.map((f) => (
                   <div key={f.label} className="flex items-center justify-between py-3">
-                    <dt className="text-sm text-ink-800/60">{f.label}</dt>
-                    <dd className="text-sm font-bold text-ink-900">{f.value}</dd>
+                    <dt className="text-sm text-ink-500">{f.label}</dt>
+                    <dd className="text-sm font-bold text-ink-950">{f.value}</dd>
                   </div>
                 ))}
               </dl>
-              <p className="mt-4 text-xs leading-relaxed text-ink-800/50">
+              <p className="mt-4 text-xs leading-relaxed text-ink-500">
                 실제 이용자의 정보가 아닌 예시 프로필입니다.
               </p>
             </div>

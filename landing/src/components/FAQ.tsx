@@ -45,7 +45,7 @@ export function FAQ() {
   return (
     <section
       id="faq"
-      className="border-b border-ink-800/10 bg-cream-50 py-20 sm:py-24"
+      className="bg-paper py-20 sm:py-28"
       aria-labelledby="faq-heading"
     >
       <div className="mx-auto max-w-3xl px-5 sm:px-6">
@@ -53,14 +53,14 @@ export function FAQ() {
           <SectionHeading kicker="FAQ" id="faq-heading" title="자주 묻는 질문" />
         </Reveal>
 
-        <div className="space-y-3">
+        <div className="divide-y divide-ink-950/10 border-t border-ink-950/10">
           {FAQ_ITEMS.map((item, i) => {
             const open = openIndex === i;
             const panelId = `faq-panel-${i}`;
             const buttonId = `faq-button-${i}`;
             return (
               <Reveal key={item.q} delayMs={i * 40}>
-                <div className="overflow-hidden rounded-2xl border border-ink-800/10 bg-white">
+                <div>
                   <h3>
                     <button
                       id={buttonId}
@@ -68,11 +68,11 @@ export function FAQ() {
                       onClick={() => toggle(i)}
                       aria-expanded={open}
                       aria-controls={panelId}
-                      className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-sm font-semibold text-ink-900 sm:text-base"
+                      className="flex w-full items-center justify-between gap-4 py-5 text-left text-base font-semibold text-ink-950"
                     >
                       {item.q}
                       <ChevronDownIcon
-                        className={`h-4 w-4 shrink-0 text-ink-800/50 transition-transform ${open ? "rotate-180" : ""}`}
+                        className={`h-4 w-4 shrink-0 text-ink-500 transition-transform ${open ? "rotate-180" : ""}`}
                       />
                     </button>
                   </h3>
@@ -84,7 +84,7 @@ export function FAQ() {
                     data-open={open}
                   >
                     <div>
-                      <p className="px-5 pb-4 text-sm leading-relaxed text-ink-800/75">
+                      <p className="pb-5 text-sm leading-relaxed text-ink-700">
                         {item.a}
                       </p>
                     </div>

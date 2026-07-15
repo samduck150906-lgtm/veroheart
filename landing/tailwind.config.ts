@@ -1,38 +1,44 @@
 import type { Config } from "tailwindcss";
 
 /**
- * 베로로 랜딩 톤: 흰색/연한 웜그레이 배경 + 브랜드 옐로우는 CTA·포인트에만.
- * 섹션마다 원색 배경, 네온, 금속광택, 과도한 그림자는 사용하지 않는다.
+ * 베로로 랜딩 톤 v2 — 플랫, 에디토리얼, 절제된 무드.
+ * 그라디언트·글로우·전면 테두리 카드를 없애고 여백과 타이포그래피 대비로 위계를 만든다.
+ * 브랜드 옐로우(accent)는 CTA 배경 1곳에만 단색으로 사용한다.
  */
 export default {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
     extend: {
       colors: {
-        cream: {
-          50: "#fffdf9",
-          100: "#faf6ee",
-          200: "#f3ecdd",
-        },
-        /** 본문·제목용 잉크(중립) */
+        paper: "#ffffff",
+        sand: "#f6f2ea",
+        /** 본문·제목용 잉크(중립, 웜톤 최소화) */
         ink: {
-          700: "#57534e",
-          800: "#44403c",
-          900: "#1c1917",
+          950: "#15140f",
+          900: "#201d17",
+          700: "#4a453c",
+          500: "#847c6d",
+          300: "#c9c2b3",
         },
-        /** 메인 브랜드 — CTA·포인트 전용 옐로우/골드 */
+        /** 브랜드 포인트 — CTA 배경 1곳에만, 항상 단색으로 */
+        accent: {
+          soft: "#f6e9c8",
+          DEFAULT: "#c2810a",
+          dark: "#986707",
+        },
+        /** 하위호환: 기존 gold-* 참조를 accent로 매핑 */
         gold: {
-          soft: "#fdf3d9",
-          muted: "#f0d78c",
-          DEFAULT: "#c8860a",
-          deep: "#a86a08",
-          darker: "#8a5607",
-          darkest: "#6b4306",
+          soft: "#f6e9c8",
+          muted: "#e9d6a3",
+          DEFAULT: "#c2810a",
+          deep: "#986707",
+          darker: "#7c5506",
+          darkest: "#5f4105",
         },
-        /** 분석 결과 상태색 — 실제 분석 예시에만 사용 */
-        safe: { soft: "#e8f4ea", DEFAULT: "#2f8f4e", deep: "#1f6636" },
-        caution: { soft: "#fdf1de", DEFAULT: "#c07a12", deep: "#8f5a0c" },
-        risk: { soft: "#fbe9e7", DEFAULT: "#c94a3c", deep: "#9c372c" },
+        /** 분석 결과 상태색 — 실제 분석 예시에만, 저채도로 */
+        safe: { soft: "#e6efe4", DEFAULT: "#4a7a4f", deep: "#345938" },
+        caution: { soft: "#f3ecdc", DEFAULT: "#96731c", deep: "#6f5514" },
+        risk: { soft: "#f4e5e0", DEFAULT: "#a5493a", deep: "#7c352a" },
       },
       fontFamily: {
         sans: [
@@ -43,14 +49,12 @@ export default {
           "sans-serif",
         ],
       },
-      backgroundImage: {
-        "gold-gradient": "linear-gradient(135deg, #d99a1f 0%, #c8860a 100%)",
-        "warm-fade":
-          "radial-gradient(120% 100% at 50% 0%, #fdf3d9 0%, #fffdf9 55%)",
+      letterSpacing: {
+        tightest: "-0.04em",
       },
       boxShadow: {
-        soft: "0 12px 32px -16px rgba(28, 25, 23, 0.16)",
-        card: "0 4px 18px -6px rgba(28, 25, 23, 0.08)",
+        soft: "0 1px 2px rgba(21, 20, 15, 0.06), 0 12px 28px -18px rgba(21, 20, 15, 0.16)",
+        card: "0 1px 2px rgba(21, 20, 15, 0.05)",
       },
       keyframes: {
         "float-y": {

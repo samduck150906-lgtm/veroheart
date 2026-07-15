@@ -13,7 +13,7 @@ import { Footer } from "@/components/Footer";
 
 export default function HomePage() {
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-cream-50">
+    <div className="relative min-h-screen overflow-x-hidden bg-paper">
       <SiteHeader />
       <main>
         <Hero />

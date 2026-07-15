@@ -25,7 +25,7 @@ export function ProblemSection() {
   return (
     <section
       id="problem"
-      className="border-b border-ink-800/10 bg-white py-20 sm:py-24"
+      className="bg-sand py-20 sm:py-28"
       aria-labelledby="problem-heading"
     >
       <div className="mx-auto max-w-6xl px-5 sm:px-6">
@@ -37,14 +37,12 @@ export function ProblemSection() {
             description="원재료명과 보장성분만으로는 우리 아이에게 맞는 제품인지 판단하기 어렵습니다."
           />
         </Reveal>
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid divide-y divide-ink-950/10 border-t border-ink-950/10 sm:grid-cols-2 sm:divide-x sm:divide-y-0 sm:border-x">
           {PAIN_POINTS.map((item, i) => (
             <Reveal key={item.text} delayMs={i * 70}>
-              <div className="flex h-full items-start gap-4 rounded-2xl border border-ink-800/10 bg-cream-50 px-6 py-5">
-                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-gold-deep shadow-card">
-                  <item.icon className="h-4 w-4" />
-                </span>
-                <p className="text-sm leading-relaxed text-ink-800 sm:text-base">
+              <div className="flex h-full items-start gap-4 px-1 py-7 sm:px-8">
+                <item.icon className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
+                <p className="text-base leading-relaxed text-ink-900">
                   {item.text}
                 </p>
               </div>

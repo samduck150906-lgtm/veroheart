@@ -7,7 +7,7 @@ const COUPANG_PARTNERS_DISCLOSURE =
 
 export function Footer() {
   return (
-    <footer className="border-t border-ink-800/10 bg-cream-100 py-14" aria-label="푸터">
+    <footer className="border-t border-ink-950/10 bg-paper py-14" aria-label="푸터">
       <div className="mx-auto flex max-w-6xl flex-col gap-10 px-5 sm:px-6 lg:flex-row lg:items-start lg:justify-between">
         <div className="max-w-sm">
           <Image
@@ -15,9 +15,9 @@ export function Footer() {
             alt="VeRoRo"
             width={120}
             height={44}
-            className="h-8 w-auto"
+            className="h-7 w-auto"
           />
-          <p className="mt-4 space-y-1 text-xs leading-relaxed text-ink-800/60">
+          <p className="mt-4 space-y-1 text-xs leading-relaxed text-ink-500">
             <span className="block">
               {COMPANY.tradeName} · 대표 {COMPANY.representative}
             </span>
@@ -29,7 +29,7 @@ export function Footer() {
               고객센터 {COMPANY.phone} · {COMPANY.email}
             </span>
           </p>
-          <p className="mt-4 text-[11px] leading-relaxed text-ink-800/45">
+          <p className="mt-4 text-[11px] leading-relaxed text-ink-300">
             {COUPANG_PARTNERS_DISCLOSURE}
           </p>
         </div>
@@ -37,25 +37,25 @@ export function Footer() {
         <nav aria-label="정책" className="flex flex-wrap gap-x-8 gap-y-3 text-sm">
           <Link
             href="/terms"
-            className="font-medium text-ink-800/80 underline-offset-4 transition hover:text-gold-deep hover:underline"
+            className="font-medium text-ink-700 underline-offset-4 transition hover:text-ink-950 hover:underline"
           >
             이용약관
           </Link>
           <Link
             href="/privacy"
-            className="font-medium text-ink-800/80 underline-offset-4 transition hover:text-gold-deep hover:underline"
+            className="font-medium text-ink-700 underline-offset-4 transition hover:text-ink-950 hover:underline"
           >
             개인정보처리방침
           </Link>
           <Link
             href="/refund"
-            className="font-medium text-ink-800/80 underline-offset-4 transition hover:text-gold-deep hover:underline"
+            className="font-medium text-ink-700 underline-offset-4 transition hover:text-ink-950 hover:underline"
           >
             취소 및 환불 안내
           </Link>
           <a
             href={CONTACT_MAILTO("[VeRoRo] 문의")}
-            className="font-medium text-ink-800/80 underline-offset-4 transition hover:text-gold-deep hover:underline"
+            className="font-medium text-ink-700 underline-offset-4 transition hover:text-ink-950 hover:underline"
           >
             고객센터 문의
           </a>
@@ -68,7 +68,7 @@ export function Footer() {
                 href={SOCIAL_INSTAGRAM}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-ink-800/15 bg-white text-gold-deep transition hover:bg-gold-soft"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-ink-950/15 text-ink-700 transition hover:bg-sand"
                 aria-label="Instagram"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
@@ -83,7 +83,7 @@ export function Footer() {
                 href={SOCIAL_YOUTUBE}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-ink-800/15 bg-white text-gold-deep transition hover:bg-gold-soft"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-ink-950/15 text-ink-700 transition hover:bg-sand"
                 aria-label="YouTube"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
@@ -95,7 +95,7 @@ export function Footer() {
           </div>
         )}
       </div>
-      <p className="mx-auto mt-10 max-w-6xl px-5 text-center text-xs text-ink-800/45 sm:px-6">
+      <p className="mx-auto mt-10 max-w-6xl px-5 text-center text-xs text-ink-300 sm:px-6">
         © {new Date().getFullYear()} {COMPANY.tradeName}. All rights reserved.
       </p>
     </footer>

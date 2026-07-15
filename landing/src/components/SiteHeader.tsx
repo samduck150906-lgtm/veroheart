@@ -34,12 +34,10 @@ export function SiteHeader() {
     <header className="fixed inset-x-0 top-0 z-50">
       <div
         className={`transition-all duration-300 ${
-          scrolled
-            ? "glass border-b border-gold-muted/40 shadow-sm"
-            : "border-b border-transparent"
+          scrolled ? "glass border-b border-ink-950/10" : "border-b border-transparent"
         }`}
       >
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-6">
           <Link
             href="/"
             aria-label="베로로 홈"
@@ -52,16 +50,16 @@ export function SiteHeader() {
               width={132}
               height={48}
               priority
-              className="h-8 w-auto sm:h-9"
+              className="h-7 w-auto sm:h-8"
             />
           </Link>
 
-          <nav aria-label="주요 메뉴" className="hidden items-center gap-1 md:flex">
+          <nav aria-label="주요 메뉴" className="hidden items-center gap-8 md:flex">
             {NAV_LINKS.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
-                className="rounded-full px-4 py-2 text-sm font-semibold text-ink-800/80 transition hover:bg-gold-soft/70 hover:text-gold-darker"
+                className="text-sm font-semibold text-ink-700 transition hover:text-ink-950"
               >
                 {link.label}
               </a>
@@ -72,7 +70,7 @@ export function SiteHeader() {
             <a
               href="#waitlist"
               onClick={() => trackEvent("hero_waitlist_click", { from: "header" })}
-              className="hidden rounded-full bg-gold-gradient px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-deep sm:inline-flex"
+              className="hidden rounded-lg bg-accent px-5 py-2.5 text-sm font-bold text-ink-950 transition hover:bg-accent-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:inline-flex"
             >
               출시 알림 받기
             </a>
@@ -83,7 +81,7 @@ export function SiteHeader() {
               aria-expanded={open}
               aria-controls="mobile-nav"
               aria-label={open ? "메뉴 닫기" : "메뉴 열기"}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-gold-muted/60 bg-white/70 text-ink-900 transition hover:bg-gold-soft md:hidden"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-ink-950/15 text-ink-950 transition hover:bg-sand md:hidden"
             >
               <svg
                 width="20"
@@ -116,7 +114,7 @@ export function SiteHeader() {
       {/* 모바일 드로어 */}
       <div id="mobile-nav" className={`md:hidden ${open ? "pointer-events-auto" : "pointer-events-none"}`}>
         <div
-          className={`fixed inset-0 top-0 z-40 bg-ink-900/20 backdrop-blur-sm transition-opacity duration-300 ${
+          className={`fixed inset-0 top-0 z-40 bg-ink-950/25 transition-opacity duration-300 ${
             open ? "opacity-100" : "opacity-0"
           }`}
           onClick={() => setOpen(false)}
@@ -124,7 +122,7 @@ export function SiteHeader() {
         />
         <nav
           aria-label="모바일 메뉴"
-          className={`absolute inset-x-3 top-[64px] z-50 origin-top rounded-3xl border border-gold-muted/50 glass p-3 shadow-soft transition-all duration-300 ${
+          className={`absolute inset-x-3 top-[64px] z-50 origin-top rounded-2xl border border-ink-950/10 bg-paper p-3 shadow-soft transition-all duration-300 ${
             open ? "translate-y-0 scale-100 opacity-100" : "-translate-y-3 scale-95 opacity-0"
           }`}
         >
@@ -133,7 +131,7 @@ export function SiteHeader() {
               key={link.href}
               href={link.href}
               onClick={() => setOpen(false)}
-              className="block rounded-2xl px-4 py-3 text-base font-semibold text-ink-900 transition hover:bg-gold-soft"
+              className="block rounded-xl px-4 py-3 text-base font-semibold text-ink-950 transition hover:bg-sand"
             >
               {link.label}
             </a>
@@ -144,7 +142,7 @@ export function SiteHeader() {
               setOpen(false);
               trackEvent("hero_waitlist_click", { from: "mobile_menu" });
             }}
-            className="mt-1 block rounded-2xl bg-gold-gradient px-4 py-3 text-center text-base font-bold text-white shadow-sm"
+            className="mt-1 block rounded-lg bg-accent px-4 py-3 text-center text-base font-bold text-ink-950"
           >
             출시 알림 받기
           </a>
