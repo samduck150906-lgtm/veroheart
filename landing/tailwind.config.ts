@@ -1,122 +1,65 @@
 import type { Config } from "tailwindcss";
 
-/** 랜딩 메인: 진한 옐로우(골드/앰버). 텍스트는 가독용 딥 브라운/스톤. */
+/**
+ * 베로로 랜딩 톤: 흰색/연한 웜그레이 배경 + 브랜드 옐로우는 CTA·포인트에만.
+ * 섹션마다 원색 배경, 네온, 금속광택, 과도한 그림자는 사용하지 않는다.
+ */
 export default {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
     extend: {
       colors: {
         cream: {
-          50: "#fffdf7",
-          100: "#fff9eb",
-          200: "#ffefc4",
+          50: "#fffdf9",
+          100: "#faf6ee",
+          200: "#f3ecdd",
         },
-        /** 본문·제목용 (녹색 톤 제거) */
+        /** 본문·제목용 잉크(중립) */
         ink: {
           700: "#57534e",
           800: "#44403c",
           900: "#1c1917",
         },
-        /** 메인 브랜드 — 진한 옐로우 / 골드 */
+        /** 메인 브랜드 — CTA·포인트 전용 옐로우/골드 */
         gold: {
-          soft: "#fff8e1",
-          muted: "#fde68a",
-          DEFAULT: "#d97706",
-          deep: "#b45309",
-          darker: "#92400e",
-          darkest: "#78350f",
+          soft: "#fdf3d9",
+          muted: "#f0d78c",
+          DEFAULT: "#c8860a",
+          deep: "#a86a08",
+          darker: "#8a5607",
+          darkest: "#6b4306",
         },
-        /** 보조 포인트 — 따뜻한 코랄/선셋으로 그라디언트 대비 */
-        ember: {
-          soft: "#ffedd5",
-          DEFAULT: "#f97316",
-          deep: "#ea580c",
-        },
-        /**
-         * 기존 클래스명 호환: sky-* → 골드 포인트,
-         * forest-* → 잉크(중립)로 매핑해 한 번에 톤 전환
-         */
-        forest: {
-          700: "#57534e",
-          800: "#44403c",
-          900: "#1c1917",
-        },
-        sky: {
-          soft: "#fffbeb",
-          DEFAULT: "#d97706",
-          deep: "#b45309",
-        },
-        peach: {
-          soft: "#fef3c7",
-          DEFAULT: "#f59e0b",
-          deep: "#d97706",
-        },
+        /** 분석 결과 상태색 — 실제 분석 예시에만 사용 */
+        safe: { soft: "#e8f4ea", DEFAULT: "#2f8f4e", deep: "#1f6636" },
+        caution: { soft: "#fdf1de", DEFAULT: "#c07a12", deep: "#8f5a0c" },
+        risk: { soft: "#fbe9e7", DEFAULT: "#c94a3c", deep: "#9c372c" },
       },
       fontFamily: {
-        sans: ["var(--font-jakarta)", "system-ui", "sans-serif"],
+        sans: [
+          "Pretendard Variable",
+          "Pretendard",
+          "-apple-system",
+          "system-ui",
+          "sans-serif",
+        ],
       },
       backgroundImage: {
-        "gold-gradient":
-          "linear-gradient(135deg, #f59e0b 0%, #d97706 45%, #ea580c 100%)",
-        "gold-radial":
-          "radial-gradient(120% 120% at 50% 0%, #fff9eb 0%, #fff3d6 40%, #ffe6b0 100%)",
-        "hero-mesh":
-          "radial-gradient(60% 70% at 15% 10%, rgba(251,191,36,0.35) 0%, transparent 60%), radial-gradient(55% 65% at 90% 15%, rgba(249,115,22,0.22) 0%, transparent 60%), radial-gradient(70% 80% at 60% 100%, rgba(253,230,138,0.45) 0%, transparent 65%)",
-        "dot-grid":
-          "radial-gradient(rgba(146,64,14,0.14) 1px, transparent 1px)",
-        "grid-lines":
-          "linear-gradient(to right, rgba(146,64,14,0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(146,64,14,0.06) 1px, transparent 1px)",
-        "sheen":
-          "linear-gradient(110deg, transparent 25%, rgba(255,255,255,0.5) 50%, transparent 75%)",
+        "gold-gradient": "linear-gradient(135deg, #d99a1f 0%, #c8860a 100%)",
+        "warm-fade":
+          "radial-gradient(120% 100% at 50% 0%, #fdf3d9 0%, #fffdf9 55%)",
       },
       boxShadow: {
-        soft: "0 18px 50px -12px rgba(180, 83, 9, 0.18)",
-        card: "0 8px 30px -8px rgba(146, 64, 14, 0.1)",
-        glow: "0 20px 60px -12px rgba(217, 119, 6, 0.45)",
-        "glow-lg": "0 30px 90px -20px rgba(234, 88, 12, 0.5)",
-        float: "0 24px 70px -18px rgba(120, 53, 15, 0.28)",
+        soft: "0 12px 32px -16px rgba(28, 25, 23, 0.16)",
+        card: "0 4px 18px -6px rgba(28, 25, 23, 0.08)",
       },
       keyframes: {
         "float-y": {
           "0%, 100%": { transform: "translateY(0px)" },
-          "50%": { transform: "translateY(-14px)" },
-        },
-        "float-y-slow": {
-          "0%, 100%": { transform: "translateY(0px)" },
-          "50%": { transform: "translateY(-22px)" },
-        },
-        blob: {
-          "0%, 100%": { transform: "translate(0px, 0px) scale(1)" },
-          "33%": { transform: "translate(24px, -30px) scale(1.08)" },
-          "66%": { transform: "translate(-20px, 18px) scale(0.94)" },
-        },
-        shimmer: {
-          "0%": { backgroundPosition: "-200% 0" },
-          "100%": { backgroundPosition: "200% 0" },
-        },
-        marquee: {
-          "0%": { transform: "translateX(0)" },
-          "100%": { transform: "translateX(-50%)" },
-        },
-        "pulse-ring": {
-          "0%": { transform: "scale(0.9)", opacity: "0.7" },
-          "70%": { transform: "scale(1.5)", opacity: "0" },
-          "100%": { transform: "scale(1.5)", opacity: "0" },
-        },
-        "gradient-pan": {
-          "0%, 100%": { backgroundPosition: "0% 50%" },
-          "50%": { backgroundPosition: "100% 50%" },
+          "50%": { transform: "translateY(-8px)" },
         },
       },
       animation: {
-        "float-y": "float-y 6s ease-in-out infinite",
-        "float-y-slow": "float-y-slow 9s ease-in-out infinite",
-        blob: "blob 16s ease-in-out infinite",
-        "blob-slow": "blob 22s ease-in-out infinite",
-        shimmer: "shimmer 2.4s linear infinite",
-        marquee: "marquee 28s linear infinite",
-        "pulse-ring": "pulse-ring 2.6s cubic-bezier(0.4,0,0.6,1) infinite",
-        "gradient-pan": "gradient-pan 8s ease infinite",
+        "float-y": "float-y 7s ease-in-out infinite",
       },
     },
   },
