@@ -6,7 +6,6 @@ import { AnalysisPreview } from "@/components/AnalysisPreview";
 import { FeatureSection } from "@/components/FeatureSection";
 import { PersonalizationSection } from "@/components/PersonalizationSection";
 import { TrustSection } from "@/components/TrustSection";
-import { AppShowcase } from "@/components/AppShowcase";
 import { WaitlistSection } from "@/components/WaitlistSection";
 import { FAQ } from "@/components/FAQ";
 import { FinalCTA } from "@/components/FinalCTA";
@@ -24,7 +23,6 @@ export default function HomePage() {
         <FeatureSection />
         <PersonalizationSection />
         <TrustSection />
-        <AppShowcase />
         <WaitlistSection />
         <FAQ />
         <FinalCTA />
