@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Cat, Dog, Heart, Layers, Star } from 'lucide-react';
 import type { Product } from '../types';
 import { useStore } from '../store/useStore';
-import { calculateCompatibilityScore } from '../utils/score';
+import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import { normalizeProductDisplayName } from '../utils/productDisplay';
 
 /** 추천 사유 문구의 톤(신호등)을 판정해 pill 색상을 정한다. */
@@ -65,7 +65,7 @@ export default function ProductCard({
   note,
 }: ProductCardProps) {
   const { profile, favorites, toggleFavorite } = useStore();
-  const score = calculateCompatibilityScore(product, profile);
+  const score = resolveProductDisplayVerdict(product, profile).score;
   const isFav = favorites.includes(product.id);
   const petMeta = petTypeMeta(product.targetPetType);
 
