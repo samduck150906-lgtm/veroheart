@@ -7,8 +7,71 @@ export interface UserPetProfile {
   age: number;
   /** kg, 선택 — DB 미연동 시에도 폼에만 반영 가능 */
   weightKg?: number;
+  /** 품종(선택) — pets.breed */
+  breed?: string;
+  /** 프로필 사진 URL(선택) — pets.image_url */
+  imageUrl?: string;
   healthConcerns: string[];
   allergies: string[];
+}
+
+/** 식이 다이어리에서 다루는 제품 유형 — DB products.product_type 규칙과 동일 */
+export type FeedingProductType = 'food' | 'snack' | 'supplement' | 'custom';
+
+/** 시간대(선택) */
+export type MealPeriod = 'morning' | 'lunch' | 'dinner' | 'snack' | 'other';
+
+/** 반려동물 일별 섭취 기록 (pet_feeding_logs) — 클라이언트 모델 */
+export interface PetFeedingLog {
+  id: string;
+  userId: string;
+  petId: string;
+  /** 공식 제품 참조. 직접 입력 시 null */
+  productId: string | null;
+  productType: FeedingProductType;
+  /** 직접 입력 제품명 */
+  customProductName: string | null;
+  isCustomProduct: boolean;
+  /** YYYY-MM-DD */
+  feedingDate: string;
+  /** HH:MM (선택) */
+  feedingTime: string | null;
+  mealPeriod: MealPeriod | null;
+  amount: number | null;
+  unit: string | null;
+  memo: string | null;
+  /** 1~5 기호도(선택) */
+  preferenceLevel: number | null;
+  reactionNote: string | null;
+  imageUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+  /** 조인된 제품 요약(있을 때) — 성분 분석 보기/이미지 표기용 */
+  product?: {
+    id: string;
+    name: string;
+    brand: string;
+    imageUrl: string;
+    productType: string;
+  } | null;
+}
+
+/** 다이어리 기록 저장 입력값(생성/수정 공용) */
+export interface FeedingLogInput {
+  petId: string;
+  productId: string | null;
+  productType: FeedingProductType;
+  customProductName: string | null;
+  isCustomProduct: boolean;
+  feedingDate: string;
+  feedingTime: string | null;
+  mealPeriod: MealPeriod | null;
+  amount: number | null;
+  unit: string | null;
+  memo: string | null;
+  preferenceLevel: number | null;
+  reactionNote: string | null;
+  imageUrl: string | null;
 }
 
 export interface Ingredient {
@@ -110,6 +173,9 @@ export interface SupabasePet {
   name: string;
   pet_type: 'dog' | 'cat';
   age_group: 'baby' | 'adult' | 'senior';
+  weight?: number | string | null;
+  breed?: string | null;
+  image_url?: string | null;
   conditions: string[] | null;
   allergies: string[] | null;
   created_at: string;

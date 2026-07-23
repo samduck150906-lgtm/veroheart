@@ -20,7 +20,6 @@ const Comparison = lazy(() => import('./pages/Comparison'));
 const Cart = lazy(() => import('./pages/Cart'));
 const AnalysisResult = lazy(() => import('./pages/AnalysisResult'));
 const Scan = lazy(() => import('./pages/Scan'));
-const Ranking = lazy(() => import('./pages/Ranking'));
 const Brand = lazy(() => import('./pages/Brand'));
 const Login = lazy(() => import('./pages/Login'));
 const ViralEvent = lazy(() => import('./pages/ViralEvent'));
@@ -121,7 +120,8 @@ function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="search" element={<Search />} />
-          <Route path="ranking" element={<Ranking />} />
+          {/* 구 /ranking(인기·랭킹) 경로는 제거 — 검색으로 리다이렉트 */}
+          <Route path="ranking" element={<Navigate to="/search" replace />} />
           {/* 인증 페이지는 Login으로 일원화 — 구 /auth 링크·북마크는 /login으로 리다이렉트 */}
           <Route path="auth" element={<Navigate to="/login" replace />} />
           <Route path="login" element={<Login />} />
