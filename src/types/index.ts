@@ -13,6 +13,8 @@ export interface UserPetProfile {
   imageUrl?: string;
   healthConcerns: string[];
   allergies: string[];
+  /** 제품별 과거 기호도 평균(1~5). pet_feeding_logs 집계값을 연결할 때 사용 */
+  productPreferences?: Record<string, number>;
 }
 
 /** 식이 다이어리에서 다루는 제품 유형 — DB products.product_type 규칙과 동일 */
@@ -157,5 +159,3 @@ export interface SupabasePet {
   allergies: string[] | null;
   created_at: string;
 }
-
-
