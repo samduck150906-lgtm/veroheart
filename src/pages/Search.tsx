@@ -14,7 +14,6 @@ import {
   Sparkles,
   Search as SearchIcon,
   Clock,
-  TrendingUp,
 } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import StateView from '../components/StateView';
@@ -56,10 +55,7 @@ function resolveCategoryFromSearchParams(category: string | null): string {
   return category ?? '전체';
 }
 
-/** 인기 검색어(급상승) — 홈과 동일 데이터 소스 재사용 상위 8개 */
-const POPULAR_KEYWORDS = ['관절 영양제', '저알러지 사료', '그레인프리', '시니어 강아지', '노령묘 습식', '수제 간식', '치석 제거', '프로바이오틱스'];
-
-/** 추천 키워드(증상·목적) chip */
+/** 추천 키워드(증상·목적) chip — 성분·목적 기반 탐색 보조(인기·순위 아님) */
 const SYMPTOM_KEYWORDS = ['눈물', '알러지', '다이어트', '관절', '피부', '노령견', '치석', '소화'];
 
 const RECENT_KEY = 'vh_recent_searches';
@@ -437,30 +433,6 @@ export default function Search() {
             ))}
           </div>
         </div>
-
-        {/* 인기 검색어 (검색어 없을 때만) */}
-        {showDiscovery && (
-          <div style={{ marginTop: '14px', marginBottom: '2px' }}>
-            <div className="search-block-label">
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                <TrendingUp size={13} /> 인기 검색어
-              </span>
-            </div>
-            <div className="search-chip-row">
-              {POPULAR_KEYWORDS.map((kw, i) => (
-                <button
-                  key={kw}
-                  type="button"
-                  className="search-chip"
-                  onClick={() => applyKeyword(kw)}
-                >
-                  <span className={`search-chip-rank${i < 3 ? ' top3' : ''}`}>{i + 1}</span>
-                  {kw}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
 
         <div style={{ marginBottom: '14px' }}>
           <p style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '0.04em' }}>반려동물</p>

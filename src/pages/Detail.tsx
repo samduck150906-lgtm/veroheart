@@ -18,9 +18,12 @@ import {
   Trash2,
   MessageSquare,
   Share2,
+  UtensilsCrossed,
 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { useStore } from '../store/useStore';
+import FeedingLogForm from '../components/diary/FeedingLogForm';
+import { productTypeToFeedingType } from '../components/diary/feedingConstants';
 import { generateAnalysisReport } from '../utils/analysis';
 import BottomSheet from '../components/BottomSheet';
 import { TossCard } from '../components/TossUI';
@@ -75,10 +78,14 @@ export default function Detail() {
     addToCart,
     products,
     userId,
+    pets,
+    activePetId,
     trackRecentView,
     favorites,
     toggleFavorite,
   } = useStore();
+
+  const [logFormOpen, setLogFormOpen] = useState(false);
 
   type ReviewRow = {
     id: string;
@@ -158,6 +165,20 @@ export default function Detail() {
 
   const handleScrollTop = () => {
     scrollAppToTop(true); // reduced-motion 사용자는 유틸이 즉시 이동으로 처리
+  };
+
+  // "우리 아이가 먹었어요" — 로그인/반려동물 확인 후 기록 시트 열기
+  const openFeedingLog = () => {
+    if (!userId) {
+      navigate('/login');
+      return;
+    }
+    if (pets.length === 0) {
+      notify.info('먼저 반려동물을 등록해주세요.');
+      navigate('/profile?tab=pets');
+      return;
+    }
+    setLogFormOpen(true);
   };
 
   const handleShare = async () => {
@@ -412,6 +433,32 @@ export default function Detail() {
       <ScoreGauge score={safetyScore} oneLiner={report?.summary} />
       <GlanceGrid tiles={glanceTiles} />
       <FitForPetCard petName={profile.name} percent={breakdown.total} chips={fitChips} reasons={breakdown.reasons} />
+
+      {/* 우리 아이가 먹었어요 — 성분 분석 제품을 섭취 다이어리에 바로 기록 */}
+      <button
+        type="button"
+        onClick={openFeedingLog}
+        className="ui-press"
+        style={{
+          width: '100%',
+          minHeight: '52px',
+          marginBottom: '24px',
+          padding: '14px 18px',
+          borderRadius: '16px',
+          border: '1px solid rgba(21, 179, 107, 0.35)',
+          background: 'var(--pdp-safe-bg, #E7F8F0)',
+          color: '#15803D',
+          fontWeight: 800,
+          fontSize: '15px',
+          cursor: 'pointer',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px',
+        }}
+      >
+        <UtensilsCrossed size={18} /> 우리 아이가 먹었어요 · 섭취 기록 추가
+      </button>
 
       <TossCard style={{ marginBottom: '24px', padding: '20px' }}>
         <div style={{ marginBottom: '8px', fontSize: '13px', color: 'var(--text-light)', fontWeight: 700 }}>{product.brand}</div>
@@ -696,6 +743,24 @@ export default function Detail() {
         buyHref={purchase.isDirect ? purchase.url : null}
         buyLabel={purchase.ctaLabel}
         onBuy={() => { addToCart(product.id, 1); navigate('/cart'); }}
+      />
+
+      <FeedingLogForm
+        isOpen={logFormOpen}
+        onClose={() => setLogFormOpen(false)}
+        pets={pets}
+        initialPetId={activePetId}
+        userId={userId}
+        presetProduct={{
+          id: product.id,
+          name: product.name,
+          brand: product.brand,
+          imageUrl: product.imageUrl,
+          productType: productTypeToFeedingType(product.category),
+        }}
+        onSaved={() => {
+          notify.success(`${profile.name}의 섭취 기록에 추가했어요.`);
+        }}
       />
     </div>
   );

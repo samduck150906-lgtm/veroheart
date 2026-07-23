@@ -1,12 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 import { notify } from '../store/useNotification';
-import type { Product } from '../types';
-import type { SupabasePet } from '../types';
+import type { FeedingLogInput, PetFeedingLog, Product, SupabasePet } from '../types';
 import {
+  mapFeedingLogFromRow,
   mapProductFromSupabaseRow,
   type SupabaseBrandNameRow,
   type SupabaseCartItemRow,
   type SupabaseFavoriteRow,
+  type SupabaseFeedingLogRow,
   type SupabaseProductRow,
   type SupabaseRecentViewRow,
 } from './supabaseRowTypes';
@@ -127,6 +128,16 @@ export async function saveUserPet(petData: Partial<SupabasePet>) {
     notify.success('프로필이 업데이트되었습니다.');
   }
   return data as SupabasePet;
+}
+
+/** 반려동물 삭제. RLS 로 본인 소유 행만 삭제된다(user_id 조건 병행). */
+export async function deleteUserPet(petId: string, userId: string): Promise<boolean> {
+  const { error } = await supabase.from('pets').delete().match({ id: petId, user_id: userId });
+  if (error) {
+    notify.error('반려동물 삭제에 실패했습니다.');
+    return false;
+  }
+  return true;
 }
 
 // Products
@@ -427,6 +438,207 @@ export async function getProductsByBrand(brandName: string): Promise<Product[]> 
     .eq('brand_name', brandName);
   if (error) return [];
   return (data as SupabaseProductRow[]).map(mapProductFromSupabaseRow);
+}
+
+// ─── 식이 다이어리 (pet_feeding_logs) ────────────────────────────────────────
+//
+// 모든 함수는 로그인 세션의 auth.uid() 로 RLS 검증을 받는다. 클라이언트가 user_id
+// 를 조작해도 서버(RLS)가 본인 데이터만 허용하므로 다른 사용자 기록에 접근할 수 없다.
+
+const FEEDING_LOG_SELECT = `
+  *,
+  products (
+    id,
+    name,
+    brand_name,
+    image_url,
+    product_type
+  )
+` as const;
+
+/** 다이어리 제품 검색 — 유형(사료/간식/영양제) + 제품명/브랜드명. 기존 products DB 사용 */
+export async function searchDiaryProducts(
+  query: string,
+  productType?: 'food' | 'snack' | 'supplement',
+): Promise<Product[]> {
+  if (!isSupabaseConfigured) return [];
+  let builder = supabase
+    .from('products')
+    .select(`
+      *,
+      product_ingredients (
+        ingredient_id,
+        ingredients (id, name_ko, risk_level)
+      )
+    `)
+    .limit(30);
+
+  if (productType) {
+    builder = builder.eq('product_type', productType);
+  }
+  const q = query.trim();
+  if (q) {
+    builder = builder.or(`name.ilike.%${q}%,brand_name.ilike.%${q}%`);
+  }
+
+  const { data, error } = await builder;
+  if (error) {
+    console.error('searchDiaryProducts error:', error.message);
+    return [];
+  }
+  return (data as SupabaseProductRow[]).map(mapProductFromSupabaseRow);
+}
+
+/** 특정 반려동물의 특정 날짜 섭취 기록 목록 (시간 오름차순) */
+export async function getFeedingLogsByDate(
+  petId: string,
+  date: string,
+): Promise<PetFeedingLog[]> {
+  if (!isSupabaseConfigured || !petId || !date) return [];
+  const { data, error } = await supabase
+    .from('pet_feeding_logs')
+    .select(FEEDING_LOG_SELECT)
+    .eq('pet_id', petId)
+    .eq('feeding_date', date)
+    .order('feeding_time', { ascending: true, nullsFirst: true })
+    .order('created_at', { ascending: true });
+  if (error) {
+    console.error('getFeedingLogsByDate error:', error.message);
+    return [];
+  }
+  return (data as SupabaseFeedingLogRow[]).map(mapFeedingLogFromRow);
+}
+
+/**
+ * 특정 반려동물의 월간 기록 요약. 달력 점/아이콘 표기에 필요한 최소 필드만 조회.
+ * @param month 1~12
+ */
+export async function getFeedingLogMonth(
+  petId: string,
+  year: number,
+  month: number,
+): Promise<{ feedingDate: string; productType: string }[]> {
+  if (!isSupabaseConfigured || !petId) return [];
+  const start = `${year}-${String(month).padStart(2, '0')}-01`;
+  // 다음 달 1일 (미포함 상한)
+  const endYear = month === 12 ? year + 1 : year;
+  const endMonth = month === 12 ? 1 : month + 1;
+  const end = `${endYear}-${String(endMonth).padStart(2, '0')}-01`;
+
+  const { data, error } = await supabase
+    .from('pet_feeding_logs')
+    .select('feeding_date, product_type')
+    .eq('pet_id', petId)
+    .gte('feeding_date', start)
+    .lt('feeding_date', end);
+  if (error) {
+    console.error('getFeedingLogMonth error:', error.message);
+    return [];
+  }
+  return ((data ?? []) as { feeding_date: string; product_type: string | null }[]).map((r) => ({
+    feedingDate: r.feeding_date,
+    productType: r.product_type ?? 'food',
+  }));
+}
+
+/** 월간 전체 기록(목록 보기용). 날짜 내림차순 → 시간 오름차순. @param month 1~12 */
+export async function getFeedingLogsByMonthFull(
+  petId: string,
+  year: number,
+  month: number,
+): Promise<PetFeedingLog[]> {
+  if (!isSupabaseConfigured || !petId) return [];
+  const start = `${year}-${String(month).padStart(2, '0')}-01`;
+  const endYear = month === 12 ? year + 1 : year;
+  const endMonth = month === 12 ? 1 : month + 1;
+  const end = `${endYear}-${String(endMonth).padStart(2, '0')}-01`;
+
+  const { data, error } = await supabase
+    .from('pet_feeding_logs')
+    .select(FEEDING_LOG_SELECT)
+    .eq('pet_id', petId)
+    .gte('feeding_date', start)
+    .lt('feeding_date', end)
+    .order('feeding_date', { ascending: false })
+    .order('feeding_time', { ascending: true, nullsFirst: true });
+  if (error) {
+    console.error('getFeedingLogsByMonthFull error:', error.message);
+    return [];
+  }
+  return (data as SupabaseFeedingLogRow[]).map(mapFeedingLogFromRow);
+}
+
+function toFeedingLogRowPayload(userId: string, input: FeedingLogInput) {
+  return {
+    user_id: userId,
+    pet_id: input.petId,
+    product_id: input.isCustomProduct ? null : input.productId,
+    product_type: input.productType,
+    custom_product_name: input.isCustomProduct ? input.customProductName : null,
+    is_custom_product: input.isCustomProduct,
+    feeding_date: input.feedingDate,
+    feeding_time: input.feedingTime || null,
+    meal_period: input.mealPeriod,
+    amount: input.amount,
+    unit: input.unit,
+    memo: input.memo,
+    preference_level: input.preferenceLevel,
+    reaction_note: input.reactionNote,
+    image_url: input.imageUrl,
+  };
+}
+
+/** 섭취 기록 생성 */
+export async function createFeedingLog(
+  userId: string,
+  input: FeedingLogInput,
+): Promise<PetFeedingLog | null> {
+  const { data, error } = await supabase
+    .from('pet_feeding_logs')
+    .insert(toFeedingLogRowPayload(userId, input))
+    .select(FEEDING_LOG_SELECT)
+    .single();
+  if (error) {
+    console.error('createFeedingLog error:', error.message);
+    notify.error('섭취 기록 저장에 실패했습니다.');
+    return null;
+  }
+  return mapFeedingLogFromRow(data as SupabaseFeedingLogRow);
+}
+
+/** 섭취 기록 수정 — 본인 기록만(RLS + user_id 조건) */
+export async function updateFeedingLog(
+  logId: string,
+  userId: string,
+  input: FeedingLogInput,
+): Promise<PetFeedingLog | null> {
+  const payload = toFeedingLogRowPayload(userId, input);
+  const { data, error } = await supabase
+    .from('pet_feeding_logs')
+    .update(payload)
+    .match({ id: logId, user_id: userId })
+    .select(FEEDING_LOG_SELECT)
+    .single();
+  if (error) {
+    console.error('updateFeedingLog error:', error.message);
+    notify.error('섭취 기록 수정에 실패했습니다.');
+    return null;
+  }
+  return mapFeedingLogFromRow(data as SupabaseFeedingLogRow);
+}
+
+/** 섭취 기록 삭제 — 본인 기록만 */
+export async function deleteFeedingLog(logId: string, userId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('pet_feeding_logs')
+    .delete()
+    .match({ id: logId, user_id: userId });
+  if (error) {
+    console.error('deleteFeedingLog error:', error.message);
+    notify.error('섭취 기록 삭제에 실패했습니다.');
+    return false;
+  }
+  return true;
 }
 
 

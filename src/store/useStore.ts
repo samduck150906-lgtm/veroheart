@@ -8,6 +8,7 @@ import {
   getInitialSessionUser,
   getUserPets,
   saveUserPet,
+  deleteUserPet,
   fetchCartItems,
   saveCartItem,
   removeCartItemFromDB,
@@ -19,7 +20,11 @@ import {
   getRecentViews,
   signOut as supabaseSignOut
 } from '../lib/supabase';
-import { mapProductFromSupabaseRow } from '../lib/supabaseRowTypes';
+import {
+  mapProductFromSupabaseRow,
+  mapPetProfileFromRow,
+  ageGroupFromAge,
+} from '../lib/supabaseRowTypes';
 
 let adminDataSyncChannel: RealtimeChannel | null = null;
 let adminDataSyncTimer: ReturnType<typeof setTimeout> | null = null;
@@ -28,8 +33,21 @@ interface StoreState {
   userId: string | null;
   isLoggedIn: boolean;
   signOut: () => Promise<void>;
+  /** 현재 활성(선택된) 반려동물 프로필. 앱 전역 추천·분석 기준. */
   profile: UserPetProfile;
+  /** 사용자가 등록한 모든 반려동물 (다이어리·프로필 선택용) */
+  pets: UserPetProfile[];
+  /** 활성 반려동물 id (pets 중 하나) */
+  activePetId: string | null;
   updateProfile: (updates: Partial<UserPetProfile>) => void;
+  /** 로그인 사용자의 모든 반려동물을 다시 불러온다 */
+  fetchPets: () => Promise<void>;
+  /** 활성 반려동물 전환 */
+  selectPet: (petId: string) => void;
+  /** 반려동물 생성/수정 (id 없으면 신규) → 저장 후 활성으로 지정 */
+  savePet: (data: UserPetProfile) => Promise<UserPetProfile | null>;
+  /** 반려동물 삭제 */
+  removePet: (petId: string) => Promise<void>;
   products: Product[];
   selectedProduct: Product | null;
   orders: SupabaseOrderWithItems[];
@@ -58,6 +76,8 @@ export const useStore = create<StoreState>((set, get) => ({
   userId: null,
   isLoggedIn: false,
   profile: DEFAULT_USER_PET_PROFILE,
+  pets: [],
+  activePetId: null,
   products: [],
   selectedProduct: null,
   orders: [],
@@ -75,6 +95,8 @@ export const useStore = create<StoreState>((set, get) => ({
       recentViews: [],
       cart: [],
       profile: DEFAULT_USER_PET_PROFILE,
+      pets: [],
+      activePetId: null,
     });
     get().fetchProducts();
   },
@@ -137,19 +159,14 @@ export const useStore = create<StoreState>((set, get) => ({
       supabase.auth.onAuthStateChange(handleAuthStateChange);
       set({ userId: user.id, isLoggedIn: isReal });
 
-      // Fetch Pet Profile
+      // Fetch Pet Profiles (모든 반려동물 — 다이어리/선택 지원)
       const pets = await getUserPets(user.id);
       if (pets && pets.length > 0) {
-        const p = pets[0];
+        const mapped = pets.map(mapPetProfileFromRow);
         set({
-          profile: {
-            id: p.id,
-            name: p.name,
-            species: p.pet_type === 'cat' ? 'Cat' : 'Dog',
-            age: p.age_group === 'baby' ? 1 : p.age_group === 'senior' ? 10 : 4,
-            healthConcerns: p.conditions || [],
-            allergies: p.allergies || []
-          }
+          pets: mapped,
+          activePetId: mapped[0].id,
+          profile: mapped[0],
         });
       }
 
@@ -181,25 +198,82 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   updateProfile: async (updates) => {
-    const { userId, profile } = get();
+    const { profile, savePet } = get();
     const newProfile = { ...profile, ...updates };
+    // 로컬 즉시 반영
     set({ profile: newProfile });
+    await savePet(newProfile);
+  },
 
+  fetchPets: async () => {
+    const { userId } = get();
     if (!userId) return;
-
-    const saved = await saveUserPet({
-      id: profile.id !== DEFAULT_USER_PET_PROFILE.id ? profile.id : undefined,
-      user_id: userId,
-      name: newProfile.name,
-      pet_type: newProfile.species === 'Cat' ? 'cat' : 'dog',
-      age_group: newProfile.age < 2 ? 'baby' : newProfile.age > 7 ? 'senior' : 'adult',
-      conditions: newProfile.healthConcerns,
-      allergies: newProfile.allergies,
+    const rows = await getUserPets(userId);
+    const mapped = rows.map(mapPetProfileFromRow);
+    const { activePetId } = get();
+    const nextActive = mapped.find((p) => p.id === activePetId) ?? mapped[0] ?? null;
+    set({
+      pets: mapped,
+      activePetId: nextActive?.id ?? null,
+      profile: nextActive ?? DEFAULT_USER_PET_PROFILE,
     });
+  },
 
-    if (saved?.id) {
-      set({ profile: { ...get().profile, id: saved.id } });
+  selectPet: (petId) => {
+    const { pets } = get();
+    const target = pets.find((p) => p.id === petId);
+    if (target) set({ activePetId: target.id, profile: target });
+  },
+
+  savePet: async (data) => {
+    const { userId } = get();
+    if (!userId) {
+      // 비로그인: 로컬 프로필만 갱신 (DB 미연동)
+      set({ profile: data });
+      return null;
     }
+    const isExisting = Boolean(data.id) && data.id !== DEFAULT_USER_PET_PROFILE.id;
+    const saved = await saveUserPet({
+      id: isExisting ? data.id : undefined,
+      user_id: userId,
+      name: data.name,
+      pet_type: data.species === 'Cat' ? 'cat' : 'dog',
+      age_group: ageGroupFromAge(data.age),
+      weight: data.weightKg ?? null,
+      breed: data.breed ?? null,
+      image_url: data.imageUrl ?? null,
+      conditions: data.healthConcerns,
+      allergies: data.allergies,
+    });
+    if (!saved?.id) return null;
+
+    const savedProfile = mapPetProfileFromRow(saved);
+    // pets 목록 갱신(신규 추가 또는 기존 갱신)
+    const { pets } = get();
+    const exists = pets.some((p) => p.id === savedProfile.id);
+    const nextPets = exists
+      ? pets.map((p) => (p.id === savedProfile.id ? savedProfile : p))
+      : [...pets, savedProfile];
+    set({
+      pets: nextPets,
+      activePetId: savedProfile.id,
+      profile: savedProfile,
+    });
+    return savedProfile;
+  },
+
+  removePet: async (petId) => {
+    const { userId, pets, activePetId } = get();
+    if (!userId) return;
+    const ok = await deleteUserPet(petId, userId);
+    if (!ok) return;
+    const nextPets = pets.filter((p) => p.id !== petId);
+    const nextActiveId = activePetId === petId ? (nextPets[0]?.id ?? null) : activePetId;
+    set({
+      pets: nextPets,
+      activePetId: nextActiveId,
+      profile: nextPets.find((p) => p.id === nextActiveId) ?? DEFAULT_USER_PET_PROFILE,
+    });
   },
 
   fetchProducts: async () => {
