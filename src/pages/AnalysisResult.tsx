@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { ArrowLeft, AlertCircle, Check, ShoppingBag, Sparkles } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Check, Sparkles } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
 import {
@@ -318,10 +318,6 @@ export default function AnalysisResult() {
     return t.length ? t : ['특별히 피해야 할 대상은 확인되지 않았어요'];
   }, [breakdown, dangerIngredients.length]);
 
-  const handleBuy = () => {
-    if (product?.coupangLink) window.open(product.coupangLink, '_blank', 'noopener');
-    else if (product) navigate(`/product/${product.id}`);
-  };
 
   if (!product) {
     return (
@@ -534,10 +530,10 @@ export default function AnalysisResult() {
         </button>
         <button
           type="button"
-          onClick={handleBuy}
+          onClick={() => product && navigate(`/product/${product.id}`)}
           style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '15px 0', borderRadius: 16, border: 'none', background: 'var(--primary)', color: 'var(--text-dark)', fontSize: 14, fontWeight: 900, cursor: 'pointer', boxShadow: 'var(--shadow-md)' }}
         >
-          <ShoppingBag size={17} /> 구매하기
+          <Sparkles size={17} /> 상세 성분 분석
         </button>
       </div>
 

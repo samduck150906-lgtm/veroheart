@@ -24,10 +24,7 @@ export type SupabaseProductRow = {
   has_risk_factors?: string[] | null;
   verification_status?: string | null;
   verified_at?: string | null;
-  coupang_product_id?: string | null;
-  coupang_link?: string | null;
   barcode?: string | null;
-  min_price?: number | null;
   image_url?: string | null;
   review_count?: number | null;
   avg_rating?: number | null;
@@ -56,12 +53,6 @@ export type SupabaseProductIngredientRow = {
     risk_level?: string | null;
     description?: string | null;
   } | null;
-};
-
-export type SupabaseCartItemRow = {
-  product_id: string;
-  quantity: number;
-  id: string;
 };
 
 export type SupabaseFavoriteRow = { product_id: string };
@@ -244,12 +235,9 @@ export function mapProductFromSupabaseRow(p: SupabaseProductRow): Product {
     hasRiskFactors: p.has_risk_factors ?? undefined,
     verificationStatus: vs,
     verifiedAt: p.verified_at || undefined,
-    coupangProductId: p.coupang_product_id || undefined,
-    coupangLink: p.coupang_link?.trim() || undefined,
     barcode: p.barcode ?? undefined,
     guaranteedAnalysis,
     caloriesPer100g: toNum(p.kcal_per_100g),
-    price: p.min_price ?? 0,
     imageUrl:
       p.image_url ||
       'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&q=80',

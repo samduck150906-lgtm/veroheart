@@ -18,7 +18,6 @@ import {
   Trash2,
   MessageSquare,
   Share2,
-  UtensilsCrossed,
 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { useStore } from '../store/useStore';
@@ -31,7 +30,6 @@ import { getReviews, createReview, deleteReview } from '../lib/supabase';
 import { notify } from '../store/useNotification';
 import { buildProductConclusion } from '../utils/productConclusion';
 import { getCompatibilityBreakdown } from '../utils/score';
-import { resolveProductPurchase } from '../utils/productLinks';
 import { getAppScrollEl, getAppScrollTop, scrollAppToTop } from '../utils/scroll';
 import { analyzeFeed } from '../analysis/feedAnalysis';
 import FeedAnalysisCard from '../components/FeedAnalysisCard';
@@ -56,7 +54,6 @@ import {
 import { REVIEW_QUICK_TAGS } from '../constants/reviewTags';
 
 interface Ingredient { nameKo: string; nameEn?: string; purpose?: string; riskLevel?: string; isAllergy?: boolean; }
-const COUPANG_PARTNERS_DISCLOSURE = '이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.';
 
 function getVerificationMeta(status?: 'pending' | 'verified' | 'needs_review') {
   if (status === 'verified') return { label: '검수 완료', bg: '#E7F8F0', color: '#15B36B' };
@@ -75,7 +72,6 @@ export default function Detail() {
     comparisonList,
     addToComparison,
     removeFromComparison,
-    addToCart,
     products,
     userId,
     pets,
@@ -283,12 +279,12 @@ export default function Detail() {
     altCards.push({
       id: c.p.id, brand: c.p.brand, name: c.p.name, imageUrl: c.p.imageUrl,
       score: c.score, deltaScore: Math.max(0, Math.round(c.score - currentScore)),
-      price: c.p.price, deltaPrice: c.p.price - product.price, tag, tagTone,
+      tag, tagTone,
     });
   };
+  const riskCount = (p: typeof product) => (p.ingredients ?? []).filter(i => i.riskLevel === 'danger' || i.riskLevel === 'caution').length;
   pickAlt(altPool.filter(x => x.score > currentScore).sort((a, b) => b.score - a.score), '더 건강해요', 'excellent');
-  pickAlt(altPool.filter(x => x.p.price < product.price && x.score >= 60).sort((a, b) => a.p.price - b.p.price), '더 저렴해요', 'good');
-  pickAlt(altPool.filter(x => Math.abs(x.p.price - product.price) <= product.price * 0.2).sort((a, b) => b.score - a.score), '같은 가격 최고', 'neutral');
+  pickAlt(altPool.filter(x => riskCount(x.p) === 0 && x.score >= 60).sort((a, b) => b.score - a.score), '주의 성분 없음', 'good');
   pickAlt(altPool.filter(x => x.p.verificationStatus === 'verified' && x.score >= 75).sort((a, b) => b.score - a.score), '전문가 검수 ✓', 'neutral');
 
   // 영양 레이더 축 (product.nutrition 있을 때만) — 매크로%를 0~100 스케일로 정규화
@@ -340,9 +336,6 @@ export default function Detail() {
   const reviewSummary = reviews.length
     ? `후기 ${reviews.length}개 요약 · 평균 ${avgRating.toFixed(1)}점${topReviewTags.length ? ` · 자주 언급: ${topReviewTags.slice(0, 3).map(t => t.replace(/\s\d+$/, '')).join(', ')}` : ''}`
     : undefined;
-
-  // 구매 링크 결정(검증·안전) — 검증된 상품별 직행 링크만 "구매", 나머지는 검색/장바구니
-  const purchase = resolveProductPurchase(product);
 
   return (
     <div className="animate-fade-in detail-page-root" style={{ paddingBottom: '96px' }}>
@@ -433,32 +426,6 @@ export default function Detail() {
       <ScoreGauge score={safetyScore} oneLiner={report?.summary} />
       <GlanceGrid tiles={glanceTiles} />
       <FitForPetCard petName={profile.name} percent={breakdown.total} chips={fitChips} reasons={breakdown.reasons} />
-
-      {/* 우리 아이가 먹었어요 — 성분 분석 제품을 섭취 다이어리에 바로 기록 */}
-      <button
-        type="button"
-        onClick={openFeedingLog}
-        className="ui-press"
-        style={{
-          width: '100%',
-          minHeight: '52px',
-          marginBottom: '24px',
-          padding: '14px 18px',
-          borderRadius: '16px',
-          border: '1px solid rgba(21, 179, 107, 0.35)',
-          background: 'var(--pdp-safe-bg, #E7F8F0)',
-          color: '#15803D',
-          fontWeight: 800,
-          fontSize: '15px',
-          cursor: 'pointer',
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '8px',
-        }}
-      >
-        <UtensilsCrossed size={18} /> 우리 아이가 먹었어요 · 섭취 기록 추가
-      </button>
 
       <TossCard style={{ marginBottom: '24px', padding: '20px' }}>
         <div style={{ marginBottom: '8px', fontSize: '13px', color: 'var(--text-light)', fontWeight: 700 }}>{product.brand}</div>
@@ -718,31 +685,12 @@ export default function Detail() {
         </div>
       </section>
 
-      <p
-        style={{
-          margin: '32px 0 0',
-          padding: '14px 16px',
-          fontSize: '11px',
-          lineHeight: 1.55,
-          fontWeight: 600,
-          color: 'var(--text-muted)',
-          textAlign: 'center',
-          background: 'var(--surface-alt)',
-          borderRadius: '14px',
-        }}
-      >
-        {COUPANG_PARTNERS_DISCLOSURE}
-      </p>
-
       <StickyCtaBar
-        price={product.price}
         isFav={isFav}
         isComparing={isComparing}
         onFav={() => toggleFavorite(product.id)}
         onCompare={() => { if (isComparing) { removeFromComparison(product.id); } else { addToComparison(product.id); } }}
-        buyHref={purchase.isDirect ? purchase.url : null}
-        buyLabel={purchase.ctaLabel}
-        onBuy={() => { addToCart(product.id, 1); navigate('/cart'); }}
+        onLog={openFeedingLog}
       />
 
       <FeedingLogForm

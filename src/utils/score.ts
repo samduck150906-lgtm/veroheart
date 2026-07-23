@@ -144,11 +144,10 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
   const reviewConfidence = Math.min(1, Math.log10((product.reviewsCount || 0) + 1) / 3);
   const socialProof = Math.round((weightedRating * 0.75 + reviewConfidence * 0.25) * 20);
 
-  let value = 6;
-  if (product.price <= 15000) value += 4;
-  else if (product.price <= 30000) value += 2;
-  else if (product.price >= 70000) value -= 2;
-  value -= Math.max(0, dangerCount - 1);
+  // 성분 안정성 보정 축(구 "가성비"에서 가격 요소 제거). 위험 성분이 많을수록 감점.
+  let value = 8;
+  value += Math.min(2, safeCount);
+  value -= Math.max(0, dangerCount - 1) * 2;
   value = Math.max(0, Math.min(10, value));
 
   let petFit = 10;

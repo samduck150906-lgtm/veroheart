@@ -81,25 +81,16 @@ describe('PDP redesign parts', () => {
     expect(allergy).toContain('알레르기');
   });
 
-  it('StickyCtaBar: 직행 링크가 없으면 "구매"가 아니라 장바구니 담기로 표시(오인 방지)', () => {
+  it('StickyCtaBar: 가격·구매 대신 "우리 아이가 먹었어요"(섭취 기록) CTA를 노출한다', () => {
     const html = renderToStaticMarkup(
-      <StickyCtaBar price={29900} isFav={false} isComparing={false} onFav={() => {}} onCompare={() => {}} onBuy={() => {}} />
+      <StickyCtaBar isFav={false} isComparing={false} onFav={() => {}} onCompare={() => {}} onLog={() => {}} />
     );
-    expect(html).toContain('29,900원 · 장바구니 담기');
-    expect(html).not.toContain('구매하기');
-  });
-
-  it('StickyCtaBar: 검증된 직행 링크가 있으면 외부 링크 + 전달된 구매 문구를 노출한다', () => {
-    const html = renderToStaticMarkup(
-      <StickyCtaBar
-        price={29900} isFav={false} isComparing={false}
-        onFav={() => {}} onCompare={() => {}} onBuy={() => {}}
-        buyHref="https://coupa.ng/abcd" buyLabel="최저가 보러가기"
-      />
-    );
-    expect(html).toContain('href="https://coupa.ng/abcd"');
-    expect(html).toContain('29,900원 · 최저가 보러가기');
-    expect(html).toContain('target="_blank"');
+    expect(html).toContain('우리 아이가 먹었어요');
+    // 가격·구매·장바구니·외부 링크 흔적이 남지 않아야 함
+    expect(html).not.toContain('원');
+    expect(html).not.toContain('구매');
+    expect(html).not.toContain('장바구니');
+    expect(html).not.toContain('href=');
   });
 
   it('StickyScoreBar: 점수/등급/제품명이 렌더된다', () => {
@@ -127,16 +118,16 @@ describe('PDP redesign parts', () => {
     expect(html).toContain('pdp-skel');
   });
 
-  it('AltProductCarousel: 유형 태그·점수·가격이 카드에 렌더된다', () => {
+  it('AltProductCarousel: 유형 태그·점수가 카드에 렌더되고 가격은 표시하지 않는다', () => {
     const items: AltCardData[] = [
-      { id: 'a1', brand: '오리젠', name: '오리지널', imageUrl: 'x', score: 96, deltaScore: 8, price: 26900, deltaPrice: -3000, tag: '더 건강해요', tagTone: 'excellent' },
-      { id: 'a2', brand: '나우', name: '스몰브리드', imageUrl: 'x', score: 82, deltaScore: 0, price: 19900, deltaPrice: -10000, tag: '더 저렴해요', tagTone: 'good' },
+      { id: 'a1', brand: '오리젠', name: '오리지널', imageUrl: 'x', score: 96, deltaScore: 8, tag: '더 건강해요', tagTone: 'excellent' },
+      { id: 'a2', brand: '나우', name: '스몰브리드', imageUrl: 'x', score: 82, deltaScore: 0, tag: '주의 성분 없음', tagTone: 'good' },
     ];
     const html = renderToStaticMarkup(<AltProductCarousel items={items} onOpen={() => {}} />);
     expect(html).toContain('더 건강해요');
-    expect(html).toContain('더 저렴해요');
+    expect(html).toContain('주의 성분 없음');
     expect(html).toContain('96점');
-    expect(html).toContain('26,900원');
+    expect(html).not.toContain('원');
     // 빈 배열이면 렌더하지 않음
     expect(renderToStaticMarkup(<AltProductCarousel items={[]} onOpen={() => {}} />)).toBe('');
   });

@@ -9,7 +9,6 @@ describe('mapProductFromSupabaseRow', () => {
       brand_name: 'Brand',
       name: 'Food',
       product_type: 'dry',
-      min_price: 12000,
       image_url: null,
       review_count: 3,
       avg_rating: 4.2,
@@ -39,7 +38,6 @@ describe('mapProductFromSupabaseRow', () => {
     const p = mapProductFromSupabaseRow(row);
     expect(p.id).toBe('p1');
     expect(p.brand).toBe('Brand');
-    expect(p.price).toBe(12000);
     expect(p.ingredients).toHaveLength(2);
     expect(p.ingredients[0].riskLevel).toBe('safe');
     expect(p.ingredients[1].riskLevel).toBe('danger');

@@ -26,7 +26,6 @@ function product(overrides: Partial<Product> = {}): Product {
     mainCategory: 'food',
     targetPetType: 'dog',
     targetLifeStage: ['adult'],
-    price: 30_000,
     imageUrl: '',
     ingredients: [ingredient('protein'), ingredient('grain')],
     reviewsCount: 100,

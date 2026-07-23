@@ -2,7 +2,6 @@ import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { calculateCompatibilityScore } from '../utils/score';
 import { normalizeProductDisplayName } from '../utils/productDisplay';
-import ProductPrice from '../components/product/ProductPrice';
 import { X, GitCompare, ShieldCheck, Star, ShoppingBag } from 'lucide-react';
 
 export default function Comparison() {
@@ -98,10 +97,6 @@ export default function Comparison() {
               </div>
 
               <div style={{ borderTop: '1px solid var(--line)', paddingTop: '12px', fontSize: '13px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>가격</span>
-                  <ProductPrice value={p.price} size={13} weight={600} />
-                </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                   <span style={{ color: 'var(--text-muted)' }}>평점</span>
                   <span style={{ fontWeight: 600 }}>★ {p.averageRating}</span>

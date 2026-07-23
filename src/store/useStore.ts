@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { AuthChangeEvent, RealtimeChannel, Session } from '@supabase/supabase-js';
-import type { UserPetProfile, Product, SupabaseOrderWithItems } from '../types';
+import type { UserPetProfile, Product } from '../types';
 import { DEFAULT_USER_PET_PROFILE } from '../types';
 import {
   supabase,
@@ -9,10 +9,6 @@ import {
   getUserPets,
   saveUserPet,
   deleteUserPet,
-  fetchCartItems,
-  saveCartItem,
-  removeCartItemFromDB,
-  clearUserCart,
   getFavorites,
   addFavorite,
   removeFavorite,
@@ -50,13 +46,11 @@ interface StoreState {
   removePet: (petId: string) => Promise<void>;
   products: Product[];
   selectedProduct: Product | null;
-  orders: SupabaseOrderWithItems[];
   isLoadingProducts: boolean;
   isInitializing: boolean;
   initApp: () => Promise<void>;
   fetchProducts: () => Promise<void>;
   fetchProductDetail: (productId: string) => Promise<void>;
-  fetchOrders: () => Promise<void>;
   favorites: string[];
   toggleFavorite: (productId: string) => void;
   recentViews: Product[];
@@ -64,11 +58,6 @@ interface StoreState {
   comparisonList: string[];
   addToComparison: (productId: string) => void;
   removeFromComparison: (productId: string) => void;
-  cart: { productId: string; quantity: number }[];
-  addToCart: (productId: string, quantity?: number) => void;
-  updateCartQuantity: (productId: string, quantity: number) => void;
-  removeFromCart: (productId: string) => void;
-  clearCart: () => void;
   logout: () => Promise<void>;
 }
 
@@ -80,7 +69,6 @@ export const useStore = create<StoreState>((set, get) => ({
   activePetId: null,
   products: [],
   selectedProduct: null,
-  orders: [],
   recentViews: [],
   isLoadingProducts: false,
   isInitializing: true,
@@ -90,10 +78,8 @@ export const useStore = create<StoreState>((set, get) => ({
     set({
       userId: null,
       isLoggedIn: false,
-      orders: [],
       favorites: [],
       recentViews: [],
-      cart: [],
       profile: DEFAULT_USER_PET_PROFILE,
       pets: [],
       activePetId: null,
@@ -170,15 +156,9 @@ export const useStore = create<StoreState>((set, get) => ({
         });
       }
 
-      // Fetch Cart & Favorites
-      const [cartData, favData] = await Promise.all([
-        fetchCartItems(user.id),
-        getFavorites(user.id)
-      ]);
-      set({
-        cart: cartData.map(c => ({ productId: c.productId, quantity: c.quantity })),
-        favorites: favData
-      });
+      // Fetch Favorites
+      const favData = await getFavorites(user.id);
+      set({ favorites: favData });
 
       // Fetch Recent Views
       const recentData = await getRecentViews(user.id);
@@ -187,8 +167,7 @@ export const useStore = create<StoreState>((set, get) => ({
         set({ recentViews: mapped });
       }
 
-      const { fetchProducts, fetchOrders } = get();
-      await Promise.all([fetchProducts(), fetchOrders()]);
+      await get().fetchProducts();
       set({ isInitializing: false });
     } catch (err) {
       console.error('initApp err:', err);
@@ -308,18 +287,6 @@ export const useStore = create<StoreState>((set, get) => ({
     }
   },
 
-  fetchOrders: async () => {
-    const { userId } = get();
-    if (!userId) return;
-    try {
-      const { getOrders } = await import('../lib/supabase');
-      const data = await getOrders(userId);
-      set({ orders: data as SupabaseOrderWithItems[] });
-    } catch (err) {
-      console.error(err);
-    }
-  },
-
   favorites: [],
   toggleFavorite: async (id) => {
     const { userId, favorites } = get();
@@ -349,65 +316,12 @@ export const useStore = create<StoreState>((set, get) => ({
   removeFromComparison: (id) => set((state) => ({
     comparisonList: state.comparisonList.filter(cid => cid !== id)
   })),
-  cart: [],
-  
-  addToCart: async (id, qty = 1) => {
-    const { userId, cart } = get();
-    let newQuantity = qty;
-    
-    const existing = cart.find(c => c.productId === id);
-    if (existing) {
-      newQuantity = existing.quantity + qty;
-      set({ cart: cart.map(c => c.productId === id ? { ...c, quantity: newQuantity } : c) });
-    } else {
-      set({ cart: [...cart, { productId: id, quantity: qty }] });
-    }
-
-    if (userId) {
-      await saveCartItem(userId, id, newQuantity);
-    }
-  },
-
-  updateCartQuantity: async (id, qty) => {
-    const { userId, cart } = get();
-    if (qty <= 0) {
-      set({ cart: cart.filter(c => c.productId !== id) });
-      if (userId) {
-        await removeCartItemFromDB(userId, id);
-      }
-      return;
-    }
-
-    set({
-      cart: cart.map(c => c.productId === id ? { ...c, quantity: qty } : c)
-    });
-
-    if (userId) {
-      await saveCartItem(userId, id, qty);
-    }
-  },
-  
-  removeFromCart: async (id) => {
-    const { userId, cart } = get();
-    set({ cart: cart.filter(c => c.productId !== id) });
-    if (userId) {
-      await removeCartItemFromDB(userId, id);
-    }
-  },
-  
-  clearCart: async () => {
-    const { userId } = get();
-    set({ cart: [] });
-    if (userId) {
-      await clearUserCart(userId);
-    }
-  },
 
   logout: async () => {
     try {
       const { signOut } = await import('../lib/supabase');
       await signOut();
-      set({ userId: null, profile: DEFAULT_USER_PET_PROFILE, orders: [], cart: [], favorites: [] });
+      set({ userId: null, profile: DEFAULT_USER_PET_PROFILE, pets: [], activePetId: null, favorites: [] });
     } catch (err) {
       console.error(err);
     }

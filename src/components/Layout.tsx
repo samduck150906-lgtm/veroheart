@@ -1,5 +1,5 @@
 import { Outlet, useLocation, Link, useNavigate } from 'react-router-dom';
-import { Bell, Search, ShoppingBag } from 'lucide-react';
+import { Bell, Search } from 'lucide-react';
 import BottomNav from './BottomNav';
 import Footer from './Footer';
 import ThemeToggle from './ThemeToggle';
@@ -7,15 +7,14 @@ import { VERORO_LOGO_SRC } from '../constants/assets';
 import { useStore } from '../store/useStore';
 export default function Layout() {
   const navigate = useNavigate();
-  const { profile, isLoggedIn, cart } = useStore();
+  const { profile, isLoggedIn } = useStore();
   const location = useLocation();
   const hideFooterOn = ['/login'];
   const shouldHideFooter = hideFooterOn.some((path) => location.pathname.startsWith(path));
-  // 상품 상세는 하단에 고정 구매 CTA(StickyCtaBar)를 쓰므로 전역 BottomNav를 숨겨
-  // 구매 버튼이 네비게이션에 가려지지 않게 한다. (헤더의 검색/장바구니로 이동 가능)
+  // 상품 상세는 하단에 고정 액션 바(StickyCtaBar)를 쓰므로 전역 BottomNav를 숨겨
+  // 액션 버튼이 네비게이션에 가려지지 않게 한다.
   const hideBottomNavOn = ['/product/'];
   const shouldHideBottomNav = hideBottomNavOn.some((path) => location.pathname.startsWith(path));
-  const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
   return (
     <div className="app-shell">
@@ -47,15 +46,6 @@ export default function Layout() {
               aria-label="알림"
             >
               <Bell size={18} />
-            </button>
-            <button
-              type="button"
-              className="app-icon-button app-icon-button-emphasis"
-              onClick={() => navigate('/cart')}
-              aria-label="장바구니"
-            >
-              <ShoppingBag size={18} />
-              {cartCount > 0 && <span className="ui-count-badge">{cartCount > 9 ? '9+' : cartCount}</span>}
             </button>
           </div>
         </div>

@@ -5,7 +5,7 @@ import { displayBrand, hasMeaningfulBrand } from './brandLabel';
 
 const makeProduct = (over: Partial<Product> = {}): Product => ({
   id: 'p1', brand: '테스트', name: '테스트 사료', category: 'food',
-  price: 10000, imageUrl: '', ingredients: [], reviewsCount: 0, averageRating: 0, ...over,
+  imageUrl: '', ingredients: [], reviewsCount: 0, averageRating: 0, ...over,
 });
 
 // ── P0-2: 랭킹 종/카테고리 필터 (한글 라벨 ↔ 영문 enum) ───────────────

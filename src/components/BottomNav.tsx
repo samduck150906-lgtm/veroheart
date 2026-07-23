@@ -1,12 +1,14 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, ScanLine, User, ShoppingBag } from 'lucide-react';
+import { Home, Search, ScanLine, User, UtensilsCrossed } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { DEFAULT_USER_PET_PROFILE } from '../types';
 
 export default function BottomNav() {
   const location = useLocation();
-  const { cart, profile, isLoggedIn } = useStore();
-  const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+  const { profile, isLoggedIn } = useStore();
+  const tabParam = new URLSearchParams(location.search).get('tab');
+  const onProfile = location.pathname === '/profile';
+  const onDiary = onProfile && tabParam === 'diary';
 
   const profileTabLabel =
     isLoggedIn &&
@@ -18,15 +20,15 @@ export default function BottomNav() {
       : '마이 펫';
 
   const navItems = [
-    { path: '/', label: '홈', icon: Home, badge: 0 },
-    { path: '/search', label: '탐색', icon: Search, badge: 0 },
-    { path: '/cart', label: '장바구니', icon: ShoppingBag, badge: cartCount },
-    { path: '/profile', label: profileTabLabel, icon: User, badge: 0 },
+    { path: '/', label: '홈', icon: Home, active: location.pathname === '/' },
+    { path: '/search', label: '탐색', icon: Search, active: location.pathname.startsWith('/search') },
+    { path: '/profile?tab=diary', label: '다이어리', icon: UtensilsCrossed, active: onDiary },
+    { path: '/profile', label: profileTabLabel, icon: User, active: onProfile && !onDiary },
   ];
 
   const renderItem = (item: (typeof navItems)[number]) => {
     const Icon = item.icon;
-    const isActive = location.pathname === item.path;
+    const isActive = item.active;
     return (
       <Link
         key={item.path}
@@ -35,9 +37,6 @@ export default function BottomNav() {
       >
         <div className="bottom-nav-icon-wrap">
           <Icon size={22} strokeWidth={isActive ? 2.25 : 2} style={{ transition: 'color 0.15s ease' }} />
-          {item.badge > 0 && (
-            <span className="bottom-nav-badge">{item.badge > 9 ? '9+' : item.badge}</span>
-          )}
         </div>
         <span className="bottom-nav-label">{item.label}</span>
       </Link>

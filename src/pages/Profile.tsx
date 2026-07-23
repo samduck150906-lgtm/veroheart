@@ -3,8 +3,6 @@ import { useStore } from '../store/useStore';
 import {
   User,
   ChevronRight,
-  Calendar,
-  ShoppingBag,
   LogOut,
   LogIn,
   Heart,
@@ -18,8 +16,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { TossCard, TossButton, TossChip, TossInput, TossSectionTitle } from '../components/TossUI';
 import ProductCard from '../components/ProductCard';
 import FeedingDiary from '../components/diary/FeedingDiary';
-import type { SupabaseOrderItem, UserPetProfile } from '../types';
-import { formatKRW } from '../utils/price';
+import type { UserPetProfile } from '../types';
 
 const PROFILE_STEP_META = [
   { title: '이름', prompt: '우리 아이의 이름은 무엇인가요?' },
@@ -70,8 +67,6 @@ export default function Profile() {
     savePet,
     removePet,
     selectPet,
-    orders,
-    fetchOrders,
     logout,
     favorites,
     products,
@@ -100,11 +95,6 @@ export default function Profile() {
   const [deleteTarget, setDeleteTarget] = useState<UserPetProfile | null>(null);
 
   const favoriteProducts = useMemo(() => products.filter((p) => favorites.includes(p.id)), [products, favorites]);
-
-  useEffect(() => {
-    if (!userId) return;
-    if (activeTab === 'account') fetchOrders();
-  }, [activeTab, fetchOrders, userId]);
 
   // 반려동물이 하나도 없으면 편집 폼을 바로 노출(첫 등록 유도)
   useEffect(() => {
@@ -558,61 +548,29 @@ export default function Profile() {
         </div>
       )}
 
-      {/* ── 계정 설정 (주문 내역 + 로그아웃) ── */}
+      {/* ── 계정 설정 ── */}
       {activeTab === 'account' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          <div>
-            <TossSectionTitle title="주문 내역" style={{ marginBottom: '14px' }} />
-            {orders.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                {orders.map((order) => (
-                  <div key={order.id} className="card" style={{ padding: '20px', border: '1px solid var(--surface-alt)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px dashed var(--line)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Calendar size={16} color="var(--text-muted)" />
-                        <span style={{ fontSize: '14px', color: 'var(--text-dark)', fontWeight: 600 }}>{new Date(order.created_at).toLocaleDateString()}</span>
-                      </div>
-                      <DeliveryStatus status={order.status} />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      {order.order_items.map((item: SupabaseOrderItem) => (
-                        <Link key={item.id} to={`/product/${item.product_id}`} style={{ display: 'flex', gap: '12px', textDecoration: 'none', color: 'inherit' }}>
-                          <img src={item.products.image_url} alt={item.products.name} loading="lazy" decoding="async" style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover' }} />
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{item.products.brand_name}</div>
-                            <div style={{ fontSize: '14px', fontWeight: 700, margin: '2px 0' }}>{item.products.name}</div>
-                            <div style={{ fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap' }}>{formatKRW(item.price_at_purchase)} · {item.quantity}개</div>
-                          </div>
-                          <ChevronRight size={20} color="var(--text-muted)" style={{ alignSelf: 'center' }} />
-                        </Link>
-                      ))}
-                    </div>
-                    <DeliveryTimeline status={order.status} />
-                    <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--surface-alt)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>총 결제 금액</span>
-                      <span style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-dark)', whiteSpace: 'nowrap' }}>{formatKRW(order.total_amount)}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '60px 20px', backgroundColor: 'var(--surface-alt)', borderRadius: '24px' }}>
-                <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'var(--surface-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', boxShadow: 'var(--shadow-card)' }}>
-                  <ShoppingBag color="var(--text-muted)" size={32} />
-                </div>
-                <p style={{ color: 'var(--text-muted)', fontSize: '15px' }}>아직 주문 내역이 없습니다.</p>
-              </div>
-            )}
-          </div>
-
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <TossCard style={{ padding: '20px' }}>
-            <TossSectionTitle title="계정" style={{ marginBottom: '14px' }} />
-            <button
-              onClick={handleLogout}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '14px', fontWeight: 700, cursor: 'pointer', padding: '8px 0' }}
-            >
-              <LogOut size={16} /> 로그아웃
-            </button>
+            <TossSectionTitle title="계정" subtitle="로그인한 계정을 관리해요" style={{ marginBottom: '16px' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setTab('favorites')}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'var(--surface-alt)', border: 'none', borderRadius: '12px', padding: '14px 16px', cursor: 'pointer' }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: 700, color: 'var(--text-dark)' }}>
+                  <Heart size={16} /> 저장한 제품
+                </span>
+                <ChevronRight size={18} color="var(--text-muted)" />
+              </button>
+              <button
+                onClick={handleLogout}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '14px', fontWeight: 700, cursor: 'pointer', padding: '12px 4px' }}
+              >
+                <LogOut size={16} /> 로그아웃
+              </button>
+            </div>
           </TossCard>
         </div>
       )}
@@ -659,62 +617,3 @@ const petIconBtn: React.CSSProperties = {
   flexShrink: 0,
 };
 
-const DELIVERY_STEPS = [
-  { key: 'pending', label: '주문 확인' },
-  { key: 'paid', label: '결제 완료' },
-  { key: 'shipped', label: '배송 중' },
-  { key: 'completed', label: '배송 완료' },
-];
-
-function DeliveryStatus({ status }: { status: string }) {
-  const colors: Record<string, { bg: string; text: string; label: string }> = {
-    pending: { bg: '#FEF3C7', text: '#92400E', label: '주문 확인 중' },
-    paid: { bg: '#DBEAFE', text: '#1E40AF', label: '결제 완료' },
-    shipped: { bg: '#D1FAE5', text: '#065F46', label: '배송 중' },
-    completed: { bg: '#E0E7FF', text: '#3730A3', label: '배송 완료' },
-    cancelled: { bg: '#FEE2E2', text: '#991B1B', label: '취소됨' },
-  };
-  const c = colors[status] || colors.pending;
-  return (
-    <span style={{ fontSize: '13px', fontWeight: 700, color: c.text, backgroundColor: c.bg, padding: '4px 12px', borderRadius: '12px' }}>
-      {c.label}
-    </span>
-  );
-}
-
-function DeliveryTimeline({ status }: { status: string }) {
-  const currentIdx = DELIVERY_STEPS.findIndex((s) => s.key === status);
-  const activeIdx = currentIdx === -1 ? 0 : currentIdx;
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0', marginTop: '20px', padding: '16px', background: 'var(--surface-alt)', borderRadius: '14px' }}>
-      {DELIVERY_STEPS.map((step, idx) => (
-        <div key={step.key} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 'none' }}>
-            <div
-              style={{
-                width: '28px',
-                height: '28px',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: idx <= activeIdx ? 'var(--primary-dark)' : 'var(--line)',
-                color: idx <= activeIdx ? '#fff' : 'var(--text-muted)',
-                fontSize: '12px',
-                fontWeight: 800,
-              }}
-            >
-              {idx < activeIdx ? '✓' : idx + 1}
-            </div>
-            <span style={{ fontSize: '10px', fontWeight: 600, marginTop: '4px', color: idx <= activeIdx ? 'var(--primary-dark)' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-              {step.label}
-            </span>
-          </div>
-          {idx < DELIVERY_STEPS.length - 1 && (
-            <div style={{ flex: 1, height: '2px', backgroundColor: idx < activeIdx ? 'var(--primary-dark)' : 'var(--line)', margin: '0 2px', marginBottom: '14px' }} />
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}

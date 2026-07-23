@@ -41,16 +41,6 @@ interface StandardFeedItem {
   fiber: number;
 }
 
-type PriceBand = 'any' | 'under5k' | 'under10k' | 'under20k' | 'over20k';
-
-const PRICE_BAND_LABELS: { id: PriceBand; label: string }[] = [
-  { id: 'any', label: '전체' },
-  { id: 'under5k', label: '5만원 이하' },
-  { id: 'under10k', label: '10만원 이하' },
-  { id: 'under20k', label: '20만원 이하' },
-  { id: 'over20k', label: '20만원 이상' },
-];
-
 function resolveCategoryFromSearchParams(category: string | null): string {
   return category ?? '전체';
 }
@@ -136,7 +126,7 @@ export default function Search() {
   const [recentSearches, setRecentSearches] = useState<string[]>(() => loadRecentSearches());
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [sortBy, setSortBy] = useState<'default' | 'price_asc' | 'price_desc' | 'rating'>('default');
+  const [sortBy, setSortBy] = useState<'default' | 'rating'>('default');
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filters, setFilters] = useState({
@@ -147,17 +137,10 @@ export default function Search() {
     brand: '',
     healthConcerns: [] as string[],
     dietPreset: false,
-    priceBand: 'any' as PriceBand,
   });
 
   const [showSuggest, setShowSuggest] = useState(false);
   const brandOptions = useMemo(() => deriveBrandOptions(products), [products]);
-
-  const priceMin = filters.priceBand === 'over20k' ? 20000 : undefined;
-  const priceMax = filters.priceBand === 'under5k' ? 5000
-    : filters.priceBand === 'under10k' ? 10000
-    : filters.priceBand === 'under20k' ? 20000
-    : undefined;
 
   const [excludedIngredients, setExcludedIngredients] = useState<string[]>([]);
   const [isStandardFeedModalOpen, setIsStandardFeedModalOpen] = useState(false);
@@ -177,7 +160,6 @@ export default function Search() {
     filters.brand !== '' ||
     filters.healthConcerns.length > 0 ||
     filters.dietPreset ||
-    filters.priceBand !== 'any' ||
     excludedIngredients.length > 0;
 
   const filteredIngList = useMemo(
@@ -208,8 +190,6 @@ export default function Search() {
           brand: filters.brand || undefined,
           healthConcerns: filters.healthConcerns,
           dietPreset: filters.dietPreset,
-          priceMin,
-          priceMax,
         });
         setSearchResults(results);
         if (query.trim() && results.length > 0) {
@@ -227,7 +207,7 @@ export default function Search() {
       }
     }, 400);
     return () => clearTimeout(timer);
-  }, [query, category, filters, excludedIngredients, priceMin, priceMax]);
+  }, [query, category, filters, excludedIngredients]);
 
   useEffect(() => {
     getAllIngredients().then(setAllIngredients).catch(console.error);
@@ -243,9 +223,7 @@ export default function Search() {
     }
 
     const arr = [...searchResults];
-    if (sortBy === 'price_asc') arr.sort((a, b) => a.price - b.price);
-    else if (sortBy === 'price_desc') arr.sort((a, b) => b.price - a.price);
-    else if (sortBy === 'rating') arr.sort((a, b) => b.averageRating - a.averageRating);
+    if (sortBy === 'rating') arr.sort((a, b) => b.averageRating - a.averageRating);
     return arr.map((product) => ({
       product,
       breakdown: null,
@@ -271,7 +249,6 @@ export default function Search() {
       brand: '',
       healthConcerns: [],
       dietPreset: false,
-      priceBand: 'any',
     });
     setExcludedIngredients([]);
     setSortBy('default');
@@ -334,7 +311,6 @@ export default function Search() {
     (filters.brand ? 1 : 0) +
     filters.healthConcerns.length +
     (filters.dietPreset ? 1 : 0) +
-    (filters.priceBand !== 'any' ? 1 : 0) +
     excludedIngredients.length;
 
   const showDiscovery = query.trim() === '';
@@ -467,29 +443,6 @@ export default function Search() {
         </div>
 
         <div style={{ marginBottom: '14px' }}>
-          <p style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '0.04em' }}>가격대</p>
-          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-            {PRICE_BAND_LABELS.map(({ id, label }) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setFilters(f => ({ ...f, priceBand: id }))}
-                style={{
-                  flexShrink: 0,
-                  padding: '8px 12px', borderRadius: '999px', fontSize: '12px', fontWeight: 700,
-                  border: filters.priceBand === id ? 'none' : '1px solid var(--line)',
-                  backgroundColor: filters.priceBand === id ? 'var(--primary)' : 'var(--surface-elevated)',
-                  color: filters.priceBand === id ? '#191F28' : 'var(--text-muted)',
-                  cursor: 'pointer',
-                }}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ marginBottom: '14px' }}>
           <p style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '0.04em' }}>빠른 목적</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             <button
@@ -528,8 +481,6 @@ export default function Search() {
           <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)' }}>정렬</span>
           {([
             { id: 'default' as const, label: '추천순' },
-            { id: 'price_asc' as const, label: '가격 낮은순' },
-            { id: 'price_desc' as const, label: '가격 높은순' },
             { id: 'rating' as const, label: '평점순' },
           ]).map(({ id, label }) => (
             <TossChip key={id} label={label} active={sortBy === id} onClick={() => setSortBy(id)} />
@@ -611,7 +562,7 @@ export default function Search() {
               {profile.name} 프로필 기반 추천순
             </div>
             <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-              검수 완료 여부, 알레르기 회피, 건강 고민 매칭, 리뷰 신뢰도, 가격 적정성, 종/연령 적합도를 함께 반영해 정렬합니다.
+              검수 완료 여부, 알레르기 회피, 건강 고민 매칭, 리뷰 신뢰도, 성분 안전성, 종/연령 적합도를 함께 반영해 정렬합니다.
             </div>
           </div>
         )}
@@ -682,19 +633,6 @@ export default function Search() {
                 <FilterChip label="강아지" selected={filters.targetPetType === 'dog'} onClick={() => setFilters({ ...filters, targetPetType: 'dog' })} />
                 <FilterChip label="고양이" selected={filters.targetPetType === 'cat'} onClick={() => setFilters({ ...filters, targetPetType: 'cat' })} />
                 <FilterChip label="공용 제품만" selected={filters.targetPetType === 'all'} onClick={() => setFilters({ ...filters, targetPetType: 'all' })} />
-              </div>
-            </TossFilterSection>
-
-            <TossFilterSection title="가격대">
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {PRICE_BAND_LABELS.map(({ id, label }) => (
-                  <FilterChip
-                    key={id}
-                    label={label}
-                    selected={filters.priceBand === id}
-                    onClick={() => setFilters({ ...filters, priceBand: id })}
-                  />
-                ))}
               </div>
             </TossFilterSection>
 

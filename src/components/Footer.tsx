@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { COUPANG_PARTNERS_DISCLOSURE } from '../constants/coupangPartners';
 import { COMPANY } from '../constants/companyInfo';
 
 function Footer() {
@@ -56,18 +55,6 @@ function Footer() {
         >
           VeRoRo
         </div>
-
-        <p
-          style={{
-            margin: '0 0 10px',
-            fontSize: '10px',
-            lineHeight: 1.45,
-            fontWeight: 600,
-            color: 'var(--text-muted)',
-          }}
-        >
-          {COUPANG_PARTNERS_DISCLOSURE}
-        </p>
 
         <div style={{ fontSize: '8.5px', lineHeight: 1.4, color: 'var(--text-muted)' }}>
           © {COMPANY.tradeName}

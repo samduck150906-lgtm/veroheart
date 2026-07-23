@@ -17,7 +17,6 @@ const Search = lazy(() => import('./pages/Search'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Detail = lazy(() => import('./pages/Detail'));
 const Comparison = lazy(() => import('./pages/Comparison'));
-const Cart = lazy(() => import('./pages/Cart'));
 const AnalysisResult = lazy(() => import('./pages/AnalysisResult'));
 const Scan = lazy(() => import('./pages/Scan'));
 const Brand = lazy(() => import('./pages/Brand'));
@@ -130,7 +129,8 @@ function App() {
           <Route path="event/personality-quiz" element={<Test />} />
           <Route path="profile" element={<Profile />} />
           <Route path="comparison" element={<Comparison />} />
-          <Route path="cart" element={<Cart />} />
+          {/* 구 /cart(장바구니·결제) 경로 제거 — 홈으로 리다이렉트 */}
+          <Route path="cart" element={<Navigate to="/" replace />} />
           <Route path="analysis" element={<AnalysisResult />} />
           <Route path="product/:id" element={<Detail />} />
           <Route path="terms" element={<Terms />} />

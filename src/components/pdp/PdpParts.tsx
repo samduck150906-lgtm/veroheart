@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { formatKRW } from '../../utils/price';
 import {
   ShieldCheck,
   AlertTriangle,
@@ -12,7 +11,7 @@ import {
   Sparkles,
   GitCompare,
   Heart,
-  ExternalLink,
+  UtensilsCrossed,
   RefreshCw,
   WifiOff,
   Inbox,
@@ -352,8 +351,6 @@ export interface AltCardData {
   imageUrl: string;
   score: number;
   deltaScore: number;
-  price: number;
-  deltaPrice: number;
   tag: string;
   tagTone: SafetyTone | 'neutral';
 }
@@ -377,14 +374,10 @@ function AltCard({ a, onOpen }: { a: AltCardData; onOpen: (id: string) => void }
       </div>
       <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--pdp-ink-faint,var(--pdp-ink-faint))' }}>{a.brand}</div>
       <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--pdp-ink,var(--pdp-ink))', lineHeight: 1.35, height: 38, overflow: 'hidden' }}>{a.name}</div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', marginTop: 8 }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 900, color: meta.fg, background: meta.bg, padding: '3px 8px', borderRadius: 999 }}>
           {Math.round(a.score)}점
           {a.deltaScore > 0 && <span style={{ fontSize: 11 }}>▲{a.deltaScore}</span>}
-        </span>
-        <span style={{ textAlign: 'right' }}>
-          <span style={{ display: 'block', fontSize: 14, fontWeight: 900, color: 'var(--pdp-ink,var(--pdp-ink))', whiteSpace: 'nowrap' }}>{formatKRW(a.price)}</span>
-          {a.deltaPrice < 0 && <span style={{ fontSize: 11, fontWeight: 800, color: '#16A34A' }}>{a.deltaPrice.toLocaleString()}원</span>}
         </span>
       </div>
     </button>
@@ -634,33 +627,25 @@ export function OfflineBanner({ online }: { online: boolean }) {
   );
 }
 
-/* ─── Sticky bottom CTA bar (spec §21) ─── */
+/* ─── Sticky bottom action bar — 찜/비교 + "우리 아이가 먹었어요"(섭취 기록) ─── */
 export function StickyCtaBar({
-  price,
   isFav,
   isComparing,
   onFav,
   onCompare,
-  buyHref,
-  buyLabel,
-  onBuy,
+  onLog,
 }: {
-  price: number;
   isFav: boolean;
   isComparing: boolean;
   onFav: () => void;
   onCompare: () => void;
-  buyHref?: string | null;
-  /** 외부 링크 CTA 문구. 검색 폴백이면 "판매처 검색" 등으로 전달 (기본: 최저가 보러가기) */
-  buyLabel?: string;
-  onBuy: () => void;
+  /** 섭취 기록 시트 열기 (우리 아이가 먹었어요) */
+  onLog: () => void;
 }) {
-  // 외부 직행 링크가 있을 때만 가격+구매 문구, 없으면 장바구니 담기(구매 오인 방지)
-  const externalLabel = `${price > 0 ? `${formatKRW(price)} · ` : ''}${buyLabel ?? '최저가 보러가기'}`;
   return (
     <div
       role="region"
-      aria-label="구매"
+      aria-label="제품 액션"
       style={{
         position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 0,
         width: '100%', maxWidth: 480, zIndex: 30,
@@ -679,18 +664,10 @@ export function StickyCtaBar({
         style={{ width: 48, height: 48, flexShrink: 0, borderRadius: 14, border: '1px solid var(--pdp-line,var(--pdp-line))', background: isComparing ? 'var(--pdp-safe-bg)' : 'var(--pdp-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
         <GitCompare size={20} color={isComparing ? '#1D4ED8' : 'var(--pdp-ink-muted)'} />
       </button>
-      {buyHref ? (
-        <a href={buyHref} target="_blank" rel="noopener noreferrer"
-          style={{ flex: 1, minWidth: 0, height: 48, borderRadius: 14, background: 'var(--primary,#FEE500)', color: 'var(--pdp-ink)', fontWeight: 900, fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, textDecoration: 'none', whiteSpace: 'nowrap' }}>
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{externalLabel}</span> <ExternalLink size={17} style={{ flexShrink: 0 }} />
-        </a>
-      ) : null}
-      {!buyHref && (
-        <button type="button" onClick={onBuy}
-          style={{ flex: 1, height: 48, borderRadius: 14, border: 'none', background: 'var(--primary,#FEE500)', color: 'var(--pdp-ink)', fontWeight: 900, fontSize: 16, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-          {price > 0 ? `${formatKRW(price)} · 장바구니 담기` : '장바구니 담기'}
-        </button>
-      )}
+      <button type="button" onClick={onLog}
+        style={{ flex: 1, height: 48, borderRadius: 14, border: 'none', background: 'var(--primary,#FEE500)', color: 'var(--pdp-ink)', fontWeight: 900, fontSize: 16, cursor: 'pointer', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+        <UtensilsCrossed size={18} /> 우리 아이가 먹었어요
+      </button>
     </div>
   );
 }

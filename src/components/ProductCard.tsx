@@ -4,7 +4,6 @@ import type { Product } from '../types';
 import { useStore } from '../store/useStore';
 import { calculateCompatibilityScore } from '../utils/score';
 import { normalizeProductDisplayName } from '../utils/productDisplay';
-import ProductPrice from './product/ProductPrice';
 
 /** 추천 사유 문구의 톤(신호등)을 판정해 pill 색상을 정한다. */
 function noteToneStyle(note: string): { color: string; background: string; borderColor: string } {
@@ -157,8 +156,7 @@ export default function ProductCard({
                 <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-dark)' }}>{product.averageRating}</span>
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>리뷰 {product.reviewsCount.toLocaleString()}</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
-                <ProductPrice value={product.price} size={15} weight={900} />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
                 <div
                   style={{
                     padding: '3px 8px', borderRadius: '14px',
@@ -247,7 +245,6 @@ export default function ProductCard({
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <ProductPrice value={product.price} size={compact ? 12 : 13} weight={700} color="#6B7280" />
               <div style={{
                 padding: '4px 10px', borderRadius: '16px',
                 backgroundColor: getScoreColor(score) + '22',

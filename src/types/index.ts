@@ -109,16 +109,12 @@ export interface Product {
   formulation?: string;
   healthConcerns?: string[];
   hasRiskFactors?: string[];
-  price: number;
   imageUrl: string;
   ingredients: Ingredient[];
   reviewsCount: number;
   averageRating: number;
   verificationStatus?: 'pending' | 'verified' | 'needs_review';
   verifiedAt?: string | null;
-  coupangProductId?: string | null;
-  /** 파트너스 등 수동 발급 전체 URL — 있으면 구매 버튼이 이 주소로 이동 */
-  coupangLink?: string | null;
   /** 보장성분 영양 밸런스 — 있을 때만 영양 섹션 노출 */
   nutrition?: NutritionData;
   /** 제품 바코드(EAN/UPC). 스캔→상품 매핑에 사용. DB `products.barcode` 컬럼 필요 */
@@ -137,25 +133,6 @@ export const DEFAULT_USER_PET_PROFILE: UserPetProfile = {
   healthConcerns: [],
   allergies: [],
 };
-
-export interface SupabaseProduct {
-  id: string;
-  name: string;
-  brand_name: string;
-  manufacturer_name?: string | null;
-  product_type: string;
-  image_url: string | null;
-  avg_rating: number;
-  review_count: number;
-  min_price: number | null;
-  verification_status?: 'pending' | 'verified' | 'needs_review' | null;
-  verified_at?: string | null;
-  coupang_product_id?: string | null;
-  coupang_link?: string | null;
-  product_ingredients?: {
-    ingredients: SupabaseIngredient;
-  }[];
-}
 
 export interface SupabaseIngredient {
   id: string;
@@ -181,45 +158,4 @@ export interface SupabasePet {
   created_at: string;
 }
 
-export interface SupabaseCartItem {
-  id: string;
-  product_id: string;
-  quantity: number;
-  products: {
-    id: string;
-    name: string;
-    min_price: number | null;
-    image_url: string | null;
-  };
-}
-
-export interface SupabaseOrder {
-  id: string;
-  user_id: string;
-  status: 'pending' | 'paid' | 'completed' | 'cancelled' | 'failed';
-  total_amount: number;
-  shipping_address: string | null;
-  customer_name: string | null;
-  customer_email: string | null;
-  customer_phone: string | null;
-  payment_key?: string;
-  paid_at?: string;
-  created_at: string;
-}
-
-export interface SupabaseOrderItem {
-  id: string;
-  product_id: string;
-  quantity: number;
-  price_at_purchase: number;
-  products: {
-    brand_name: string;
-    name: string;
-    image_url: string | null;
-  };
-}
-
-export type SupabaseOrderWithItems = SupabaseOrder & {
-  order_items: SupabaseOrderItem[];
-};
 

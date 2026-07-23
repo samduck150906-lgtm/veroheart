@@ -5,7 +5,6 @@ import {
   mapFeedingLogFromRow,
   mapProductFromSupabaseRow,
   type SupabaseBrandNameRow,
-  type SupabaseCartItemRow,
   type SupabaseFavoriteRow,
   type SupabaseFeedingLogRow,
   type SupabaseProductRow,
@@ -224,8 +223,6 @@ export async function searchProducts(
     dietPreset?: boolean;
     /** 빈 문자열이면 종 필터 없음. 강아지/고양이 선택 시 해당 종 + 공용(all) 포함 */
     targetPetType?: '' | 'dog' | 'cat' | 'all';
-    priceMin?: number;
-    priceMax?: number;
     /** 정확 일치 브랜드 필터 (products.brand_name) */
     brand?: string;
   } = {}
@@ -280,13 +277,6 @@ export async function searchProducts(
     builder = builder.overlaps('product_health_concerns', healthOverlap);
   }
 
-  if (filters.priceMin != null && filters.priceMin > 0) {
-    builder = builder.gte('min_price', filters.priceMin);
-  }
-  if (filters.priceMax != null && filters.priceMax > 0) {
-    builder = builder.lte('min_price', filters.priceMax);
-  }
-
   const { data, error } = await builder;
   if (error) {
     console.error('searchProducts error:', error);
@@ -307,37 +297,10 @@ export async function searchProducts(
   return filtered.map(mapProductFromSupabaseRow);
 }
 
-// Ingredients, Cart, Orders (same logic)
+// Ingredients
 export async function getAllIngredients() {
   if (!isSupabaseConfigured) return [];
   const { data } = await supabase.from('ingredients').select('id, name_ko, risk_level').order('name_ko');
-  return data || [];
-}
-
-export async function fetchCartItems(userId: string) {
-  const { data } = await supabase.from('cart_items').select('id, product_id, quantity').eq('user_id', userId);
-  const rows = (data ?? []) as SupabaseCartItemRow[];
-  return rows.map((item) => ({
-    productId: item.product_id,
-    quantity: item.quantity,
-    cartItemId: item.id
-  }));
-}
-
-export async function saveCartItem(userId: string, productId: string, quantity: number) {
-  await supabase.from('cart_items').upsert({ user_id: userId, product_id: productId, quantity }, { onConflict: 'user_id,product_id' });
-}
-
-export async function removeCartItemFromDB(userId: string, productId: string) {
-  await supabase.from('cart_items').delete().match({ user_id: userId, product_id: productId });
-}
-
-export async function clearUserCart(userId: string) {
-  await supabase.from('cart_items').delete().eq('user_id', userId);
-}
-
-export async function getOrders(userId: string) {
-  const { data } = await supabase.from('orders').select(`*, order_items (*, products (*))`).eq('user_id', userId).order('created_at', { ascending: false });
   return data || [];
 }
 

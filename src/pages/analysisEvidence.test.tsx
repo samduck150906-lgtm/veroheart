@@ -20,7 +20,6 @@ const product: Product = {
   brand: '테스트',
   name: '테스트 사료',
   category: '건식',
-  price: 10000,
   imageUrl: '',
   reviewsCount: 0,
   averageRating: 0,

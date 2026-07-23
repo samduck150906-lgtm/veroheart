@@ -10,7 +10,7 @@ function ing(nameKo: string): Ingredient {
 function product(overrides: Partial<Product> = {}): Product {
   return {
     id: 'p1', brand: '브랜드', name: '연어 사료', category: 'food',
-    targetPetType: 'dog', price: 30000, imageUrl: '',
+    targetPetType: 'dog', imageUrl: '',
     ingredients: [ing('연어'), ing('현미')],
     reviewsCount: 0, averageRating: 0,
     ...overrides,
