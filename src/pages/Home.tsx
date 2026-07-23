@@ -122,11 +122,21 @@ export default function Home() {
     return '좋은 저녁이에요';
   }, []);
 
+  // 검색 페이지는 ?q= 파라미터를 읽는다(Search.tsx). 과거 ?query= 는 매칭되지 않아
+  // 빈 검색 화면으로 빠지는 버그가 있었다.
   const goSearchWith = (query: string) =>
     navigate({
       pathname: '/search',
-      search: query ? `?query=${encodeURIComponent(query)}` : '',
+      search: query ? `?q=${encodeURIComponent(query)}` : '',
     });
+
+  // 홈 상단 실제 검색 입력(§8) — 클릭 이동이 아니라 홈에서 바로 입력·제출한다.
+  const [heroQuery, setHeroQuery] = useState('');
+  const submitHeroSearch = () => {
+    const q = heroQuery.trim();
+    if (!q) return; // 빈/공백 검색 방지
+    goSearchWith(q);
+  };
 
   const goCategory = (name: string) =>
     navigate({ pathname: '/search', search: `?category=${encodeURIComponent(name)}` });
@@ -157,17 +167,43 @@ export default function Home() {
         <h1 className="home-hero-title">
           오늘도 <b>건강한 한 끼</b>를<br />함께 찾아드릴게요
         </h1>
-        <button
-          type="button"
-          className="home-hero-search ui-press"
-          onClick={() => navigate('/search')}
+        <form
+          className="home-hero-search"
+          role="search"
+          onSubmit={(e) => { e.preventDefault(); submitHeroSearch(); }}
+          style={{ gap: 10, justifyContent: 'flex-start' }}
         >
-          <span className="home-hero-search-label">
-            <Search size={20} color="#7C6F9C" />
-            사료·간식 이름이나 성분을 검색
-          </span>
-          <ChevronRight size={18} color="#9CA3AF" />
-        </button>
+          <Search size={20} color="#7C6F9C" style={{ flexShrink: 0 }} aria-hidden />
+          <input
+            type="search"
+            value={heroQuery}
+            onChange={(e) => setHeroQuery(e.target.value)}
+            placeholder="사료·간식 이름이나 성분을 검색"
+            aria-label="사료·간식·성분 검색"
+            enterKeyHint="search"
+            inputMode="search"
+            autoComplete="off"
+            style={{
+              flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent',
+              fontSize: 15, fontWeight: 600, color: 'var(--text-dark)',
+            }}
+          />
+          <button
+            type="submit"
+            aria-label="검색"
+            disabled={!heroQuery.trim()}
+            style={{
+              flexShrink: 0, width: 36, height: 36, borderRadius: 12, border: 'none',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              background: heroQuery.trim() ? 'var(--primary)' : 'var(--secondary)',
+              color: heroQuery.trim() ? 'var(--text-dark)' : '#9CA3AF',
+              cursor: heroQuery.trim() ? 'pointer' : 'default',
+              transition: 'background var(--transition-fast)',
+            }}
+          >
+            <Search size={18} strokeWidth={2.5} aria-hidden />
+          </button>
+        </form>
         <button
           type="button"
           className="home-hero-scan ui-press"

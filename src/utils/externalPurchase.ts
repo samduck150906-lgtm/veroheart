@@ -1,4 +1,13 @@
 import type { Product } from '../types';
+import { isValidCoupangLink } from './coupangLink';
+import { isSafeExternalUrl } from './productLinks';
+
+/** 안전(https)하고 쿠팡 도메인인 검증된 제휴 링크만 반환. 아니면 null */
+function safeCoupangLink(product: Product): string | null {
+  const link = product.coupangLink?.trim();
+  if (link && isSafeExternalUrl(link) && isValidCoupangLink(link)) return link;
+  return null;
+}
 
 function buildCoupangQuery(product: Product) {
   return `${product.brand} ${product.name}`.trim();
@@ -13,9 +22,9 @@ export function getCoupangProductUrl(productId: string) {
   return `https://www.coupang.com/vp/products/${encodeURIComponent(productId)}`;
 }
 
-/** 파트너스 링크가 있으면 그 URL을 우선 사용 */
+/** 검증된 파트너스 링크가 있으면 우선 사용, 없으면 상품ID → 검색 순으로 폴백 */
 export function getCoupangLandingUrl(product: Product): string {
-  const link = product.coupangLink?.trim();
+  const link = safeCoupangLink(product);
   if (link) return link;
   if (product.coupangProductId) return getCoupangProductUrl(product.coupangProductId);
   return getCoupangSearchUrl(product);
@@ -31,8 +40,8 @@ export function getCoupangAppIntentUrl(product: Product) {
 
 export function openCoupangForProduct(product: Product) {
   const landing = getCoupangLandingUrl(product);
-  /* 파트너스 단축 URL은 앱 intent 대신 브라우저 직행이 안전 */
-  if (product.coupangLink?.trim()) {
+  /* 검증된 파트너스 단축 URL은 앱 intent 대신 브라우저 직행이 안전 */
+  if (safeCoupangLink(product)) {
     window.location.href = landing;
     return;
   }

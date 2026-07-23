@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { formatKRW } from '../../utils/price';
 import {
   ShieldCheck,
   AlertTriangle,
@@ -382,7 +383,7 @@ function AltCard({ a, onOpen }: { a: AltCardData; onOpen: (id: string) => void }
           {a.deltaScore > 0 && <span style={{ fontSize: 11 }}>▲{a.deltaScore}</span>}
         </span>
         <span style={{ textAlign: 'right' }}>
-          <span style={{ display: 'block', fontSize: 14, fontWeight: 900, color: 'var(--pdp-ink,var(--pdp-ink))' }}>{a.price.toLocaleString()}원</span>
+          <span style={{ display: 'block', fontSize: 14, fontWeight: 900, color: 'var(--pdp-ink,var(--pdp-ink))', whiteSpace: 'nowrap' }}>{formatKRW(a.price)}</span>
           {a.deltaPrice < 0 && <span style={{ fontSize: 11, fontWeight: 800, color: '#16A34A' }}>{a.deltaPrice.toLocaleString()}원</span>}
         </span>
       </div>
@@ -641,6 +642,7 @@ export function StickyCtaBar({
   onFav,
   onCompare,
   buyHref,
+  buyLabel,
   onBuy,
 }: {
   price: number;
@@ -649,9 +651,12 @@ export function StickyCtaBar({
   onFav: () => void;
   onCompare: () => void;
   buyHref?: string | null;
+  /** 외부 링크 CTA 문구. 검색 폴백이면 "판매처 검색" 등으로 전달 (기본: 최저가 보러가기) */
+  buyLabel?: string;
   onBuy: () => void;
 }) {
-  const priceLabel = price > 0 ? `${price.toLocaleString()}원 · 구매하기` : '구매하기';
+  // 외부 직행 링크가 있을 때만 가격+구매 문구, 없으면 장바구니 담기(구매 오인 방지)
+  const externalLabel = `${price > 0 ? `${formatKRW(price)} · ` : ''}${buyLabel ?? '최저가 보러가기'}`;
   return (
     <div
       role="region"
@@ -676,13 +681,14 @@ export function StickyCtaBar({
       </button>
       {buyHref ? (
         <a href={buyHref} target="_blank" rel="noopener noreferrer"
-          style={{ flex: 1, height: 48, borderRadius: 14, background: 'var(--primary,#FEE500)', color: 'var(--pdp-ink)', fontWeight: 900, fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, textDecoration: 'none' }}>
-          {priceLabel} <ExternalLink size={17} />
+          style={{ flex: 1, minWidth: 0, height: 48, borderRadius: 14, background: 'var(--primary,#FEE500)', color: 'var(--pdp-ink)', fontWeight: 900, fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{externalLabel}</span> <ExternalLink size={17} style={{ flexShrink: 0 }} />
         </a>
-      ) : (
+      ) : null}
+      {!buyHref && (
         <button type="button" onClick={onBuy}
-          style={{ flex: 1, height: 48, borderRadius: 14, border: 'none', background: 'var(--primary,#FEE500)', color: 'var(--pdp-ink)', fontWeight: 900, fontSize: 16, cursor: 'pointer' }}>
-          {priceLabel}
+          style={{ flex: 1, height: 48, borderRadius: 14, border: 'none', background: 'var(--primary,#FEE500)', color: 'var(--pdp-ink)', fontWeight: 900, fontSize: 16, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+          {price > 0 ? `${formatKRW(price)} · 장바구니 담기` : '장바구니 담기'}
         </button>
       )}
     </div>

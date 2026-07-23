@@ -3,6 +3,8 @@ import { Heart, ShieldCheck, Star } from 'lucide-react';
 import type { Product } from '../types';
 import { useStore } from '../store/useStore';
 import { calculateCompatibilityScore } from '../utils/score';
+import { normalizeProductDisplayName } from '../utils/productDisplay';
+import ProductPrice from './product/ProductPrice';
 
 /** 추천 사유 문구의 톤(신호등)을 판정해 pill 색상을 정한다. */
 function noteToneStyle(note: string): { color: string; background: string; borderColor: string } {
@@ -112,10 +114,10 @@ export default function ProductCard({
               style={{
                 fontSize: '13px', fontWeight: 700, marginTop: '3px', lineHeight: 1.35,
                 display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-                overflow: 'hidden', minHeight: '35px',
+                overflow: 'hidden', minHeight: '35px', wordBreak: 'break-word',
               }}
             >
-              {product.name}
+              {normalizeProductDisplayName(product)}
             </div>
 
             {/* 메타 행: 추천 사유(note) > 건강 태그 순으로 1줄 고정 높이 */}
@@ -156,9 +158,7 @@ export default function ProductCard({
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>리뷰 {product.reviewsCount.toLocaleString()}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
-                <span style={{ fontSize: '15px', color: 'var(--text-dark)', fontWeight: 900, letterSpacing: '-0.02em' }}>
-                  {product.price.toLocaleString()}<span style={{ fontSize: '12px', fontWeight: 700 }}>원</span>
-                </span>
+                <ProductPrice value={product.price} size={15} weight={900} />
                 <div
                   style={{
                     padding: '3px 8px', borderRadius: '14px',
@@ -216,7 +216,7 @@ export default function ProductCard({
         <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: 1, paddingRight: '30px' }}>
           <div>
             <div style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: 600 }}>{product.brand}</div>
-            <div style={{ fontSize: compact ? '14px' : '16px', fontWeight: 700, marginTop: '4px', lineHeight: 1.3 }}>{product.name}</div>
+            <div style={{ fontSize: compact ? '14px' : '16px', fontWeight: 700, marginTop: '4px', lineHeight: 1.3, wordBreak: 'break-word' }}>{normalizeProductDisplayName(product)}</div>
             {showHealthTags && healthTags.length > 0 && (
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
                 {healthTags.map(tag => (
@@ -247,9 +247,7 @@ export default function ProductCard({
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: compact ? '12px' : '13px', color: '#6B7280', fontWeight: 700 }}>
-                {product.price.toLocaleString()}원
-              </span>
+              <ProductPrice value={product.price} size={compact ? 12 : 13} weight={700} color="#6B7280" />
               <div style={{
                 padding: '4px 10px', borderRadius: '16px',
                 backgroundColor: getScoreColor(score) + '22',

@@ -6,25 +6,20 @@ type Props = {
   className?: string;
 };
 
-/** 현대적인 스마트폰 목업 — 은은한 글로우와 그라디언트 베젤 */
+/** 차분한 스마트폰 목업 — 실제 화면 내용이 잘 보이도록 장식은 최소화 */
 export function PhoneMockup({ children, label, className = "" }: Props) {
   return (
     <div
-      className={`relative mx-auto w-[min(100%,272px)] shrink-0 ${className}`}
+      className={`relative mx-auto w-[min(100%,280px)] shrink-0 ${className}`}
       aria-hidden={label ? undefined : true}
     >
-      {/* 뒤쪽 글로우 */}
-      <div
-        className="absolute -inset-8 -z-10 rounded-[3rem] bg-gold-gradient opacity-25 blur-3xl"
-        aria-hidden
-      />
-      <div className="rounded-[2.6rem] bg-gradient-to-b from-ink-900 to-gold-darkest p-[3px] shadow-float ring-1 ring-white/10">
-        <div className="rounded-[2.45rem] bg-ink-900 p-2">
-          <div className="relative overflow-hidden rounded-[2rem] bg-cream-50">
+      <div className="rounded-[2.4rem] bg-ink-900 p-[3px] shadow-soft">
+        <div className="rounded-[2.25rem] bg-ink-900 p-2">
+          <div className="relative overflow-hidden rounded-[1.85rem] bg-paper">
             {/* 상태바 노치 */}
             <div className="absolute left-1/2 top-2.5 z-10 h-6 w-24 -translate-x-1/2 rounded-full bg-ink-900" />
             {label && <span className="sr-only">{label}</span>}
-            <div className="min-h-[430px] px-4 pb-6 pt-11">{children}</div>
+            <div className="min-h-[440px] px-4 pb-6 pt-11">{children}</div>
           </div>
         </div>
       </div>

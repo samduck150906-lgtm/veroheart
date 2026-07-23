@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { TossCard, TossButton, TossChip, TossInput, TossSectionTitle } from '../components/TossUI';
 import ProductCard from '../components/ProductCard';
 import type { SupabaseOrderItem } from '../types';
+import { formatKRW } from '../utils/price';
 
 const PROFILE_STEP_META = [
   { title: '이름', prompt: '우리 아이의 이름은 무엇인가요?' },
@@ -346,7 +347,7 @@ export default function Profile() {
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{item.products.brand_name}</div>
                         <div style={{ fontSize: '14px', fontWeight: 700, margin: '2px 0' }}>{item.products.name}</div>
-                        <div style={{ fontSize: '13px', fontWeight: 600 }}>{item.price_at_purchase.toLocaleString()}원 · {item.quantity}개</div>
+                        <div style={{ fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap' }}>{formatKRW(item.price_at_purchase)} · {item.quantity}개</div>
                       </div>
                       <ChevronRight size={20} color="var(--text-muted)" style={{ alignSelf: 'center' }} />
                     </Link>
@@ -358,7 +359,7 @@ export default function Profile() {
 
                 <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--surface-alt)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>총 결제 금액</span>
-                  <span style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-dark)' }}>{order.total_amount.toLocaleString()}원</span>
+                  <span style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-dark)', whiteSpace: 'nowrap' }}>{formatKRW(order.total_amount)}</span>
                 </div>
               </div>
             ))

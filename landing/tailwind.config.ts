@@ -1,122 +1,69 @@
 import type { Config } from "tailwindcss";
 
-/** 랜딩 메인: 진한 옐로우(골드/앰버). 텍스트는 가독용 딥 브라운/스톤. */
+/**
+ * 베로로 랜딩 톤 v2 — 플랫, 에디토리얼, 절제된 무드.
+ * 그라디언트·글로우·전면 테두리 카드를 없애고 여백과 타이포그래피 대비로 위계를 만든다.
+ * 브랜드 옐로우(accent)는 CTA 배경 1곳에만 단색으로 사용한다.
+ */
 export default {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
     extend: {
       colors: {
-        cream: {
-          50: "#fffdf7",
-          100: "#fff9eb",
-          200: "#ffefc4",
-        },
-        /** 본문·제목용 (녹색 톤 제거) */
+        paper: "#ffffff",
+        sand: "#f6f2ea",
+        /** 본문·제목용 잉크(중립, 웜톤 최소화) */
         ink: {
-          700: "#57534e",
-          800: "#44403c",
-          900: "#1c1917",
+          950: "#15140f",
+          900: "#201d17",
+          700: "#4a453c",
+          500: "#847c6d",
+          300: "#c9c2b3",
         },
-        /** 메인 브랜드 — 진한 옐로우 / 골드 */
+        /** 브랜드 포인트 — CTA 배경 1곳에만, 항상 단색으로 */
+        accent: {
+          soft: "#f6e9c8",
+          DEFAULT: "#c2810a",
+          dark: "#986707",
+        },
+        /** 하위호환: 기존 gold-* 참조를 accent로 매핑 */
         gold: {
-          soft: "#fff8e1",
-          muted: "#fde68a",
-          DEFAULT: "#d97706",
-          deep: "#b45309",
-          darker: "#92400e",
-          darkest: "#78350f",
+          soft: "#f6e9c8",
+          muted: "#e9d6a3",
+          DEFAULT: "#c2810a",
+          deep: "#986707",
+          darker: "#7c5506",
+          darkest: "#5f4105",
         },
-        /** 보조 포인트 — 따뜻한 코랄/선셋으로 그라디언트 대비 */
-        ember: {
-          soft: "#ffedd5",
-          DEFAULT: "#f97316",
-          deep: "#ea580c",
-        },
-        /**
-         * 기존 클래스명 호환: sky-* → 골드 포인트,
-         * forest-* → 잉크(중립)로 매핑해 한 번에 톤 전환
-         */
-        forest: {
-          700: "#57534e",
-          800: "#44403c",
-          900: "#1c1917",
-        },
-        sky: {
-          soft: "#fffbeb",
-          DEFAULT: "#d97706",
-          deep: "#b45309",
-        },
-        peach: {
-          soft: "#fef3c7",
-          DEFAULT: "#f59e0b",
-          deep: "#d97706",
-        },
+        /** 분석 결과 상태색 — 실제 분석 예시에만, 저채도로 */
+        safe: { soft: "#e6efe4", DEFAULT: "#4a7a4f", deep: "#345938" },
+        caution: { soft: "#f3ecdc", DEFAULT: "#96731c", deep: "#6f5514" },
+        risk: { soft: "#f4e5e0", DEFAULT: "#a5493a", deep: "#7c352a" },
       },
       fontFamily: {
-        sans: ["var(--font-jakarta)", "system-ui", "sans-serif"],
+        sans: [
+          "Pretendard Variable",
+          "Pretendard",
+          "-apple-system",
+          "system-ui",
+          "sans-serif",
+        ],
       },
-      backgroundImage: {
-        "gold-gradient":
-          "linear-gradient(135deg, #f59e0b 0%, #d97706 45%, #ea580c 100%)",
-        "gold-radial":
-          "radial-gradient(120% 120% at 50% 0%, #fff9eb 0%, #fff3d6 40%, #ffe6b0 100%)",
-        "hero-mesh":
-          "radial-gradient(60% 70% at 15% 10%, rgba(251,191,36,0.35) 0%, transparent 60%), radial-gradient(55% 65% at 90% 15%, rgba(249,115,22,0.22) 0%, transparent 60%), radial-gradient(70% 80% at 60% 100%, rgba(253,230,138,0.45) 0%, transparent 65%)",
-        "dot-grid":
-          "radial-gradient(rgba(146,64,14,0.14) 1px, transparent 1px)",
-        "grid-lines":
-          "linear-gradient(to right, rgba(146,64,14,0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(146,64,14,0.06) 1px, transparent 1px)",
-        "sheen":
-          "linear-gradient(110deg, transparent 25%, rgba(255,255,255,0.5) 50%, transparent 75%)",
+      letterSpacing: {
+        tightest: "-0.04em",
       },
       boxShadow: {
-        soft: "0 18px 50px -12px rgba(180, 83, 9, 0.18)",
-        card: "0 8px 30px -8px rgba(146, 64, 14, 0.1)",
-        glow: "0 20px 60px -12px rgba(217, 119, 6, 0.45)",
-        "glow-lg": "0 30px 90px -20px rgba(234, 88, 12, 0.5)",
-        float: "0 24px 70px -18px rgba(120, 53, 15, 0.28)",
+        soft: "0 1px 2px rgba(21, 20, 15, 0.06), 0 12px 28px -18px rgba(21, 20, 15, 0.16)",
+        card: "0 1px 2px rgba(21, 20, 15, 0.05)",
       },
       keyframes: {
         "float-y": {
           "0%, 100%": { transform: "translateY(0px)" },
-          "50%": { transform: "translateY(-14px)" },
-        },
-        "float-y-slow": {
-          "0%, 100%": { transform: "translateY(0px)" },
-          "50%": { transform: "translateY(-22px)" },
-        },
-        blob: {
-          "0%, 100%": { transform: "translate(0px, 0px) scale(1)" },
-          "33%": { transform: "translate(24px, -30px) scale(1.08)" },
-          "66%": { transform: "translate(-20px, 18px) scale(0.94)" },
-        },
-        shimmer: {
-          "0%": { backgroundPosition: "-200% 0" },
-          "100%": { backgroundPosition: "200% 0" },
-        },
-        marquee: {
-          "0%": { transform: "translateX(0)" },
-          "100%": { transform: "translateX(-50%)" },
-        },
-        "pulse-ring": {
-          "0%": { transform: "scale(0.9)", opacity: "0.7" },
-          "70%": { transform: "scale(1.5)", opacity: "0" },
-          "100%": { transform: "scale(1.5)", opacity: "0" },
-        },
-        "gradient-pan": {
-          "0%, 100%": { backgroundPosition: "0% 50%" },
-          "50%": { backgroundPosition: "100% 50%" },
+          "50%": { transform: "translateY(-8px)" },
         },
       },
       animation: {
-        "float-y": "float-y 6s ease-in-out infinite",
-        "float-y-slow": "float-y-slow 9s ease-in-out infinite",
-        blob: "blob 16s ease-in-out infinite",
-        "blob-slow": "blob 22s ease-in-out infinite",
-        shimmer: "shimmer 2.4s linear infinite",
-        marquee: "marquee 28s linear infinite",
-        "pulse-ring": "pulse-ring 2.6s cubic-bezier(0.4,0,0.6,1) infinite",
-        "gradient-pan": "gradient-pan 8s ease infinite",
+        "float-y": "float-y 7s ease-in-out infinite",
       },
     },
   },

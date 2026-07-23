@@ -162,3 +162,47 @@ describe('analyzeFeed — 급여량', () => {
     expect(a.feeding).toBeNull();
   });
 });
+
+describe('analyzeFeed — 연어/어류 감지 및 데이터 부족 구분 (P0 신뢰성)', () => {
+  it('원재료에 "연어"가 있으면 동물성 단백질로 감지한다(없음 오판 금지)', () => {
+    const a = analyzeFeed(product({ ingredients: [ing('연어'), ing('현미')] }), dogProfile);
+    expect(a.ingredientQuality.firstIsAnimalProtein).toBe(true);
+    expect(a.ingredientQuality.animalProteins).toContain('연어');
+  });
+
+  it('salmon / salmon meal / 연어분 alias 를 동물성 단백질로 감지한다', () => {
+    const en = analyzeFeed(product({ ingredients: [ing('Salmon', 'safe', 'salmon meal')] }), dogProfile);
+    expect(en.ingredientQuality.animalProteins.length).toBeGreaterThan(0);
+    const ko = analyzeFeed(product({ ingredients: [ing('연어분')] }), dogProfile);
+    expect(ko.ingredientQuality.animalProteins).toContain('연어분');
+  });
+
+  it('연어오일/어유/fish oil/오메가 를 기능성(오메가) 원료로 감지한다', () => {
+    for (const name of ['연어오일', '어유', '오메가3']) {
+      const a = analyzeFeed(product({ ingredients: [ing('닭고기'), ing(name)] }), dogProfile);
+      expect(a.ingredientQuality.functional).toContain(name);
+    }
+    const en = analyzeFeed(product({ ingredients: [ing('닭고기'), ing('생선유', 'safe', 'fish oil')] }), dogProfile);
+    expect(en.ingredientQuality.functional.length).toBeGreaterThan(0);
+  });
+
+  it('원재료·보장성분이 모두 없으면 "없음"이 아니라 정보 부족으로 요약한다', () => {
+    const a = analyzeFeed(product({ ingredients: [] }), dogProfile);
+    expect(a.ingredientQuality.total).toBe(0);
+    // 확정적 부정("주의가 필요한 성분이 있어…")이 아니라 정보 부족을 명시해야 한다.
+    expect(a.summary).toContain('정보가 부족');
+    expect(a.summary).not.toContain('주의가 필요한 성분이 있어');
+    // 원료 미평가 사유가 주의 목록에 남아 있어야 한다.
+    expect(a.cautions.join(' ')).toContain('원재료 정보가 없어');
+  });
+
+  it('보장성분만 있고 원재료가 없으면, 영양은 평가하되 원료 정보 부족을 표시한다', () => {
+    const a = analyzeFeed(
+      product({ guaranteedAnalysis: { crudeProtein: 30, crudeFat: 15, moisture: 10 }, ingredients: [] }),
+      dogProfile,
+    );
+    expect(a.hasNutritionData).toBe(true);
+    expect(a.ingredientQuality.total).toBe(0);
+    expect(a.cautions.join(' ')).toContain('원재료 정보가 없어');
+  });
+});

@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --reveal-duration: 0.7s;
+  --reveal-duration: 0.6s;
 }
 
 html {
@@ -24,7 +24,7 @@ body {
 @layer utilities {
   .reveal-base {
     opacity: 0;
-    transform: translateY(18px);
+    transform: translateY(10px);
     transition:
       opacity var(--reveal-duration) cubic-bezier(0.22, 1, 0.36, 1),
       transform var(--reveal-duration) cubic-bezier(0.22, 1, 0.36, 1);
@@ -35,71 +35,24 @@ body {
     transform: translateY(0);
   }
 
-  /* 브랜드 그라디언트 텍스트 */
-  .text-gradient-gold {
-    background-image: linear-gradient(
-      120deg,
-      #f59e0b 0%,
-      #ea580c 55%,
-      #d97706 100%
-    );
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-
-  /* 유리(글래스) 표면 */
+  /* 헤더 스크롤 상태 배경 */
   .glass {
-    background-color: rgba(255, 253, 247, 0.7);
-    backdrop-filter: blur(14px) saturate(160%);
-    -webkit-backdrop-filter: blur(14px) saturate(160%);
-  }
-  .glass-dark {
-    background-color: rgba(28, 25, 23, 0.55);
-    backdrop-filter: blur(14px) saturate(150%);
-    -webkit-backdrop-filter: blur(14px) saturate(150%);
+    background-color: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
 
-  /* 그라디언트 보더 카드 */
-  .ring-gradient {
-    position: relative;
+  /* 아코디언(FAQ) 펼침 애니메이션 */
+  .accordion-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.25s ease;
   }
-  .ring-gradient::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 1px;
-    background: linear-gradient(
-      135deg,
-      rgba(245, 158, 11, 0.55),
-      rgba(234, 88, 12, 0.15) 40%,
-      rgba(253, 230, 138, 0.55)
-    );
-    -webkit-mask:
-      linear-gradient(#000 0 0) content-box,
-      linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    pointer-events: none;
+  .accordion-panel[data-open="true"] {
+    grid-template-rows: 1fr;
   }
-
-  /* 반짝이는 스킨 (버튼 hover 등) */
-  .sheen {
-    background-size: 200% 100%;
-  }
-
-  .bg-grid-fade {
-    -webkit-mask-image: radial-gradient(
-      ellipse 70% 60% at 50% 0%,
-      #000 40%,
-      transparent 100%
-    );
-    mask-image: radial-gradient(
-      ellipse 70% 60% at 50% 0%,
-      #000 40%,
-      transparent 100%
-    );
+  .accordion-panel > div {
+    overflow: hidden;
   }
 }
 
@@ -113,14 +66,10 @@ body {
     transform: none;
     transition: none;
   }
-  .animate-float-y,
-  .animate-float-y-slow,
-  .animate-blob,
-  .animate-blob-slow,
-  .animate-shimmer,
-  .animate-marquee,
-  .animate-pulse-ring,
-  .animate-gradient-pan {
+  .animate-float-y {
     animation: none !important;
+  }
+  .accordion-panel {
+    transition: none;
   }
 }

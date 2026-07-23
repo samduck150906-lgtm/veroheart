@@ -93,10 +93,13 @@ const ARTIFICIAL = [
   '아황산', '화학보존료', '합성보존료', '합성착색료', '합성향료', 'propyleneglycol', 'sodiumnitrite',
 ];
 const FUNCTIONAL = [
-  '유산균', '프로바이오틱', '프리바이오틱', '오메가', '생선오일', '연어오일', '어유', '글루코사민',
+  '유산균', '프로바이오틱', '프리바이오틱', '오메가', '생선오일', '연어오일', '어유', '정제어유', '글루코사민',
   '콘드로이틴', 'msm', '타우린', '크랜베리', '블루베리', '프락토올리고당', '유카', '루테인', '비오틴',
   '뮤신', '초유', 'probiotic', 'prebiotic', 'omega', 'glucosamine', 'chondroitin', 'taurine',
   'cranberry', 'blueberry', 'yucca', 'lutein', 'biotin',
+  // 영문 오메가/어유 라벨 누락 보강 (norm 이 공백을 제거하므로 'fish oil'→'fishoil').
+  // 3글자 이하 축약어(dha/epa 등)는 substring 오탐 위험이 있어 넣지 않는다.
+  'fish oil', 'salmon oil', 'krill oil', 'menhaden oil',
 ];
 
 /** 공백·괄호·대소문자 차이를 흡수한 매칭용 정규화 */
@@ -268,6 +271,9 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
 
   // ── 요약(한 줄) ──
   const summary = (() => {
+    // 데이터 부족을 "미포함"으로 단정하지 않는다. 원재료·보장성분이 모두 없으면
+    // grade 기반 부정 문장("주의가 필요한 성분…") 대신 정보 부족을 명시한다.
+    if (iq.total === 0 && !hasNutritionData) return '원재료·영양 정보가 부족해 아직 정확히 평가하기 어려워요.';
     if (allergyHits.length > 0) return `${profile.name}가 피해야 할 성분이 있어 급여 전 확인이 필요해요.`;
     if (grade === 'A+' || grade === 'A') return iq.firstIsAnimalProtein ? '동물성 단백질 중심의 균형 잡힌 우수한 사료예요.' : '전반적으로 품질이 우수한 사료예요.';
     if (grade === 'B') return '무난하게 급여할 수 있는 사료예요.';
