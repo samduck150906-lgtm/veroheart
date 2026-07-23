@@ -59,42 +59,101 @@
   ERROR: 42P01: relation "phase2_alias_production_approved_canonical_candidates" does not exist
   ```
 
-## Post-Apply Preflight Result
+## Post-Apply Preflight
 
-- The post-apply preflight output was not included in the operator-provided data available to this documentation update.
-- This documentation PR did not run Supabase, did not execute SQL, and did not query production to fill in missing values.
-- Any post-apply preflight table should be recorded from the operator's saved SQL Editor output in a follow-up documentation update.
+```json
+[
+  {
+    "section": "phase2_alias_production_preflight",
+    "severity": "PASS",
+    "analysis_marker_exact_count": 1,
+    "analysis_marker_conflict_count": 0,
+    "expected_canonical_count": 14,
+    "existing_marker_owned_canonical_count": 14,
+    "marker_owned_canonical_mismatch_count": 0,
+    "preexisting_unmarked_canonical_count": 0,
+    "expected_alias_count": 30,
+    "existing_marker_owned_alias_count": 30,
+    "marker_owned_alias_mismatch_count": 0,
+    "preexisting_alias_conflict_count": 0,
+    "forbidden_related_row_count": "0",
+    "final_assessment": "PRODUCTION_PREFLIGHT_READY"
+  }
+]
+```
 
-## Verify Result
+Conclusion:
+- The production marker exists exactly once.
+- 14 marker-owned canonical rows exist.
+- 30 marker-owned alias rows exist.
+- No canonical mismatch.
+- No alias mismatch.
+- No preexisting unmarked canonical conflict.
+- No preexisting alias conflict.
+- No forbidden related rows.
+- Apply was not re-run.
 
-- The production verify output was not included in the operator-provided data available to this documentation update.
-- This documentation PR did not run the verify SQL and does not infer verification status from the apply error.
-- Production verification should be treated as not documented here until the operator-provided verify result is recorded.
+## Verify After Apply
 
-## Rollback Status
+```json
+[
+  {
+    "section": "phase2_alias_production_verify",
+    "severity": "PASS",
+    "analysis_marker_exact_count": 1,
+    "analysis_marker_conflict_count": 0,
+    "expected_canonical_count": 14,
+    "canonical_found_count": 14,
+    "marker_owned_canonical_mismatch_count": 0,
+    "expected_alias_count": 30,
+    "alias_found_count": 30,
+    "marker_owned_alias_mismatch_count": 0,
+    "excluded_found_count": 0,
+    "preexisting_unmarked_canonical_count": 0,
+    "forbidden_related_row_count": "0",
+    "final_assessment": "PRODUCTION_ALIAS_SEED_VERIFIED"
+  }
+]
+```
 
-- No rollback PR was created by this documentation update.
-- No rollback SQL was run by this documentation update.
-- The rollback execution status was not included in the operator-provided data available to this documentation update.
-- Rollback status should be recorded only from explicit operator-provided rollback output.
+Conclusion:
+- Production seed was verified successfully.
+- 14 canonical rows verified.
+- 30 alias rows verified.
+- Excluded candidates were not inserted.
+- No risk/allergen/evidence/product-label/review-queue side effects were detected by verify.
+- Runtime/scoring behavior remains unchanged.
+
+## Rollback
+
+- Rollback was not run.
+- Rollback was not needed because verify passed.
+- The rollback SQL remains available from PR #24 only for explicitly approved recovery scenarios.
 
 ## Final Assessment
 
-- The initial production preflight before apply passed with `PRODUCTION_PREFLIGHT_READY`.
-- The apply attempt returned PostgreSQL error `42P01` for missing relation `phase2_alias_production_approved_canonical_candidates`.
-- Because post-apply preflight, verify, and rollback outputs were not provided to this documentation update, this document does not mark the production seed as verified.
-- Current documented assessment: `PRODUCTION_APPLY_ERROR_REQUIRES_REVIEW`.
+```text
+Phase 2 low-risk alias production preflight: PASS
+Phase 2 low-risk alias production apply: completed, with SQL Editor temp relation error noted
+Phase 2 low-risk alias post-apply preflight: PASS
+Phase 2 low-risk alias production verify: PASS
+Production canonical seed rows: 14
+Production alias seed rows: 30
+Excluded candidates inserted: 0
+Forbidden related rows: 0
+Rollback: not run
+Final assessment: PRODUCTION_ALIAS_SEED_VERIFIED
+```
 
 ## Follow-Up Note
 
-- Review why the guarded apply SQL referenced `phase2_alias_production_approved_canonical_candidates` outside its available statement scope.
-- Do not run additional production SQL from this result document alone.
-- Any fix, retry, verification, or rollback plan must use a separate reviewed PR or an explicitly approved operator procedure.
-- Preserve saved SQL Editor outputs for post-apply preflight, verify, and rollback if they were run separately.
+- Future manual SQLs should avoid relying on session-scoped temporary tables in Supabase SQL Editor if execution/session behavior is ambiguous.
+- Prefer CTE-only read SQL for verification and consider a future hardening PR for write SQL ergonomics if needed.
+- No urgent rollback is indicated because post-apply preflight and verify both passed.
 
 ## Execution Notes
 
-- This document records operator-provided production execution context, the provided pre-apply preflight result, and the provided apply error.
+- This document records operator-provided production execution context, the provided pre-apply preflight result, the provided apply error, the provided post-apply preflight result, and the provided verify result.
 - This documentation PR did not run Supabase, did not execute SQL, and did not inspect production data.
 - This documentation PR does not create a migration, rollback PR, SQL file, or application behavior change.
 - This documentation PR does not include secrets, credentials, URLs, access tokens, or `.env` values.
