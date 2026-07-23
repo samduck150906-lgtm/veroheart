@@ -386,28 +386,27 @@ h1, h2, h3, h4, h5, h6 {
   top: 0;
   left: 0;
   right: 0;
-  min-height: 72px;
+  min-height: 56px;
   z-index: 50;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 14px 20px 12px;
+  padding: 10px 20px;
   font-weight: 700;
   font-size: 18px;
   max-width: 480px;
   margin: 0 auto;
 }
 
+/* 단순화: 헤더는 얇은 경계선만, 그림자·라운드 제거 */
 .app-header-community {
-  border-bottom-left-radius: 20px;
-  border-bottom-right-radius: 20px;
-  box-shadow: 0 4px 20px rgba(28, 25, 23, 0.06);
+  border-bottom: 1px solid var(--line);
 }
 
 .app-main {
   flex: 1;
   min-height: 0; /* allow flex item to shrink so overflow-y can scroll */
-  padding-top: 128px;
+  padding-top: 76px;
   padding-bottom: 104px; /* BottomNav + safe area */
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -430,9 +429,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .bottom-nav-community {
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(28, 25, 23, 0.08);
-  box-shadow: 0 8px 28px rgba(28, 25, 23, 0.08);
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--line);
+  box-shadow: 0 4px 16px rgba(28, 25, 23, 0.05);
 }
 
 /* 중앙 스캔 FAB — 하단 바 위로 볼록하게 떠오르는 진입점 */
@@ -450,7 +449,7 @@ h1, h2, h3, h4, h5, h6 {
   justify-content: center;
   gap: 1px;
   text-decoration: none;
-  box-shadow: 0 8px 20px rgba(229, 206, 0, 0.45), 0 2px 6px rgba(28, 25, 23, 0.12);
+  box-shadow: 0 4px 12px rgba(229, 206, 0, 0.28);
   border: 3px solid #fff;
   transition: transform var(--transition-fast);
 }
@@ -2299,7 +2298,7 @@ button:active {
 
 @media (max-width: 399px) {
   .app-main {
-    padding-top: 136px;
+    padding-top: 76px;
   }
 
   .ui-grid-2 {
