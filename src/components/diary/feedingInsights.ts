@@ -108,6 +108,49 @@ function prevDateKey(key: string): string {
   return toDateKey(dt);
 }
 
+function addDaysKey(key: string, delta: number): string {
+  const [y, m, d] = key.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  dt.setDate(dt.getDate() + delta);
+  return toDateKey(dt);
+}
+
+/** 주어진 날짜가 속한 주의 일요일(주 시작) 날짜키 */
+export function weekStartKey(dateKey: string): string {
+  const [y, m, d] = dateKey.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  return addDaysKey(dateKey, -dt.getDay());
+}
+
+/** 주 시작 날짜키로부터 7일의 날짜키 배열 */
+export function weekDateKeys(startKey: string): string[] {
+  return Array.from({ length: 7 }, (_, i) => addDaysKey(startKey, i));
+}
+
+export interface PreferenceTrendPoint {
+  date: string;
+  avg: number;
+  count: number;
+}
+
+/**
+ * 날짜별 평균 기호도 추이. 기호도가 기록된 날만 포함(오름차순).
+ * 기호도 데이터가 전혀 없으면 빈 배열 → 그래프 미표시.
+ */
+export function computePreferenceTrend(logs: PetFeedingLog[]): PreferenceTrendPoint[] {
+  const byDate = new Map<string, { sum: number; count: number }>();
+  for (const log of logs) {
+    if (log.preferenceLevel == null) continue;
+    const cur = byDate.get(log.feedingDate) ?? { sum: 0, count: 0 };
+    cur.sum += log.preferenceLevel;
+    cur.count += 1;
+    byDate.set(log.feedingDate, cur);
+  }
+  return [...byDate.entries()]
+    .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+    .map(([date, { sum, count }]) => ({ date, avg: sum / count, count }));
+}
+
 function logKey(log: PetFeedingLog): string {
   if (log.isCustomProduct) return `custom:${(log.customProductName ?? '').trim().toLowerCase()}`;
   return log.productId ? `product:${log.productId}` : `custom:${(log.customProductName ?? '').trim().toLowerCase()}`;

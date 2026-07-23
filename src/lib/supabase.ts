@@ -532,6 +532,77 @@ export async function getFeedingLogsByMonthFull(
   return (data as SupabaseFeedingLogRow[]).map(mapFeedingLogFromRow);
 }
 
+/** 임의 날짜 범위 [startKey, endKeyInclusive] 의 기록 (주간 뷰용). 날짜·시간 오름차순 */
+export async function getFeedingLogsRange(
+  petId: string,
+  startKey: string,
+  endKeyInclusive: string,
+): Promise<PetFeedingLog[]> {
+  if (!isSupabaseConfigured || !petId) return [];
+  const { data, error } = await supabase
+    .from('pet_feeding_logs')
+    .select(FEEDING_LOG_SELECT)
+    .eq('pet_id', petId)
+    .gte('feeding_date', startKey)
+    .lte('feeding_date', endKeyInclusive)
+    .order('feeding_date', { ascending: true })
+    .order('feeding_time', { ascending: true, nullsFirst: true });
+  if (error) {
+    console.error('getFeedingLogsRange error:', error.message);
+    return [];
+  }
+  return (data as SupabaseFeedingLogRow[]).map(mapFeedingLogFromRow);
+}
+
+/** 특정 제품(공식 또는 직접 입력)의 급여 이력 — 최신순 */
+export async function getFeedingLogsForProduct(
+  petId: string,
+  ref: { productId?: string | null; customName?: string | null },
+  limit = 60,
+): Promise<PetFeedingLog[]> {
+  if (!isSupabaseConfigured || !petId) return [];
+  let builder = supabase.from('pet_feeding_logs').select(FEEDING_LOG_SELECT).eq('pet_id', petId);
+  if (ref.productId) {
+    builder = builder.eq('product_id', ref.productId);
+  } else if (ref.customName) {
+    builder = builder.eq('is_custom_product', true).eq('custom_product_name', ref.customName);
+  } else {
+    return [];
+  }
+  const { data, error } = await builder
+    .order('feeding_date', { ascending: false })
+    .order('feeding_time', { ascending: false, nullsFirst: false })
+    .limit(limit);
+  if (error) {
+    console.error('getFeedingLogsForProduct error:', error.message);
+    return [];
+  }
+  return (data as SupabaseFeedingLogRow[]).map(mapFeedingLogFromRow);
+}
+
+/** 메모·특이사항·직접 입력 제품명으로 기록 검색 — 최신순 */
+export async function searchFeedingLogs(
+  petId: string,
+  query: string,
+  limit = 50,
+): Promise<PetFeedingLog[]> {
+  const q = query.trim();
+  if (!isSupabaseConfigured || !petId || !q) return [];
+  const like = `%${q}%`;
+  const { data, error } = await supabase
+    .from('pet_feeding_logs')
+    .select(FEEDING_LOG_SELECT)
+    .eq('pet_id', petId)
+    .or(`memo.ilike.${like},custom_product_name.ilike.${like},reaction_note.ilike.${like}`)
+    .order('feeding_date', { ascending: false })
+    .limit(limit);
+  if (error) {
+    console.error('searchFeedingLogs error:', error.message);
+    return [];
+  }
+  return (data as SupabaseFeedingLogRow[]).map(mapFeedingLogFromRow);
+}
+
 function toFeedingLogRowPayload(userId: string, input: FeedingLogInput) {
   return {
     user_id: userId,

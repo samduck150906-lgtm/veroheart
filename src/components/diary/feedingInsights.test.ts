@@ -1,6 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import type { PetFeedingLog } from '../../types';
-import { computeDailySummary, groupByMealPeriod, computeMonthlyInsights } from './feedingInsights';
+import {
+  computeDailySummary,
+  groupByMealPeriod,
+  computeMonthlyInsights,
+  computePreferenceTrend,
+  weekStartKey,
+  weekDateKeys,
+} from './feedingInsights';
 
 let seq = 0;
 function log(over: Partial<PetFeedingLog> = {}): PetFeedingLog {
@@ -104,5 +111,37 @@ describe('computeMonthlyInsights', () => {
       log({ feedingDate: '2026-07-17' }),
     ]);
     expect(ins.streak).toBe(3); // 21,22,23
+  });
+});
+
+describe('week helpers', () => {
+  it('weekStartKey returns the Sunday of the week', () => {
+    // 2026-07-23 is a Thursday → week starts Sunday 2026-07-19
+    expect(weekStartKey('2026-07-23')).toBe('2026-07-19');
+    // a Sunday maps to itself
+    expect(weekStartKey('2026-07-19')).toBe('2026-07-19');
+  });
+  it('weekDateKeys returns 7 consecutive days', () => {
+    expect(weekDateKeys('2026-07-19')).toEqual([
+      '2026-07-19', '2026-07-20', '2026-07-21', '2026-07-22', '2026-07-23', '2026-07-24', '2026-07-25',
+    ]);
+  });
+});
+
+describe('computePreferenceTrend', () => {
+  it('averages preference per day, only for days with preference records, ascending', () => {
+    const trend = computePreferenceTrend([
+      log({ feedingDate: '2026-07-22', preferenceLevel: 4 }),
+      log({ feedingDate: '2026-07-22', preferenceLevel: 2 }),
+      log({ feedingDate: '2026-07-23', preferenceLevel: 5 }),
+      log({ feedingDate: '2026-07-21', preferenceLevel: null }), // ignored
+    ]);
+    expect(trend).toEqual([
+      { date: '2026-07-22', avg: 3, count: 2 },
+      { date: '2026-07-23', avg: 5, count: 1 },
+    ]);
+  });
+  it('returns empty when no preference is recorded', () => {
+    expect(computePreferenceTrend([log({ preferenceLevel: null })])).toEqual([]);
   });
 });

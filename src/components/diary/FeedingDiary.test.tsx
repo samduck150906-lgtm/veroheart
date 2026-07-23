@@ -50,5 +50,8 @@ describe('FeedingDiary', () => {
     // 달력 요일 헤더
     expect(html).toContain('일');
     expect(html).toContain('월');
+    // 리뉴얼된 다이어리 컨트롤: 주간 뷰 토글 + 기록 검색
+    expect(html).toContain('주간 보기');
+    expect(html).toContain('기록 검색');
   });
 });
