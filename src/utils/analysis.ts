@@ -12,102 +12,91 @@ export interface AnalysisReport {
 export function generateAnalysisReport(product: Product, profile: UserPetProfile): AnalysisReport {
   const ingredients = product.ingredients || [];
   const compatibility = getCompatibilityBreakdown(product, profile);
-  let score = 0;
-  
-  // 1. Ingredient Safety (S) - 35 points
-  let sScore = 35;
-  const allergyMatches: string[] = [];
-  const dangerIngredients: string[] = [];
+  const dangerIngredients = ingredients
+    .filter((ingredient) => ingredient.riskLevel === 'danger')
+    .map((ingredient) => ingredient.nameKo);
+  const cautionIngredients = ingredients
+    .filter((ingredient) => ingredient.riskLevel === 'caution')
+    .map((ingredient) => ingredient.nameKo);
 
-  ingredients.forEach(ing => {
-    // Check for allergies
-    const matchesAllergy = profile.allergies.some(a => 
-      ing.nameKo.includes(a) || (ing.nameEn && ing.nameEn.toLowerCase().includes(a.toLowerCase()))
-    );
-
-    if (matchesAllergy) {
-      allergyMatches.push(ing.nameKo);
-      sScore -= 15;
-    }
-
-    if (ing.riskLevel === 'danger') {
-      dangerIngredients.push(ing.nameKo);
-      sScore -= 10;
-    } else if (ing.riskLevel === 'caution') {
-      sScore -= 5;
-    }
-  });
-
-  score += Math.max(0, sScore);
-
-  // 2. Health Concern Suitability (C) - 25 points
-  let cScore = 15;
-  const concernMatches: string[] = [];
-  
-  profile.healthConcerns.forEach(concern => {
-    const helpfulIng = ingredients.find(ing => ing.purpose.includes(concern) || ing.nameKo.includes(concern));
-    if (helpfulIng) {
-      concernMatches.push(helpfulIng.nameKo);
-      cScore += 5;
-    }
-  });
-  score += Math.min(25, cScore);
-
-  // 3. Review & Rating (R) - 20 points
-  const rScore = (product.averageRating / 5) * 20;
-  score += rScore;
-
-  // 4. Popularity & Value (P+V) - 20 points
-  const pScore = Math.min(10, (product.reviewsCount / 500) * 10);
-  score += pScore + 8; // Default value score
-
-  const totalScore = Math.round((score + compatibility.total) / 2);
-  
-  // Highlights
   const highlights: { text: string; type: 'positive' | 'negative' | 'caution' }[] = [];
-  
-  if (allergyMatches.length > 0) {
+
+  if (compatibility.speciesMismatch) {
+    const expected = profile.species === 'Cat' ? '고양이' : '강아지';
+    const actual = product.targetPetType === 'cat' ? '고양이' : '강아지';
     highlights.push({
-      text: `알레르기 주의보! ${allergyMatches.join(', ')} 등 우리 애가 못 먹는 원료가 포함되어 있어요.`,
+      text: `${expected}용 제품이 아닙니다. 이 제품은 ${actual}용으로 등록되어 있어요.`,
+      type: 'negative',
+    });
+  }
+
+  if (compatibility.allergyHits.length > 0) {
+    highlights.push({
+      text: `알레르기·회피 성분 ${compatibility.allergyHits.join(', ')}이 포함되어 있어 급여를 권하지 않아요.`,
       type: 'negative',
     });
   }
 
   if (dangerIngredients.length > 0) {
     highlights.push({
-      text: `위험 성분 하이라이트: ${dangerIngredients.join(', ')} 포함 — 빨간색만 피하면 안심이에요.`,
+      text: `위험 성분 ${dangerIngredients.join(', ')}이 포함되어 있어 성분표 확인이 필요해요.`,
+      type: 'caution',
+    });
+  } else if (cautionIngredients.length > 0) {
+    highlights.push({
+      text: `주의 성분 ${cautionIngredients.slice(0, 3).join(', ')}${cautionIngredients.length > 3 ? ` 외 ${cautionIngredients.length - 3}개` : ''}가 있어요.`,
       type: 'caution',
     });
   }
 
-  if (concernMatches.length > 0) {
-    highlights.push({ text: `${profile.healthConcerns[0]} 건강에 도움이 되는 성분 포함`, type: 'positive' });
+  if (compatibility.matchedConcerns.length > 0) {
+    highlights.push({
+      text: `${compatibility.matchedConcerns.join(', ')} 고민과 연관된 성분·제품 정보가 확인됐어요.`,
+      type: 'positive',
+    });
   }
 
-  // Summary logic
-  let grade: 'Excellent' | 'Good' | 'Fair' | 'Poor' = 'Fair';
-  let summary = '무난한 선택입니다.';
-  
-  if (totalScore >= 85) {
-    grade = 'Excellent';
-    summary = `${profile.name}에게 완벽하게 추천하는 제품입니다!`;
-  } else if (totalScore >= 70) {
-    grade = 'Good';
-    summary = `${profile.name}에게 대체로 안전하고 건강한 제품입니다.`;
-  } else if (totalScore < 50 || allergyMatches.length > 0) {
+  if (compatibility.preferencePenalty > 0 && compatibility.preferenceLevel != null) {
+    highlights.push({
+      text: `과거 기호도 ${compatibility.preferenceLevel.toFixed(1)}점으로, 잘 먹지 않았던 기록을 반영했어요.`,
+      type: 'caution',
+    });
+  }
+
+  let grade: AnalysisReport['grade'] = 'Fair';
+  let summary = `${profile.name}에게 무난한 편이지만 성분표를 함께 확인해 주세요.`;
+
+  if (compatibility.speciesMismatch) {
     grade = 'Poor';
-    summary = '급여 전 전문가와 상담이 필요한 제품입니다.';
+    summary = `${profile.name}의 동물 종류와 맞지 않는 제품입니다.`;
+  } else if (compatibility.allergyHits.length > 0) {
+    grade = 'Poor';
+    summary = `${profile.name}의 알레르기·회피 성분이 포함되어 있어 급여를 권하지 않아요.`;
+  } else if (compatibility.total >= 85) {
+    grade = 'Excellent';
+    summary = `${profile.name}에게 성분과 건강 조건이 매우 잘 맞는 제품입니다.`;
+  } else if (compatibility.total >= 70) {
+    grade = 'Good';
+    summary = `${profile.name}에게 대체로 잘 맞는 제품입니다.`;
+  } else if (compatibility.total < 50) {
+    grade = 'Poor';
+    summary = '급여 전 성분과 건강 조건을 다시 확인하는 편이 좋아요.';
   }
 
   return {
-    score: totalScore,
+    score: compatibility.total,
     grade,
     summary,
     highlights,
-    detailedAnalysis: `전체 ${ingredients.length}개의 성분 중 ${dangerIngredients.length}개의 위험 성분이 발견되었습니다. ${
-      profile.healthConcerns.length > 0
-        ? `${profile.name}의 건강 고민(${profile.healthConcerns.join(', ')})과의 관련도는 ${concernMatches.length > 0 ? '높음' : '보통'}입니다. `
-        : ''
-    }리뷰/인기/가격까지 포함한 종합 적합도는 ${compatibility.total}점으로 계산되었습니다.`
+    detailedAnalysis: [
+      `성분 안전성 ${compatibility.ingredientSafety}/50점`,
+      `건강 적합성 ${compatibility.healthSuitability}/30점`,
+      `고민 적합성 ${compatibility.concernFit}/20점`,
+      compatibility.allergyPenalty > 0 ? `알레르기 감점 -${compatibility.allergyPenalty}점` : null,
+      compatibility.preferencePenalty > 0 ? `기호도 감점 -${compatibility.preferencePenalty}점` : null,
+      compatibility.speciesMismatch ? '동물 종류 불일치로 최종 0점 처리' : null,
+    ]
+      .filter(Boolean)
+      .join(' · '),
   };
 }
