@@ -6,15 +6,18 @@ import {
   getProductRecommendationInsights,
   getRecommendationBreakdown,
   gradeFromScore,
+  preferencePenaltyFromLevel,
   rankProductsForProfile,
   resolveDisplayVerdict,
 } from './score';
 import type { Ingredient, Product, UserPetProfile } from '../types';
 
-// TODO: This is a temporary legacy score contract. Replace these tests with the unified analysis engine tests.
-
-function ingredient(nameKo: string, riskLevel: Ingredient['riskLevel'] = 'safe'): Ingredient {
-  return { id: nameKo, nameKo, nameEn: nameKo, purpose: '', riskLevel };
+function ingredient(
+  nameKo: string,
+  riskLevel: Ingredient['riskLevel'] = 'safe',
+  purpose = '',
+): Ingredient {
+  return { id: nameKo, nameKo, nameEn: nameKo, purpose, riskLevel };
 }
 
 function product(overrides: Partial<Product> = {}): Product {
@@ -27,7 +30,7 @@ function product(overrides: Partial<Product> = {}): Product {
     targetPetType: 'dog',
     targetLifeStage: ['adult'],
     imageUrl: '',
-    ingredients: [ingredient('protein'), ingredient('grain')],
+    ingredients: [ingredient('닭고기'), ingredient('유산균')],
     reviewsCount: 100,
     averageRating: 4,
     verificationStatus: 'verified',
@@ -47,12 +50,14 @@ const profile: UserPetProfile = {
 function expectCurrentBreakdownShape(result: ReturnType<typeof getRecommendationBreakdown>) {
   expect(result).toEqual({
     total: expect.any(Number),
-    safety: expect.any(Number),
-    concern: expect.any(Number),
-    socialProof: expect.any(Number),
-    value: expect.any(Number),
-    petFit: expect.any(Number),
-    verification: expect.any(Number),
+    baseScore: expect.any(Number),
+    ingredientSafety: expect.any(Number),
+    healthSuitability: expect.any(Number),
+    concernFit: expect.any(Number),
+    allergyPenalty: expect.any(Number),
+    preferencePenalty: expect.any(Number),
+    preferenceLevel: expect.toSatisfy((value: unknown) => value === null || typeof value === 'number'),
+    speciesMismatch: expect.any(Boolean),
     allergyHits: expect.any(Array),
     matchedConcerns: expect.any(Array),
     dangerCount: expect.any(Number),
@@ -61,123 +66,189 @@ function expectCurrentBreakdownShape(result: ReturnType<typeof getRecommendation
   });
   expect(result.total).toBeGreaterThanOrEqual(0);
   expect(result.total).toBeLessThanOrEqual(100);
+  expect(result.ingredientSafety).toBeGreaterThanOrEqual(0);
+  expect(result.ingredientSafety).toBeLessThanOrEqual(50);
+  expect(result.healthSuitability).toBeGreaterThanOrEqual(0);
+  expect(result.healthSuitability).toBeLessThanOrEqual(30);
+  expect(result.concernFit).toBeGreaterThanOrEqual(0);
+  expect(result.concernFit).toBeLessThanOrEqual(20);
 }
 
-describe('legacy compatibility score public contract', () => {
-  it('returns the current breakdown shape with a bounded score', () => {
+describe('ingredient-centered compatibility score', () => {
+  it('returns the new breakdown shape with a bounded score', () => {
     expectCurrentBreakdownShape(getRecommendationBreakdown(product(), profile));
   });
 
-  it('calculates a bounded score consistently for identical input', () => {
+  it('uses only ingredient safety, health suitability and concern fit for the 100-point base', () => {
+    const result = getRecommendationBreakdown(product(), profile);
+    expect(result.baseScore).toBe(
+      result.ingredientSafety + result.healthSuitability + result.concernFit,
+    );
+  });
+
+  it('does not change when reviews, ratings or verification status change', () => {
+    const lowExternalSignals = product({
+      reviewsCount: 0,
+      averageRating: 0,
+      verificationStatus: 'pending',
+    });
+    const highExternalSignals = product({
+      reviewsCount: 100_000,
+      averageRating: 5,
+      verificationStatus: 'verified',
+    });
+
+    expect(calculateCompatibilityScore(lowExternalSignals, profile)).toBe(
+      calculateCompatibilityScore(highExternalSignals, profile),
+    );
+  });
+
+  it('sets the final score to zero when the product species does not match', () => {
+    const result = getRecommendationBreakdown(product({ targetPetType: 'cat' }), profile);
+    expect(result.speciesMismatch).toBe(true);
+    expect(result.total).toBe(0);
+  });
+
+  it('applies an approximately 100-point allergy penalty to the ranking score itself', () => {
+    const allergicProfile: UserPetProfile = { ...profile, allergies: ['닭'] };
+    const result = getRecommendationBreakdown(product(), allergicProfile);
+
+    expect(result.allergyHits).toEqual(['닭']);
+    expect(result.allergyPenalty).toBe(90);
+    expect(result.total).toBeLessThanOrEqual(10);
+    expect(calculateCompatibilityScore(product(), allergicProfile)).toBe(result.total);
+  });
+
+  it('applies up to a 30-point penalty for low historical preference', () => {
+    const base = getRecommendationBreakdown(product(), profile);
+    const lowPreferenceProfile: UserPetProfile = {
+      ...profile,
+      productPreferences: { 'product-1': 1 },
+    };
+    const result = getRecommendationBreakdown(product(), lowPreferenceProfile);
+
+    expect(result.preferenceLevel).toBe(1);
+    expect(result.preferencePenalty).toBe(30);
+    expect(result.total).toBe(Math.max(0, base.total - 30));
+  });
+
+  it('scores health-concern matching separately from general health suitability', () => {
+    const concernProfile: UserPetProfile = {
+      ...profile,
+      healthConcerns: ['관절'],
+    };
+    const matched = product({
+      healthConcerns: ['관절'],
+      ingredients: [ingredient('글루코사민', 'safe', '관절 건강')],
+    });
+    const unmatched = product({
+      healthConcerns: [],
+      ingredients: [ingredient('닭고기')],
+    });
+
+    expect(getRecommendationBreakdown(matched, concernProfile).concernFit).toBe(20);
+    expect(getRecommendationBreakdown(unmatched, concernProfile).concernFit).toBe(5);
+  });
+
+  it('penalizes danger and caution ingredients inside ingredient safety', () => {
+    const safe = getRecommendationBreakdown(product(), profile);
+    const risky = getRecommendationBreakdown(
+      product({ ingredients: [ingredient('위험원료', 'danger'), ingredient('주의원료', 'caution')] }),
+      profile,
+    );
+
+    expect(risky.ingredientSafety).toBeLessThan(safe.ingredientSafety);
+    expect(risky.dangerCount).toBe(1);
+    expect(risky.cautionCount).toBe(1);
+  });
+
+  it('keeps public aliases consistent', () => {
     const input = product();
-    const first = calculateCompatibilityScore(input, profile);
-    const second = calculateCompatibilityScore(input, profile);
+    const expected = getRecommendationBreakdown(input, profile);
 
-    expect(first).toBe(second);
-    expect(first).toBe(getRecommendationBreakdown(input, profile).total);
-    expect(first).toBeGreaterThanOrEqual(0);
-    expect(first).toBeLessThanOrEqual(100);
+    expect(getCompatibilityBreakdown(input, profile)).toEqual(expected);
+    expect(buildRecommendationBreakdown(input, profile)).toEqual(expected);
+    expect(getProductRecommendationInsights(input, profile)).toEqual({
+      breakdown: expected,
+      reasons: expected.reasons,
+    });
   });
 
-  it('keeps the compatibility breakdown alias consistent', () => {
-    const input = product();
-    const result = getCompatibilityBreakdown(input, profile);
-
-    expectCurrentBreakdownShape(result);
-    expect(result).toEqual(getRecommendationBreakdown(input, profile));
-  });
-
-  it('keeps the build breakdown alias consistent', () => {
-    const input = product();
-    const result = buildRecommendationBreakdown(input, profile);
-
-    expectCurrentBreakdownShape(result);
-    expect(result).toEqual(getRecommendationBreakdown(input, profile));
-  });
-
-  it('returns insights derived from the same breakdown', () => {
-    const input = product();
-    const result = getProductRecommendationInsights(input, profile);
-
-    expectCurrentBreakdownShape(result.breakdown);
-    expect(result.breakdown).toEqual(getRecommendationBreakdown(input, profile));
-    expect(result.reasons).toEqual(result.breakdown.reasons);
-  });
-
-  it('does not change the raw ranking score when applying the display cap', () => {
-    // 하드캡은 표시용일 뿐, 랭킹에 쓰는 원점수 계약은 그대로여야 한다.
-    const input = product({ ingredients: [ingredient('닭고기', 'danger')] });
-    const raw = calculateCompatibilityScore(input, profile);
-    expect(raw).toBe(getRecommendationBreakdown(input, profile).total);
-  });
-
-  it('ranks products by their calculated score in descending order (unchanged legacy contract)', () => {
+  it('ranks products by the personalized final score', () => {
+    const allergicProfile: UserPetProfile = { ...profile, allergies: ['닭'] };
     const products = [
-      product({ id: 'product-a', reviewsCount: 0, averageRating: 0, verificationStatus: 'pending' }),
-      product({ id: 'product-b', reviewsCount: 20, averageRating: 3, verificationStatus: 'verified' }),
-      product({ id: 'product-c', reviewsCount: 500, averageRating: 5, verificationStatus: 'verified' }),
+      product({ id: 'chicken', ingredients: [ingredient('닭고기')] }),
+      product({ id: 'salmon', ingredients: [ingredient('연어'), ingredient('유산균')] }),
+      product({ id: 'danger', ingredients: [ingredient('위험원료', 'danger')] }),
     ];
-    const ranked = rankProductsForProfile(products, profile);
+    const ranked = rankProductsForProfile(products, allergicProfile);
 
     expect(ranked).toHaveLength(products.length);
-    for (const entry of ranked) {
-      expect(entry.score).toBe(calculateCompatibilityScore(entry.product, profile));
-      expect(entry.breakdown.total).toBe(entry.score);
-    }
+    expect(ranked[0].product.id).toBe('salmon');
     for (let index = 1; index < ranked.length; index += 1) {
       expect(ranked[index - 1].score).toBeGreaterThanOrEqual(ranked[index].score);
     }
   });
 });
 
-describe('resolveDisplayVerdict — 표시 등급 하드캡', () => {
-  it('알레르기·위험 성분이 없으면 원점수/등급을 그대로 표시한다', () => {
-    const v = resolveDisplayVerdict(88);
-    expect(v.score).toBe(88);
-    expect(v.grade).toBe('A');
-    expect(v.capReason).toBeNull();
+describe('preferencePenaltyFromLevel', () => {
+  it('maps 1~5 preference levels to a maximum 30-point penalty', () => {
+    expect(preferencePenaltyFromLevel(null)).toBe(0);
+    expect(preferencePenaltyFromLevel(1)).toBe(30);
+    expect(preferencePenaltyFromLevel(2)).toBe(20);
+    expect(preferencePenaltyFromLevel(3)).toBe(10);
+    expect(preferencePenaltyFromLevel(4)).toBe(0);
+    expect(preferencePenaltyFromLevel(5)).toBe(0);
+  });
+});
+
+describe('resolveDisplayVerdict — safety cap', () => {
+  it('keeps a safe score unchanged', () => {
+    const verdict = resolveDisplayVerdict(88);
+    expect(verdict.score).toBe(88);
+    expect(verdict.grade).toBe('A');
+    expect(verdict.capReason).toBeNull();
   });
 
-  it('회피(알레르기) 성분이 있으면 높은 점수라도 최대 D로 하드캡한다', () => {
-    const v = resolveDisplayVerdict(88, { allergyHits: 1 });
-    expect(v.score).toBe(54);
-    expect(v.grade).toBe('D'); // "주의가 필요해요" — 빨간 경고 배너와 일치
-    expect(v.capReason).toBe('allergy');
+  it('caps species mismatch at zero', () => {
+    const verdict = resolveDisplayVerdict(88, { speciesMismatch: true });
+    expect(verdict.score).toBe(0);
+    expect(verdict.grade).toBe('F');
+    expect(verdict.capReason).toBe('species');
   });
 
-  it('위험 성분이 있으면(알레르기 없음) 최대 C로 하드캡한다', () => {
-    const v = resolveDisplayVerdict(90, { dangerCount: 2 });
-    expect(v.score).toBe(69);
-    expect(v.grade).toBe('C'); // "보통이에요"
-    expect(v.capReason).toBe('danger');
+  it('caps an allergy result below 10 points', () => {
+    const verdict = resolveDisplayVerdict(88, { allergyHits: 1 });
+    expect(verdict.score).toBe(9);
+    expect(verdict.grade).toBe('F');
+    expect(verdict.capReason).toBe('allergy');
   });
 
-  it('알레르기가 위험 성분보다 우선한다', () => {
-    const v = resolveDisplayVerdict(95, { allergyHits: 1, dangerCount: 3 });
-    expect(v.score).toBe(54);
-    expect(v.capReason).toBe('allergy');
+  it('caps danger ingredients at C grade', () => {
+    const verdict = resolveDisplayVerdict(90, { dangerCount: 2 });
+    expect(verdict.score).toBe(69);
+    expect(verdict.grade).toBe('C');
+    expect(verdict.capReason).toBe('danger');
   });
 
-  it('원점수가 이미 상한선보다 낮으면 점수를 올리지 않고 사유도 비운다', () => {
-    const v = resolveDisplayVerdict(30, { allergyHits: 1 });
-    expect(v.score).toBe(30); // 상한(54)이 실제로 끌어내리지 않음
-    expect(v.grade).toBe('F');
-    expect(v.capReason).toBeNull();
-  });
-
-  it('표시 등급은 항상 하드캡된 점수의 gradeFromScore와 일치한다(모순 없음)', () => {
+  it('always derives the grade from the capped score', () => {
     for (const raw of [100, 92, 71, 60, 42, 10]) {
-      for (const opts of [{}, { allergyHits: 1 }, { dangerCount: 1 }]) {
-        const v = resolveDisplayVerdict(raw, opts);
-        expect(v.grade).toBe(gradeFromScore(v.score));
+      for (const opts of [
+        {},
+        { speciesMismatch: true },
+        { allergyHits: 1 },
+        { dangerCount: 1 },
+      ]) {
+        const verdict = resolveDisplayVerdict(raw, opts);
+        expect(verdict.grade).toBe(gradeFromScore(verdict.score));
       }
     }
   });
 
-  it('비정상 입력(NaN/음수/100 초과)을 0~100 범위로 안전 처리한다', () => {
+  it('safely clamps invalid input into the 0~100 range', () => {
     expect(resolveDisplayVerdict(Number.NaN).score).toBe(0);
     expect(resolveDisplayVerdict(-20).score).toBe(0);
     expect(resolveDisplayVerdict(140).score).toBe(100);
-    expect(resolveDisplayVerdict(140, { allergyHits: 1 }).score).toBe(54);
+    expect(resolveDisplayVerdict(140, { allergyHits: 1 }).score).toBe(9);
   });
 });
