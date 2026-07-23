@@ -53,6 +53,8 @@ export interface PetFeedingLog {
     brand: string;
     imageUrl: string;
     productType: string;
+    /** 100g당 열량(kcal). 일일 열량 합계는 이 값이 있을 때만 계산 */
+    caloriesPer100g?: number | null;
   } | null;
 }
 

@@ -143,6 +143,7 @@ export type SupabaseFeedingLogRow = {
     brand_name: string | null;
     image_url: string | null;
     product_type: string | null;
+    kcal_per_100g?: number | string | null;
   } | null;
 };
 
@@ -172,6 +173,7 @@ export function mapFeedingLogFromRow(row: SupabaseFeedingLogRow): PetFeedingLog 
           row.products.image_url ||
           'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&q=80',
         productType: row.products.product_type ?? 'food',
+        caloriesPer100g: toNum(row.products.kcal_per_100g) ?? null,
       }
     : null;
   return {

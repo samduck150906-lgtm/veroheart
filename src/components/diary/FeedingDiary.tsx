@@ -11,6 +11,9 @@ import {
   FlaskConical,
   PawPrint,
   Clock3,
+  Flame,
+  RotateCcw,
+  CalendarCheck2,
 } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import type { PetFeedingLog } from '../../types';
@@ -22,11 +25,18 @@ import {
 } from '../../lib/supabase';
 import {
   WEEKDAY_LABELS,
+  PREFERENCE_OPTIONS,
   feedingTypeMeta,
   mealPeriodLabel,
   productTypeToFeedingType,
   toDateKey,
 } from './feedingConstants';
+import {
+  computeDailySummary,
+  groupByMealPeriod,
+  computeMonthlyInsights,
+  type TopProduct,
+} from './feedingInsights';
 import FeedingLogForm from './FeedingLogForm';
 import StateView from '../StateView';
 import { Skeleton } from '../Skeleton';
@@ -72,6 +82,7 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingLog, setEditingLog] = useState<PetFeedingLog | null>(null);
+  const [presetLog, setPresetLog] = useState<PetFeedingLog | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<PetFeedingLog | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -166,10 +177,19 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
 
   const openCreate = () => {
     setEditingLog(null);
+    setPresetLog(null);
     setFormOpen(true);
   };
   const openEdit = (log: PetFeedingLog) => {
+    setPresetLog(null);
     setEditingLog(log);
+    setFormOpen(true);
+  };
+  /** "다시 기록" — 기존 기록을 복제해 새 기록으로 (오늘 날짜) */
+  const openRelog = (log: PetFeedingLog) => {
+    setEditingLog(null);
+    setSelectedDate(todayKey);
+    setPresetLog(log);
     setFormOpen(true);
   };
 
@@ -213,19 +233,9 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
     );
   }
 
-  // ── 일일 요약 계산 (선택 날짜) ──
-  const summary = (() => {
-    let food = 0;
-    let snack = 0;
-    let supp = 0;
-    for (const log of dayLogs) {
-      const t = log.productType === 'custom' ? productTypeToFeedingType(log.product?.productType) : log.productType;
-      if (t === 'snack') snack += 1;
-      else if (t === 'supplement') supp += 1;
-      else food += 1;
-    }
-    return { food, snack, supp, total: dayLogs.length };
-  })();
+  // ── 일일 요약 (선택 날짜) — 열량은 데이터가 있을 때만 합산 ──
+  const summary = computeDailySummary(dayLogs);
+  const daySections = groupByMealPeriod(dayLogs);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
@@ -378,8 +388,16 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '14px' }}>
                 <SummaryPill label={`사료 ${summary.food}회`} show={summary.food > 0} tone="food" />
                 <SummaryPill label={`간식 ${summary.snack}회`} show={summary.snack > 0} tone="snack" />
-                <SummaryPill label={`영양제 ${summary.supp}종`} show={summary.supp > 0} tone="supplement" />
-                <SummaryPill label={`총 ${summary.total}건 기록`} show tone="total" />
+                <SummaryPill label={`영양제 ${summary.supplement}종`} show={summary.supplement > 0} tone="supplement" />
+                <SummaryPill label={`총 ${summary.total}건`} show tone="total" />
+                {summary.kcal != null && (
+                  <span style={{ fontSize: '13px', fontWeight: 800, color: '#B45309', background: 'rgba(245, 158, 11, 0.14)', padding: '6px 12px', borderRadius: '999px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <Flame size={13} /> 약 {summary.kcal.toLocaleString()}kcal
+                    {summary.kcalCounted < summary.total && (
+                      <span style={{ fontWeight: 600, opacity: 0.8 }}> ({summary.kcalCounted}건)</span>
+                    )}
+                  </span>
+                )}
               </div>
             )}
 
@@ -388,15 +406,28 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
             ) : dayLogs.length === 0 ? (
               <DayEmpty onAdd={openCreate} />
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {dayLogs.map((log) => (
-                  <FeedingLogCard
-                    key={log.id}
-                    log={log}
-                    onEdit={() => openEdit(log)}
-                    onDelete={() => setDeleteTarget(log)}
-                    onViewAnalysis={(pid) => navigate(`/product/${pid}`)}
-                  />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {daySections.map((section) => (
+                  <div key={section.period}>
+                    {daySections.length > 1 && (
+                      <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        {section.label}
+                        <span style={{ fontWeight: 600, color: 'var(--text-light)' }}>{section.logs.length}</span>
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {section.logs.map((log) => (
+                        <FeedingLogCard
+                          key={log.id}
+                          log={log}
+                          onEdit={() => openEdit(log)}
+                          onDelete={() => setDeleteTarget(log)}
+                          onRelog={() => openRelog(log)}
+                          onViewAnalysis={(pid) => navigate(`/product/${pid}`)}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
@@ -418,7 +449,16 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
           ) : monthLogs.length === 0 ? (
             <DayEmpty onAdd={openCreate} />
           ) : (
-            <MonthList logs={monthLogs} onEdit={openEdit} onDelete={setDeleteTarget} onViewAnalysis={(pid) => navigate(`/product/${pid}`)} />
+            <>
+              <MonthlyInsightsCard logs={monthLogs} onRelog={openRelog} />
+              <MonthList
+                logs={monthLogs}
+                onEdit={openEdit}
+                onDelete={setDeleteTarget}
+                onRelog={openRelog}
+                onViewAnalysis={(pid) => navigate(`/product/${pid}`)}
+              />
+            </>
           )}
         </div>
       )}
@@ -430,6 +470,7 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
         pets={pets}
         initialPetId={selectedPetId}
         editingLog={editingLog}
+        presetLog={presetLog}
         initialDate={selectedDate}
         userId={userId}
         onSaved={handleSaved}
@@ -618,11 +659,13 @@ function FeedingLogCard({
   log,
   onEdit,
   onDelete,
+  onRelog,
   onViewAnalysis,
 }: {
   log: PetFeedingLog;
   onEdit: () => void;
   onDelete: () => void;
+  onRelog: () => void;
   onViewAnalysis: (productId: string) => void;
 }) {
   const meta = feedingTypeMeta(log.productType === 'custom' ? productTypeToFeedingType(log.product?.productType) : log.productType);
@@ -631,6 +674,7 @@ function FeedingLogCard({
   const img = log.isCustomProduct ? null : log.product?.imageUrl ?? null;
   const timeText = log.feedingTime ?? mealPeriodLabel(log.mealPeriod);
   const showAnalysis = !log.isCustomProduct && Boolean(log.productId);
+  const pref = log.preferenceLevel != null ? PREFERENCE_OPTIONS.find((p) => p.value === log.preferenceLevel) : null;
 
   return (
     <div
@@ -674,6 +718,11 @@ function FeedingLogCard({
                 <Clock3 size={11} /> {timeText}
               </span>
             )}
+            {pref && (
+              <span title={`기호도: ${pref.label}`} style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                <span aria-hidden>{pref.emoji}</span> {pref.label}
+              </span>
+            )}
           </div>
           {brand && <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>{brand}</div>}
           <div className="line-clamp-2" style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-dark)', lineHeight: 1.4 }}>
@@ -692,14 +741,25 @@ function FeedingLogCard({
             <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>· {log.reactionNote}</p>
           )}
         </div>
+        {log.imageUrl && (
+          <img
+            src={log.imageUrl}
+            alt="기록 사진"
+            loading="lazy"
+            style={{ width: '56px', height: '56px', borderRadius: '12px', objectFit: 'cover', flexShrink: 0, alignSelf: 'flex-start' }}
+          />
+        )}
       </div>
 
       <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
         {showAnalysis && (
           <button type="button" onClick={() => onViewAnalysis(log.productId!)} style={cardActionStyle}>
-            <FlaskConical size={14} /> 성분 분석 보기
+            <FlaskConical size={14} /> 성분 분석
           </button>
         )}
+        <button type="button" onClick={onRelog} style={cardActionStyle}>
+          <RotateCcw size={14} /> 다시 기록
+        </button>
         <button type="button" onClick={onEdit} style={cardActionStyle}>
           <Pencil size={14} /> 수정
         </button>
@@ -707,6 +767,78 @@ function FeedingLogCard({
           <Trash2 size={14} /> 삭제
         </button>
       </div>
+    </div>
+  );
+}
+
+function MonthlyInsightsCard({ logs, onRelog }: { logs: PetFeedingLog[]; onRelog: (log: PetFeedingLog) => void }) {
+  const ins = computeMonthlyInsights(logs);
+  const typeTotal = ins.typeCounts.food + ins.typeCounts.snack + ins.typeCounts.supplement || 1;
+  const bars: { key: 'food' | 'snack' | 'supplement'; label: string; color: string; count: number }[] = [
+    { key: 'food', label: '사료', color: '#F59E0B', count: ins.typeCounts.food },
+    { key: 'snack', label: '간식', color: '#F97316', count: ins.typeCounts.snack },
+    { key: 'supplement', label: '영양제', color: '#6366F1', count: ins.typeCounts.supplement },
+  ];
+
+  return (
+    <div style={{ border: '1px solid var(--line)', borderRadius: '18px', background: 'var(--surface-elevated)', padding: '16px', marginBottom: '20px' }}>
+      <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '12px' }}>이번 달 요약</div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '16px' }}>
+        <InsightStat icon={<CalendarCheck2 size={15} />} value={`${ins.daysLogged}일`} label="기록한 날" />
+        <InsightStat icon={<ListIcon size={15} />} value={`${ins.totalRecords}건`} label="총 기록" />
+        <InsightStat icon={<Flame size={15} />} value={`${ins.streak}일`} label="연속 기록" />
+      </div>
+
+      {/* 유형 분포 바 */}
+      <div style={{ marginBottom: ins.topProducts.length > 0 ? '16px' : 0 }}>
+        <div style={{ display: 'flex', height: '8px', borderRadius: '999px', overflow: 'hidden', background: 'var(--surface-alt)', marginBottom: '8px' }}>
+          {bars.map((b) => (
+            <div key={b.key} style={{ width: `${(b.count / typeTotal) * 100}%`, background: b.color }} />
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          {bars.map((b) => (
+            <span key={b.key} style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: b.color }} /> {b.label} {b.count}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {ins.topProducts.length > 0 && (
+        <div>
+          <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '10px' }}>자주 먹인 제품</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {ins.topProducts.map((p: TopProduct) => (
+              <div key={p.key} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                {p.imageUrl ? (
+                  <img src={p.imageUrl} alt={p.label} style={{ width: '36px', height: '36px', borderRadius: '9px', objectFit: 'cover', flexShrink: 0 }} />
+                ) : (
+                  <div style={{ width: '36px', height: '36px', borderRadius: '9px', background: 'var(--surface-alt)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px' }} aria-hidden>🍽️</div>
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="line-clamp-1" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-dark)' }}>{p.label}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>{p.count}회 기록</div>
+                </div>
+                <button type="button" onClick={() => onRelog(p.sample)} style={{ ...cardActionStyle, minHeight: '34px', flexShrink: 0 }}>
+                  <RotateCcw size={13} /> 다시 기록
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function InsightStat({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) {
+  return (
+    <div style={{ background: 'var(--surface-alt)', borderRadius: '12px', padding: '12px 10px', textAlign: 'center' }}>
+      <div style={{ color: 'var(--text-muted)', display: 'flex', justifyContent: 'center', marginBottom: '4px' }}>{icon}</div>
+      <div style={{ fontSize: '17px', fontWeight: 900, color: 'var(--text-dark)', lineHeight: 1.1 }}>{value}</div>
+      <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, marginTop: '2px' }}>{label}</div>
     </div>
   );
 }
@@ -730,11 +862,13 @@ function MonthList({
   logs,
   onEdit,
   onDelete,
+  onRelog,
   onViewAnalysis,
 }: {
   logs: PetFeedingLog[];
   onEdit: (log: PetFeedingLog) => void;
   onDelete: (log: PetFeedingLog) => void;
+  onRelog: (log: PetFeedingLog) => void;
   onViewAnalysis: (productId: string) => void;
 }) {
   // 날짜별 그룹 (이미 날짜 내림차순 정렬됨)
@@ -758,6 +892,7 @@ function MonthList({
                 log={log}
                 onEdit={() => onEdit(log)}
                 onDelete={() => onDelete(log)}
+                onRelog={() => onRelog(log)}
                 onViewAnalysis={onViewAnalysis}
               />
             ))}

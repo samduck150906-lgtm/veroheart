@@ -415,7 +415,8 @@ const FEEDING_LOG_SELECT = `
     name,
     brand_name,
     image_url,
-    product_type
+    product_type,
+    kcal_per_100g
   )
 ` as const;
 

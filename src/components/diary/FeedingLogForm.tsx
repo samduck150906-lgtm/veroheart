@@ -40,6 +40,8 @@ interface FeedingLogFormProps {
   initialDate?: string;
   /** PDP 등에서 제품을 미리 지정 */
   presetProduct?: PresetProduct | null;
+  /** 기존 기록을 바탕으로 "다시 기록"(제품·급여량·단위·유형을 새 기록으로 복제) */
+  presetLog?: PetFeedingLog | null;
   userId: string | null;
   onSaved: (log: PetFeedingLog) => void;
 }
@@ -56,6 +58,7 @@ export default function FeedingLogForm({
   editingLog,
   initialDate,
   presetProduct,
+  presetLog,
   userId,
   onSaved,
 }: FeedingLogFormProps) {
@@ -119,21 +122,41 @@ export default function FeedingLogForm({
       setReaction(editingLog.reactionNote ?? '');
       setImageUrl(editingLog.imageUrl ?? '');
     } else {
-      // 생성 모드
+      // 생성 모드 — 공통 기본값
       setPetId(initialPetId);
       setDate(initialDate ?? toDateKey(new Date()));
       setTime(nowTimeHHMM());
       setMealPeriod(null);
-      setAmount('');
-      setUnit('g');
-      setCustomUnit('');
       setMemo('');
       setPreference(null);
       setReaction('');
       setImageUrl('');
       setSearchQuery('');
       setSearchResults([]);
-      if (presetProduct) {
+
+      const applyUnit = (u: string | null) => {
+        if (u && !UNIT_OPTIONS.includes(u as (typeof UNIT_OPTIONS)[number])) {
+          setUnit('__custom__');
+          setCustomUnit(u);
+        } else {
+          setUnit(u ?? 'g');
+          setCustomUnit('');
+        }
+      };
+
+      if (presetLog) {
+        // "다시 기록" — 제품·유형·급여량·단위를 복제(날짜/시간은 새로)
+        setProductType(presetLog.productType);
+        setCustomMode(presetLog.isCustomProduct);
+        setCustomName(presetLog.customProductName ?? '');
+        setSelectedProduct(
+          presetLog.product && !presetLog.isCustomProduct
+            ? { id: presetLog.product.id, name: presetLog.product.name, brand: presetLog.product.brand, imageUrl: presetLog.product.imageUrl }
+            : null,
+        );
+        setAmount(presetLog.amount != null ? String(presetLog.amount) : '');
+        applyUnit(presetLog.unit);
+      } else if (presetProduct) {
         setProductType(presetProduct.productType);
         setCustomMode(false);
         setCustomName('');
@@ -143,14 +166,18 @@ export default function FeedingLogForm({
           brand: presetProduct.brand,
           imageUrl: presetProduct.imageUrl,
         });
+        setAmount('');
+        applyUnit('g');
       } else {
         setProductType('food');
         setCustomMode(false);
         setCustomName('');
         setSelectedProduct(null);
+        setAmount('');
+        applyUnit('g');
       }
     }
-  }, [isOpen, editingLog, presetProduct, initialPetId, initialDate]);
+  }, [isOpen, editingLog, presetProduct, presetLog, initialPetId, initialDate]);
 
   // 제품 검색(디바운스) — 공식 유형 + 검색 모드에서만
   const searchType = feedingTypeMeta(productType).searchType;
