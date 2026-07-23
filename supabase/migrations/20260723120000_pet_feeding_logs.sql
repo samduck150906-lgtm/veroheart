@@ -61,6 +61,7 @@ CREATE INDEX IF NOT EXISTS idx_feeding_logs_pet_date ON public.pet_feeding_logs 
 CREATE OR REPLACE FUNCTION public.set_feeding_log_updated_at()
 RETURNS trigger
 LANGUAGE plpgsql
+SET search_path = ''
 AS $$
 BEGIN
   NEW.updated_at = NOW();
