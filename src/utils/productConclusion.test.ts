@@ -31,14 +31,24 @@ describe('buildProductConclusion — 판정 우선순위(§6)', () => {
       report(95),
     );
     expect(c.tone).toBe('alert');
-    expect(c.headline).toContain('맞지 않을 수 있어요');
+    expect(c.headline).toContain('급여를 권하지 않아요');
   });
 
-  it('종이 다르면(고양이용을 강아지가) 확인 경고를 우선한다', () => {
+  it('종이 다르면(고양이용을 강아지가) 종 부적합 경고(alert)를 최우선한다', () => {
     const c = buildProductConclusion(product({ targetPetType: 'cat' }), dog, report(90));
-    expect(c.tone).toBe('caution');
+    expect(c.tone).toBe('alert');
     expect(c.headline).toContain('강아지');
     expect(c.subline).toContain('고양이용');
+  });
+
+  it('종 불일치와 알레르기가 겹치면 종 부적합 경고가 우선한다', () => {
+    const c = buildProductConclusion(
+      product({ targetPetType: 'cat', ingredients: [ing('닭고기')] }),
+      { ...dog, allergies: ['닭'] },
+      report(90),
+    );
+    expect(c.tone).toBe('alert');
+    expect(c.headline).toContain('제품이 아닙니다');
   });
 
   it("targetPetType이 'all'이면 종 경고를 내지 않는다", () => {
