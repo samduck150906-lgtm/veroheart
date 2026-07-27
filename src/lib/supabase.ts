@@ -210,6 +210,46 @@ export async function getProductByBarcode(barcode: string): Promise<Product | nu
 /** 다이어트·체중 관련 태그( DB product_health_concerns 값과 맞추면 매칭됨 ) */
 export const DIET_HEALTH_TAGS = ['비만', '다이어트', '체중', '저칼로리', '체중관리', '다이어트케어'] as const;
 
+/**
+ * PostgREST or() 필터에 안전하게 넣을 ilike 패턴.
+ * 값에 쉼표·괄호가 있으면 or 파서가 조건 구분자로 해석해 쿼리 전체가 400으로
+ * 깨지므로("구토, 설사" 검색이 무조건 0건) 큰따옴표로 감싸고 따옴표·역슬래시를
+ * 이스케이프한다.
+ */
+function toOrIlikePattern(raw: string): string {
+  const escaped = raw.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  return `"%${escaped}%"`;
+}
+
+/**
+ * UI 라이프스테이지 라벨 → DB target_life_stage 배열에 실재하는 값 후보.
+ * 시드는 영문 enum(adult/senior/puppy_kitten/all), 일부 수입 데이터는 한글('성체')
+ * 이라 exact contains 로는 어떤 칩도 매칭되지 않았다. overlaps + 후보군으로 조회한다.
+ */
+const LIFE_STAGE_DB_VALUES: Record<string, string[]> = {
+  '퍼피': ['puppy_kitten', 'puppy', 'kitten', '퍼피', '키튼', '자견', '자묘'],
+  '어덜트': ['adult', '어덜트', '성체', '성견', '성묘'],
+  '시니어': ['senior', '시니어', '노령', '노령견', '노령묘'],
+  '올스테이지': ['all', '올스테이지', '전연령'],
+};
+
+/**
+ * 복합 건강 고민 라벨 → DB product_health_concerns 의 단일어 태그 후보.
+ * overlaps 는 배열 원소의 정확 일치라서 '피부·모질' 같은 복합 라벨은 DB의
+ * '피부' 태그와 매칭되지 않았다. 라벨 자체도 후보에 남겨 DB가 복합 라벨을
+ * 쓰는 경우도 함께 매칭한다.
+ */
+const HEALTH_CONCERN_DB_TOKENS: Record<string, string[]> = {
+  '피부·모질': ['피부', '모질', '피모'],
+  '소화기': ['소화', '소화기', '장', '위장'],
+  '비만·다이어트': ['비만', '다이어트', '체중', '체중관리'],
+  '신장·비뇨기': ['신장', '비뇨기', '요로', '방광'],
+  '스트레스·분리불안': ['스트레스', '분리불안', '안정'],
+  '임신·수유': ['임신', '수유'],
+  '눈': ['눈', '눈물'],
+  '구강': ['구강', '치아', '치석'],
+};
+
 export async function searchProducts(
   query: string, 
   category?: string, 
@@ -237,9 +277,10 @@ export async function searchProducts(
   `);
   
   if (query) {
-    builder = builder.or(`name.ilike.%${query}%,brand_name.ilike.%${query}%`);
+    const pattern = toOrIlikePattern(query);
+    builder = builder.or(`name.ilike.${pattern},brand_name.ilike.${pattern}`);
   }
-  
+
   if (category && category !== '전체') {
     builder = builder.eq('main_category', category);
   }
@@ -258,7 +299,8 @@ export async function searchProducts(
   }
 
   if (filters.targetLifeStage) {
-    builder = builder.contains('target_life_stage', [filters.targetLifeStage]);
+    const lifeStageValues = LIFE_STAGE_DB_VALUES[filters.targetLifeStage] ?? [filters.targetLifeStage];
+    builder = builder.overlaps('target_life_stage', lifeStageValues);
   }
 
   if (filters.formulation) {
@@ -269,10 +311,14 @@ export async function searchProducts(
     builder = builder.eq('brand_name', filters.brand);
   }
 
-  let healthOverlap: string[] = [...(filters.healthConcerns || [])];
+  let healthOverlap: string[] = (filters.healthConcerns || []).flatMap((concern) => [
+    concern,
+    ...(HEALTH_CONCERN_DB_TOKENS[concern] ?? []),
+  ]);
   if (filters.dietPreset) {
-    healthOverlap = [...new Set([...healthOverlap, ...DIET_HEALTH_TAGS])];
+    healthOverlap = [...healthOverlap, ...DIET_HEALTH_TAGS];
   }
+  healthOverlap = [...new Set(healthOverlap)];
   if (healthOverlap.length > 0) {
     builder = builder.overlaps('product_health_concerns', healthOverlap);
   }
@@ -442,7 +488,8 @@ export async function searchDiaryProducts(
   }
   const q = query.trim();
   if (q) {
-    builder = builder.or(`name.ilike.%${q}%,brand_name.ilike.%${q}%`);
+    const pattern = toOrIlikePattern(q);
+    builder = builder.or(`name.ilike.${pattern},brand_name.ilike.${pattern}`);
   }
 
   const { data, error } = await builder;
@@ -588,7 +635,7 @@ export async function searchFeedingLogs(
 ): Promise<PetFeedingLog[]> {
   const q = query.trim();
   if (!isSupabaseConfigured || !petId || !q) return [];
-  const like = `%${q}%`;
+  const like = toOrIlikePattern(q);
   const { data, error } = await supabase
     .from('pet_feeding_logs')
     .select(FEEDING_LOG_SELECT)

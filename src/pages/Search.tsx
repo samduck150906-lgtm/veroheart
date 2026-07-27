@@ -37,7 +37,10 @@ interface StandardFeedItem {
 }
 
 function resolveCategoryFromSearchParams(category: string | null): string {
-  return category ?? '전체';
+  if (!category) return '전체';
+  // 구 링크 호환: 과거 칩이 쓰던 세분류는 main_category에 없다 — '사료'로 정규화
+  if (category === '건식사료' || category === '습식사료') return '사료';
+  return category;
 }
 
 /** 추천 키워드(증상·목적) chip — 성분·목적 기반 탐색 보조(인기·순위 아님) */
@@ -79,7 +82,8 @@ const HEALTH_CONCERN_OPTIONS = [
   '간', '면역', '눈', '구강', '스트레스·분리불안', '임신·수유',
 ];
 
-const SEARCH_MAIN_CATEGORIES = ['전체', '건식사료', '습식사료', '간식', '영양제'];
+// DB products.main_category 실측값 기준. 건식/습식 구분은 필터 시트의 '제형'이 담당한다.
+const SEARCH_MAIN_CATEGORIES = ['전체', '사료', '간식', '영양제'];
 
 function defaultPetFromProfile(profile: { species?: string } | undefined): '' | 'dog' | 'cat' | 'all' {
   if (profile?.species === 'Cat') return 'cat';

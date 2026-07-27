@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   CalendarDays,
@@ -100,13 +100,13 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
   const { pets, activePetId, userId } = useStore();
   const navigate = useNavigate();
 
-  const today = useMemo(() => new Date(), []);
-  const todayKey = toDateKey(today);
+  // 렌더마다 재계산 — 탭을 자정 넘어 열어 두어도 '오늘' 배지·이동이 어긋나지 않게
+  const todayKey = toDateKey(new Date());
 
   const [selectedPetId, setSelectedPetId] = useState<string | null>(activePetId ?? pets[0]?.id ?? null);
   const [viewMode, setViewMode] = useState<'calendar' | 'week' | 'list'>('calendar');
-  const [viewYear, setViewYear] = useState(today.getFullYear());
-  const [viewMonth, setViewMonth] = useState(today.getMonth() + 1); // 1~12
+  const [viewYear, setViewYear] = useState(() => new Date().getFullYear());
+  const [viewMonth, setViewMonth] = useState(() => new Date().getMonth() + 1); // 1~12
   const [selectedDate, setSelectedDate] = useState<string>(todayKey);
   const [weekStart, setWeekStart] = useState<string>(() => weekStartKey(todayKey));
 
@@ -133,13 +133,22 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
     setSelectedPetId(activePetId ?? pets[0]?.id ?? null);
   }, [pets, activePetId, selectedPetId]);
 
+  // 각 로더의 최신 요청 번호 — 저장 직후처럼 같은 로더가 연달아 불릴 때
+  // 늦게 도착한 이전 요청 응답이 최신 상태를 덮어쓰지 않게 막는다.
+  const monthMarksReq = useRef(0);
+  const monthLogsReq = useRef(0);
+  const weekLogsReq = useRef(0);
+  const dayLogsReq = useRef(0);
+
   // 월간 마크(달력 점) 로드
   const loadMonthMarks = useCallback(async () => {
+    const req = ++monthMarksReq.current;
     if (!selectedPetId) {
       setMonthMarks({});
       return;
     }
     const rows = await getFeedingLogMonth(selectedPetId, viewYear, viewMonth);
+    if (req !== monthMarksReq.current) return;
     const map: Record<string, Set<string>> = {};
     for (const r of rows) {
       const type = productTypeToFeedingType(r.productType);
@@ -151,6 +160,7 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
 
   // 목록 보기 월간 전체 로드
   const loadMonthLogs = useCallback(async () => {
+    const req = ++monthLogsReq.current;
     if (!selectedPetId) {
       setMonthLogs([]);
       return;
@@ -158,14 +168,15 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
     setLoadingMonth(true);
     try {
       const rows = await getFeedingLogsByMonthFull(selectedPetId, viewYear, viewMonth);
-      setMonthLogs(rows);
+      if (req === monthLogsReq.current) setMonthLogs(rows);
     } finally {
-      setLoadingMonth(false);
+      if (req === monthLogsReq.current) setLoadingMonth(false);
     }
   }, [selectedPetId, viewYear, viewMonth]);
 
   // 주간 범위 기록 로드
   const loadWeekLogs = useCallback(async () => {
+    const req = ++weekLogsReq.current;
     if (!selectedPetId) {
       setWeekLogs([]);
       return;
@@ -173,14 +184,15 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
     setLoadingWeek(true);
     try {
       const rows = await getFeedingLogsRange(selectedPetId, weekStart, shiftDateKey(weekStart, 6));
-      setWeekLogs(rows);
+      if (req === weekLogsReq.current) setWeekLogs(rows);
     } finally {
-      setLoadingWeek(false);
+      if (req === weekLogsReq.current) setLoadingWeek(false);
     }
   }, [selectedPetId, weekStart]);
 
   // 선택 날짜 기록 로드
   const loadDayLogs = useCallback(async () => {
+    const req = ++dayLogsReq.current;
     if (!selectedPetId) {
       setDayLogs([]);
       return;
@@ -188,9 +200,9 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
     setLoadingDay(true);
     try {
       const rows = await getFeedingLogsByDate(selectedPetId, selectedDate);
-      setDayLogs(rows);
+      if (req === dayLogsReq.current) setDayLogs(rows);
     } finally {
-      setLoadingDay(false);
+      if (req === dayLogsReq.current) setLoadingDay(false);
     }
   }, [selectedPetId, selectedDate]);
 
@@ -228,9 +240,11 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
     }
   };
   const goToday = () => {
-    setViewYear(today.getFullYear());
-    setViewMonth(today.getMonth() + 1);
-    setSelectedDate(todayKey);
+    // 마운트 시점의 today가 아니라 현재 시각 기준 — 자정을 넘겨도 '오늘'이 맞도록
+    const now = new Date();
+    setViewYear(now.getFullYear());
+    setViewMonth(now.getMonth() + 1);
+    setSelectedDate(toDateKey(now));
   };
 
   const goWeek = (delta: number) => {
@@ -240,8 +254,9 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
     setSelectedDate(shiftDateKey(nextStart, dow));
   };
   const goThisWeek = () => {
-    setWeekStart(weekStartKey(todayKey));
-    setSelectedDate(todayKey);
+    const nowKey = toDateKey(new Date());
+    setWeekStart(weekStartKey(nowKey));
+    setSelectedDate(nowKey);
   };
 
   const switchView = (mode: 'calendar' | 'week' | 'list') => {
@@ -272,23 +287,24 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
   /** "다시 기록" — 기존 기록을 복제해 새 기록으로 (오늘 날짜) */
   const openRelog = (log: PetFeedingLog) => {
     setEditingLog(null);
-    setSelectedDate(todayKey);
+    setSelectedDate(toDateKey(new Date()));
     setPresetLog(log);
     setFormOpen(true);
   };
   const openHistory = (ref: ProductRef) => setHistoryRef(ref);
 
   const handleSaved = (saved: PetFeedingLog) => {
-    // 저장된 기록의 날짜로 이동해 즉시 확인
+    // 저장된 기록의 날짜(및 반려동물)로 이동해 즉시 확인.
+    // 달력·주간 상태를 모두 저장된 날짜에 맞추고 무조건 새로고침한다 —
+    // 조건부 새로고침은 주간 뷰에서 달이 걸친 날짜에 저장했을 때(뷰 상태가
+    // 이미 같아 effect가 다시 돌지 않는 경우) 목록이 갱신되지 않는 구멍이 있었다.
+    // 오래된 요청 응답은 로더의 요청 번호 가드가 걸러 준다.
+    if (saved.petId && saved.petId !== selectedPetId) setSelectedPetId(saved.petId);
     setSelectedDate(saved.feedingDate);
-    const savedMonth = Number(saved.feedingDate.slice(5, 7));
-    const savedYear = Number(saved.feedingDate.slice(0, 4));
-    if (savedYear !== viewYear || savedMonth !== viewMonth) {
-      setViewYear(savedYear);
-      setViewMonth(savedMonth);
-    } else {
-      refreshAll();
-    }
+    setViewYear(Number(saved.feedingDate.slice(0, 4)));
+    setViewMonth(Number(saved.feedingDate.slice(5, 7)));
+    setWeekStart(weekStartKey(saved.feedingDate));
+    refreshAll();
   };
 
   const confirmDelete = async () => {
@@ -1155,7 +1171,8 @@ function ProductHistorySheet({
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <SummaryPill label={`총 ${logs.length}회`} show tone="total" />
+            {/* 조회 상한(60회)에 걸리면 '총'이 아니라 '최근'으로 정직하게 표기 */}
+            <SummaryPill label={logs.length >= 60 ? `최근 ${logs.length}회` : `총 ${logs.length}회`} show tone="total" />
             <SummaryPill label={`최근 ${formatDateHeading(logs[0].feedingDate)}`} show tone="total" />
             {avgPref != null && <SummaryPill label={`평균 기호도 ${avgPref.toFixed(1)}`} show tone="food" />}
           </div>

@@ -321,7 +321,18 @@ export const useStore = create<StoreState>((set, get) => ({
     try {
       const { signOut } = await import('../lib/supabase');
       await signOut();
-      set({ userId: null, profile: DEFAULT_USER_PET_PROFILE, pets: [], activePetId: null, favorites: [] });
+      // 개인화 상태를 모두 비운다 — recentViews를 남기면 다음 사용자에게
+      // 이전 사용자의 '최근 본 제품'이 노출된다. isLoggedIn도 auth 리스너에
+      // 의존하지 않고 즉시 내린다.
+      set({
+        userId: null,
+        isLoggedIn: false,
+        profile: DEFAULT_USER_PET_PROFILE,
+        pets: [],
+        activePetId: null,
+        favorites: [],
+        recentViews: [],
+      });
     } catch (err) {
       console.error(err);
     }

@@ -246,6 +246,11 @@ export default function FeedingLogForm({
     }
     if (!petId) return;
 
+    // 급여량: 입력에서 첫 번째 숫자만 추출한다. 전체에서 숫자 외 문자를 지우는
+    // 방식은 "약간"→0, "50~60"→5060 같은 잘못된 값을 조용히 저장했다.
+    const amountMatch = amount.trim().match(/\d*\.?\d+/);
+    const parsedAmount = amountMatch ? Number.parseFloat(amountMatch[0]) : NaN;
+
     const input: FeedingLogInput = {
       petId,
       productId: isCustomProduct ? null : selectedProduct?.id ?? null,
@@ -255,7 +260,7 @@ export default function FeedingLogForm({
       feedingDate: date,
       feedingTime: time || null,
       mealPeriod,
-      amount: amount.trim() ? Number(amount.replace(/[^0-9.]/g, '')) : null,
+      amount: Number.isFinite(parsedAmount) ? parsedAmount : null,
       unit: resolvedUnit || null,
       memo: memo.trim() || null,
       preferenceLevel: preference,

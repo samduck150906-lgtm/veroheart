@@ -6,8 +6,10 @@ import { useNavigate } from 'react-router-dom';
 import PetSafetyAlert from '../components/PetSafetyAlert';
 import type { PetSafetyScan } from '../utils/petSafety';
 
+// category 값은 DB products.main_category 실측값('사료'/'간식'/'영양제')과 일치해야 한다.
+// '건식사료' 같은 세분류는 main_category에 존재하지 않아 검색 결과가 항상 0건이 된다.
 const CATEGORIES = [
-  { label: '사료', category: '건식사료', icon: Soup },
+  { label: '사료', category: '사료', icon: Soup },
   { label: '간식', category: '간식', icon: Bone },
   { label: '영양제', category: '영양제', icon: Pill },
 ];
