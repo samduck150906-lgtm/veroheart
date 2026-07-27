@@ -26,17 +26,19 @@ import {
 
 /** 재설계된 PDP 파트가 예시 데이터로 올바른 콘텐츠를 렌더하는지 검증. */
 describe('PDP redesign parts', () => {
-  it('ScoreGauge: 점수→등급/라벨/한줄이 렌더된다', () => {
+  it('ScoreGauge: 점수→등급/라벨/한줄이 렌더된다 (등급은 utils/score와 동일 밴드)', () => {
     const html = renderToStaticMarkup(<ScoreGauge score={92} oneLiner="단백질 품질이 우수합니다." />);
-    expect(html).toContain('A+');
+    expect(html).not.toContain('A+'); // 단일 스케일(A~F) — 별도 A+ 밴드 없음
     expect(html).toContain('매우 안전');
     expect(html).toContain('단백질 품질이 우수합니다.');
     expect(html).toContain('안전점수');
   });
 
-  it('gradeFromScore 밴드: 60점→C/확인 필요, 40점→F/비추천', () => {
+  it('gradeFromScore 밴드: utils/score 기준(72→B, 62→C, 40→D, 35→F)과 일치한다', () => {
+    expect(renderToStaticMarkup(<ScoreGauge score={72} />)).toContain('대체로 안전');
     expect(renderToStaticMarkup(<ScoreGauge score={62} />)).toContain('확인 필요');
-    expect(renderToStaticMarkup(<ScoreGauge score={40} />)).toContain('비추천');
+    expect(renderToStaticMarkup(<ScoreGauge score={40} />)).toContain('주의');
+    expect(renderToStaticMarkup(<ScoreGauge score={35} />)).toContain('비추천');
   });
 
   it('GlanceGrid: 각 타일의 라벨/값이 렌더된다', () => {
@@ -96,7 +98,7 @@ describe('PDP redesign parts', () => {
   it('StickyScoreBar: 점수/등급/제품명이 렌더된다', () => {
     const html = renderToStaticMarkup(<StickyScoreBar score={92} name="미니 인도어 어덜트" visible progress={40} />);
     expect(html).toContain('92');
-    expect(html).toContain('A+');
+    expect(html).toContain('>A<'); // canonical A 등급 (A+ 아님)
     expect(html).toContain('미니 인도어 어덜트');
   });
 

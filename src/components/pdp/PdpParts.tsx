@@ -16,6 +16,9 @@ import {
   WifiOff,
   Inbox,
 } from 'lucide-react';
+import { gradeMetaFromScore, type GradeMeta, type SafetyTone } from './gradeMeta';
+
+export type { GradeMeta, SafetyTone };
 
 /* ────────────────────────────────────────────────────────────
  * PDP (Product Detail Page) redesign parts — P0 components.
@@ -24,31 +27,7 @@ import {
  * the personalized breakdown (getRecommendationBreakdown).
  * ──────────────────────────────────────────────────────────── */
 
-export type SafetyTone = 'excellent' | 'good' | 'caution' | 'danger';
-
-export interface GradeMeta {
-  grade: string;
-  tone: SafetyTone;
-  fg: string;
-  bg: string;
-  ring: string;
-  label: string;
-}
-
-/** 0–100 score → letter grade + semantic color band (spec §9.3 / §29). */
-function gradeFromScore(score: number): GradeMeta {
-  const s = Math.max(0, Math.min(100, Math.round(score)));
-  const safe = { fg: 'var(--pdp-safe-fg)', bg: 'var(--pdp-safe-bg)' };
-  const good = { fg: 'var(--pdp-good-fg)', bg: 'var(--pdp-good-bg)' };
-  const caution = { fg: 'var(--pdp-caution-fg)', bg: 'var(--pdp-caution-bg)' };
-  const danger = { fg: 'var(--pdp-danger-fg)', bg: 'var(--pdp-danger-bg)' };
-  if (s >= 90) return { grade: 'A+', tone: 'excellent', ...safe, ring: '#16A34A', label: '매우 안전' };
-  if (s >= 85) return { grade: 'A', tone: 'excellent', ...safe, ring: '#22C55E', label: '안전' };
-  if (s >= 75) return { grade: 'B', tone: 'good', ...good, ring: '#4ADE80', label: '대체로 안전' };
-  if (s >= 60) return { grade: 'C', tone: 'caution', ...caution, ring: '#F59E0B', label: '확인 필요' };
-  if (s >= 45) return { grade: 'D', tone: 'caution', ...caution, ring: '#F97316', label: '주의' };
-  return { grade: 'F', tone: 'danger', ...danger, ring: '#EF4444', label: '비추천' };
-}
+const gradeFromScore = gradeMetaFromScore;
 
 /** Count-up that respects prefers-reduced-motion (spec §13). */
 function useCountUp(to: number, durationMs = 800): number {

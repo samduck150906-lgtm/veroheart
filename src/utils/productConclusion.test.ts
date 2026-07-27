@@ -81,4 +81,25 @@ describe('buildProductConclusion — 판정 우선순위(§6)', () => {
     expect(buildProductConclusion(product(), dog, report(60)).tone).toBe('caution');
     expect(buildProductConclusion(product(), dog, report(30)).tone).toBe('caution');
   });
+
+  it('게스트(personalized:false)에게는 종 불일치·알레르기 경고 대신 점수 결론을 낸다', () => {
+    const c = buildProductConclusion(
+      product({ targetPetType: 'cat', ingredients: [ing('닭고기')] }),
+      { ...dog, allergies: ['닭'] },
+      report(88),
+      { personalized: false },
+    );
+    expect(c.tone).toBe('match');
+    expect(c.headline).not.toContain('제품이 아닙니다');
+  });
+
+  it('알레르기 매칭이 점수 엔진과 동일한 정규화 매처를 쓴다(공백·대소문자 무시)', () => {
+    const c = buildProductConclusion(
+      product({ ingredients: [ing('닭 고기')] }),
+      { ...dog, allergies: ['닭고기'] },
+      report(95),
+    );
+    expect(c.tone).toBe('alert');
+    expect(c.headline).toContain('급여를 권하지 않아요');
+  });
 });

@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import { calculateCompatibilityScore } from '../utils/score';
+import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import { normalizeProductDisplayName } from '../utils/productDisplay';
-import { X, GitCompare, ShieldCheck, Star, ShoppingBag } from 'lucide-react';
+import { X, GitCompare, ShieldCheck, Star, PawPrint } from 'lucide-react';
 
 export default function Comparison() {
   const navigate = useNavigate();
@@ -38,7 +38,7 @@ export default function Comparison() {
         </span>
         <h2 style={{ fontSize: '25px', marginBottom: '8px', fontWeight: 900 }}>제품 비교 ({products.length}/4)</h2>
         <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-          가격, 평점, 주의 성분, 맞춤 궁합을 한 자리에서 비교해 더 빠르게 결정해보세요.
+          평점, 위험 성분, 맞춤 궁합을 한 자리에서 비교해 더 빠르게 결정해보세요.
         </p>
       </section>
 
@@ -54,7 +54,7 @@ export default function Comparison() {
           <div style={{ fontSize: '14px', fontWeight: 800, marginTop: '4px' }}>평점과 리뷰 반응</div>
         </div>
         <div className="ui-info-card" style={{ padding: '16px' }}>
-          <div className="ui-icon-pill" style={{ marginBottom: '10px' }}><ShoppingBag size={16} color="var(--primary-dark)" /></div>
+          <div className="ui-icon-pill" style={{ marginBottom: '10px' }}><PawPrint size={16} color="var(--primary-dark)" /></div>
           <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 700 }}>비교 기준</div>
           <div style={{ fontSize: '14px', fontWeight: 800, marginTop: '4px' }}>{profile.name} 맞춤 궁합 점수</div>
         </div>
@@ -62,7 +62,8 @@ export default function Comparison() {
       
       <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '16px' }}>
         {products.map(p => {
-          const score = calculateCompatibilityScore(p, profile);
+          // 카드·상세와 동일한 하드캡 적용 점수 (게스트에게는 객관 점수)
+          const score = resolveProductDisplayVerdict(p, profile).score;
           const dangerCount = p.ingredients?.filter(i => i.riskLevel === 'danger').length || 0;
           const safeRatio = p.ingredients?.length
             ? Math.round((p.ingredients.filter(i => i.riskLevel === 'safe').length / p.ingredients.length) * 100)
@@ -102,7 +103,7 @@ export default function Comparison() {
                   <span style={{ fontWeight: 600 }}>★ {p.averageRating}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>주의 성분</span>
+                  <span style={{ color: 'var(--text-muted)' }}>위험 성분</span>
                   <span style={{ fontWeight: 600, color: 'var(--danger)' }}>
                     {dangerCount}개
                   </span>

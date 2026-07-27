@@ -29,7 +29,8 @@ import { TossCard } from '../components/TossUI';
 import { getReviews, createReview, deleteReview } from '../lib/supabase';
 import { notify } from '../store/useNotification';
 import { buildProductConclusion } from '../utils/productConclusion';
-import { getCompatibilityBreakdown } from '../utils/score';
+import { isAllergyIngredient } from '../utils/score';
+import { isRealPetProfile, resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import { getAppScrollEl, getAppScrollTop, scrollAppToTop } from '../utils/scroll';
 import { analyzeFeed } from '../analysis/feedAnalysis';
 import FeedAnalysisCard from '../components/FeedAnalysisCard';
@@ -51,6 +52,7 @@ import {
   type AltCardData,
   type RadarAxis,
 } from '../components/pdp/PdpParts';
+import { gradeMetaFromScore } from '../components/pdp/gradeMeta';
 import { REVIEW_QUICK_TAGS } from '../constants/reviewTags';
 
 interface Ingredient { nameKo: string; nameEn?: string; purpose?: string; riskLevel?: string; isAllergy?: boolean; }
@@ -211,15 +213,26 @@ export default function Detail() {
   );
 
   const report = product ? generateAnalysisReport(product, profile) : null;
-  const conclusion = product && report ? buildProductConclusion(product, profile, report) : null;
+  const personalized = isRealPetProfile(profile);
   const isComparing = comparisonList.includes(product?.id || '');
   const isFav = favorites.includes(product?.id || '');
   const verificationMeta = getVerificationMeta(product.verificationStatus);
 
   // ── PDP 판단 스택 데이터 (점수 게이지 · 요약 · 우리 아이 적합도) ──
-  const breakdown = getCompatibilityBreakdown(product, profile);
-  const safetyScore = report ? report.score : breakdown.total;
-  const petTypeLabel = product.targetPetType === 'cat' ? '고양이용' : product.targetPetType === 'all' ? '공용' : '강아지용';
+  // 표시 점수는 카드·분석결과와 동일한 하드캡(위험≤69, 알레르기≤9, 종 불일치=0)을
+  // 거친 값을 쓴다. 게스트에게는 개인화 감점 없는 객관 점수를 보여준다.
+  const { breakdown, score: safetyScore } = resolveProductDisplayVerdict(product, profile);
+  const conclusion = report
+    ? buildProductConclusion(product, profile, { ...report, score: safetyScore }, { personalized })
+    : null;
+  const petTypeLabel =
+    product.targetPetType === 'cat'
+      ? '고양이용'
+      : product.targetPetType === 'all'
+        ? '공용'
+        : product.targetPetType === 'dog'
+          ? '강아지용'
+          : '미표기';
   const glanceTiles: GlanceTileData[] = [
     breakdown.dangerCount > 0
       ? { icon: <AlertTriangle size={18} />, label: '안전도', value: `위험 ${breakdown.dangerCount}개`, tone: 'danger' }
@@ -241,14 +254,19 @@ export default function Detail() {
     ...(profile.healthConcerns || []).slice(0, 2),
   ].filter(Boolean) as string[];
 
-  // Sticky Score 노출/진행률
+  // Sticky Score 노출/진행률 — 이 앱의 유일한 스크롤 영역은 .app-main이다
   const showStickyScore = scrollY > 420;
-  const scrollMax = typeof document !== 'undefined' ? Math.max(1, document.documentElement.scrollHeight - window.innerHeight) : 1;
+  const appScrollEl = getAppScrollEl();
+  const scrollMax = appScrollEl
+    ? Math.max(1, appScrollEl.scrollHeight - appScrollEl.clientHeight)
+    : typeof document !== 'undefined'
+      ? Math.max(1, document.documentElement.scrollHeight - window.innerHeight)
+      : 1;
   const scrollProgress = Math.min(100, (scrollY / scrollMax) * 100);
 
   // 종합 의견 3줄 (breakdown 기반, 신규 데이터 불필요)
   const safeCount = product.ingredients?.filter(i => i.riskLevel === 'safe').length ?? 0;
-  const gradeLabel = safetyScore >= 85 ? '매우 안전' : safetyScore >= 75 ? '대체로 안전' : safetyScore >= 60 ? '확인 필요' : '주의';
+  const gradeLabel = gradeMetaFromScore(safetyScore).label;
   const verdictLines = [
     {
       icon: <ShieldCheck size={16} />,
@@ -260,16 +278,16 @@ export default function Detail() {
     },
     {
       icon: <Check size={16} />,
-      text: `결론: ${profile.name} 적합도 ${breakdown.total}% — ${breakdown.total >= 75 ? '추천합니다.' : breakdown.total >= 60 ? '급여 시 소량부터 확인하세요.' : '대체 상품을 함께 검토하세요.'}`,
+      text: `결론: ${profile.name} 적합도 ${safetyScore}% — ${safetyScore >= 75 ? '추천합니다.' : safetyScore >= 60 ? '급여 시 소량부터 확인하세요.' : '대체 상품을 함께 검토하세요.'}`,
     },
   ];
 
-  // ── 대체 상품 4유형 (더 건강 / 더 저렴 / 같은 가격 최고 / 전문가 검수) ──
-  const currentScore = report ? report.score : breakdown.total;
+  // ── 대체 상품 (더 건강 / 주의 성분 없음 / 전문가 검수) — 표시 점수와 같은 캡 적용 ──
+  const currentScore = safetyScore;
   const expectedPet = profile.species === 'Cat' ? 'cat' : 'dog';
   const altPool = products
     .filter(p => p.id !== product.id && p.category === product.category && (!p.targetPetType || p.targetPetType === expectedPet || p.targetPetType === 'all'))
-    .map(p => ({ p, score: generateAnalysisReport(p, profile).score }));
+    .map(p => ({ p, score: resolveProductDisplayVerdict(p, profile).score }));
   const altUsed = new Set<string>();
   const altCards: AltCardData[] = [];
   const pickAlt = (cands: { p: typeof product; score: number }[], tag: string, tagTone: AltCardData['tagTone']) => {
@@ -308,7 +326,8 @@ export default function Detail() {
   // Create Toss-style Headline Data
   const dangerIngs = product.ingredients?.filter(i => i.riskLevel === 'danger') || [];
   const cautionIngs = product.ingredients?.filter(i => i.riskLevel === 'caution') || [];
-  const allergyIngs = product.ingredients?.filter(ing => profile.allergies.some(a => ing.nameKo.includes(a) || (ing.nameEn && ing.nameEn.toLowerCase().includes(a.toLowerCase())))) || [];
+  // 점수 엔진과 동일한 매처 사용 — 헤드라인/성분 플래그/점수 판정이 서로 어긋나지 않게
+  const allergyIngs = product.ingredients?.filter(ing => isAllergyIngredient(ing, profile.allergies)) || [];
   const { headline, headlineColor } = (() => {
     if (allergyIngs.length > 0 || dangerIngs.length > 0) {
       const count = new Set([...allergyIngs, ...dangerIngs]).size;
@@ -341,7 +360,7 @@ export default function Detail() {
     <div className="animate-fade-in detail-page-root" style={{ paddingBottom: '96px' }}>
       <Helmet>
         <title>{product.name} - 베로로</title>
-        <meta name="description" content={`${product.brand}의 ${product.name} 전성분 분석 결과 및 구매`} />
+        <meta name="description" content={`${product.brand}의 ${product.name} 전성분 분석 결과`} />
       </Helmet>
 
       <OfflineBanner online={online} />
@@ -425,7 +444,7 @@ export default function Detail() {
       {/* ── 3초 판단 스택: 점수 게이지 · 핵심 요약 · 우리 아이 적합도 ── */}
       <ScoreGauge score={safetyScore} oneLiner={report?.summary} />
       <GlanceGrid tiles={glanceTiles} />
-      <FitForPetCard petName={profile.name} percent={breakdown.total} chips={fitChips} reasons={breakdown.reasons} />
+      <FitForPetCard petName={profile.name} percent={safetyScore} chips={fitChips} reasons={breakdown.reasons} />
 
       <TossCard style={{ marginBottom: '24px', padding: '20px' }}>
         <div style={{ marginBottom: '8px', fontSize: '13px', color: 'var(--text-light)', fontWeight: 700 }}>{product.brand}</div>
@@ -519,9 +538,7 @@ export default function Detail() {
         <div>
           {(product.ingredients ?? [])
             .map(ing => {
-              const isAllergy = profile.allergies.some(a =>
-                ing.nameKo.includes(a) || (ing.nameEn && ing.nameEn.toLowerCase().includes(a.toLowerCase()))
-              );
+              const isAllergy = isAllergyIngredient(ing, profile.allergies);
               // 위험/알레르기 → 주의 → 안전 순으로 정렬(판단이 먼저 보이도록)
               const rank = isAllergy || ing.riskLevel === 'danger' ? 0 : ing.riskLevel === 'caution' ? 1 : 2;
               return { ing, isAllergy, rank };

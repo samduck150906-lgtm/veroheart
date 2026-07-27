@@ -1,4 +1,4 @@
-import type { Product, UserPetProfile } from '../types';
+import type { Ingredient, Product, UserPetProfile } from '../types';
 import { analyzeFeed } from '../analysis/feedAnalysis';
 
 /** 궁합 등급 — 점수(0~100)를 사용자에게 보여줄 A~F 등급으로 매핑한 단일 진실원천 */
@@ -116,18 +116,33 @@ function countConcernMatches(product: Product, profile: UserPetProfile) {
   return [...matched];
 }
 
-function countAllergyHits(product: Product, profile: UserPetProfile) {
+/**
+ * 성분 1개가 등록된 알레르기·회피 성분과 매칭되는지.
+ * 점수·상세·결론 카드가 같은 판정을 공유하도록 하는 단일 매처다.
+ * (NFKC 정규화 + 공백/구두점 제거 후 이름·영문명·용도 포함 검사)
+ */
+export function isAllergyIngredient(ingredient: Ingredient, allergies: string[]): boolean {
+  return allergies.some((allergy) => {
+    const normalizedAllergy = normalize(allergy);
+    if (!normalizedAllergy) return false;
+    return (
+      normalize(ingredient.nameKo || '').includes(normalizedAllergy) ||
+      normalize(ingredient.nameEn || '').includes(normalizedAllergy) ||
+      normalize(ingredient.purpose || '').includes(normalizedAllergy)
+    );
+  });
+}
+
+/** 프로필 알레르기 중 제품 성분과 매칭된 항목 목록 — 표면 공통 매처 */
+export function countAllergyHits(product: Product, profile: UserPetProfile): string[] {
   const hits = new Set<string>();
 
   for (const allergy of profile.allergies) {
     const normalizedAllergy = normalize(allergy);
     if (!normalizedAllergy) continue;
 
-    const hasHit = product.ingredients.some(
-      (ingredient) =>
-        normalize(ingredient.nameKo).includes(normalizedAllergy) ||
-        normalize(ingredient.nameEn || '').includes(normalizedAllergy) ||
-        normalize(ingredient.purpose).includes(normalizedAllergy),
+    const hasHit = (product.ingredients ?? []).some((ingredient) =>
+      isAllergyIngredient(ingredient, [allergy]),
     );
 
     if (hasHit) hits.add(allergy);

@@ -202,7 +202,9 @@ export default function AnalysisResult() {
   const rawScore = useMemo(() => {
     if (!product) return 75;
     if (hasPetProfile) return calculateCompatibilityScore(product, profile);
-    return generateAnalysisReport(product, profile).score;
+    // 프로필이 없으면 개인화 감점(종 불일치·알레르기) 없는 객관 점수를 보여준다.
+    // 기본 프로필(종=Dog)로 개인화하면 고양이 제품이 게스트에게 전부 0점이 된다.
+    return getRecommendationBreakdown(product, profile).baseScore;
   }, [product, profile, hasPetProfile]);
 
   const breakdown = useMemo(
@@ -214,6 +216,7 @@ export default function AnalysisResult() {
   // 모순되지 않게 한다. 랭킹용 원점수(rawScore)는 그대로 두고 표시값만 조정한다.
   const verdict = useMemo(
     () => resolveDisplayVerdict(rawScore, {
+      speciesMismatch: breakdown?.speciesMismatch ?? false,
       allergyHits: breakdown?.allergyHits.length ?? 0,
       dangerCount: dangerIngredients.length,
     }),
