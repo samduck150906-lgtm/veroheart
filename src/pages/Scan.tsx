@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { ArrowLeft, Search as SearchIcon, Barcode, Zap, ZapOff } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { getProductByBarcode } from '../lib/supabase';
 
@@ -17,6 +16,12 @@ interface BarcodeDetectorLike {
 interface BarcodeDetectorCtor {
   new (options?: { formats: string[] }): BarcodeDetectorLike;
 }
+
+/** 뷰파인더 안 자리표시자 바코드 패턴 — 프로토타입 barBars */
+const BAR_PATTERN = Array.from({ length: 16 }, (_, i) => ({
+  w: `${i % 3 === 0 ? 4 : i % 2 === 0 ? 2 : 6}px`,
+  o: 0.5 + ((i * 7) % 5) / 10,
+}));
 
 export default function Scan() {
   const navigate = useNavigate();
@@ -140,111 +145,137 @@ export default function Scan() {
   const showLive = camState === 'live' || camState === 'starting';
   const showFallback = camState === 'denied' || camState === 'unavailable';
 
+  const hint = detected
+    ? '제품을 찾았어'
+    : showFallback
+      ? '카메라를 쓸 수 없어. 직접 검색으로 넘어가자'
+      : detectorRef.current
+        ? '바코드를 읽고 있어…'
+        : '제품 뒷면 바코드를 사각형 안에 맞춰줘';
+
   return (
-    <div style={{ position: 'fixed', inset: 0, background: '#0B0D10', zIndex: 30, overflow: 'hidden' }}>
+    <div style={{ position: 'fixed', inset: 0, background: '#0A0A08', zIndex: 30, overflow: 'hidden', display: 'flex', flexDirection: 'column', maxWidth: '480px', margin: '0 auto' }}>
       <Helmet>
         <title>스캔 | 베로로</title>
         <meta name="description" content="바코드를 스캔해 제품 성분 분석을 확인하세요." />
       </Helmet>
-      <style>{`@keyframes veroScanLine { 0%{top:6%} 50%{top:90%} 100%{top:6%} }`}</style>
 
-      {/* Camera preview */}
-      {showLive && (
-        <video
-          ref={videoRef}
-          playsInline
-          muted
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-        />
-      )}
-
-      {/* Dim + guide frame */}
-      {showLive && (
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)' }}>
-          <div
-            style={{
-              position: 'absolute', left: '50%', top: '44%', transform: 'translate(-50%,-50%)',
-              width: '78%', height: '26%', borderRadius: 20,
-              boxShadow: '0 0 0 100vmax rgba(0,0,0,0.45)', overflow: 'hidden',
-            }}
-          >
-            {/* corner brackets */}
-            {[
-              { top: 0, left: 0, borderWidth: '3px 0 0 3px' },
-              { top: 0, right: 0, borderWidth: '3px 3px 0 0' },
-              { bottom: 0, left: 0, borderWidth: '0 0 3px 3px' },
-              { bottom: 0, right: 0, borderWidth: '0 3px 3px 0' },
-            ].map((c, i) => (
-              <span key={i} style={{ position: 'absolute', width: 26, height: 26, borderStyle: 'solid', borderColor: '#FEE500', borderRadius: 4, ...c }} />
-            ))}
-            {/* scan line */}
-            <span style={{ position: 'absolute', left: '6%', right: '6%', height: 2, background: 'linear-gradient(90deg,transparent,#FEE500,transparent)', animation: 'veroScanLine 2.4s ease-in-out infinite' }} />
-          </div>
-
-          <p style={{ position: 'absolute', left: 0, right: 0, top: 'calc(44% + 22vh)', textAlign: 'center', color: '#fff', fontSize: 14, fontWeight: 700, padding: '0 32px', textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}>
-            {detectorRef.current
-              ? '제품 뒷면 바코드를 프레임 안에 맞춰주세요'
-              : '바코드 자동 인식이 지원되지 않는 기기예요. 아래에서 직접 검색해 주세요'}
-          </p>
-        </div>
-      )}
-
-      {/* Fallback (권한 거부 / 미지원) */}
-      {showFallback && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center', color: '#fff' }}>
-          <Barcode size={44} color="#FEE500" style={{ marginBottom: 18 }} />
-          <p style={{ fontSize: 17, fontWeight: 800, margin: 0 }}>
-            {camState === 'denied' ? '카메라 권한이 필요해요' : '이 기기에서는 카메라 스캔을 쓸 수 없어요'}
-          </p>
-          <p style={{ fontSize: 13, opacity: 0.75, margin: '8px 0 24px', lineHeight: 1.6 }}>
-            {camState === 'denied'
-              ? '설정에서 카메라 접근을 허용하거나, 제품명으로 직접 검색해 분석할 수 있어요.'
-              : '제품명으로 직접 검색해 분석을 시작해 보세요.'}
-          </p>
-          <button
-            type="button"
-            onClick={() => navigate('/search')}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 24px', borderRadius: 16, border: 'none', background: '#FEE500', color: '#191F28', fontSize: 15, fontWeight: 900, cursor: 'pointer' }}
-          >
-            <SearchIcon size={18} /> 직접 검색하기
-          </button>
-        </div>
-      )}
-
-      {/* Top bar */}
-      <div style={{ position: 'absolute', top: 'calc(12px + env(safe-area-inset-top,0px))', left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px' }}>
+      {/* 상단 바 */}
+      <div style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: '12px', padding: 'calc(14px + env(safe-area-inset-top,0px)) 14px 14px' }}>
         <button
           type="button"
           onClick={() => { stopCamera(); navigate(-1); }}
           aria-label="닫기"
-          style={{ width: 40, height: 40, borderRadius: 999, border: 'none', background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          style={{
+            width: '38px', height: '38px', borderRadius: '50%', border: 'none', cursor: 'pointer',
+            background: 'rgba(255,255,255,.12)', color: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
         >
-          <ArrowLeft size={20} />
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
         </button>
+        <span style={{ fontSize: '14.5px', fontWeight: 800, color: '#fff' }}>바코드 스캔</span>
         {showLive && (
           <button
             type="button"
             onClick={toggleTorch}
             aria-label="플래시"
-            style={{ width: 40, height: 40, borderRadius: 999, border: 'none', background: torchOn ? '#FEE500' : 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', color: torchOn ? '#191F28' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+            style={{
+              marginLeft: 'auto', width: '38px', height: '38px', borderRadius: '50%', border: 'none', cursor: 'pointer',
+              background: torchOn ? '#FFD90A' : 'rgba(255,255,255,.12)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
           >
-            {torchOn ? <Zap size={19} /> : <ZapOff size={19} />}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={torchOn ? '#15150F' : '#fff'} strokeWidth="2" strokeLinejoin="round">
+              <path d="M13 2L5 13h5l-1 9 8-11h-5z" />
+            </svg>
           </button>
         )}
       </div>
 
-      {/* Bottom bar: 인식 결과 + 직접 검색 */}
-      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 'calc(28px + env(safe-area-inset-bottom,0px))', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '0 24px' }}>
-        {detected && (
-          <div style={{ color: '#fff', fontSize: 13, fontWeight: 700, opacity: 0.9 }}>인식됨: {detected}</div>
+      {/* 뷰파인더 */}
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+        {showLive && (
+          <video
+            ref={videoRef}
+            playsInline
+            muted
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+          />
         )}
-        <button
-          type="button"
-          onClick={() => { stopCamera(); navigate('/search'); }}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#fff', background: 'none', border: 'none', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', opacity: 0.9 }}
+        {!showLive && (
+          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(120% 80% at 50% 40%, #2A2A22 0%, #111110 70%)' }} />
+        )}
+
+        <div
+          style={{
+            position: 'absolute', left: '34px', right: '34px', top: '26%', bottom: '30%',
+            borderRadius: '18px', boxShadow: '0 0 0 3000px rgba(0,0,0,.45)',
+          }}
         >
-          <SearchIcon size={16} /> 제품명으로 직접 검색
-        </button>
+          <span style={{ position: 'absolute', left: '-2px', top: '-2px', width: '34px', height: '34px', borderTop: '4px solid #FFD90A', borderLeft: '4px solid #FFD90A', borderRadius: '14px 0 0 0' }} />
+          <span style={{ position: 'absolute', right: '-2px', top: '-2px', width: '34px', height: '34px', borderTop: '4px solid #FFD90A', borderRight: '4px solid #FFD90A', borderRadius: '0 14px 0 0' }} />
+          <span style={{ position: 'absolute', left: '-2px', bottom: '-2px', width: '34px', height: '34px', borderBottom: '4px solid #FFD90A', borderLeft: '4px solid #FFD90A', borderRadius: '0 0 0 14px' }} />
+          <span style={{ position: 'absolute', right: '-2px', bottom: '-2px', width: '34px', height: '34px', borderBottom: '4px solid #FFD90A', borderRight: '4px solid #FFD90A', borderRadius: '0 0 14px 0' }} />
+
+          {!showLive && (
+            <span style={{ position: 'absolute', inset: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px', opacity: 0.5 }}>
+              {BAR_PATTERN.map((bar, i) => (
+                <span key={i} style={{ height: '70px', background: '#fff', width: bar.w, opacity: bar.o }} />
+              ))}
+            </span>
+          )}
+
+          {showLive && !detected && (
+            <span className="vr-laser" style={{ position: 'absolute', left: '6px', right: '6px', height: '3px', background: '#FFD90A', boxShadow: '0 0 22px 6px rgba(255,217,10,.7)' }} />
+          )}
+          {detected && (
+            <span className="vr-anim-fade" style={{ position: 'absolute', inset: 0, border: '3px solid #5AD07F', borderRadius: '18px' }} />
+          )}
+        </div>
+
+        <div style={{ position: 'absolute', left: 0, right: 0, bottom: '26px', textAlign: 'center', padding: '0 24px' }}>
+          <div style={{ fontSize: '14px', fontWeight: 800, color: '#fff' }}>{hint}</div>
+          {detected && (
+            <div style={{ fontSize: '12px', color: '#8A8A7C', marginTop: '5px', fontFamily: 'ui-monospace, Menlo, monospace' }}>
+              {detected}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 하단 액션 */}
+      <div style={{ flex: 'none', padding: '16px 16px calc(16px + env(safe-area-inset-bottom,0px))' }}>
+        {showFallback ? (
+          <>
+            <button
+              type="button"
+              className="vr-btn vr-btn--primary"
+              style={{ padding: '16px', fontSize: '15.5px' }}
+              onClick={() => { stopCamera(); navigate('/search'); }}
+            >
+              직접 검색하기
+            </button>
+            <div style={{ textAlign: 'center', fontSize: '11.5px', color: '#8A8A7C', marginTop: '10px', lineHeight: 1.6 }}>
+              {camState === 'denied'
+                ? '설정에서 카메라 접근을 허용하면 바로 스캔할 수 있어.'
+                : '이 기기에서는 카메라 스캔을 쓸 수 없어.'}
+            </div>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={() => { stopCamera(); navigate('/search'); }}
+            style={{
+              width: '100%', textAlign: 'center', padding: '13px', background: 'none', border: 'none',
+              fontSize: '13.5px', fontWeight: 800, color: '#8A8A7C', cursor: 'pointer',
+            }}
+          >
+            제품명으로 직접 검색
+          </button>
+        )}
       </div>
     </div>
   );

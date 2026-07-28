@@ -1,124 +1,167 @@
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { X } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import { normalizeProductDisplayName } from '../utils/productDisplay';
-import { X, GitCompare, ShieldCheck, Star, PawPrint } from 'lucide-react';
+import { VR } from '../lib/veroroDesign';
+import type { Product } from '../types';
+import type { UserPetProfile } from '../types';
+
+/** 비교표에 한 번에 세울 수 있는 최대 제품 수 — 프로토타입 문구('최대 3개')와 동일 */
+const MAX_COLUMNS = 3;
+
+interface Column {
+  product: Product;
+  grade: string;
+  score: number;
+  kcal: string;
+  protein: string;
+  signalText: string;
+  allergyText: string;
+  allergyHit: boolean;
+}
+
+function buildColumn(product: Product, profile: UserPetProfile): Column {
+  const { score, grade, breakdown } = resolveProductDisplayVerdict(product, profile);
+  const kcalValue = product.caloriesPer100g ?? product.guaranteedAnalysis?.kcalPer100g;
+  const proteinValue = product.guaranteedAnalysis?.crudeProtein;
+  const goodCount = product.ingredients?.filter((i) => i.riskLevel === 'safe').length ?? 0;
+  const warnCount = breakdown.dangerCount + breakdown.cautionCount;
+
+  return {
+    product,
+    grade,
+    score,
+    kcal: kcalValue ? `${Math.round(kcalValue)}kcal` : '—',
+    protein: proteinValue ? `${proteinValue}%` : '—',
+    signalText: `주의 ${warnCount} · 좋음 ${goodCount}`,
+    allergyText: breakdown.allergyHits.length > 0 ? breakdown.allergyHits.join(', ') : '해당 없음',
+    allergyHit: breakdown.allergyHits.length > 0,
+  };
+}
 
 export default function Comparison() {
   const navigate = useNavigate();
   const { profile, products: storeProducts, comparisonList, removeFromComparison } = useStore();
-  
-  const products = comparisonList.map(id => storeProducts.find(p => p.id === id)).filter(Boolean) as typeof storeProducts;
 
-  if (products.length === 0) {
+  const columns = useMemo(() => {
+    return comparisonList
+      .map((id) => storeProducts.find((p) => p.id === id))
+      .filter((p): p is Product => Boolean(p))
+      .slice(0, MAX_COLUMNS)
+      .map((p) => buildColumn(p, profile));
+  }, [comparisonList, storeProducts, profile]);
+
+  const petName = profile.name || '우리 아이';
+
+  if (columns.length === 0) {
     return (
-      <div style={{ textAlign: 'center', padding: '100px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <div style={{ width: '120px', height: '120px', borderRadius: '50%', backgroundColor: 'var(--surface-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
-          <img src="https://cdn-icons-png.flaticon.com/512/9322/9322127.png" alt="Empty Comparison" style={{ width: '60px', opacity: 0.6 }} />
+      <div style={{ padding: '14px 0 40px' }}>
+        <h1 style={{ margin: '0 0 4px', fontSize: '24px', fontWeight: 800, letterSpacing: '-0.04em' }}>비교함</h1>
+        <p style={{ margin: '0 0 24px', fontSize: '13px', color: VR.muted }}>최대 {MAX_COLUMNS}개까지 나란히 볼 수 있어.</p>
+        <div className="vr-card" style={{ padding: '40px 20px', textAlign: 'center' }}>
+          <p style={{ margin: '0 0 18px', fontSize: '14px', color: VR.muted, lineHeight: 1.6 }}>
+            아직 담은 제품이 없어.<br />탐색에서 &lsquo;비교&rsquo;를 눌러 담아봐.
+          </p>
+          <button type="button" className="vr-btn vr-btn--primary" style={{ width: 'auto', padding: '13px 22px' }} onClick={() => navigate('/search')}>
+            비교할 제품 탐색하기
+          </button>
         </div>
-        <h3 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '8px', color: 'var(--text-dark)' }}>비교함이 비어있습니다.</h3>
-        <p style={{ marginBottom: '32px', color: 'var(--text-muted)', fontSize: '15px' }}>마음에 드는 사료들을 담아<br/>어떤 점이 다른지 꼼꼼히 비교해보세요!</p>
-        <button 
-          className="btn btn-primary" 
-          style={{ padding: '16px 32px', borderRadius: '16px', fontWeight: 800, fontSize: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', border: 'none', cursor: 'pointer' }}
-          onClick={() => navigate('/search')}
-        >
-          비교할 사료 탐색하기
-        </button>
       </div>
     );
   }
 
+  const rows: { label: string; values: string[]; tone?: (col: Column) => string }[] = [
+    { label: '등급', values: columns.map((c) => `${c.grade} ${c.score}`) },
+    { label: '열량', values: columns.map((c) => c.kcal) },
+    { label: '조단백', values: columns.map((c) => c.protein) },
+    { label: '평점', values: columns.map((c) => (c.product.reviewsCount > 0 ? `★ ${c.product.averageRating.toFixed(1)}` : '—')) },
+    { label: '성분 신호', values: columns.map((c) => c.signalText) },
+    {
+      label: `${petName} 알레르기`,
+      values: columns.map((c) => c.allergyText),
+      tone: (c) => (c.allergyHit ? 'var(--danger-strong)' : 'var(--vr-body-2)'),
+    },
+  ];
+
+  const best = columns.reduce((a, b) => (b.score > a.score ? b : a));
+  const gridTemplate = `74px repeat(${columns.length}, 1fr)`;
+
   return (
-    <div className="animate-fade-in" style={{ paddingBottom: '40px' }}>
-      <section className="ui-hero-panel" style={{ marginBottom: '18px', padding: '20px' }}>
-        <span className="ui-badge ui-badge-soft" style={{ marginBottom: '10px', display: 'inline-flex' }}>
-          <GitCompare size={13} />
-          compare
-        </span>
-        <h2 style={{ fontSize: '25px', marginBottom: '8px', fontWeight: 900 }}>제품 비교 ({products.length}/4)</h2>
-        <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-          평점, 위험 성분, 맞춤 궁합을 한 자리에서 비교해 더 빠르게 결정해보세요.
-        </p>
-      </section>
+    <div className="vr-anim-fade" style={{ padding: '14px 0 24px' }}>
+      <h1 style={{ margin: '0 0 4px', fontSize: '24px', fontWeight: 800, letterSpacing: '-0.04em' }}>비교함</h1>
+      <p style={{ margin: '0 0 16px', fontSize: '13px', color: VR.muted }}>최대 {MAX_COLUMNS}개까지 나란히 볼 수 있어.</p>
 
-      <div className="ui-grid-3" style={{ marginBottom: '18px' }}>
-        <div className="ui-info-card" style={{ padding: '16px' }}>
-          <div className="ui-icon-pill" style={{ marginBottom: '10px' }}><ShieldCheck size={16} color="#10B981" /></div>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 700 }}>비교 기준</div>
-          <div style={{ fontSize: '14px', fontWeight: 800, marginTop: '4px' }}>주의 성분과 안전 비율</div>
-        </div>
-        <div className="ui-info-card" style={{ padding: '16px' }}>
-          <div className="ui-icon-pill" style={{ marginBottom: '10px' }}><Star size={16} color="#F59E0B" /></div>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 700 }}>비교 기준</div>
-          <div style={{ fontSize: '14px', fontWeight: 800, marginTop: '4px' }}>평점과 리뷰 반응</div>
-        </div>
-        <div className="ui-info-card" style={{ padding: '16px' }}>
-          <div className="ui-icon-pill" style={{ marginBottom: '10px' }}><PawPrint size={16} color="var(--primary-dark)" /></div>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 700 }}>비교 기준</div>
-          <div style={{ fontSize: '14px', fontWeight: 800, marginTop: '4px' }}>{profile.name} 맞춤 궁합 점수</div>
-        </div>
-      </div>
-      
-      <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '16px' }}>
-        {products.map(p => {
-          // 카드·상세와 동일한 하드캡 적용 점수 (게스트에게는 객관 점수)
-          const score = resolveProductDisplayVerdict(p, profile).score;
-          const dangerCount = p.ingredients?.filter(i => i.riskLevel === 'danger').length || 0;
-          const safeRatio = p.ingredients?.length
-            ? Math.round((p.ingredients.filter(i => i.riskLevel === 'safe').length / p.ingredients.length) * 100)
-            : 0;
-          return (
-            <div key={p.id} className="ui-info-card" style={{ flex: '0 0 260px', position: 'relative', padding: '16px' }}>
-              <button 
-                onClick={() => removeFromComparison(p.id)}
-                style={{
-                  position: 'absolute', top: '8px', right: '8px', background: 'var(--surface-elevated)', color: 'var(--text-dark)',
-                  border: 'none', borderRadius: '50%', padding: '4px', cursor: 'pointer',
-                  boxShadow: 'var(--shadow-card)'
-                }}
-              ><X size={16} /></button>
-              
-              <div style={{ width: '100%', height: '168px', borderRadius: '14px', overflow: 'hidden', marginBottom: '12px' }}>
-                <img src={p.imageUrl} alt={p.name} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              </div>
-              
-              <div style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: 700 }}>{p.brand}</div>
-              <div style={{ fontSize: '16px', fontWeight: 800, margin: '4px 0 12px', lineHeight: 1.4, minHeight: '44px', wordBreak: 'break-word' }}>{normalizeProductDisplayName(p)}</div>
-              
-              <div style={{ padding: '14px', background: 'rgba(31,222,145,0.1)', borderRadius: '14px', textAlign: 'center', marginBottom: '14px' }}>
-                <div style={{ fontSize: '12px', color: 'var(--primary-dark)', fontWeight: 700 }}>{profile.name} 궁합 점수</div>
-                <div style={{ fontSize: '28px', fontWeight: 900, color: 'var(--primary-dark)' }}>{score}점</div>
-              </div>
-              
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '14px' }}>
-                <span className="ui-badge ui-badge-muted">평점 {p.averageRating}</span>
-                <span className="ui-badge ui-badge-muted">리뷰 {p.reviewsCount}</span>
-                <span className="ui-badge ui-badge-soft">안전 {safeRatio}%</span>
-              </div>
-
-              <div style={{ borderTop: '1px solid var(--line)', paddingTop: '12px', fontSize: '13px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>평점</span>
-                  <span style={{ fontWeight: 600 }}>★ {p.averageRating}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>위험 성분</span>
-                  <span style={{ fontWeight: 600, color: 'var(--danger)' }}>
-                    {dangerCount}개
-                  </span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>안전 성분 비율</span>
-                  <span style={{ fontWeight: 600, color: '#10B981' }}>{safeRatio}%</span>
-                </div>
-              </div>
-              
-              <button className="btn btn-outline" style={{ width: '100%', marginTop: '12px', padding: '10px' }} onClick={() => navigate(`/product/${p.id}`)}>상세 보기</button>
+      <div
+        className="vr-card"
+        style={{ display: 'grid', gridTemplateColumns: gridTemplate, borderRadius: '16px', overflow: 'hidden', fontSize: '12.5px' }}
+      >
+        <div style={{ background: 'var(--vr-soft)', padding: '11px 10px', fontWeight: 800, color: VR.sub, fontSize: '11px' }}>제품</div>
+        {columns.map((c) => (
+          <div key={c.product.id} style={{ background: 'var(--vr-soft)', padding: '11px 10px', borderLeft: '1px solid var(--vr-card-line)', position: 'relative' }}>
+            <div style={{ fontSize: '11px', color: VR.sub, fontWeight: 700 }}>{c.product.brand}</div>
+            <div style={{ fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.3, marginTop: '2px', paddingRight: '16px' }}>
+              {normalizeProductDisplayName(c.product)}
             </div>
-          );
-        })}
+            <button
+              type="button"
+              onClick={() => removeFromComparison(c.product.id)}
+              aria-label={`${c.product.name} 비교함에서 빼기`}
+              style={{
+                position: 'absolute', top: '6px', right: '6px', border: 'none', background: 'none',
+                cursor: 'pointer', color: VR.sub, padding: '2px', lineHeight: 0,
+              }}
+            >
+              <X size={13} />
+            </button>
+          </div>
+        ))}
+
+        {rows.map((row) => (
+          <div key={row.label} style={{ display: 'contents' }}>
+            <div style={{ padding: '12px 10px', borderTop: '1px solid var(--vr-row-line)', fontWeight: 800, color: VR.sub, fontSize: '11px' }}>
+              {row.label}
+            </div>
+            {row.values.map((value, i) => (
+              <div
+                key={`${row.label}-${columns[i].product.id}`}
+                style={{
+                  padding: '12px 10px', borderTop: '1px solid var(--vr-row-line)', borderLeft: '1px solid var(--vr-card-line)',
+                  fontWeight: 700, color: row.tone ? row.tone(columns[i]) : (i === 0 ? 'var(--vr-ink)' : 'var(--vr-body-2)'),
+                }}
+              >
+                {value}
+              </div>
+            ))}
+          </div>
+        ))}
       </div>
+
+      {columns.length > 1 && (
+        <div
+          style={{
+            marginTop: '14px', background: 'var(--vr-yellow-tint)', border: '1.5px solid var(--vr-yellow)',
+            borderRadius: '16px', padding: '15px',
+          }}
+        >
+          <div style={{ fontSize: '14.5px', fontWeight: 800, letterSpacing: '-0.02em' }}>
+            {petName}라면 &lsquo;{normalizeProductDisplayName(best.product)}&rsquo;가 나아
+          </div>
+          <p style={{ margin: '7px 0 0', fontSize: '12.5px', lineHeight: 1.55, color: 'var(--vr-body)' }}>
+            프로필 기준 종합 {best.score}점으로 가장 높아. {best.allergyHit ? '다만 알레르기 성분이 포함돼 있어 급여 전 확인이 필요해.' : `${petName} 알레르기 성분은 들어 있지 않아.`}
+          </p>
+        </div>
+      )}
+
+      <button
+        type="button"
+        className="vr-btn vr-btn--outline"
+        style={{ marginTop: '12px' }}
+        onClick={() => navigate('/search')}
+      >
+        제품 더 담으러 가기
+      </button>
     </div>
   );
 }
