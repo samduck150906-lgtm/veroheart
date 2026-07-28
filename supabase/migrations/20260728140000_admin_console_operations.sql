@@ -13,10 +13,11 @@
 -- 추가되는 것
 --   1. ingredients.category                 — 관리자 성분 분류(기존 UI가 쓰던 미존재 컬럼)
 --   2. unmatched_ingredients 검수 컬럼      — 매핑 대상·검수자·검수시각·메모·샘플 제품
+--   2-b. 익명 쓰기 정책 제거                — unmatched_update / banners ALL (운영 실측 확인)
 --   3. log_unmatched_ingredient(text, uuid) — 샘플 제품까지 기록하는 오버로드
 --   4. app_settings                         — 런타임 시스템 설정(공개 키만 anon SELECT)
 --   5. admin_audit_log                      — 관리자 쓰기 감사 로그(service_role 전용)
---   6. storage bucket 'product-images'      — 제품 이미지(공개 읽기 / 쓰기는 service_role)
+--   6. storage bucket 'product-images'      — 제품 이미지(공개 버킷, 쓰기는 service_role 전용)
 --   7. admin_replace_product_ingredients()  — 제품 원재료 원자적 교체 RPC
 --   8. 검색·페이지네이션 인덱스
 --
@@ -84,6 +85,19 @@ DO $$ BEGIN
       CHECK (status IN ('pending', 'mapped', 'resolved', 'ignored'));
   END IF;
 END $$;
+
+-- ─── 2-b) 큐/배너의 익명 쓰기 정책 제거 ─────────────────────────────────────
+-- 운영 DB 실측(2026-07-28): 20260714120000_tighten_banner_and_queue_rls.sql 이
+-- 아직 적용되지 않아 아래 두 정책이 살아 있다.
+--   - unmatched_ingredients.unmatched_update : FOR UPDATE USING (true)
+--     → 익명 사용자가 검수 큐의 임의 행 상태를 바꿀 수 있다. 관리자 검수 화면이
+--       이 큐를 쓰기 시작하므로 반드시 닫는다(검수 갱신은 service_role 로만).
+--   - banners."Allow admin all access on banners" : FOR ALL USING(true) WITH CHECK(true)
+--     → 이름만 admin 이고 역할 검증이 없어 누구나 배너를 조작할 수 있다.
+-- 두 정책 모두 "권한 축소"이며 service_role 은 RLS 를 우회하므로 운영 쓰기에는 영향이 없다.
+-- 위 마이그레이션이 나중에 적용돼도 DROP ... IF EXISTS 라 충돌하지 않는다.
+DROP POLICY IF EXISTS unmatched_update ON public.unmatched_ingredients;
+DROP POLICY IF EXISTS "Allow admin all access on banners" ON public.banners;
 
 -- ─── 3) 미매칭 기록 오버로드 (샘플 제품 포함) ───────────────────────────────
 -- 기존 1-인자 함수는 그대로 유지한다(호출부 호환).
@@ -168,11 +182,12 @@ ON CONFLICT (id) DO UPDATE
       file_size_limit = EXCLUDED.file_size_limit,
       allowed_mime_types = EXCLUDED.allowed_mime_types;
 
+-- storage.objects 에 SELECT 정책을 만들지 않는다.
+-- public = true 버킷은 /object/public/<bucket>/<path> 로 RLS 검사 없이 서빙되므로
+-- 사용자 앱의 <img src="...publicUrl"> 는 정책 없이도 동작한다.
+-- 반대로 광범위한 SELECT 정책을 두면 클라이언트가 버킷 전체 파일 목록까지
+-- 조회할 수 있어 의도보다 넓은 노출이 된다(Supabase security advisor 0025).
 DROP POLICY IF EXISTS "product_images_public_read" ON storage.objects;
-CREATE POLICY "product_images_public_read"
-  ON storage.objects FOR SELECT
-  TO public
-  USING (bucket_id = 'product-images');
 
 -- ─── 7) 제품 원재료 원자적 교체 RPC ─────────────────────────────────────────
 -- Edge Function 에서 delete + insert 를 나눠 실행하면 중간 실패 시 원재료가
