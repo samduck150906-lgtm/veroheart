@@ -32,6 +32,8 @@ const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const AdminProducts = lazy(() => import('./pages/admin/AdminProducts'));
 const AdminIngredients = lazy(() => import('./pages/admin/AdminIngredients'));
+const AdminUnmatched = lazy(() => import('./pages/admin/AdminUnmatched'));
+const AdminMembers = lazy(() => import('./pages/admin/AdminMembers'));
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
 const AdminAuthGuard = lazy(() => import('./pages/admin/AdminAuthGuard'));
 
@@ -150,6 +152,8 @@ function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="products" element={<AdminProducts />} />
           <Route path="ingredients" element={<AdminIngredients />} />
+          <Route path="unmatched-ingredients" element={<AdminUnmatched />} />
+          <Route path="members" element={<AdminMembers />} />
           <Route path="settings" element={<AdminSettings />} />
         </Route>
       </Routes>

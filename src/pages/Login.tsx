@@ -4,6 +4,7 @@ import { Mail, Lock, Eye, EyeOff, ArrowLeft, RefreshCw, Check, X } from 'lucide-
 import { supabase } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import { notify } from '../store/useNotification';
+import { usePublicSettings } from '../lib/publicSettings';
 import { VERORO_LOGO_SRC } from '../constants/assets';
 import { TossButton, TossCard, TossChip, TossInput, TossField, TossSectionBlock } from '../components/TossUI';
 
@@ -46,6 +47,8 @@ export default function Login() {
   const location = useLocation();
   const { initApp } = useStore();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
+  // 관리자 콘솔(시스템 설정)에서 신규 가입을 잠글 수 있다.
+  const { signupEnabled } = usePublicSettings();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
@@ -125,6 +128,10 @@ export default function Login() {
     }
     if (!isValidEmail(addr)) {
       notify.error('올바른 이메일 형식인지 확인해 주세요.');
+      return;
+    }
+    if (mode === 'signup' && !signupEnabled) {
+      notify.error('현재 신규 회원 가입이 일시 중단되었습니다.');
       return;
     }
     if (mode === 'signup' && !passwordPolicyOk(password)) {
@@ -207,6 +214,8 @@ export default function Login() {
             <button
               key={m}
               type="button"
+              disabled={m === 'signup' && !signupEnabled}
+              title={m === 'signup' && !signupEnabled ? '신규 가입이 일시 중단되었습니다.' : undefined}
               onClick={() => {
                 setMode(m);
                 setPendingVerification(false);
@@ -223,6 +232,7 @@ export default function Login() {
                 background: mode === m ? 'var(--surface-elevated)' : 'transparent',
                 color: mode === m ? 'var(--text-dark)' : 'var(--text-muted)',
                 boxShadow: mode === m ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+                opacity: m === 'signup' && !signupEnabled ? 0.45 : 1,
               }}
             >
               {m === 'login' ? '로그인' : '회원가입'}

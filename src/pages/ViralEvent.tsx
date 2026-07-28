@@ -4,10 +4,12 @@ import { Copy, ExternalLink, Share2, CheckCircle2 } from 'lucide-react';
 import { VIRAL_EVENT_CONFIG } from '../copy/marketing';
 import { isKakaoShareConfigured, kakaoShareTextWithLink } from '../lib/kakaoShare';
 import { notify } from '../store/useNotification';
+import { usePublicSettings } from '../lib/publicSettings';
 
 const SHARE_PATH = '/event/personality-quiz';
 
 export default function ViralEvent() {
+  const { viralEventVisible } = usePublicSettings();
   const [kakaoSharing, setKakaoSharing] = useState(false);
   const [copied, setCopied] = useState(false);
   const shareUrl = useMemo(() => `${window.location.origin}${SHARE_PATH}`, []);
@@ -61,6 +63,18 @@ export default function ViralEvent() {
     }
   };
 
+
+  // 관리자 콘솔(시스템 설정)에서 이벤트 노출을 끌 수 있다.
+  if (!viralEventVisible) {
+    return (
+      <div style={{ padding: '80px 24px', textAlign: 'center' }}>
+        <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '10px' }}>이벤트가 종료되었어요</h2>
+        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
+          다음 이벤트로 곧 다시 찾아올게요.
+        </p>
+      </div>
+    );
+  }
   return (
     <div style={{ paddingBottom: '32px' }}>
       <Helmet>

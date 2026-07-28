@@ -1,22 +1,34 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { supabase, adminWrite } from '../../lib/supabase';
-import { Plus, Search, Edit2, Trash2, X } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
+import { Plus, Search, Edit2, Trash2, X, Upload, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
 import { notify } from '../../store/useNotification';
+import ProductIngredientsEditor from './ProductIngredientsEditor';
+import {
+  deleteProduct as deleteProductApi,
+  fetchProductIngredients,
+  fetchProductsPage,
+  saveProduct as saveProductApi,
+  uploadProductImage,
+  validateProductImage,
+  type AdminProductRow,
+  type ProductIngredientLink,
+} from '../../lib/adminApi';
 
-interface Product {
-  id: string;
-  name: string;
-  brand_name: string;
-  product_type: string;
-  main_category: string;
+interface ProductForm {
+  id?: string;
+  name?: string;
+  brand_name?: string;
+  product_type?: string;
+  main_category?: string;
   sub_category?: string;
-  target_pet_type: string;
+  target_pet_type?: string;
   target_life_stage?: string[];
   formulation?: string;
   product_health_concerns?: string[];
   has_risk_factors?: string[];
-  image_url: string;
-  min_price: number;
+  image_url?: string;
+  min_price?: number;
   barcode?: string;
   kcal_per_100g?: number;
 }
@@ -58,48 +70,84 @@ const MAIN_CATEGORIES = [
 ];
 
 const PET_TYPES = ['dog', 'cat', 'all'];
+const PAGE_SIZE = 20;
 
 const AdminProducts: React.FC = () => {
-  const [products, setProducts] = useState<Product[]>([]);
+  const navigate = useNavigate();
+
+  const [products, setProducts] = useState<AdminProductRow[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('전체');
+
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentProduct, setCurrentProduct] = useState<Partial<Product>>({});
+  const [currentProduct, setCurrentProduct] = useState<ProductForm>({});
   const [nutrition, setNutrition] = useState<NutritionForm>(EMPTY_NUTRITION);
+  const [ingredientLinks, setIngredientLinks] = useState<ProductIngredientLink[]>([]);
+  const [ingredientsLoading, setIngredientsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [uploading, setUploading] = useState(false);
 
-  const fetchProducts = useCallback(async () => {
+  const [deleteTarget, setDeleteTarget] = useState<AdminProductRow | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  // 검색어 디바운스 — 입력할 때마다 서버를 때리지 않는다.
+  useEffect(() => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      setSearch(searchInput.trim());
+      setPage(1); // 검색 조건이 바뀌면 항상 1페이지부터
+    }, 300);
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
+  }, [searchInput]);
+
+  const loadProducts = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      notify.error(`제품 조회 실패: ${error.message}`);
+    setLoadError(null);
+    try {
+      const { rows, total: count } = await fetchProductsPage({
+        page,
+        pageSize: PAGE_SIZE,
+        search,
+        category: activeTab,
+      });
+      setProducts(rows);
+      setTotal(count);
+      // 삭제 등으로 현재 페이지가 비면 이전 페이지로 이동
+      if (rows.length === 0 && count > 0 && page > 1) {
+        setPage((p) => Math.max(1, p - 1));
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setLoadError(message);
+      notify.error(`제품 조회 실패: ${message}`);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setProducts((data || []) as Product[]);
-    setLoading(false);
-  }, []);
+  }, [page, search, activeTab]);
 
   useEffect(() => {
-    // 마운트 시 제품 목록을 로드한다. 로딩 상태 갱신은 의도된 동작이다.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchProducts();
-  }, [fetchProducts]);
+    // 페이지/검색/카테고리 변경 시 서버에서 다시 조회한다.
+    loadProducts();
+  }, [loadProducts]);
 
-  const filteredProducts = useMemo(() => {
-    return products.filter((p) => {
-      const matchesSearch =
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.brand_name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesTab = activeTab === '전체' || p.main_category === activeTab;
-      return matchesSearch && matchesTab;
-    });
-  }, [products, searchTerm, activeTab]);
+  const selectTab = (tab: string) => {
+    setActiveTab(tab);
+    setPage(1); // 카테고리 변경 시 1페이지 초기화
+  };
 
   const openCreateModal = () => {
     setCurrentProduct({
@@ -110,36 +158,71 @@ const AdminProducts: React.FC = () => {
       min_price: 0,
     });
     setNutrition(EMPTY_NUTRITION);
+    setIngredientLinks([]);
+    setFormError('');
     setIsModalOpen(true);
   };
 
-  const openEditModal = async (p: Product) => {
-    setCurrentProduct(p);
+  const openEditModal = async (row: AdminProductRow) => {
+    setFormError('');
     setNutrition(EMPTY_NUTRITION);
+    setIngredientLinks([]);
     setIsModalOpen(true);
-    // 기존 보장성분 로드(있으면 폼에 채움)
-    const { data } = await supabase
-      .from('nutritional_profiles')
-      .select('*')
-      .eq('product_id', p.id)
-      .maybeSingle();
-    if (data) {
+    setIngredientsLoading(true);
+
+    // 목록은 경량 컬럼만 조회하므로, 편집 시 전체 필드를 다시 읽는다.
+    const [{ data: full }, { data: np }] = await Promise.all([
+      supabase.from('products').select('*').eq('id', row.id).maybeSingle(),
+      supabase.from('nutritional_profiles').select('*').eq('product_id', row.id).maybeSingle(),
+    ]);
+
+    setCurrentProduct((full ?? row) as ProductForm);
+
+    if (np) {
       const s = (v: unknown) => (v === null || v === undefined ? '' : String(v));
       setNutrition({
-        crude_protein: s(data.crude_protein),
-        crude_fat: s(data.crude_fat),
-        crude_fiber: s(data.crude_fiber),
-        crude_ash: s(data.crude_ash),
-        moisture: s(data.moisture),
-        calcium: s(data.calcium),
-        phosphorus: s(data.phosphorus),
+        crude_protein: s(np.crude_protein),
+        crude_fat: s(np.crude_fat),
+        crude_fiber: s(np.crude_fiber),
+        crude_ash: s(np.crude_ash),
+        moisture: s(np.moisture),
+        calcium: s(np.calcium),
+        phosphorus: s(np.phosphorus),
       });
+    }
+
+    try {
+      setIngredientLinks(await fetchProductIngredients(row.id));
+    } catch (err) {
+      notify.error(`원재료 조회 실패: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setIngredientsLoading(false);
+    }
+  };
+
+  const handleUpload = async (file: File) => {
+    const invalid = validateProductImage(file);
+    if (invalid) {
+      notify.error(invalid);
+      return;
+    }
+    setUploading(true);
+    try {
+      const publicUrl = await uploadProductImage(file, currentProduct.id);
+      setCurrentProduct((prev) => ({ ...prev, image_url: publicUrl }));
+      notify.success('이미지가 업로드되었습니다.');
+    } catch (err) {
+      notify.error(`이미지 업로드 실패: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
   const handleSave = async () => {
-    if (!currentProduct.name || !currentProduct.brand_name) {
-      notify.error('제품명과 브랜드는 필수입니다.');
+    if (isSaving) return;
+    if (!currentProduct.name?.trim() || !currentProduct.brand_name?.trim()) {
+      setFormError('제품명과 브랜드는 필수입니다.');
       return;
     }
 
@@ -187,37 +270,63 @@ const AdminProducts: React.FC = () => {
         }
       : null;
 
+    setIsSaving(true);
+    setFormError('');
     try {
-      // anon 키로는 RLS에 막히므로 service_role Edge Function 프록시로 쓴다
-      await adminWrite('saveProduct', { product: payload, nutrition: nutritionPayload });
+      // anon 키로는 RLS에 막히므로 service_role Edge Function 프록시로 쓴다.
+      // 제품 저장과 원재료 연결 교체는 같은 요청 안에서 처리된다(RPC 트랜잭션).
+      await saveProductApi({
+        product: payload,
+        nutrition: nutritionPayload,
+        ingredients: ingredientLinks.map((link, index) => ({
+          ingredient_id: link.ingredientId,
+          sort_order: index,
+        })),
+      });
       notify.success(currentProduct.id ? '제품 정보가 수정되었습니다.' : '신규 제품이 등록되었습니다.');
       setIsModalOpen(false);
-      fetchProducts();
+      await loadProducts();
     } catch (err) {
-      notify.error(`저장 실패: ${err instanceof Error ? err.message : String(err)}`);
+      const message = err instanceof Error ? err.message : String(err);
+      setFormError(message);
+      notify.error(`저장 실패: ${message}`);
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('정말 삭제하시겠습니까?')) return;
+  const confirmDelete = async () => {
+    if (!deleteTarget || isDeleting) return;
+    setIsDeleting(true);
     try {
-      await adminWrite('deleteProduct', { id });
+      await deleteProductApi(deleteTarget.id);
+      notify.success('제품이 삭제되었습니다.');
+      setDeleteTarget(null);
+      await loadProducts();
     } catch (err) {
       notify.error(`삭제 실패: ${err instanceof Error ? err.message : String(err)}`);
-      return;
+    } finally {
+      setIsDeleting(false);
     }
-    notify.success('제품이 삭제되었습니다.');
-    fetchProducts();
   };
+
+  const rangeLabel = useMemo(() => {
+    if (total === 0) return '0';
+    const from = (page - 1) * PAGE_SIZE + 1;
+    const to = Math.min(page * PAGE_SIZE, total);
+    return `${from.toLocaleString()}–${to.toLocaleString()}`;
+  }, [page, total]);
 
   return (
     <div>
       <div className="admin-toolbar">
         <div className="admin-title-wrap">
           <h2>제품 관리</h2>
-          <p>총 {products.length.toLocaleString()}개 제품</p>
+          <p>
+            총 {total.toLocaleString()}개 제품 · {rangeLabel} 표시 중
+          </p>
         </div>
-        <button className="admin-btn-primary" onClick={openCreateModal}>
+        <button type="button" className="admin-btn-primary" onClick={openCreateModal}>
           <Plus size={16} />
           신규 제품 등록
         </button>
@@ -226,9 +335,10 @@ const AdminProducts: React.FC = () => {
       <div className="admin-filter-row">
         {['전체', ...MAIN_CATEGORIES].map((tab) => (
           <button
+            type="button"
             key={tab}
             className={`admin-chip ${activeTab === tab ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => selectTab(tab)}
           >
             {tab}
           </button>
@@ -237,9 +347,13 @@ const AdminProducts: React.FC = () => {
 
       <div className="admin-search-wrap">
         <Search size={16} className="admin-search-icon" />
+        <label htmlFor="admin-product-search" className="admin-visually-hidden">
+          제품명, 브랜드 검색
+        </label>
         <input
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          id="admin-product-search"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
           placeholder="제품명, 브랜드 검색"
         />
       </div>
@@ -262,18 +376,37 @@ const AdminProducts: React.FC = () => {
                   <div className="admin-empty">데이터를 불러오는 중입니다...</div>
                 </td>
               </tr>
-            ) : filteredProducts.length === 0 ? (
+            ) : loadError ? (
               <tr>
                 <td colSpan={5}>
-                  <div className="admin-empty">표시할 제품이 없습니다.</div>
+                  <div className="admin-empty">
+                    제품을 불러오지 못했습니다.
+                    <button type="button" className="admin-btn-soft" style={{ marginLeft: 10 }} onClick={loadProducts}>
+                      다시 시도
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ) : products.length === 0 ? (
+              <tr>
+                <td colSpan={5}>
+                  <div className="admin-empty">
+                    {search || activeTab !== '전체'
+                      ? '검색 조건에 맞는 제품이 없습니다.'
+                      : '등록된 제품이 없습니다. "신규 제품 등록"으로 시작해 주세요.'}
+                  </div>
                 </td>
               </tr>
             ) : (
-              filteredProducts.map((p) => (
+              products.map((p) => (
                 <tr key={p.id}>
                   <td>
                     <div className="admin-item-cell">
-                      <img src={p.image_url} alt={p.name} loading="lazy" decoding="async" />
+                      {p.image_url ? (
+                        <img src={p.image_url} alt="" loading="lazy" decoding="async" />
+                      ) : (
+                        <div className="admin-thumb-empty" aria-hidden="true" />
+                      )}
                       <div>
                         <div className="admin-item-main">{p.name}</div>
                         <div className="admin-item-sub">
@@ -283,11 +416,11 @@ const AdminProducts: React.FC = () => {
                     </div>
                   </td>
                   <td>
-                    <div>{p.main_category}</div>
+                    <div>{p.main_category || '-'}</div>
                     <div className="admin-item-sub">{p.sub_category || '-'}</div>
                   </td>
                   <td>
-                    <span className="admin-tag blue">{p.target_pet_type.toUpperCase()}</span>
+                    <span className="admin-tag blue">{(p.target_pet_type || 'all').toUpperCase()}</span>
                     <div className="admin-item-sub" style={{ marginTop: 6 }}>
                       {p.target_life_stage?.join(', ') || '전연령'}
                     </div>
@@ -298,16 +431,18 @@ const AdminProducts: React.FC = () => {
                   <td style={{ textAlign: 'right' }}>
                     <div className="admin-actions">
                       <button
+                        type="button"
                         className="admin-icon-btn edit"
                         onClick={() => openEditModal(p)}
-                        aria-label="제품 수정"
+                        aria-label={`${p.name} 수정`}
                       >
                         <Edit2 size={14} />
                       </button>
                       <button
+                        type="button"
                         className="admin-icon-btn delete"
-                        onClick={() => handleDelete(p.id)}
-                        aria-label="제품 삭제"
+                        onClick={() => setDeleteTarget(p)}
+                        aria-label={`${p.name} 삭제`}
                       >
                         <Trash2 size={14} />
                       </button>
@@ -320,68 +455,161 @@ const AdminProducts: React.FC = () => {
         </table>
       </div>
 
+      <nav className="admin-pagination" aria-label="제품 목록 페이지">
+        <button
+          type="button"
+          className="admin-btn-soft"
+          onClick={() => setPage((p) => Math.max(1, p - 1))}
+          disabled={page <= 1 || loading}
+          aria-label="이전 페이지"
+        >
+          <ChevronLeft size={14} /> 이전
+        </button>
+        <span className="admin-pagination-label">
+          {page} / {totalPages}
+        </span>
+        <button
+          type="button"
+          className="admin-btn-soft"
+          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+          disabled={page >= totalPages || loading}
+          aria-label="다음 페이지"
+        >
+          다음 <ChevronRight size={14} />
+        </button>
+      </nav>
+
       {isModalOpen && (
-        <div className="admin-modal-backdrop" onClick={() => setIsModalOpen(false)}>
-          <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="admin-modal-backdrop" onClick={() => !isSaving && setIsModalOpen(false)}>
+          <div
+            className="admin-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={currentProduct.id ? '제품 정보 수정' : '신규 제품 등록'}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3>{currentProduct.id ? '제품 정보 수정' : '신규 제품 등록'}</h3>
-              <button className="admin-btn-soft" onClick={() => setIsModalOpen(false)} aria-label="모달 닫기">
+              <button
+                type="button"
+                className="admin-btn-soft"
+                onClick={() => setIsModalOpen(false)}
+                aria-label="모달 닫기"
+                disabled={isSaving}
+              >
                 <X size={16} />
               </button>
             </div>
 
             <div className="admin-form-grid">
               <InputField
+                id="pf-name"
                 label="제품명*"
                 value={currentProduct.name}
                 onChange={(value) => setCurrentProduct({ ...currentProduct, name: value })}
               />
               <InputField
+                id="pf-brand"
                 label="브랜드*"
                 value={currentProduct.brand_name}
                 onChange={(value) => setCurrentProduct({ ...currentProduct, brand_name: value })}
               />
               <InputField
+                id="pf-price"
                 label="가격"
                 type="number"
                 value={currentProduct.min_price}
-                onChange={(value) =>
-                  setCurrentProduct({ ...currentProduct, min_price: Number(value || 0) })
-                }
+                onChange={(value) => setCurrentProduct({ ...currentProduct, min_price: Number(value || 0) })}
               />
               <InputField
-                label="이미지 URL"
-                value={currentProduct.image_url}
-                onChange={(value) => setCurrentProduct({ ...currentProduct, image_url: value })}
-              />
-              <InputField
+                id="pf-barcode"
                 label="바코드 (EAN/UPC)"
                 value={currentProduct.barcode}
                 onChange={(value) => setCurrentProduct({ ...currentProduct, barcode: value })}
               />
+
+              {/* 이미지: 업로드가 기본, 외부 URL 직접 입력은 보조 수단으로 유지 */}
+              <div className="admin-form-group admin-form-span-2">
+                <span className="admin-form-legend">제품 이미지</span>
+                <div className="admin-image-row">
+                  {currentProduct.image_url ? (
+                    <img className="admin-image-preview" src={currentProduct.image_url} alt="제품 이미지 미리보기" />
+                  ) : (
+                    <div className="admin-image-preview admin-thumb-empty" aria-hidden="true" />
+                  )}
+                  <div style={{ flex: 1 }}>
+                    <input
+                      ref={fileInputRef}
+                      id="pf-image-file"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="admin-visually-hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleUpload(file);
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="admin-btn-soft"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading || isSaving}
+                    >
+                      <Upload size={14} /> {uploading ? '업로드 중…' : '이미지 업로드'}
+                    </button>
+                    {currentProduct.image_url && (
+                      <button
+                        type="button"
+                        className="admin-btn-soft"
+                        style={{ marginLeft: 8 }}
+                        onClick={() => setCurrentProduct({ ...currentProduct, image_url: '' })}
+                        disabled={uploading || isSaving}
+                      >
+                        이미지 제거
+                      </button>
+                    )}
+                    <label htmlFor="pf-image-url" className="admin-inline-label">
+                      또는 이미지 URL 직접 입력
+                    </label>
+                    <input
+                      id="pf-image-url"
+                      value={currentProduct.image_url ?? ''}
+                      onChange={(e) => setCurrentProduct({ ...currentProduct, image_url: e.target.value })}
+                      placeholder="https://..."
+                    />
+                    <p className="admin-hint">JPG · PNG · WebP, 최대 3MB. 업로드 시 긴 변 1200px로 축소됩니다.</p>
+                  </div>
+                </div>
+              </div>
+
               <SelectField
+                id="pf-main-cat"
                 label="메인 카테고리"
                 value={currentProduct.main_category}
                 options={MAIN_CATEGORIES}
                 onChange={(value) => setCurrentProduct({ ...currentProduct, main_category: value })}
               />
               <SelectField
+                id="pf-pet-type"
                 label="타겟 반려동물"
                 value={currentProduct.target_pet_type}
                 options={PET_TYPES}
                 onChange={(value) => setCurrentProduct({ ...currentProduct, target_pet_type: value })}
               />
               <InputField
+                id="pf-sub-cat"
                 label="서브 카테고리"
                 value={currentProduct.sub_category}
                 onChange={(value) => setCurrentProduct({ ...currentProduct, sub_category: value })}
               />
               <InputField
+                id="pf-formulation"
                 label="제형"
                 value={currentProduct.formulation}
                 onChange={(value) => setCurrentProduct({ ...currentProduct, formulation: value })}
               />
               <InputField
+                id="pf-concerns"
                 className="admin-form-span-2"
                 label="건강 고민 태그 (콤마 구분)"
                 value={currentProduct.product_health_concerns?.join(', ')}
@@ -396,11 +624,26 @@ const AdminProducts: React.FC = () => {
                 }
               />
 
+              {/* 원재료 구성 — 분석 엔진의 핵심 입력 */}
+              <div className="admin-form-span-2">
+                {ingredientsLoading ? (
+                  <div className="admin-empty">원재료를 불러오는 중입니다…</div>
+                ) : (
+                  <ProductIngredientsEditor
+                    value={ingredientLinks}
+                    onChange={setIngredientLinks}
+                    disabled={isSaving}
+                    onRequestCreateIngredient={() => navigate('/admin/ingredients')}
+                  />
+                )}
+              </div>
+
               {/* 보장성분(영양) — 입력 시 분석 결과가 "실측"으로 표시됨 */}
-              <div className="admin-form-span-2" style={{ marginTop: 8, fontSize: 13, fontWeight: 800, color: '#475569' }}>
+              <div className="admin-form-span-2 admin-form-legend" style={{ marginTop: 8 }}>
                 보장성분 (입력 시 분석 결과가 실측으로 표시돼요)
               </div>
               <InputField
+                id="pf-kcal"
                 label="100g당 열량 (kcal)"
                 type="number"
                 value={currentProduct.kcal_per_100g}
@@ -408,6 +651,7 @@ const AdminProducts: React.FC = () => {
               />
               {NUTRITION_FIELDS.map(({ key, label }) => (
                 <InputField
+                  id={`pf-${key}`}
                   key={key}
                   label={label}
                   type="number"
@@ -417,12 +661,40 @@ const AdminProducts: React.FC = () => {
               ))}
             </div>
 
+            {formError && (
+              <p className="admin-form-error" role="alert">
+                {formError}
+              </p>
+            )}
+
             <div className="admin-modal-footer">
-              <button className="admin-btn-soft" onClick={() => setIsModalOpen(false)}>
+              <button type="button" className="admin-btn-soft" onClick={() => setIsModalOpen(false)} disabled={isSaving}>
                 취소
               </button>
-              <button className="admin-btn-primary" onClick={handleSave}>
-                저장하기
+              <button type="button" className="admin-btn-primary" onClick={handleSave} disabled={isSaving || uploading}>
+                {isSaving ? '저장 중…' : '저장하기'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div className="admin-modal-backdrop" style={{ zIndex: 1200 }} onClick={() => !isDeleting && setDeleteTarget(null)}>
+          <div className="admin-modal admin-modal-sm" role="alertdialog" aria-modal="true" aria-label="제품 삭제 확인" onClick={(e) => e.stopPropagation()}>
+            <h3>
+              <AlertTriangle size={18} style={{ verticalAlign: '-3px', marginRight: 6, color: '#f59e0b' }} />
+              제품을 삭제할까요?
+            </h3>
+            <p className="admin-modal-desc">
+              <strong>{deleteTarget.name}</strong> 을(를) 삭제하면 연결된 원재료·보장성분 정보도 함께 사라집니다. 되돌릴 수 없습니다.
+            </p>
+            <div className="admin-modal-footer">
+              <button type="button" className="admin-btn-soft" onClick={() => setDeleteTarget(null)} disabled={isDeleting}>
+                취소
+              </button>
+              <button type="button" className="admin-btn-danger" onClick={confirmDelete} disabled={isDeleting}>
+                {isDeleting ? '삭제 중…' : '삭제하기'}
               </button>
             </div>
           </div>
@@ -433,32 +705,44 @@ const AdminProducts: React.FC = () => {
 };
 
 function InputField({
+  id,
   label,
   value,
   onChange,
   type = 'text',
   className,
+  placeholder,
 }: {
+  id: string;
   label: string;
   value?: string | number;
   onChange: (value: string) => void;
   type?: string;
   className?: string;
+  placeholder?: string;
 }) {
   return (
     <div className={`admin-form-group ${className || ''}`}>
-      <label>{label}</label>
-      <input type={type} value={value ?? ''} onChange={(e) => onChange(e.target.value)} />
+      <label htmlFor={id}>{label}</label>
+      <input
+        id={id}
+        type={type}
+        value={value ?? ''}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+      />
     </div>
   );
 }
 
 function SelectField({
+  id,
   label,
   value,
   options,
   onChange,
 }: {
+  id: string;
   label: string;
   value?: string;
   options: string[];
@@ -466,8 +750,8 @@ function SelectField({
 }) {
   return (
     <div className="admin-form-group">
-      <label>{label}</label>
-      <select value={value || ''} onChange={(e) => onChange(e.target.value)}>
+      <label htmlFor={id}>{label}</label>
+      <select id={id} value={value || ''} onChange={(e) => onChange(e.target.value)}>
         <option value="">선택하세요</option>
         {options.map((option) => (
           <option key={option} value={option}>

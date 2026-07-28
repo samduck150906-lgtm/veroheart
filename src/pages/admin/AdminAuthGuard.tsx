@@ -1,6 +1,7 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { ShieldCheck, Lock, Loader2 } from 'lucide-react';
 import { adminWrite } from '../../lib/supabase';
+import { readAdminToken, storeAdminToken } from '../../lib/adminSession';
 import './admin.css';
 
 interface AdminAuthGuardProps {
@@ -16,12 +17,13 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // 로그인 시 서버 검증을 통과한 토큰만 저장되므로, 존재하면 세션 유지
-    if (sessionStorage.getItem('vh_admin_auth')) setIsAuthenticated(true);
+    // 로그인 시 서버 검증을 통과한 토큰만 저장되고, TTL 이 지나면 자동 만료된다.
+    if (readAdminToken()) setIsAuthenticated(true);
     setIsLoading(false);
   }, []);
 
   const handleAdminLogin = async () => {
+    if (isSubmitting) return;
     const id = adminId.trim();
     const pw = adminPassword.trim();
     if (!id || !pw) {
@@ -34,9 +36,10 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
     setError('');
     try {
       await adminWrite('verifyAdmin', {}, token);
-      sessionStorage.setItem('vh_admin_auth', token);
+      storeAdminToken(token);
       setIsAuthenticated(true);
     } catch {
+      // 아이디 존재 여부를 구분하지 않는 단일 메시지 — 계정 열거 방지
       setError('관리자 인증에 실패했습니다.');
       setAdminPassword('');
     } finally {
@@ -75,11 +78,16 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
 
           <h1>VeRoRo Admin</h1>
           <p>관리자 콘솔에 접근하려면 인증이 필요합니다.</p>
-          <p style={{ marginTop: '-8px' }}>추가 가입은 불가하며 지정된 3명 관리자만 로그인할 수 있습니다.</p>
+          <p style={{ marginTop: '-8px' }}>추가 가입은 불가하며 지정된 관리자만 로그인할 수 있습니다.</p>
 
           <div className="admin-auth-field">
+            <label htmlFor="admin-id" className="admin-visually-hidden">
+              관리자 아이디
+            </label>
             <input
+              id="admin-id"
               type="text"
+              autoComplete="username"
               placeholder="관리자 아이디 입력"
               value={adminId}
               onChange={(e) => { setAdminId(e.target.value); if (error) setError(''); }}
@@ -89,8 +97,13 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
 
           <div className="admin-auth-field" style={{ position: 'relative' }}>
             <Lock size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#475569' }} />
+            <label htmlFor="admin-password" className="admin-visually-hidden">
+              관리자 비밀번호
+            </label>
             <input
+              id="admin-password"
               type="password"
+              autoComplete="current-password"
               placeholder="관리자 비밀번호 입력"
               value={adminPassword}
               onChange={(e) => { setAdminPassword(e.target.value); if (error) setError(''); }}
@@ -101,17 +114,16 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
             />
           </div>
 
-          {error && <p className="admin-auth-error">{error}</p>}
+          {error && <p className="admin-auth-error" role="alert">{error}</p>}
 
-          <button onClick={handleAdminLogin} className="admin-auth-submit" disabled={isSubmitting}>
+          <button type="button" onClick={handleAdminLogin} className="admin-auth-submit" disabled={isSubmitting}>
             {isSubmitting ? '인증 중…' : '인증하기'}
           </button>
 
           <div style={{ marginTop: '16px', fontSize: '12px', color: '#64748b', lineHeight: 1.6 }}>
-            <div>허용 계정: rumi / young / jeong</div>
             <div>신규 관리자 가입: 불가</div>
             <div style={{ marginTop: '10px' }}>
-              문의:{' '}
+              계정 문의:{' '}
               <a href="mailto:veroro@eternalsix.com" style={{ color: '#6366f1' }}>
                 veroro@eternalsix.com
               </a>

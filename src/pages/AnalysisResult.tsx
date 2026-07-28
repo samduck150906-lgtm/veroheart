@@ -18,6 +18,7 @@ import { findIngredientByName } from '../analysis/ingredientDictionary';
 import { classifyIngredientQuality } from '../analysis/ingredientQuality';
 import { PURPOSE_STYLE } from '../analysis/nutrientClassification';
 import type { IngredientCategory } from '../analysis/types';
+import { isPhase2ObservationBuildEnabled } from '../lib/phase2ObservationFlag';
 import BottomSheet from '../components/BottomSheet';
 import StateView from '../components/StateView';
 import type { Ingredient, Product } from '../types';
@@ -228,6 +229,27 @@ export default function AnalysisResult() {
     () => (product ? generateAnalysisReport(product, profile) : null),
     [product, profile],
   );
+
+  // ── Phase 2 별칭 관찰(기본 OFF) ──
+  // 플래그가 꺼져 있으면 여기서 아무 일도 일어나지 않는다(네트워크 호출 0건).
+  // 켜져 있어도 매칭 결과를 기록만 하며, 위 점수·등급·판정에는 관여하지 않는다.
+  useEffect(() => {
+    if (!isPhase2ObservationBuildEnabled()) return;
+    if (!product || ingredients.length === 0) return;
+    let cancelled = false;
+    import('../lib/phase2Observation').then(({ observeIngredientLabels }) => {
+      if (cancelled) return;
+      observeIngredientLabels(
+        ingredients.map((ing) => ing.nameKo).filter(Boolean),
+        { productId: product.id },
+      );
+    });
+    return () => {
+      cancelled = true;
+    };
+    // 성분 목록의 내용이 같으면 다시 관찰하지 않는다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product?.id, ingredients.length]);
 
   // ── 잠들어 있던 성분 품질·기능성·안전 엔진을 결과 화면에 연결 ──
   const pipeline = useMemo<ScoringPipelineResult | null>(

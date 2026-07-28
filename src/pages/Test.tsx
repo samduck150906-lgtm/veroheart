@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { VIRAL_TEST_CAMPAIGN, KAKAO_SHARE_MESSAGES } from '../copy/marketing';
 import { isKakaoShareConfigured, kakaoShareTextWithLink } from '../lib/kakaoShare';
 import { notify } from '../store/useNotification';
+import { usePublicSettings } from '../lib/publicSettings';
 
 type AxisKey = 'S' | 'A' | 'V' | 'F';
 type Scores = Record<AxisKey, number>;
@@ -57,6 +58,7 @@ function computeResultType(scores: Scores, answers: number[]): string {
 }
 
 export default function Test() {
+  const { viralEventVisible } = usePublicSettings();
   const navigate = useNavigate();
   const [kakaoSharing, setKakaoSharing] = useState(false);
   const [step, setStep] = useState(0);
@@ -128,6 +130,18 @@ export default function Test() {
     }
   };
 
+
+  // 관리자 콘솔(시스템 설정)에서 이벤트 노출을 끌 수 있다.
+  if (!viralEventVisible) {
+    return (
+      <div style={{ padding: '80px 24px', textAlign: 'center' }}>
+        <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '10px' }}>이벤트가 종료되었어요</h2>
+        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
+          다음 이벤트로 곧 다시 찾아올게요.
+        </p>
+      </div>
+    );
+  }
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '120px' }}>
       <section style={{ marginBottom: '14px' }}>

@@ -1,3 +1,7 @@
+/**
+ * ⚠️ 미연결(unwired) 모듈 — /ranking 화면 제거 후 호출부가 없다.
+ * 한글 라벨 ↔ 영문 enum 매칭 회귀 테스트(uiFixes.test.ts)를 보존하기 위해 남겨둔다.
+ */
 import type { Product } from '../types';
 
 /** 한글 종 라벨 → DB target_pet_type 값 (전체=필터 없음) */

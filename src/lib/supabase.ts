@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { notify } from '../store/useNotification';
 import type { FeedingLogInput, PetFeedingLog, Product, SupabasePet } from '../types';
+import { readAdminToken } from './adminSession';
 import { toExactIlikePattern, toOrIlikePattern } from './postgrestPattern';
 import {
   mapFeedingLogFromRow,
@@ -22,18 +23,20 @@ export const supabase = createClient(
 );
 
 /**
- * 관리자 쓰기 프록시 호출. anon 키로는 RLS에 막혀 쓸 수 없으므로,
+ * 관리자 쓰기/운영 프록시 호출. anon 키로는 RLS에 막혀 쓸 수 없으므로,
  * service_role로 동작하는 admin-write Edge Function을 통해 쓴다.
- * 관리자 토큰(sessionStorage 'vh_admin_auth')을 x-admin-token 헤더로 전달해 서버가 검증한다.
+ * 관리자 토큰(sessionStorage, TTL 적용 — lib/adminSession)을 x-admin-token 헤더로
+ * 전달해 서버가 SHA-256 화이트리스트로 검증한다.
+ *
+ * ⚠️ 관리자 쓰기를 anon 클라이언트(`supabase.from(...).insert/update/delete`)로
+ * 직접 하지 말 것. ingredients/products 에는 공개 SELECT 정책만 있어 실패한다.
  */
 export async function adminWrite<T = unknown>(
   action: string,
   data: Record<string, unknown> = {},
   tokenOverride?: string,
 ): Promise<T> {
-  const token =
-    tokenOverride ??
-    (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('vh_admin_auth') ?? '' : '');
+  const token = tokenOverride ?? readAdminToken() ?? '';
   const res = await fetch(`${supabaseUrl}/functions/v1/admin-write`, {
     method: 'POST',
     headers: {

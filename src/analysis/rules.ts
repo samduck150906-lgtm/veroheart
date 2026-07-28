@@ -1,4 +1,7 @@
 /**
+ * ⚠️ 미연결(unwired) 모듈 — ruleEngine.ts 전용 규칙 시드. 런타임 판정에는 쓰이지 않는다.
+ * (사유·재사용 계획은 ruleEngine.ts 헤더 참고)
+ *
  * 분석 규칙 정의.
  *
  * 규칙은 코드/DB 어디서나 동일한 형태(AnalysisRule)로 평가된다.
