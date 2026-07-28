@@ -21,17 +21,39 @@ import {
   requireUuid,
 } from './validation.ts';
 
-/** CORS: 비어 있으면 `*`, `CORS_ALLOWED_ORIGINS`(쉼표)가 있으면 요청 Origin이 목록에 있을 때만 반사 */
+/**
+ * 관리자 콘솔이 아닌 출처에서 이 함수를 브라우저로 호출하지 못하게 한다.
+ *
+ * 이전에는 `CORS_ALLOWED_ORIGINS` 가 비어 있으면 `*` 를 돌려줬다. 이 함수는
+ * service_role 로 쓰기를 수행하는 관리자 전용 엔드포인트이므로 기본값이
+ * "아무 사이트나 허용"이어서는 안 된다(토큰 검증은 별도로 하지만, CORS 는
+ * 브라우저에서의 오용을 막는 1차 방어선이다).
+ *
+ * 그래서 시크릿이 설정돼 있지 않아도 안전하도록 알려진 운영 출처를 기본 허용
+ * 목록으로 둔다. `CORS_ALLOWED_ORIGINS`(쉼표 구분)가 설정되면 그 값이 우선한다
+ * — 도메인이 바뀌어도 재배포 없이 교체할 수 있다.
+ */
+const DEFAULT_ALLOWED_ORIGINS = [
+  'https://veroro-admin.netlify.app',
+  'https://veroro-app.netlify.app',
+  'http://localhost:5173',
+  'http://localhost:4173',
+];
+
 function buildCorsHeaders(req: Request): Record<string, string> {
   const base = {
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-admin-token',
+    Vary: 'Origin',
   };
   const raw = (Deno.env.get('CORS_ALLOWED_ORIGINS') ?? '').trim();
-  if (!raw) return { ...base, 'Access-Control-Allow-Origin': '*' };
-  const allowed = raw.split(',').map((s) => s.trim()).filter(Boolean);
+  const allowed = raw
+    ? raw.split(',').map((s) => s.trim()).filter(Boolean)
+    : DEFAULT_ALLOWED_ORIGINS;
+
   const origin = req.headers.get('Origin');
   if (origin && allowed.includes(origin)) return { ...base, 'Access-Control-Allow-Origin': origin };
-  return { ...base, 'Access-Control-Allow-Origin': allowed[0] ?? '*' };
+  // 목록에 없는 출처에는 허용 목록의 첫 항목을 돌려준다 → 브라우저가 불일치로 차단한다.
+  return { ...base, 'Access-Control-Allow-Origin': allowed[0] };
 }
 
 /**
