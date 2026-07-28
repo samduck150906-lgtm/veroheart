@@ -1,6 +1,7 @@
 import type { Ingredient, Product, UserPetProfile } from '../types';
 import { analyzeFeed } from '../analysis/feedAnalysis';
 import { resolveProductWithPhase2AliasAdapter } from '../lib/phase2AliasResolverProductAdapter';
+import { isPhase2AliasResolverRuntimeEnabled } from '../lib/phase2AliasResolverRuntimeFlag';
 
 /** 궁합 등급 — 점수(0~100)를 사용자에게 보여줄 A~F 등급으로 매핑한 단일 진실원천 */
 export type CompatibilityGrade = 'A' | 'B' | 'C' | 'D' | 'F';
@@ -170,7 +171,7 @@ export function preferencePenaltyFromLevel(level: number | null | undefined): nu
 /**
  * Phase 2 alias resolver runtime integration point.
  *
- * The adapter is deliberately wired with the feature flag disabled so scoring
+ * The adapter is deliberately wired through a disabled flag accessor so scoring
  * receives the original product object. Turning this on requires a separate
  * owner-approved PR with score/output diffs reviewed explicitly.
  */
@@ -180,7 +181,7 @@ export function getPhase2AliasResolverScoringProduct(product: Product): Product 
     aliases: [],
     canonicals: [],
     blockedTerms: [],
-    flags: { phase2AliasResolver: false },
+    flags: { phase2AliasResolver: isPhase2AliasResolverRuntimeEnabled() },
   }).product;
 }
 
