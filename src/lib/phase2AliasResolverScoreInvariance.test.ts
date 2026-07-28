@@ -57,7 +57,7 @@ describe('Phase 2 alias resolver score invariance while disabled', () => {
   it('keeps compatibility scores unchanged when the adapter flag is absent', () => {
     for (const input of products) {
       const before = calculateCompatibilityScore(input, profile);
-      const adapted = resolveProductWithPhase2AliasAdapter({ input: undefined as never, product: input, aliases, canonicals, blockedTerms });
+      const adapted = resolveProductWithPhase2AliasAdapter({ product: input, aliases, canonicals, blockedTerms });
       const after = calculateCompatibilityScore(adapted.product, profile);
 
       expect(adapted.enabled).toBe(false);
