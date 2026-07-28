@@ -2,7 +2,7 @@ import { COMPANY } from '../constants/companyInfo';
 
 export default function Privacy() {
   return (
-    <div style={{ padding: '20px', paddingTop: '80px', paddingBottom: '100px', lineHeight: 1.65 }}>
+    <div style={{ padding: '18px 2px 40px', lineHeight: 1.7 }}>
       <h1 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '8px' }}>VeRoRo(베로로) 개인정보처리방침</h1>
       <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '20px' }}>시행일: 2026년 4월 12일</p>
 

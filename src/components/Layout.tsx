@@ -1,40 +1,45 @@
-import { Outlet, useLocation, Link } from 'react-router-dom';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
 import BottomNav from './BottomNav';
 import Footer from './Footer';
-import ThemeToggle from './ThemeToggle';
-import { VERORO_LOGO_SRC } from '../constants/assets';
+import AppHeader from './AppHeader';
+import { resolveRouteChrome } from '../lib/routeChrome';
 
 export default function Layout() {
   const location = useLocation();
-  const hideFooterOn = ['/login'];
+  const chrome = useMemo(
+    () => resolveRouteChrome(location.pathname, location.search),
+    [location.pathname, location.search]
+  );
+
+  // 프로토타입의 onScroll: 8px 넘어가면 헤더 그림자, 200px 넘어가면 상세 하단 CTA.
+  // 여기서는 헤더 그림자만 셸이 관리하고, 스크롤 값은 하위 화면이 쓸 수 있게 노출한다.
+  const [raised, setRaised] = useState(false);
+  const raisedRef = useRef(false);
+  const onScroll = useCallback((e: React.UIEvent<HTMLElement>) => {
+    const next = e.currentTarget.scrollTop > 8;
+    if (next !== raisedRef.current) {
+      raisedRef.current = next;
+      setRaised(next);
+    }
+  }, []);
+
+  // 약관/개인정보/환불은 푸터의 법적 링크가 중복되므로 감춘다. 로그인도 프로토타입과 동일.
+  const hideFooterOn = ['/login', '/terms', '/privacy', '/refund', '/product/', '/analysis'];
   const shouldHideFooter = hideFooterOn.some((path) => location.pathname.startsWith(path));
-  // 상품 상세는 하단 고정 액션 바(StickyCtaBar)를 쓰므로 전역 BottomNav를 숨긴다.
-  const hideBottomNavOn = ['/product/'];
-  const shouldHideBottomNav = hideBottomNavOn.some((path) => location.pathname.startsWith(path));
 
   return (
     <div className="app-shell">
-      <header className="glass app-header app-header-community">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-          <Link to="/" style={{ display: 'flex', alignItems: 'center', lineHeight: 0 }} aria-label="VeRoRo 홈">
-            <img
-              src={VERORO_LOGO_SRC}
-              alt="VeRoRo"
-              style={{ height: '32px', width: 'auto', objectFit: 'contain', display: 'block' }}
-            />
-          </Link>
-          <ThemeToggle />
-        </div>
-      </header>
+      <AppHeader raised={raised} />
 
-      <main className="app-main container">
-        <div className="animate-fade-in" style={{ paddingBottom: '20px' }}>
+      <main className="app-main container" onScroll={onScroll}>
+        <div className="vr-anim-fade">
           <Outlet />
         </div>
         {!shouldHideFooter && <Footer />}
       </main>
 
-      {!shouldHideBottomNav && <BottomNav />}
+      {chrome.nav && <BottomNav />}
     </div>
   );
 }

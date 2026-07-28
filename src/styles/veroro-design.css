@@ -1,0 +1,609 @@
+/* ──────────────────────────────────────────────────────────────
+   VERORO App — 디자인 시스템 레이어
+   출처: Claude Design 핸드오프 `VERORO App.dc.html` (+ android-frame.jsx)
+   index.css 다음에 로드되어 레거시 토큰을 새 팔레트로 재타게팅한다.
+   ────────────────────────────────────────────────────────────── */
+
+:root {
+  /* ── 원본 디자인 토큰 (프로토타입 상수 그대로) ── */
+  --vr-ink: #15150F;          /* INK — 텍스트/테두리용. 테마에 따라 반전된다. */
+  /* 반전 면 — 항상 어두운 패널(잉크 배너·토스트·로고 칩)에 쓴다. ink와 달리 테마에서 뒤집히지 않는다. */
+  --vr-inverse: #15150F;
+  --vr-on-inverse: #FFFFFF;
+  --vr-on-inverse-sub: #A5A596;
+  --vr-yellow: #FFD90A;       /* YEL */
+  --vr-yellow-ink: #6B5C00;   /* 노랑 위 보조 텍스트 */
+  --vr-yellow-deep: #8A7400;  /* 노랑 계열 링크/강조 */
+  --vr-yellow-soft: #FFF7D1;
+  --vr-yellow-tint: #FFFDF2;
+  --vr-sub: #8A8A7C;          /* SUB */
+  --vr-line: #E3E1D8;         /* LINE — 입력/버튼 테두리 */
+  --vr-card-line: #EDEBE3;    /* 카드 테두리 */
+  --vr-row-line: #F1EFE8;     /* 표 구분선 */
+  --vr-soft: #F7F6F1;         /* 연한 면 */
+  --vr-soft-2: #FCFBF7;       /* 더 연한 면 */
+  --vr-shell: #EDEBE4;        /* 디바이스 바깥 캔버스 */
+  --vr-body: #3C3C33;         /* 본문 */
+  --vr-body-2: #55554A;       /* 미선택 칩/보조 본문 */
+  --vr-muted: #77776B;
+  --vr-faint: #A5A596;
+  --vr-disabled: #B8B8AC;
+  --vr-mono: #DCD9CC;         /* 이미지 자리 모노그램 */
+  --vr-ink-2: #2C2C24;        /* 잉크 위 한 단계 밝은 면 */
+  --vr-kakao: #FEE500;
+
+  /* 등급 스케일 — GC 상수 (fg / bg) */
+  --vr-grade-a-fg: #0E8A46; --vr-grade-a-bg: #E7F6EC;
+  --vr-grade-b-fg: #5E8F14; --vr-grade-b-bg: #F0F6E4;
+  --vr-grade-c-fg: #B4780A; --vr-grade-c-bg: #FDF3DE;
+  --vr-grade-d-fg: #C4551A; --vr-grade-d-bg: #FDEDE3;
+  --vr-grade-f-fg: #C2302B; --vr-grade-f-bg: #FBE9E8;
+
+  /* 성분 신호등 — LVL 상수 */
+  --vr-signal-good-fg: #0E8A46; --vr-signal-good-bg: #E7F6EC;
+  --vr-signal-warn-fg: #B4780A; --vr-signal-warn-bg: #FDF3DE;
+  --vr-signal-risk-fg: #C2302B; --vr-signal-risk-bg: #FBE9E8;
+  --vr-live: #5AD07F;
+
+  /* 반경 — 프로토타입에서 반복되는 값 */
+  --vr-r-chip: 11px;
+  --vr-r-card: 15px;
+  --vr-r-panel: 18px;
+  --vr-r-sheet: 22px;
+
+  /* ── 레거시 시맨틱 토큰 재타게팅 ──
+     기존 화면 대부분이 아래 토큰을 참조하므로, 여기서 한 번에 새 팔레트로 전환된다. */
+  --primary: #FFD90A;
+  --primary-dark: #8A7400;
+  --secondary: #F7F6F1;
+  --accent: #C2302B;
+
+  --text-dark: #15150F;
+  --text-muted: #77776B;
+  --text-light: #A5A596;
+
+  --bg-color: #FFFFFF;
+  --bg-gradient: #EDEBE4;
+
+  --safe: #0E8A46;
+  --warning: #B4780A;
+  --danger: #C2302B;
+
+  --surface: #FFFFFF;
+  --surface-alt: #F7F6F1;
+  --surface-elevated: #FFFFFF;
+  --surface-muted: #F7F6F1;
+  --text: #15150F;
+  --text-sub: #8A8A7C;
+  --text-weak: #A5A596;
+  --line: #EDEBE3;
+  --border-subtle: #EDEBE3;
+
+  --safe-strong: #0E8A46; --safe-bg: #E7F6EC; --safe-line: #CBE7D6;
+  --caution-strong: #B4780A; --caution-bg: #FDF3DE; --caution-line: #F0DFB4;
+  --danger-strong: #C2302B; --danger-bg: #FBE9E8; --danger-line: #F3C9C6;
+
+  --grade-a: #0E8A46;
+  --grade-b: #5E8F14;
+  --grade-c: #B4780A;
+  --grade-d: #C4551A;
+  --grade-f: #C2302B;
+
+  --skeleton-base: #F1EFE8;
+  --skeleton-sheen: #FAF9F5;
+
+  --shadow-sm: 0 2px 10px rgba(21, 21, 15, 0.04);
+  --shadow-md: 0 10px 30px rgba(21, 21, 15, 0.07);
+  --shadow-lg: 0 24px 60px rgba(21, 21, 15, 0.14);
+  --shadow-card: 0 2px 10px rgba(21, 21, 15, 0.045);
+  --shadow-card-hover: 0 10px 26px -10px rgba(21, 21, 15, 0.16);
+  --nav-shadow: 0 -6px 20px rgba(21, 21, 15, 0.08);
+  --shadow-pop: 0 14px 34px rgba(21, 21, 15, 0.12);
+
+  /* PDP 토큰도 같은 팔레트로 정렬 */
+  --pdp-ink: #15150F;
+  --pdp-ink-muted: #55554A;
+  --pdp-ink-faint: #A5A596;
+  --pdp-line: #EDEBE3;
+  --pdp-surface: #FFFFFF;
+  --pdp-surface-soft: #F7F6F1;
+  --pdp-e1: 0 1px 2px rgba(21, 21, 15, .04);
+  --pdp-e2: 0 8px 24px rgba(21, 21, 15, .06);
+  --pdp-e3: 0 16px 40px rgba(21, 21, 15, .10);
+  --pdp-safe-fg: #0E8A46;   --pdp-safe-bg: #E7F6EC;
+  --pdp-good-fg: #5E8F14;   --pdp-good-bg: #F0F6E4;
+  --pdp-caution-fg: #B4780A; --pdp-caution-bg: #FDF3DE; --pdp-caution-line: #F0DFB4;
+  --pdp-danger-fg: #C2302B;  --pdp-danger-bg: #FBE9E8;  --pdp-danger-line: #F3C9C6;
+  --pdp-neutral-fg: #55554A; --pdp-neutral-bg: #F7F6F1;
+}
+
+/* 다크 테마 — 프로토타입에는 없지만 앱에는 이미 있는 기능이라 새 팔레트로 페어링한다.
+   잉크(#15150F)를 배경으로 끌어내리고 노랑을 그대로 강조색으로 유지한다. */
+:root[data-theme="dark"] {
+  --vr-ink: #F4F3EC;
+  --vr-inverse: #23231C;
+  --vr-on-inverse: #F4F3EC;
+  --vr-on-inverse-sub: #A5A596;
+  --vr-line: #33332A;
+  --vr-card-line: #2C2C24;
+  --vr-row-line: #26261F;
+  --vr-soft: #1D1D17;
+  --vr-soft-2: #191913;
+  --vr-shell: #0A0A08;
+  --vr-body: #DCDBD1;
+  --vr-body-2: #C3C2B6;
+  --vr-muted: #A5A596;
+  --vr-faint: #8A8A7C;
+  --vr-mono: #3A3A31;
+  --vr-ink-2: #2C2C24;
+  --vr-yellow-soft: #33290A;
+  --vr-yellow-tint: #221E0B;
+  --vr-yellow-deep: #FFD90A;
+
+  --vr-grade-a-bg: rgba(14, 138, 70, .18);
+  --vr-grade-b-bg: rgba(94, 143, 20, .18);
+  --vr-grade-c-bg: rgba(180, 120, 10, .18);
+  --vr-grade-d-bg: rgba(196, 85, 26, .18);
+  --vr-grade-f-bg: rgba(194, 48, 43, .18);
+  --vr-grade-a-fg: #4FCB86; --vr-grade-b-fg: #A5C95F;
+  --vr-grade-c-fg: #E8B451; --vr-grade-d-fg: #EE8B54;
+  --vr-grade-f-fg: #F0776F;
+  --vr-signal-good-fg: #4FCB86; --vr-signal-good-bg: rgba(14, 138, 70, .18);
+  --vr-signal-warn-fg: #E8B451; --vr-signal-warn-bg: rgba(180, 120, 10, .18);
+  --vr-signal-risk-fg: #F0776F; --vr-signal-risk-bg: rgba(194, 48, 43, .18);
+
+  --secondary: #1D1D17;
+  --accent: #F0776F;
+  --text-dark: #F4F3EC;
+  --text-muted: #A5A596;
+  --text-light: #8A8A7C;
+  --bg-color: #121210;
+  --bg-gradient: #0A0A08;
+
+  --surface: #121210;
+  --surface-alt: #1D1D17;
+  --surface-elevated: #16160F;
+  --surface-muted: #1D1D17;
+  --text: #F4F3EC;
+  --text-sub: #A5A596;
+  --text-weak: #8A8A7C;
+  --line: #2C2C24;
+  --border-subtle: #2C2C24;
+
+  --safe-strong: #4FCB86; --safe-bg: rgba(14, 138, 70, .18); --safe-line: rgba(79, 203, 134, .28);
+  --caution-strong: #E8B451; --caution-bg: rgba(180, 120, 10, .18); --caution-line: rgba(232, 180, 81, .3);
+  --danger-strong: #F0776F; --danger-bg: rgba(194, 48, 43, .18); --danger-line: rgba(240, 119, 111, .3);
+  --grade-a: #4FCB86; --grade-b: #A5C95F; --grade-c: #E8B451; --grade-d: #EE8B54; --grade-f: #F0776F;
+
+  --skeleton-base: #23231C; --skeleton-sheen: #2E2E25;
+
+  --pdp-ink: #F4F3EC;
+  --pdp-ink-muted: #C3C2B6;
+  --pdp-ink-faint: #8A8A7C;
+  --pdp-line: #2C2C24;
+  --pdp-surface: #16160F;
+  --pdp-surface-soft: #1D1D17;
+  --pdp-neutral-fg: #C3C2B6; --pdp-neutral-bg: #1D1D17;
+  --pdp-safe-fg: #4FCB86;   --pdp-safe-bg: rgba(14, 138, 70, .18);
+  --pdp-good-fg: #A5C95F;   --pdp-good-bg: rgba(94, 143, 20, .18);
+  --pdp-caution-fg: #E8B451; --pdp-caution-bg: rgba(180, 120, 10, .18);
+  --pdp-danger-fg: #F0776F;  --pdp-danger-bg: rgba(194, 48, 43, .18);
+}
+
+/* ── 타이포그래피 — 프로토타입은 Pretendard 단일 스택 ── */
+* {
+  font-family: Pretendard, -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', Roboto, sans-serif;
+}
+body {
+  color: var(--vr-ink);
+  -webkit-tap-highlight-color: transparent;
+}
+h1, h2, h3, h4, h5, h6 {
+  letter-spacing: -0.03em;
+}
+
+/* ── 프로토타입 키프레임 (원본 이름 유지) ── */
+@keyframes vLaser  { 0% { top: 8%; } 50% { top: 78%; } 100% { top: 8%; } }
+@keyframes vPulse  { 0%, 100% { opacity: .35; transform: scale(1); } 50% { opacity: 1; transform: scale(1.06); } }
+@keyframes vUp     { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes vSheet  { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes vFade   { from { opacity: 0; } to { opacity: 1; } }
+@keyframes vRing   { from { stroke-dashoffset: 314; } to { stroke-dashoffset: 38; } }
+@keyframes vSheen  { 0% { transform: translateX(-120%); } 100% { transform: translateX(220%); } }
+@keyframes vBlink  { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+
+.vr-anim-fade  { animation: vFade .25s; }
+.vr-anim-up    { animation: vUp .3s cubic-bezier(.2, .8, .2, 1); }
+.vr-anim-sheet { animation: vSheet .3s cubic-bezier(.2, .8, .2, 1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .vr-anim-fade, .vr-anim-up, .vr-anim-sheet, .vr-sheen::before,
+  .vr-blink, .vr-pulse, .vr-laser { animation: none !important; }
+}
+
+/* ── 셸 크롬 ──────────────────────────────────────────────── */
+
+/* 헤더: 유리 효과 대신 흰 면 + 스크롤 시에만 그림자 (프로토타입 headerShadow) */
+.app-header,
+.glass.app-header {
+  position: static;
+  max-width: none;
+  margin: 0;
+  min-height: 0;
+  flex: none;
+  padding: 0;
+  background: var(--surface);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: none;
+  box-shadow: none;
+  z-index: 5;
+  transition: box-shadow .18s ease;
+}
+.app-header-community { border-bottom: none; }
+.app-header--raised { box-shadow: 0 4px 16px rgba(0, 0, 0, .07); }
+
+.vr-header-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+}
+.vr-header-row--back { gap: 12px; padding: 11px 14px; }
+
+.vr-header-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 15.5px;
+  font-weight: 800;
+  letter-spacing: -.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vr-logo-chip {
+  background: var(--vr-inverse);
+  border-radius: 7px;
+  padding: 7px 10px;
+  display: inline-flex;
+  align-items: center;
+  border: none;
+  cursor: pointer;
+}
+
+/* 헤더 원형 아이콘 버튼 (뒤로/공유/테마/프로필) */
+.vr-round-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--vr-soft);
+  color: var(--vr-ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex: none;
+  padding: 0;
+  transition: transform .12s ease;
+}
+.vr-round-btn:active { transform: scale(.94); }
+.vr-round-btn--accent { background: var(--vr-yellow); color: #15150F; font-size: 13px; font-weight: 800; }
+
+/* 본문 좌우 여백 — 프로토타입 화면 거터는 16px */
+.container { padding: 0 16px; }
+
+/* 히어로처럼 화면 폭을 꽉 채워야 하는 블록 */
+.vr-bleed { margin-left: -16px; margin-right: -16px; }
+
+.app-main {
+  padding-top: 0;
+  padding-bottom: 28px;
+  background: var(--surface);
+}
+@supports (padding: max(0px)) {
+  .app-main { padding-bottom: 28px; }
+}
+
+/* 하단 탭바: 떠 있는 알약 → 프로토타입의 꽉 찬 바 */
+.bottom-nav,
+.glass-nav.bottom-nav {
+  position: static;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  height: auto;
+  max-width: none;
+  margin: 0;
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  padding: 8px 8px 10px;
+  border-radius: 0;
+  background: var(--surface);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
+  border-top: 1px solid var(--vr-row-line);
+  box-shadow: none;
+  z-index: 6;
+}
+@supports (padding: max(0px)) {
+  .bottom-nav { padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
+}
+
+.bottom-nav-item {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 5px 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--vr-disabled);
+}
+.bottom-nav-item-active {
+  color: var(--vr-ink);
+  background: none;
+  box-shadow: none;
+}
+.bottom-nav-label { font-size: 10.5px; font-weight: 800; letter-spacing: -.01em; opacity: 1; }
+
+/* 가운데 스캔 FAB — 56px, 라운드 사각, 바 위로 26px 돌출 */
+.scan-fab {
+  flex: 1;
+  width: auto;
+  height: auto;
+  margin-top: 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--vr-ink);
+}
+.scan-fab-badge {
+  width: 56px;
+  height: 56px;
+  border-radius: 19px;
+  background: var(--vr-yellow);
+  color: #15150F;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: -26px;
+  box-shadow: 0 8px 20px rgba(255, 217, 10, .5);
+  transition: transform .12s ease;
+}
+.scan-fab:active .scan-fab-badge { transform: scale(.94); }
+.scan-fab-label { font-size: 10.5px; font-weight: 800; letter-spacing: -.01em; }
+
+/* ── 재사용 프리미티브 ─────────────────────────────────────── */
+
+.vr-card {
+  border: 1px solid var(--vr-card-line);
+  border-radius: var(--vr-r-card);
+  background: var(--surface);
+}
+.vr-card--soft { border: none; background: var(--vr-soft); }
+
+.vr-grade-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  border-radius: 6px;
+  padding: 2px 7px;
+  font-size: 11px;
+}
+
+.vr-mono-tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--vr-soft);
+  color: var(--vr-mono);
+  font-weight: 800;
+  letter-spacing: -.04em;
+  overflow: hidden;
+  flex: none;
+}
+
+.vr-chip {
+  flex: none;
+  padding: 8px 13px;
+  border-radius: var(--vr-r-chip);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1.5px solid var(--vr-line);
+  background: var(--surface);
+  color: var(--vr-body-2);
+  white-space: nowrap;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.vr-chip--on {
+  border-color: var(--vr-inverse);
+  background: var(--vr-inverse);
+  color: var(--vr-on-inverse);
+}
+
+/* 가로 스크롤 레일 — 스크롤바 숨김 (프로토타입 ::-webkit-scrollbar{width:0}) */
+.vr-rail {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.vr-rail::-webkit-scrollbar { width: 0; height: 0; }
+
+/* 노랑 CTA 위를 지나가는 하이라이트 */
+.vr-sheen { position: relative; overflow: hidden; }
+.vr-sheen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, .55) 50%, transparent 70%);
+  animation: vSheen 3.4s ease-in-out infinite;
+  pointer-events: none;
+}
+.vr-pulse { animation: vPulse 2s infinite; }
+.vr-blink { animation: vBlink 1.6s infinite; }
+.vr-laser { animation: vLaser 1.5s ease-in-out infinite; }
+.vr-ring  { animation: vRing 1.1s cubic-bezier(.2, .8, .2, 1); }
+
+/* 바텀시트 — 필터/리뷰/펫 전환/엔트리 게이트 공통 */
+.vr-sheet-root {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.vr-sheet-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 10, 8, .42);
+  border: none;
+  padding: 0;
+  animation: vFade .2s;
+}
+.vr-sheet-panel {
+  position: relative;
+  background: var(--surface);
+  border-radius: var(--vr-r-sheet) var(--vr-r-sheet) 0 0;
+  padding: 16px 16px 20px;
+  animation: vSheet .3s cubic-bezier(.2, .8, .2, 1);
+  max-height: 78%;
+  overflow-y: auto;
+}
+.vr-sheet-handle {
+  width: 38px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--vr-line);
+  margin: 0 auto 16px;
+}
+
+/* 하단 고정 CTA 바 (상세) */
+.vr-sticky-cta {
+  flex: none;
+  padding: 11px 14px 14px;
+  background: var(--surface);
+  box-shadow: 0 -6px 20px rgba(0, 0, 0, .08);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  animation: vUp .22s;
+}
+@supports (padding: max(0px)) {
+  .vr-sticky-cta { padding-bottom: calc(14px + env(safe-area-inset-bottom)); }
+}
+
+/* 토스트 */
+.vr-toast {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: 96px;
+  z-index: 70;
+  max-width: 448px;
+  margin: 0 auto;
+  background: var(--vr-inverse);
+  color: var(--vr-on-inverse);
+  border-radius: 13px;
+  padding: 13px 15px;
+  font-size: 13.5px;
+  font-weight: 700;
+  animation: vUp .22s;
+}
+
+/* 버튼 계열 — 프로토타입의 노랑/잉크/외곽선 3종 */
+.vr-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -.01em;
+  cursor: pointer;
+  transition: transform .12s ease, opacity .12s ease;
+}
+.vr-btn:active { transform: scale(.98); }
+.vr-btn:disabled { cursor: default; transform: none; }
+.vr-btn--primary { background: var(--vr-yellow); color: #15150F; }
+.vr-btn--primary:disabled { background: var(--vr-row-line); color: var(--vr-disabled); }
+.vr-btn--ink { background: var(--vr-inverse); color: var(--vr-on-inverse); }
+.vr-btn--outline { background: var(--surface); color: var(--vr-ink); border: 1.5px solid var(--vr-line); }
+.vr-btn--kakao { background: var(--vr-kakao); color: #191919; }
+.vr-btn--ghost { background: none; color: var(--vr-sub); font-size: 13.5px; }
+
+/* 기존 .btn 계열도 새 팔레트에 맞춘다 (노랑 위 흰 글씨 방지) */
+.btn-primary, .btn-primary:hover {
+  background-color: var(--vr-yellow);
+  color: #15150F;
+}
+.btn-outline {
+  background-color: var(--surface);
+  color: var(--vr-ink);
+  border: 1.5px solid var(--vr-line);
+}
+.btn-outline:hover { background-color: var(--vr-soft); }
+
+/* 입력 */
+.vr-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1.5px solid var(--vr-line);
+  border-radius: 14px;
+  padding: 16px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--vr-ink);
+  background: var(--surface);
+  outline: none;
+  transition: border-color .15s ease;
+}
+.vr-input::placeholder { color: var(--vr-faint); }
+.vr-input:focus { border-color: var(--vr-ink); }
+
+/* 링크 hover — 프로토타입 a:hover{color:#8A7400} */
+a:hover { color: var(--vr-yellow-deep); }
+
+/* ── 검색 화면 보조 칩 — 파랑 계열을 새 팔레트로 교체 ── */
+.search-chip {
+  border-radius: var(--vr-r-chip);
+  border: 1.5px solid var(--vr-line);
+  background: var(--surface);
+  color: var(--vr-body-2);
+  font-size: 12.5px;
+}
+.search-chip--symptom {
+  background: var(--vr-soft);
+  border-color: transparent;
+  color: var(--vr-body-2);
+}
+.search-chip--recent {
+  background: var(--surface);
+  border-color: var(--vr-line);
+}
+.search-chip .search-chip-rank { color: var(--vr-yellow-deep); }
+.search-chip .search-chip-rank.top3 { color: var(--danger-strong); }
+.search-block-label { color: var(--vr-sub); }

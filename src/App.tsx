@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { pickSplashTagline } from './copy/marketing';
-import { VERORO_LOGO_SRC } from './constants/assets';
+import Wordmark from './components/Wordmark';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useStore } from './store/useStore';
 import Layout from './components/Layout';
@@ -88,24 +88,29 @@ function App() {
   const showSplash = !adminMode && (isInitializing || showEntrySplash);
 
   if (showSplash) {
+    // 스플래시 — 잉크 배경 위 워드마크, 하단에 노란 점 3개가 순차 펄스 (프로토타입 Splash)
     return (
       <div style={{
-        display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
-        height: '100vh', background: 'var(--bg-gradient)', padding: '32px 24px', textAlign: 'center',
-        boxSizing: 'border-box',
+        position: 'absolute', inset: 0, zIndex: 80, background: '#15150F',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '18px',
       }}>
-        <img
-          src={VERORO_LOGO_SRC}
-          alt="VeRoRo"
-          style={{ height: '128px', width: 'auto', objectFit: 'contain', marginBottom: '26px', display: 'block' }}
-        />
-        <p style={{
-          color: 'var(--text-dark)', fontSize: '15px', fontWeight: 600, lineHeight: 1.55, maxWidth: '320px', margin: '0 0 28px',
-        }}>
+        <div className="vr-anim-up">
+          <Wordmark height={44} />
+        </div>
+        <div className="vr-anim-fade" style={{ fontSize: '14.5px', fontWeight: 700, color: '#A5A596', letterSpacing: '-0.01em', textAlign: 'center', padding: '0 24px' }}>
           {splashLine}
-        </p>
-        <div style={{ width: '36px', height: '36px', border: '3px solid rgba(250, 204, 21, 0.3)', borderTopColor: 'var(--primary-dark)', borderRadius: '50%', animation: 'spin 0.85s linear infinite' }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+        <div style={{ position: 'absolute', bottom: '44px', display: 'flex', gap: '5px' }}>
+          {[0, 0.15, 0.3].map((delay) => (
+            <div
+              key={delay}
+              style={{
+                width: '6px', height: '6px', borderRadius: '50%', background: '#FFD90A',
+                animation: `vPulse 1s ${delay}s infinite`,
+              }}
+            />
+          ))}
+        </div>
       </div>
     );
   }
@@ -162,7 +167,8 @@ function App() {
             position: 'fixed',
             inset: 0,
             zIndex: 9999,
-            background: 'var(--bg-gradient)',
+            maxWidth: '480px',
+            margin: '0 auto',
           }}
         >
           <EntryGate

@@ -19,12 +19,13 @@ export default function ThemeToggle() {
   return (
     <button
       type="button"
-      className="app-icon-button"
+      className="vr-round-btn"
+      style={{ color: 'var(--vr-muted)' }}
       onClick={() => setMode(cycleThemeMode())}
       aria-label={`테마 전환 (현재: ${meta.label})`}
       title={meta.label}
     >
-      <Icon size={18} />
+      <Icon size={17} strokeWidth={2} />
     </button>
   );
 }
