@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { notify } from '../store/useNotification';
 import type { FeedingLogInput, PetFeedingLog, Product, SupabasePet } from '../types';
+import { toExactIlikePattern, toOrIlikePattern } from './postgrestPattern';
 import {
   mapFeedingLogFromRow,
   mapProductFromSupabaseRow,
@@ -211,17 +212,6 @@ export async function getProductByBarcode(barcode: string): Promise<Product | nu
 export const DIET_HEALTH_TAGS = ['비만', '다이어트', '체중', '저칼로리', '체중관리', '다이어트케어'] as const;
 
 /**
- * PostgREST or() 필터에 안전하게 넣을 ilike 패턴.
- * 값에 쉼표·괄호가 있으면 or 파서가 조건 구분자로 해석해 쿼리 전체가 400으로
- * 깨지므로("구토, 설사" 검색이 무조건 0건) 큰따옴표로 감싸고 따옴표·역슬래시를
- * 이스케이프한다.
- */
-function toOrIlikePattern(raw: string): string {
-  const escaped = raw.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-  return `"%${escaped}%"`;
-}
-
-/**
  * UI 라이프스테이지 라벨 → DB target_life_stage 배열에 실재하는 값 후보.
  * 시드는 영문 enum(adult/senior/puppy_kitten/all), 일부 수입 데이터는 한글('성체')
  * 이라 exact contains 로는 어떤 칩도 매칭되지 않았다. overlaps + 후보군으로 조회한다.
@@ -241,6 +231,7 @@ const LIFE_STAGE_DB_VALUES: Record<string, string[]> = {
  */
 const HEALTH_CONCERN_DB_TOKENS: Record<string, string[]> = {
   '피부·모질': ['피부', '모질', '피모'],
+  '알러지': ['알러지', '알레르기', '저자극', '저알러지', '저알레르기'],
   '소화기': ['소화', '소화기', '장', '위장'],
   '비만·다이어트': ['비만', '다이어트', '체중', '체중관리'],
   '신장·비뇨기': ['신장', '비뇨기', '요로', '방광'],
@@ -466,6 +457,38 @@ const FEEDING_LOG_SELECT = `
   )
 ` as const;
 
+/** 다이어리 사진 스토리지 버킷 — 20260728120000_feeding_log_photo_storage.sql 로 생성 */
+export const FEEDING_LOG_PHOTO_BUCKET = 'feeding-log-photos';
+
+/**
+ * 다이어리 사진을 Supabase Storage에 올리고 공개 URL을 돌려준다.
+ * 실패(버킷 미생성·권한 등) 시 null — 호출부는 data URL 저장으로 폴백해
+ * 마이그레이션이 아직 적용되지 않은 환경에서도 기능이 끊기지 않게 한다.
+ */
+export async function uploadFeedingLogPhoto(userId: string, file: File): Promise<string | null> {
+  if (!isSupabaseConfigured || !userId) return null;
+  const rawExt = file.name.includes('.') ? file.name.split('.').pop() ?? '' : '';
+  const ext = rawExt.toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+  // 경로 1단계는 반드시 auth.uid() — 스토리지 RLS가 이 prefix로 소유자를 검증한다
+  const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
+  try {
+    const { error } = await supabase.storage.from(FEEDING_LOG_PHOTO_BUCKET).upload(path, file, {
+      cacheControl: '31536000',
+      contentType: file.type || undefined,
+      upsert: false,
+    });
+    if (error) {
+      console.error('uploadFeedingLogPhoto error:', error.message);
+      return null;
+    }
+    const { data } = supabase.storage.from(FEEDING_LOG_PHOTO_BUCKET).getPublicUrl(path);
+    return data?.publicUrl ?? null;
+  } catch (err) {
+    console.error('uploadFeedingLogPhoto error:', err);
+    return null;
+  }
+}
+
 /** 다이어리 제품 검색 — 유형(사료/간식/영양제) + 제품명/브랜드명. 기존 products DB 사용 */
 export async function searchDiaryProducts(
   query: string,
@@ -612,7 +635,11 @@ export async function getFeedingLogsForProduct(
   if (ref.productId) {
     builder = builder.eq('product_id', ref.productId);
   } else if (ref.customName) {
-    builder = builder.eq('is_custom_product', true).eq('custom_product_name', ref.customName);
+    // 직접 입력 제품명은 대소문자 무시로 묶는다 — 월간 인사이트가
+    // lower-case 로 합산하므로 이력 조회도 같은 기준을 써야 개수가 일치한다.
+    builder = builder
+      .eq('is_custom_product', true)
+      .ilike('custom_product_name', toExactIlikePattern(ref.customName));
   } else {
     return [];
   }

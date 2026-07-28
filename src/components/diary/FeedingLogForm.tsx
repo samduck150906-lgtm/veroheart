@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, X, Check, FlaskConical, Camera, Trash2, PawPrint } from 'lucide-react';
 import BottomSheet from '../BottomSheet';
-import { searchDiaryProducts, createFeedingLog, updateFeedingLog } from '../../lib/supabase';
+import { searchDiaryProducts, createFeedingLog, updateFeedingLog, uploadFeedingLogPhoto } from '../../lib/supabase';
 import { notify } from '../../store/useNotification';
 import type {
   FeedingLogInput,
@@ -80,6 +80,8 @@ export default function FeedingLogForm({
   const [preference, setPreference] = useState<number | null>(null);
   const [reaction, setReaction] = useState<string>('');
   const [imageUrl, setImageUrl] = useState<string>('');
+  /** 선택한 원본 파일 — 저장 시 Storage 업로드용(imageUrl은 미리보기/폴백) */
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   // 제품 검색
@@ -121,6 +123,7 @@ export default function FeedingLogForm({
       setPreference(editingLog.preferenceLevel);
       setReaction(editingLog.reactionNote ?? '');
       setImageUrl(editingLog.imageUrl ?? '');
+      setPhotoFile(null);
     } else {
       // 생성 모드 — 공통 기본값
       setPetId(initialPetId);
@@ -131,6 +134,7 @@ export default function FeedingLogForm({
       setPreference(null);
       setReaction('');
       setImageUrl('');
+      setPhotoFile(null);
       setSearchQuery('');
       setSearchResults([]);
 
@@ -230,6 +234,8 @@ export default function FeedingLogForm({
       e.target.value = '';
       return;
     }
+    // 미리보기는 data URL, 실제 저장은 handleSave에서 Storage 업로드
+    setPhotoFile(file);
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === 'string') setImageUrl(reader.result);
@@ -251,25 +257,34 @@ export default function FeedingLogForm({
     const amountMatch = amount.trim().match(/\d*\.?\d+/);
     const parsedAmount = amountMatch ? Number.parseFloat(amountMatch[0]) : NaN;
 
-    const input: FeedingLogInput = {
-      petId,
-      productId: isCustomProduct ? null : selectedProduct?.id ?? null,
-      productType,
-      customProductName: isCustomProduct ? customName.trim() : null,
-      isCustomProduct,
-      feedingDate: date,
-      feedingTime: time || null,
-      mealPeriod,
-      amount: Number.isFinite(parsedAmount) ? parsedAmount : null,
-      unit: resolvedUnit || null,
-      memo: memo.trim() || null,
-      preferenceLevel: preference,
-      reactionNote: reaction.trim() || null,
-      imageUrl: imageUrl || null,
-    };
-
     setIsSaving(true);
     try {
+      // 사진: 새로 고른 파일은 Storage에 올리고 URL만 저장한다. base64를 DB에
+      // 넣으면 목록 조회 payload가 수 MB로 커진다. 업로드 실패(버킷 미적용 등)
+      // 시에만 기존 방식(data URL)으로 폴백.
+      let savedImageUrl: string | null = imageUrl || null;
+      if (photoFile) {
+        const uploaded = await uploadFeedingLogPhoto(userId, photoFile);
+        if (uploaded) savedImageUrl = uploaded;
+      }
+
+      const input: FeedingLogInput = {
+        petId,
+        productId: isCustomProduct ? null : selectedProduct?.id ?? null,
+        productType,
+        customProductName: isCustomProduct ? customName.trim() : null,
+        isCustomProduct,
+        feedingDate: date,
+        feedingTime: time || null,
+        mealPeriod,
+        amount: Number.isFinite(parsedAmount) ? parsedAmount : null,
+        unit: resolvedUnit || null,
+        memo: memo.trim() || null,
+        preferenceLevel: preference,
+        reactionNote: reaction.trim() || null,
+        imageUrl: savedImageUrl,
+      };
+
       const saved = editingLog
         ? await updateFeedingLog(editingLog.id, userId, input)
         : await createFeedingLog(userId, input);
@@ -778,7 +793,10 @@ export default function FeedingLogForm({
               />
               <button
                 type="button"
-                onClick={() => setImageUrl('')}
+                onClick={() => {
+                  setImageUrl('');
+                  setPhotoFile(null);
+                }}
                 aria-label="사진 삭제"
                 style={{
                   position: 'absolute',
