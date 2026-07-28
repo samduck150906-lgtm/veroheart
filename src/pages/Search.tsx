@@ -21,6 +21,7 @@ import { searchProducts, getAllIngredients } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import standardFeedData from '../data/standard_feed_data.json';
 import { rankProductsForProfile } from '../utils/score';
+import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import FilterChip from '../components/ui/FilterChip';
 import { COMPANY } from '../constants/companyInfo';
 import { buildSearchSuggestions, deriveBrandOptions, type Suggestion } from '../utils/searchSuggestions';
@@ -45,6 +46,27 @@ function resolveCategoryFromSearchParams(category: string | null): string {
 
 /** 추천 키워드(증상·목적) chip — 성분·목적 기반 탐색 보조(인기·순위 아님) */
 const SYMPTOM_KEYWORDS = ['눈물', '알러지', '다이어트', '관절', '피부', '노령견', '치석', '소화'];
+
+/**
+ * 추천 키워드 → 구조화 검색 매핑.
+ * 제품명 텍스트 검색(ilike)만으로는 '눈물' 같은 증상어가 제품명에 없어
+ * 대부분 0건이었다. 건강 태그·라이프스테이지·다이어트 프리셋 필터로 잇는다.
+ * healthConcerns 값은 필터 시트 옵션(HEALTH_CONCERN_OPTIONS)과 맞춰
+ * 시트에서도 선택 상태가 보이게 한다('알러지'는 태그 전용).
+ */
+const SYMPTOM_KEYWORD_FILTERS: Record<
+  string,
+  { healthConcerns?: string[]; lifeStage?: string; dietPreset?: boolean }
+> = {
+  '눈물': { healthConcerns: ['눈'] },
+  '알러지': { healthConcerns: ['알러지'] },
+  '다이어트': { dietPreset: true },
+  '관절': { healthConcerns: ['관절'] },
+  '피부': { healthConcerns: ['피부·모질'] },
+  '노령견': { lifeStage: '시니어' },
+  '치석': { healthConcerns: ['구강'] },
+  '소화': { healthConcerns: ['소화기'] },
+};
 
 const RECENT_KEY = 'vh_recent_searches';
 const RECENT_MAX = 8;
@@ -203,9 +225,19 @@ export default function Search() {
         score,
       }));
     }
-    const arr = [...searchResults];
-    if (sortBy === 'rating') arr.sort((a, b) => b.averageRating - a.averageRating);
-    return arr.map((product) => ({ product, breakdown: null, score: null }));
+    // 평점순: 대량 임포트 제품은 avg_rating이 전부 0이라 평점만으로는 정렬이
+    // 사실상 무의미하다 — 동점(무평점 포함)은 적합도 표시 점수로 2차 정렬한다.
+    const arr = searchResults.map((product) => ({
+      product,
+      tiebreak: resolveProductDisplayVerdict(product, profile).score,
+    }));
+    if (sortBy === 'rating') {
+      arr.sort(
+        (a, b) =>
+          b.product.averageRating - a.product.averageRating || b.tiebreak - a.tiebreak,
+      );
+    }
+    return arr.map(({ product }) => ({ product, breakdown: null, score: null }));
   }, [searchResults, sortBy, profile]);
 
   const toggleHealthConcern = (concern: string) => {
@@ -255,7 +287,21 @@ export default function Search() {
   };
 
   const applyKeyword = (kw: string) => {
-    setQuery(kw);
+    const mapped = SYMPTOM_KEYWORD_FILTERS[kw];
+    if (mapped) {
+      // 증상어는 제품명 검색이 아니라 태그·프리셋 필터로 잇는다
+      setQuery('');
+      setFilters((f) => ({
+        ...f,
+        ...(mapped.lifeStage ? { targetLifeStage: mapped.lifeStage } : {}),
+        ...(mapped.dietPreset ? { dietPreset: true } : {}),
+        ...(mapped.healthConcerns
+          ? { healthConcerns: [...new Set([...f.healthConcerns, ...mapped.healthConcerns])] }
+          : {}),
+      }));
+    } else {
+      setQuery(kw);
+    }
     recordRecent(kw);
     setShowSuggest(false);
   };
