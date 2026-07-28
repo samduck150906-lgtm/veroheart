@@ -1,5 +1,6 @@
 import type { Ingredient, Product, UserPetProfile } from '../types';
 import { analyzeFeed } from '../analysis/feedAnalysis';
+import { resolveProductWithPhase2AliasAdapter } from '../lib/phase2AliasResolverProductAdapter';
 
 /** 궁합 등급 — 점수(0~100)를 사용자에게 보여줄 A~F 등급으로 매핑한 단일 진실원천 */
 export type CompatibilityGrade = 'A' | 'B' | 'C' | 'D' | 'F';
@@ -166,14 +167,32 @@ export function preferencePenaltyFromLevel(level: number | null | undefined): nu
   return 0;
 }
 
+/**
+ * Phase 2 alias resolver runtime integration point.
+ *
+ * The adapter is deliberately wired with the feature flag disabled so scoring
+ * receives the original product object. Turning this on requires a separate
+ * owner-approved PR with score/output diffs reviewed explicitly.
+ */
+export function getPhase2AliasResolverScoringProduct(product: Product): Product {
+  return resolveProductWithPhase2AliasAdapter({
+    product,
+    aliases: [],
+    canonicals: [],
+    blockedTerms: [],
+    flags: { phase2AliasResolver: false },
+  }).product;
+}
+
 export function getRecommendationBreakdown(product: Product, profile: UserPetProfile): RecommendationBreakdown {
-  const ingredients = product.ingredients ?? [];
-  const allergyHits = countAllergyHits(product, profile);
-  const matchedConcerns = countConcernMatches(product, profile);
+  const scoringProduct = getPhase2AliasResolverScoringProduct(product);
+  const ingredients = scoringProduct.ingredients ?? [];
+  const allergyHits = countAllergyHits(scoringProduct, profile);
+  const matchedConcerns = countConcernMatches(scoringProduct, profile);
   const dangerCount = ingredients.filter((ingredient) => ingredient.riskLevel === 'danger').length;
   const cautionCount = ingredients.filter((ingredient) => ingredient.riskLevel === 'caution').length;
-  const speciesMismatch = isSpeciesMismatch(product, profile);
-  const feed = analyzeFeed(product, profile);
+  const speciesMismatch = isSpeciesMismatch(scoringProduct, profile);
+  const feed = analyzeFeed(scoringProduct, profile);
 
   // 1) 성분 안전성 — 50점
   // 성분표가 없으면 안전하다고 간주하지 않고 중립값에서 시작한다.
@@ -214,7 +233,7 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
   // 알레르기는 첫 적중만으로 90점, 추가 적중마다 5점씩 최대 100점 감점한다.
   const allergyPenalty =
     allergyHits.length > 0 ? Math.min(100, 90 + Math.max(0, allergyHits.length - 1) * 5) : 0;
-  const preferenceLevel = profile.productPreferences?.[product.id] ?? null;
+  const preferenceLevel = profile.productPreferences?.[scoringProduct.id] ?? null;
   const preferencePenalty = preferencePenaltyFromLevel(preferenceLevel);
 
   const total = speciesMismatch
@@ -224,7 +243,7 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
   const reasons: string[] = [];
   if (speciesMismatch) {
     const expected = profile.species === 'Cat' ? '고양이' : '강아지';
-    const actual = product.targetPetType === 'cat' ? '고양이' : '강아지';
+    const actual = scoringProduct.targetPetType === 'cat' ? '고양이' : '강아지';
     reasons.push(`${expected}용 제품이 아님 · ${actual}용 제품`);
   }
   if (allergyHits.length > 0) reasons.push(`알레르기·회피 성분 ${allergyHits.join(', ')} 포함`);
