@@ -1,32 +1,36 @@
 import { useMemo, useState, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, ArrowLeft, RefreshCw, Check, X } from 'lucide-react';
+import { Eye, EyeOff, RefreshCw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import { notify } from '../store/useNotification';
+import { LogoChip } from '../components/Wordmark';
+import { VR } from '../lib/veroroDesign';
 import { usePublicSettings } from '../lib/publicSettings';
-import { VERORO_LOGO_SRC } from '../constants/assets';
-import { TossButton, TossCard, TossChip, TossInput, TossField, TossSectionBlock } from '../components/TossUI';
 
 const PASSWORD_RULES = [
   {
     id: 'len',
     label: '8자 이상',
+    shortLabel: '8자 이상',
     test: (pw: string) => pw.length >= 8,
   },
   {
     id: 'letter',
     label: '영문(A–Z, a–z) 1자 이상',
+    shortLabel: '영문 포함',
     test: (pw: string) => /[a-zA-Z]/.test(pw),
   },
   {
     id: 'digit',
     label: '숫자 1자 이상',
+    shortLabel: '숫자 포함',
     test: (pw: string) => /[0-9]/.test(pw),
   },
   {
     id: 'special',
     label: '특수문자 1자 이상 (!@#$%^&* 등)',
+    shortLabel: '특수문자 포함',
     test: (pw: string) => /[^A-Za-z0-9]/.test(pw),
   },
 ] as const;
@@ -185,198 +189,160 @@ export default function Login() {
     }
   };
 
+  const emailOk = isValidEmail(email);
+  const canSubmit = mode === 'login'
+    ? Boolean(email.trim()) && password.length > 0
+    : emailOk && passwordPolicyOk(password);
+
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-gradient)', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '16px 20px' }}>
+    <div style={{ padding: '22px 4px 40px' }}>
+      <div style={{ marginBottom: '22px' }}>
+        <LogoChip height={20} padding="11px 14px" radius={10} ariaLabel="VERORO" />
+      </div>
+
+      <h1 style={{ margin: '0 0 6px', fontSize: '26px', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.25 }}>
+        {mode === 'login' ? '이메일로 로그인' : '이메일로 시작하기'}
+      </h1>
+      <p style={{ margin: '0 0 24px', fontSize: '13.5px', color: VR.muted, lineHeight: 1.55 }}>
+        펫 프로필을 저장하면 맞춤 등급을 볼 수 있어.
+      </p>
+
+      {/* 로그인 / 회원가입 전환 */}
+      <div style={{ display: 'flex', gap: '6px', background: 'var(--vr-soft)', padding: '4px', borderRadius: '12px', marginBottom: '18px' }}>
+        {(['login', 'signup'] as const).map((m) => (
+          <button
+            key={m}
+            type="button"
+            disabled={m === 'signup' && !signupEnabled}
+            title={m === 'signup' && !signupEnabled ? '신규 가입이 일시 중단되었습니다.' : undefined}
+            onClick={() => { setMode(m); setPendingVerification(false); }}
+            style={{
+              flex: 1, padding: '10px', borderRadius: '9px', border: 'none',
+              cursor: m === 'signup' && !signupEnabled ? 'not-allowed' : 'pointer',
+              fontSize: '13.5px', fontWeight: 800,
+              background: mode === m ? 'var(--surface)' : 'transparent',
+              color: mode === m ? 'var(--vr-ink)' : VR.sub,
+              opacity: m === 'signup' && !signupEnabled ? 0.45 : 1,
+            }}
+          >
+            {m === 'login' ? '로그인' : '회원가입'}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '11px' }}>
+        <input
+          type="email"
+          className="vr-input"
+          placeholder="이메일"
+          autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && void handleSubmit()}
+          aria-label="이메일"
+        />
+        <div style={{ position: 'relative' }}>
+          <input
+            type={showPw ? 'text' : 'password'}
+            className="vr-input"
+            style={{ paddingRight: '50px' }}
+            placeholder="비밀번호"
+            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && void handleSubmit()}
+            aria-label="비밀번호"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPw(!showPw)}
+            aria-label={showPw ? '비밀번호 숨기기' : '비밀번호 보기'}
+            style={{
+              position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)',
+              background: 'none', border: 'none', cursor: 'pointer', color: VR.sub, display: 'inline-flex',
+            }}
+          >
+            {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        </div>
+      </div>
+
+      {mode === 'signup' && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '14px' }}>
+          {PASSWORD_RULES.map((rule) => {
+            const ok = rule.test(password);
+            return (
+              <div key={rule.id} style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                <span style={{
+                  width: '16px', height: '16px', borderRadius: '50%', flex: 'none',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: ok ? 'var(--safe-strong)' : 'var(--vr-card-line)',
+                }}>
+                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke={ok ? '#fff' : 'var(--vr-line)'} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 13l4 4L19 7" />
+                  </svg>
+                </span>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: ok ? 'var(--safe-strong)' : VR.faint }}>
+                  {rule.shortLabel}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <button
+        type="button"
+        className="vr-btn vr-btn--primary"
+        style={{ marginTop: '22px', padding: '16px', fontSize: '15.5px' }}
+        onClick={() => void handleSubmit()}
+        disabled={isLoading || !canSubmit}
+      >
+        {isLoading ? '처리 중…' : mode === 'login' ? '로그인' : '가입하고 시작하기'}
+      </button>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '22px 0' }}>
+        <span style={{ flex: 1, height: '1px', background: 'var(--vr-card-line)' }} />
+        <span style={{ fontSize: '11.5px', color: VR.faint, fontWeight: 700 }}>또는</span>
+        <span style={{ flex: 1, height: '1px', background: 'var(--vr-card-line)' }} />
+      </div>
+
+      {/* 이메일 인증 재전송 — 소셜 로그인 대신 제공하는 보조 경로 */}
+      <div className="vr-card" style={{ padding: '14px' }}>
+        <div style={{ fontSize: '12.5px', fontWeight: 800, marginBottom: '6px' }}>인증 메일이 안 왔어?</div>
+        <p style={{ margin: '0 0 10px', fontSize: '12px', color: VR.muted, lineHeight: 1.55 }}>
+          가입 직후나 로그인이 안 될 때 다시 보낼 수 있어. 스팸함도 꼭 확인해줘.
+        </p>
         <button
           type="button"
-          onClick={() => navigate(-1)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-dark)', fontWeight: 600 }}
+          className="vr-btn vr-btn--outline"
+          style={{ padding: '12px', fontSize: '13.5px' }}
+          onClick={() => void handleResendVerification()}
+          disabled={resendLoading || resendCooldown > 0}
         >
-          <ArrowLeft size={20} /> 뒤로
+          <RefreshCw size={15} style={{ animation: resendLoading ? 'spin 0.85s linear infinite' : undefined }} />
+          {resendCooldown > 0 ? `${resendCooldown}초 후 다시 보내기` : '인증 메일 다시 보내기'}
         </button>
       </div>
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 28px 80px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <img
-            src={VERORO_LOGO_SRC}
-            alt="VeRoRo"
-            style={{ height: '48px', width: 'auto', maxWidth: 'min(280px, 100%)', objectFit: 'contain', margin: '0 auto 14px', display: 'block' }}
-          />
-          <h1 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-dark)', margin: '0 0 6px', lineHeight: 1.35 }}>
-            {mode === 'login' ? '이메일로 로그인' : '이메일로 회원가입'}
-          </h1>
-        </div>
-
-        <div style={{ display: 'flex', backgroundColor: 'rgba(250, 204, 21, 0.2)', borderRadius: '14px', padding: '4px', marginBottom: '22px' }}>
-          {(['login', 'signup'] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              disabled={m === 'signup' && !signupEnabled}
-              title={m === 'signup' && !signupEnabled ? '신규 가입이 일시 중단되었습니다.' : undefined}
-              onClick={() => {
-                setMode(m);
-                setPendingVerification(false);
-              }}
-              style={{
-                flex: 1,
-                padding: '12px',
-                borderRadius: '10px',
-                border: 'none',
-                cursor: 'pointer',
-                fontWeight: 700,
-                fontSize: '15px',
-                transition: 'all 0.2s',
-                background: mode === m ? 'var(--surface-elevated)' : 'transparent',
-                color: mode === m ? 'var(--text-dark)' : 'var(--text-muted)',
-                boxShadow: mode === m ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-                opacity: m === 'signup' && !signupEnabled ? 0.45 : 1,
-              }}
-            >
-              {m === 'login' ? '로그인' : '회원가입'}
-            </button>
-          ))}
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '16px' }}>
-          <TossField icon={<Mail size={18} color="var(--text-muted)" />}>
-            <TossInput
-              type="email"
-              placeholder="이메일 주소"
-              value={email}
-              onChange={setEmail}
-              style={{ border: 'none', padding: '0', background: 'transparent', fontSize: '16px' }}
-            />
-          </TossField>
-          <TossField icon={<Lock size={18} color="var(--text-muted)" />}>
-            <TossInput
-              type={showPw ? 'text' : 'password'}
-              placeholder="비밀번호"
-              value={password}
-              onChange={setPassword}
-              style={{ border: 'none', padding: '0', background: 'transparent', fontSize: '16px' }}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPw(!showPw)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'inline-flex' }}
-            >
-              {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
-          </TossField>
-        </div>
-
-        <div style={{ display: 'none' }}>
-          <div style={{ position: 'relative' }}>
-            <Mail size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-            <input
-              type="email"
-              placeholder="이메일 주소"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-              style={{ width: '100%', padding: '16px 16px 16px 46px', borderRadius: '14px', border: '1px solid var(--line)', fontSize: '16px', outline: 'none', boxSizing: 'border-box' }}
-            />
-          </div>
-          <div style={{ position: 'relative' }}>
-            <Lock size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-            <input
-              type={showPw ? 'text' : 'password'}
-              placeholder="비밀번호"
-              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-              style={{ width: '100%', padding: '16px 46px 16px 46px', borderRadius: '14px', border: '1px solid var(--line)', fontSize: '16px', outline: 'none', boxSizing: 'border-box' }}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPw(!showPw)}
-              style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
-            >
-              {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
-          </div>
-        </div>
-
-        {mode === 'signup' && (
-          <TossCard style={{ marginBottom: '18px', padding: '12px 14px', borderRadius: '12px' }}>
-            <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 800, color: 'var(--text-dark)' }}>비밀번호 정책</p>
-            <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'grid', gap: '6px' }}>
-              {PASSWORD_RULES.map((rule) => {
-                const ok = rule.test(password);
-                return (
-                  <li
-                    key={rule.id}
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: ok ? '#059669' : 'var(--text-muted)', fontWeight: 600 }}
-                  >
-                    {ok ? <Check size={14} strokeWidth={2.5} /> : <X size={14} strokeWidth={2.5} />}
-                    {rule.label}
-                  </li>
-                );
-              })}
-            </ul>
-          </TossCard>
-        )}
-
-        <TossButton
-          type="button"
-          onClick={() => void handleSubmit()}
-          disabled={isLoading}
-          style={{ width: '100%', marginBottom: '14px', height: '52px', fontSize: '16px' }}
-        >
-          {isLoading ? '처리 중...' : mode === 'login' ? '로그인' : '회원가입'}
-        </TossButton>
-
-        {mode === 'login' && (
-          <TossSectionBlock title="이메일 인증" style={{ marginBottom: '14px', borderRadius: '12px', background: '#EFF6FF', border: '1px solid #BFDBFE' }}>
-            <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 800, color: '#1E40AF' }}>이메일 인증</p>
-            <p style={{ margin: '0 0 10px', fontSize: '12px', color: '#1D4ED8', lineHeight: 1.5, fontWeight: 600 }}>
-              가입 직후 또는 로그인이 안 될 때, 아래 버튼으로 인증 메일을 다시 보낼 수 있어요. 스팸함도 꼭 확인해 주세요.
-            </p>
-            <button
-              type="button"
-              onClick={() => void handleResendVerification()}
-              disabled={resendLoading || resendCooldown > 0}
-              style={{
-                width: '100%',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                padding: '12px',
-                borderRadius: '10px',
-                border: '1px solid #93C5FD',
-                background: '#fff',
-                color: '#1D4ED8',
-                fontWeight: 800,
-                fontSize: '13px',
-                cursor: resendLoading || resendCooldown > 0 ? 'not-allowed' : 'pointer',
-                opacity: resendLoading || resendCooldown > 0 ? 0.65 : 1,
-              }}
-            >
-              <RefreshCw size={16} style={{ animation: resendLoading ? 'spin 0.85s linear infinite' : undefined }} />
-              {resendCooldown > 0 ? `${resendCooldown}초 후 다시 보내기` : '인증 메일 다시 보내기'}
-            </button>
-          </TossSectionBlock>
-        )}
-
-        {pendingVerification && (
-          <div style={{ marginBottom: '12px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-            <TossChip active>인증 대기</TossChip>
-            <p style={{ margin: 0, fontSize: '11px', color: 'var(--caution-strong)', lineHeight: 1.5, fontWeight: 600, width: '100%' }}>
-              인증이 끝나면 로그인 탭에서 같은 이메일로 로그인해 주세요.
-            </p>
-          </div>
-        )}
-
-        <p style={{ margin: 0, textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-          소셜 로그인 없이 이메일과 비밀번호만 사용합니다.
+      {pendingVerification && (
+        <p style={{ margin: '12px 0 0', fontSize: '11.5px', color: 'var(--caution-strong)', lineHeight: 1.55, fontWeight: 700 }}>
+          인증이 끝나면 로그인 탭에서 같은 이메일로 로그인해줘.
         </p>
-      </div>
+      )}
+
+      <p style={{ margin: '20px 0 0', fontSize: '11.5px', color: VR.faint, lineHeight: 1.6, textAlign: 'center' }}>
+        가입하면{' '}
+        <button
+          type="button"
+          onClick={() => navigate('/terms')}
+          style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', color: 'inherit', textDecoration: 'underline', cursor: 'pointer' }}
+        >
+          이용약관
+        </button>
+        과 개인정보 처리방침에 동의하는 걸로 볼게. 소셜 로그인 없이 이메일과 비밀번호만 사용해.
+      </p>
+
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );

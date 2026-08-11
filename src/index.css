@@ -133,29 +133,10 @@
 }
 
 /* ── Dark: 셸 크롬(반투명 흰색으로 하드코딩된 곳) 오버라이드 ── */
-:root[data-theme="dark"] .glass {
-  background: rgba(20, 24, 30, 0.86);
-  border-bottom-color: rgba(255, 255, 255, 0.06);
-}
-:root[data-theme="dark"] .glass-nav,
-:root[data-theme="dark"] .bottom-nav-community {
-  background: rgba(22, 26, 32, 0.94);
-  border-color: rgba(255, 255, 255, 0.08);
-}
 :root[data-theme="dark"] .app-icon-button {
   background: rgba(30, 35, 43, 0.95);
   border-color: rgba(255, 255, 255, 0.08);
   color: #C7CED8;
-}
-:root[data-theme="dark"] .bottom-nav-item-active {
-  background: rgba(234, 179, 8, 0.14);
-  box-shadow: inset 0 0 0 1px rgba(234, 179, 8, 0.28);
-}
-:root[data-theme="dark"] .scan-fab { border-color: #161A20; }
-:root[data-theme="dark"] .search-chip--symptom {
-  background: rgba(59, 130, 246, 0.16);
-  border-color: rgba(59, 130, 246, 0.32);
-  color: #93C5FD;
 }
 :root[data-theme="dark"] .rising-trend--up   { background: rgba(239,68,68,.18); color: #FCA5A5; }
 :root[data-theme="dark"] .rising-trend--down { background: rgba(59,130,246,.18); color: #93C5FD; }

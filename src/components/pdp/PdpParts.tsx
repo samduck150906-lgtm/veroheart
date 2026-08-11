@@ -625,26 +625,26 @@ export function StickyCtaBar({
     <div
       role="region"
       aria-label="제품 액션"
+      className="vr-anim-up"
       style={{
         position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 0,
         width: '100%', maxWidth: 480, zIndex: 30,
-        display: 'flex', alignItems: 'center', gap: 10,
-        padding: '12px 16px calc(12px + env(safe-area-inset-bottom, 0px))',
-        background: 'var(--pdp-surface,#fff)',
-        borderTop: '1px solid var(--pdp-line,var(--pdp-line))',
-        boxShadow: '0 -8px 28px rgba(15,23,42,.08)',
+        display: 'flex', alignItems: 'center', gap: 9,
+        padding: '11px 14px calc(14px + env(safe-area-inset-bottom, 0px))',
+        background: 'var(--surface)',
+        boxShadow: '0 -6px 20px rgba(0,0,0,.08)',
       }}
     >
       <button type="button" onClick={onFav} aria-pressed={isFav} aria-label="찜하기"
-        style={{ width: 48, height: 48, flexShrink: 0, borderRadius: 14, border: '1px solid var(--pdp-line,var(--pdp-line))', background: 'var(--pdp-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-        <Heart size={22} color={isFav ? '#F04452' : 'var(--pdp-ink-faint)'} fill={isFav ? '#F04452' : 'none'} />
+        style={{ width: 50, height: 50, flexShrink: 0, borderRadius: 14, border: '1.5px solid var(--vr-line)', background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+        <Heart size={21} color={isFav ? 'var(--danger-strong)' : 'var(--vr-ink)'} fill={isFav ? 'var(--danger-strong)' : 'none'} />
       </button>
       <button type="button" onClick={onCompare} aria-pressed={isComparing} aria-label="비교 담기"
-        style={{ width: 48, height: 48, flexShrink: 0, borderRadius: 14, border: '1px solid var(--pdp-line,var(--pdp-line))', background: isComparing ? 'var(--pdp-safe-bg)' : 'var(--pdp-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-        <GitCompare size={20} color={isComparing ? '#1D4ED8' : 'var(--pdp-ink-muted)'} />
+        style={{ height: 50, padding: '0 16px', flexShrink: 0, borderRadius: 14, border: `1.5px solid ${isComparing ? 'var(--vr-inverse)' : 'var(--vr-line)'}`, background: isComparing ? 'var(--vr-inverse)' : 'var(--surface)', color: isComparing ? 'var(--vr-on-inverse)' : 'var(--vr-ink)', fontSize: 13.5, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+        <GitCompare size={17} /> 비교
       </button>
       <button type="button" onClick={onLog}
-        style={{ flex: 1, height: 48, borderRadius: 14, border: 'none', background: 'var(--primary,#FEE500)', color: 'var(--pdp-ink)', fontWeight: 900, fontSize: 16, cursor: 'pointer', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+        style={{ flex: 1, height: 50, borderRadius: 14, border: 'none', background: 'var(--vr-yellow)', color: '#15150F', fontWeight: 800, fontSize: 15, cursor: 'pointer', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
         <UtensilsCrossed size={18} /> 우리 아이가 먹었어요
       </button>
     </div>

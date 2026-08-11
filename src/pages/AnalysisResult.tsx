@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { ArrowLeft, AlertCircle, Check, Sparkles } from 'lucide-react';
+import { gradeVerdict } from '../lib/veroroDesign';
+import { AlertCircle, Check, Sparkles } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
 import {
@@ -24,12 +25,6 @@ import StateView from '../components/StateView';
 import type { Ingredient, Product } from '../types';
 
 /* ── 등급·위험도 시각 토큰 (신호등) ───────────────────────── */
-const GRADE_COLOR: Record<CompatibilityGrade, string> = {
-  A: 'var(--grade-a)', B: 'var(--grade-b)', C: 'var(--grade-c)', D: 'var(--grade-d)', F: 'var(--grade-f)',
-};
-const GRADE_LABEL: Record<CompatibilityGrade, string> = {
-  A: '아주 잘 맞아요', B: '잘 맞는 편이에요', C: '보통이에요', D: '주의가 필요해요', F: '맞지 않아요',
-};
 const RISK = {
   safe:    { color: 'var(--safe-strong)', bg: 'var(--safe-bg)', label: '안전' },
   caution: { color: 'var(--caution-strong)', bg: 'var(--caution-bg)', label: '주의' },
@@ -60,43 +55,64 @@ const CATEGORY_LABEL: Record<IngredientCategory, string> = {
 };
 
 /* ── 점수 링 (3초 판정 히어로) ───────────────────────────── */
-function ScoreRing({ score, grade }: { score: number; grade: CompatibilityGrade }) {
-  const color = GRADE_COLOR[grade];
-  const [fill, setFill] = useState(0);
-  useEffect(() => {
-    const t = setTimeout(() => setFill(score), 150);
-    return () => clearTimeout(t);
-  }, [score]);
-
-  const r = 52;
-  const circumference = 2 * Math.PI * r;
-  const offset = circumference - (fill / 100) * circumference;
+/**
+ * 분석 리포트 헤더 — 잉크 패널 위 등급 링과 A~F 스케일.
+ * (디자인 핸드오프 Analysis 스크린)
+ */
+function ReportHero({
+  score,
+  grade,
+  productName,
+  headline,
+}: {
+  score: number;
+  grade: CompatibilityGrade;
+  productName: string;
+  headline: string;
+}) {
+  const r = 50;
+  const circumference = 2 * Math.PI * r; // ≈314 — 프로토타입 stroke-dasharray와 동일
+  const offset = circumference - (Math.max(0, Math.min(100, score)) / 100) * circumference;
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 20, padding: '20px 4px' }}>
-      <div style={{ position: 'relative', width: 128, height: 128, flexShrink: 0 }}>
-        <svg width="128" height="128" style={{ transform: 'rotate(-90deg)' }}>
-          <circle cx="64" cy="64" r={r} fill="none" stroke="var(--line)" strokeWidth="11" />
-          <circle
-            cx="64" cy="64" r={r} fill="none" stroke={color} strokeWidth="11"
-            strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round"
-            style={{ transition: 'stroke-dashoffset 0.9s cubic-bezier(0.16,1,0.3,1)' }}
-          />
-        </svg>
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ fontSize: 34, fontWeight: 900, color: 'var(--text-dark)', lineHeight: 1, letterSpacing: '-0.03em' }}>{Math.round(fill)}</span>
-          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-light)' }}>/ 100</span>
+    <div className="vr-bleed" style={{ background: 'var(--vr-inverse)', padding: '24px 16px 28px', color: 'var(--vr-on-inverse)' }}>
+      <div style={{ fontSize: 12.5, fontWeight: 800, color: '#FFD90A', letterSpacing: '.05em' }}>분석 리포트</div>
+      <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: '-.03em', marginTop: 5, lineHeight: 1.3 }}>{productName}</div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginTop: 20 }}>
+        <div style={{ position: 'relative', width: 118, height: 118, flexShrink: 0 }}>
+          <svg width="118" height="118" viewBox="0 0 118 118" style={{ transform: 'rotate(-90deg)' }}>
+            <circle cx="59" cy="59" r={r} fill="none" stroke="#2C2C24" strokeWidth="11" />
+            <circle
+              cx="59" cy="59" r={r} fill="none" stroke="#FFD90A" strokeWidth="11" strokeLinecap="round"
+              strokeDasharray={circumference}
+              strokeDashoffset={offset}
+              style={{ animation: `vRing 1.1s cubic-bezier(.2,.8,.2,1)` }}
+            />
+          </svg>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: 46, fontWeight: 800, letterSpacing: '-.06em', lineHeight: 1 }}>{grade}</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--vr-on-inverse-sub)' }}>{score}점</span>
+          </div>
         </div>
-      </div>
-      <div style={{ minWidth: 0 }}>
-        <span style={{ display: 'inline-block', background: color, color: '#fff', borderRadius: 8, padding: '4px 12px', fontSize: 15, fontWeight: 900, marginBottom: 8 }}>
-          {grade}등급
-        </span>
-        <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-dark)', letterSpacing: '-0.02em' }}>
-          {GRADE_LABEL[grade]}
-        </div>
-        <div style={{ fontSize: 12.5, color: 'var(--text-muted)', fontWeight: 600, marginTop: 4, lineHeight: 1.5 }}>
-          우리 아이와의 종합 궁합 점수예요
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: '-.03em', lineHeight: 1.4 }}>{headline}</div>
+          <div style={{ display: 'flex', gap: 5, marginTop: 12 }}>
+            {(['A', 'B', 'C', 'D', 'F'] as const).map((g) => (
+              <div
+                key={g}
+                style={{
+                  flex: 1, textAlign: 'center', padding: '5px 0', borderRadius: 7,
+                  fontSize: 11.5, fontWeight: 800,
+                  color: g === grade ? '#15150F' : '#77776B',
+                  background: g === grade ? '#FFD90A' : '#2C2C24',
+                }}
+              >
+                {g}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -356,7 +372,7 @@ export default function AnalysisResult() {
   }
 
   return (
-    <div style={{ padding: '0 16px 120px' }}>
+    <div style={{ padding: '0 0 120px' }}>
       <Helmet>
         <title>{product.name} 성분 분석 결과 | 베로로</title>
         <meta name="description" content={`${product.name} 성분 분석 결과 — ${grade}등급`} />
@@ -364,36 +380,17 @@ export default function AnalysisResult() {
 
       <style>{`@keyframes veroFadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }`}</style>
 
-      {/* Header */}
-      <header style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 0 8px' }}>
-        <button
-          onClick={() => navigate(-1)}
-          aria-label="뒤로"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', color: 'var(--text-dark)' }}
-        >
-          <ArrowLeft size={22} />
-        </button>
-        <span style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-dark)' }}>영양 리포트</span>
-      </header>
+      <ReportHero
+        score={score}
+        grade={grade}
+        productName={product.name}
+        headline={report?.summary || gradeVerdict(grade)}
+      />
 
-      {/* Product card */}
-      <div style={{ display: 'flex', gap: 14, alignItems: 'center', background: 'var(--surface-elevated)', border: '1px solid rgba(28,25,23,0.06)', borderRadius: 20, padding: 14, boxShadow: 'var(--shadow-sm)' }}>
-        <img
-          src={product.imageUrl}
-          alt={product.name}
-          decoding="async"
-          onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png'; }}
-          style={{ width: 64, height: 64, borderRadius: 14, objectFit: 'cover', background: 'var(--secondary)', flexShrink: 0 }}
-        />
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)' }}>{product.brand}</div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-dark)', lineHeight: 1.35, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{product.name}</div>
-          <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text-light)', marginTop: 2 }}>{lifeStage}</div>
-        </div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '16px 0 12px' }}>
+        <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--vr-sub)' }}>{product.brand}</span>
+        <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--vr-faint)' }}>{lifeStage}</span>
       </div>
-
-      {/* Score hero */}
-      <ScoreRing score={score} grade={grade} />
 
       {!hasPetProfile && (
         <button

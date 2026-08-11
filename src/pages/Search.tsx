@@ -1,22 +1,21 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   X,
   Trash2,
   Plus,
   FlaskConical,
   Package,
-  SlidersHorizontal,
   Search as SearchIcon,
   Clock,
   Database,
 } from 'lucide-react';
-import ProductCard from '../components/ProductCard';
+import ProductRow from '../components/ProductRow';
 import StateView from '../components/StateView';
 import BottomSheet from '../components/BottomSheet';
 import { ProductGridSkeleton } from '../components/Skeleton';
 import type { Product } from '../types';
-import { TossFilterSection, TossSearchBar } from '../components/TossUI';
+import { TossFilterSection } from '../components/TossUI';
 import { searchProducts, getAllIngredients } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import standardFeedData from '../data/standard_feed_data.json';
@@ -25,6 +24,7 @@ import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import FilterChip from '../components/ui/FilterChip';
 import { COMPANY } from '../constants/companyInfo';
 import { buildSearchSuggestions, deriveBrandOptions, type Suggestion } from '../utils/searchSuggestions';
+import { VR } from '../lib/veroroDesign';
 
 interface StandardFeedItem {
   id: number;
@@ -114,7 +114,8 @@ function defaultPetFromProfile(profile: { species?: string } | undefined): '' | 
 }
 
 export default function Search() {
-  const { profile, products } = useStore();
+  const { profile, products, comparisonList } = useStore();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const category = resolveCategoryFromSearchParams(searchParams.get('category'));
 
@@ -153,6 +154,7 @@ export default function Search() {
   });
 
   const [showSuggest, setShowSuggest] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
   const brandOptions = useMemo(() => deriveBrandOptions(products), [products]);
 
   const [excludedIngredients, setExcludedIngredients] = useState<string[]>([]);
@@ -334,84 +336,93 @@ export default function Search() {
 
   const showDiscovery = query.trim() === '';
 
-  return (
-    <div className="animate-fade-in" style={{ paddingTop: '8px', paddingBottom: '100px' }}>
-      <h1 style={{ margin: '0 0 14px', fontSize: '22px', fontWeight: 800, color: 'var(--text-dark)', letterSpacing: '-0.02em' }}>
-        제품 탐색
-      </h1>
+  const petName = profile.name || '우리 아이';
+  const sortLabel = sortBy === 'rating' ? '평점순' : '추천순';
 
-      {/* 검색 + 필터 */}
-      <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch', marginBottom: '12px' }}>
-        <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
-          <TossSearchBar value={query} onChange={handleQueryChange} placeholder="제품·브랜드·성분 검색" />
-          {showSuggest && query.trim() !== '' && suggestions.length > 0 && (
-            <SearchSuggestionList suggestions={suggestions} onPick={applySuggestion} />
-          )}
-        </div>
-        <button
-          type="button"
-          aria-label="필터 열기"
-          onClick={() => setIsFilterOpen(true)}
+  return (
+    <div className="vr-anim-fade" style={{ paddingTop: '6px', paddingBottom: '24px' }}>
+      {/* 검색 */}
+      <div style={{ position: 'relative', margin: '8px 0 12px' }}>
+        <div
           style={{
-            position: 'relative', flexShrink: 0, width: '52px', borderRadius: '14px', cursor: 'pointer',
-            border: activeFilterCount > 0 ? 'none' : '1px solid var(--line)',
-            background: activeFilterCount > 0 ? 'var(--primary)' : 'var(--surface-elevated)',
-            color: 'var(--text-dark)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            display: 'flex', alignItems: 'center', gap: '9px',
+            background: 'var(--vr-soft)', borderRadius: '14px', padding: '12px 14px',
+            border: `1.5px solid ${searchFocused ? 'var(--vr-ink)' : 'transparent'}`,
           }}
         >
-          <SlidersHorizontal size={20} />
-          {activeFilterCount > 0 && (
-            <span className="filter-count" style={{ position: 'absolute', top: '-6px', right: '-6px' }}>{activeFilterCount}</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--vr-sub)" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
+            <circle cx="11" cy="11" r="7" />
+            <path d="M16.5 16.5L21 21" />
+          </svg>
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => handleQueryChange(e.target.value)}
+            onFocus={() => { setSearchFocused(true); setShowSuggest(true); }}
+            onBlur={() => setSearchFocused(false)}
+            placeholder="제품명, 브랜드, 성분 검색"
+            aria-label="제품명, 브랜드, 성분 검색"
+            enterKeyHint="search"
+            autoComplete="off"
+            style={{
+              border: 'none', outline: 'none', background: 'transparent', fontSize: '14.5px',
+              fontWeight: 600, flex: 1, minWidth: 0, color: 'var(--vr-ink)',
+            }}
+          />
+          {query !== '' && (
+            <button
+              type="button"
+              onClick={() => { setQuery(''); setShowSuggest(false); }}
+              aria-label="검색어 지우기"
+              style={{
+                width: '20px', height: '20px', borderRadius: '50%', border: 'none', flex: 'none',
+                background: '#D8D5C9', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+              }}
+            >
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.4" strokeLinecap="round">
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
           )}
-        </button>
-      </div>
-
-      {/* 카테고리 */}
-      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', marginBottom: '14px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-        {SEARCH_MAIN_CATEGORIES.map((name) => {
-          const active = category === name;
-          return (
-            <button
-              key={name}
-              type="button"
-              onClick={() => { setCategory(name); setFilters(f => ({ ...f, subCategory: '' })); }}
-              style={{
-                flexShrink: 0, padding: '8px 16px', borderRadius: '999px', fontSize: '14px', fontWeight: 600, whiteSpace: 'nowrap', cursor: 'pointer',
-                border: active ? 'none' : '1px solid var(--line)',
-                background: active ? 'var(--text-dark)' : 'var(--surface-elevated)',
-                color: active ? '#fff' : 'var(--text-muted)',
-              }}
-            >
-              {name}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* 정렬 + 성분사전 */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '16px' }}>
-        <div style={{ display: 'flex', gap: '4px' }}>
-          {([{ id: 'default', label: '추천순' }, { id: 'rating', label: '평점순' }] as const).map(({ id, label }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setSortBy(id)}
-              style={{
-                padding: '6px 12px', borderRadius: '999px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', border: 'none',
-                background: sortBy === id ? 'var(--surface-alt)' : 'transparent',
-                color: sortBy === id ? 'var(--text-dark)' : 'var(--text-muted)',
-              }}
-            >
-              {label}
-            </button>
-          ))}
         </div>
+        {showSuggest && query.trim() !== '' && suggestions.length > 0 && (
+          <SearchSuggestionList suggestions={suggestions} onPick={applySuggestion} />
+        )}
+      </div>
+
+      {/* 필터 + 카테고리 칩 */}
+      <div className="vr-rail vr-bleed" style={{ gap: '7px', padding: '0 16px 2px', marginBottom: '14px', alignItems: 'center' }}>
         <button
           type="button"
-          onClick={() => setIsStandardFeedModalOpen(true)}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}
+          onClick={() => setIsFilterOpen(true)}
+          style={{
+            flex: 'none', display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 13px',
+            borderRadius: '11px', background: 'var(--vr-inverse)', color: 'var(--vr-on-inverse)',
+            fontSize: '12.5px', fontWeight: 800, cursor: 'pointer', border: 'none',
+          }}
         >
-          <Database size={14} /> 성분사전
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FFD90A" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
+            <path d="M4 6h16M7 12h10M10 18h4" />
+          </svg>
+          필터 {activeFilterCount > 0 ? activeFilterCount : ''}
+        </button>
+        {SEARCH_MAIN_CATEGORIES.map((name) => (
+          <button
+            key={name}
+            type="button"
+            className={category === name ? 'vr-chip vr-chip--on' : 'vr-chip'}
+            onClick={() => { setCategory(name); setFilters(f => ({ ...f, subCategory: '' })); }}
+          >
+            {name}
+          </button>
+        ))}
+        <button
+          type="button"
+          className="vr-chip"
+          onClick={() => setIsStandardFeedModalOpen(true)}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+        >
+          <Database size={13} /> 성분사전
         </button>
       </div>
 
@@ -459,24 +470,53 @@ export default function Search() {
         </div>
       )}
 
-      {/* 결과 수 */}
-      <div style={{ marginBottom: '12px' }}>
-        <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>
-          {isLoading ? (
-            '불러오는 중…'
-          ) : (
-            <>총 <strong style={{ color: 'var(--text-dark)', fontWeight: 800 }}>{displayResults.length}</strong>개</>
-          )}
+      {/* 결과 수 + 정렬 */}
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '10px' }}>
+        <span style={{ fontSize: '13px', fontWeight: 700, color: VR.muted }}>
+          {isLoading ? '불러오는 중…' : `${displayResults.length}개 · ${petName} 프로필 기준 정렬`}
         </span>
+        <button
+          type="button"
+          onClick={() => setIsFilterOpen(true)}
+          style={{ fontSize: '12.5px', fontWeight: 800, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--vr-ink)' }}
+        >
+          {sortLabel} ↓
+        </button>
       </div>
 
       {isLoading && displayResults.length === 0 && <ProductGridSkeleton count={6} />}
 
-      <div className="ui-grid-2" style={{ alignItems: 'stretch' }}>
-        {displayResults.map(({ product, breakdown }) => (
-          <ProductCard key={product.id} product={product} grid note={breakdown?.reasons[0]} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {displayResults.map(({ product }) => (
+          <ProductRow key={product.id} product={product} />
         ))}
       </div>
+
+      {/* 비교함 바 — 2개 이상 담겼을 때만 (프로토타입 showCompareBar) */}
+      {comparisonList.length > 1 && (
+        <button
+          type="button"
+          onClick={() => navigate('/comparison')}
+          className="vr-anim-up"
+          style={{
+            position: 'sticky', bottom: '10px', zIndex: 5, width: '100%', marginTop: '14px',
+            padding: '13px 16px', borderRadius: '14px', border: 'none', cursor: 'pointer',
+            background: 'var(--vr-inverse)', color: 'var(--vr-on-inverse)',
+            display: 'flex', alignItems: 'center', gap: '10px',
+          }}
+        >
+          <span style={{
+            width: '24px', height: '24px', borderRadius: '8px', background: '#FFD90A', color: '#15150F',
+            fontSize: '12.5px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            {comparisonList.length}
+          </span>
+          <span style={{ fontSize: '14px', fontWeight: 800, letterSpacing: '-0.02em' }}>비교함 보기</span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FFD90A" strokeWidth="2.6" strokeLinecap="round" style={{ marginLeft: 'auto' }} aria-hidden>
+            <path d="M9 6l6 6-6 6" />
+          </svg>
+        </button>
+      )}
 
       {displayResults.length === 0 && !isLoading && (
         <StateView
@@ -524,6 +564,14 @@ export default function Search() {
           </div>
         }
       >
+        <TossFilterSection title="정렬">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            {([{ id: 'default', label: '추천순' }, { id: 'rating', label: '평점순' }] as const).map(({ id, label }) => (
+              <FilterChip key={id} label={label} selected={sortBy === id} onClick={() => setSortBy(id)} />
+            ))}
+          </div>
+        </TossFilterSection>
+
         <TossFilterSection title="반려동물">
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             <FilterChip label="전체" selected={filters.targetPetType === ''} onClick={() => setFilters({ ...filters, targetPetType: '' })} />

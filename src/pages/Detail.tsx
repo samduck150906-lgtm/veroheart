@@ -35,7 +35,6 @@ import { getAppScrollEl, getAppScrollTop, scrollAppToTop } from '../utils/scroll
 import { analyzeFeed } from '../analysis/feedAnalysis';
 import FeedAnalysisCard from '../components/FeedAnalysisCard';
 import {
-  ScoreGauge,
   GlanceGrid,
   FitForPetCard,
   IngredientCard,
@@ -54,6 +53,8 @@ import {
 } from '../components/pdp/PdpParts';
 import { gradeMetaFromScore } from '../components/pdp/gradeMeta';
 import { REVIEW_QUICK_TAGS } from '../constants/reviewTags';
+import ProductThumb from '../components/ProductThumb';
+import { gradePalette, gradeVerdict } from '../lib/veroroDesign';
 
 interface Ingredient { nameKo: string; nameEn?: string; purpose?: string; riskLevel?: string; isAllergy?: boolean; }
 
@@ -221,7 +222,7 @@ export default function Detail() {
   // ── PDP 판단 스택 데이터 (점수 게이지 · 요약 · 우리 아이 적합도) ──
   // 표시 점수는 카드·분석결과와 동일한 하드캡(위험≤69, 알레르기≤9, 종 불일치=0)을
   // 거친 값을 쓴다. 게스트에게는 개인화 감점 없는 객관 점수를 보여준다.
-  const { breakdown, score: safetyScore } = resolveProductDisplayVerdict(product, profile);
+  const { breakdown, score: safetyScore, grade: displayGrade } = resolveProductDisplayVerdict(product, profile);
   const conclusion = report
     ? buildProductConclusion(product, profile, { ...report, score: safetyScore }, { personalized })
     : null;
@@ -437,12 +438,62 @@ export default function Detail() {
         )}
       </div>
 
-      <div style={{ position: 'relative', width: '100%', height: '320px', borderRadius: '24px', overflow: 'hidden', marginBottom: '20px', boxShadow: '0 16px 40px -12px rgb(0 0 0 / 0.12)' }}>
-        <img src={product.imageUrl} alt={product.name} fetchPriority="high" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      <div className="vr-bleed" style={{ position: 'relative', height: '250px', background: 'var(--vr-soft)', marginBottom: '18px', overflow: 'hidden' }}>
+        <ProductThumb
+          src={product.imageUrl}
+          alt={product.name}
+          monoSource={product.brand || product.name}
+          height={250}
+          radius={0}
+          fontSize={56}
+        />
+        <button
+          type="button"
+          onClick={() => toggleFavorite(product.id)}
+          aria-pressed={isFav}
+          aria-label="찜하기"
+          style={{
+            position: 'absolute', top: '14px', right: '16px', width: '40px', height: '40px', borderRadius: '50%',
+            background: 'var(--surface)', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 3px 10px rgba(0,0,0,.1)',
+          }}
+        >
+          <svg width="19" height="19" viewBox="0 0 24 24" stroke="var(--vr-ink)" strokeWidth="2" fill={isFav ? 'var(--danger-strong)' : 'none'}>
+            <path d="M12 20s-7-4.5-7-9.5A4 4 0 0112 8a4 4 0 017 2.5C19 15.5 12 20 12 20z" />
+          </svg>
+        </button>
       </div>
 
-      {/* ── 3초 판단 스택: 점수 게이지 · 핵심 요약 · 우리 아이 적합도 ── */}
-      <ScoreGauge score={safetyScore} oneLiner={report?.summary} />
+      {/* ── 등급 배너: 종합 점수·판정 → 분석 리포트 진입 (디자인 Detail 스크린) ── */}
+      <button
+        type="button"
+        onClick={() => navigate('/analysis')}
+        style={{
+          width: '100%', marginBottom: '12px', border: 'none', cursor: 'pointer', textAlign: 'left',
+          borderRadius: '18px', background: 'var(--vr-inverse)', padding: '17px',
+          display: 'flex', alignItems: 'center', gap: '14px',
+        }}
+      >
+        <span style={{
+          width: '56px', height: '56px', borderRadius: '16px', flex: 'none',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: gradePalette(displayGrade).fg,
+        }}>
+          <span style={{ fontSize: '28px', fontWeight: 800, color: '#fff', letterSpacing: '-0.04em' }}>{displayGrade}</span>
+        </span>
+        <span style={{ flex: 1 }}>
+          <span style={{ display: 'block', fontSize: '16.5px', fontWeight: 800, color: 'var(--vr-on-inverse)', letterSpacing: '-0.03em' }}>
+            종합 {safetyScore}점 · {gradeVerdict(displayGrade)}
+          </span>
+          <span style={{ display: 'block', fontSize: '12.5px', color: 'var(--vr-on-inverse-sub)', marginTop: '3px' }}>
+            성분 {product.ingredients?.length ?? 0}개 분석 · {profile.name} 기준 리포트 보기
+          </span>
+        </span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFD90A" strokeWidth="2.6" strokeLinecap="round" aria-hidden>
+          <path d="M9 6l6 6-6 6" />
+        </svg>
+      </button>
+
       <GlanceGrid tiles={glanceTiles} />
       <FitForPetCard petName={profile.name} percent={safetyScore} chips={fitChips} reasons={breakdown.reasons} />
 

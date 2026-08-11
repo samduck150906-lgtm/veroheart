@@ -4,6 +4,8 @@ import { HelmetProvider } from 'react-helmet-async';
 import App from './App.tsx';
 import ErrorBoundary from './components/ErrorBoundary';
 import './index.css';
+// VERORO 디자인 시스템 — index.css의 레거시 토큰을 새 팔레트로 재타게팅하므로 항상 뒤에 온다.
+import './styles/veroro-design.css';
 import { isAdminExperience, toggleAdminDesktopMode } from './utils/adminHost';
 
 if (typeof document !== 'undefined' && typeof window !== 'undefined') {
