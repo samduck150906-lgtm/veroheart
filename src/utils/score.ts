@@ -1,4 +1,5 @@
 import type { Ingredient, Product, UserPetProfile } from '../types';
+import { allergyTagsForLabel, isFamilyAllergyIngredient } from '../analysis/allergyFamilyMatcher';
 import { analyzeFeed } from '../analysis/feedAnalysis';
 import { resolveProductWithPhase2AliasAdapter } from '../lib/phase2AliasResolverProductAdapter';
 import { isPhase2AliasResolverRuntimeEnabled } from '../lib/phase2AliasResolverRuntimeFlag';
@@ -121,18 +122,10 @@ function countConcernMatches(product: Product, profile: UserPetProfile) {
 /**
  * 성분 1개가 등록된 알레르기·회피 성분과 매칭되는지.
  * 점수·상세·결론 카드가 같은 판정을 공유하도록 하는 단일 매처다.
- * (NFKC 정규화 + 공백/구두점 제거 후 이름·영문명·용도 포함 검사)
+ * 직접 문자열 매칭에 더해 사전 allergenTags와 source-family 보강 매칭을 사용한다.
  */
 export function isAllergyIngredient(ingredient: Ingredient, allergies: string[]): boolean {
-  return allergies.some((allergy) => {
-    const normalizedAllergy = normalize(allergy);
-    if (!normalizedAllergy) return false;
-    return (
-      normalize(ingredient.nameKo || '').includes(normalizedAllergy) ||
-      normalize(ingredient.nameEn || '').includes(normalizedAllergy) ||
-      normalize(ingredient.purpose || '').includes(normalizedAllergy)
-    );
-  });
+  return isFamilyAllergyIngredient(ingredient, allergies);
 }
 
 /** 프로필 알레르기 중 제품 성분과 매칭된 항목 목록 — 표면 공통 매처 */
@@ -140,8 +133,7 @@ export function countAllergyHits(product: Product, profile: UserPetProfile): str
   const hits = new Set<string>();
 
   for (const allergy of profile.allergies) {
-    const normalizedAllergy = normalize(allergy);
-    if (!normalizedAllergy) continue;
+    if (allergyTagsForLabel(allergy).length === 0 && !normalize(allergy)) continue;
 
     const hasHit = (product.ingredients ?? []).some((ingredient) =>
       isAllergyIngredient(ingredient, [allergy]),
