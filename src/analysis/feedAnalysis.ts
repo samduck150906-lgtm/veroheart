@@ -12,6 +12,7 @@
  * 모든 함수는 순수(pure)하며 외부 호출/랜덤/시간에 의존하지 않는다.
  */
 import type { Product, UserPetProfile } from '../types';
+import { allergyIngredientNames } from './allergyFamilyMatcher';
 import type { GuaranteedAnalysis } from './types';
 import {
   toDryMatter,
@@ -53,7 +54,7 @@ export interface FeedAnalysis {
   species: 'dog' | 'cat';
   productType: FeedProductType;
   hasNutritionData: boolean;
-  /** as-fed 매크로(%) — 보장성분 있을 때만 */
+  /** as-fed 기준 % */
   macros: FeedMacros | null;
   /** 건물기준 매크로(%) — 제품 간 비교용 */
   macrosDMB: { protein: number; fat: number; fiber: number; carb: number } | null;
@@ -194,12 +195,7 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
   const functional = ingredients.filter((_, i) => hitsAny(names[i], FUNCTIONAL)).map((i) => i.nameKo);
 
   const allergyHits = Array.from(
-    new Set(
-      profile.allergies.flatMap((a) => {
-        const na = norm(a);
-        return ingredients.filter((i) => norm(i.nameKo).includes(na) || norm(i.nameEn ?? '').includes(na)).map((i) => i.nameKo);
-      }),
-    ),
+    new Set(profile.allergies.flatMap((allergy) => allergyIngredientNames(ingredients, allergy))),
   );
 
   const iq: FeedIngredientQuality = {
