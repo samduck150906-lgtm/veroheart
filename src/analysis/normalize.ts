@@ -9,6 +9,7 @@
  * 성분명을 매칭 비교용 키로 정규화한다.
  * - 소문자화, 공백 제거, 괄호/대괄호 제거
  * - "가루/파우더" → "분말"로 통일
+ * - "정육" → fresh meat source label로 통일
  * - 선행/후행 기호 제거
  */
 export function normalizeIngredientName(name: string): string {
@@ -17,6 +18,7 @@ export function normalizeIngredientName(name: string): string {
     .normalize('NFKC')
     .replace(/[()（）[\]{}]/g, '')
     .replace(/가루|파우더/g, '분말')
+    .replace(/정육/g, '')
     .replace(/[*·•▪◦・,]/g, '')
     .replace(/\s+/g, '')
     .trim();
