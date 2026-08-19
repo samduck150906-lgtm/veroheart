@@ -6,13 +6,16 @@ import {
 export interface ProductionReadOnlySqlTemplate {
   templateId: string;
   dataset: ProductionReadOnlySelectDataset;
-  sql: string;
+  selectColumns: string[];
+  orderBy: string[];
+  limitParameter: ':limit';
   requiredColumns: string[];
   safety: {
     readOnlyOnly: true;
     executionApproved: false;
     appRuntimeApproved: false;
     mutationApproved: false;
+    containsExecutableSqlText: false;
   };
 }
 
@@ -22,8 +25,8 @@ export interface ProductionReadOnlySqlTemplateValidation {
   valid: boolean;
   missingRequiredColumns: string[];
   forbiddenTermsFound: string[];
-  startsWithSelect: boolean;
-  hasSingleStatement: boolean;
+  hasSelectColumns: boolean;
+  hasLimitParameter: boolean;
 }
 
 export interface ProductionReadOnlySqlTemplateGuardReport {
@@ -60,76 +63,92 @@ const FORBIDDEN_TERMS = [
   'grant',
   'revoke',
   'security definer',
-  'perform ',
-  'call ',
+  'perform',
+  'call',
 ];
 
-function normalizeSql(sql: string): string {
-  return sql.replace(/\s+/g, ' ').trim().toLowerCase();
+function normalizeText(value: string): string {
+  return value.replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
-function hasRequiredColumn(sql: string, column: string): boolean {
-  const normalized = normalizeSql(sql);
-  return normalized.includes(column.toLowerCase());
+function hasRequiredColumn(columns: string[], column: string): boolean {
+  const normalizedColumns = columns.map(normalizeText);
+  return normalizedColumns.includes(column.toLowerCase());
 }
 
-function hasSingleStatement(sql: string): boolean {
-  const withoutTrailingSemicolon = sql.trim().replace(/;$/, '');
-  return !withoutTrailingSemicolon.includes(';');
-}
+function forbiddenTermsFound(template: ProductionReadOnlySqlTemplate): string[] {
+  const searchable = [
+    template.templateId,
+    template.dataset,
+    ...template.selectColumns,
+    ...template.orderBy,
+    template.limitParameter,
+  ]
+    .map(normalizeText)
+    .join(' ');
 
-function forbiddenTermsFound(sql: string): string[] {
-  const normalized = normalizeSql(sql);
-  return FORBIDDEN_TERMS.filter((term) => normalized.includes(term));
+  return FORBIDDEN_TERMS.filter((term) => searchable.includes(term));
 }
 
 export const PRODUCTION_READ_ONLY_SQL_TEMPLATES: ProductionReadOnlySqlTemplate[] = [
   {
-    templateId: 'products-readonly-select',
+    templateId: 'products-readonly-select-shape',
     dataset: 'products',
-    sql: 'select id, name, category, target_pet_type as targetPetType from products order by id limit :limit',
+    selectColumns: ['id', 'name', 'category', 'targetPetType'],
+    orderBy: ['id'],
+    limitParameter: ':limit',
     requiredColumns: ['id', 'name'],
     safety: {
       readOnlyOnly: true,
       executionApproved: false,
       appRuntimeApproved: false,
       mutationApproved: false,
+      containsExecutableSqlText: false,
     },
   },
   {
-    templateId: 'ingredients-readonly-select',
+    templateId: 'ingredients-readonly-select-shape',
     dataset: 'ingredients',
-    sql: 'select id, name_ko as nameKo, name_en as nameEn, risk_level as riskLevel from ingredients order by id limit :limit',
+    selectColumns: ['id', 'nameKo', 'nameEn', 'riskLevel'],
+    orderBy: ['id'],
+    limitParameter: ':limit',
     requiredColumns: ['id', 'nameKo'],
     safety: {
       readOnlyOnly: true,
       executionApproved: false,
       appRuntimeApproved: false,
       mutationApproved: false,
+      containsExecutableSqlText: false,
     },
   },
   {
-    templateId: 'product-ingredients-readonly-select',
+    templateId: 'product-ingredients-readonly-select-shape',
     dataset: 'product_ingredients',
-    sql: 'select product_id as productId, ingredient_id as ingredientId, position from product_ingredients order by product_id, position limit :limit',
+    selectColumns: ['productId', 'ingredientId', 'position'],
+    orderBy: ['productId', 'position'],
+    limitParameter: ':limit',
     requiredColumns: ['productId', 'ingredientId', 'position'],
     safety: {
       readOnlyOnly: true,
       executionApproved: false,
       appRuntimeApproved: false,
       mutationApproved: false,
+      containsExecutableSqlText: false,
     },
   },
   {
-    templateId: 'computed-signals-placeholder-select',
+    templateId: 'computed-signals-readonly-select-shape',
     dataset: 'computed_signals',
-    sql: 'select product_id as productId, allergy_hits as allergyHits, score, display_score as displayScore, ranking_position as rankingPosition from computed_read_only_signals order by product_id limit :limit',
+    selectColumns: ['productId', 'allergyHits', 'score', 'displayScore', 'rankingPosition'],
+    orderBy: ['productId'],
+    limitParameter: ':limit',
     requiredColumns: ['productId', 'allergyHits', 'score', 'displayScore'],
     safety: {
       readOnlyOnly: true,
       executionApproved: false,
       appRuntimeApproved: false,
       mutationApproved: false,
+      containsExecutableSqlText: false,
     },
   },
 ];
@@ -138,11 +157,11 @@ export function validateProductionReadOnlySqlTemplate(
   template: ProductionReadOnlySqlTemplate,
 ): ProductionReadOnlySqlTemplateValidation {
   const missingRequiredColumns = template.requiredColumns.filter(
-    (column) => !hasRequiredColumn(template.sql, column),
+    (column) => !hasRequiredColumn(template.selectColumns, column),
   );
-  const foundForbiddenTerms = forbiddenTermsFound(template.sql);
-  const startsWithSelect = normalizeSql(template.sql).startsWith('select ');
-  const singleStatement = hasSingleStatement(template.sql);
+  const foundForbiddenTerms = forbiddenTermsFound(template);
+  const hasSelectColumns = template.selectColumns.length > 0;
+  const hasLimitParameter = template.limitParameter === ':limit';
 
   return {
     templateId: template.templateId,
@@ -150,16 +169,17 @@ export function validateProductionReadOnlySqlTemplate(
     valid:
       missingRequiredColumns.length === 0 &&
       foundForbiddenTerms.length === 0 &&
-      startsWithSelect &&
-      singleStatement &&
+      hasSelectColumns &&
+      hasLimitParameter &&
       template.safety.readOnlyOnly &&
       !template.safety.executionApproved &&
       !template.safety.appRuntimeApproved &&
-      !template.safety.mutationApproved,
+      !template.safety.mutationApproved &&
+      !template.safety.containsExecutableSqlText,
     missingRequiredColumns,
     forbiddenTermsFound: foundForbiddenTerms,
-    startsWithSelect,
-    hasSingleStatement: singleStatement,
+    hasSelectColumns,
+    hasLimitParameter,
   };
 }
 
