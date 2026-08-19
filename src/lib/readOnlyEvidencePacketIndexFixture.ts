@@ -1,6 +1,10 @@
 import { buildReadOnlyEvidencePacketExportFixture } from './readOnlyEvidencePacketExportFixture';
+import { buildProductionReadOnlyImpactDryRun } from './productionReadOnlyImpactDryRun';
+import type { ProductionReadOnlyRows } from './productionReadOnlyRowAdapter';
+import { buildProductionReadOnlySqlTemplateGuardReport } from './productionReadOnlySqlTemplateGuard';
 import {
   assertReadOnlyEvidencePacketSafe,
+  buildReadOnlyEvidencePacket,
   type ReadOnlyEvidencePacket,
   type ReadOnlyEvidencePacketGateDecision,
 } from './readOnlyEvidencePacketSchema';
@@ -171,13 +175,41 @@ function withGate(
   };
 }
 
-export function buildReadOnlyEvidencePacketIndexFixture(): ReadOnlyEvidencePacketIndex {
-  const base = buildReadOnlyEvidencePacketExportFixture().packet;
-
-  const safe = withGate(base, {
-    packetId: 'fixture-safe-no-visible-diff',
-    decision: 'safe',
+function buildNoVisibleDiffPacket(): ReadOnlyEvidencePacket {
+  const noDiffRows: ProductionReadOnlyRows = {
+    products: [{ id: 'p-safe', name: 'No visible diff sample' }],
+    productIngredients: [{ productId: 'p-safe', ingredientId: 'i-safe', position: 1 }],
+    ingredients: [{ id: 'i-safe', nameKo: '동물성부산물' }],
+    signals: [
+      {
+        productId: 'p-safe',
+        allergyHits: [],
+        score: 72,
+        displayScore: 72,
+        rankingPosition: 1,
+      },
+    ],
+  };
+  const dryRun = buildProductionReadOnlyImpactDryRun({
+    hypothesisId: 'fixture-safe-no-visible-diff',
+    hypothesisStatement: 'Identical before and after rows should remain safe and stay out of owner attention.',
+    beforeRows: noDiffRows,
+    afterRows: noDiffRows,
   });
+
+  return buildReadOnlyEvidencePacket({
+    packetId: 'fixture-safe-no-visible-diff',
+    source: 'fixture',
+    executionState: 'fixture_generated',
+    generatedAtIso: '2026-08-20T00:00:00.000Z',
+    templateGuard: buildProductionReadOnlySqlTemplateGuardReport(),
+    dryRun,
+  });
+}
+
+export function buildReadOnlyEvidencePacketIndexFixture(): ReadOnlyEvidencePacketIndex {
+  const safe = buildNoVisibleDiffPacket();
+  const base = buildReadOnlyEvidencePacketExportFixture().packet;
   const approvalRequired = withGate(base, {
     packetId: 'fixture-visible-allergy-score-diff',
     decision: 'approval_required',
