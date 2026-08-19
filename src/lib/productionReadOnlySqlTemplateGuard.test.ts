@@ -7,7 +7,7 @@ import {
 } from './productionReadOnlySqlTemplateGuard';
 
 describe('production read-only sql template guard', () => {
-  it('keeps bundled templates select-only and non-executable', () => {
+  it('keeps bundled templates select-shaped and non-executable', () => {
     const report = buildProductionReadOnlySqlTemplateGuardReport();
 
     expect(report.reportKind).toBe('production_read_only_sql_template_guard');
@@ -32,6 +32,7 @@ describe('production read-only sql template guard', () => {
         executionApproved: false,
         appRuntimeApproved: false,
         mutationApproved: false,
+        containsExecutableSqlText: false,
       });
     }
   });
@@ -51,25 +52,24 @@ describe('production read-only sql template guard', () => {
     ]);
   });
 
-  it('rejects mutation or schema-changing statements', () => {
+  it('rejects mutation or schema-changing terms inside structured shapes', () => {
     const unsafeTemplate: ProductionReadOnlySqlTemplate = {
       ...PRODUCTION_READ_ONLY_SQL_TEMPLATES[0],
-      templateId: 'unsafe-update-template',
-      sql: 'select id, name from products; update products set name = name',
+      templateId: 'unsafe-update-shape',
+      selectColumns: ['id', 'update'],
     };
 
     const validation = validateProductionReadOnlySqlTemplate(unsafeTemplate);
 
     expect(validation.valid).toBe(false);
-    expect(validation.hasSingleStatement).toBe(false);
     expect(validation.forbiddenTermsFound).toEqual(['update']);
   });
 
   it('rejects templates missing required adapter columns', () => {
     const incompleteTemplate: ProductionReadOnlySqlTemplate = {
       ...PRODUCTION_READ_ONLY_SQL_TEMPLATES[2],
-      templateId: 'incomplete-product-ingredients-template',
-      sql: 'select product_id as productId, ingredient_id as ingredientId from product_ingredients',
+      templateId: 'incomplete-product-ingredients-shape',
+      selectColumns: ['productId', 'ingredientId'],
     };
 
     const validation = validateProductionReadOnlySqlTemplate(incompleteTemplate);
@@ -78,16 +78,21 @@ describe('production read-only sql template guard', () => {
     expect(validation.missingRequiredColumns).toEqual(['position']);
   });
 
-  it('rejects non-select templates even without forbidden mutation terms', () => {
-    const nonSelectTemplate: ProductionReadOnlySqlTemplate = {
+  it('rejects executable or runtime-approved shapes', () => {
+    const executableTemplate: ProductionReadOnlySqlTemplate = {
       ...PRODUCTION_READ_ONLY_SQL_TEMPLATES[0],
-      templateId: 'with-template',
-      sql: 'with sampled as (select id, name from products) select id, name from sampled',
+      templateId: 'runtime-approved-shape',
+      safety: {
+        readOnlyOnly: true,
+        executionApproved: false,
+        appRuntimeApproved: false,
+        mutationApproved: false,
+        containsExecutableSqlText: true,
+      },
     };
 
-    const validation = validateProductionReadOnlySqlTemplate(nonSelectTemplate);
+    const validation = validateProductionReadOnlySqlTemplate(executableTemplate);
 
     expect(validation.valid).toBe(false);
-    expect(validation.startsWithSelect).toBe(false);
   });
 });
