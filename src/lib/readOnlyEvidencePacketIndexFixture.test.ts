@@ -34,6 +34,21 @@ describe('read-only evidence packet index fixture', () => {
     expect(index.queues.operationalSafetyViolationPacketIds).toEqual([]);
   });
 
+  it('keeps the safe packet truly free of visible behavior diffs', () => {
+    const index = buildReadOnlyEvidencePacketIndexFixture();
+    const safe = index.entries.find((entry) => entry.packetId === 'fixture-safe-no-visible-diff');
+
+    expect(safe).toMatchObject({
+      gateDecision: 'safe',
+      requiresOwnerApproval: false,
+      blocked: false,
+      allergyHitChangedProducts: 0,
+      scoreChangedProducts: 0,
+      displayChangedProducts: 0,
+      rankingChangedProducts: 0,
+    });
+  });
+
   it('keeps approval and blocked reasons attached to the indexed packet', () => {
     const index = buildReadOnlyEvidencePacketIndexFixture();
     const byPacketId = new Map(index.entries.map((entry) => [entry.packetId, entry]));
