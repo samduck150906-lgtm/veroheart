@@ -103,6 +103,12 @@ export function buildOwnerAttentionReviewBrief(
         ownerAction: ownerActionFor(kind),
       };
     });
+  const safeEntriesOmitted = index.entries.filter(
+    (entry) =>
+      entry.gateDecision === 'safe' &&
+      entry.operationallySafe &&
+      !ownerAttentionIds.has(entry.packetId),
+  ).length;
 
   return {
     briefKind: 'owner_attention_review_brief',
@@ -117,7 +123,7 @@ export function buildOwnerAttentionReviewBrief(
       operationalSafetyViolationEntries: entries.filter(
         (entry) => entry.attentionKind === 'operational_safety_violation',
       ).length,
-      safeEntriesOmitted: index.summary.safePackets,
+      safeEntriesOmitted,
     },
     safety: {
       executesSql: false,
