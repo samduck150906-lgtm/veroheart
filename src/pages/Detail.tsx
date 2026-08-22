@@ -29,6 +29,7 @@ import { TossCard } from '../components/TossUI';
 import { getReviews, createReview, deleteReview } from '../lib/supabase';
 import { notify } from '../store/useNotification';
 import { buildProductConclusion } from '../utils/productConclusion';
+import { buildAllergyDisplayState } from '../utils/allergyDisplay';
 import { isAllergyIngredient } from '../utils/score';
 import { isRealPetProfile, resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import { getAppScrollEl, getAppScrollTop, scrollAppToTop } from '../utils/scroll';
@@ -223,6 +224,7 @@ export default function Detail() {
   // 표시 점수는 카드·분석결과와 동일한 하드캡(위험≤69, 알레르기≤9, 종 불일치=0)을
   // 거친 값을 쓴다. 게스트에게는 개인화 감점 없는 객관 점수를 보여준다.
   const { breakdown, score: safetyScore, grade: displayGrade } = resolveProductDisplayVerdict(product, profile);
+  const allergyDisplay = buildAllergyDisplayState(breakdown, profile.name || '우리 아이');
   const conclusion = report
     ? buildProductConclusion(product, profile, { ...report, score: safetyScore }, { personalized })
     : null;
@@ -240,9 +242,11 @@ export default function Detail() {
       : breakdown.cautionCount > 0
         ? { icon: <AlertTriangle size={18} />, label: '안전도', value: `주의 ${breakdown.cautionCount}개`, tone: 'caution' }
         : { icon: <ShieldCheck size={18} />, label: '안전도', value: '위험 성분 없음', tone: 'excellent' },
-    breakdown.allergyHits.length > 0
+    allergyDisplay.level === 'hard'
       ? { icon: <Ban size={18} />, label: '알레르기', value: `${breakdown.allergyHits.length}개 주의`, tone: 'danger' }
-      : { icon: <Ban size={18} />, label: '알레르기', value: '해당 없음', tone: 'excellent' },
+      : allergyDisplay.level === 'caution'
+        ? { icon: <Ban size={18} />, label: '알레르기', value: allergyDisplay.shortText, tone: 'caution' }
+        : { icon: <Ban size={18} />, label: '알레르기', value: '해당 없음', tone: 'excellent' },
     { icon: <Dog size={18} />, label: '추천 대상', value: petTypeLabel, tone: 'neutral' },
     { icon: <Calendar size={18} />, label: '생애주기', value: (product.targetLifeStage && product.targetLifeStage[0]) || '전연령', tone: 'neutral' },
     { icon: <Flame size={18} />, label: '제형', value: product.formulation || '건식', tone: 'neutral' },
@@ -275,7 +279,7 @@ export default function Detail() {
     },
     {
       icon: <Flame size={16} />,
-      text: `성분 구성: 안전 성분 ${safeCount}개${breakdown.allergyHits.length ? `, ${profile.name}의 회피 성분 ${breakdown.allergyHits.join('·')} 포함` : ', 등록된 알레르기 성분 없음'}.`,
+      text: `성분 구성: 안전 성분 ${safeCount}개, ${allergyDisplay.summaryText}.`,
     },
     {
       icon: <Check size={16} />,
@@ -327,12 +331,15 @@ export default function Detail() {
   // Create Toss-style Headline Data
   const dangerIngs = product.ingredients?.filter(i => i.riskLevel === 'danger') || [];
   const cautionIngs = product.ingredients?.filter(i => i.riskLevel === 'caution') || [];
-  // 점수 엔진과 동일한 매처 사용 — 헤드라인/성분 플래그/점수 판정이 서로 어긋나지 않게
+  // 점수 엔진과 동일한 HARD 매처 사용 — 개별 성분의 확정 회피 플래그는 caution과 구분한다.
   const allergyIngs = product.ingredients?.filter(ing => isAllergyIngredient(ing, profile.allergies)) || [];
   const { headline, headlineColor } = (() => {
     if (allergyIngs.length > 0 || dangerIngs.length > 0) {
       const count = new Set([...allergyIngs, ...dangerIngs]).size;
       return { headline: `주의 성분이 ${count}개 발견됐어요`, headlineColor: '#F04452' };
+    }
+    if (allergyDisplay.level === 'caution') {
+      return { headline: '알레르기 관련 원료를 확인해 주세요', headlineColor: '#F59E0B' };
     }
     if (cautionIngs.length > 0) {
       return { headline: `확인해야 할 성분이 ${cautionIngs.length}개 있어요`, headlineColor: '#F59E0B' };
