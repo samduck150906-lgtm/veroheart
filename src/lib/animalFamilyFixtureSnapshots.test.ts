@@ -21,7 +21,7 @@ describe('animal family fixture snapshots', () => {
       'turkey',
     ]);
     expect(ANIMAL_FAMILY_FIXTURE_CASES.some((item) => item.note === 'named organ')).toBe(true);
-    expect(ANIMAL_FAMILY_FIXTURE_CASES.some((item) => item.note === 'named fat')).toBe(true);
+    expect(ANIMAL_FAMILY_FIXTURE_CASES.some((item) => item.note === 'named fat uses processing caution')).toBe(true);
     expect(ANIMAL_FAMILY_FIXTURE_CASES.some((item) => item.note === 'unknown source must not become chicken')).toBe(true);
   });
 
@@ -31,8 +31,8 @@ describe('animal family fixture snapshots', () => {
 
     expect(byId.get('chicken-meal')?.allergyHits).toEqual(['닭']);
     expect(byId.get('chicken-organ')?.allergyHits).toEqual(['닭']);
-    expect(byId.get('chicken-fat')?.allergyHits).toEqual(['닭']);
-    expect(byId.get('poultry-byproduct')?.allergyHits).toEqual(['닭']);
+    expect(byId.get('chicken-fat')?.allergyHits).toEqual([]);
+    expect(byId.get('poultry-byproduct')?.allergyHits).toEqual([]);
     expect(byId.get('unknown-animal-byproduct')?.allergyHits).toEqual([]);
     expect(byId.get('fish-oil')?.allergyHits).toEqual(['생선']);
     expect(byId.get('egg-white')?.allergyHits).toEqual(['계란']);

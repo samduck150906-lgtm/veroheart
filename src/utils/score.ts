@@ -1,5 +1,10 @@
 import type { Ingredient, Product, UserPetProfile } from '../types';
-import { allergyTagsForLabel, isFamilyAllergyIngredient } from '../analysis/allergyFamilyMatcher';
+import {
+  allergyCautionMatches,
+  allergyTagsForLabel,
+  isFamilyAllergyIngredient,
+  type AllergyRelationshipMatch,
+} from '../analysis/allergyFamilyMatcher';
 import { analyzeFeed } from '../analysis/feedAnalysis';
 import { resolveProductWithPhase2AliasAdapter } from '../lib/phase2AliasResolverProductAdapter';
 import { isPhase2AliasResolverRuntimeEnabled } from '../lib/phase2AliasResolverRuntimeFlag';
@@ -78,10 +83,12 @@ export interface RecommendationBreakdown {
   healthSuitability: number;
   concernFit: number;
   allergyPenalty: number;
+  allergyCautionPenalty: number;
   preferencePenalty: number;
   preferenceLevel: number | null;
   speciesMismatch: boolean;
   allergyHits: string[];
+  allergyCautions: AllergyRelationshipMatch[];
   matchedConcerns: string[];
   dangerCount: number;
   cautionCount: number;
@@ -120,15 +127,14 @@ function countConcernMatches(product: Product, profile: UserPetProfile) {
 }
 
 /**
- * 성분 1개가 등록된 알레르기·회피 성분과 매칭되는지.
- * 점수·상세·결론 카드가 같은 판정을 공유하도록 하는 단일 매처다.
- * 직접 문자열 매칭에 더해 사전 allergenTags와 source-family 보강 매칭을 사용한다.
+ * 성분 1개가 등록된 알레르기·회피 성분과 HARD 매칭되는지.
+ * 가금류의 다른 종, 지방, 가수분해 단백질, 포괄 가금류 표기는 별도 caution으로 분리한다.
  */
 export function isAllergyIngredient(ingredient: Ingredient, allergies: string[]): boolean {
   return isFamilyAllergyIngredient(ingredient, allergies);
 }
 
-/** 프로필 알레르기 중 제품 성분과 매칭된 항목 목록 — 표면 공통 매처 */
+/** 프로필 알레르기 중 제품 성분과 HARD 매칭된 항목 목록 — 표면 공통 매처 */
 export function countAllergyHits(product: Product, profile: UserPetProfile): string[] {
   const hits = new Set<string>();
 
@@ -143,6 +149,37 @@ export function countAllergyHits(product: Product, profile: UserPetProfile): str
   }
 
   return [...hits];
+}
+
+/** HARD 알레르기와 구분되는 교차반응/가공형태 caution 목록. */
+export function countAllergyCautions(
+  product: Product,
+  profile: UserPetProfile,
+): AllergyRelationshipMatch[] {
+  return allergyCautionMatches(product.ingredients ?? [], profile.allergies ?? []);
+}
+
+/**
+ * Poultry Allergy Policy v1.0 caution calibration.
+ * 의학 문헌은 상대 위험의 방향을 제공하고, 아래 점수는 베로로 내부 보수적 calibration이다.
+ * HARD 알레르기가 있으면 caution 감점은 중복 적용하지 않는다.
+ */
+export function allergyCautionPenaltyFromMatches(matches: AllergyRelationshipMatch[]): number {
+  if (matches.length === 0) return 0;
+
+  const crossSources = new Set(
+    matches
+      .filter((match) => match.kind === 'cross_caution')
+      .map((match) => match.ingredientSource)
+      .filter(Boolean),
+  );
+  const crossPenalty =
+    crossSources.size > 0 ? Math.min(12, 8 + Math.max(0, crossSources.size - 1) * 4) : 0;
+  const strongPenalty = matches.some((match) => match.kind === 'strong_caution') ? 15 : 0;
+  const hydrolysisPenalty = matches.some((match) => match.kind === 'hydrolysis_caution') ? 10 : 0;
+  const processingPenalty = matches.some((match) => match.kind === 'processing_caution') ? 5 : 0;
+
+  return Math.max(crossPenalty, strongPenalty, hydrolysisPenalty, processingPenalty);
 }
 
 function isSpeciesMismatch(product: Product, profile: UserPetProfile) {
@@ -181,6 +218,7 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
   const scoringProduct = getPhase2AliasResolverScoringProduct(product);
   const ingredients = scoringProduct.ingredients ?? [];
   const allergyHits = countAllergyHits(scoringProduct, profile);
+  const allergyCautions = countAllergyCautions(scoringProduct, profile);
   const matchedConcerns = countConcernMatches(scoringProduct, profile);
   const dangerCount = ingredients.filter((ingredient) => ingredient.riskLevel === 'danger').length;
   const cautionCount = ingredients.filter((ingredient) => ingredient.riskLevel === 'caution').length;
@@ -223,15 +261,24 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
   );
 
   // 개인화 감점 — 제품의 객관 점수와 분리해서 마지막에 적용한다.
-  // 알레르기는 첫 적중만으로 90점, 추가 적중마다 5점씩 최대 100점 감점한다.
+  // HARD 알레르기는 첫 적중만으로 90점, 추가 적중마다 5점씩 최대 100점 감점한다.
+  // Poultry caution은 HARD가 없을 때만 최대 15점 범위로 적용한다.
   const allergyPenalty =
     allergyHits.length > 0 ? Math.min(100, 90 + Math.max(0, allergyHits.length - 1) * 5) : 0;
+  const allergyCautionPenalty =
+    allergyHits.length > 0 ? 0 : allergyCautionPenaltyFromMatches(allergyCautions);
   const preferenceLevel = profile.productPreferences?.[scoringProduct.id] ?? null;
   const preferencePenalty = preferencePenaltyFromLevel(preferenceLevel);
 
   const total = speciesMismatch
     ? 0
-    : Math.max(0, Math.min(100, Math.round(baseScore - allergyPenalty - preferencePenalty)));
+    : Math.max(
+        0,
+        Math.min(
+          100,
+          Math.round(baseScore - allergyPenalty - allergyCautionPenalty - preferencePenalty),
+        ),
+      );
 
   const reasons: string[] = [];
   if (speciesMismatch) {
@@ -240,6 +287,22 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
     reasons.push(`${expected}용 제품이 아님 · ${actual}용 제품`);
   }
   if (allergyHits.length > 0) reasons.push(`알레르기·회피 성분 ${allergyHits.join(', ')} 포함`);
+  if (allergyHits.length === 0 && allergyCautionPenalty > 0) {
+    const cross = allergyCautions.filter((match) => match.kind === 'cross_caution');
+    const strong = allergyCautions.some((match) => match.kind === 'strong_caution');
+    const hydrolyzed = allergyCautions.some((match) => match.kind === 'hydrolysis_caution');
+    const processedFat = allergyCautions.some((match) => match.kind === 'processing_caution');
+    if (strong) {
+      reasons.push(`알레르기와 관련된 가금류 원료가 포괄 표기됨 · ${allergyCautionPenalty}점 감점`);
+    } else if (cross.length > 0) {
+      const related = [...new Set(cross.map((match) => match.ingredientName))].slice(0, 3);
+      reasons.push(`관련 가금류 교차반응 주의(${related.join(', ')}) · ${allergyCautionPenalty}점 감점`);
+    } else if (hydrolyzed) {
+      reasons.push(`알레르기 원료의 가수분해 성분 주의 · ${allergyCautionPenalty}점 감점`);
+    } else if (processedFat) {
+      reasons.push(`알레르기 원료와 관련된 가금류 지방 주의 · ${allergyCautionPenalty}점 감점`);
+    }
+  }
   if (preferencePenalty > 0 && preferenceLevel != null) {
     reasons.push(`과거 기호도 ${preferenceLevel.toFixed(1)}점 · ${preferencePenalty}점 감점`);
   }
@@ -265,10 +328,12 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
     healthSuitability,
     concernFit,
     allergyPenalty,
+    allergyCautionPenalty,
     preferencePenalty,
     preferenceLevel,
     speciesMismatch,
     allergyHits,
+    allergyCautions,
     matchedConcerns,
     dangerCount,
     cautionCount,

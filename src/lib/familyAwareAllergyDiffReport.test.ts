@@ -45,7 +45,7 @@ const products = [
 ];
 
 describe('family-aware allergy diff report fixture', () => {
-  it('documents which fixture products are affected by chicken-family allergy matching', () => {
+  it('documents hard hits and caution tiers separately under poultry policy v1', () => {
     const rows = products.map((item) => {
       const breakdown = getRecommendationBreakdown(item, profile);
       const display = resolveDisplayVerdict(breakdown.total, {
@@ -57,6 +57,8 @@ describe('family-aware allergy diff report fixture', () => {
         id: item.id,
         allergyHits: breakdown.allergyHits,
         allergyPenalty: breakdown.allergyPenalty,
+        allergyCautionPenalty: breakdown.allergyCautionPenalty,
+        cautionKinds: breakdown.allergyCautions.map((match) => match.kind),
         displayScore: display.score,
       };
     });
@@ -65,11 +67,26 @@ describe('family-aware allergy diff report fixture', () => {
       'ordinary-chicken',
       'meal-label',
       'organ-label',
-      'fat-label',
-      'poultry-byproduct-label',
     ]);
-    expect(rows.find((row) => row.id === 'unknown-byproduct-label')?.allergyHits).toEqual([]);
-    expect(rows.filter((row) => row.allergyPenalty === 90)).toHaveLength(5);
-    expect(rows.filter((row) => row.displayScore <= 9)).toHaveLength(5);
+
+    const fat = rows.find((row) => row.id === 'fat-label');
+    expect(fat?.allergyHits).toEqual([]);
+    expect(fat?.allergyCautionPenalty).toBe(5);
+    expect(fat?.cautionKinds).toContain('processing_caution');
+    expect(fat?.displayScore).toBeGreaterThan(9);
+
+    const genericPoultry = rows.find((row) => row.id === 'poultry-byproduct-label');
+    expect(genericPoultry?.allergyHits).toEqual([]);
+    expect(genericPoultry?.allergyCautionPenalty).toBe(15);
+    expect(genericPoultry?.cautionKinds).toContain('strong_caution');
+    expect(genericPoultry?.displayScore).toBeGreaterThan(9);
+
+    const unknown = rows.find((row) => row.id === 'unknown-byproduct-label');
+    expect(unknown?.allergyHits).toEqual([]);
+    expect(unknown?.allergyCautionPenalty).toBe(0);
+    expect(unknown?.cautionKinds).toEqual([]);
+
+    expect(rows.filter((row) => row.allergyPenalty === 90)).toHaveLength(3);
+    expect(rows.filter((row) => row.displayScore <= 9)).toHaveLength(3);
   });
 });

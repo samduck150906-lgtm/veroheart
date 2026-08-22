@@ -40,6 +40,29 @@ const FAMILY_RULES: FamilyRule[] = [
   { terms: ['계란', '달걀', '난백', '난황', 'egg'], tags: ['egg'] },
 ];
 
+export type PoultrySourceFamily = 'chicken' | 'duck' | 'turkey';
+export type AllergyRelationshipKind =
+  | 'hard'
+  | 'cross_caution'
+  | 'strong_caution'
+  | 'processing_caution'
+  | 'hydrolysis_caution'
+  | 'none';
+
+export interface AllergyRelationshipMatch {
+  allergy: string;
+  ingredientName: string;
+  kind: AllergyRelationshipKind;
+  allergySource: PoultrySourceFamily | 'poultry' | null;
+  ingredientSource: PoultrySourceFamily | 'poultry' | null;
+}
+
+const POULTRY_SOURCE_TERMS: Array<{ source: PoultrySourceFamily; terms: string[] }> = [
+  { source: 'chicken', terms: ['닭', '계육', '치킨', 'chicken'] },
+  { source: 'duck', terms: ['오리', 'duck'] },
+  { source: 'turkey', terms: ['칠면조', '터키', 'turkey'] },
+];
+
 function compact(value: string): string {
   return normalizeIngredientName(value || '');
 }
@@ -70,6 +93,96 @@ function familyTagsFromLabel(label: string): string[] {
   return [...tags];
 }
 
+function poultrySourceFromLabel(label: string): PoultrySourceFamily | null {
+  const key = compact(label);
+  for (const rule of POULTRY_SOURCE_TERMS) {
+    if (rule.terms.some((term) => key.includes(compact(term)))) return rule.source;
+  }
+
+  const dictionaryTags = dictionaryMatches(label).flatMap((entry) => entry.allergenTags.map(compact));
+  if (dictionaryTags.includes('chicken')) return 'chicken';
+  if (dictionaryTags.includes('duck')) return 'duck';
+  if (dictionaryTags.includes('turkey')) return 'turkey';
+  return null;
+}
+
+function isBroadPoultryLabel(label: string): boolean {
+  const key = compact(label);
+  if (!key || poultrySourceFromLabel(label)) return false;
+  return key.includes(compact('가금')) || key.includes(compact('poultry'));
+}
+
+function poultrySourceFromIngredient(ingredient: Ingredient): PoultrySourceFamily | null {
+  const labels = [ingredient.nameKo, ingredient.nameEn, ingredient.purpose].filter(Boolean);
+  for (const label of labels) {
+    const source = poultrySourceFromLabel(label);
+    if (source) return source;
+  }
+  return null;
+}
+
+function isGenericPoultryIngredient(ingredient: Ingredient): boolean {
+  if (poultrySourceFromIngredient(ingredient)) return false;
+  return [ingredient.nameKo, ingredient.nameEn, ingredient.purpose]
+    .filter(Boolean)
+    .some((label) => isBroadPoultryLabel(label));
+}
+
+function ingredientText(ingredient: Ingredient): string {
+  return compact(`${ingredient.nameKo} ${ingredient.nameEn || ''} ${ingredient.purpose || ''}`);
+}
+
+function isHydrolyzedPoultryIngredient(ingredient: Ingredient): boolean {
+  const key = ingredientText(ingredient);
+  return ['가수분해', 'hydrolyzed', 'hydrolysed', 'hydrolysate'].some((term) =>
+    key.includes(compact(term)),
+  );
+}
+
+function isPoultryFatIngredient(ingredient: Ingredient): boolean {
+  const key = ingredientText(ingredient);
+  return ['지방', '기름', 'fat', 'oil'].some((term) => key.includes(compact(term)));
+}
+
+function poultryRelationship(
+  ingredient: Ingredient,
+  allergy: string,
+): AllergyRelationshipMatch | null {
+  const allergySource = poultrySourceFromLabel(allergy);
+  const broadPoultryAllergy = isBroadPoultryLabel(allergy);
+  const ingredientSource = poultrySourceFromIngredient(ingredient);
+  const genericPoultryIngredient = isGenericPoultryIngredient(ingredient);
+
+  const allergyIsPoultry = Boolean(allergySource || broadPoultryAllergy);
+  const ingredientIsPoultry = Boolean(ingredientSource || genericPoultryIngredient);
+  if (!allergyIsPoultry && !ingredientIsPoultry) return null;
+
+  const base: Omit<AllergyRelationshipMatch, 'kind'> = {
+    allergy,
+    ingredientName: ingredient.nameKo,
+    allergySource: allergySource ?? (broadPoultryAllergy ? 'poultry' : null),
+    ingredientSource: ingredientSource ?? (genericPoultryIngredient ? 'poultry' : null),
+  };
+
+  if (!allergyIsPoultry || !ingredientIsPoultry) return { ...base, kind: 'none' };
+
+  if (isHydrolyzedPoultryIngredient(ingredient)) {
+    return { ...base, kind: 'hydrolysis_caution' };
+  }
+  if (isPoultryFatIngredient(ingredient)) {
+    return { ...base, kind: 'processing_caution' };
+  }
+
+  if (broadPoultryAllergy) return { ...base, kind: 'hard' };
+  if (allergySource && ingredientSource === allergySource) return { ...base, kind: 'hard' };
+  if (allergySource && ingredientSource && ingredientSource !== allergySource) {
+    return { ...base, kind: 'cross_caution' };
+  }
+  if (allergySource && genericPoultryIngredient) return { ...base, kind: 'strong_caution' };
+
+  return { ...base, kind: 'none' };
+}
+
 export function allergyTagsForLabel(label: string): string[] {
   const tags = new Set<string>();
 
@@ -94,25 +207,64 @@ export function allergyTagsForIngredient(ingredient: Ingredient): string[] {
   return [...tags];
 }
 
-export function isFamilyAllergyIngredient(ingredient: Ingredient, allergies: string[]): boolean {
+export function classifyAllergyRelationship(
+  ingredient: Ingredient,
+  allergy: string,
+): AllergyRelationshipMatch {
+  const poultry = poultryRelationship(ingredient, allergy);
+  if (poultry) return poultry;
+
+  const allergyKey = compact(allergy);
+  if (!allergyKey) {
+    return {
+      allergy,
+      ingredientName: ingredient.nameKo,
+      kind: 'none',
+      allergySource: null,
+      ingredientSource: null,
+    };
+  }
+
+  const directTextMatch =
+    compact(ingredient.nameKo || '').includes(allergyKey) ||
+    compact(ingredient.nameEn || '').includes(allergyKey) ||
+    compact(ingredient.purpose || '').includes(allergyKey);
   const ingredientTags = new Set(allergyTagsForIngredient(ingredient));
+  const dictionaryFamilyMatch = allergyTagsForLabel(allergy).some((tag) => ingredientTags.has(tag));
 
-  return allergies.some((allergy) => {
-    const allergyKey = compact(allergy);
-    if (!allergyKey) return false;
+  return {
+    allergy,
+    ingredientName: ingredient.nameKo,
+    kind: directTextMatch || dictionaryFamilyMatch ? 'hard' : 'none',
+    allergySource: null,
+    ingredientSource: null,
+  };
+}
 
-    const directTextMatch =
-      compact(ingredient.nameKo || '').includes(allergyKey) ||
-      compact(ingredient.nameEn || '').includes(allergyKey) ||
-      compact(ingredient.purpose || '').includes(allergyKey);
-    if (directTextMatch) return true;
+export function isFamilyAllergyIngredient(ingredient: Ingredient, allergies: string[]): boolean {
+  return allergies.some((allergy) => classifyAllergyRelationship(ingredient, allergy).kind === 'hard');
+}
 
-    return allergyTagsForLabel(allergy).some((tag) => ingredientTags.has(tag));
-  });
+export function allergyCautionMatches(
+  ingredients: Ingredient[],
+  allergies: string[],
+): AllergyRelationshipMatch[] {
+  const cautionKinds: AllergyRelationshipKind[] = [
+    'cross_caution',
+    'strong_caution',
+    'processing_caution',
+    'hydrolysis_caution',
+  ];
+
+  return allergies.flatMap((allergy) =>
+    ingredients
+      .map((ingredient) => classifyAllergyRelationship(ingredient, allergy))
+      .filter((match) => cautionKinds.includes(match.kind)),
+  );
 }
 
 export function allergyIngredientNames(ingredients: Ingredient[], allergy: string): string[] {
   return ingredients
-    .filter((ingredient) => isFamilyAllergyIngredient(ingredient, [allergy]))
+    .filter((ingredient) => classifyAllergyRelationship(ingredient, allergy).kind === 'hard')
     .map((ingredient) => ingredient.nameKo);
 }

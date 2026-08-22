@@ -1,5 +1,3 @@
-import { buildPoultryCrossFamilySpecificityAudit } from './poultryCrossFamilySpecificityAudit';
-
 export type PoultrySpecificityPolicyOptionId =
   | 'keep_current_conservative'
   | 'species_specific_hard_block_plus_related_caution'
@@ -50,6 +48,15 @@ export interface PoultrySpecificityOwnerReviewPacket {
     changesEnvOrDeploy: false;
   };
 }
+
+const PRE_POLICY_BASELINE = {
+  namedPairs: 9,
+  sameSourceMatches: 3,
+  crossSpeciesMatches: 6,
+  crossSpeciesScoreCappedProductsInFixture: 6,
+  genericPoultryMatches: 3,
+  unknownAnimalByproductNamedMatches: 0,
+} as const;
 
 const OPTIONS: PoultrySpecificityPolicyOption[] = [
   {
@@ -106,19 +113,15 @@ const OPTIONS: PoultrySpecificityPolicyOption[] = [
   },
 ];
 
+/**
+ * Historical owner-review packet from before Poultry Allergy Policy v1.0.
+ * The baseline is intentionally frozen so later runtime changes do not rewrite the evidence
+ * that was used for the owner decision.
+ */
 export function buildPoultrySpecificityOwnerReviewPacket(): PoultrySpecificityOwnerReviewPacket {
-  const audit = buildPoultryCrossFamilySpecificityAudit();
-
   return {
     packetKind: 'poultry_specificity_owner_review_packet',
-    currentBehavior: {
-      namedPairs: audit.summary.namedPairs,
-      sameSourceMatches: audit.summary.sameSourceMatches,
-      crossSpeciesMatches: audit.summary.crossSpeciesMatches,
-      crossSpeciesScoreCappedProductsInFixture: audit.summary.crossSpeciesScoreCappedProducts,
-      genericPoultryMatches: audit.summary.genericPoultryMatches,
-      unknownAnimalByproductNamedMatches: audit.summary.unknownAnimalByproductNamedMatches,
-    },
+    currentBehavior: { ...PRE_POLICY_BASELINE },
     evidenceAssessment: {
       immunologicOverlapSupported: true,
       blanketClinicalEquivalenceEstablished: false,

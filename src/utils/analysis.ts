@@ -1,4 +1,5 @@
 import type { Product, UserPetProfile } from '../types';
+import type { AllergyRelationshipMatch } from '../analysis/allergyFamilyMatcher';
 import { getCompatibilityBreakdown } from './score';
 
 export interface AnalysisReport {
@@ -7,6 +8,32 @@ export interface AnalysisReport {
   summary: string;
   highlights: { text: string; type: 'positive' | 'negative' | 'caution' }[];
   detailedAnalysis: string;
+}
+
+function allergyCautionText(matches: AllergyRelationshipMatch[]): string | null {
+  if (matches.length === 0) return null;
+
+  const strong = matches.filter((match) => match.kind === 'strong_caution');
+  if (strong.length > 0) {
+    return '등록한 알레르기와 관련된 가금류 원료가 포괄적으로 표기되어 있어, 원료 출처를 확인한 뒤 급여하는 편이 안전해요.';
+  }
+
+  const cross = matches.filter((match) => match.kind === 'cross_caution');
+  if (cross.length > 0) {
+    const allergens = [...new Set(cross.map((match) => match.allergy))];
+    const ingredients = [...new Set(cross.map((match) => match.ingredientName))].slice(0, 3);
+    return `${allergens.join(', ')} 알레르기와 관련된 다른 가금류 성분(${ingredients.join(', ')})이 있어요. 가금류 간 교차반응 가능성이 보고되어 있으므로 처음 급여하거나 과거 반응 이력이 있다면 특히 주의해 주세요.`;
+  }
+
+  if (matches.some((match) => match.kind === 'hydrolysis_caution')) {
+    return '등록한 알레르기 원료의 가수분해 성분이 있어요. 가수분해 정도에 따라 반응 가능성이 달라질 수 있어 제품 정보를 확인해 주세요.';
+  }
+
+  if (matches.some((match) => match.kind === 'processing_caution')) {
+    return '등록한 알레르기 원료와 관련된 가금류 지방 성분이 있어요. 고기 단백질과 동일한 확정 알레르기로 보지는 않지만 원료 정제도와 잔류 단백질을 알 수 없어 주의가 필요해요.';
+  }
+
+  return null;
 }
 
 export function generateAnalysisReport(product: Product, profile: UserPetProfile): AnalysisReport {
@@ -18,6 +45,7 @@ export function generateAnalysisReport(product: Product, profile: UserPetProfile
   const cautionIngredients = ingredients
     .filter((ingredient) => ingredient.riskLevel === 'caution')
     .map((ingredient) => ingredient.nameKo);
+  const allergyCaution = allergyCautionText(compatibility.allergyCautions);
 
   const highlights: { text: string; type: 'positive' | 'negative' | 'caution' }[] = [];
 
@@ -35,6 +63,8 @@ export function generateAnalysisReport(product: Product, profile: UserPetProfile
       text: `알레르기·회피 성분 ${compatibility.allergyHits.join(', ')}이 포함되어 있어 급여를 권하지 않아요.`,
       type: 'negative',
     });
+  } else if (allergyCaution) {
+    highlights.push({ text: allergyCaution, type: 'caution' });
   }
 
   if (dangerIngredients.length > 0) {
@@ -72,6 +102,9 @@ export function generateAnalysisReport(product: Product, profile: UserPetProfile
   } else if (compatibility.allergyHits.length > 0) {
     grade = 'Poor';
     summary = `${profile.name}의 알레르기·회피 성분이 포함되어 있어 급여를 권하지 않아요.`;
+  } else if (allergyCaution) {
+    grade = compatibility.total >= 70 ? 'Good' : 'Fair';
+    summary = `관련 가금류 성분이 있어 교차반응 가능성에 주의가 필요해요.`;
   } else if (compatibility.total >= 85) {
     grade = 'Excellent';
     summary = `${profile.name}에게 성분과 건강 조건이 매우 잘 맞는 제품입니다.`;
@@ -93,6 +126,9 @@ export function generateAnalysisReport(product: Product, profile: UserPetProfile
       `건강 적합성 ${compatibility.healthSuitability}/30점`,
       `고민 적합성 ${compatibility.concernFit}/20점`,
       compatibility.allergyPenalty > 0 ? `알레르기 감점 -${compatibility.allergyPenalty}점` : null,
+      compatibility.allergyCautionPenalty > 0
+        ? `알레르기 관련 주의 감점 -${compatibility.allergyCautionPenalty}점`
+        : null,
       compatibility.preferencePenalty > 0 ? `기호도 감점 -${compatibility.preferencePenalty}점` : null,
       compatibility.speciesMismatch ? '동물 종류 불일치로 최종 0점 처리' : null,
     ]

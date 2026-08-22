@@ -1,6 +1,7 @@
 import {
   allergyTagsForIngredient,
   allergyTagsForLabel,
+  classifyAllergyRelationship,
   isFamilyAllergyIngredient,
 } from '../analysis/allergyFamilyMatcher';
 import type { Ingredient, Product, UserPetProfile } from '../types';
@@ -23,7 +24,8 @@ export interface PoultryCrossFamilyAuditRow {
   ingredientTags: string[];
   sharedTags: string[];
   currentMatch: boolean;
-  matchKind: 'same_named_source' | 'shared_poultry_crossmatch' | 'no_match';
+  relationshipKind: ReturnType<typeof classifyAllergyRelationship>['kind'];
+  matchKind: 'same_named_source' | 'cross_poultry_caution' | 'no_match';
 }
 
 export interface PoultryCrossFamilyScoreImpactRow {
@@ -33,6 +35,7 @@ export interface PoultryCrossFamilyScoreImpactRow {
   ingredientLabel: string;
   allergyHits: string[];
   allergyPenalty: number;
+  allergyCautionPenalty: number;
   recommendationScore: number;
   displayScore: number;
 }
@@ -56,7 +59,8 @@ export interface PoultryCrossFamilySpecificityAudit {
   summary: {
     namedPairs: number;
     sameSourceMatches: number;
-    crossSpeciesMatches: number;
+    crossSpeciesHardMatches: number;
+    crossSpeciesCautionMatches: number;
     genericPoultryMatches: number;
     unknownAnimalByproductNamedMatches: number;
     crossSpeciesScoreCappedProducts: number;
@@ -126,11 +130,12 @@ function namedMatrixRow(
   const allergyTags = allergyTagsForLabel(allergy.allergyLabel);
   const ingredientTags = allergyTagsForIngredient(candidateIngredient);
   const sharedTags = intersection(allergyTags, ingredientTags);
-  const currentMatch = isFamilyAllergyIngredient(candidateIngredient, [allergy.allergyLabel]);
+  const relationship = classifyAllergyRelationship(candidateIngredient, allergy.allergyLabel);
+  const currentMatch = relationship.kind === 'hard';
 
   let matchKind: PoultryCrossFamilyAuditRow['matchKind'] = 'no_match';
-  if (currentMatch && allergy.family === candidate.family) matchKind = 'same_named_source';
-  if (currentMatch && allergy.family !== candidate.family) matchKind = 'shared_poultry_crossmatch';
+  if (relationship.kind === 'hard' && allergy.family === candidate.family) matchKind = 'same_named_source';
+  if (relationship.kind === 'cross_caution') matchKind = 'cross_poultry_caution';
 
   return {
     allergyFamily: allergy.family,
@@ -141,6 +146,7 @@ function namedMatrixRow(
     ingredientTags,
     sharedTags,
     currentMatch,
+    relationshipKind: relationship.kind,
     matchKind,
   };
 }
@@ -164,6 +170,7 @@ function scoreImpactRow(
     ingredientLabel: candidate.ingredientLabel,
     allergyHits: breakdown.allergyHits,
     allergyPenalty: breakdown.allergyPenalty,
+    allergyCautionPenalty: breakdown.allergyCautionPenalty,
     recommendationScore: breakdown.total,
     displayScore: display.score,
   };
@@ -200,8 +207,11 @@ export function buildPoultryCrossFamilySpecificityAudit(): PoultryCrossFamilySpe
     summary: {
       namedPairs: namedMatrix.length,
       sameSourceMatches: namedMatrix.filter((row) => row.matchKind === 'same_named_source').length,
-      crossSpeciesMatches: namedMatrix.filter(
-        (row) => row.matchKind === 'shared_poultry_crossmatch',
+      crossSpeciesHardMatches: namedMatrix.filter(
+        (row) => row.allergyFamily !== row.ingredientFamily && row.currentMatch,
+      ).length,
+      crossSpeciesCautionMatches: namedMatrix.filter(
+        (row) => row.matchKind === 'cross_poultry_caution',
       ).length,
       genericPoultryMatches: genericPoultryMatches.filter((row) => row.currentMatch).length,
       unknownAnimalByproductNamedMatches: unknownAnimalByproductNamedMatches.filter(
