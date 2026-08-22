@@ -12,7 +12,7 @@
  * 모든 함수는 순수(pure)하며 외부 호출/랜덤/시간에 의존하지 않는다.
  */
 import type { Product, UserPetProfile } from '../types';
-import { allergyIngredientNames } from './allergyFamilyMatcher';
+import { allergyCautionMatches, allergyIngredientNames } from './allergyFamilyMatcher';
 import type { GuaranteedAnalysis } from './types';
 import {
   toDryMatter,
@@ -197,6 +197,7 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
   const allergyHits = Array.from(
     new Set(profile.allergies.flatMap((allergy) => allergyIngredientNames(ingredients, allergy))),
   );
+  const allergyCautions = allergyCautionMatches(ingredients, profile.allergies);
 
   const iq: FeedIngredientQuality = {
     total: ingredients.length,
@@ -256,6 +257,7 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
   if (macrosDMB && macrosDMB.protein >= (species === 'cat' ? 32 : 22)) positives.push(`건물기준 조단백질 ${macrosDMB.protein}%로 단백질이 풍부해요`);
 
   if (allergyHits.length > 0) cautions.push(`${profile.name}의 회피 성분이 들어 있어요: ${allergyHits.join(', ')}`);
+  else if (allergyCautions.length > 0) cautions.push(`${profile.name}의 알레르기와 관련된 원료가 있어 급여 전 확인이 필요해요`);
   if (iq.dangerCount > 0) cautions.push(`위험 등급 성분 ${iq.dangerCount}개 포함`);
   if (iq.artificial.length > 0) cautions.push(`합성 첨가물 의심 원료: ${iq.artificial.slice(0, 3).join(', ')}`);
   if (iq.byProducts.length > 0) cautions.push(`부산물 원료 포함: ${iq.byProducts.slice(0, 2).join(', ')}`);
@@ -271,6 +273,7 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
     // grade 기반 부정 문장("주의가 필요한 성분…") 대신 정보 부족을 명시한다.
     if (iq.total === 0 && !hasNutritionData) return '원재료·영양 정보가 부족해 아직 정확히 평가하기 어려워요.';
     if (allergyHits.length > 0) return `${profile.name}가 피해야 할 성분이 있어 급여 전 확인이 필요해요.`;
+    if (allergyCautions.length > 0) return `${profile.name}의 알레르기와 관련된 원료가 있어 급여 전 확인이 필요해요.`;
     if (grade === 'A+' || grade === 'A') return iq.firstIsAnimalProtein ? '동물성 단백질 중심의 균형 잡힌 우수한 사료예요.' : '전반적으로 품질이 우수한 사료예요.';
     if (grade === 'B') return '무난하게 급여할 수 있는 사료예요.';
     if (grade === 'C') return '나쁘지 않지만 확인할 점이 몇 가지 있어요.';
