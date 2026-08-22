@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
+import { buildAllergyDisplayState, type AllergyDisplayLevel } from '../utils/allergyDisplay';
 import { normalizeProductDisplayName } from '../utils/productDisplay';
 import { VR } from '../lib/veroroDesign';
 import type { Product } from '../types';
@@ -19,7 +20,7 @@ interface Column {
   protein: string;
   signalText: string;
   allergyText: string;
-  allergyHit: boolean;
+  allergyLevel: AllergyDisplayLevel;
 }
 
 function buildColumn(product: Product, profile: UserPetProfile): Column {
@@ -28,6 +29,7 @@ function buildColumn(product: Product, profile: UserPetProfile): Column {
   const proteinValue = product.guaranteedAnalysis?.crudeProtein;
   const goodCount = product.ingredients?.filter((i) => i.riskLevel === 'safe').length ?? 0;
   const warnCount = breakdown.dangerCount + breakdown.cautionCount;
+  const allergyDisplay = buildAllergyDisplayState(breakdown, profile.name || '우리 아이');
 
   return {
     product,
@@ -36,8 +38,8 @@ function buildColumn(product: Product, profile: UserPetProfile): Column {
     kcal: kcalValue ? `${Math.round(kcalValue)}kcal` : '—',
     protein: proteinValue ? `${proteinValue}%` : '—',
     signalText: `주의 ${warnCount} · 좋음 ${goodCount}`,
-    allergyText: breakdown.allergyHits.length > 0 ? breakdown.allergyHits.join(', ') : '해당 없음',
-    allergyHit: breakdown.allergyHits.length > 0,
+    allergyText: allergyDisplay.shortText,
+    allergyLevel: allergyDisplay.level,
   };
 }
 
@@ -81,12 +83,23 @@ export default function Comparison() {
     {
       label: `${petName} 알레르기`,
       values: columns.map((c) => c.allergyText),
-      tone: (c) => (c.allergyHit ? 'var(--danger-strong)' : 'var(--vr-body-2)'),
+      tone: (c) =>
+        c.allergyLevel === 'hard'
+          ? 'var(--danger-strong)'
+          : c.allergyLevel === 'caution'
+            ? 'var(--caution-strong)'
+            : 'var(--vr-body-2)',
     },
   ];
 
   const best = columns.reduce((a, b) => (b.score > a.score ? b : a));
   const gridTemplate = `74px repeat(${columns.length}, 1fr)`;
+  const bestAllergyCopy =
+    best.allergyLevel === 'hard'
+      ? '다만 알레르기 성분이 포함돼 있어 급여 전 확인이 필요해.'
+      : best.allergyLevel === 'caution'
+        ? `${petName}의 알레르기와 관련된 원료가 있어 급여 전 확인이 필요해.`
+        : `${petName} 알레르기 성분은 들어 있지 않아.`;
 
   return (
     <div className="vr-anim-fade" style={{ padding: '14px 0 24px' }}>
@@ -149,7 +162,7 @@ export default function Comparison() {
             {petName}라면 &lsquo;{normalizeProductDisplayName(best.product)}&rsquo;가 나아
           </div>
           <p style={{ margin: '7px 0 0', fontSize: '12.5px', lineHeight: 1.55, color: 'var(--vr-body)' }}>
-            프로필 기준 종합 {best.score}점으로 가장 높아. {best.allergyHit ? '다만 알레르기 성분이 포함돼 있어 급여 전 확인이 필요해.' : `${petName} 알레르기 성분은 들어 있지 않아.`}
+            프로필 기준 종합 {best.score}점으로 가장 높아. {bestAllergyCopy}
           </p>
         </div>
       )}
