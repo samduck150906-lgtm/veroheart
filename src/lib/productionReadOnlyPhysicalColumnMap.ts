@@ -74,10 +74,10 @@ export function mapProductionPhysicalRowsToAdapterRows(
       category: row.main_category ?? null,
       targetPetType: row.target_pet_type ?? null,
     })),
-    productIngredients: input.productIngredients.map((row, index) => ({
+    productIngredients: input.productIngredients.map((row) => ({
       productId: row.product_id,
       ingredientId: row.ingredient_id,
-      position: row.sort_order ?? index,
+      position: row.sort_order ?? 0,
     })),
     ingredients: input.ingredients.map((row) => ({
       id: row.id,
