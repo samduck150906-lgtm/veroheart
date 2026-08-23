@@ -49,6 +49,7 @@ export interface ProductionReadOnlyPoultrySignalMatrixReport {
     incompleteRows: number;
     hardRows: number;
     cautionOnlyRows: number;
+    /** scoreable rows with neither HARD nor caution signal */
     noneRows: number;
     productsMissingIngredientLinks: number;
     missingLinkedIngredients: number;
@@ -230,7 +231,10 @@ export function buildProductionReadOnlyPoultrySignalMatrix(
         (row) => row.hardHits.length === 0 && row.cautionKinds.length > 0,
       ).length,
       noneRows: rows.filter(
-        (row) => row.hardHits.length === 0 && row.cautionKinds.length === 0,
+        (row) =>
+          row.scoreStatus === 'computed' &&
+          row.hardHits.length === 0 &&
+          row.cautionKinds.length === 0,
       ).length,
       productsMissingIngredientLinks,
       missingLinkedIngredients,
