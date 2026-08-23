@@ -37,6 +37,16 @@ describe('production read-only physical column map', () => {
     expect(mapped.signals[0]?.productId).toBe('p1');
   });
 
+  it('uses the database default meaning rather than inventing an array-relative position', () => {
+    const mapped = mapProductionPhysicalRowsToAdapterRows({
+      products: [{ id: 'p1', name: '테스트 사료' }],
+      productIngredients: [{ product_id: 'p1', ingredient_id: 'i1', sort_order: null }],
+      ingredients: [{ id: 'i1', name_ko: '닭고기' }],
+    });
+
+    expect(mapped.productIngredients[0]?.position).toBe(0);
+  });
+
   it('documents the production schema columns that differ from adapter field names', () => {
     const pairs = new Set(
       PRODUCTION_READ_ONLY_PHYSICAL_COLUMN_MAP.map(
