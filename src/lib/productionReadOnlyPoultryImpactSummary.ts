@@ -55,6 +55,13 @@ export interface ProductionReadOnlyPoultryImpactSummaryReport {
   };
 }
 
+const PROFILE_LABELS: Record<PoultrySyntheticProfileId, string> = {
+  chicken: '닭',
+  duck: '오리',
+  turkey: '칠면조',
+  poultry: '가금류',
+};
+
 function signalForRow(row: ProductionReadOnlyPoultrySignalRow): 'hard' | 'caution' | 'none' {
   if (row.hardHits.length > 0) return 'hard';
   if (row.cautionKinds.length > 0) return 'caution';
@@ -70,9 +77,9 @@ function affectedSort(a: PoultryAffectedProductSummary, b: PoultryAffectedProduc
 }
 
 function profileSummary(
+  profileId: PoultrySyntheticProfileId,
   profileRows: ProductionReadOnlyPoultrySignalRow[],
 ): PoultryProfileImpactSummary {
-  const first = profileRows[0];
   const cautionRows = profileRows.filter((row) => signalForRow(row) === 'caution');
   const cautionPenalties = cautionRows
     .map((row) => row.allergyCautionPenalty)
@@ -96,8 +103,8 @@ function profileSummary(
     .sort(affectedSort);
 
   return {
-    profileId: first?.profileId ?? 'chicken',
-    allergyLabel: first?.allergyLabel ?? '',
+    profileId,
+    allergyLabel: profileRows[0]?.allergyLabel ?? PROFILE_LABELS[profileId],
     products: profileRows.length,
     computedProducts: profileRows.filter((row) => row.scoreStatus === 'computed').length,
     incompleteProducts: profileRows.filter((row) => row.scoreStatus === 'data_incomplete').length,
@@ -122,7 +129,7 @@ export function buildProductionReadOnlyPoultryImpactSummary(
 ): ProductionReadOnlyPoultryImpactSummaryReport {
   const profileIds: PoultrySyntheticProfileId[] = ['chicken', 'duck', 'turkey', 'poultry'];
   const profiles = profileIds.map((profileId) =>
-    profileSummary(matrix.rows.filter((row) => row.profileId === profileId)),
+    profileSummary(profileId, matrix.rows.filter((row) => row.profileId === profileId)),
   );
 
   const warnings: string[] = [];
