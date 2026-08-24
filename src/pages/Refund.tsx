@@ -54,7 +54,7 @@ export default function Refund() {
           <p>
             상호 {COMPANY.tradeName} · 대표 {COMPANY.representative}
             <br />
-            사업자등록번호 {COMPANY.bizRegNo} · 통신판매업 {COMPANY.mailOrderBizNo}
+            사업자등록번호 {COMPANY.bizRegNo}
             <br />
             주소 {COMPANY.address}
             <br />

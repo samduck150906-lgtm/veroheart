@@ -41,7 +41,7 @@ const jsonLd = [
   {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "이터널식스",
+    name: "름랩(REUMLAB)",
     url: SITE_URL,
     logo: `${SITE_URL}/veroro-logo.png`,
     email: "veroro@eternalsix.com",
