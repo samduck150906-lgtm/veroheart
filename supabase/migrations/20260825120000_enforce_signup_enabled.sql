@@ -64,3 +64,13 @@ DROP TRIGGER IF EXISTS on_auth_user_signup_gate ON auth.users;
 CREATE TRIGGER on_auth_user_signup_gate
   BEFORE INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.enforce_signup_enabled();
+
+-- ── 공개 EXECUTE 권한 회수 ──────────────────────────────────────────────────
+-- 이 함수는 트리거 전용이라 PostgREST(/rest/v1/rpc/...)로 노출될 이유가 없다.
+-- (직접 호출하면 "trigger functions can only be called as triggers" 로 실패하므로
+--  악용 경로는 아니지만, SECURITY DEFINER 함수를 공개해 둘 이유도 없다.)
+-- 트리거 함수의 EXECUTE 권한은 CREATE TRIGGER 시점에만 검사되므로 동작에는 영향이 없다
+-- — 운영 적용 후 실제 INSERT 로 허용/차단 양쪽을 재확인했다.
+REVOKE EXECUTE ON FUNCTION public.enforce_signup_enabled() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.enforce_signup_enabled() FROM anon;
+REVOKE EXECUTE ON FUNCTION public.enforce_signup_enabled() FROM authenticated;

@@ -24,6 +24,12 @@ import type { Product, UserPetProfile } from '../types';
 
 const ITERATIONS = 100;
 
+/**
+ * 엔진을 수백 번 돌리는 테스트라 기본 5초 제한을 넘긴다(전체 스위트를 병렬로 돌릴 때
+ * 특히). 반복 횟수를 줄이면 검사 강도가 떨어지므로 제한 시간 쪽을 늘린다.
+ */
+const TIMEOUT_MS = 30_000;
+
 function product(): Product {
   return {
     id: 'determinism-fixture',
@@ -81,7 +87,7 @@ describe('분석 엔진 결정성', () => {
     for (let i = 0; i < ITERATIONS; i += 1) {
       expect(JSON.stringify(analyzeFeed(product(), profile()))).toBe(first);
     }
-  });
+  }, TIMEOUT_MS);
 
   it(`적합도 점수·등급·근거가 ${ITERATIONS}회 동일하다`, () => {
     const first = JSON.stringify(getRecommendationBreakdown(product(), profile()));
@@ -93,7 +99,7 @@ describe('분석 엔진 결정성', () => {
       expect(JSON.stringify(resolveDisplayVerdict(product(), profile()))).toBe(firstVerdict);
       expect(calculateCompatibilityScore(product(), profile())).toBe(firstScore);
     }
-  });
+  }, TIMEOUT_MS);
 
   it(`점수 파이프라인과 결론 문장이 ${ITERATIONS}회 동일하다`, () => {
     const p = product();
@@ -104,7 +110,7 @@ describe('분석 엔진 결정성', () => {
       expect(JSON.stringify(runScoringPipeline(product(), profile().breed))).toBe(first);
       expect(JSON.stringify(buildProductConclusion(product(), profile()))).toBe(firstConclusion);
     }
-  });
+  }, TIMEOUT_MS);
 
   it('같은 인스턴스를 반복해서 넘겨도 결과가 변하지 않는다(입력 변형 없음)', () => {
     // 같은 객체를 계속 넘긴다. 엔진이 입력 배열을 제자리 정렬하는 등
@@ -119,7 +125,7 @@ describe('분석 엔진 결정성', () => {
     }
     expect(p.ingredients?.map((i) => i.id).join(',')).toBe(ingredientOrder);
     expect(pet.allergies).toEqual(['닭고기']);
-  });
+  }, TIMEOUT_MS);
 
   it('보장성분·프로필의 키 순서가 달라도 결과가 같다', () => {
     const base = product();
@@ -131,7 +137,7 @@ describe('분석 엔진 결정성', () => {
     expect(JSON.stringify(analyzeFeed(shuffled, withReversedKeys(profile())))).toBe(
       JSON.stringify(analyzeFeed(base, profile())),
     );
-  });
+  }, TIMEOUT_MS);
 
   it('알레르기 판정이 반복 호출에도 뒤집히지 않는다', () => {
     // 닭고기 알레르기 + "닭고기 분말" 원료 → 매번 같은 회피 판정이어야 한다.
@@ -144,5 +150,5 @@ describe('분석 엔진 결정성', () => {
       expect(again.summary).toBe(first.summary);
       expect(again.grade).toBe(first.grade);
     }
-  });
+  }, TIMEOUT_MS);
 });
