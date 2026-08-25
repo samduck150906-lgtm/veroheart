@@ -64,17 +64,33 @@ export function mapSettingsRows(rows: { key: string; value: unknown }[]): Public
   };
 }
 
+/**
+ * 캐시 수명(ms).
+ *
+ * 예전에는 세션당 1회만 읽고 영구 캐시했다. 그래서 관리자가 점검 모드를 켜거나
+ * 가입을 닫아도, 이미 앱을 열어 둔 사용자에게는 새로고침 전까지 반영되지 않았다.
+ * 운영 스위치는 "지금 눌러서 지금 먹히는" 것이 목적이므로 수명을 둔다.
+ * (요청 자체는 공개 키 몇 줄짜리 SELECT 라 5분 간격이면 부담이 없다.)
+ */
+const SETTINGS_TTL_MS = 5 * 60 * 1000;
+
 let cached: PublicSettings | null = null;
+let cachedAt = 0;
 let inFlight: Promise<PublicSettings> | null = null;
 
 /** 테스트 전용 — 캐시를 비운다. */
 export function __resetPublicSettingsCache(): void {
   cached = null;
+  cachedAt = 0;
   inFlight = null;
 }
 
+function isCacheFresh(): boolean {
+  return cached !== null && Date.now() - cachedAt < SETTINGS_TTL_MS;
+}
+
 export async function loadPublicSettings(): Promise<PublicSettings> {
-  if (cached) return cached;
+  if (isCacheFresh()) return cached as PublicSettings;
   if (inFlight) return inFlight;
 
   inFlight = (async () => {
@@ -84,6 +100,7 @@ export async function loadPublicSettings(): Promise<PublicSettings> {
       if (error || !data) return DEFAULT_PUBLIC_SETTINGS;
       const settings = mapSettingsRows(data as { key: string; value: unknown }[]);
       cached = settings;
+      cachedAt = Date.now();
       return settings;
     } catch {
       return DEFAULT_PUBLIC_SETTINGS;
@@ -101,11 +118,25 @@ export function usePublicSettings(): PublicSettings {
 
   useEffect(() => {
     let cancelled = false;
-    loadPublicSettings().then((next) => {
-      if (!cancelled) setSettings(next);
-    });
+    const sync = () => {
+      loadPublicSettings().then((next) => {
+        if (!cancelled) setSettings(next);
+      });
+    };
+
+    sync();
+    // 캐시가 만료될 즈음 한 번 더 확인하고, 앱을 다시 앞으로 가져올 때도 맞춘다
+    // (모바일에서는 탭을 며칠씩 열어 두는 일이 흔하다).
+    const timer = window.setInterval(sync, SETTINGS_TTL_MS);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') sync();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
     return () => {
       cancelled = true;
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
     };
   }, []);
 

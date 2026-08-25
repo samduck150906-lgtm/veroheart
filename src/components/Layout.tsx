@@ -6,6 +6,44 @@ import AppHeader from './AppHeader';
 import { resolveRouteChrome } from '../lib/routeChrome';
 import { usePublicSettings } from '../lib/publicSettings';
 
+/**
+ * 점검 모드 화면.
+ *
+ * 예전에는 점검 모드가 켜져도 안내 배너만 뜨고 모든 기능이 그대로 열려 있었다.
+ * 스위치 이름과 실제 동작이 달라서, 운영자가 점검을 걸어 둔 동안에도 사용자는
+ * 계속 데이터를 쓰고 있었다. 이제 사용자 화면은 실제로 막는다.
+ *
+ * 관리자 콘솔(/admin)은 이 Layout 바깥의 별도 라우트라 영향받지 않는다 —
+ * 점검 중에도 관리자는 들어와 설정을 되돌릴 수 있어야 한다.
+ */
+function MaintenanceScreen() {
+  return (
+    <div
+      role="status"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '12px',
+        minHeight: '60vh',
+        padding: '0 28px',
+        textAlign: 'center',
+      }}
+    >
+      <span style={{ fontSize: '40px' }} aria-hidden="true">🛠️</span>
+      <h1 style={{ margin: 0, fontSize: '19px', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-dark)' }}>
+        지금은 서비스 점검 중이에요
+      </h1>
+      <p style={{ margin: 0, fontSize: '14px', lineHeight: 1.6, color: 'var(--text-muted)' }}>
+        점검이 끝나면 바로 다시 열어 드릴게요.
+        <br />
+        잠시 후 새로고침해 주세요.
+      </p>
+    </div>
+  );
+}
+
 export default function Layout() {
   const location = useLocation();
   const chrome = useMemo(
@@ -37,25 +75,27 @@ export default function Layout() {
     <div className="app-shell">
       <AppHeader raised={raised} />
 
-      {settings.maintenanceMode && (
-        <div className="app-notice app-notice-warning" role="status">
-          현재 서비스 점검 중이에요. 일부 기능이 일시적으로 동작하지 않을 수 있어요.
-        </div>
-      )}
-      {!settings.maintenanceMode && settings.serviceNotice.enabled && settings.serviceNotice.message && (
+      {settings.serviceNotice.enabled && settings.serviceNotice.message && (
         <div className="app-notice" role="status">
           {settings.serviceNotice.message}
         </div>
       )}
 
       <main className="app-main container" onScroll={onScroll}>
-        <div className="vr-anim-fade">
-          <Outlet />
-        </div>
-        {!shouldHideFooter && <Footer />}
+        {settings.maintenanceMode ? (
+          <MaintenanceScreen />
+        ) : (
+          <>
+            <div className="vr-anim-fade">
+              <Outlet />
+            </div>
+            {!shouldHideFooter && <Footer />}
+          </>
+        )}
       </main>
 
-      {chrome.nav && <BottomNav />}
+      {/* 점검 중에는 이동할 곳이 없으므로 하단 네비도 감춘다. */}
+      {chrome.nav && !settings.maintenanceMode && <BottomNav />}
     </div>
   );
 }

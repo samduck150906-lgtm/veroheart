@@ -178,6 +178,10 @@ export default function Login() {
         notify.error('이메일 또는 비밀번호가 올바르지 않습니다.');
       } else if (msg.includes('User already registered') || lower.includes('already registered')) {
         notify.error('이미 가입된 이메일입니다. 로그인을 시도해 주세요.');
+      } else if (lower.includes('signup_disabled') || lower.includes('signup disabled')) {
+        // DB 트리거(enforce_signup_enabled)가 막은 경우. 프론트 스위치가 캐시 때문에
+        // 아직 열려 있어도 서버에서 걸리므로, 원문 대신 같은 안내를 보여준다.
+        notify.error('현재 신규 회원 가입이 일시 중단되었습니다.');
       } else if (lower.includes('email not confirmed')) {
         notify.error('이메일 인증이 아직 완료되지 않았습니다. 메일함을 확인하거나 아래에서 재전송해 주세요.');
         setPendingVerification(true);

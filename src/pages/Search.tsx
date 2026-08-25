@@ -184,6 +184,9 @@ export default function Search() {
   );
 
   useEffect(() => {
+    // 디바운스 타이머만 취소하면 이미 떠난 요청은 못 막는다. 검색어를 빠르게 바꾸면
+    // 먼저 보낸 느린 응답이 나중 결과를 덮어써 엉뚱한 목록이 남는다.
+    let cancelled = false;
     const timer = setTimeout(async () => {
       setIsLoading(true);
       try {
@@ -197,6 +200,7 @@ export default function Search() {
           healthConcerns: filters.healthConcerns,
           dietPreset: filters.dietPreset,
         });
+        if (cancelled) return;
         setSearchResults(results);
         if (query.trim() && results.length > 0) {
           const t = query.trim();
@@ -209,10 +213,13 @@ export default function Search() {
       } catch (err) {
         console.error(err);
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     }, 400);
-    return () => clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [query, category, filters, excludedIngredients]);
 
   useEffect(() => {

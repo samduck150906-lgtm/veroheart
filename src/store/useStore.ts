@@ -14,6 +14,7 @@ import {
   removeFavorite,
   addRecentView,
   getRecentViews,
+  getProductDetail,
   signOut as supabaseSignOut
 } from '../lib/supabase';
 import { notify } from './useNotification';
@@ -40,6 +41,26 @@ export const MAX_COMPARISON = 3;
  */
 const BOOT_TIMEOUT_MS = 8000;
 
+/**
+ * 제품 상세 요청 순번.
+ *
+ * 사용자가 A 를 눌렀다가 곧바로 B 로 넘어가면 두 요청이 동시에 떠 있게 된다.
+ * 순번 없이 응답 순서대로 반영하면 늦게 도착한 A 가 B 화면을 덮어써서,
+ * 주소는 B 인데 B 의 점수·분석 자리에 A 의 결과가 표시된다.
+ * 마지막으로 시작한 요청의 응답만 반영한다.
+ */
+let productDetailRequestId = 0;
+
+/**
+ * 세션 초기화 순번.
+ *
+ * initApp 은 watchdog(8초) 때문에 응답을 기다리는 도중에도 앱이 열린다. 그 사이
+ * 사용자가 로그아웃하면, 뒤늦게 도착한 초기화 결과가 userId/isLoggedIn 을 다시
+ * 켜서 세션 없이 로그인된 것처럼 보이는 상태가 만들어진다. 로그아웃·재초기화가
+ * 순번을 올리고, 지난 순번의 결과는 버린다.
+ */
+let sessionEpoch = 0;
+
 let adminDataSyncChannel: RealtimeChannel | null = null;
 let adminDataSyncTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -53,7 +74,7 @@ interface StoreState {
   pets: UserPetProfile[];
   /** 활성 반려동물 id (pets 중 하나) */
   activePetId: string | null;
-  updateProfile: (updates: Partial<UserPetProfile>) => void;
+  updateProfile: (updates: Partial<UserPetProfile>) => Promise<void>;
   /** 로그인 사용자의 모든 반려동물을 다시 불러온다 */
   fetchPets: () => Promise<void>;
   /** 활성 반려동물 전환 */
@@ -107,6 +128,11 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   initApp: async () => {
+    sessionEpoch += 1;
+    const epoch = sessionEpoch;
+    /** 이 초기화가 아직 최신인지 — 아니면 결과를 반영하지 않는다. */
+    const isCurrent = () => epoch === sessionEpoch;
+
     const bootWatchdog = setTimeout(() => {
       if (get().isInitializing) {
         console.warn('[VeRoRo] 초기화 응답이 늦어 먼저 화면을 엽니다.');
@@ -148,6 +174,7 @@ export const useStore = create<StoreState>((set, get) => ({
       }
 
       const user = await getInitialSessionUser();
+      if (!isCurrent()) return;
       if (!user) {
         set({
           isInitializing: false,
@@ -171,11 +198,17 @@ export const useStore = create<StoreState>((set, get) => ({
       supabase.auth.onAuthStateChange(handleAuthStateChange);
       set({ userId: user.id, isLoggedIn: isReal });
 
+      // 아래 조회는 모두 네트워크를 탄다. 사이에 로그아웃이 끼면 그 결과를
+      // 다시 채워 넣지 않도록 매 단계에서 순번을 확인한다.
+      const applyIfCurrent = (patch: Partial<StoreState>) => {
+        if (isCurrent()) set(patch);
+      };
+
       // Fetch Pet Profiles (모든 반려동물 — 다이어리/선택 지원)
       const pets = await getUserPets(user.id);
       if (pets && pets.length > 0) {
         const mapped = pets.map(mapPetProfileFromRow);
-        set({
+        applyIfCurrent({
           pets: mapped,
           activePetId: mapped[0].id,
           profile: mapped[0],
@@ -184,13 +217,13 @@ export const useStore = create<StoreState>((set, get) => ({
 
       // Fetch Favorites
       const favData = await getFavorites(user.id);
-      set({ favorites: favData });
+      applyIfCurrent({ favorites: favData });
 
       // Fetch Recent Views
       const recentData = await getRecentViews(user.id);
       if (recentData.length > 0) {
         const mapped = recentData.map(mapProductFromSupabaseRow).filter(Boolean) as Product[];
-        set({ recentViews: mapped });
+        applyIfCurrent({ recentViews: mapped });
       }
 
       await get().fetchProducts();
@@ -208,10 +241,19 @@ export const useStore = create<StoreState>((set, get) => ({
 
   updateProfile: async (updates) => {
     const { profile, savePet } = get();
+    const previous = profile;
     const newProfile = { ...profile, ...updates };
     // 로컬 즉시 반영
     set({ profile: newProfile });
-    await savePet(newProfile);
+
+    const saved = await savePet(newProfile);
+    // 저장에 실패하면 되돌린다. 몸무게·알레르기는 곧바로 적합도 점수에 반영되므로,
+    // 저장되지 않은 값을 남겨 두면 사용자는 저장된 프로필 기준이라 믿고 분석 결과를
+    // 보게 되고, 새로고침하면 그 값이 통째로 사라진다.
+    // (savePet 은 성공 시 서버가 돌려준 값으로 profile 을 다시 채운다.)
+    if (!saved && get().userId) {
+      set({ profile: previous });
+    }
   },
 
   fetchPets: async () => {
@@ -297,22 +339,19 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   fetchProductDetail: async (id) => {
+    productDetailRequestId += 1;
+    const requestId = productDetailRequestId;
+    const isStale = () => requestId !== productDetailRequestId;
+
     set({ isLoadingProducts: true, selectedProduct: null });
     try {
-      const { getProductDetail } = await import('../lib/supabase');
       const data = await getProductDetail(id);
-      if (data) {
-        set({ 
-          selectedProduct: data, 
-          isLoadingProducts: false 
-        });
-      } else {
-        set({ selectedProduct: null, isLoadingProducts: false });
-      }
+      if (isStale()) return;
+      set({ selectedProduct: data ?? null, isLoadingProducts: false });
     } catch (err) {
-      const { notify } = await import('./useNotification');
-      notify.error('상품 정보를 가져오지 못했습니다.');
       console.error(err);
+      if (isStale()) return;
+      notify.error('상품 정보를 가져오지 못했습니다.');
       set({ selectedProduct: null, isLoadingProducts: false });
     }
   },
@@ -367,9 +406,10 @@ export const useStore = create<StoreState>((set, get) => ({
   })),
 
   logout: async () => {
+    // 진행 중인 초기화 결과가 로그아웃 뒤에 도착해 세션을 되살리지 못하게 한다.
+    sessionEpoch += 1;
     try {
-      const { signOut } = await import('../lib/supabase');
-      await signOut();
+      await supabaseSignOut();
       // 개인화 상태를 모두 비운다 — recentViews를 남기면 다음 사용자에게
       // 이전 사용자의 '최근 본 제품'이 노출된다. isLoggedIn도 auth 리스너에
       // 의존하지 않고 즉시 내린다.
