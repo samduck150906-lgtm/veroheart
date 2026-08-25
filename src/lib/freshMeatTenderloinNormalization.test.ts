@@ -25,8 +25,14 @@ describe('fresh meat tenderloin normalization', () => {
   });
 
   it('does not turn adjacent chicken-family parts into fresh meat aliases', () => {
-    expect(exactDictionaryIds('닭간')).toEqual([]);
-    expect(exactDictionaryIds('닭지방')).toEqual([]);
+    // 인접 부위는 각자의 정규명으로 떨어져야 한다. 생육(chicken)으로 흡수되면
+    // 부위별 품질·알레르기 판정이 뭉개진다.
+    expect(exactDictionaryIds('닭간')).toEqual(['chicken_liver']);
+    expect(exactDictionaryIds('닭지방')).toEqual(['chicken_fat']);
     expect(exactDictionaryIds('닭연골')).toEqual([]);
+
+    for (const label of ['닭간', '닭지방', '닭연골']) {
+      expect(exactDictionaryIds(label), label).not.toContain('chicken');
+    }
   });
 });

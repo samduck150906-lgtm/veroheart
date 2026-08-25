@@ -33,8 +33,12 @@ describe('chicken-family dictionary coverage', () => {
     }
   });
 
-  it('documents current tenderloin coverage gap', () => {
-    expect(exactDictionaryIds('닭정육')).toEqual([]);
-    expect(exactDictionaryIds('닭 정육')).toEqual([]);
+  it('maps tenderloin labels to fresh chicken, not to the processed meal canonical', () => {
+    // 사전 확장(dfbaa72) 이후 '닭정육'은 생육(chicken)으로 해석된다.
+    // 중요한 건 가공 분말(chicken_meal)로 새지 않는 것이다 — 품질 등급이 뒤집힌다.
+    for (const label of ['닭정육', '닭 정육']) {
+      expect(exactDictionaryIds(label), label).toEqual(['chicken']);
+      expect(exactDictionaryIds(label), label).not.toContain('chicken_meal');
+    }
   });
 });

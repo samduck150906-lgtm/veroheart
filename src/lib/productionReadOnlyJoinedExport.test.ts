@@ -1,15 +1,17 @@
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { buildProductionReadOnlyJoinedExportReport } from './productionReadOnlyJoinedExport';
 
+// jsdom 환경에서는 import.meta.url 이 http:// 로 잡혀 fileURLToPath 가 던진다.
+// 저장소의 다른 SQL 검사 테스트와 같이 process.cwd() 기준 경로로 읽는다.
+const EXPORT_SQL_PATH = resolve(
+  process.cwd(),
+  'supabase/tests/manual/production_read_only_poultry_impact_export.sql',
+);
+
 function readExportSql(): string {
-  return readFileSync(
-    fileURLToPath(
-      new URL('../../supabase/tests/manual/production_read_only_poultry_impact_export.sql', import.meta.url),
-    ),
-    'utf8',
-  );
+  return readFileSync(EXPORT_SQL_PATH, 'utf8');
 }
 
 function executableSql(sql: string): string {

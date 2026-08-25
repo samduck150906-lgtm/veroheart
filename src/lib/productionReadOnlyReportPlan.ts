@@ -67,7 +67,7 @@ const DATASETS: ProductionReadOnlyDatasetPlan[] = [
   {
     dataset: 'canonical_ingredient_aliases',
     operations: ['select', 'count'],
-    purpose: 'Compare alias coverage without inserting or updating aliases.',
+    purpose: 'Compare alias coverage using select-only reads.',
   },
   {
     dataset: 'canonical_ingredient_allergen_map',

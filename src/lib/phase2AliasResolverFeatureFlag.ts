@@ -28,6 +28,13 @@ export interface Phase2AliasResolverFlaggedDecision {
   changed: false;
   status: 'disabled' | Phase2AliasResolverResult['status'];
   canonicalCandidate: Phase2AliasResolverMatch | null;
+  /**
+   * canonicalCandidate 를 펼쳐 놓은 읽기 전용 사본. 관측 리포트/섀도 메타데이터가
+   * 중첩 객체를 매번 옵셔널 체이닝하지 않도록 둔다. 후보가 없으면 모두 null.
+   */
+  canonicalName: string | null;
+  canonicalId: string | null;
+  aliasId: string | null;
   resolverResult: Phase2AliasResolverResult | null;
   reason:
     | 'feature_flag_disabled'
@@ -60,6 +67,9 @@ export function resolvePhase2AliasBehindFeatureFlag(
       changed: false,
       status: 'disabled',
       canonicalCandidate: null,
+      canonicalName: null,
+      canonicalId: null,
+      aliasId: null,
       resolverResult: null,
       reason: 'feature_flag_disabled',
     };
@@ -81,6 +91,9 @@ export function resolvePhase2AliasBehindFeatureFlag(
     changed: false,
     status: resolverResult.status,
     canonicalCandidate,
+    canonicalName: canonicalCandidate?.canonicalName ?? null,
+    canonicalId: canonicalCandidate?.canonicalId ?? null,
+    aliasId: canonicalCandidate?.aliasId ?? null,
     resolverResult,
     reason,
   };

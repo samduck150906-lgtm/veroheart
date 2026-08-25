@@ -55,6 +55,10 @@ function expectCurrentBreakdownShape(result: ReturnType<typeof getRecommendation
     healthSuitability: expect.any(Number),
     concernFit: expect.any(Number),
     allergyPenalty: expect.any(Number),
+    // 가금 알레르기 정책 v1.0(#88)에서 "같은 계열 주의" 감점이 분리돼 들어왔다.
+    // 직접 일치(allergyHits/allergyPenalty)와 계열 주의를 나눠 근거로 보여준다.
+    allergyCautions: expect.any(Array),
+    allergyCautionPenalty: expect.any(Number),
     preferencePenalty: expect.any(Number),
     preferenceLevel: expect.toSatisfy((value: unknown) => value === null || typeof value === 'number'),
     speciesMismatch: expect.any(Boolean),

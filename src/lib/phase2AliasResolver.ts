@@ -11,6 +11,8 @@ export interface Phase2AliasSeed {
   alias: string;
   canonicalName: string;
   canonicalId?: string;
+  /** 별칭 행 식별자. 관측 리포트에서 어떤 별칭이 매칭됐는지 되짚을 때 쓴다. */
+  aliasId?: string;
 }
 
 export interface Phase2AliasResolverInput {
@@ -29,6 +31,8 @@ export interface Phase2AliasResolverMatch {
   canonicalId?: string;
   matchedValue: string;
   matchKind: Phase2AliasMatchKind;
+  /** matchKind === 'alias' 일 때만 존재한다(정규명 직접 매칭에는 별칭이 없다). */
+  aliasId?: string;
 }
 
 export interface Phase2AliasResolverResult {
@@ -108,6 +112,7 @@ export function resolvePhase2Alias(input: Phase2AliasResolverInput): Phase2Alias
       canonicalId: aliasSeed.canonicalId,
       matchedValue: aliasSeed.alias,
       matchKind: 'alias',
+      aliasId: aliasSeed.aliasId,
     }));
 
   const canonicalMatches = (input.canonicals ?? [])

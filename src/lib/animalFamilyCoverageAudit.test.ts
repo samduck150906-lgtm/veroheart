@@ -33,8 +33,17 @@ describe('animal-family canonical coverage audit', () => {
     expect(byId.get('chicken')?.category).not.toBe(byId.get('chicken_meal')?.category);
   });
 
-  it('documents that most non-chicken animal sources currently lack separate meal canonicals', () => {
-    for (const missing of ['beef_meal', 'pork_meal', 'duck_meal', 'salmon_meal', 'turkey_meal']) {
+  it('documents which non-chicken animal sources have gained separate meal canonicals', () => {
+    // 사전 확장(dfbaa72)으로 오리·연어는 생육과 분말이 분리됐다.
+    for (const present of ['duck_meal', 'salmon_meal']) {
+      expect(byId.has(present), present).toBe(true);
+      expect(byId.get(present)?.category, present).toBe('processed_protein');
+    }
+  });
+
+  it('documents that the remaining animal sources still lack separate meal canonicals', () => {
+    // 소·돼지·칠면조는 아직 생육 정규명만 있어, 분말 라벨이 생육으로 뭉뚱그려진다.
+    for (const missing of ['beef_meal', 'pork_meal', 'turkey_meal']) {
       expect(byId.has(missing), missing).toBe(false);
     }
   });

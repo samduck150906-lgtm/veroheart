@@ -11,7 +11,7 @@ import {
   calculateCompatibilityScore,
   type CompatibilityGrade,
 } from '../utils/score';
-import { calculateCalories, checkCalciumPhosphorusRatio } from '../analysis/nutrition';
+import { calculateCalories, checkCalciumPhosphorusRatio, toPercent } from '../analysis/nutrition';
 import { runScoringPipeline, type ScoringPipelineResult } from '../analysis/scoringPipeline';
 import { evaluateDiseases, type ActiveDiseaseResult } from '../analysis/breedDiseaseEngine';
 import { concernsToDiseaseIds } from '../analysis/adapter';
@@ -309,15 +309,20 @@ export default function AnalysisResult() {
   // ── 영양 구성: 보장성분(실측)이 있으면 사용, 없으면 형태 기반 추정 ──
   const nutrition = useMemo(() => {
     const ga = product?.guaranteedAnalysis;
-    if (ga && ((ga.crudeProtein ?? 0) > 0 || (ga.crudeFat ?? 0) > 0)) {
-      const protein = ga.crudeProtein ?? 0;
-      const fat = ga.crudeFat ?? 0;
-      const fiber = ga.crudeFiber ?? 0;
-      const ash = ga.crudeAsh ?? 0;
-      const moisture = ga.moisture ?? 0;
+    // 보장성분은 문자열·null 이 섞여 들어오므로 계산 전에 숫자로 정리한다.
+    // (그대로 빼면 NaN 이 되어 영양소 탭에 "NaN%" 가 그대로 찍힌다.)
+    if (ga && (toPercent(ga.crudeProtein) > 0 || toPercent(ga.crudeFat) > 0)) {
+      const protein = toPercent(ga.crudeProtein);
+      const fat = toPercent(ga.crudeFat);
+      const fiber = toPercent(ga.crudeFiber);
+      const ash = toPercent(ga.crudeAsh);
+      const moisture = toPercent(ga.moisture);
       const carbs = Math.max(0, 100 - protein - fat - fiber - ash - moisture);
       const others = Math.max(0, 100 - protein - fat - carbs);
-      const kcal = product?.caloriesPer100g || calculateCalories(ga).kcalPer100g;
+      const labelKcal = Number(product?.caloriesPer100g);
+      const kcal = Number.isFinite(labelKcal) && labelKcal > 0
+        ? labelKcal
+        : calculateCalories(ga).kcalPer100g;
       return {
         protein: Math.round(protein),
         fat: Math.round(fat),

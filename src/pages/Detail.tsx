@@ -20,7 +20,7 @@ import {
   Share2,
 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
-import { useStore } from '../store/useStore';
+import { useStore, MAX_COMPARISON } from '../store/useStore';
 import FeedingLogForm from '../components/diary/FeedingLogForm';
 import { productTypeToFeedingType } from '../components/diary/feedingConstants';
 import { generateAnalysisReport } from '../utils/analysis';
@@ -764,7 +764,15 @@ export default function Detail() {
         isFav={isFav}
         isComparing={isComparing}
         onFav={() => toggleFavorite(product.id)}
-        onCompare={() => { if (isComparing) { removeFromComparison(product.id); } else { addToComparison(product.id); } }}
+        onCompare={() => {
+          if (isComparing) {
+            removeFromComparison(product.id);
+            return;
+          }
+          if (!addToComparison(product.id)) {
+            notify.warning(`비교는 최대 ${MAX_COMPARISON}개까지 담을 수 있어요.`);
+          }
+        }}
         onLog={openFeedingLog}
       />
 

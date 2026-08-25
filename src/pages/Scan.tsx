@@ -4,7 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import { useStore } from '../store/useStore';
 import { getProductByBarcode } from '../lib/supabase';
 
-type CamState = 'idle' | 'starting' | 'live' | 'denied' | 'unavailable';
+type CamState = 'idle' | 'starting' | 'live' | 'denied' | 'unavailable' | 'no-detector';
 
 /** 실험적 BarcodeDetector API — 표준 TS 타입이 없어 필요한 부분만 선언한다. */
 interface DetectedBarcode {
@@ -25,7 +25,6 @@ const BAR_PATTERN = Array.from({ length: 16 }, (_, i) => ({
 
 export default function Scan() {
   const navigate = useNavigate();
-  const { products } = useStore();
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -50,8 +49,10 @@ export default function Scan() {
       handledRef.current = true;
       setDetected(code);
       stopCamera();
-      // 1) 이미 로드된 상품의 바코드와 즉시 매칭
-      const local = products.find((p) => p.barcode === code);
+      // 1) 이미 로드된 상품의 바코드와 즉시 매칭.
+      //    이 효과는 마운트 때 한 번만 도는데 제품 목록은 그 뒤에 채워지므로,
+      //    클로저에 갇힌 값 대신 호출 시점의 스토어 값을 읽는다.
+      const local = useStore.getState().products.find((p) => p.barcode === code);
       if (local) {
         navigate(`/product/${local.id}`);
         return;
@@ -65,7 +66,7 @@ export default function Scan() {
       // 3) 폴백: 바코드를 검색어로 넘겨 검색 화면으로 인계
       navigate(`/search?q=${encodeURIComponent(code)}`);
     },
-    [products, navigate, stopCamera],
+    [navigate, stopCamera],
   );
 
   const scanLoop = useCallback(() => {
@@ -104,23 +105,31 @@ export default function Scan() {
       }
       setCamState('live');
 
+      // BarcodeDetector 가 없으면(iOS Safari 등) 아무리 비춰도 인식되지 않는다.
+      // 카메라만 켜 둔 채 "읽고 있어요"처럼 보이면 사용자는 계속 기다리게 되므로,
+      // 카메라를 끄고 직접 검색으로 안내한다.
       const BD = (window as unknown as { BarcodeDetector?: BarcodeDetectorCtor }).BarcodeDetector;
-      if (BD) {
-        try {
-          detectorRef.current = new BD({
-            formats: ['ean_13', 'ean_8', 'code_128', 'upc_a', 'upc_e', 'qr_code'],
-          });
-          rafRef.current = requestAnimationFrame(scanLoop);
-        } catch {
-          detectorRef.current = null;
-        }
+      if (!BD) {
+        stopCamera();
+        setCamState('no-detector');
+        return;
+      }
+      try {
+        detectorRef.current = new BD({
+          formats: ['ean_13', 'ean_8', 'code_128', 'upc_a', 'upc_e', 'qr_code'],
+        });
+        rafRef.current = requestAnimationFrame(scanLoop);
+      } catch {
+        detectorRef.current = null;
+        stopCamera();
+        setCamState('no-detector');
       }
     } catch (err) {
       const name = err instanceof DOMException ? err.name : '';
       if (name === 'NotAllowedError' || name === 'SecurityError') setCamState('denied');
       else setCamState('unavailable');
     }
-  }, [scanLoop]);
+  }, [scanLoop, stopCamera]);
 
   useEffect(() => {
     handledRef.current = false;
@@ -143,15 +152,14 @@ export default function Scan() {
   }, [torchOn]);
 
   const showLive = camState === 'live' || camState === 'starting';
-  const showFallback = camState === 'denied' || camState === 'unavailable';
+  const showFallback =
+    camState === 'denied' || camState === 'unavailable' || camState === 'no-detector';
 
   const hint = detected
     ? '제품을 찾았어'
     : showFallback
       ? '카메라를 쓸 수 없어. 직접 검색으로 넘어가자'
-      : detectorRef.current
-        ? '바코드를 읽고 있어…'
-        : '제품 뒷면 바코드를 사각형 안에 맞춰줘';
+      : '바코드를 읽고 있어…';
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#0A0A08', zIndex: 30, overflow: 'hidden', display: 'flex', flexDirection: 'column', maxWidth: '480px', margin: '0 auto' }}>
@@ -258,10 +266,27 @@ export default function Scan() {
             >
               직접 검색하기
             </button>
+            {camState === 'denied' && (
+              // 브라우저는 한 번 거절되면 다시 묻지 않는다. 설정에서 허용을 바꾼
+              // 뒤 앱을 껐다 켜지 않아도 되도록 재시도 경로를 열어 둔다.
+              <button
+                type="button"
+                onClick={() => { handledRef.current = false; startCamera(); }}
+                style={{
+                  width: '100%', marginTop: '10px', padding: '13px', background: 'none',
+                  border: '1.5px solid rgba(255,255,255,.22)', borderRadius: '12px',
+                  fontSize: '13.5px', fontWeight: 800, color: '#fff', cursor: 'pointer',
+                }}
+              >
+                카메라 다시 시도
+              </button>
+            )}
             <div style={{ textAlign: 'center', fontSize: '11.5px', color: '#8A8A7C', marginTop: '10px', lineHeight: 1.6 }}>
               {camState === 'denied'
                 ? '설정에서 카메라 접근을 허용하면 바로 스캔할 수 있어.'
-                : '이 기기에서는 카메라 스캔을 쓸 수 없어.'}
+                : camState === 'no-detector'
+                  ? '이 브라우저는 바코드 자동 인식을 지원하지 않아. 제품명으로 검색해 줘.'
+                  : '이 기기에서는 카메라 스캔을 쓸 수 없어.'}
             </div>
           </>
         ) : (

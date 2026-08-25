@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
-import { useStore } from '../store/useStore';
+import { useStore, MAX_COMPARISON } from '../store/useStore';
 import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import { buildAllergyDisplayState, type AllergyDisplayLevel } from '../utils/allergyDisplay';
 import { normalizeProductDisplayName } from '../utils/productDisplay';
@@ -9,8 +9,8 @@ import { VR } from '../lib/veroroDesign';
 import type { Product } from '../types';
 import type { UserPetProfile } from '../types';
 
-/** 비교표에 한 번에 세울 수 있는 최대 제품 수 — 프로토타입 문구('최대 3개')와 동일 */
-const MAX_COLUMNS = 3;
+/** 비교표 열 수 = 스토어가 담기를 허용하는 상한. 두 값이 갈라지면 담긴 제품이 사라진다. */
+const MAX_COLUMNS = MAX_COMPARISON;
 
 interface Column {
   product: Product;

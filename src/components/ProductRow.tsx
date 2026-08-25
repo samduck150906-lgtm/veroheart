@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import ProductThumb from './ProductThumb';
-import { useStore } from '../store/useStore';
+import { useStore, MAX_COMPARISON } from '../store/useStore';
+import { notify } from '../store/useNotification';
 import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import { normalizeProductDisplayName } from '../utils/productDisplay';
 import { fitShortLabel, gradePalette, VR } from '../lib/veroroDesign';
@@ -71,7 +72,15 @@ export default function ProductRow({ product }: ProductRowProps) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginTop: '8px' }}>
           <button
             type="button"
-            onClick={() => (inCompare ? removeFromComparison(product.id) : addToComparison(product.id))}
+            onClick={() => {
+              if (inCompare) {
+                removeFromComparison(product.id);
+                return;
+              }
+              if (!addToComparison(product.id)) {
+                notify.warning(`비교는 최대 ${MAX_COMPARISON}개까지 담을 수 있어요.`);
+              }
+            }}
             style={{
               padding: '5px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: 800, cursor: 'pointer',
               border: `1.5px solid ${inCompare ? 'var(--vr-inverse)' : 'var(--vr-line)'}`,

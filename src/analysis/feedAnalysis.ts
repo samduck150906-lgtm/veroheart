@@ -16,6 +16,7 @@ import { allergyCautionMatches, allergyIngredientNames } from './allergyFamilyMa
 import type { GuaranteedAnalysis } from './types';
 import {
   toDryMatter,
+  toPercent,
   calculateCalories,
   validateAAFCO,
   checkCalciumPhosphorusRatio,
@@ -153,11 +154,12 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
   let caP: FeedAnalysis['caP'] = { ratio: null, note: null };
 
   if (hasNutritionData && ga) {
-    const protein = ga.crudeProtein ?? 0;
-    const fat = ga.crudeFat ?? 0;
-    const fiber = ga.crudeFiber ?? 0;
-    const ash = ga.crudeAsh ?? 0;
-    const moisture = ga.moisture ?? 0;
+    // 보장성분은 문자열·null·범위 밖 값이 섞여 들어올 수 있어 숫자로 정리한 뒤 쓴다.
+    const protein = toPercent(ga.crudeProtein);
+    const fat = toPercent(ga.crudeFat);
+    const fiber = toPercent(ga.crudeFiber);
+    const ash = toPercent(ga.crudeAsh);
+    const moisture = toPercent(ga.moisture);
     const carb = Math.max(0, Math.round((100 - protein - fat - fiber - ash - moisture) * 10) / 10);
     macros = { protein, fat, fiber, ash, moisture, carb };
 
@@ -169,12 +171,14 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
     };
 
     const calc = calculateCalories(ga);
-    const measuredKcal = product.caloriesPer100g && product.caloriesPer100g > 0;
+    // 라벨 열량도 문자열로 들어올 수 있다 — 유한한 양수일 때만 실측치로 인정한다.
+    const labelKcal = Number(product.caloriesPer100g);
+    const measuredKcal = Number.isFinite(labelKcal) && labelKcal > 0;
     calories = {
-      per100g: measuredKcal ? Math.round(product.caloriesPer100g as number) : calc.kcalPer100g,
-      perKg: measuredKcal ? Math.round((product.caloriesPer100g as number) * 10) : calc.kcalPerKg,
+      per100g: measuredKcal ? Math.round(labelKcal) : calc.kcalPer100g,
+      perKg: measuredKcal ? Math.round(labelKcal * 10) : calc.kcalPerKg,
       distribution: { protein: calc.distribution.protein, fat: calc.distribution.fat, carb: calc.distribution.carbs },
-      measured: Boolean(measuredKcal),
+      measured: measuredKcal,
     };
 
     if (productType === 'complete') {
@@ -182,7 +186,12 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
       aafco = { evaluated: true, passed: res.passed, details: res.details, label: aafco.label };
     }
 
-    caP = { ratio: ga.calcium && ga.phosphorus ? ga.calcium / ga.phosphorus : null, note: checkCalciumPhosphorusRatio(ga) };
+    const calciumPct = toPercent(ga.calcium);
+    const phosphorusPct = toPercent(ga.phosphorus);
+    caP = {
+      ratio: calciumPct > 0 && phosphorusPct > 0 ? calciumPct / phosphorusPct : null,
+      note: checkCalciumPhosphorusRatio(ga),
+    };
   }
 
   // ── 2) 원료 품질 판정 ──
@@ -282,14 +291,19 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
 
   // ── 5) 1일 권장 급여량 (실제 열량 기반) ──
   let feeding: FeedAnalysis['feeding'] = null;
-  if (profile.weightKg && profile.weightKg > 0 && productType === 'complete') {
-    const kcalFallback = { complete: 380 } as const;
-    const kcalPer100g = calories?.per100g && calories.per100g > 0 ? calories.per100g : kcalFallback.complete;
-    const measured = Boolean(calories?.per100g && calories.per100g > 0);
-    const rer = 70 * Math.pow(profile.weightKg, 0.75);
+  // 몸무게는 프로필 입력값이라 문자열·0·비정상 값이 들어올 수 있다. 유한한 양수일
+  // 때만 계산하고, 결과가 유한하지 않으면 급여량을 내보내지 않는다(화면 NaN 방지).
+  const weightKg = Number(profile.weightKg);
+  if (Number.isFinite(weightKg) && weightKg > 0 && productType === 'complete') {
+    const kcalFallback = 380;
+    const measured = Boolean(calories?.per100g && Number.isFinite(calories.per100g) && calories.per100g > 0);
+    const kcalPer100g = measured ? (calories as { per100g: number }).per100g : kcalFallback;
+    const rer = 70 * Math.pow(weightKg, 0.75);
     const der = rer * derFactor(profile);
     const grams = Math.round((der / kcalPer100g) * 100);
-    feeding = { gramsPerDay: grams, kcalPer100g: Math.round(kcalPer100g), measured, derKcal: Math.round(der) };
+    if (Number.isFinite(grams) && grams > 0) {
+      feeding = { gramsPerDay: grams, kcalPer100g: Math.round(kcalPer100g), measured, derKcal: Math.round(der) };
+    }
   }
 
   return {

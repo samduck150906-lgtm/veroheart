@@ -390,12 +390,27 @@ export async function getFavorites(userId: string): Promise<string[]> {
   return ((data ?? []) as SupabaseFavoriteRow[]).map((r) => r.product_id);
 }
 
-export async function addFavorite(userId: string, productId: string) {
-  await supabase.from('favorites').upsert({ user_id: userId, product_id: productId });
+export async function addFavorite(userId: string, productId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('favorites')
+    .upsert({ user_id: userId, product_id: productId }, { onConflict: 'user_id,product_id' });
+  if (error) {
+    console.error('addFavorite error:', error.message);
+    return false;
+  }
+  return true;
 }
 
-export async function removeFavorite(userId: string, productId: string) {
-  await supabase.from('favorites').delete().match({ user_id: userId, product_id: productId });
+export async function removeFavorite(userId: string, productId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('favorites')
+    .delete()
+    .match({ user_id: userId, product_id: productId });
+  if (error) {
+    console.error('removeFavorite error:', error.message);
+    return false;
+  }
+  return true;
 }
 
 // ─── Recent Views ────────────────────────────────────────────────────────────

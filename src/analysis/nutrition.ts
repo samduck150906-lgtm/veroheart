@@ -6,10 +6,32 @@
  */
 import type { GuaranteedAnalysis } from './types';
 
+/**
+ * 보장성분 값을 계산에 쓸 수 있는 유한한 퍼센트로 정리한다.
+ *
+ * DB·크롤링 데이터에는 문자열("28"), 단위가 붙은 문자열("28%"), null, 음수가 섞여
+ * 들어온다. 그대로 산술에 넣으면 NaN 이 화면까지 새어 나가 "NaNkcal" 처럼 보인다.
+ * 숫자로 해석되지 않으면 fallback 을 쓰고, 퍼센트는 0~100 으로 가둔다.
+ */
+export function toPercent(value: unknown, fallback = 0): number {
+  const n = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(100, Math.max(0, n));
+}
+
+/** 퍼센트 제약이 없는 값(칼슘·인 등)을 유한한 양수로 정리한다. */
+function toPositiveNumber(value: unknown): number | null {
+  const n = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return n;
+}
+
 /** as-fed % → 건물 기준 % */
 export function toDryMatter(asFedPercent: number, moisturePercent: number): number | null {
-  if (moisturePercent >= 100) return null;
-  return (asFedPercent / (100 - moisturePercent)) * 100;
+  const asFed = toPercent(asFedPercent);
+  const moisture = toPercent(moisturePercent);
+  if (moisture >= 100) return null;
+  return (asFed / (100 - moisture)) * 100;
 }
 
 /**
@@ -21,11 +43,11 @@ export function calculateCalories(ga: GuaranteedAnalysis): {
   kcalPerKg: number;
   distribution: { protein: number; fat: number; carbs: number };
 } {
-  const protein = ga.crudeProtein ?? 0;
-  const fat = ga.crudeFat ?? 0;
-  const fiber = ga.crudeFiber ?? 0;
-  const ash = ga.crudeAsh ?? 0;
-  const moisture = ga.moisture ?? 0;
+  const protein = toPercent(ga.crudeProtein);
+  const fat = toPercent(ga.crudeFat);
+  const fiber = toPercent(ga.crudeFiber);
+  const ash = toPercent(ga.crudeAsh);
+  const moisture = toPercent(ga.moisture);
 
   const nfe = Math.max(0, 100 - protein - fat - fiber - ash - moisture);
 
@@ -60,9 +82,9 @@ export function validateAAFCO(
   const details: string[] = [];
   let passed = true;
 
-  const moisture = ga.moisture ?? 10;
-  const proteinDMB = toDryMatter(ga.crudeProtein ?? 0, moisture) ?? 0;
-  const fatDMB = toDryMatter(ga.crudeFat ?? 0, moisture) ?? 0;
+  const moisture = toPercent(ga.moisture, 10);
+  const proteinDMB = toDryMatter(toPercent(ga.crudeProtein), moisture) ?? 0;
+  const fatDMB = toDryMatter(toPercent(ga.crudeFat), moisture) ?? 0;
 
   const isCat = species === 'cat';
   const minProtein = isCat ? 26 : 18;
@@ -84,10 +106,14 @@ export function validateAAFCO(
 
 /** 칼슘:인 비율 점검 (권장 1:1 ~ 2:1) */
 export function checkCalciumPhosphorusRatio(ga: GuaranteedAnalysis): string | null {
-  if (!ga.calcium || !ga.phosphorus) return null;
-  const ratio = ga.calcium / ga.phosphorus;
+  const calcium = toPositiveNumber(ga.calcium);
+  const phosphorus = toPositiveNumber(ga.phosphorus);
+  if (calcium === null || phosphorus === null) return null;
+  const ratio = calcium / phosphorus;
   if (ratio < 1.0 || ratio > 2.0) {
-    return `칼슘:인 비율이 권장 범위를 벗어나요 (현재 1:${ratio.toFixed(2)}, 권장 1:1~2:1).`;
+    // ratio 는 칼슘/인 이므로 "칼슘:인 = ratio:1" 로 적는다.
+    // 예전에는 `1:${ratio}` 로 적어 칼슘 과다를 인 과다처럼 뒤집어 보여줬다.
+    return `칼슘:인 비율이 권장 범위를 벗어나요 (현재 ${ratio.toFixed(2)}:1, 권장 1:1~2:1).`;
   }
   return null;
 }

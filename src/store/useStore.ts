@@ -16,11 +16,20 @@ import {
   getRecentViews,
   signOut as supabaseSignOut
 } from '../lib/supabase';
+import { notify } from './useNotification';
 import {
   mapProductFromSupabaseRow,
   mapPetProfileFromRow,
   ageGroupFromAge,
 } from '../lib/supabaseRowTypes';
+
+/**
+ * 비교함에 담을 수 있는 최대 제품 수.
+ * 비교 화면이 나란히 세우는 열 수와 반드시 같아야 한다 — 예전에는 스토어가 4개까지
+ * 받아들이고 화면은 3개만 그려서, 4번째 제품이 "담김"으로 표시된 채 비교표에서
+ * 조용히 사라졌다.
+ */
+export const MAX_COMPARISON = 3;
 
 let adminDataSyncChannel: RealtimeChannel | null = null;
 let adminDataSyncTimer: ReturnType<typeof setTimeout> | null = null;
@@ -56,7 +65,8 @@ interface StoreState {
   recentViews: Product[];
   trackRecentView: (productId: string) => void;
   comparisonList: string[];
-  addToComparison: (productId: string) => void;
+  /** 담기에 성공하면 true, 이미 담겼거나 상한을 넘겨 거절되면 false. */
+  addToComparison: (productId: string) => boolean;
   removeFromComparison: (productId: string) => void;
   logout: () => Promise<void>;
 }
@@ -291,10 +301,27 @@ export const useStore = create<StoreState>((set, get) => ({
   toggleFavorite: async (id) => {
     const { userId, favorites } = get();
     const isFav = favorites.includes(id);
-    set({ favorites: isFav ? favorites.filter(fid => fid !== id) : [...favorites, id] });
-    if (userId) {
-      if (isFav) await removeFavorite(userId, id);
-      else await addFavorite(userId, id);
+
+    // 비로그인 상태에서는 저장할 곳이 없다. 낙관적으로 켜 두면 새로고침에서
+    // 조용히 사라지므로, 상태를 바꾸지 않고 로그인이 필요하다고 알린다.
+    if (!userId) {
+      notify.warning('찜하려면 로그인이 필요해요.');
+      return;
+    }
+
+    const next = isFav ? favorites.filter((fid) => fid !== id) : [...favorites, id];
+    set({ favorites: next });
+
+    const ok = isFav ? await removeFavorite(userId, id) : await addFavorite(userId, id);
+    if (!ok) {
+      // 서버 저장이 실패하면 낙관적 변경을 되돌린다 — UI 와 DB 가 갈라지면
+      // 새로고침 시점에 찜이 사라져 사용자가 저장된 줄 알고 잃는다.
+      const current = get().favorites;
+      const rolledBack = isFav
+        ? (current.includes(id) ? current : [...current, id])
+        : current.filter((fid) => fid !== id);
+      set({ favorites: rolledBack });
+      notify.error('찜 상태를 저장하지 못했어요. 잠시 후 다시 시도해 주세요.');
     }
   },
 
@@ -308,11 +335,13 @@ export const useStore = create<StoreState>((set, get) => ({
     if (userId) await addRecentView(userId, productId);
   },
   comparisonList: [],
-  addToComparison: (id) => set((state) => ({
-    comparisonList: state.comparisonList.includes(id) 
-      ? state.comparisonList 
-      : [...state.comparisonList, id].slice(0, 4) // max 4
-  })),
+  addToComparison: (id) => {
+    const { comparisonList } = get();
+    // 이미 담겼거나 상한을 넘기면 조용히 버리지 않고 거절을 알린다.
+    if (comparisonList.includes(id) || comparisonList.length >= MAX_COMPARISON) return false;
+    set({ comparisonList: [...comparisonList, id] });
+    return true;
+  },
   removeFromComparison: (id) => set((state) => ({
     comparisonList: state.comparisonList.filter(cid => cid !== id)
   })),
