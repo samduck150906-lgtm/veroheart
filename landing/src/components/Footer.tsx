@@ -22,7 +22,8 @@ export function Footer() {
               {COMPANY.tradeName} · 대표 {COMPANY.representative}
             </span>
             <span className="block">
-              사업자등록번호 {COMPANY.bizRegNo} · 통신판매업 {COMPANY.mailOrderBizNo}
+              사업자등록번호 {COMPANY.bizRegNo}
+              {COMPANY.mailOrderBizNo ? ` · 통신판매업 ${COMPANY.mailOrderBizNo}` : ""}
             </span>
             <span className="block">{COMPANY.address}</span>
             <span className="block">

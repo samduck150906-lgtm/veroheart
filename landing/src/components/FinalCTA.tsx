@@ -2,6 +2,7 @@
 
 import { Reveal } from "@/components/Reveal";
 import { trackEvent } from "@/lib/analytics";
+import { CONTACT_MAILTO } from "@/constants/company";
 
 export function FinalCTA() {
   return (
@@ -25,7 +26,7 @@ export function FinalCTA() {
               출시 알림 받기
             </a>
             <a
-              href="mailto:veroro@eternalsix.com?subject=%5BVeRoRo%5D%20%EB%B2%A0%ED%83%80%ED%85%8C%EC%8A%A4%ED%84%B0%20%EC%8B%A0%EC%B2%AD"
+              href={CONTACT_MAILTO("[VeRoRo] 베타테스터 신청")}
               onClick={() => trackEvent("beta_apply_click", { from: "final_cta" })}
               className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-ink-950/15 px-7 py-4 text-sm font-bold text-ink-950 transition hover:bg-paper sm:w-auto"
             >

@@ -2,6 +2,7 @@ import { useState, useEffect, type ReactNode } from 'react';
 import { ShieldCheck, Lock, Loader2 } from 'lucide-react';
 import { adminWrite } from '../../lib/supabase';
 import { readAdminToken, storeAdminToken } from '../../lib/adminSession';
+import { COMPANY } from '../../constants/companyInfo';
 import './admin.css';
 
 interface AdminAuthGuardProps {
@@ -124,8 +125,8 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
             <div>신규 관리자 가입: 불가</div>
             <div style={{ marginTop: '10px' }}>
               계정 문의:{' '}
-              <a href="mailto:veroro@eternalsix.com" style={{ color: '#6366f1' }}>
-                veroro@eternalsix.com
+              <a href={`mailto:${COMPANY.email}`} style={{ color: '#6366f1' }}>
+                {COMPANY.email}
               </a>
             </div>
           </div>

@@ -1,5 +1,7 @@
 /** VeRoRo(베로로) 법률 문서 — 랜딩 정적 페이지용 (앱 내용과 동기화 권장) */
 
+import { COMPANY } from "@/constants/company";
+
 export type LegalSection = {
   heading: string;
   paragraphs: string[];
@@ -20,7 +22,7 @@ export const TERMS_DOC: LegalDoc = {
     {
       heading: "제1조 (목적)",
       paragraphs: [
-        '본 약관은 이터널식스(이하 "회사")가 제공하는 반려동물 성분 분석·정보 제공·커뮤니티 및 관련 전자상거래 서비스 VeRoRo(이하 통칭하여 "서비스")의 이용과 관련하여 회사와 이용자 간 권리·의무 및 책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.',
+        `본 약관은 ${COMPANY.tradeName}(이하 "회사")가 제공하는 반려동물 성분 분석·정보 제공·커뮤니티 및 관련 전자상거래 서비스 VeRoRo(이하 통칭하여 "서비스")의 이용과 관련하여 회사와 이용자 간 권리·의무 및 책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.`,
       ],
     },
     {
@@ -119,8 +121,8 @@ export const TERMS_DOC: LegalDoc = {
     {
       heading: "제13조 (회사 정보)",
       paragraphs: [
-        "상호: 이터널식스 · 대표: 성아름 · 사업자등록번호: 303-28-65658 · 통신판매업 신고번호: 제 2025-수원영통-1499호",
-        "주소: 경기도 수원시 영통구 삼성로 186-1 4층 · 고객센터: 010-8111-9370 · 이메일: veroro@eternalsix.com",
+        `상호: ${COMPANY.tradeName} · 대표: ${COMPANY.representative} · 사업자등록번호: ${COMPANY.bizRegNo}${COMPANY.mailOrderBizNo ? ` · 통신판매업 신고번호: ${COMPANY.mailOrderBizNo}` : ""}`,
+        `주소: ${COMPANY.address} · 고객센터: ${COMPANY.phone} · 이메일: ${COMPANY.email}`,
       ],
     },
   ],
@@ -130,7 +132,7 @@ export const PRIVACY_DOC: LegalDoc = {
   title: "VeRoRo(베로로) 개인정보처리방침",
   effective: "2026년 4월 12일",
   intro:
-    '이터널식스(이하 "회사")는 VeRoRo(베로로) 서비스(이하 "서비스")와 관련하여 「개인정보 보호법」 등 관련 법령을 준수하며, 이용자의 개인정보가 보호받을 수 있도록 다음과 같이 개인정보처리방침을 수립·공개합니다.',
+    `${COMPANY.tradeName}(이하 "회사")는 VeRoRo(베로로) 서비스(이하 "서비스")와 관련하여 「개인정보 보호법」 등 관련 법령을 준수하며, 이용자의 개인정보가 보호받을 수 있도록 다음과 같이 개인정보처리방침을 수립·공개합니다.`,
   sections: [
     {
       heading: "1. 수집하는 개인정보 항목 및 방법",
@@ -212,7 +214,7 @@ export const PRIVACY_DOC: LegalDoc = {
       heading: "10. 개인정보 보호책임자",
       paragraphs: [
         "회사는 개인정보 처리에 관한 업무를 총괄하여 책임지고, 이용자의 불만 처리 및 피해 구제를 위해 개인정보 보호책임자를 지정합니다.",
-        "연락처: 010-8111-9370 · veroro@eternalsix.com",
+        `연락처: ${COMPANY.phone} · ${COMPANY.email}`,
       ],
     },
     {
@@ -282,8 +284,8 @@ export const REFUND_DOC: LegalDoc = {
     {
       heading: "고객센터",
       paragraphs: [
-        "전화: 010-8111-9370",
-        "이메일: veroro@eternalsix.com",
+        `전화: ${COMPANY.phone}`,
+        `이메일: ${COMPANY.email}`,
         "운영시간: 평일 10:00 ~ 18:00 (점심 12:00 ~ 13:00 제외), 주말·공휴일 휴무",
       ],
     },

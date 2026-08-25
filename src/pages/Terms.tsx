@@ -1,3 +1,5 @@
+import { COMPANY } from '../constants/companyInfo';
+
 export default function Terms() {
   return (
     <div style={{ padding: '18px 2px 40px', lineHeight: 1.7 }}>
@@ -9,7 +11,7 @@ export default function Terms() {
       <div style={{ fontSize: '12.5px', color: 'var(--vr-body-2)' }}>
         <p style={{ fontSize: '14px', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--vr-ink)', margin: '18px 0 6px' }}>제1조 (목적)</p>
         <p>
-          본 약관은 이터널식스(이하 &quot;회사&quot;)가 제공하는 반려동물 성분 분석·정보 제공·커뮤니티 및 관련 전자상거래
+          본 약관은 {COMPANY.tradeName}(이하 &quot;회사&quot;)가 제공하는 반려동물 성분 분석·정보 제공·커뮤니티 및 관련 전자상거래
           서비스 VeRoRo(이하 통칭하여 &quot;서비스&quot;)의 이용과 관련하여 회사와
           이용자 간 권리·의무 및 책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.
         </p>
@@ -98,12 +100,13 @@ export default function Terms() {
 
         <p style={{ fontSize: '14px', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--vr-ink)', margin: '18px 0 6px' }}>제13조 (회사 정보)</p>
         <p>
-          상호: 이터널식스 · 대표: 성아름 · 사업자등록번호: 303-28-65658 · 통신판매업 신고번호: 제 2025-수원영통-1499호
+          상호: {COMPANY.tradeName} · 대표: {COMPANY.representative} · 사업자등록번호: {COMPANY.bizRegNo}
+          {COMPANY.mailOrderBizNo && ` · 통신판매업 신고번호: ${COMPANY.mailOrderBizNo}`}
           <br />
-          주소: 경기도 수원시 영통구 삼성로 186-1 4층 · 고객센터:{' '}
-          <a href="tel:010-8111-9370" style={{ color: 'var(--vr-yellow-deep)' }}>010-8111-9370</a>
+          주소: {COMPANY.address} · 고객센터:{' '}
+          <a href={COMPANY.phoneTelHref} style={{ color: 'var(--vr-yellow-deep)' }}>{COMPANY.phone}</a>
           {' · '}
-          <a href="mailto:veroro@eternalsix.com" style={{ color: 'var(--vr-yellow-deep)' }}>veroro@eternalsix.com</a>
+          <a href={`mailto:${COMPANY.email}`} style={{ color: 'var(--vr-yellow-deep)' }}>{COMPANY.email}</a>
         </p>
       </div>
     </div>

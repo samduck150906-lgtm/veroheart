@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { COMPANY } from "@/constants/company";
 
 const SITE_URL = "https://veroro.life";
 
@@ -41,10 +42,10 @@ const jsonLd = [
   {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "이터널식스",
+    name: COMPANY.tradeName,
     url: SITE_URL,
     logo: `${SITE_URL}/veroro-logo.png`,
-    email: "veroro@eternalsix.com",
+    email: COMPANY.email,
   },
   {
     "@context": "https://schema.org",

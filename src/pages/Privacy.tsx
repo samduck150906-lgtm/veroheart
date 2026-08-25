@@ -15,8 +15,12 @@ export default function Privacy() {
           <br />
           사업자등록번호 {COMPANY.bizRegNo}
           <br />
-          통신판매업 {COMPANY.mailOrderBizNo}
-          <br />
+          {COMPANY.mailOrderBizNo && (
+            <>
+              통신판매업 {COMPANY.mailOrderBizNo}
+              <br />
+            </>
+          )}
           연락처 {COMPANY.phone}
           <br />
           주소 {COMPANY.address}
