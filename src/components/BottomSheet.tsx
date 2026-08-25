@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+import { lockAppScroll, unlockAppScroll } from '../utils/scroll';
 
 interface BottomSheetProps {
   isOpen: boolean;
@@ -27,16 +28,17 @@ export default function BottomSheet({
   const [isRendered, setIsRendered] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
-      // 열릴 때 즉시 마운트(등장) → 닫힐 때는 트랜지션 후 언마운트. 의도된 enter/exit 패턴.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsRendered(true);
-      document.body.style.overflow = 'hidden';
-    } else {
+    if (!isOpen) {
       const timer = setTimeout(() => setIsRendered(false), 300); // match transition duration
-      document.body.style.overflow = 'unset';
       return () => clearTimeout(timer);
     }
+    // 열릴 때 즉시 마운트(등장) → 닫힐 때는 트랜지션 후 언마운트. 의도된 enter/exit 패턴.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsRendered(true);
+    // 시트가 열려 있는 동안 뒤 화면을 잠근다. 정리 함수를 두어야 시트 안에서
+    // 화면을 이동해 컴포넌트가 통째로 사라져도 잠금이 남지 않는다.
+    lockAppScroll();
+    return () => unlockAppScroll();
   }, [isOpen]);
 
   // Esc 로 닫기(접근성)

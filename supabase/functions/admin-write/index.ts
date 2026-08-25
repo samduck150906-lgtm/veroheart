@@ -565,6 +565,22 @@ serve(async (req) => {
     if (err instanceof ValidationError) {
       return json({ error: err.message }, 400, cors);
     }
+
+    // 외래 키 위반(23503)은 운영자가 바로 조치할 수 있는 상황이다.
+    // 일반 500 문구로 뭉개면 "왜 삭제가 안 되는지" 알 수 없어 재시도만 반복하게 된다.
+    const code = (err as { code?: string } | null)?.code;
+    if (code === '23503') {
+      console.error(`admin-write action=${action} actor=${actor} FK violation:`, err);
+      return json(
+        {
+          error:
+            '이 항목을 참조하는 데이터가 남아 있어 삭제할 수 없습니다. 연결된 제품·성분·리뷰를 먼저 정리해 주세요.',
+        },
+        409,
+        cors,
+      );
+    }
+
     // 내부 오류 전문은 서버 로그에만 남기고, 클라이언트에는 일반 메시지를 준다.
     console.error(`admin-write action=${action} actor=${actor} failed:`, err);
     return json({ error: '요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.' }, 500, cors);

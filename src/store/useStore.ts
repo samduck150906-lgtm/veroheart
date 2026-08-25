@@ -31,6 +31,15 @@ import {
  */
 export const MAX_COMPARISON = 3;
 
+/**
+ * 초기화 대기 상한(ms).
+ *
+ * initApp 은 예외는 잡지만, 모바일 네트워크에서 요청이 거부도 응답도 하지 않고
+ * 매달려 있으면 catch 가 돌지 않아 스플래시에 영영 갇힌다. 이 시간이 지나면
+ * 남은 조회는 계속 두되 화면부터 열어 준다.
+ */
+const BOOT_TIMEOUT_MS = 8000;
+
 let adminDataSyncChannel: RealtimeChannel | null = null;
 let adminDataSyncTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -98,6 +107,13 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   initApp: async () => {
+    const bootWatchdog = setTimeout(() => {
+      if (get().isInitializing) {
+        console.warn('[VeRoRo] 초기화 응답이 늦어 먼저 화면을 엽니다.');
+        set({ isInitializing: false });
+      }
+    }, BOOT_TIMEOUT_MS);
+
     try {
       const scheduleProductRefresh = () => {
         if (adminDataSyncTimer) clearTimeout(adminDataSyncTimer);
@@ -183,6 +199,10 @@ export const useStore = create<StoreState>((set, get) => ({
       console.error('initApp err:', err);
       set({ isInitializing: false });
       get().fetchProducts();
+    } finally {
+      clearTimeout(bootWatchdog);
+      // 어느 경로로 빠져나오든 스플래시는 반드시 닫는다.
+      if (get().isInitializing) set({ isInitializing: false });
     }
   },
 
