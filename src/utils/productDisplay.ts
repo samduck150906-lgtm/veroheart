@@ -63,6 +63,33 @@ export function normalizeProductDisplayName(product: NameSource): string {
   return s.length >= 2 ? s : raw;
 }
 
+/**
+ * 브랜드 자리에 들어온 '수집 출처' 라벨.
+ *
+ * 대량 임포트가 판매처 이름을 brand_name 에 그대로 넣어서, 운영 DB 의 제품 458개가
+ * 전부 '쿠팡검색'(438) 또는 '쿠팡상품'(20) 을 브랜드로 갖고 있다. 이건 브랜드가 아니라
+ * 데이터를 어디서 가져왔는지를 뜻하는 내부 값이라 사용자에게 보여줄 것이 아니다.
+ *
+ * 진짜 브랜드는 긴 제품명 안에 섞여 있어 추출이 필요하다 — 그건 데이터 작업이고,
+ * 여기서는 내부 라벨을 화면에 내보내지 않는 것까지만 한다.
+ */
+const SOURCE_LABEL_BRANDS = new Set(['쿠팡검색', '쿠팡상품', '쿠팡', 'coupang']);
+
+/**
+ * 화면에 쓸 브랜드명. 수집 출처 라벨이면 빈 문자열을 돌려주고, 호출부는 브랜드 줄을 숨긴다.
+ */
+export function resolveBrandLabel(product: NameSource): string {
+  const brand = (product.brand ?? '').trim();
+  if (!brand) return '';
+  return SOURCE_LABEL_BRANDS.has(brand.toLowerCase()) ? '' : brand;
+}
+
+/** 브랜드로 쓸 수 없는 수집 출처 라벨인지 — 브랜드 목록·자동완성에서 걸러낸다. */
+export function isSourceLabelBrand(brand: string | null | undefined): boolean {
+  const value = (brand ?? '').trim().toLowerCase();
+  return value.length > 0 && SOURCE_LABEL_BRANDS.has(value);
+}
+
 /** 카드 등에서 너무 긴 제목을 안전하게 자를 때 (CSS clamp 보조용, 말줄임 포함) */
 export function truncateName(name: string, max = 60): string {
   const n = name.trim();

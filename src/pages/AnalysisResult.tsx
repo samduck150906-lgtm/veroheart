@@ -379,7 +379,7 @@ export default function AnalysisResult() {
   return (
     <div style={{ padding: '0 0 120px' }}>
       <Helmet>
-        <title>{product.name} 성분 분석 결과 | 베로로</title>
+        <title>{`${product.name} 성분 분석 결과 | 베로로`}</title>
         <meta name="description" content={`${product.name} 성분 분석 결과 — ${grade}등급`} />
       </Helmet>
 

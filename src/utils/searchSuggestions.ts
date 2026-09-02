@@ -5,6 +5,7 @@
  * 입력어와 일치하는 후보를 브랜드 → 제품 → 성분 순으로 모아 반환한다.
  * 접두 일치(prefix)를 부분 일치보다 우선한다.
  */
+import { isSourceLabelBrand } from './productDisplay';
 
 export type SuggestionKind = 'brand' | 'product' | 'ingredient';
 
@@ -58,7 +59,10 @@ export function buildSearchSuggestions(
   // ── 브랜드 (일치 브랜드, 제품 수 많은 순) ──
   const brandCount = new Map<string, number>();
   for (const p of products) {
-    if (p.brand) brandCount.set(p.brand, (brandCount.get(p.brand) ?? 0) + 1);
+    // '쿠팡검색' 같은 수집 출처 라벨은 브랜드가 아니므로 제안하지 않는다.
+    if (p.brand && !isSourceLabelBrand(p.brand)) {
+      brandCount.set(p.brand, (brandCount.get(p.brand) ?? 0) + 1);
+    }
   }
   [...brandCount.keys()]
     .filter((b) => norm(b).includes(q))
@@ -92,7 +96,7 @@ export function buildSearchSuggestions(
 export function deriveBrandOptions(products: SuggestProduct[], limit = 16): string[] {
   const count = new Map<string, number>();
   for (const p of products) {
-    if (p.brand) count.set(p.brand, (count.get(p.brand) ?? 0) + 1);
+    if (p.brand && !isSourceLabelBrand(p.brand)) count.set(p.brand, (count.get(p.brand) ?? 0) + 1);
   }
   return [...count.keys()]
     .sort((a, b) => (count.get(b) ?? 0) - (count.get(a) ?? 0) || a.localeCompare(b))

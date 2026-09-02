@@ -55,14 +55,26 @@ import {
 import { gradeMetaFromScore } from '../components/pdp/gradeMeta';
 import { REVIEW_QUICK_TAGS } from '../constants/reviewTags';
 import ProductThumb from '../components/ProductThumb';
+import { normalizeProductDisplayName, resolveBrandLabel } from '../utils/productDisplay';
 import { gradePalette, gradeVerdict } from '../lib/veroroDesign';
+import {
+  describeProductCompleteness,
+  type ProductDataCompleteness,
+} from '../utils/productDataCompleteness';
 
 interface Ingredient { nameKo: string; nameEn?: string; purpose?: string; riskLevel?: string; isAllergy?: boolean; }
 
-function getVerificationMeta(status?: 'pending' | 'verified' | 'needs_review') {
-  if (status === 'verified') return { label: '검수 완료', bg: '#E7F8F0', color: '#15B36B' };
-  if (status === 'needs_review') return { label: '검토 필요', bg: '#FDECEE', color: '#D92D20' };
-  return { label: '검수 대기', bg: '#FEF6E0', color: '#B45309' };
+/**
+ * 정보 충실도 배지의 색.
+ *
+ * 예전에는 운영자용 검수 상태(verification_status)를 그대로 '검수 대기' 로 띄웠다.
+ * 보호자에게는 뜻이 통하지 않는 내부 상태이고, 운영 DB 에서 verified 인 제품이
+ * 0건이라 사실상 모든 제품에 붙어 있었다. utils/productDataCompleteness 참고.
+ */
+function getCompletenessPalette(level: ProductDataCompleteness) {
+  if (level === 'full') return { bg: '#E7F8F0', color: '#15B36B' };
+  if (level === 'partial') return { bg: '#FEF6E0', color: '#B45309' };
+  return { bg: 'var(--surface-alt)', color: 'var(--text-muted)' };
 }
 
 export default function Detail() {
@@ -143,9 +155,11 @@ export default function Detail() {
 
   const handleSubmitReview = async () => {
     if (!userId) { navigate('/login'); return; }
+    // 별점만 필수다. 태그와 한 줄 글은 '(선택)' 이라고 안내한 대로 진짜 선택이다.
+    // 예전에는 본문이 비면 조용히 return 하고 버튼도 잠겨 있어서, 선택이라고 써 놓고
+    // 실제로는 글을 써야만 등록됐다.
     const tagLine = reviewTags.length > 0 ? `# ${reviewTags.join(' · ')}` : '';
     const body = [tagLine, reviewContent.trim()].filter(Boolean).join('\n\n');
-    if (!body) return;
     setIsSubmitting(true);
     const review = await createReview(userId, id!, reviewRating, body);
     if (review) {
@@ -184,7 +198,7 @@ export default function Detail() {
   const handleShare = async () => {
     if (!product) return;
     const url = typeof window !== 'undefined' ? window.location.href : '';
-    const title = [product.brand, product.name].filter(Boolean).join(' ');
+    const title = [resolveBrandLabel(product), normalizeProductDisplayName(product)].filter(Boolean).join(' ');
     try {
       if (typeof navigator !== 'undefined' && navigator.share) {
         await navigator.share({ title: 'VeRoRo', text: `${title} · 베로로 성분 분석`, url });
@@ -218,7 +232,9 @@ export default function Detail() {
   const personalized = isRealPetProfile(profile);
   const isComparing = comparisonList.includes(product?.id || '');
   const isFav = favorites.includes(product?.id || '');
-  const verificationMeta = getVerificationMeta(product.verificationStatus);
+  const brandLabel = resolveBrandLabel(product);
+  const completeness = describeProductCompleteness(product);
+  const completenessPalette = getCompletenessPalette(completeness.level);
 
   // ── PDP 판단 스택 데이터 (점수 게이지 · 요약 · 우리 아이 적합도) ──
   // 표시 점수는 카드·분석결과와 동일한 하드캡(위험≤69, 알레르기≤9, 종 불일치=0)을
@@ -257,7 +273,8 @@ export default function Detail() {
     { icon: <Dog size={18} />, label: '추천 대상', value: petTypeLabel, tone: 'neutral' },
     { icon: <Calendar size={18} />, label: '생애주기', value: (product.targetLifeStage && product.targetLifeStage[0]) || '전연령', tone: 'neutral' },
     { icon: <Flame size={18} />, label: '제형', value: product.formulation || '건식', tone: 'neutral' },
-    { icon: <Globe size={18} />, label: '제조', value: product.manufacturerName || product.brand, tone: 'neutral' },
+    // 브랜드 자리에 수집 출처 라벨('쿠팡검색')만 있는 제품이 많아 그대로 쓰면 제조사로 오해된다.
+    { icon: <Globe size={18} />, label: '제조', value: product.manufacturerName || brandLabel || '정보 없음', tone: 'neutral' },
   ];
   const fitChips = [
     profile.name,
@@ -309,7 +326,7 @@ export default function Detail() {
     if (!c) return;
     altUsed.add(c.p.id);
     altCards.push({
-      id: c.p.id, brand: c.p.brand, name: c.p.name, imageUrl: c.p.imageUrl,
+      id: c.p.id, brand: resolveBrandLabel(c.p), name: c.p.name, imageUrl: c.p.imageUrl,
       score: c.score, deltaScore: Math.max(0, Math.round(c.score - currentScore)),
       tag, tagTone,
     });
@@ -317,7 +334,7 @@ export default function Detail() {
   const riskCount = (p: typeof product) => (p.ingredients ?? []).filter(i => i.riskLevel === 'danger' || i.riskLevel === 'caution').length;
   pickAlt(altPool.filter(x => x.score > currentScore).sort((a, b) => b.score - a.score), '더 건강해요', 'excellent');
   pickAlt(altPool.filter(x => riskCount(x.p) === 0 && x.score >= 60).sort((a, b) => b.score - a.score), '주의 성분 없음', 'good');
-  pickAlt(altPool.filter(x => x.p.verificationStatus === 'verified' && x.score >= 75).sort((a, b) => b.score - a.score), '전문가 검수 ✓', 'neutral');
+  pickAlt(altPool.filter(x => x.p.verificationStatus === 'verified' && x.score >= 75).sort((a, b) => b.score - a.score), '정보가 확인된 제품', 'neutral');
 
   // 영양 레이더 축 (product.nutrition 있을 때만) — 매크로%를 0~100 스케일로 정규화
   const nz = (v: number | undefined, max: number) => Math.min(100, Math.round(((v ?? 0) / max) * 100));
@@ -379,8 +396,8 @@ export default function Detail() {
   return (
     <div className="animate-fade-in detail-page-root" style={{ paddingBottom: '96px' }}>
       <Helmet>
-        <title>{product.name} - 베로로</title>
-        <meta name="description" content={`${product.brand}의 ${product.name} 전성분 분석 결과`} />
+        <title>{`${normalizeProductDisplayName(product)} - 베로로`}</title>
+        <meta name="description" content={`${brandLabel ? `${brandLabel}의 ` : ''}${normalizeProductDisplayName(product)} 전성분 분석 결과`} />
       </Helmet>
 
       <OfflineBanner online={online} />
@@ -461,7 +478,7 @@ export default function Detail() {
         <ProductThumb
           src={product.imageUrl}
           alt={product.name}
-          monoSource={product.brand || product.name}
+          monoSource={brandLabel || product.name}
           height={250}
           radius={0}
           fontSize={56}
@@ -517,7 +534,9 @@ export default function Detail() {
       <FitForPetCard petName={profile.name} percent={safetyScore} chips={fitChips} reasons={breakdown.reasons} />
 
       <TossCard style={{ marginBottom: '24px', padding: '20px' }}>
-        <div style={{ marginBottom: '8px', fontSize: '13px', color: 'var(--text-light)', fontWeight: 700 }}>{product.brand}</div>
+        {brandLabel && (
+          <div style={{ marginBottom: '8px', fontSize: '13px', color: 'var(--text-light)', fontWeight: 700 }}>{brandLabel}</div>
+        )}
         <h1 style={{ fontSize: '26px', lineHeight: 1.3, marginBottom: '14px', fontWeight: 900 }}>{product.name}</h1>
       
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '18px' }}>
@@ -530,12 +549,13 @@ export default function Detail() {
               fontWeight: 800,
               padding: '7px 10px',
               borderRadius: '999px',
-              background: verificationMeta.bg,
-              color: verificationMeta.color,
+              background: completenessPalette.bg,
+              color: completenessPalette.color,
             }}
+            title={completeness.detail || undefined}
           >
             <Shield size={14} />
-            {verificationMeta.label}
+            {completeness.label}
           </div>
           {product.targetPetType && (
             <div className="ui-badge ui-badge-muted" style={{ display: 'inline-flex' }}>
@@ -669,16 +689,18 @@ export default function Detail() {
         )}
       </BottomSheet>
 
-      {/* 브랜드 바로가기 */}
+      {/* 브랜드 바로가기 — 수집 출처 라벨뿐이면 링크할 브랜드가 없으므로 숨긴다. */}
+      {brandLabel && (
       <div style={{ marginBottom: '32px' }}>
         <Link to={`/brand/${encodeURIComponent(product.brand)}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: 'var(--surface-alt)', borderRadius: '16px', textDecoration: 'none', color: 'var(--text-dark)', border: '1px solid var(--surface-alt)' }}>
           <div>
             <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '2px' }}>브랜드</div>
-            <div style={{ fontSize: '16px', fontWeight: 800 }}>{product.brand}의 다른 제품 보기</div>
+            <div style={{ fontSize: '16px', fontWeight: 800 }}>{brandLabel}의 다른 제품 보기</div>
           </div>
           <ArrowLeft size={18} style={{ transform: 'rotate(180deg)', color: 'var(--text-muted)' }} />
         </Link>
       </div>
+      )}
 
       {/* 리뷰 섹션 */}
       <section style={{ marginBottom: '40px' }}>
@@ -693,6 +715,10 @@ export default function Detail() {
 
         {/* 리뷰 작성 */}
         <div style={{ background: 'var(--surface-alt)', borderRadius: '20px', padding: '20px', marginBottom: '24px', border: '1px solid var(--surface-alt)' }}>
+          {/* 등록 조건을 미리 알려 준다 — '(선택)'과 실제 검증이 어긋나 보이지 않게. */}
+          <p style={{ margin: '0 0 12px', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 700 }}>
+            별점만 남겨도 등록돼요. 태그와 한 줄 글은 선택이에요.
+          </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
             {REVIEW_QUICK_TAGS.map((tag) => (
               <button
@@ -725,12 +751,13 @@ export default function Detail() {
             value={reviewContent}
             onChange={e => setReviewContent(e.target.value)}
             placeholder={userId ? '한 줄 덧붙이기 (선택)' : '로그인 후 작성'}
+            aria-label="리뷰 한 줄 (선택)"
             disabled={!userId}
             style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid var(--line)', fontSize: '14px', outline: 'none', resize: 'none', height: '80px', boxSizing: 'border-box', color: 'var(--text-dark)', background: userId ? 'var(--surface-elevated)' : 'var(--surface-alt)' }}
           />
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
             {userId ? (
-              <button onClick={handleSubmitReview} disabled={isSubmitting || !reviewContent.trim()} style={{ padding: '12px 24px', background: 'var(--text-dark)', color: 'var(--bg-color)', borderRadius: '12px', fontWeight: 700, fontSize: '14px', border: 'none', cursor: 'pointer', opacity: isSubmitting || !reviewContent.trim() ? 0.5 : 1 }}>
+              <button onClick={handleSubmitReview} disabled={isSubmitting} style={{ padding: '12px 24px', background: 'var(--text-dark)', color: 'var(--bg-color)', borderRadius: '12px', fontWeight: 700, fontSize: '14px', border: 'none', cursor: 'pointer', opacity: isSubmitting ? 0.5 : 1 }}>
                 {isSubmitting ? '등록 중...' : '리뷰 등록'}
               </button>
             ) : (
@@ -797,7 +824,7 @@ export default function Detail() {
         presetProduct={{
           id: product.id,
           name: product.name,
-          brand: product.brand,
+          brand: brandLabel,
           imageUrl: product.imageUrl,
           productType: productTypeToFeedingType(product.category),
         }}

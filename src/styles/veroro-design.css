@@ -288,6 +288,8 @@ h1, h2, h3, h4, h5, h6 {
   cursor: pointer;
   flex: none;
   padding: 0;
+  /* 반려동물 사진을 넣으면 원형 밖으로 삐져나오지 않게 자른다. */
+  overflow: hidden;
   transition: transform .12s ease;
 }
 .vr-round-btn:active { transform: scale(.94); }

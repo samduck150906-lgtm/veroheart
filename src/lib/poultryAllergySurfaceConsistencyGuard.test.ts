@@ -11,9 +11,14 @@ describe('poultry allergy surface consistency guard', () => {
     const comparison = source('../pages/Comparison.tsx');
 
     expect(comparison).toContain('buildAllergyDisplayState');
-    expect(comparison).toContain("best.allergyLevel === 'caution'");
-    expect(comparison).toContain("best.allergyLevel === 'unknown'");
+    // 비교 결과 문구는 우세/동점 판정으로 옮겨졌지만, 알레르기 안내는 여전히
+    // 공유 표시 상태(none/unknown/caution/hard)를 그대로 따라야 한다.
+    expect(comparison).toContain("level === 'caution'");
+    expect(comparison).toContain("level === 'unknown'");
     expect(comparison).toContain('hasIngredientData: (product.ingredients?.length ?? 0) > 0');
+    // 근거 없는 우승자를 만들지 않는다 — 예전의 점수 최댓값 reduce 로 되돌아가지 않게 한다.
+    expect(comparison).toContain('resolveComparisonVerdict');
+    expect(comparison).not.toContain('columns.reduce((a, b) => (b.score > a.score ? b : a))');
     expect(comparison).not.toContain(
       "breakdown.allergyHits.length > 0 ? breakdown.allergyHits.join(', ') : '해당 없음'",
     );

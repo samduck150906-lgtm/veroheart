@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import ProductThumb from '../components/ProductThumb';
 import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
-import { normalizeProductDisplayName } from '../utils/productDisplay';
+import { normalizeProductDisplayName, resolveBrandLabel } from '../utils/productDisplay';
 import { gradePalette, VR } from '../lib/veroroDesign';
 import type { PetSafetyScan } from '../utils/petSafety';
 import type { Product } from '../types';
@@ -220,7 +220,7 @@ export default function Home() {
                   style={{ width: '132px', flex: 'none', border: 'none', background: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}
                 >
                   <span style={{ position: 'relative', display: 'block' }}>
-                    <ProductThumb src={p.imageUrl} alt={p.name} monoSource={p.brand || p.name} height={132} radius={15} fontSize={26} />
+                    <ProductThumb src={p.imageUrl} alt={p.name} monoSource={resolveBrandLabel(p) || p.name} height={132} radius={15} fontSize={26} />
                     <span
                       className="vr-grade-pill"
                       style={{ position: 'absolute', left: '8px', top: '8px', color: palette.fg, background: palette.bg }}
@@ -228,7 +228,7 @@ export default function Home() {
                       {grade}
                     </span>
                   </span>
-                  <span style={{ display: 'block', fontSize: '11.5px', color: VR.sub, fontWeight: 700, marginTop: '8px' }}>{p.brand}</span>
+                  <span style={{ display: 'block', fontSize: '11.5px', color: VR.sub, fontWeight: 700, marginTop: '8px' }}>{resolveBrandLabel(p)}</span>
                   <span className="line-clamp-2" style={{ display: 'block', fontSize: '13px', fontWeight: 700, lineHeight: 1.35, letterSpacing: '-0.02em', color: 'var(--vr-ink)' }}>
                     {normalizeProductDisplayName(p)}
                   </span>
@@ -262,9 +262,9 @@ export default function Home() {
                     cursor: 'pointer', textAlign: 'left', width: '100%',
                   }}
                 >
-                  <ProductThumb src={product.imageUrl} alt={product.name} monoSource={product.brand || product.name} size={58} radius={12} fontSize={16} />
+                  <ProductThumb src={product.imageUrl} alt={product.name} monoSource={resolveBrandLabel(product) || product.name} size={58} radius={12} fontSize={16} />
                   <span style={{ minWidth: 0, flex: 1 }}>
-                    <span style={{ display: 'block', fontSize: '11.5px', color: VR.sub, fontWeight: 700 }}>{product.brand}</span>
+                    <span style={{ display: 'block', fontSize: '11.5px', color: VR.sub, fontWeight: 700 }}>{resolveBrandLabel(product)}</span>
                     <span style={{
                       display: 'block', fontSize: '14px', fontWeight: 700, letterSpacing: '-0.02em',
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--vr-ink)',

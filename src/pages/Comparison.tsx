@@ -5,6 +5,7 @@ import { useStore, MAX_COMPARISON } from '../store/useStore';
 import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import { buildAllergyDisplayState, type AllergyDisplayLevel } from '../utils/allergyDisplay';
 import { normalizeProductDisplayName } from '../utils/productDisplay';
+import { resolveComparisonVerdict, type ComparisonCandidate } from '../utils/comparisonVerdict';
 import { VR } from '../lib/veroroDesign';
 import type { Product } from '../types';
 import type { UserPetProfile } from '../types';
@@ -21,6 +22,9 @@ interface Column {
   signalText: string;
   allergyText: string;
   allergyLevel: AllergyDisplayLevel;
+  dangerCount: number;
+  cautionCount: number;
+  matchedConcerns: string[];
 }
 
 function buildColumn(product: Product, profile: UserPetProfile): Column {
@@ -42,6 +46,9 @@ function buildColumn(product: Product, profile: UserPetProfile): Column {
     signalText: `주의 ${warnCount} · 좋음 ${goodCount}`,
     allergyText: allergyDisplay.shortText,
     allergyLevel: allergyDisplay.level,
+    dangerCount: breakdown.dangerCount,
+    cautionCount: breakdown.cautionCount,
+    matchedConcerns: breakdown.matchedConcerns,
   };
 }
 
@@ -94,16 +101,25 @@ export default function Comparison() {
     },
   ];
 
-  const best = columns.reduce((a, b) => (b.score > a.score ? b : a));
   const gridTemplate = `74px repeat(${columns.length}, 1fr)`;
-  const bestAllergyCopy =
-    best.allergyLevel === 'hard'
-      ? '다만 알레르기 성분이 포함돼 있어 급여 전 확인이 필요해.'
-      : best.allergyLevel === 'caution'
+  const candidates: ComparisonCandidate[] = columns.map((c) => ({
+    id: c.product.id,
+    name: normalizeProductDisplayName(c.product),
+    score: c.score,
+    allergyLevel: c.allergyLevel,
+    dangerCount: c.dangerCount,
+    cautionCount: c.cautionCount,
+    matchedConcerns: c.matchedConcerns,
+  }));
+  const verdict = resolveComparisonVerdict(candidates);
+  const allergyNote = (level: AllergyDisplayLevel) =>
+    level === 'hard'
+      ? `다만 ${petName}의 알레르기 성분이 포함돼 있어 급여 전 확인이 필요해.`
+      : level === 'caution'
         ? `${petName}의 알레르기와 관련된 원료가 있어 급여 전 확인이 필요해.`
-        : best.allergyLevel === 'unknown'
-          ? '원료 정보가 부족해 알레르기 포함 여부를 판정할 수 없어.'
-          : `${petName} 알레르기 성분은 들어 있지 않아.`;
+        : level === 'unknown'
+          ? '원료 정보가 부족해 알레르기 포함 여부는 판정할 수 없어.'
+          : '';
 
   return (
     <div className="vr-anim-fade" style={{ padding: '14px 0 24px' }}>
@@ -155,19 +171,40 @@ export default function Comparison() {
         ))}
       </div>
 
-      {columns.length > 1 && (
+      {verdict.kind !== 'none' && (
         <div
           style={{
             marginTop: '14px', background: 'var(--vr-yellow-tint)', border: '1.5px solid var(--vr-yellow)',
             borderRadius: '16px', padding: '15px',
           }}
         >
-          <div style={{ fontSize: '14.5px', fontWeight: 800, letterSpacing: '-0.02em' }}>
-            {petName}라면 &lsquo;{normalizeProductDisplayName(best.product)}&rsquo;가 나아
-          </div>
-          <p style={{ margin: '7px 0 0', fontSize: '12.5px', lineHeight: 1.55, color: 'var(--vr-body)' }}>
-            프로필 기준 종합 {best.score}점으로 가장 높아. {bestAllergyCopy}
-          </p>
+          {verdict.kind === 'winner' ? (
+            <>
+              <div style={{ fontSize: '14.5px', fontWeight: 800, letterSpacing: '-0.02em' }}>
+                {petName}에게는 &lsquo;{verdict.winner.name}&rsquo;가 조금 더 잘 맞아
+              </div>
+              <ul style={{ margin: '9px 0 0', padding: '0 0 0 17px', fontSize: '12.5px', lineHeight: 1.6, color: 'var(--vr-body)' }}>
+                {verdict.reasons.map((reason) => (
+                  <li key={reason}>{reason}</li>
+                ))}
+              </ul>
+              {allergyNote(verdict.winner.allergyLevel) && (
+                <p style={{ margin: '8px 0 0', fontSize: '12.5px', lineHeight: 1.55, color: 'var(--vr-body)' }}>
+                  {allergyNote(verdict.winner.allergyLevel)}
+                </p>
+              )}
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: '14.5px', fontWeight: 800, letterSpacing: '-0.02em' }}>
+                {verdict.leaders.length > 2 ? '담은 제품 모두' : '두 제품 모두'} 비슷하게 잘 맞아
+              </div>
+              <p style={{ margin: '7px 0 0', fontSize: '12.5px', lineHeight: 1.55, color: 'var(--vr-body)' }}>
+                {petName} 기준으로 우열을 가릴 만한 차이가 없어. 급여량이나 가격처럼
+                표에 없는 조건으로 골라도 괜찮아.
+              </p>
+            </>
+          )}
         </div>
       )}
 

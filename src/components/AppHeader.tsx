@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Cat, Dog, UserRound } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { notify } from '../store/useNotification';
 import { normalizeProductDisplayName } from '../utils/productDisplay';
@@ -17,7 +18,7 @@ export default function AppHeader({ raised }: AppHeaderProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const params = useParams();
-  const { profile, selectedProduct } = useStore();
+  const { profile, selectedProduct, isLoggedIn } = useStore();
 
   const chrome = useMemo(
     () => resolveRouteChrome(location.pathname, location.search),
@@ -26,7 +27,11 @@ export default function AppHeader({ raised }: AppHeaderProps) {
 
   if (chrome.header === 'none') return null;
 
-  const petInitial = (profile.name || '펫').trim().charAt(0) || '펫';
+  // 로그아웃 상태에서는 기본 프로필(이름 '우리 아이')이 그대로 남아 있어서,
+  // 예전처럼 이름 첫 글자를 그리면 로그인하지 않았는데도 '우' 가 계속 보였다.
+  // 로그인 여부로 갈라서 그린다. 한 글자 아바타는 쓰지 않는다.
+  const petName = profile.name?.trim();
+  const SpeciesIcon = profile.species === 'Cat' ? Cat : Dog;
 
   const share = async () => {
     const url = window.location.href;
@@ -81,14 +86,35 @@ export default function AppHeader({ raised }: AppHeaderProps) {
         ) : null}
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px' }}>
           <ThemeToggle />
-          <button
-            type="button"
-            className="vr-round-btn vr-round-btn--accent"
-            onClick={() => navigate('/profile')}
-            aria-label="마이 펫"
-          >
-            {petInitial}
-          </button>
+          {isLoggedIn ? (
+            <button
+              type="button"
+              className="vr-round-btn vr-round-btn--accent"
+              onClick={() => navigate('/profile')}
+              aria-label={petName ? `${petName} 프로필` : '마이 펫'}
+              title={petName || '마이 펫'}
+            >
+              {profile.imageUrl ? (
+                <img
+                  src={profile.imageUrl}
+                  alt=""
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                />
+              ) : (
+                <SpeciesIcon size={17} strokeWidth={2.2} aria-hidden />
+              )}
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="vr-round-btn"
+              onClick={() => navigate('/login')}
+              aria-label="로그인"
+              title="로그인"
+            >
+              <UserRound size={17} strokeWidth={2.2} aria-hidden />
+            </button>
+          )}
         </div>
       </div>
     </header>

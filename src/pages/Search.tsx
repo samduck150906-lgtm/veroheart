@@ -24,6 +24,7 @@ import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import FilterChip from '../components/ui/FilterChip';
 import { COMPANY } from '../constants/companyInfo';
 import { buildSearchSuggestions, deriveBrandOptions, type Suggestion } from '../utils/searchSuggestions';
+import { productsForPetFilter, visibleSymptomKeywords } from '../utils/searchKeywords';
 import { VR } from '../lib/veroroDesign';
 
 interface StandardFeedItem {
@@ -43,30 +44,6 @@ function resolveCategoryFromSearchParams(category: string | null): string {
   if (category === '건식사료' || category === '습식사료') return '사료';
   return category;
 }
-
-/** 추천 키워드(증상·목적) chip — 성분·목적 기반 탐색 보조(인기·순위 아님) */
-const SYMPTOM_KEYWORDS = ['눈물', '알러지', '다이어트', '관절', '피부', '노령견', '치석', '소화'];
-
-/**
- * 추천 키워드 → 구조화 검색 매핑.
- * 제품명 텍스트 검색(ilike)만으로는 '눈물' 같은 증상어가 제품명에 없어
- * 대부분 0건이었다. 건강 태그·라이프스테이지·다이어트 프리셋 필터로 잇는다.
- * healthConcerns 값은 필터 시트 옵션(HEALTH_CONCERN_OPTIONS)과 맞춰
- * 시트에서도 선택 상태가 보이게 한다('알러지'는 태그 전용).
- */
-const SYMPTOM_KEYWORD_FILTERS: Record<
-  string,
-  { healthConcerns?: string[]; lifeStage?: string; dietPreset?: boolean }
-> = {
-  '눈물': { healthConcerns: ['눈'] },
-  '알러지': { healthConcerns: ['알러지'] },
-  '다이어트': { dietPreset: true },
-  '관절': { healthConcerns: ['관절'] },
-  '피부': { healthConcerns: ['피부·모질'] },
-  '노령견': { lifeStage: '시니어' },
-  '치석': { healthConcerns: ['구강'] },
-  '소화': { healthConcerns: ['소화기'] },
-};
 
 const RECENT_KEY = 'vh_recent_searches';
 const RECENT_MAX = 8;
@@ -296,21 +273,10 @@ export default function Search() {
   };
 
   const applyKeyword = (kw: string) => {
-    const mapped = SYMPTOM_KEYWORD_FILTERS[kw];
-    if (mapped) {
-      // 증상어는 제품명 검색이 아니라 태그·프리셋 필터로 잇는다
-      setQuery('');
-      setFilters((f) => ({
-        ...f,
-        ...(mapped.lifeStage ? { targetLifeStage: mapped.lifeStage } : {}),
-        ...(mapped.dietPreset ? { dietPreset: true } : {}),
-        ...(mapped.healthConcerns
-          ? { healthConcerns: [...new Set([...f.healthConcerns, ...mapped.healthConcerns])] }
-          : {}),
-      }));
-    } else {
-      setQuery(kw);
-    }
+    // 검색어로 넘긴다. searchProducts 가 제품명·브랜드명에 더해 원료명까지 훑으므로
+    // '관절'·'귀리' 같은 말이 제품명에 없어도 해당 원료를 쓰는 제품이 잡힌다.
+    // (예전에는 건강 태그 필터로 이었는데, 그 컬럼이 운영 DB 에서 비어 있어 늘 0건이었다.)
+    setQuery(kw);
     recordRecent(kw);
     setShowSuggest(false);
   };
@@ -340,6 +306,13 @@ export default function Search() {
     filters.healthConcerns.length +
     (filters.dietPreset ? 1 : 0) +
     excludedIngredients.length;
+
+  // 눌렀을 때 결과가 0건인 키워드는 보여주지 않는다.
+  // 검색이 종 필터까지 함께 걸기 때문에 같은 조건에서 세어야 어긋나지 않는다.
+  const shownKeywords = useMemo(
+    () => visibleSymptomKeywords(productsForPetFilter(products, filters.targetPetType)),
+    [products, filters.targetPetType],
+  );
 
   const showDiscovery = query.trim() === '';
 
@@ -467,7 +440,7 @@ export default function Search() {
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>추천 키워드</span>
             </div>
             <div className="search-chip-row">
-              {SYMPTOM_KEYWORDS.map((kw) => (
+              {shownKeywords.map((kw) => (
                 <button key={kw} type="button" className="search-chip search-chip--symptom" onClick={() => applyKeyword(kw)}>
                   #{kw}
                 </button>
@@ -480,7 +453,11 @@ export default function Search() {
       {/* 결과 수 + 정렬 */}
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '10px' }}>
         <span style={{ fontSize: '13px', fontWeight: 700, color: VR.muted }}>
-          {isLoading ? '불러오는 중…' : `${displayResults.length}개 · ${petName} 프로필 기준 정렬`}
+          {isLoading
+            ? '불러오는 중…'
+            : sortBy === 'rating'
+              ? `${displayResults.length}개 · 평점 높은 순`
+              : `${displayResults.length}개 · ${petName}에게 잘 맞는 순`}
         </span>
         <button
           type="button"

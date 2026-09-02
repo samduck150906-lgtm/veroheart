@@ -3,7 +3,7 @@ import ProductThumb from './ProductThumb';
 import { useStore, MAX_COMPARISON } from '../store/useStore';
 import { notify } from '../store/useNotification';
 import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
-import { normalizeProductDisplayName } from '../utils/productDisplay';
+import { normalizeProductDisplayName, resolveBrandLabel } from '../utils/productDisplay';
 import { fitShortLabel, gradePalette, VR } from '../lib/veroroDesign';
 import type { Product } from '../types';
 
@@ -24,6 +24,8 @@ export default function ProductRow({ product }: ProductRowProps) {
   const isFav = favorites.includes(product.id);
   const inCompare = comparisonList.includes(product.id);
   const petName = profile.name || '우리 아이';
+  // 수집 출처 라벨('쿠팡검색' 등)은 브랜드가 아니므로 줄 자체를 숨긴다.
+  const brandLabel = resolveBrandLabel(product);
 
   const open = () => navigate(`/product/${product.id}`);
 
@@ -35,7 +37,7 @@ export default function ProductRow({ product }: ProductRowProps) {
         aria-label={`${product.name} 상세 보기`}
         style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer', flex: 'none' }}
       >
-        <ProductThumb src={product.imageUrl} alt={product.name} monoSource={product.brand || product.name} size={74} radius={13} fontSize={19} />
+        <ProductThumb src={product.imageUrl} alt={product.name} monoSource={brandLabel || product.name} size={74} radius={13} fontSize={19} />
       </button>
 
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -45,7 +47,9 @@ export default function ProductRow({ product }: ProductRowProps) {
           style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', padding: 0, cursor: 'pointer' }}
         >
           <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '11.5px', color: VR.sub, fontWeight: 700 }}>{product.brand}</span>
+            {brandLabel && (
+              <span style={{ fontSize: '11.5px', color: VR.sub, fontWeight: 700 }}>{brandLabel}</span>
+            )}
             <span
               style={{
                 fontSize: '11px', fontWeight: 800, padding: '1px 6px', borderRadius: '5px',

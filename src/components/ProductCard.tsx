@@ -3,7 +3,7 @@ import { Cat, Dog, Heart, Layers, Star } from 'lucide-react';
 import type { Product } from '../types';
 import { useStore } from '../store/useStore';
 import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
-import { normalizeProductDisplayName } from '../utils/productDisplay';
+import { normalizeProductDisplayName, resolveBrandLabel } from '../utils/productDisplay';
 
 /** 추천 사유 문구의 톤(신호등)을 판정해 pill 색상을 정한다. */
 function noteToneStyle(note: string): { color: string; background: string; borderColor: string } {
@@ -165,7 +165,7 @@ export default function ProductCard({
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-            <div style={{ fontSize: '11px', color: 'var(--text-light)', fontWeight: 600 }}>{product.brand}</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-light)', fontWeight: 600 }}>{resolveBrandLabel(product)}</div>
             <div
               style={{
                 fontSize: '13px',
@@ -294,7 +294,7 @@ export default function ProductCard({
 
         <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: 1, paddingRight: '30px' }}>
           <div>
-            <div style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: 600 }}>{product.brand}</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: 600 }}>{resolveBrandLabel(product)}</div>
             <div
               style={{
                 fontSize: compact ? '14px' : '16px',

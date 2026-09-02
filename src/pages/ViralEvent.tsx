@@ -67,7 +67,7 @@ export default function ViralEvent() {
   return (
     <div style={{ padding: '0 0 24px' }}>
       <Helmet>
-        <title>{VIRAL_EVENT_CONFIG.eventTitle} - 베로로</title>
+        <title>{`${VIRAL_EVENT_CONFIG.eventTitle} - 베로로`}</title>
         <meta name="description" content="반려동물 성향 테스트 결과를 공유하고 리워드 이벤트에 참여하세요." />
       </Helmet>
 

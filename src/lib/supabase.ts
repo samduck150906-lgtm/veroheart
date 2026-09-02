@@ -284,6 +284,57 @@ const HEALTH_CONCERN_DB_TOKENS: Record<string, string[]> = {
   '구강': ['구강', '치아', '치석'],
 };
 
+/**
+ * 검색어와 이름이 겹치는 원료가 들어 있는 제품 id 를 찾는다.
+ *
+ * 제품 검색은 제품명·브랜드명만 훑고 있었다. 그런데 검색 자동완성은 성분명까지
+ * 제안하기 때문에, "귀리" 같은 성분을 눌러도 제품명에 그 글자가 없어 0건이 떴다
+ * (운영 데이터: 제품명 일치 0건, 실제로 원료로 쓰는 제품 43건).
+ * 여기서 얻은 id 를 제품 검색의 or 조건에 더해, 필터는 서버에서 한 번만 적용한다.
+ *
+ * id 를 URL 쿼리에 싣는 구조라 상한을 둔다. 흔한 원료(닭고기 253건)는 목록에서
+ * 다 훑어보지 않으므로 상한이 사용자 경험을 해치지 않는다.
+ */
+export const INGREDIENT_SEARCH_PRODUCT_LIMIT = 200;
+
+export async function findProductIdsByIngredientName(
+  term: string,
+  limit = INGREDIENT_SEARCH_PRODUCT_LIMIT,
+): Promise<string[]> {
+  const trimmed = term.trim();
+  if (!isSupabaseConfigured || !trimmed) return [];
+
+  const pattern = toOrIlikePattern(trimmed);
+  const { data: ingredientRows, error: ingredientError } = await supabase
+    .from('ingredients')
+    .select('id')
+    .or(`name_ko.ilike.${pattern},name_en.ilike.${pattern}`)
+    .limit(50);
+
+  if (ingredientError || !ingredientRows?.length) {
+    if (ingredientError) console.error('findProductIdsByIngredientName error:', ingredientError.message);
+    return [];
+  }
+
+  const { data: linkRows, error: linkError } = await supabase
+    .from('product_ingredients')
+    .select('product_id')
+    .in('ingredient_id', ingredientRows.map((row) => row.id))
+    .limit(2000);
+
+  if (linkError) {
+    console.error('findProductIdsByIngredientName error:', linkError.message);
+    return [];
+  }
+
+  const ids = new Set<string>();
+  for (const row of (linkRows ?? []) as { product_id: string | null }[]) {
+    if (row.product_id) ids.add(row.product_id);
+    if (ids.size >= limit) break;
+  }
+  return [...ids];
+}
+
 export async function searchProducts(
   query: string, 
   category?: string, 
@@ -314,7 +365,14 @@ export async function searchProducts(
   
   if (query) {
     const pattern = toOrIlikePattern(query);
-    builder = builder.or(`name.ilike.${pattern},brand_name.ilike.${pattern}`);
+    // 제품명·브랜드에 더해 '그 원료가 들어간 제품'도 결과에 넣는다.
+    // 필터(카테고리·종·건강태그 등)는 아래에서 한 번만 적용되므로 두 경로가 갈라지지 않는다.
+    const ingredientProductIds = await findProductIdsByIngredientName(query);
+    const clauses = [`name.ilike.${pattern}`, `brand_name.ilike.${pattern}`];
+    if (ingredientProductIds.length > 0) {
+      clauses.push(`id.in.(${ingredientProductIds.join(',')})`);
+    }
+    builder = builder.or(clauses.join(','));
   }
 
   if (category && category !== '전체') {
