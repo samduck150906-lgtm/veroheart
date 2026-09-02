@@ -17,6 +17,7 @@ import { TossCard, TossButton, TossChip, TossInput, TossSectionTitle } from '../
 import ProductCard from '../components/ProductCard';
 import FeedingDiary from '../components/diary/FeedingDiary';
 import type { UserPetProfile } from '../types';
+import { HEALTH_CONCERN_OPTIONS } from '../health/concerns';
 
 const PROFILE_STEP_META = [
   { title: '이름', prompt: '우리 아이의 이름은 무엇인가요?' },
@@ -28,7 +29,7 @@ const PROFILE_STEP_META = [
 ];
 
 const allergyOptions = ['닭고기', '소고기', '연어', '곡물', '인공색소'];
-const concernOptions = ['피부·모질', '관절', '소화기', '비만·다이어트', '신장·비뇨기', '심장', '면역', '눈', '구강'];
+const concernOptions = HEALTH_CONCERN_OPTIONS;
 
 type MyPageTab = 'pets' | 'diary' | 'favorites' | 'account';
 
@@ -616,4 +617,3 @@ const petIconBtn: React.CSSProperties = {
   justifyContent: 'center',
   flexShrink: 0,
 };
-
