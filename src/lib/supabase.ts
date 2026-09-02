@@ -59,6 +59,38 @@ export async function adminWrite<T = unknown>(
  * 이메일 로그인만 사용합니다. 익명 로그인(signInAnonymously)은 호출하지 않습니다.
  * (Supabase에서 익명 로그인이 꺼져 있으면 기존 구현이 진입 시 오류 토스트를 띄웠습니다.)
  */
+/**
+ * PostgREST 응답을 행 타입으로 받는다.
+ *
+ * 이 프로젝트는 Supabase 생성 타입을 쓰지 않아서 supabase-js 의 select 파서가
+ * 조인 카디널리티를 알 수 없다. `product_ingredients → ingredients` 는 FK 기준
+ * 다대일이라 런타임에는 객체 하나가 오지만, 파서는 배열로 추론한다.
+ * 매핑은 SupabaseProductRow 를 기준으로 하므로 그 타입으로 받는다.
+ */
+function asProductRows(data: unknown): SupabaseProductRow[] {
+  return (data ?? []) as SupabaseProductRow[];
+}
+
+function asProductRow(data: unknown): SupabaseProductRow {
+  return data as SupabaseProductRow;
+}
+
+/**
+ * 제품 조회가 받아오는 컬럼.
+ *
+ * 예전에는 목록 조회가 `*, ingredients (*)` 로 테이블의 모든 컬럼을 받아왔다.
+ * mapProductFromSupabaseRow / mapIngredientFromJoin 이 실제로 읽는 필드는
+ * SupabaseProductRow · SupabaseProductIngredientRow 에 선언된 것뿐이라,
+ * 나머지는 파싱만 하고 즉시 버려졌다. 운영 데이터(제품 458개, 원료 링크 4,265개)
+ * 기준 응답 원본이 약 1,650kB 였고 그 절반 이상이 쓰이지 않는 컬럼이었다.
+ * 전송량은 gzip 으로 줄지만 파싱·객체 생성 비용은 원본 크기를 그대로 따라간다.
+ *
+ * select 문자열은 supabase-js 가 응답 타입을 추론하려면 리터럴이어야 해서
+ * 각 쿼리에 그대로 적는다. 목록이 서로 어긋나지 않는지는
+ * `productSelectColumns.test.ts` 가 이 파일을 읽어 검사한다.
+ * 컬럼을 늘릴 때는 위 행 타입 → 각 쿼리 → 그 테스트의 목록 순으로 함께 고친다.
+ */
+
 export async function getInitialSessionUser() {
   if (!isSupabaseConfigured) return null;
   try {
@@ -146,10 +178,14 @@ export async function deleteUserPet(petId: string, userId: string): Promise<bool
 // Products
 export async function getProducts(): Promise<Product[]> {
   if (!isSupabaseConfigured) return [];
+  // 목록에서는 ingredient_id 를 받지 않는다. 원료 행에서 id 를 읽을 수 있고,
+  // 링크 4,265건마다 UUID 를 한 번 더 실으면 응답이 다시 커진다.
   const { data, error } = await supabase.from('products').select(`
-    *,
+    id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
+    target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
+    verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
     product_ingredients (
-      ingredients (*)
+      ingredients (id, name_ko, name_en, risk_level, description)
     )
   `);
   
@@ -157,7 +193,7 @@ export async function getProducts(): Promise<Product[]> {
     console.error('getProducts error:', error.message);
     return [];
   }
-  return (data as SupabaseProductRow[]).map(mapProductFromSupabaseRow);
+  return asProductRows(data).map(mapProductFromSupabaseRow);
 }
 
 export async function getProductDetail(productId: string): Promise<Product | null> {
@@ -165,12 +201,14 @@ export async function getProductDetail(productId: string): Promise<Product | nul
   const { data, error } = await supabase
     .from('products')
     .select(`
-      *,
+      id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
+      target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
+      verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
       product_ingredients (
         ingredient_id,
-        ingredients (*)
+        ingredients (id, name_ko, name_en, risk_level, description)
       ),
-      nutritional_profiles (*)
+      nutritional_profiles (crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus)
     `)
     .eq('id', productId)
     .single();
@@ -179,7 +217,7 @@ export async function getProductDetail(productId: string): Promise<Product | nul
     console.error('getProductDetail error:', error);
     return null;
   }
-  return mapProductFromSupabaseRow(data as SupabaseProductRow);
+  return mapProductFromSupabaseRow(asProductRow(data));
 }
 
 /**
@@ -193,19 +231,21 @@ export async function getProductByBarcode(barcode: string): Promise<Product | nu
     const { data, error } = await supabase
       .from('products')
       .select(`
-        *,
+        id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
+        target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
+        verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
         product_ingredients (
           ingredient_id,
-          ingredients (*)
+          ingredients (id, name_ko, name_en, risk_level, description)
         ),
-        nutritional_profiles (*)
+        nutritional_profiles (crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus)
       `)
       .eq('barcode', barcode)
       .limit(1)
       .maybeSingle();
 
     if (error || !data) return null;
-    return mapProductFromSupabaseRow(data as SupabaseProductRow);
+    return mapProductFromSupabaseRow(asProductRow(data));
   } catch {
     return null;
   }
@@ -263,7 +303,9 @@ export async function searchProducts(
 ): Promise<Product[]> {
   if (!isSupabaseConfigured) return [];
   let builder = supabase.from('products').select(`
-    *,
+    id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
+    target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
+    verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
     product_ingredients (
       ingredient_id,
       ingredients (id, name_ko, risk_level)
@@ -323,7 +365,7 @@ export async function searchProducts(
     return [];
   }
 
-  let filtered: SupabaseProductRow[] = (data as SupabaseProductRow[]) || [];
+  let filtered: SupabaseProductRow[] = asProductRows(data);
   if (excludeIngredients.length > 0) {
     filtered = filtered.filter((p) => {
       const hasExcluded = p.product_ingredients?.some((pi) =>
@@ -425,7 +467,15 @@ export async function addRecentView(userId: string, productId: string) {
 export async function getRecentViews(userId: string) {
   const { data, error } = await supabase
     .from('recent_views')
-    .select(`product_id, viewed_at, products(*)`)
+    .select(`
+      product_id,
+      viewed_at,
+      products (
+        id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
+        target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
+        verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating
+      )
+    `)
     .eq('user_id', userId)
     .order('viewed_at', { ascending: false })
     .limit(10);
@@ -452,10 +502,17 @@ export async function getBrands(): Promise<string[]> {
 export async function getProductsByBrand(brandName: string): Promise<Product[]> {
   const { data, error } = await supabase
     .from('products')
-    .select(`*, product_ingredients(ingredients(*))`)
+    .select(`
+      id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
+      target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
+      verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
+      product_ingredients (
+        ingredients (id, name_ko, name_en, risk_level, description)
+      )
+    `)
     .eq('brand_name', brandName);
   if (error) return [];
-  return (data as SupabaseProductRow[]).map(mapProductFromSupabaseRow);
+  return asProductRows(data).map(mapProductFromSupabaseRow);
 }
 
 // ─── 식이 다이어리 (pet_feeding_logs) ────────────────────────────────────────
@@ -516,7 +573,9 @@ export async function searchDiaryProducts(
   let builder = supabase
     .from('products')
     .select(`
-      *,
+      id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
+      target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
+      verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
       product_ingredients (
         ingredient_id,
         ingredients (id, name_ko, risk_level)
@@ -538,7 +597,7 @@ export async function searchDiaryProducts(
     console.error('searchDiaryProducts error:', error.message);
     return [];
   }
-  return (data as SupabaseProductRow[]).map(mapProductFromSupabaseRow);
+  return asProductRows(data).map(mapProductFromSupabaseRow);
 }
 
 /** 특정 반려동물의 특정 날짜 섭취 기록 목록 (시간 오름차순) */
