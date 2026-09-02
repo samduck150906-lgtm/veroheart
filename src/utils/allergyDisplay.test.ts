@@ -44,4 +44,28 @@ describe('allergy display state', () => {
       summaryText: '등록된 알레르기 성분 없음',
     });
   });
+
+  it('does not call missing ingredient data allergy-free', () => {
+    expect(
+      buildAllergyDisplayState(
+        { allergyHits: [], allergyCautions: [] },
+        '보리',
+        { hasIngredientData: false },
+      ),
+    ).toEqual({
+      level: 'unknown',
+      shortText: '판정 불가',
+      summaryText: '원료 정보 부족으로 알레르기 판정 불가',
+    });
+  });
+
+  it('keeps a detected hit stronger than a contradictory missing-data flag', () => {
+    expect(
+      buildAllergyDisplayState(
+        { allergyHits: ['닭'], allergyCautions: [] },
+        '보리',
+        { hasIngredientData: false },
+      ).level,
+    ).toBe('hard');
+  });
 });

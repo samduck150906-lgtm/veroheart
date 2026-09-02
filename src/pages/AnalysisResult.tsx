@@ -286,13 +286,13 @@ export default function AnalysisResult() {
   const positives = useMemo(() => {
     const base = [
       safeIngredients.length > 5 ? `안전 성분 ${safeIngredients.length}가지 확인` : null,
-      cautionIngredients.length === 0 && dangerIngredients.length === 0 ? '주의·위험 성분 없음' : null,
-      hasPetProfile && breakdown?.allergyHits.length === 0 && (breakdown?.allergyCautions.length ?? 0) === 0 ? '알레르기 성분 미포함' : null,
+      ingredients.length > 0 && cautionIngredients.length === 0 && dangerIngredients.length === 0 ? '주의·위험 성분 없음' : null,
+      hasPetProfile && ingredients.length > 0 && breakdown?.allergyHits.length === 0 && (breakdown?.allergyCautions.length ?? 0) === 0 ? '알레르기 성분 미포함' : null,
       breakdown && breakdown.matchedConcerns.length > 0 ? `${breakdown.matchedConcerns.join(', ')} 건강 고민과 연관` : null,
     ].filter(Boolean) as string[];
     const fromReport = (report?.highlights ?? []).filter((h) => h.type === 'positive').map((h) => h.text);
     return Array.from(new Set([...base, ...fromReport]));
-  }, [safeIngredients.length, cautionIngredients.length, dangerIngredients.length, hasPetProfile, breakdown, report]);
+  }, [safeIngredients.length, cautionIngredients.length, dangerIngredients.length, ingredients.length, hasPetProfile, breakdown, report]);
 
   const cautions = useMemo(() => {
     const base = [

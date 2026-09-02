@@ -1,6 +1,6 @@
 import type { AllergyRelationshipMatch } from '../analysis/allergyFamilyMatcher';
 
-export type AllergyDisplayLevel = 'hard' | 'caution' | 'none';
+export type AllergyDisplayLevel = 'hard' | 'caution' | 'none' | 'unknown';
 
 export interface AllergyDisplayInput {
   allergyHits: string[];
@@ -11,6 +11,11 @@ export interface AllergyDisplayState {
   level: AllergyDisplayLevel;
   shortText: string;
   summaryText: string;
+}
+
+export interface AllergyDisplayOptions {
+  /** False means the product has no ingredient rows, so absence cannot be established. */
+  hasIngredientData?: boolean;
 }
 
 function cautionShortText(matches: AllergyRelationshipMatch[]): string {
@@ -24,6 +29,7 @@ function cautionShortText(matches: AllergyRelationshipMatch[]): string {
 export function buildAllergyDisplayState(
   input: AllergyDisplayInput,
   petName = '우리 아이',
+  options: AllergyDisplayOptions = {},
 ): AllergyDisplayState {
   if (input.allergyHits.length > 0) {
     return {
@@ -38,6 +44,14 @@ export function buildAllergyDisplayState(
       level: 'caution',
       shortText: cautionShortText(input.allergyCautions),
       summaryText: `${petName}의 알레르기와 관련된 원료가 있어 급여 전 확인 필요`,
+    };
+  }
+
+  if (options.hasIngredientData === false) {
+    return {
+      level: 'unknown',
+      shortText: '판정 불가',
+      summaryText: '원료 정보 부족으로 알레르기 판정 불가',
     };
   }
 
