@@ -1,47 +1,50 @@
 import React from 'react';
 import { useNotification, type NotificationType } from '../store/useNotification';
-import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
+import { CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 
 const icons: Record<NotificationType, React.ReactNode> = {
-  success: <CheckCircle className="w-5 h-5 text-green-500" />,
-  error: <AlertCircle className="w-5 h-5 text-red-500" />,
-  info: <Info className="w-5 h-5 text-blue-500" />,
-  warning: <AlertTriangle className="w-5 h-5 text-amber-500" />,
+  success: <CheckCircle size={16} strokeWidth={2.5} aria-hidden />,
+  error: <AlertCircle size={16} strokeWidth={2.5} aria-hidden />,
+  info: <Info size={16} strokeWidth={2.5} aria-hidden />,
+  warning: <AlertTriangle size={16} strokeWidth={2.5} aria-hidden />,
 };
 
-const bgColors: Record<NotificationType, string> = {
-  success: 'bg-green-50 border-green-100',
-  error: 'bg-red-50 border-red-100',
-  info: 'bg-blue-50 border-blue-100',
-  warning: 'bg-amber-50 border-amber-100',
-};
-
+/**
+ * 상단 토스트 알림.
+ *
+ * 예전에는 화면 폭을 꽉 채우는 파스텔 색 상자가 오른쪽에서 밀려 들어오고 닫기(X)
+ * 버튼까지 달려 있어서, "로그인되었습니다" 같은 한 줄 안내에 비해 과했다.
+ * 지금은 위에서 내려오는 작은 알약 하나로 띄우고 시간이 지나면 스스로 사라진다.
+ * 눌러서 바로 닫을 수도 있어 별도 닫기 버튼을 두지 않는다.
+ *
+ * 오류·경고는 즉시 읽히도록 role="alert", 나머지는 하던 일을 끊지 않도록
+ * role="status" 로 전달한다.
+ */
 export default function Notification() {
-  const { notifications, removeNotification } = useNotification();
+  const notifications = useNotification((state) => state.notifications);
+  const removeNotification = useNotification((state) => state.removeNotification);
 
   if (notifications.length === 0) return null;
 
   return (
-    <div className="fixed top-4 right-4 left-4 z-[9999] flex flex-col gap-3 pointer-events-none sm:left-auto sm:w-80">
-      {notifications.map((notification) => (
-        <div
-          key={notification.id}
-          className={`pointer-events-auto flex items-start gap-3 p-4 rounded-xl border shadow-lg animate-in slide-in-from-right-full fade-in duration-300 ${bgColors[notification.type]}`}
-        >
-          <div className="flex-shrink-0 mt-0.5">
-            {icons[notification.type]}
-          </div>
-          <p className="flex-1 text-sm font-semibold text-gray-800 leading-tight">
-            {notification.message}
-          </p>
-          <button
+    <div className="vr-toast-layer">
+      {notifications.map((notification) => {
+        const urgent = notification.type === 'error' || notification.type === 'warning';
+        return (
+          <div
+            key={notification.id}
+            className="vr-toast"
+            data-type={notification.type}
+            data-leaving={notification.leaving ? '' : undefined}
+            role={urgent ? 'alert' : 'status'}
+            aria-live={urgent ? 'assertive' : 'polite'}
             onClick={() => removeNotification(notification.id)}
-            className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
           >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      ))}
+            <span className="vr-toast__icon">{icons[notification.type]}</span>
+            <span className="vr-toast__text">{notification.message}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }
