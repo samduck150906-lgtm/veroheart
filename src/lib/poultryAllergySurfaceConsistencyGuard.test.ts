@@ -7,11 +7,13 @@ function source(relativeUrl: string): string {
 }
 
 describe('poultry allergy surface consistency guard', () => {
-  it('routes comparison allergy copy through the shared HARD/caution/none display state', () => {
+  it('routes comparison allergy copy through the shared HARD/caution/none/unknown display state', () => {
     const comparison = source('../pages/Comparison.tsx');
 
     expect(comparison).toContain('buildAllergyDisplayState');
     expect(comparison).toContain("best.allergyLevel === 'caution'");
+    expect(comparison).toContain("best.allergyLevel === 'unknown'");
+    expect(comparison).toContain('hasIngredientData: (product.ingredients?.length ?? 0) > 0');
     expect(comparison).not.toContain(
       "breakdown.allergyHits.length > 0 ? breakdown.allergyHits.join(', ') : '해당 없음'",
     );
@@ -22,6 +24,10 @@ describe('poultry allergy surface consistency guard', () => {
 
     expect(detail).toContain('buildAllergyDisplayState');
     expect(detail).toContain("allergyDisplay.level === 'caution'");
+    expect(detail).toContain("allergyDisplay.level === 'unknown'");
+    expect(detail).toContain('hasIngredientData');
+    expect(detail).toContain("value: '원료 정보 부족'");
+    expect(detail).toContain('위험 성분 포함 여부를 판정할 수 없어요');
     expect(detail).toContain('allergyDisplay.summaryText');
     expect(detail).not.toContain(
       "breakdown.allergyHits.length ? `, ${profile.name}의 회피 성분 ${breakdown.allergyHits.join('·')} 포함` : ', 등록된 알레르기 성분 없음'",
@@ -33,7 +39,9 @@ describe('poultry allergy surface consistency guard', () => {
 
     expect(analysisResult).toContain("breakdown?.allergyHits.length === 0");
     expect(analysisResult).toContain("(breakdown?.allergyCautions.length ?? 0) === 0");
+    expect(analysisResult).toContain('ingredients.length > 0');
     expect(analysisResult).toContain("'알레르기 성분 미포함'");
+    expect(analysisResult).toContain("'주의·위험 성분 없음'");
   });
 
   it('keeps feed-analysis quality score objective while surfacing profile caution copy', () => {

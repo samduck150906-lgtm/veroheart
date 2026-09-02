@@ -224,7 +224,10 @@ export default function Detail() {
   // 표시 점수는 카드·분석결과와 동일한 하드캡(위험≤69, 알레르기≤9, 종 불일치=0)을
   // 거친 값을 쓴다. 게스트에게는 개인화 감점 없는 객관 점수를 보여준다.
   const { breakdown, score: safetyScore, grade: displayGrade } = resolveProductDisplayVerdict(product, profile);
-  const allergyDisplay = buildAllergyDisplayState(breakdown, profile.name || '우리 아이');
+  const hasIngredientData = (product.ingredients?.length ?? 0) > 0;
+  const allergyDisplay = buildAllergyDisplayState(breakdown, profile.name || '우리 아이', {
+    hasIngredientData,
+  });
   const conclusion = report
     ? buildProductConclusion(product, profile, { ...report, score: safetyScore }, { personalized })
     : null;
@@ -237,7 +240,9 @@ export default function Detail() {
           ? '강아지용'
           : '미표기';
   const glanceTiles: GlanceTileData[] = [
-    breakdown.dangerCount > 0
+    !hasIngredientData
+      ? { icon: <AlertTriangle size={18} />, label: '안전도', value: '원료 정보 부족', tone: 'caution' }
+      : breakdown.dangerCount > 0
       ? { icon: <AlertTriangle size={18} />, label: '안전도', value: `위험 ${breakdown.dangerCount}개`, tone: 'danger' }
       : breakdown.cautionCount > 0
         ? { icon: <AlertTriangle size={18} />, label: '안전도', value: `주의 ${breakdown.cautionCount}개`, tone: 'caution' }
@@ -246,7 +251,9 @@ export default function Detail() {
       ? { icon: <Ban size={18} />, label: '알레르기', value: `${breakdown.allergyHits.length}개 주의`, tone: 'danger' }
       : allergyDisplay.level === 'caution'
         ? { icon: <Ban size={18} />, label: '알레르기', value: allergyDisplay.shortText, tone: 'caution' }
-        : { icon: <Ban size={18} />, label: '알레르기', value: '해당 없음', tone: 'excellent' },
+        : allergyDisplay.level === 'unknown'
+          ? { icon: <Ban size={18} />, label: '알레르기', value: allergyDisplay.shortText, tone: 'caution' }
+          : { icon: <Ban size={18} />, label: '알레르기', value: '해당 없음', tone: 'excellent' },
     { icon: <Dog size={18} />, label: '추천 대상', value: petTypeLabel, tone: 'neutral' },
     { icon: <Calendar size={18} />, label: '생애주기', value: (product.targetLifeStage && product.targetLifeStage[0]) || '전연령', tone: 'neutral' },
     { icon: <Flame size={18} />, label: '제형', value: product.formulation || '건식', tone: 'neutral' },
@@ -275,7 +282,9 @@ export default function Detail() {
   const verdictLines = [
     {
       icon: <ShieldCheck size={16} />,
-      text: `안전성: ${breakdown.dangerCount === 0 ? '위험 성분 없음' : `위험 성분 ${breakdown.dangerCount}개`}${breakdown.cautionCount ? `, 주의 ${breakdown.cautionCount}개` : ''} — ${gradeLabel} 등급입니다.`,
+      text: hasIngredientData
+        ? `안전성: ${breakdown.dangerCount === 0 ? '위험 성분 없음' : `위험 성분 ${breakdown.dangerCount}개`}${breakdown.cautionCount ? `, 주의 ${breakdown.cautionCount}개` : ''} — ${gradeLabel} 등급입니다.`
+        : '안전성: 원료 정보가 부족해 위험 성분 포함 여부를 판정할 수 없어요.',
     },
     {
       icon: <Flame size={16} />,
@@ -340,6 +349,9 @@ export default function Detail() {
     }
     if (allergyDisplay.level === 'caution') {
       return { headline: '알레르기 관련 원료를 확인해 주세요', headlineColor: '#F59E0B' };
+    }
+    if (allergyDisplay.level === 'unknown') {
+      return { headline: '원료 정보가 부족해 알레르기를 확인할 수 없어요', headlineColor: '#F59E0B' };
     }
     if (cautionIngs.length > 0) {
       return { headline: `확인해야 할 성분이 ${cautionIngs.length}개 있어요`, headlineColor: '#F59E0B' };

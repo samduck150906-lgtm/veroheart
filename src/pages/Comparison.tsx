@@ -29,7 +29,9 @@ function buildColumn(product: Product, profile: UserPetProfile): Column {
   const proteinValue = product.guaranteedAnalysis?.crudeProtein;
   const goodCount = product.ingredients?.filter((i) => i.riskLevel === 'safe').length ?? 0;
   const warnCount = breakdown.dangerCount + breakdown.cautionCount;
-  const allergyDisplay = buildAllergyDisplayState(breakdown, profile.name || '우리 아이');
+  const allergyDisplay = buildAllergyDisplayState(breakdown, profile.name || '우리 아이', {
+    hasIngredientData: (product.ingredients?.length ?? 0) > 0,
+  });
 
   return {
     product,
@@ -86,7 +88,7 @@ export default function Comparison() {
       tone: (c) =>
         c.allergyLevel === 'hard'
           ? 'var(--danger-strong)'
-          : c.allergyLevel === 'caution'
+          : c.allergyLevel === 'caution' || c.allergyLevel === 'unknown'
             ? 'var(--caution-strong)'
             : 'var(--vr-body-2)',
     },
@@ -99,7 +101,9 @@ export default function Comparison() {
       ? '다만 알레르기 성분이 포함돼 있어 급여 전 확인이 필요해.'
       : best.allergyLevel === 'caution'
         ? `${petName}의 알레르기와 관련된 원료가 있어 급여 전 확인이 필요해.`
-        : `${petName} 알레르기 성분은 들어 있지 않아.`;
+        : best.allergyLevel === 'unknown'
+          ? '원료 정보가 부족해 알레르기 포함 여부를 판정할 수 없어.'
+          : `${petName} 알레르기 성분은 들어 있지 않아.`;
 
   return (
     <div className="vr-anim-fade" style={{ padding: '14px 0 24px' }}>
