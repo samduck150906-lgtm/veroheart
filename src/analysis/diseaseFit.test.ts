@@ -1,19 +1,31 @@
 import { describe, it, expect } from 'vitest';
 import { concernsToDiseaseIds } from './adapter';
+import { canonicalizeHealthConcerns } from '../health/concerns';
 import { evaluateDiseases } from './breedDiseaseEngine';
 
 describe('concernsToDiseaseIds — 건강 고민 라벨 → 질환 ID', () => {
-  it('알려진 라벨을 질환 ID로 매핑하고 미지원 항목(면역)은 제외한다', () => {
+  it('알려진 라벨과 별칭을 canonical 계약을 거쳐 질환 ID로 매핑한다', () => {
     expect(concernsToDiseaseIds(['관절', '심장', '면역', '신장·비뇨기'])).toEqual(['joint', 'heart', 'kidney']);
+    expect(concernsToDiseaseIds(['소화', '장 건강', '피부', '체중 관리', '구강 건강'])).toEqual([
+      'gut',
+      'skin',
+      'weight',
+      'dental',
+    ]);
   });
 
-  it('중복을 제거한다', () => {
-    expect(concernsToDiseaseIds(['관절', '관절'])).toEqual(['joint']);
+  it('canonical concern 기준으로 중복을 제거한다', () => {
+    expect(concernsToDiseaseIds(['관절', 'joint'])).toEqual(['joint']);
   });
 
   it('빈 입력·undefined를 안전하게 처리한다', () => {
     expect(concernsToDiseaseIds([])).toEqual([]);
     expect(concernsToDiseaseIds(undefined)).toEqual([]);
+  });
+
+  it('면역은 legacy 질환 카드가 없어도 canonical profile concern으로 보존된다', () => {
+    expect(canonicalizeHealthConcerns(['면역'])).toEqual(['immune']);
+    expect(concernsToDiseaseIds(['면역'])).toEqual([]);
   });
 });
 
