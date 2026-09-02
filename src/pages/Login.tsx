@@ -7,6 +7,7 @@ import { notify } from '../store/useNotification';
 import { LogoChip } from '../components/Wordmark';
 import { VR } from '../lib/veroroDesign';
 import { usePublicSettings } from '../lib/publicSettings';
+import { isKakaoLoginEnabled, signInWithKakao } from '../lib/kakaoAuth';
 
 const PASSWORD_RULES = [
   {
@@ -60,7 +61,10 @@ export default function Login() {
   const [resendLoading, setResendLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [pendingVerification, setPendingVerification] = useState(false);
+  const [kakaoLoading, setKakaoLoading] = useState(false);
   const resendIntervalRef = useRef<number | null>(null);
+  // 카카오 키가 준비되기 전에는 버튼을 잠가 둔다 (lib/kakaoAuth 참고).
+  const kakaoReady = isKakaoLoginEnabled();
 
   const redirectTo = useMemo(() => {
     const from = (location.state as { from?: string } | null)?.from;
@@ -121,6 +125,26 @@ export default function Login() {
       }
     } finally {
       setResendLoading(false);
+    }
+  };
+
+  const handleKakao = async () => {
+    if (kakaoLoading) return;
+    if (mode === 'signup' && !signupEnabled) {
+      notify.error('현재 신규 회원 가입이 일시 중단되었습니다.');
+      return;
+    }
+    setKakaoLoading(true);
+    try {
+      // 성공하면 카카오 인증 페이지로 이동하므로 이 아래는 실행되지 않는다.
+      const failure = await signInWithKakao(`${window.location.origin}/auth/callback`);
+      if (failure) {
+        notify.error(failure.message);
+        setKakaoLoading(false);
+      }
+    } catch (err: unknown) {
+      notify.error(err instanceof Error ? err.message : '카카오 로그인에 실패했어요.');
+      setKakaoLoading(false);
     }
   };
 
@@ -311,7 +335,42 @@ export default function Login() {
         <span style={{ flex: 1, height: '1px', background: 'var(--vr-card-line)' }} />
       </div>
 
-      {/* 이메일 인증 재전송 — 소셜 로그인 대신 제공하는 보조 경로 */}
+      {/* 카카오로 계속하기 — 로그인/회원가입 공용 (첫 로그인 시 계정이 생성된다) */}
+      <button
+        type="button"
+        onClick={() => void handleKakao()}
+        disabled={!kakaoReady || kakaoLoading}
+        aria-label={kakaoReady ? '카카오로 계속하기' : '카카오 로그인 준비 중'}
+        title={kakaoReady ? undefined : '카카오 로그인은 준비 중이에요.'}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '9px',
+          padding: '15px', borderRadius: '12px', border: 'none',
+          background: '#FEE500', color: '#191600',
+          fontSize: '14.5px', fontWeight: 800, letterSpacing: '-0.02em',
+          cursor: kakaoReady && !kakaoLoading ? 'pointer' : 'not-allowed',
+          opacity: kakaoReady ? (kakaoLoading ? 0.65 : 1) : 0.45,
+        }}
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+          <path d="M12 3C6.99 3 2.93 6.2 2.93 10.15c0 2.53 1.67 4.75 4.19 6.01-.18.65-.67 2.42-.77 2.8-.12.47.17.46.36.34.15-.1 2.39-1.63 3.36-2.29.63.09 1.27.14 1.93.14 5.01 0 9.07-3.2 9.07-7.15S17.01 3 12 3z" />
+        </svg>
+        {kakaoReady
+          ? (kakaoLoading ? '카카오로 이동 중…' : '카카오로 계속하기')
+          : '카카오로 계속하기 (준비 중)'}
+      </button>
+      {!kakaoReady && (
+        <p style={{ margin: '8px 0 0', fontSize: '11.5px', color: VR.faint, lineHeight: 1.55, textAlign: 'center' }}>
+          카카오 로그인은 키 발급·심사가 끝나면 열려. 지금은 이메일로 가입해줘.
+        </p>
+      )}
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '22px 0' }}>
+        <span style={{ flex: 1, height: '1px', background: 'var(--vr-card-line)' }} />
+        <span style={{ fontSize: '11.5px', color: VR.faint, fontWeight: 700 }}>도움이 필요해?</span>
+        <span style={{ flex: 1, height: '1px', background: 'var(--vr-card-line)' }} />
+      </div>
+
+      {/* 이메일 인증 재전송 */}
       <div className="vr-card" style={{ padding: '14px' }}>
         <div style={{ fontSize: '12.5px', fontWeight: 800, marginBottom: '6px' }}>인증 메일이 안 왔어?</div>
         <p style={{ margin: '0 0 10px', fontSize: '12px', color: VR.muted, lineHeight: 1.55 }}>
@@ -344,7 +403,7 @@ export default function Login() {
         >
           이용약관
         </button>
-        과 개인정보 처리방침에 동의하는 걸로 볼게. 소셜 로그인 없이 이메일과 비밀번호만 사용해.
+        과 개인정보 처리방침에 동의하는 걸로 볼게.
       </p>
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>

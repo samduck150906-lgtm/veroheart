@@ -2,13 +2,13 @@
  * 베로로 브랜드·기능·UGC 카피 (단일 소스)
  */
 
-/** 스플래시 로딩 화면에서 로테이션 */
-export const SPLASH_TAGLINES = [
-  '우리 아이가 먹는 모든 것, 의심 대신 베로로 하세요.',
-  '집사의 마음은 진심(Vero)이니까, 성분 분석은 베로로가 합니다.',
-  '로니와 삼덕이의 건강한 식탁을 위한 가장 쉬운 습관',
-  '세상에 나쁜 성분은 있어도, 나쁜 집사는 없으니까.',
-] as const;
+/**
+ * 스플래시 로딩 화면 문구.
+ *
+ * 로고 아래 한 줄은 브랜드 슬로건으로 고정한다. 앱을 열 때마다 다른 문장이 뜨면
+ * 첫인상이 매번 달라져 슬로건으로 기억되지 않는다.
+ */
+export const SPLASH_TAGLINE = '고민은 진심(VERO)으로, 사랑은 배로!' as const;
 
 /** 홈 히어로 (고정 구성) */
 export const HOME_HERO = {
@@ -16,8 +16,7 @@ export const HOME_HERO = {
 } as const;
 
 export function pickSplashTagline(): string {
-  const i = Math.floor(Math.random() * SPLASH_TAGLINES.length);
-  return SPLASH_TAGLINES[i];
+  return SPLASH_TAGLINE;
 }
 
 /** 런칭 바이럴 테스트 캠페인 */
