@@ -77,3 +77,25 @@ Do not show reassuring phrases such as "추천합니다", "안심하고 먹을 �
 Medical or nutritional thresholds must carry evidence records describing source, source date/version, species, life stage, healthy-animal vs diagnosed-disease scope, nutrient, unit, threshold/range, measured/declared/calculated/estimated value type, evidence strength, and limitations.
 
 Do not describe general profile concerns as diagnoses, treatments, prevention, cures, therapeutic suitability, or guaranteed improvement.
+
+## Runtime Evaluator
+
+`src/health/evaluator.ts` is the canonical concern evaluator. It keeps the legacy disease engine available for shadow comparison, but produces the structured result that scoring and UI surfaces should consume in later integration PRs.
+
+Evaluator rules:
+
+- product tags are tag evidence only
+- named functional ingredients without an amount are possible evidence only
+- ingredient presence never passes an mg/1000 kcal threshold
+- quantitative support requires a comparable label-declared or calculated value
+- contradictory quantitative checks return `not_supported`
+- renal/urinary and heart concerns cannot become `supported` from tags or ingredient names alone
+- `immune` returns a real concern result without inventing a disease card
+
+Initial source references used for conservative runtime evidence records:
+
+- WSAVA Global Nutrition Guidelines, accessed 2026-09-02
+- FEDIAF Nutritional Guidelines for Complete and Complementary Pet Food for Cats and Dogs, 2024
+- MSD/Merck Veterinary Manual, Renal Dysfunction in Dogs and Cats, accessed 2026-09-02
+
+Current numeric checks are internal label-comparison gates, not therapeutic diet certification. They must be shown with limitations and must not be described as complete NRC or AAFCO disease-specific rules.
