@@ -170,6 +170,32 @@ def collect_product_links(html: str, base_url: str, link_pattern: str | None) ->
     return found
 
 
+def sample_same_site_links(html: str, base_url: str, limit: int = 12) -> list[str]:
+    """
+    제품 주소 모양을 못 맞췄을 때 보여 줄 후보들.
+
+    사이트마다 주소 규칙이 달라서, 제품 번호가 없는 곳(기업 사이트 등)에서는 자동
+    판별이 실패한다. 그때 "0개 찾음" 만 남기면 다음에 뭘 해야 할지 알 수 없다.
+    같은 도메인 링크를 몇 개 보여 주면 --link-pattern 을 바로 정할 수 있다.
+    """
+    base = urllib.parse.urlparse(base_url)
+    seen: set[str] = set()
+    out: list[str] = []
+    for href in re.findall(r'<a[^>]+href=["\']([^"\']+)["\']', html, re.I):
+        absolute = urllib.parse.urljoin(base_url, href.strip())
+        parsed = urllib.parse.urlparse(absolute)
+        if parsed.scheme not in ("http", "https") or parsed.netloc != base.netloc:
+            continue
+        path = parsed.path.rstrip("/")
+        if not path or path in seen:
+            continue
+        seen.add(path)
+        out.append(absolute)
+        if len(out) >= limit:
+            break
+    return out
+
+
 def load_brand_products(conn, brand: str, overwrite: bool) -> list[tuple[str, str]]:
     """(id, name) — 그 브랜드에서 영양정보가 없는 제품만."""
     cur = conn.cursor()
@@ -236,6 +262,31 @@ def run_self_test() -> int:
     check("title 폴백", page_title("<html><head><title> 밥이보약  오리 </title></head></html>"),
           "밥이보약 오리")
     check("제목 없음", page_title("<html><body>내용만</body></html>"), "")
+
+    # 제품 번호가 없는 사이트(기업 사이트 등)에서는 자동 판별이 실패한다.
+    # 그때 후보를 보여 줘야 --link-pattern 을 정할 수 있다.
+    corporate = """
+    <html><body>
+      <a href="/kr/cats/products/retail-products/indoor-27">인도어</a>
+      <a href="/kr/cats/products/retail-products/hairball-care">헤어볼</a>
+      <a href="/kr/cats/products/retail-products/indoor-27">같은 주소 다시</a>
+      <a href="https://elsewhere.example/x">다른 사이트</a>
+    </body></html>
+    """
+    check("번호 없는 주소는 자동으로 못 잡는다",
+          collect_product_links(corporate, "https://brand.example/kr/cats/products", None), [])
+    check(
+        "대신 후보를 보여 준다",
+        sample_same_site_links(corporate, "https://brand.example/kr/cats/products"),
+        ["https://brand.example/kr/cats/products/retail-products/indoor-27",
+         "https://brand.example/kr/cats/products/retail-products/hairball-care"],
+    )
+    check(
+        "--link-pattern 을 주면 그 조각으로 잡는다",
+        collect_product_links(corporate, "https://brand.example/kr/cats/products", "/retail-products/"),
+        ["https://brand.example/kr/cats/products/retail-products/indoor-27",
+         "https://brand.example/kr/cats/products/retail-products/hairball-care"],
+    )
 
     for line in failures:
         print(f"실패 {line}")
@@ -345,6 +396,16 @@ def main() -> int:
                 # 로그만 보고 바로 알 수 있도록. 실제로 그 실수를 한 적이 있다.
                 LOG.info("[%s] %s → 제품 링크 %d개%s", brand, list_url, len(links),
                          (" (예: " + ", ".join(links[:2]) + ")") if links else "")
+                if not links:
+                    # 한 개도 못 맞췄으면 후보를 보여 준다. 여기서 멈추면 다음에 뭘
+                    # 해야 할지 알 수 없다 — --link-pattern 을 정할 재료를 남긴다.
+                    samples = sample_same_site_links(listing_html, list_url)
+                    LOG.warning(
+                        "[%s] 제품 주소 모양을 못 맞췄습니다. 이 사이트의 링크 예시입니다 — "
+                        "제품 상세 주소의 공통 조각을 --link-pattern 으로 주세요:", brand,
+                    )
+                    for sample in samples:
+                        LOG.warning("    %s", sample)
                 product_links.extend(links)
                 time.sleep(args.delay)
 
