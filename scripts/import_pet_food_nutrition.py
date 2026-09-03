@@ -321,6 +321,39 @@ def resolve_candidates(
     return matched, "포함일치"
 
 
+def assert_columns_nullable(conn) -> None:
+    """
+    등록성분 컬럼이 NULL 을 허용하는지 확인한다.
+
+    원래 이 컬럼들은 NOT NULL DEFAULT 0.0 이었다. 그 상태로 이 스크립트를 돌리면
+    값을 모르는 성분이 0 으로 채워져, 앱이 "칼슘 0%" 를 신고값으로 읽는다. 그래서
+    마이그레이션(20260903120000_nutritional_profiles_allow_unknown)이 먼저 적용돼
+    있어야 한다.
+    """
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'nutritional_profiles'
+          AND column_name = ANY(%s)
+          AND (is_nullable = 'NO' OR column_default IS NOT NULL)
+        """,
+        (list(NUTRIENT_COLUMNS),),
+    )
+    offenders = [r[0] for r in cur.fetchall()]
+    cur.close()
+    if offenders:
+        raise SystemExit(
+            "중단: 다음 컬럼이 아직 NOT NULL 이거나 기본값이 있습니다 — "
+            f"{', '.join(offenders)}\n"
+            "이 상태로 넣으면 모르는 성분이 0 으로 저장돼 '칼슘 0%' 처럼 보입니다.\n"
+            "먼저 supabase/migrations/20260903120000_nutritional_profiles_allow_unknown.sql "
+            "을 적용하세요."
+        )
+
+
 def load_products(conn) -> list[tuple[str, str, str, bool]]:
     """(id, name, brand_name, 영양정보 있음) 목록."""
     cur = conn.cursor()
@@ -456,7 +489,8 @@ def main() -> int:
         conn.close()
         return 0
 
-    # 4) 반영
+    # 4) 반영 — 스키마가 '모름'을 담을 수 있는 상태인지 먼저 확인한다.
+    assert_columns_nullable(conn)
     cur = conn.cursor()
     applied = 0
     for pid, present, kcal in writes:
