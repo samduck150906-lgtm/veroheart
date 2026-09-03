@@ -2,6 +2,8 @@
 """
 쿠팡 상품 상세페이지에서 등록성분을 읽어 nutritional_profiles 에 채운다.
 
+    pip install playwright && python -m playwright install chromium   # 최초 1회
+
     python scripts/fetch_coupang_nutrition.py --self-test          # 파싱 자가검증 (네트워크 불필요)
     python scripts/fetch_coupang_nutrition.py --limit 20           # 20건만 미리보기
     python scripts/fetch_coupang_nutrition.py                      # 전체 미리보기 (DB 미반영)
@@ -24,6 +26,14 @@
     - 받아온 HTML 을 캐시에 저장한다. 파싱을 고칠 때 다시 받지 않아도 된다.
     - 한 건씩 순서대로, 기본 3초 간격으로 받는다(--delay). 상대 서버를 두드리지 않기 위해서다.
       쿠팡 이용약관·robots 정책은 실행 전에 직접 확인하시라.
+
+받아오는 방식
+    파이썬이 직접 보낸 요청은 쿠팡이 403 으로 막는다(실측 20건 전부). 그래서 Playwright 로
+    실제 Chromium 을 띄워 사람이 보는 것과 같은 페이지를 받는다. 브라우저 창을 눈으로
+    보려면 --show-browser, 굳이 직접 요청을 쓰려면 --http-only(대개 403).
+
+    한 건에 5~10초 걸린다. 458건이면 한 시간쯤 잡아야 한다. 중간에 끊겨도 받은 페이지는
+    캐시에 남아 있어, 다시 실행하면 남은 것부터 이어서 받는다.
 
 환경 변수 (.env)
     DATABASE_URL 또는 SUPABASE_DB_URL : postgresql://...
@@ -227,6 +237,63 @@ def fetch(url: str, timeout: int, retries: int = 2) -> str:
     raise RuntimeError(str(last_error))
 
 
+class BrowserFetcher:
+    """
+    진짜 브라우저(Playwright + Chromium)로 상세페이지를 연다.
+
+    파이썬이 직접 보낸 요청은 쿠팡이 403 으로 막는다(실측: 20건 전부 403). 사람이 쓰는
+    브라우저와 구별해서 거르기 때문이라, 헤더를 흉내 내는 것으로는 넘어가지 않는다.
+
+    브라우저와 세션을 한 번만 만들어 끝까지 쓴다. 매번 새로 열면 느릴 뿐 아니라,
+    첫 방문자로 계속 보여 오히려 더 잘 막힌다.
+    """
+
+    def __init__(self, timeout: int, headless: bool = True) -> None:
+        try:
+            from playwright.sync_api import sync_playwright
+        except ImportError as exc:  # pragma: no cover - 설치 안내가 목적
+            raise SystemExit(
+                "브라우저 수집에는 Playwright 가 필요합니다:\n"
+                "    pip install playwright\n"
+                "    python -m playwright install chromium"
+            ) from exc
+
+        self._timeout_ms = timeout * 1000
+        self._playwright = sync_playwright().start()
+        self._browser = self._playwright.chromium.launch(headless=headless)
+        self._context = self._browser.new_context(
+            user_agent=USER_AGENT,
+            locale="ko-KR",
+            timezone_id="Asia/Seoul",
+            viewport={"width": 1440, "height": 900},
+        )
+        self._page = self._context.new_page()
+        # 상품 페이지로 바로 들어가면 첫 방문으로 걸러진다. 첫 화면을 먼저 열어 쿠키를 받는다.
+        try:
+            self._page.goto("https://www.coupang.com/", wait_until="domcontentloaded",
+                            timeout=self._timeout_ms)
+            self._page.wait_for_timeout(2000)
+        except Exception as exc:  # noqa: BLE001
+            LOG.warning("첫 화면을 열지 못했습니다(계속 진행): %s", exc)
+
+    def get(self, url: str) -> str:
+        response = self._page.goto(url, wait_until="domcontentloaded", timeout=self._timeout_ms)
+        if response is not None and response.status >= 400:
+            raise RuntimeError(f"HTTP {response.status}")
+        # 등록성분표는 아래쪽 '상품정보제공고시' 영역에 있고, 스크롤해야 그려지는 경우가 많다.
+        for _ in range(4):
+            self._page.mouse.wheel(0, 4000)
+            self._page.wait_for_timeout(600)
+        return self._page.content()
+
+    def close(self) -> None:
+        for closer in (self._context.close, self._browser.close, self._playwright.stop):
+            try:
+                closer()
+            except Exception:  # noqa: BLE001 - 정리 실패로 결과를 잃지 않는다
+                pass
+
+
 def load_targets(conn, overwrite: bool) -> list[tuple[str, str, str, str | None, str | None]]:
     """(id, name, brand, coupang_product_id, coupang_link) — 영양정보가 없는 제품만."""
     cur = conn.cursor()
@@ -349,7 +416,13 @@ def main() -> int:
     parser.add_argument("--overwrite", action="store_true", help="이미 영양정보가 있는 제품도 다시 받는다")
     parser.add_argument("--limit", type=int, help="이 건수만 처리한다 (먼저 소량으로 확인할 때)")
     parser.add_argument("--delay", type=float, default=3.0, help="요청 간격(초). 기본 3초")
-    parser.add_argument("--timeout", type=int, default=20)
+    parser.add_argument("--timeout", type=int, default=30)
+    parser.add_argument(
+        "--http-only",
+        action="store_true",
+        help="브라우저 없이 직접 요청한다. 쿠팡은 이 방식을 403 으로 막으므로 보통 쓸 일이 없다.",
+    )
+    parser.add_argument("--show-browser", action="store_true", help="브라우저 창을 띄워 진행을 눈으로 본다")
     parser.add_argument("--cache", type=Path, default=Path("./data/coupang_cache"), help="받아온 HTML 보관 위치")
     parser.add_argument("--report", type=Path, default=Path("./data/coupang_nutrition_report.csv"))
     parser.add_argument("-v", "--verbose", action="store_true")
@@ -384,6 +457,13 @@ def main() -> int:
     LOG.info("대상 %d건", len(targets))
 
     args.cache.mkdir(parents=True, exist_ok=True)
+    # 캐시에 다 있으면 브라우저를 띄울 이유가 없다.
+    need_network = any(not (args.cache / f"{t[0]}.html").exists() for t in targets)
+    fetcher = None
+    if need_network and not args.http_only:
+        LOG.info("브라우저를 준비합니다 (Playwright + Chromium)")
+        fetcher = BrowserFetcher(args.timeout, headless=not args.show_browser)
+
     report: list[dict[str, Any]] = []
     writes: list[tuple[str, dict[str, float], float | None]] = []
     blocked_streak = 0
@@ -401,7 +481,7 @@ def main() -> int:
             raw_html = cached.read_text(encoding="utf-8", errors="replace")
         else:
             try:
-                raw_html = fetch(url, args.timeout)
+                raw_html = fetcher.get(url) if fetcher else fetch(url, args.timeout)
             except Exception as exc:  # noqa: BLE001
                 row.update({"결과": "실패", "사유": f"페이지를 받지 못함: {exc}"})
                 report.append(row)
@@ -461,6 +541,9 @@ def main() -> int:
 
         if index % 25 == 0:
             LOG.info("%d/%d 진행", index, len(targets))
+
+    if fetcher:
+        fetcher.close()
 
     args.report.parent.mkdir(parents=True, exist_ok=True)
     columns = ["결과", "제품명", "브랜드", *REPORT_COLUMNS.keys(), "보장경계", "계산kcal_100g", "사유"]
