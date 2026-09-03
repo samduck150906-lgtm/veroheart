@@ -13,6 +13,8 @@ import {
   Check,
 } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import AllergyIngredientPicker from '../components/AllergyIngredientPicker';
+import { petAgeDisplay } from '../utils/allergyPicker';
 import { TossCard, TossButton, TossChip, TossInput, TossSectionTitle } from '../components/TossUI';
 import ProductCard from '../components/ProductCard';
 import FeedingDiary from '../components/diary/FeedingDiary';
@@ -28,23 +30,22 @@ const PROFILE_STEP_META = [
   { title: '건강 고민', prompt: '신경 쓰이는 건강 고민이 있나요? (복수 선택)' },
 ];
 
-const allergyOptions = ['닭고기', '소고기', '연어', '곡물', '인공색소'];
+// 회피 성분은 고정 목록 대신 성분 DB 검색으로 고른다 (components/AllergyIngredientPicker).
+// 예전 목록은 5개뿐이라 오리·칠면조·달걀 같은 흔한 알레르겐도 고를 수 없었다.
+
+// 건강 고민 선택지는 근거 등급까지 함께 정의된 health/concerns 를 단일 출처로 쓴다.
+// 여기서 문자열을 따로 늘리면 분석이 다루지 못하는 항목이 조용히 섞인다.
 const concernOptions = HEALTH_CONCERN_OPTIONS;
 
-type MyPageTab = 'pets' | 'diary' | 'favorites' | 'account';
+// '계정 설정' 은 독립 탭이었지만 로그아웃과 중복 링크뿐이라, 페이지 하단 계정 섹션으로 합쳤다.
+type MyPageTab = 'pets' | 'diary' | 'favorites';
 
 const TAB_META: { key: MyPageTab; label: string }[] = [
   { key: 'pets', label: '내 반려동물' },
   { key: 'diary', label: '식이 다이어리' },
   { key: 'favorites', label: '저장한 제품' },
-  { key: 'account', label: '계정 설정' },
 ];
 
-function petAgeLabel(age: number): string {
-  if (age < 2) return '아기';
-  if (age > 7) return '시니어';
-  return '성인';
-}
 
 function newPetDraft(): UserPetProfile {
   return {
@@ -245,30 +246,19 @@ export default function Profile() {
         );
       case 4:
         return (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-            {allergyOptions.map((opt) => (
-              <button
-                key={opt}
-                type="button"
-                onClick={() => toggleArrayItem('allergies', opt)}
-                style={{
-                  padding: '10px 18px',
-                  borderRadius: '999px',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  border: formData.allergies.includes(opt) ? 'none' : '1px solid var(--line)',
-                  backgroundColor: formData.allergies.includes(opt) ? 'var(--danger)' : 'var(--surface-elevated)',
-                  color: formData.allergies.includes(opt) ? '#fff' : 'var(--text-dark)',
-                  cursor: 'pointer',
-                }}
-              >
-                {opt}
-              </button>
-            ))}
-          </div>
+          <AllergyIngredientPicker
+            selected={formData.allergies}
+            onChange={(next) => setFormData({ ...formData, allergies: next })}
+          />
         );
       case 5:
         return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {/* 고른 항목이 전부 맞춤 추천 근거가 되는 것은 아니다. 근거가 없는데
+                있는 것처럼 보이지 않도록 미리 알린다. */}
+            <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+              고른 고민은 프로필에 기록되고, 분석에 쓸 수 있는 항목은 제품 원료와 맞춰 볼게요.
+            </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
             {concernOptions.map((opt) => (
               <button
@@ -289,6 +279,7 @@ export default function Profile() {
                 {opt}
               </button>
             ))}
+          </div>
           </div>
         );
       default:
@@ -421,7 +412,7 @@ export default function Profile() {
                         </div>
                         <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600, marginTop: '3px' }}>
                           {pet.species === 'Cat' ? '고양이' : '강아지'}
-                          {pet.breed ? ` · ${pet.breed}` : ''} · {petAgeLabel(pet.age)}
+                          {pet.breed ? ` · ${pet.breed}` : ''} · {petAgeDisplay(pet.age, pet.species)}
                           {pet.weightKg ? ` · ${pet.weightKg}kg` : ''}
                         </div>
                       </button>
@@ -550,24 +541,34 @@ export default function Profile() {
       )}
 
       {/* ── 계정 설정 ── */}
-      {activeTab === 'account' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {/* 계정 — 독립 탭 대신 마이페이지 하단에 둔다. 탭이 하나 줄고,
+          어느 탭에서든 로그아웃·약관에 바로 닿는다. */}
+      {isLoggedIn && (
+        <div style={{ marginTop: '28px' }}>
           <TossCard style={{ padding: '20px' }}>
             <TossSectionTitle title="계정" subtitle="로그인한 계정을 관리해요" style={{ marginBottom: '16px' }} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <button
-                type="button"
-                onClick={() => setTab('favorites')}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'var(--surface-alt)', border: 'none', borderRadius: '12px', padding: '14px 16px', cursor: 'pointer' }}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <Link
+                to="/terms"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 4px', fontSize: '14px', fontWeight: 700, color: 'var(--text-dark)', textDecoration: 'none' }}
               >
-                <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: 700, color: 'var(--text-dark)' }}>
-                  <Heart size={16} /> 저장한 제품
-                </span>
-                <ChevronRight size={18} color="var(--text-muted)" />
-              </button>
+                이용약관 <ChevronRight size={17} color="var(--text-muted)" />
+              </Link>
+              <Link
+                to="/privacy"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 4px', fontSize: '14px', fontWeight: 700, color: 'var(--text-dark)', textDecoration: 'none' }}
+              >
+                개인정보 처리방침 <ChevronRight size={17} color="var(--text-muted)" />
+              </Link>
+              <Link
+                to="/refund"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 4px', fontSize: '14px', fontWeight: 700, color: 'var(--text-dark)', textDecoration: 'none' }}
+              >
+                환불 정책 <ChevronRight size={17} color="var(--text-muted)" />
+              </Link>
               <button
                 onClick={handleLogout}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '14px', fontWeight: 700, cursor: 'pointer', padding: '12px 4px' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '14px', fontWeight: 700, cursor: 'pointer', padding: '14px 4px', textAlign: 'left' }}
               >
                 <LogOut size={16} /> 로그아웃
               </button>

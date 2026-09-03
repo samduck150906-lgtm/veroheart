@@ -10,7 +10,13 @@ import type { PetSafetyScan } from '../utils/petSafety';
 import type { Product } from '../types';
 
 // category 값은 DB products.main_category 실측값('사료'/'간식'/'영양제')과 일치해야 한다.
-const CATEGORIES = ['사료', '간식', '영양제'] as const;
+// 부제는 등록 건수 대신 카테고리가 무엇인지 알려 준다. 건수는 보호자에게 의미가 없고,
+// DB 가 작아 보이는 역효과만 있었다.
+const CATEGORIES = [
+  { label: '사료', hint: '매일 먹는 주식' },
+  { label: '간식', hint: '훈련·보상용' },
+  { label: '영양제', hint: '부족한 영양 보충' },
+] as const;
 
 export default function Home() {
   const { profile, products, recentViews, isLoggedIn } = useStore();
@@ -32,17 +38,6 @@ export default function Home() {
   }, [recentViews, profile]);
 
   const petLabel = isLoggedIn && profile.name ? profile.name : '우리 아이';
-
-  /** 카테고리별 등록 제품 수 — 프로토타입의 '312개' 자리 */
-  const categoryCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const p of products) {
-      const key = p.mainCategory || p.category;
-      if (!key) continue;
-      counts.set(key, (counts.get(key) ?? 0) + 1);
-    }
-    return counts;
-  }, [products]);
 
   /** 프로필 기준 점수 상위 제품 — '우리 아이한테 잘 맞는 것들' */
   const recommended = useMemo(() => {
@@ -122,7 +117,7 @@ export default function Home() {
 
       {/* 카테고리 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '9px', marginBottom: '22px' }}>
-        {CATEGORIES.map((label) => (
+        {CATEGORIES.map(({ label, hint }) => (
           <button
             key={label}
             type="button"
@@ -136,7 +131,7 @@ export default function Home() {
               {label}
             </span>
             <span style={{ display: 'block', fontSize: '11.5px', color: VR.sub, marginTop: '3px', fontWeight: 600 }}>
-              {categoryCounts.get(label) ?? 0}개
+              {hint}
             </span>
           </button>
         ))}

@@ -321,8 +321,23 @@ export default function Search() {
 
   return (
     <div className="vr-anim-fade" style={{ paddingTop: '6px', paddingBottom: '24px' }}>
-      {/* 검색 */}
-      <div style={{ position: 'relative', margin: '8px 0 12px' }}>
+      {/* 검색 — 결과를 내려도 계속 닿을 수 있게 상단에 고정한다.
+          스크롤 컨테이너(.app-main)가 이미 고정 헤더 아래에서 시작하므로 top 은 0 이다.
+          헤더 높이를 한 번 더 더하면 그만큼 아래로 밀려난다(브라우저에서 확인).
+          z-index 는 헤더(50)보다 낮고 본문보다 높게 둬서, 토스트(70)나
+          필터 시트(9998)와도 겹치지 않는다. */}
+      <div
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 40,
+          background: 'var(--bg-color)',
+          margin: '0 0 12px',
+          paddingTop: '8px',
+          paddingBottom: '8px',
+        }}
+      >
+      <div style={{ position: 'relative' }}>
         <div
           style={{
             display: 'flex', alignItems: 'center', gap: '9px',
@@ -368,6 +383,7 @@ export default function Search() {
         {showSuggest && query.trim() !== '' && suggestions.length > 0 && (
           <SearchSuggestionList suggestions={suggestions} onPick={applySuggestion} />
         )}
+      </div>
       </div>
 
       {/* 필터 + 카테고리 칩 */}

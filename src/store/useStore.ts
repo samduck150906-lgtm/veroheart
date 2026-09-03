@@ -371,6 +371,9 @@ export const useStore = create<StoreState>((set, get) => ({
     const next = isFav ? favorites.filter((fid) => fid !== id) : [...favorites, id];
     set({ favorites: next });
 
+    // 어디서 다시 볼 수 있는지 바로 알려 준다. 찜해 놓고 찾지 못한다는 피드백이 있었다.
+    if (!isFav) notify.success('저장했어요 · 마이페이지 > 저장한 제품');
+
     const ok = isFav ? await removeFavorite(userId, id) : await addFavorite(userId, id);
     if (!ok) {
       // 서버 저장이 실패하면 낙관적 변경을 되돌린다 — UI 와 DB 가 갈라지면
