@@ -39,6 +39,7 @@ export type RecommendationEligibility =
   | 'unknown';
 
 export type EvidenceValueKind = 'measured' | 'label_declared' | 'calculated' | 'estimated' | 'unknown';
+export type HealthConcernEvidenceDomain = 'general' | 'renal' | 'lower_urinary';
 
 export type DeclaredValueQualifier = 'exact' | 'lt' | 'lte' | 'gt' | 'gte' | 'unavailable';
 
@@ -56,6 +57,7 @@ export interface MedicalThresholdEvidence {
   species: 'dog' | 'cat' | 'all';
   lifeStage: string;
   productCategory: 'complete_food' | 'treat' | 'supplement' | 'topper' | 'unknown';
+  concernDomain: HealthConcernEvidenceDomain;
   scope: 'healthy_animal' | 'diagnosed_disease' | 'general_wellness';
   nutrient: string;
   unit: string;
@@ -71,7 +73,8 @@ export interface QuantitativeConcernCheck {
   actualValue?: number;
   unit?: string;
   valueKind: EvidenceValueKind;
-  applicability?: 'species' | 'life_stage' | 'product_type' | 'product_species';
+  applicability?: 'species' | 'life_stage' | 'product_type' | 'product_species' | 'concern_domain';
+  concernDomain: HealthConcernEvidenceDomain;
   inputEvidence: QuantitativeInputEvidence[];
   evidence?: MedicalThresholdEvidence;
   message: string;
@@ -91,6 +94,12 @@ export interface HealthConcernEvaluationResult {
   confidence: DataConfidence;
   scoringContribution: number;
   sourceReferences: MedicalThresholdEvidence[];
+  evidenceDomains: HealthConcernEvidenceDomain[];
+}
+
+export interface HealthConcernEvaluationReport {
+  results: HealthConcernEvaluationResult[];
+  unrecognizedProfileInputs: string[];
 }
 
 export interface HealthConcernDefinition {
@@ -112,7 +121,7 @@ export const HEALTH_CONCERN_DEFINITIONS: Record<HealthConcernId, HealthConcernDe
   joint: {
     id: 'joint',
     label: '관절',
-    aliases: ['관절', 'joint', 'arthritis', 'glucosamine', 'chondroitin'],
+    aliases: ['관절', '관절 건강', '관절건강', 'joint', 'joint health', 'arthritis'],
     legacyDiseaseIds: ['joint'],
     medicallySensitive: false,
   },

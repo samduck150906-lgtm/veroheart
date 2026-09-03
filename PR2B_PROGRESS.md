@@ -9,7 +9,7 @@ Harden the canonical health-concern evaluator against missing, partial, inapplic
 - Remote main at task start: `afa18338c8ba6229ea4e37bae131943399f074c0`
 - Working branch: `codex/pr2b-evaluator-correctness`
 - Current HEAD: `afa18338c8ba6229ea4e37bae131943399f074c0`
-- Latest remote branch SHA: `7679b1bab1dd016b1e1bad09ee27ffbda2a81f18`
+- Latest remote branch SHA: `fa734f7dcf707cdc6e3ec3a28c48f07508945e00`
 - Protected reference branch: `codex/pr3-concern-score-integration` at `71e355d7e9253c44be0bdb18a72cee914831cffd`; must remain untouched
 
 ## Repository Instructions
@@ -38,9 +38,9 @@ Harden the canonical health-concern evaluator against missing, partial, inapplic
 
 ## Checkpoints
 
-- Completed: repository setup; Checkpoint 1 at `564565c`; Checkpoint 2 at `7679b1b`; Checkpoint 3 applicability and aggregation implementation/validation
-- Current: Checkpoint 3 - commit, push, and verify remote SHA
-- Remaining: Checkpoints 4 through 6 implementation, validation, cleanup, push, and PR creation
+- Completed: repository setup; Checkpoint 1 at `564565c`; Checkpoint 2 at `7679b1b`; Checkpoint 3 at `fa734f7`; Checkpoint 4 identity/domain implementation and validation
+- Current: Checkpoint 4 - commit, push, and verify remote SHA
+- Remaining: Checkpoints 5 and 6 implementation, validation, cleanup, push, and PR creation
 
 ## Decisions
 
@@ -52,6 +52,10 @@ Harden the canonical health-concern evaluator against missing, partial, inapplic
 - Checkpoint 2 rejects unsafe coercion and inequality-qualified declarations for comparison. Missing moisture remains unavailable; no estimated moisture fallback is retained.
 - Checkpoint 3 uses explicit profile species, profile life stage, product target species, and product category applicability. Product names are not used to infer complete-food status.
 - Pass plus unknown becomes `possible` with `partial_quantitative`, partial confidence, and no quantitative score contribution. Confirmed failure takes precedence; all-non-applicable checks produce `not_applicable`.
+- Checkpoint 4 preserves the first exact user-entered label for each canonical concern and exposes unknown inputs through `evaluateHealthConcernsDetailed()` while retaining the existing array-returning API.
+- Product-tag matching now resolves exact canonical aliases rather than substrings. Glucosamine/chondroitin remain ingredient evidence only, not profile concern aliases.
+- The combined public renal/urinary ID remains stable, with internal `renal` and `lower_urinary` evidence domains. Renal phosphorus cannot support a lower-urinary selection or fully support the combined selection by itself.
+- Profile uses all nine canonical options. Search still owns a six-item local list and omits immune, eye, and oral; this deferred UI mismatch is documented but intentionally not changed in PR2B.
 
 ## Commands And Results
 
@@ -73,6 +77,12 @@ Harden the canonical health-concern evaluator against missing, partial, inapplic
 - Checkpoint 3 targeted tests: 3 files, 79 tests passed.
 - Checkpoint 3 TypeScript `tsc -b --pretty false`: passed.
 - Checkpoint 3 `git diff --check`: passed.
+- Checkpoint 3 commit/push: `fa734f7`; local and remote SHA matched.
+- Checkpoint 4 preflight fetch: `origin/main` remains `afa1833`; no incoming commits.
+- Checkpoint 4 targeted tests: 4 files, 90 tests passed.
+- Checkpoint 4 TypeScript `tsc -b --pretty false`: passed.
+- Checkpoint 4 targeted ESLint: passed after removing two dead imports/bindings exposed by the refactor.
+- Checkpoint 4 `git diff --check`: passed.
 
 ## Known Failures
 
@@ -80,4 +90,4 @@ Harden the canonical health-concern evaluator against missing, partial, inapplic
 
 ## Exact Next Action
 
-Commit Checkpoint 3 as `fix(health): enforce applicability and conservative aggregation`, push it, and verify the remote SHA.
+Commit Checkpoint 4 as `fix(health): separate concern identity from supporting evidence`, push it, and verify the remote SHA.

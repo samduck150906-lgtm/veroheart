@@ -1,14 +1,15 @@
 import type { Product, UserPetProfile } from '../types';
 import { toDryMatter } from '../analysis/nutrition';
 import {
-  HEALTH_CONCERN_DEFINITIONS,
-  canonicalizeHealthConcerns,
   normalizeConcernToken,
+  resolveHealthConcernId,
   type ConcernEvidenceLevel,
   type ConcernStatus,
   type DataConfidence,
   type EvidenceValueKind,
   type HealthConcernEvaluationResult,
+  type HealthConcernEvaluationReport,
+  type HealthConcernEvidenceDomain,
   type HealthConcernId,
   type MedicalThresholdEvidence,
   type QuantitativeConcernCheck,
@@ -28,6 +29,7 @@ interface Threshold {
   species: Species;
   lifeStage: string;
   productCategory: ProductCategory;
+  concernDomain: HealthConcernEvidenceDomain;
   scope: MedicalThresholdEvidence['scope'];
   source: string;
   sourceDateOrVersion: string;
@@ -139,6 +141,7 @@ function sourceEvidence(threshold: Threshold, valueKind: EvidenceValueKind): Med
     species: threshold.species,
     lifeStage: threshold.lifeStage,
     productCategory: threshold.productCategory,
+    concernDomain: threshold.concernDomain,
     scope: threshold.scope,
     nutrient: threshold.nutrient,
     unit: threshold.unit,
@@ -161,6 +164,7 @@ const THRESHOLDS: Partial<Record<HealthConcernId, Threshold[]>> = {
       species: 'all',
       lifeStage: 'adult',
       productCategory: 'complete_food',
+      concernDomain: 'general',
       scope: 'general_wellness',
       source: WELLNESS_SOURCE,
       sourceDateOrVersion: '2026-09-02',
@@ -179,6 +183,7 @@ const THRESHOLDS: Partial<Record<HealthConcernId, Threshold[]>> = {
       species: 'all',
       lifeStage: 'adult',
       productCategory: 'complete_food',
+      concernDomain: 'general',
       scope: 'general_wellness',
       source: WSAVA_SOURCE,
       sourceDateOrVersion: 'Global Nutrition Guidelines, accessed 2026-09-02',
@@ -195,6 +200,7 @@ const THRESHOLDS: Partial<Record<HealthConcernId, Threshold[]>> = {
       species: 'all',
       lifeStage: 'adult',
       productCategory: 'complete_food',
+      concernDomain: 'general',
       scope: 'general_wellness',
       source: WSAVA_SOURCE,
       sourceDateOrVersion: 'Global Nutrition Guidelines, accessed 2026-09-02',
@@ -213,6 +219,7 @@ const THRESHOLDS: Partial<Record<HealthConcernId, Threshold[]>> = {
       species: 'all',
       lifeStage: 'adult',
       productCategory: 'complete_food',
+      concernDomain: 'renal',
       scope: 'diagnosed_disease',
       source: MERCK_RENAL_SOURCE,
       sourceDateOrVersion: 'accessed 2026-09-02',
@@ -231,6 +238,7 @@ const THRESHOLDS: Partial<Record<HealthConcernId, Threshold[]>> = {
       species: 'cat',
       lifeStage: 'adult',
       productCategory: 'complete_food',
+      concernDomain: 'general',
       scope: 'healthy_animal',
       source: FEDIAF_SOURCE,
       sourceDateOrVersion: '2024',
@@ -253,23 +261,70 @@ const FUNCTIONAL_INGREDIENTS: Record<HealthConcernId, readonly string[]> = {
   oral: ['덴탈', '치석', '헥사메타인산', 'sodium hexametaphosphate', '녹차추출물'],
 };
 
-function textMatchesAny(value: string, needles: readonly string[]): boolean {
-  const hay = normalizeConcernToken(value);
-  return needles.some((needle) => hay.includes(normalizeConcernToken(needle)));
+const RENAL_URINARY_INGREDIENT_DOMAINS: Record<string, HealthConcernEvidenceDomain> = {
+  '크랜베리': 'lower_urinary',
+  cranberry: 'lower_urinary',
+  '오메가3': 'renal',
+  '오메가-3': 'renal',
+};
+
+function evidenceTextMatches(value: string, needle: string): boolean {
+  const hay = normalizeConcernToken(value).normalize('NFKC');
+  const normalizedNeedle = normalizeConcernToken(needle).normalize('NFKC');
+  if (/^[a-z0-9 -]+$/.test(normalizedNeedle)) {
+    const escaped = normalizedNeedle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+    return new RegExp(`(?:^|[^a-z0-9])${escaped}(?:$|[^a-z0-9])`, 'i').test(hay);
+  }
+  return hay.includes(normalizedNeedle);
 }
 
-function matchedTags(product: Product, concernId: HealthConcernId): string[] {
-  const aliases = HEALTH_CONCERN_DEFINITIONS[concernId].aliases;
-  return [...new Set((product.healthConcerns ?? []).filter((tag) => textMatchesAny(tag, aliases)))];
+function renalUrinaryDomain(value: string): HealthConcernEvidenceDomain {
+  const normalized = normalizeConcernToken(value);
+  if (['신장', 'kidney', 'renal'].includes(normalized)) return 'renal';
+  if (['비뇨기', '요로', '방광', 'urinary', 'bladder'].includes(normalized)) return 'lower_urinary';
+  return 'general';
 }
 
-function matchedIngredients(product: Product, concernId: HealthConcernId): string[] {
+function domainMatches(selected: HealthConcernEvidenceDomain, evidence: HealthConcernEvidenceDomain): boolean {
+  return selected === 'general' || evidence === 'general' || selected === evidence;
+}
+
+function matchedTags(
+  product: Product,
+  concernId: HealthConcernId,
+  selectedDomain: HealthConcernEvidenceDomain,
+): string[] {
+  return [
+    ...new Set(
+      (product.healthConcerns ?? []).filter((tag) => {
+        if (resolveHealthConcernId(tag) !== concernId) return false;
+        return concernId !== 'renal_urinary' || domainMatches(selectedDomain, renalUrinaryDomain(tag));
+      }),
+    ),
+  ];
+}
+
+function matchedIngredients(
+  product: Product,
+  concernId: HealthConcernId,
+  selectedDomain: HealthConcernEvidenceDomain,
+): string[] {
   const needles = FUNCTIONAL_INGREDIENTS[concernId];
   return [
     ...new Set(
       (product.ingredients ?? [])
         .filter((ingredient) =>
-          [ingredient.nameKo, ingredient.nameEn, ingredient.purpose].some((value) => value && textMatchesAny(value, needles)),
+          [ingredient.nameKo, ingredient.nameEn, ingredient.purpose].some(
+            (value) => value && needles.some((needle) => evidenceTextMatches(value, needle)),
+          )
+          && (concernId !== 'renal_urinary'
+            || needles.some((needle) =>
+              [ingredient.nameKo, ingredient.nameEn, ingredient.purpose].some(
+                (value) => value
+                  && evidenceTextMatches(value, needle)
+                  && domainMatches(selectedDomain, RENAL_URINARY_INGREDIENT_DOMAINS[needle] ?? 'general'),
+              ),
+            )),
         )
         .map((ingredient) => ingredient.nameKo),
     ),
@@ -304,7 +359,11 @@ function applicabilityReason(
   threshold: Threshold,
   product: Product,
   profile: UserPetProfile,
+  selectedDomain: HealthConcernEvidenceDomain,
 ): { kind: NonNullable<QuantitativeConcernCheck['applicability']>; message: string } | null {
+  if (!domainMatches(selectedDomain, threshold.concernDomain)) {
+    return { kind: 'concern_domain', message: '선택한 건강 고민 영역과 다른 정량 기준이라 적용되지 않아요.' };
+  }
   const species: Species = profile.species === 'Cat' ? 'cat' : 'dog';
   if (!healthRuleAppliesToSpecies(threshold.species, species)) {
     return {
@@ -328,8 +387,9 @@ function evaluateThreshold(
   threshold: Threshold,
   product: Product,
   profile: UserPetProfile,
+  selectedDomain: HealthConcernEvidenceDomain,
 ): QuantitativeConcernCheck {
-  const notApplicableReason = applicabilityReason(threshold, product, profile);
+  const notApplicableReason = applicabilityReason(threshold, product, profile, selectedDomain);
   if (notApplicableReason) {
     return {
       nutrient: threshold.nutrient,
@@ -337,6 +397,7 @@ function evaluateThreshold(
       unit: threshold.unit,
       valueKind: 'unknown',
       applicability: notApplicableReason.kind,
+      concernDomain: threshold.concernDomain,
       inputEvidence: [],
       evidence: sourceEvidence(threshold, 'unknown'),
       message: notApplicableReason.message,
@@ -350,6 +411,7 @@ function evaluateThreshold(
       status: 'unknown',
       unit: threshold.unit,
       valueKind: 'unknown',
+      concernDomain: threshold.concernDomain,
       inputEvidence: computed.inputEvidence,
       evidence,
       message: `${threshold.nutrient} 수치가 공개되어 있지 않아 비교할 수 없어요.`,
@@ -369,6 +431,7 @@ function evaluateThreshold(
     actualValue: computed.value,
     unit: threshold.unit,
     valueKind: computed.valueKind,
+    concernDomain: threshold.concernDomain,
     inputEvidence: computed.inputEvidence,
     evidence,
     message: pass
@@ -390,6 +453,7 @@ function deriveStatus(
   checks: QuantitativeConcernCheck[],
   tags: string[],
   ingredients: string[],
+  selectedDomain: HealthConcernEvidenceDomain,
 ): { status: ConcernStatus; evidenceLevel: ConcernEvidenceLevel; facts: string[]; confidence: DataConfidence } {
   const facts: string[] = [];
   const failed = checks.filter((check) => check.status === 'fail');
@@ -397,7 +461,7 @@ function deriveStatus(
   const unknown = checks.filter((check) => check.status === 'unknown');
   const applicable = checks.filter((check) => check.status !== 'not_applicable');
   const blockingApplicability = checks.filter(
-    (check) => check.status === 'not_applicable' && check.applicability !== 'species',
+    (check) => check.status === 'not_applicable' && !['species', 'concern_domain'].includes(check.applicability ?? ''),
   );
 
   if (checks.length > 0 && applicable.length === 0 && blockingApplicability.length > 0) {
@@ -410,13 +474,18 @@ function deriveStatus(
     return { status: 'not_supported', evidenceLevel: 'contradictory', facts, confidence: 'sufficient' };
   }
 
-  if (passed.length > 0 && unknown.length === 0) {
+  if (passed.length > 0 && unknown.length === 0 && !(concernId === 'renal_urinary' && selectedDomain === 'general')) {
     facts.push('공개된 라벨 수치가 내부 비교 기준 범위에 있어요.');
     return { status: 'supported', evidenceLevel: 'validated_quantitative', facts, confidence: 'sufficient' };
   }
 
   if (passed.length > 0 && unknown.length > 0) {
     facts.push('일부 수치는 비교할 수 있지만 필요한 정보가 모두 공개되지는 않았어요.');
+    return { status: 'possible', evidenceLevel: 'partial_quantitative', facts, confidence: 'partial' };
+  }
+
+  if (passed.length > 0) {
+    facts.push('신장 관련 수치는 비교되었지만 비뇨기 전체 적합성을 확인하는 근거는 아니에요.');
     return { status: 'possible', evidenceLevel: 'partial_quantitative', facts, confidence: 'partial' };
   }
 
@@ -453,17 +522,46 @@ function deriveStatus(
   return { status: 'unknown', evidenceLevel: 'missing', facts, confidence: 'insufficient' };
 }
 
-export function evaluateHealthConcerns(product: Product, profile: UserPetProfile): HealthConcernEvaluationResult[] {
-  const canonical = canonicalizeHealthConcerns(profile.healthConcerns);
-  if (canonical.length === 0) return [];
+function concernSelections(inputs: readonly string[]): Array<{
+  concernId: HealthConcernId;
+  originalProfileLabel: string;
+  selectedDomain: HealthConcernEvidenceDomain;
+}> {
+  const seen = new Set<HealthConcernId>();
+  const selections: Array<{
+    concernId: HealthConcernId;
+    originalProfileLabel: string;
+    selectedDomain: HealthConcernEvidenceDomain;
+  }> = [];
+  for (const input of inputs) {
+    const concernId = resolveHealthConcernId(input);
+    if (!concernId || seen.has(concernId)) continue;
+    seen.add(concernId);
+    selections.push({
+      concernId,
+      originalProfileLabel: input,
+      selectedDomain: concernId === 'renal_urinary' ? renalUrinaryDomain(input) : 'general',
+    });
+  }
+  return selections;
+}
+
+export function evaluateHealthConcernsDetailed(
+  product: Product,
+  profile: UserPetProfile,
+): HealthConcernEvaluationReport {
+  const canonical = concernSelections(profile.healthConcerns);
+  const unrecognizedProfileInputs = profile.healthConcerns.filter((input) => resolveHealthConcernId(input) == null);
+  if (canonical.length === 0) return { results: [], unrecognizedProfileInputs };
   const share = 20 / canonical.length;
 
-  return canonical.map((concernId) => {
-    const definition = HEALTH_CONCERN_DEFINITIONS[concernId];
-    const tags = matchedTags(product, concernId);
-    const ingredients = matchedIngredients(product, concernId);
-    const quantitativeChecks = (THRESHOLDS[concernId] ?? []).map((threshold) => evaluateThreshold(threshold, product, profile));
-    const state = deriveStatus(concernId, quantitativeChecks, tags, ingredients);
+  const results = canonical.map(({ concernId, originalProfileLabel, selectedDomain }) => {
+    const tags = matchedTags(product, concernId, selectedDomain);
+    const ingredients = matchedIngredients(product, concernId, selectedDomain);
+    const quantitativeChecks = (THRESHOLDS[concernId] ?? []).map((threshold) =>
+      evaluateThreshold(threshold, product, profile, selectedDomain),
+    );
+    const state = deriveStatus(concernId, quantitativeChecks, tags, ingredients, selectedDomain);
     const missingRequiredFields = quantitativeChecks
       .filter((check) => check.status === 'unknown')
       .map((check) => check.nutrient);
@@ -474,7 +572,7 @@ export function evaluateHealthConcerns(product: Product, profile: UserPetProfile
 
     return {
       concernId,
-      originalProfileLabel: definition.label,
+      originalProfileLabel,
       status: state.status,
       evidenceLevel: state.evidenceLevel,
       matchedProductTags: tags,
@@ -486,6 +584,22 @@ export function evaluateHealthConcerns(product: Product, profile: UserPetProfile
       confidence: state.confidence,
       scoringContribution,
       sourceReferences: quantitativeChecks.flatMap((check) => (check.evidence ? [check.evidence] : [])),
+      evidenceDomains: [...new Set([
+        ...tags.map((tag) => concernId === 'renal_urinary' ? renalUrinaryDomain(tag) : 'general' as const),
+        ...ingredients.map((ingredient) => concernId === 'renal_urinary'
+          ? RENAL_URINARY_INGREDIENT_DOMAINS[
+              Object.keys(RENAL_URINARY_INGREDIENT_DOMAINS).find((key) => evidenceTextMatches(ingredient, key)) ?? ''
+            ] ?? 'general'
+          : 'general' as const),
+        ...quantitativeChecks
+          .filter((check) => check.status === 'pass' || check.status === 'fail')
+          .map((check) => check.concernDomain),
+      ])],
     };
   });
+  return { results, unrecognizedProfileInputs };
+}
+
+export function evaluateHealthConcerns(product: Product, profile: UserPetProfile): HealthConcernEvaluationResult[] {
+  return evaluateHealthConcernsDetailed(product, profile).results;
 }

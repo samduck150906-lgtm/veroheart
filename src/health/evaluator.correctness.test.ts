@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 import type { GuaranteedAnalysis } from '../analysis/types';
 import type { Product, UserPetProfile } from '../types';
 import { resolveHealthConcernId } from './concerns';
-import { evaluateHealthConcerns, healthRuleAppliesToSpecies } from './evaluator';
+import {
+  evaluateHealthConcerns,
+  evaluateHealthConcernsDetailed,
+  healthRuleAppliesToSpecies,
+} from './evaluator';
 
 const baseProduct: Product = {
   id: 'correctness-product',
@@ -200,19 +204,59 @@ describe('health concern evaluator correctness characterization', () => {
     expect(results.reduce((sum, result) => sum + result.scoringContribution, 0)).toBe(0);
   });
 
-  it.fails('preserves the exact original profile label in the result', () => {
+  it('preserves the exact original profile label in the result', () => {
     expect(evaluate('장 건강').originalProfileLabel).toBe('장 건강');
   });
 
-  it.fails('keeps evidence ingredient keywords out of concern-name aliases', () => {
+  it('keeps evidence ingredient keywords out of concern-name aliases', () => {
     expect(resolveHealthConcernId('glucosamine')).toBeNull();
     expect(resolveHealthConcernId('chondroitin')).toBeNull();
   });
 
-  it.fails('does not create a tag match from an unrelated substring', () => {
+  it('does not create a tag match from an unrelated substring', () => {
     const result = evaluate('심장', { healthConcerns: ['심장사상충 예방'] });
     expect(result.matchedProductTags).toEqual([]);
     expect(result.status).toBe('unknown');
+  });
+
+  it('reports unrecognized profile inputs explicitly without rewarding them', () => {
+    const report = evaluateHealthConcernsDetailed(baseProduct, {
+      ...baseProfile,
+      healthConcerns: ['관절', 'legacy-unknown'],
+    });
+    expect(report.unrecognizedProfileInputs).toEqual(['legacy-unknown']);
+    expect(report.results).toHaveLength(1);
+    expect(report.results[0].originalProfileLabel).toBe('관절');
+    expect(report.results[0].scoringContribution).toBe(0);
+  });
+
+  it('does not use a lower-urinary tag as renal evidence', () => {
+    const result = evaluate('신장', { healthConcerns: ['요로'] });
+    expect(result.matchedProductTags).toEqual([]);
+    expect(result.status).toBe('unknown');
+  });
+
+  it('does not use a renal phosphorus rule as lower-urinary support', () => {
+    const result = evaluate('요로', {
+      guaranteedAnalysis: { phosphorus: 0.14, kcalPer100g: 350 },
+    });
+    expect(result.quantitativeChecks[0]).toMatchObject({
+      status: 'not_applicable',
+      applicability: 'concern_domain',
+      concernDomain: 'renal',
+    });
+    expect(result.status).toBe('unknown');
+  });
+
+  it('keeps renal evidence partial for the combined renal/urinary selection', () => {
+    const result = evaluate('신장·비뇨기', {
+      guaranteedAnalysis: { phosphorus: 0.14, kcalPer100g: 350 },
+    });
+    expect(result.quantitativeChecks[0]).toMatchObject({ status: 'pass', concernDomain: 'renal' });
+    expect(result.evidenceDomains).toEqual(['renal']);
+    expect(result.status).toBe('possible');
+    expect(result.evidenceLevel).toBe('partial_quantitative');
+    expect(result.scoringContribution).toBe(0);
   });
 
   it.fails('uses form-specific taurine evidence instead of one dry/wet assumption', () => {
