@@ -33,3 +33,5 @@ data/brand_extraction_review*.csv
 data/nutrition_import_report*.csv
 data/coupang_nutrition_report*.csv
 data/coupang_cache/
+data/brand_nutrition_report*.csv
+data/brand_cache/

@@ -1,0 +1,19 @@
+{
+  "_사용법": [
+    "브랜드 공식몰의 '전체 제품' 목록 페이지 주소를 list_urls 에 넣으세요.",
+    "브라우저에서 그 페이지를 열고 주소창을 그대로 복사하면 됩니다.",
+    "brand 이름(키)은 우리 DB 의 brand_name 과 정확히 같아야 합니다.",
+    "제품 링크가 자동으로 안 잡히면 link_pattern 에 제품 상세 주소의 공통 조각을 넣으세요",
+    "  (예: 상세 주소가 .../product/detail.html?no=12 라면 \"/product/detail\").",
+    "확인은 항상 미리보기부터:",
+    "  python scripts/fetch_brand_nutrition.py --config scripts/brand_sites.json",
+    "주소를 모르는 브랜드는 list_urls 를 빈 채로 두세요. 비어 있으면 그냥 건너뜁니다.",
+    "여기 적힌 주소는 아직 아무도 확인하지 않았습니다 — 채우고 미리보기로 검증하세요."
+  ],
+
+  "하림펫푸드": { "list_urls": [], "link_pattern": null, "_우리제품수": 13 },
+  "ANF": { "list_urls": [], "link_pattern": null, "_우리제품수": 10 },
+  "이즈칸": { "list_urls": [], "link_pattern": null, "_우리제품수": 8 },
+  "챠오츄르": { "list_urls": [], "link_pattern": null, "_우리제품수": 8 },
+  "로얄캐닌": { "list_urls": [], "link_pattern": null, "_우리제품수": 7 }
+}
