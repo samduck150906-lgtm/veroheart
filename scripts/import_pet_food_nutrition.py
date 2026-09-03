@@ -132,20 +132,49 @@ def find_header(headers: Iterable[str], aliases: tuple[str, ...]) -> str | None:
     return None
 
 
+# 보장성분은 '값' 이 아니라 '보장 경계' 로 신고된다.
+#   조단백질 "50% 이상" → 최소 보장치, 실제는 그 이상
+#   조지방   "30% 이하" → 최대 보장치, 실제는 그 이하
+# 라벨에 적히는 값이 원래 이런 형태라 그대로 담되(전 세계 사료 표시 방식이 같다),
+# 어느 쪽 경계인지 함께 남겨 화면·리포트에서 구분할 수 있게 한다.
+BoundKind = str  # 'min' | 'max' | 'exact'
+
+MIN_MARKERS = ("이상", "최소", "min")
+MAX_MARKERS = ("이하", "미만", "최대", "max")
+
+
 def parse_percent(raw: Any) -> float | None:
-    """'27.0%', '27', ' 27.5 ' → 27.5. 값이 없거나 범위를 벗어나면 None."""
+    """'27.0%', '27', '30% 이하' → 숫자만. 경계 방향은 parse_percent_bound 로."""
+    value, _ = parse_percent_bound(raw)
+    return value
+
+
+def parse_percent_bound(raw: Any) -> tuple[float | None, BoundKind]:
+    """
+    '30% 이하' → (30.0, 'max'), '50% 이상' → (50.0, 'min'), '27' → (27.0, 'exact').
+
+    값이 없거나 백분율 범위를 벗어나면 (None, 'exact').
+    """
     if raw is None:
-        return None
+        return None, "exact"
     text = str(raw).strip()
     if not text or text in {"-", "—", "미표시", "비공개", "N/A", "해당없음"}:
-        return None
+        return None, "exact"
+
+    lowered = text.lower()
+    bound: BoundKind = "exact"
+    if any(m in lowered for m in MAX_MARKERS):
+        bound = "max"
+    elif any(m in lowered for m in MIN_MARKERS):
+        bound = "min"
+
     match = re.search(r"-?\d+(?:\.\d+)?", text.replace(",", ""))
     if not match:
-        return None
+        return None, bound
     value = float(match.group(0))
     if value < 0 or value > 100:
-        return None
-    return value
+        return None, bound
+    return value, bound
 
 
 # ---------------------------------------------------------------------------
@@ -170,6 +199,8 @@ class SourceRow:
     name: str
     brand: str
     values: dict[str, float | None] = field(default_factory=dict)
+    """성분별 보장 경계 방향('min'/'max'/'exact'). 리포트에 그대로 보여 준다."""
+    bounds: dict[str, BoundKind] = field(default_factory=dict)
 
 
 def rows_from_csv(path: Path) -> list[SourceRow]:
@@ -212,7 +243,90 @@ def _extract_records(data: Any) -> list[dict[str, Any]]:
     return []
 
 
+# ---------------------------------------------------------------------------
+# 세로형(long) 데이터
+#
+# 지자체 공개 데이터(예: 제주 반려동물사료성분정보)는 성분 하나가 한 행이다.
+#   제조업체명 | 사료종류 | 성분등록번호 | 사료명 | 사료성분명 | 사료성분량
+#   글리칸코드 | 단미사료 | PP6EP0002  | 육포1  | 조지방     | 30% 이하
+#   글리칸코드 | 단미사료 | PP6EP0002  | 육포1  | 조단백질   | 50% 이상
+# 사료 하나가 4~5행에 흩어져 있어, 가로형으로 접어야 제품 한 건이 된다.
+# 같은 사료를 묶는 열쇠는 성분등록번호가 가장 정확하고, 없으면 업체+사료명을 쓴다.
+# ---------------------------------------------------------------------------
+COMPONENT_NAME_ALIASES = ("사료성분명", "성분명", "항목명", "성분")
+COMPONENT_VALUE_ALIASES = ("사료성분량", "성분량", "함량", "성분값", "값")
+REGISTRATION_NO_ALIASES = ("성분등록번호", "등록번호", "성분등록번호1")
+
+
+def is_long_format(headers: list[str]) -> bool:
+    """성분명/성분량 열이 따로 있으면 세로형이다."""
+    return bool(
+        find_header(headers, COMPONENT_NAME_ALIASES)
+        and find_header(headers, COMPONENT_VALUE_ALIASES)
+    )
+
+
+def _rows_from_long_records(records: list[dict[str, Any]], headers: list[str]) -> list[SourceRow]:
+    name_header = find_header(headers, NAME_ALIASES)
+    brand_header = find_header(headers, BRAND_ALIASES)
+    comp_header = find_header(headers, COMPONENT_NAME_ALIASES)
+    value_header = find_header(headers, COMPONENT_VALUE_ALIASES)
+    reg_header = find_header(headers, REGISTRATION_NO_ALIASES)
+
+    if not name_header:
+        raise SystemExit(f"사료명 열을 찾지 못했습니다. 헤더: {headers}")
+
+    LOG.info(
+        "세로형 데이터로 읽습니다 — 사료명=%s 업체=%s 성분명=%s 성분량=%s 등록번호=%s",
+        name_header, brand_header, comp_header, value_header, reg_header,
+    )
+
+    grouped: dict[str, SourceRow] = {}
+    unknown_components: set[str] = set()
+
+    for record in records:
+        name = str(record.get(name_header) or "").strip()
+        if not name:
+            continue
+        brand = str(record.get(brand_header) or "").strip() if brand_header else ""
+        reg_no = str(record.get(reg_header) or "").strip() if reg_header else ""
+        group_key = reg_no or f"{brand}|{name}"
+
+        row = grouped.get(group_key)
+        if row is None:
+            row = SourceRow(name=name, brand=brand, values={})
+            grouped[group_key] = row
+
+        component = str(record.get(comp_header) or "").strip()
+        column = None
+        key = normalize_key(component)
+        for candidate, aliases in NUTRIENT_ALIASES.items():
+            if any(key == normalize_key(alias) for alias in aliases):
+                column = candidate
+                break
+        if column is None:
+            if component:
+                unknown_components.add(component)
+            continue
+
+        value, bound = parse_percent_bound(record.get(value_header))
+        if value is None:
+            continue
+        row.values[column] = value
+        row.bounds[column] = bound
+
+    if unknown_components:
+        # 칼슘·인처럼 우리가 쓰는 성분이 빠졌는지 확인할 수 있게 남긴다.
+        LOG.info("매핑하지 않은 성분명: %s", ", ".join(sorted(unknown_components)[:20]))
+
+    LOG.info("세로형 %d행 → 사료 %d건으로 묶음", len(records), len(grouped))
+    return list(grouped.values())
+
+
 def _rows_from_dicts(records: list[dict[str, Any]], headers: list[str]) -> list[SourceRow]:
+    if is_long_format(headers):
+        return _rows_from_long_records(records, headers)
+
     field_map = build_field_map(headers)
     name_header = find_header(headers, NAME_ALIASES)
     brand_header = find_header(headers, BRAND_ALIASES)
@@ -236,8 +350,13 @@ def _rows_from_dicts(records: list[dict[str, Any]], headers: list[str]) -> list[
         if not name:
             continue
         brand = str(record.get(brand_header) or "").strip() if brand_header else ""
-        values = {column: parse_percent(record.get(header)) for header, column in field_map.items()}
-        rows.append(SourceRow(name=name, brand=brand, values=values))
+        values: dict[str, float | None] = {}
+        bounds: dict[str, BoundKind] = {}
+        for header, column in field_map.items():
+            value, bound = parse_percent_bound(record.get(header))
+            values[column] = value
+            bounds[column] = bound
+        rows.append(SourceRow(name=name, brand=brand, values=values, bounds=bounds))
     return rows
 
 
@@ -279,8 +398,12 @@ def fetch_rows_from_api(api_url: str, service_key: str, page_size: int, max_page
 # ---------------------------------------------------------------------------
 # 제품 매칭
 # ---------------------------------------------------------------------------
-# 포함관계 매칭을 허용할 최소 키 길이. 짧은 이름은 서로 물려 오탐이 난다.
-CONTAINMENT_MIN_KEY_LEN = 8
+# 포함관계 매칭을 허용할 최소 키 길이.
+#
+# 너무 짧은 이름("육포1")은 아무 제품에나 걸려 오탐이 난다. 반대로 너무 길게 잡으면
+# "강아지사료A"(7자) 같은 멀쩡한 이름까지 막힌다. 오탐의 실질적인 방어선은 길이가 아니라
+# '후보가 유일할 때만 반영' 규칙이므로, 길이는 명백히 모호한 이름만 걸러내는 선에 둔다.
+CONTAINMENT_MIN_KEY_LEN = 6
 
 
 def match_key(text: str) -> str:
@@ -369,9 +492,78 @@ def load_products(conn) -> list[tuple[str, str, str, bool]]:
     return rows
 
 
+def run_self_test() -> int:
+    """
+    파싱 로직 자가검증 — `python scripts/import_pet_food_nutrition.py --self-test`.
+
+    저장소에 파이썬 테스트 도구가 없어 스크립트 안에 넣었다. 운영 DB 에 값을 쓰는
+    스크립트라, 고친 뒤에는 이걸 먼저 돌려 보라는 뜻이다.
+    """
+    failures: list[str] = []
+
+    def check(label: str, actual: Any, expected: Any) -> None:
+        if actual != expected:
+            failures.append(f"{label}: {actual!r} != {expected!r}")
+
+    # 보장 경계 파싱 — 지자체 데이터는 '30% 이하' 같은 문자열로 신고된다.
+    check("30% 이하", parse_percent_bound("30% 이하"), (30.0, "max"))
+    check("50% 이상", parse_percent_bound("50% 이상"), (50.0, "min"))
+    check("20% 미만", parse_percent_bound("20% 미만"), (20.0, "max"))
+    check("27", parse_percent_bound("27"), (27.0, "exact"))
+    check("27.5%", parse_percent_bound("27.5%"), (27.5, "exact"))
+    check("비공개", parse_percent_bound("비공개"), (None, "exact"))
+    check("범위밖", parse_percent_bound("150% 이하")[0], None)
+
+    # 열 이름 표기가 달라도 같은 컬럼으로 모인다.
+    for headers in (
+        ["제품명", "업체명", "조단백질(%)", "조지방(%)", "조섬유(%)", "조회분(%)", "수분(%)", "칼슘(%)", "인(%)"],
+        ["productName", "brandName", "crudeProtein", "crudeFat", "crudeFiber", "crudeAsh", "moisture", "calcium", "phosphorus"],
+        ["품명", "제조사", "조단백", "조 지방", "조섬유", "회분", "수분", "칼슘", "인산"],
+    ):
+        check(f"열매핑 {headers[2]}", len(set(build_field_map(headers).values())), 7)
+
+    # 세로형 판별
+    check("세로형 판별", is_long_format(["제조업체명", "사료명", "사료성분명", "사료성분량"]), True)
+    check("가로형 판별", is_long_format(["제품명", "조단백질", "조지방"]), False)
+
+    # 세로형 → 가로형 접기
+    long_records = [
+        {"제조업체명": "글리칸코드", "성분등록번호": "PP6EP0002", "사료명": "육포1", "사료성분명": "조단백질", "사료성분량": "50% 이상"},
+        {"제조업체명": "글리칸코드", "성분등록번호": "PP6EP0002", "사료명": "육포1", "사료성분명": "조지방", "사료성분량": "30% 이하"},
+        {"제조업체명": "행복사료", "성분등록번호": "PP6EP0003", "사료명": "사료A", "사료성분명": "조단백질", "사료성분량": "26% 이상"},
+    ]
+    folded = _rows_from_long_records(long_records, list(long_records[0].keys()))
+    check("세로형 묶음 건수", len(folded), 2)
+    check("세로형 값", folded[0].values.get("crude_protein"), 50.0)
+    check("세로형 경계", folded[0].bounds.get("crude_fat"), "max")
+
+    # 열량 — 화면 계산기(src/analysis/nutrition.ts)와 같은 식
+    check("열량", calculate_kcal_per_100g(
+        {"crude_protein": 27, "crude_fat": 13, "crude_fiber": 4.5, "crude_ash": 7.5, "moisture": 10}), 338.0)
+    # 보장 경계가 섞이면 합이 100을 넘어 계산을 거부한다(단미사료에서 흔하다).
+    check("열량(합>100)", calculate_kcal_per_100g(
+        {"crude_protein": 50, "crude_fat": 30, "crude_fiber": 1, "crude_ash": 2, "moisture": 20}), None)
+    check("열량(값없음)", calculate_kcal_per_100g(
+        {"crude_protein": 27, "crude_fat": None, "crude_fiber": 4, "crude_ash": 7, "moisture": 10}), None)
+
+    # 제품명 매칭 — 용량·수량은 무시하되, 짧은 이름은 포함검색을 하지 않는다.
+    by_key = {match_key("행복사료 강아지사료A 2kg"): [("p", "행복사료 강아지사료A 2kg", "", False)]}
+    check("포함일치", resolve_candidates(match_key("강아지사료A"), by_key)[0] != [], True)
+    check("짧은이름 보호", resolve_candidates(match_key("육포1"), by_key)[0], [])
+
+    if failures:
+        for f in failures:
+            print(f"FAIL {f}")
+        print(f"\n실패 {len(failures)}건")
+        return 1
+    print("자가검증 통과")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument("--self-test", action="store_true", help="파싱 로직 자가검증만 하고 끝낸다")
     source.add_argument("--file", type=Path, help="공공데이터 CSV 또는 JSON 파일")
     source.add_argument("--api-url", help="공공데이터 오픈API 엔드포인트")
     parser.add_argument("--page-size", type=int, default=500)
@@ -386,6 +578,9 @@ def main() -> int:
         level=logging.DEBUG if args.verbose else logging.INFO,
         format="%(levelname)s %(message)s",
     )
+    if args.self_test:
+        return run_self_test()
+
     if load_dotenv:
         for candidate in (".env", ".env.local"):
             if Path(candidate).exists():
@@ -454,25 +649,44 @@ def main() -> int:
         present = {c: v for c, v in values.items() if v is not None}
         total = sum(present.get(c, 0.0) for c in REQUIRED_FOR_ENERGY if c in present)
         if total > 100:
+            bounded_note = (
+                " (보장 경계 '이상'/'이하' 가 섞여 합이 100을 넘음 — 단미사료에서 흔함)"
+                if any(row.bounds.get(c) in ("min", "max") for c in REQUIRED_FOR_ENERGY) else ""
+            )
             report.append({"결과": "제외", "원본제품명": row.name, "제품명": pname,
-                           "사유": f"성분 합계 {total:.1f}% > 100 — 신고값이 서로 어긋남"})
+                           "사유": f"성분 합계 {total:.1f}% > 100{bounded_note}"})
             continue
 
         kcal = calculate_kcal_per_100g({c: present.get(c) for c in REQUIRED_FOR_ENERGY})
+
+        # 보장 경계('이상'/'이하')로 신고된 값이 섞여 있으면 열량은 근사치다.
+        # 최소치와 최대치를 함께 더하기 때문이다. 리포트에 그대로 드러낸다.
+        bounded = [c for c in REQUIRED_FOR_ENERGY if row.bounds.get(c) in ("min", "max")]
+        notes: list[str] = []
+        if kcal is None:
+            notes.append(
+                f"열량 계산 불가(성분 합계 {total:.1f}%)" if total > 100 else "열량 계산 불가(성분 일부 없음)"
+            )
+        elif bounded:
+            notes.append("열량은 보장 경계 기준 근사치")
+
         writes.append((pid, present, kcal))
         report.append({
             "결과": "반영대상", "원본제품명": row.name, "제품명": pname,
             "조단백": present.get("crude_protein"), "조지방": present.get("crude_fat"),
             "조섬유": present.get("crude_fiber"), "조회분": present.get("crude_ash"),
             "수분": present.get("moisture"), "칼슘": present.get("calcium"), "인": present.get("phosphorus"),
+            "보장경계": " ".join(
+                f"{c}={row.bounds[c]}" for c in NUTRIENT_COLUMNS if row.bounds.get(c) in ("min", "max")
+            ),
             "계산kcal_100g": kcal,
-            "사유": "" if kcal is not None else "열량 계산 불가(성분 일부 없음)",
+            "사유": " · ".join(notes),
         })
 
     # 3) 리포트
     args.report.parent.mkdir(parents=True, exist_ok=True)
     columns = ["결과", "원본제품명", "업체", "제품명", "조단백", "조지방", "조섬유",
-               "조회분", "수분", "칼슘", "인", "계산kcal_100g", "사유"]
+               "조회분", "수분", "칼슘", "인", "보장경계", "계산kcal_100g", "사유"]
     with args.report.open("w", encoding="utf-8-sig", newline="") as fh:
         writer = csv.DictWriter(fh, fieldnames=columns, extrasaction="ignore")
         writer.writeheader()
