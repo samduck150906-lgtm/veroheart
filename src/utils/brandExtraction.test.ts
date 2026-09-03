@@ -5,6 +5,7 @@ import {
   extractBrandCandidates,
   firstTokenOf,
   MIN_BRAND_OCCURRENCES,
+  resolveCanonicalBrand,
 } from './brandExtraction';
 
 /** 운영 DB 실제 제품명에서 가져온 표본. */
@@ -55,13 +56,70 @@ describe('브랜드 추출', () => {
     expect(once.needsReview).toContain('광동');
   });
 
-  it("'로얄' 과 '로얄캐닌' 을 임의로 합치지 않고 검토 대상으로 표시한다", () => {
-    // 데이터만으로는 같은 브랜드인지 알 수 없다 — 자동으로 합치면 틀릴 수 있다.
+  it("'로얄' 과 '로얄캐닌' 은 서로 다른 브랜드라 합치지 않는다", () => {
+    // 운영자 확인을 거친 예외다. "로얄 수피아캔" 과 "로얄캐닌 헤어볼" 은 실제로 다른 브랜드다.
     const names = [...REAL_NAMES, '로얄캐닌 인도어 고양이 사료', '로얄 수피아 캔 2'];
     const counts = countFirstTokens(names);
-    const royal = extractBrandCandidate('로얄캐닌 헤어볼 케어 고양이 사료', counts);
-    expect(royal.brand).toBe('로얄캐닌');
-    expect(royal.needsReview).toContain('겹침');
+
+    const canin = extractBrandCandidate('로얄캐닌 헤어볼 케어 고양이 사료', counts);
+    expect(canin.brand).toBe('로얄캐닌');
+    expect(canin.needsReview).toContain('분리');
+
+    const royal = extractBrandCandidate('로얄 수피아캔, 음수량충족 고양이캔, 85g, 30개', counts);
+    expect(royal.brand).toBe('로얄');
+  });
+
+  it('앞부분이 겹치는 나머지 후보는 짧은 쪽 브랜드로 합친다', () => {
+    // 긴 쪽은 브랜드에 제품라인이 붙은 것이다: 하림펫푸드밥이보약 → 하림펫푸드.
+    const names = [
+      '하림펫푸드 더리얼 그레인프리 사료',
+      '하림펫푸드 어덜트 크런치 건식사료',
+      '하림펫푸드밥이보약 강아지 기능성 사료',
+      '하림펫푸드더리얼 강아지 동결건조 트릿',
+    ];
+    const counts = countFirstTokens(names);
+    expect(resolveCanonicalBrand('하림펫푸드밥이보약', counts)).toBe('하림펫푸드');
+
+    const c = extractBrandCandidate('하림펫푸드밥이보약 강아지 기능성 사료', counts);
+    expect(c.brand).toBe('하림펫푸드');
+    expect(c.needsReview).toContain('합침');
+  });
+
+  it('한 번만 나오는 단어라도 인정된 브랜드에 흡수되면 그 브랜드로 본다', () => {
+    // '탐사6free강아지' 는 1건뿐이지만 '탐사' 의 제품라인이다.
+    const names = [...REAL_NAMES, '탐사6free강아지 사료 치킨 레시피'];
+    const counts = countFirstTokens(names);
+    const c = extractBrandCandidate('탐사6free강아지 사료 치킨 레시피', counts);
+    expect(c.occurrences).toBe(1);
+    expect(c.brand).toBe('탐사');
+  });
+
+  it('일반명사로 시작하는 제품은 브랜드를 지어내지 않는다', () => {
+    // '강아지' 가 여러 번 반복돼도 브랜드가 아니다. 넣으면 없느니만 못하다.
+    const names = [
+      '강아지 오랄클리닉 덴탈껌 세트',
+      '강아지 수제간식 국내산100% 닭가슴살 육포',
+      '강아지간식 황태 수제간식 무첨가 트릿',
+    ];
+    const counts = countFirstTokens(names);
+    const c = extractBrandCandidate('강아지 오랄클리닉 덴탈껌 세트', counts);
+    expect(c.brand).toBe('');
+    expect(c.needsReview).toContain('일반명사');
+  });
+
+  it('일반명사로 시작해도 그 뒤가 붙어 브랜드가 되면 그 브랜드로 본다', () => {
+    // "프로바이오틱 라이브" 와 "프로바이오틱라이브" 는 띄어쓰기만 다른 같은 브랜드다.
+    const names = [
+      '프로바이오틱라이브 어덜트 캣 중성화 건식사료',
+      '프로바이오틱라이브 어덜트용 고양이 건식사료',
+      '프로바이오틱 라이브 소형성견용 강아지 건식사료, 연어, 2kg, 1개',
+    ];
+    const counts = countFirstTokens(names);
+    const c = extractBrandCandidate('프로바이오틱 라이브 소형성견용 강아지 건식사료, 연어, 2kg, 1개', counts);
+    expect(c.brand).toBe('프로바이오틱라이브');
+    // 띄어 쓴 브랜드는 두 단어를 모두 떼어낸다.
+    expect(c.displayName).not.toContain('라이브');
+    expect(c.displayName).toContain('소형성견용');
   });
 
   it('브랜드를 뗀 제품명을 따로 돌려준다', () => {

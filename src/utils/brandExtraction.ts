@@ -73,6 +73,72 @@ function findPrefixConflict(token: string, counts: Map<string, number>): string 
   return '';
 }
 
+/**
+ * 브랜드가 아닌 일반명사 — 첫 단어라도 브랜드로 쓰지 않는다.
+ *
+ * "강아지 오랄클리닉 덴탈껌 세트" 처럼 브랜드 없이 상품 설명으로 시작하는 제품이 있다.
+ * 첫 단어만 보면 '강아지' 가 3번 반복돼 브랜드처럼 보이지만, 실제로는 브랜드가 없는
+ * 제품들이다. 이런 값을 브랜드로 넣으면 없느니만 못하다.
+ */
+const NON_BRAND_TOKENS = new Set([
+  '강아지', '강아지간식', '강아지화식', '고양이', '고양이간식',
+  '반려동물', '애견', '애묘', '프로바이오틱', '유산균',
+]);
+
+/**
+ * 앞부분이 겹쳐도 합치지 않을 브랜드 쌍.
+ *
+ * '로얄 수피아캔' 과 '로얄캐닌 헤어볼' 은 서로 다른 브랜드다. 운영자 확인을 거쳐
+ * 분리하기로 했다. 여기에 없는 겹침은 같은 브랜드에 제품라인이 붙은 것으로 본다
+ * (탐사 / 탐사6free강아지, 하림펫푸드 / 하림펫푸드밥이보약 …).
+ */
+const KEEP_SEPARATE = new Set(['로얄', '로얄캐닌']);
+
+/**
+ * 겹치는 후보들을 대표 브랜드 하나로 모은다.
+ *
+ * 원칙은 '짧은 쪽이 브랜드 뿌리, 나머지는 제품라인' 이다(탐사6free강아지 → 탐사).
+ * 다만 짧은 쪽이 일반명사면 그걸 브랜드로 쓸 수 없어 더 긴 쪽을 쓴다
+ * (프로바이오틱 / 프로바이오틱라이브 → 프로바이오틱라이브. 실제로 "프로바이오틱 라이브"
+ * 와 "프로바이오틱라이브" 는 띄어쓰기만 다른 같은 브랜드다).
+ */
+export function resolveCanonicalBrand(token: string, counts: Map<string, number>): string {
+  if (NON_BRAND_TOKENS.has(token)) {
+    // 일반명사라도, 그것으로 시작하는 진짜 브랜드가 딱 하나면 그 브랜드로 본다
+    // ("프로바이오틱 라이브 …" → 프로바이오틱라이브). 후보가 여럿이면 고를 근거가
+    // 없으므로 비워 둔다("강아지" → 강아지간식/강아지화식 둘 다 일반명사).
+    const extensions = [...counts.keys()].filter(
+      (other) => other !== token && other.startsWith(token) && !NON_BRAND_TOKENS.has(other),
+    );
+    return extensions.length === 1 ? extensions[0] : '';
+  }
+  if (KEEP_SEPARATE.has(token)) return token;
+
+  let best = token;
+  for (const other of counts.keys()) {
+    if (other === token || KEEP_SEPARATE.has(other) || NON_BRAND_TOKENS.has(other)) continue;
+    if (!other.startsWith(token) && !token.startsWith(other)) continue;
+    if (other.length < best.length) best = other;
+  }
+  return best;
+}
+
+/**
+ * 제품명에서 브랜드 부분을 떼어낸다.
+ *
+ * 띄어 쓴 브랜드("프로바이오틱 라이브 소형성견용")는 첫 단어만 떼면 "라이브 소형성견용"
+ * 이 남는다. 뒤 단어까지 합쳐야 브랜드가 되는 경우에는 그 단어도 함께 뗀다.
+ */
+function stripBrandPrefix(rawName: string, token: string, canonical: string): string {
+  const stripped = normalizeProductDisplayName({ name: rawName, brand: token });
+  if (canonical === token) return stripped;
+  const [next] = stripped.split(/[\s,]+/);
+  if (next && token + next === canonical) {
+    return normalizeProductDisplayName({ name: stripped, brand: next });
+  }
+  return stripped;
+}
+
 export function extractBrandCandidate(
   rawName: string,
   counts: Map<string, number>,
@@ -89,8 +155,10 @@ export function extractBrandCandidate(
     };
   }
 
-  if (occurrences < MIN_BRAND_OCCURRENCES) {
-    // 한 번만 나오는 단어는 브랜드라는 근거가 없다 — 지어내지 않는다.
+  // 한 번만 나오는 단어라도, 이미 인정된 브랜드에 흡수되면 그 브랜드로 본다
+  // ('탐사6free강아지' 1건 → 탐사). 흡수되지 않으면 근거가 없어 비워 둔다.
+  const absorbed = resolveCanonicalBrand(token, counts);
+  if (occurrences < MIN_BRAND_OCCURRENCES && (!absorbed || absorbed === token)) {
     return {
       brand: '',
       displayName: normalizeProductDisplayName({ name: rawName }),
@@ -99,13 +167,29 @@ export function extractBrandCandidate(
     };
   }
 
+  const canonical = resolveCanonicalBrand(token, counts);
+  if (!canonical) {
+    // 브랜드가 아니라 상품 설명으로 시작하는 제품이다.
+    return {
+      brand: '',
+      displayName: normalizeProductDisplayName({ name: rawName }),
+      occurrences,
+      needsReview: `'${token}' 는 브랜드가 아닌 일반명사`,
+    };
+  }
+
   const conflict = findPrefixConflict(token, counts);
+  const merged = canonical !== token;
   return {
-    brand: token,
+    brand: canonical,
     // 브랜드는 별도 칸에 두므로 제품명에서는 뗀다.
-    displayName: normalizeProductDisplayName({ name: rawName, brand: token }),
+    displayName: stripBrandPrefix(rawName, token, canonical),
     occurrences,
-    needsReview: conflict ? `'${conflict}' 와 앞부분이 겹침 — 같은 브랜드인지 확인 필요` : '',
+    needsReview: merged
+      ? `'${token}' 를 '${canonical}' 로 합침`
+      : conflict && KEEP_SEPARATE.has(token)
+        ? `'${conflict}' 와 앞부분이 겹치지만 다른 브랜드로 분리함`
+        : '',
   };
 }
 
