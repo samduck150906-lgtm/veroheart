@@ -35,6 +35,34 @@ function stripToken(tokenRaw: string): boolean {
 }
 
 /**
+ * 제품명 앞에 붙은 브랜드를 뗀다. 브랜드는 별도 라인에 표시되므로 두 번 보일 필요가 없다.
+ *
+ * 판매처 원문은 브랜드를 세 가지 모양으로 쓴다.
+ *   "탐사 클래식 진도 사료"                  — 그대로 한 단어
+ *   "하림펫푸드밥이보약 강아지 기능성 사료"   — 브랜드에 제품라인이 붙어 한 단어
+ *   "프로바이오틱 라이브 소형성견용 …"        — 브랜드를 띄어 씀
+ * 셋 다 브랜드 부분만 떼고 나머지는 남긴다. 남는 게 없으면 원본을 지킨다.
+ */
+function stripLeadingBrand(tokens: string[], brand: string): string[] {
+  if (!brand || tokens.length === 0) return tokens;
+  const first = tokens[0].toLowerCase();
+
+  if (tokens.length > 1 && first === brand) return tokens.slice(1);
+
+  // 브랜드에 제품라인이 붙어 한 단어가 된 경우 — 제품라인은 제품명에 남긴다.
+  if (first.startsWith(brand)) {
+    const rest = tokens[0].slice(brand.length);
+    if (rest.length >= 2) return [rest, ...tokens.slice(1)];
+    if (tokens.length > 1) return tokens.slice(1);
+  }
+
+  // 브랜드를 띄어 쓴 경우 — 두 단어를 함께 뗀다.
+  if (tokens.length > 2 && first + tokens[1].toLowerCase() === brand) return tokens.slice(2);
+
+  return tokens;
+}
+
+/**
  * 표시용 제품명을 정제한다.
  * 우선순위: displayName → 정제한 name → 원본 name.
  * 정제 결과가 비면(과도 제거) 원본으로 안전 폴백한다.
@@ -52,10 +80,7 @@ export function normalizeProductDisplayName(product: NameSource): string {
   let tokens = s.split(/\s+/).filter((tok) => tok && !stripToken(tok));
 
   // 3) 선행 브랜드명 중복 제거 (브랜드는 별도 라인에 표시되므로)
-  const brand = (product.brand ?? '').trim().toLowerCase();
-  if (brand && tokens.length > 1 && tokens[0].toLowerCase() === brand) {
-    tokens = tokens.slice(1);
-  }
+  tokens = stripLeadingBrand(tokens, (product.brand ?? '').trim().toLowerCase());
 
   s = tokens.join(' ').replace(/\s{2,}/g, ' ').replace(/^[\s,·-]+|[\s,·-]+$/g, '').trim();
 

@@ -107,6 +107,16 @@ describe('브랜드 추출', () => {
     expect(c.needsReview).toContain('일반명사');
   });
 
+  it('판촉 문구로 시작하면 그것을 브랜드로 쓰지 않는다', () => {
+    // "영국1위 해링턴 …" 의 브랜드는 해링턴이지 '영국1위' 가 아니다. 뒤 단어를 브랜드로
+    // 지어내지도 않고, 판촉 문구를 브랜드로 넣지도 않는다.
+    const names = ['영국1위 해링턴 강아지사료 닭고기 야채', '영국1위 해링턴 강아지사료 퍼피용'];
+    const counts = countFirstTokens(names);
+    const c = extractBrandCandidate(names[0], counts);
+    expect(c.brand).toBe('');
+    expect(c.needsReview).toContain('일반명사');
+  });
+
   it('일반명사로 시작해도 그 뒤가 붙어 브랜드가 되면 그 브랜드로 본다', () => {
     // "프로바이오틱 라이브" 와 "프로바이오틱라이브" 는 띄어쓰기만 다른 같은 브랜드다.
     const names = [

@@ -46,3 +46,43 @@ describe('normalizeProductDisplayName', () => {
     expect(truncateName('a'.repeat(80), 10).endsWith('…')).toBe(true);
   });
 });
+describe('브랜드가 반영된 뒤의 표시명', () => {
+  it('브랜드와 제품명 첫 단어가 같으면 한 번만 보여준다', () => {
+    expect(normalizeProductDisplayName({ name: '탐사 클래식 진도 사료', brand: '탐사' })).toBe(
+      '클래식 진도 사료',
+    );
+  });
+
+  it('브랜드에 제품라인이 붙어 있으면 제품라인은 제품명에 남긴다', () => {
+    // brand_name 은 '하림펫푸드' 로 합쳤지만 '밥이보약' 은 제품을 구분하는 정보다.
+    expect(
+      normalizeProductDisplayName({
+        name: '하림펫푸드밥이보약 강아지 기능성 사료',
+        brand: '하림펫푸드',
+      }),
+    ).toBe('밥이보약 강아지 기능성 사료');
+  });
+
+  it('브랜드를 띄어 쓴 제품명에서도 브랜드만 떼어낸다', () => {
+    expect(
+      normalizeProductDisplayName({
+        name: '프로바이오틱 라이브 소형성견용 강아지 건식사료',
+        brand: '프로바이오틱라이브',
+      }),
+    ).toBe('소형성견용 강아지 건식사료');
+  });
+
+  it('앞부분만 겹치는 다른 브랜드의 제품명은 건드리지 않는다', () => {
+    // '로얄' 과 '로얄캐닌' 은 다른 브랜드다. 각자 제 이름만 뗀다.
+    expect(normalizeProductDisplayName({ name: '로얄캐닌 인도어 고양이 사료', brand: '로얄캐닌' })).toBe(
+      '인도어 고양이 사료',
+    );
+    expect(normalizeProductDisplayName({ name: '로얄 미쵸캔 고양이캔', brand: '로얄' })).toBe(
+      '미쵸캔 고양이캔',
+    );
+  });
+
+  it('브랜드를 떼면 남는 게 없을 때는 원본을 지킨다', () => {
+    expect(normalizeProductDisplayName({ name: '탐사', brand: '탐사' })).toBe('탐사');
+  });
+});

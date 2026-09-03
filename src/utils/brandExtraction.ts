@@ -83,6 +83,8 @@ function findPrefixConflict(token: string, counts: Map<string, number>): string 
 const NON_BRAND_TOKENS = new Set([
   '강아지', '강아지간식', '강아지화식', '고양이', '고양이간식',
   '반려동물', '애견', '애묘', '프로바이오틱', '유산균',
+  // 판촉 문구도 마찬가지다 — "영국1위 해링턴 …" 의 브랜드는 해링턴이다.
+  '영국1위',
 ]);
 
 /**
