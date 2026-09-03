@@ -129,14 +129,15 @@ describe('health concern evaluator correctness characterization', () => {
     }
   });
 
-  it('does not aggregate one passing and one unknown required rule as supported', () => {
+  it('does not aggregate informational pass-plus-unknown checks as supported', () => {
     const result = evaluate('비만·다이어트', {
       guaranteedAnalysis: { crudeFat: 10, moisture: 10 },
     });
     expect(result.quantitativeChecks.map((check) => check.status)).toEqual(['pass', 'unknown']);
-    expect(result.status).toBe('possible');
-    expect(result.confidence).toBe('partial');
-    expect(result.scoringContribution).toBeLessThan(20);
+    expect(result.quantitativeChecks.every((check) => check.judgment === 'informational')).toBe(true);
+    expect(result.status).toBe('unknown');
+    expect(result.confidence).toBe('insufficient');
+    expect(result.scoringContribution).toBe(0);
   });
 
   it('does not apply adult-only rules to growth or senior profiles', () => {
@@ -171,8 +172,8 @@ describe('health concern evaluator correctness characterization', () => {
     const partial = evaluate('비만·다이어트', {
       guaranteedAnalysis: { crudeFat: 10, moisture: 10 },
     });
-    expect(complete).toMatchObject({ status: 'supported', confidence: 'sufficient', scoringContribution: 20 });
-    expect(partial).toMatchObject({ status: 'possible', confidence: 'partial', scoringContribution: 0 });
+    expect(complete).toMatchObject({ status: 'unknown', confidence: 'insufficient', scoringContribution: 0 });
+    expect(partial).toMatchObject({ status: 'unknown', confidence: 'insufficient', scoringContribution: 0 });
   });
 
   it('is deterministic and keeps concern contribution bounded', () => {
@@ -185,13 +186,15 @@ describe('health concern evaluator correctness characterization', () => {
     expect(first.scoringContribution).toBeLessThanOrEqual(20);
   });
 
-  it('keeps a confirmed failure distinguishable from missing required evidence', () => {
+  it('preserves informational failure versus missing check evidence without penalizing either', () => {
     const result = evaluate('비만·다이어트', {
       guaranteedAnalysis: { crudeFat: 20, moisture: 10 },
     });
-    expect(result.status).toBe('not_supported');
+    expect(result.status).toBe('unknown');
     expect(result.quantitativeChecks.map((check) => check.status)).toEqual(['fail', 'unknown']);
-    expect(result.missingRequiredFields).toContain('조단백질');
+    expect(result.quantitativeChecks.every((check) => check.judgment === 'informational')).toBe(true);
+    expect(result.missingRequiredFields).toEqual([]);
+    expect(result.cautionReasons).toEqual([]);
     expect(result.scoringContribution).toBe(0);
   });
 
@@ -248,18 +251,19 @@ describe('health concern evaluator correctness characterization', () => {
     expect(result.status).toBe('unknown');
   });
 
-  it('keeps renal evidence partial for the combined renal/urinary selection', () => {
+  it('keeps disabled renal evidence non-judgmental for the combined renal/urinary selection', () => {
     const result = evaluate('신장·비뇨기', {
       guaranteedAnalysis: { phosphorus: 0.14, kcalPer100g: 350 },
     });
     expect(result.quantitativeChecks[0]).toMatchObject({ status: 'pass', concernDomain: 'renal' });
     expect(result.evidenceDomains).toEqual(['renal']);
-    expect(result.status).toBe('possible');
-    expect(result.evidenceLevel).toBe('partial_quantitative');
+    expect(result.quantitativeChecks[0].judgment).toBe('informational');
+    expect(result.status).toBe('unknown');
+    expect(result.evidenceLevel).toBe('missing');
     expect(result.scoringContribution).toBe(0);
   });
 
-  it.fails('uses form-specific taurine evidence instead of one dry/wet assumption', () => {
+  it('uses form-specific taurine metadata without judging an unverified input unit', () => {
     const dry = evaluate(
       '심장',
       {
@@ -279,8 +283,46 @@ describe('health concern evaluator correctness characterization', () => {
       { species: 'Cat' },
     );
 
-    expect(dry.sourceReferences[0].thresholdOrRange).not.toBe(
-      wet.sourceReferences[0].thresholdOrRange,
-    );
+    const dryRule = dry.sourceReferences.find((source) => source.productForm === 'dry');
+    const wetRule = wet.sourceReferences.find((source) => source.productForm === 'wet');
+    expect(dryRule).toMatchObject({ thresholdOrRange: '>=330', judgmentEnabled: false });
+    expect(wetRule).toMatchObject({ thresholdOrRange: '>=670', judgmentEnabled: false });
+    expect(dry.quantitativeChecks.every((check) => check.judgment === 'informational')).toBe(true);
+    expect(wet.quantitativeChecks.every((check) => check.judgment === 'informational')).toBe(true);
+    expect(dry.status).not.toBe('supported');
+    expect(wet.status).not.toBe('supported');
+  });
+
+  it('requires traceable provenance on every retained quantitative threshold', () => {
+    const concerns = ['소화기', '비만·다이어트', '신장', '심장'];
+    for (const concern of concerns) {
+      const result = evaluate(
+        concern,
+        {
+          targetPetType: concern === '심장' ? 'cat' : 'dog',
+          formulation: concern === '심장' ? 'dry' : undefined,
+          guaranteedAnalysis: {
+            crudeFiber: 4,
+            crudeFat: 10,
+            crudeProtein: 30,
+            moisture: 10,
+            phosphorus: 0.14,
+            taurine: 1_500,
+            kcalPer100g: 350,
+          },
+        },
+        concern === '심장' ? { species: 'Cat' } : {},
+      );
+      for (const source of result.sourceReferences) {
+        expect(source.issuingOrganization).not.toBe('');
+        expect(source.documentTitle).not.toBe('');
+        expect(source.sourceDateOrVersion).not.toBe('');
+        expect(source.location).not.toBe('');
+        expect(source.productCategory).toBe('complete_food');
+        expect(source.basis).not.toBe('unknown');
+        expect(source.classification).toMatch(/normative|clinical|internal_heuristic|experimental/);
+        expect(source.judgmentEnabled).toBe(false);
+      }
+    }
   });
 });

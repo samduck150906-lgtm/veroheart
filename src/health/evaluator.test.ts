@@ -108,23 +108,28 @@ describe('evaluateHealthConcerns', () => {
     expect(result.scoringContribution).toBe(10);
   });
 
-  it('supports digestive concern only when comparable label fiber is in the internal range', () => {
+  it('keeps the internal digestive fiber range informational only', () => {
     const [result] = resultFor(['소화'], {
       guaranteedAnalysis: { crudeFiber: 4, moisture: 10 },
     });
-    expect(result.status).toBe('supported');
-    expect(result.evidenceLevel).toBe('validated_quantitative');
-    expect(result.quantitativeChecks[0]).toMatchObject({ nutrient: '조섬유', status: 'pass', valueKind: 'calculated' });
-    expect(result.scoringContribution).toBe(20);
+    expect(result.status).toBe('unknown');
+    expect(result.evidenceLevel).toBe('missing');
+    expect(result.quantitativeChecks[0]).toMatchObject({
+      nutrient: '조섬유',
+      status: 'pass',
+      valueKind: 'calculated',
+      judgment: 'informational',
+    });
+    expect(result.scoringContribution).toBe(0);
   });
 
-  it('marks comparable values outside range as not_supported and blocks concern points', () => {
+  it('does not turn an internal digestive heuristic into not_supported or a penalty', () => {
     const [result] = resultFor(['소화'], {
       guaranteedAnalysis: { crudeFiber: 10, moisture: 10 },
     });
-    expect(result.status).toBe('not_supported');
-    expect(result.evidenceLevel).toBe('contradictory');
-    expect(result.cautionReasons).toHaveLength(1);
+    expect(result.status).toBe('unknown');
+    expect(result.quantitativeChecks[0]).toMatchObject({ status: 'fail', judgment: 'informational' });
+    expect(result.cautionReasons).toHaveLength(0);
     expect(result.scoringContribution).toBe(0);
   });
 
@@ -135,16 +140,18 @@ describe('evaluateHealthConcerns', () => {
     });
     expect(result.status).toBe('possible');
     expect(result.evidenceLevel).toBe('tag_and_ingredient_quantity_unknown');
-    expect(result.missingRequiredFields).toContain('인');
+    expect(result.missingRequiredFields).not.toContain('인');
     expect(result.scoringContribution).toBe(10);
   });
 
-  it('supports renal/urinary only when phosphorus per 1000 kcal is comparable and within range', () => {
+  it('keeps the unverified renal phosphorus cutoff informational only', () => {
     const [result] = resultFor(['신장'], {
       guaranteedAnalysis: { phosphorus: 0.14, kcalPer100g: 350 },
     });
-    expect(result.status).toBe('supported');
+    expect(result.status).toBe('unknown');
     expect(result.quantitativeChecks[0].actualValue).toBe(400);
+    expect(result.quantitativeChecks[0].judgment).toBe('informational');
+    expect(result.scoringContribution).toBe(0);
     expect(result.sourceReferences[0].scope).toBe('diagnosed_disease');
   });
 

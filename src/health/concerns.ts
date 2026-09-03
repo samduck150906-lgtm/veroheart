@@ -40,6 +40,9 @@ export type RecommendationEligibility =
 
 export type EvidenceValueKind = 'measured' | 'label_declared' | 'calculated' | 'estimated' | 'unknown';
 export type HealthConcernEvidenceDomain = 'general' | 'renal' | 'lower_urinary';
+export type EvidenceBasis = 'dry_matter' | 'as_fed' | 'energy' | 'unknown';
+export type EvidenceClassification = 'normative' | 'clinical' | 'internal_heuristic' | 'experimental';
+export type ProductForm = 'dry' | 'wet' | 'any' | 'unknown';
 
 export type DeclaredValueQualifier = 'exact' | 'lt' | 'lte' | 'gt' | 'gte' | 'unavailable';
 
@@ -53,17 +56,25 @@ export interface QuantitativeInputEvidence {
 
 export interface MedicalThresholdEvidence {
   source: string;
+  issuingOrganization: string;
+  documentTitle: string;
   sourceDateOrVersion: string;
+  sourceUrl?: string;
+  location: string;
   species: 'dog' | 'cat' | 'all';
   lifeStage: string;
   productCategory: 'complete_food' | 'treat' | 'supplement' | 'topper' | 'unknown';
+  productForm: ProductForm;
   concernDomain: HealthConcernEvidenceDomain;
   scope: 'healthy_animal' | 'diagnosed_disease' | 'general_wellness';
   nutrient: string;
   unit: string;
+  basis: EvidenceBasis;
   thresholdOrRange: string;
   valueKind: EvidenceValueKind;
   evidenceStrength: 'high' | 'medium' | 'low';
+  classification: EvidenceClassification;
+  judgmentEnabled: boolean;
   limitations: string;
 }
 
@@ -73,8 +84,9 @@ export interface QuantitativeConcernCheck {
   actualValue?: number;
   unit?: string;
   valueKind: EvidenceValueKind;
-  applicability?: 'species' | 'life_stage' | 'product_type' | 'product_species' | 'concern_domain';
+  applicability?: 'species' | 'life_stage' | 'product_type' | 'product_species' | 'concern_domain' | 'product_form';
   concernDomain: HealthConcernEvidenceDomain;
+  judgment: 'active' | 'informational';
   inputEvidence: QuantitativeInputEvidence[];
   evidence?: MedicalThresholdEvidence;
   message: string;

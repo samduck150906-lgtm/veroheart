@@ -14,6 +14,7 @@ import {
   type MedicalThresholdEvidence,
   type QuantitativeConcernCheck,
   type QuantitativeInputEvidence,
+  type ProductForm,
 } from './concerns';
 
 type Species = 'dog' | 'cat' | 'all';
@@ -32,7 +33,15 @@ interface Threshold {
   concernDomain: HealthConcernEvidenceDomain;
   scope: MedicalThresholdEvidence['scope'];
   source: string;
+  issuingOrganization: string;
+  documentTitle: string;
   sourceDateOrVersion: string;
+  sourceUrl?: string;
+  location: string;
+  productForm: ProductForm;
+  basis: MedicalThresholdEvidence['basis'];
+  classification: MedicalThresholdEvidence['classification'];
+  judgmentEnabled: boolean;
   evidenceStrength: MedicalThresholdEvidence['evidenceStrength'];
   limitations: string;
   compute: (product: Product) => ComputedThresholdValue;
@@ -44,10 +53,9 @@ interface ComputedThresholdValue {
   inputEvidence: QuantitativeInputEvidence[];
 }
 
-const WELLNESS_SOURCE = 'Internal label-comparison policy using public guaranteed-analysis fields';
-const WSAVA_SOURCE = 'WSAVA Global Nutrition Guidelines';
-const FEDIAF_SOURCE = 'FEDIAF Nutritional Guidelines for Complete and Complementary Pet Food for Cats and Dogs';
-const MERCK_RENAL_SOURCE = 'MSD/Merck Veterinary Manual, Renal Dysfunction in Dogs and Cats';
+const FEDIAF_GUIDELINES_URL =
+  'https://europeanpetfood.org/wp-content/uploads/2025/09/FEDIAF-Nutritional-Guidelines_2025-ONLINE.pdf';
+const WSAVA_GUIDELINES_URL = 'https://wsava.org/global-guidelines/global-nutrition-guidelines/';
 
 function parseDeclaredValue(field: string, rawValue: unknown): QuantitativeInputEvidence {
   if (typeof rawValue === 'number') {
@@ -117,15 +125,10 @@ function percentToMgPer1000Kcal(product: Product, field: 'phosphorus' | 'calcium
   );
 }
 
-function mgKgToMgPer1000Kcal(product: Product, field: 'taurine'): ComputedThresholdValue {
-  const nutrient = parseDeclaredValue(`guaranteedAnalysis.${field}`, product.guaranteedAnalysis?.[field]);
+function taurineWithUnverifiedInputUnit(product: Product): ComputedThresholdValue {
+  const nutrient = parseDeclaredValue('guaranteedAnalysis.taurine', product.guaranteedAnalysis?.taurine);
   const energy = caloriesPer100g(product);
-  const value = comparableValue(nutrient);
-  const kcal = comparableValue(energy);
-  return calculatedValue(
-    value == null || kcal == null || kcal <= 0 ? null : ((value / 10) / kcal) * 1000,
-    [nutrient, energy],
-  );
+  return { value: null, valueKind: 'unknown', inputEvidence: [nutrient, energy] };
 }
 
 function sourceEvidence(threshold: Threshold, valueKind: EvidenceValueKind): MedicalThresholdEvidence {
@@ -137,17 +140,25 @@ function sourceEvidence(threshold: Threshold, valueKind: EvidenceValueKind): Med
         : `<=${threshold.max}`;
   return {
     source: threshold.source,
+    issuingOrganization: threshold.issuingOrganization,
+    documentTitle: threshold.documentTitle,
     sourceDateOrVersion: threshold.sourceDateOrVersion,
+    sourceUrl: threshold.sourceUrl,
+    location: threshold.location,
     species: threshold.species,
     lifeStage: threshold.lifeStage,
     productCategory: threshold.productCategory,
+    productForm: threshold.productForm,
     concernDomain: threshold.concernDomain,
     scope: threshold.scope,
     nutrient: threshold.nutrient,
     unit: threshold.unit,
+    basis: threshold.basis,
     thresholdOrRange: range,
     valueKind,
     evidenceStrength: threshold.evidenceStrength,
+    classification: threshold.classification,
+    judgmentEnabled: threshold.judgmentEnabled,
     limitations: threshold.limitations,
   };
 }
@@ -166,8 +177,15 @@ const THRESHOLDS: Partial<Record<HealthConcernId, Threshold[]>> = {
       productCategory: 'complete_food',
       concernDomain: 'general',
       scope: 'general_wellness',
-      source: WELLNESS_SOURCE,
-      sourceDateOrVersion: '2026-09-02',
+      source: 'Internal exploratory label-comparison heuristic',
+      issuingOrganization: 'VERORO',
+      documentTitle: 'Health concern evaluator internal heuristic register',
+      sourceDateOrVersion: '2026-09-03',
+      location: 'digestive crude-fiber exploratory range',
+      productForm: 'any',
+      basis: 'dry_matter',
+      classification: 'internal_heuristic',
+      judgmentEnabled: false,
       evidenceStrength: 'low',
       limitations: '조섬유는 총식이섬유가 아니므로 소화기 적합성의 보조 비교로만 사용한다.',
       compute: (product) => dmb(product, 'crudeFiber'),
@@ -185,8 +203,16 @@ const THRESHOLDS: Partial<Record<HealthConcernId, Threshold[]>> = {
       productCategory: 'complete_food',
       concernDomain: 'general',
       scope: 'general_wellness',
-      source: WSAVA_SOURCE,
-      sourceDateOrVersion: 'Global Nutrition Guidelines, accessed 2026-09-02',
+      source: 'Prior internal weight-management heuristic; not a WSAVA cutoff',
+      issuingOrganization: 'VERORO',
+      documentTitle: 'Health concern evaluator internal heuristic register',
+      sourceDateOrVersion: '2026-09-03',
+      sourceUrl: WSAVA_GUIDELINES_URL,
+      location: 'No exact WSAVA section supports the fixed <=12% DMB cutoff',
+      productForm: 'any',
+      basis: 'dry_matter',
+      classification: 'internal_heuristic',
+      judgmentEnabled: false,
       evidenceStrength: 'low',
       limitations: '체중 관리는 BCS, 급여량, 열량, 활동량이 함께 필요하며 지방 수치 하나로 감량 처방을 만들 수 없다.',
       compute: (product) => dmb(product, 'crudeFat'),
@@ -202,8 +228,16 @@ const THRESHOLDS: Partial<Record<HealthConcernId, Threshold[]>> = {
       productCategory: 'complete_food',
       concernDomain: 'general',
       scope: 'general_wellness',
-      source: WSAVA_SOURCE,
-      sourceDateOrVersion: 'Global Nutrition Guidelines, accessed 2026-09-02',
+      source: 'Prior internal weight-management heuristic; not a WSAVA cutoff',
+      issuingOrganization: 'VERORO',
+      documentTitle: 'Health concern evaluator internal heuristic register',
+      sourceDateOrVersion: '2026-09-03',
+      sourceUrl: WSAVA_GUIDELINES_URL,
+      location: 'No exact WSAVA section supports the fixed >=28% DMB cutoff',
+      productForm: 'any',
+      basis: 'dry_matter',
+      classification: 'internal_heuristic',
+      judgmentEnabled: false,
       evidenceStrength: 'low',
       limitations: '근육량과 개체 상태 평가 없이 체중 감량 효과를 단정하지 않는다.',
       compute: (product) => dmb(product, 'crudeProtein'),
@@ -221,8 +255,15 @@ const THRESHOLDS: Partial<Record<HealthConcernId, Threshold[]>> = {
       productCategory: 'complete_food',
       concernDomain: 'renal',
       scope: 'diagnosed_disease',
-      source: MERCK_RENAL_SOURCE,
-      sourceDateOrVersion: 'accessed 2026-09-02',
+      source: 'Prior renal heuristic with unverified universal cutoff attribution',
+      issuingOrganization: 'VERORO',
+      documentTitle: 'Health concern evaluator internal heuristic register',
+      sourceDateOrVersion: '2026-09-03',
+      location: 'Prior <=500 mg/1000 kcal rule; exact primary table not verified',
+      productForm: 'any',
+      basis: 'energy',
+      classification: 'clinical',
+      judgmentEnabled: false,
       evidenceStrength: 'medium',
       limitations: '일반 신장·비뇨기 관심사는 진단이 아니며, CKD 식이는 수의사 판단과 처방식 검토가 필요하다.',
       compute: (product) => percentToMgPer1000Kcal(product, 'phosphorus'),
@@ -233,18 +274,51 @@ const THRESHOLDS: Partial<Record<HealthConcernId, Threshold[]>> = {
       nutrient: '타우린',
       field: 'taurine',
       direction: 'min',
-      min: 100,
+      min: 330,
       unit: 'mg/1000kcal',
       species: 'cat',
       lifeStage: 'adult',
       productCategory: 'complete_food',
       concernDomain: 'general',
       scope: 'healthy_animal',
-      source: FEDIAF_SOURCE,
-      sourceDateOrVersion: '2024',
+      source: 'FEDIAF Nutritional Guidelines 2025',
+      issuingOrganization: 'FEDIAF',
+      documentTitle: 'Nutritional Guidelines for Complete and Complementary Pet Food for Cats and Dogs',
+      sourceDateOrVersion: 'Publication September 2025',
+      sourceUrl: FEDIAF_GUIDELINES_URL,
+      location: 'Table III-4b, page 19, adult cat at MER 75 kcal/kg BW^0.67',
+      productForm: 'dry',
+      basis: 'energy',
+      classification: 'normative',
+      judgmentEnabled: false,
       evidenceStrength: 'medium',
-      limitations: '타우린 표시는 특히 고양이 영양에서 중요하지만 DCM 예방이나 심장질환 치료를 의미하지 않는다.',
-      compute: (product) => mgKgToMgPer1000Kcal(product, 'taurine'),
+      limitations: '입력 taurine 필드의 단위와 분석 provenance가 없어 비교를 비활성화했다. 완전사료 최소 권장량이며 심장질환 치료 근거가 아니다.',
+      compute: taurineWithUnverifiedInputUnit,
+    },
+    {
+      nutrient: '타우린',
+      field: 'taurine',
+      direction: 'min',
+      min: 670,
+      unit: 'mg/1000kcal',
+      species: 'cat',
+      lifeStage: 'adult',
+      productCategory: 'complete_food',
+      concernDomain: 'general',
+      scope: 'healthy_animal',
+      source: 'FEDIAF Nutritional Guidelines 2025',
+      issuingOrganization: 'FEDIAF',
+      documentTitle: 'Nutritional Guidelines for Complete and Complementary Pet Food for Cats and Dogs',
+      sourceDateOrVersion: 'Publication September 2025',
+      sourceUrl: FEDIAF_GUIDELINES_URL,
+      location: 'Table III-4b, page 19, canned adult cat at MER 75 kcal/kg BW^0.67',
+      productForm: 'wet',
+      basis: 'energy',
+      classification: 'normative',
+      judgmentEnabled: false,
+      evidenceStrength: 'medium',
+      limitations: '입력 taurine 필드의 단위와 분석 provenance가 없어 비교를 비활성화했다. 완전사료 최소 권장량이며 심장질환 치료 근거가 아니다.',
+      compute: taurineWithUnverifiedInputUnit,
     },
   ],
 };
@@ -348,6 +422,13 @@ function productCategory(product: Product): ProductCategory {
   return 'unknown';
 }
 
+function productForm(product: Product): ProductForm {
+  const formulation = normalizeConcernToken(product.formulation ?? '');
+  if (['dry', '건식'].includes(formulation)) return 'dry';
+  if (['wet', '습식', '캔', 'canned'].includes(formulation)) return 'wet';
+  return 'unknown';
+}
+
 function profileLifeStage(profile: UserPetProfile): 'growth' | 'adult' | 'senior' | 'unknown' {
   if (!Number.isFinite(profile.age) || profile.age < 0) return 'unknown';
   if (profile.age <= 1) return 'growth';
@@ -380,6 +461,9 @@ function applicabilityReason(
   if (productCategory(product) !== threshold.productCategory) {
     return { kind: 'product_type', message: '완전사료용 영양 기준을 이 제품 유형에 적용할 수 없어요.' };
   }
+  if (threshold.productForm !== 'any' && productForm(product) !== threshold.productForm) {
+    return { kind: 'product_form', message: '제품 형태 정보가 이 기준과 맞지 않아 적용할 수 없어요.' };
+  }
   return null;
 }
 
@@ -398,6 +482,7 @@ function evaluateThreshold(
       valueKind: 'unknown',
       applicability: notApplicableReason.kind,
       concernDomain: threshold.concernDomain,
+      judgment: threshold.judgmentEnabled ? 'active' : 'informational',
       inputEvidence: [],
       evidence: sourceEvidence(threshold, 'unknown'),
       message: notApplicableReason.message,
@@ -412,6 +497,7 @@ function evaluateThreshold(
       unit: threshold.unit,
       valueKind: 'unknown',
       concernDomain: threshold.concernDomain,
+      judgment: threshold.judgmentEnabled ? 'active' : 'informational',
       inputEvidence: computed.inputEvidence,
       evidence,
       message: `${threshold.nutrient} 수치가 공개되어 있지 않아 비교할 수 없어요.`,
@@ -432,6 +518,7 @@ function evaluateThreshold(
     unit: threshold.unit,
     valueKind: computed.valueKind,
     concernDomain: threshold.concernDomain,
+    judgment: threshold.judgmentEnabled ? 'active' : 'informational',
     inputEvidence: computed.inputEvidence,
     evidence,
     message: pass
@@ -456,15 +543,15 @@ function deriveStatus(
   selectedDomain: HealthConcernEvidenceDomain,
 ): { status: ConcernStatus; evidenceLevel: ConcernEvidenceLevel; facts: string[]; confidence: DataConfidence } {
   const facts: string[] = [];
-  const failed = checks.filter((check) => check.status === 'fail');
-  const passed = checks.filter((check) => check.status === 'pass');
-  const unknown = checks.filter((check) => check.status === 'unknown');
-  const applicable = checks.filter((check) => check.status !== 'not_applicable');
+  const judgmentChecks = checks.filter((check) => check.judgment === 'active');
+  const failed = judgmentChecks.filter((check) => check.status === 'fail');
+  const passed = judgmentChecks.filter((check) => check.status === 'pass');
+  const unknown = judgmentChecks.filter((check) => check.status === 'unknown');
   const blockingApplicability = checks.filter(
     (check) => check.status === 'not_applicable' && !['species', 'concern_domain'].includes(check.applicability ?? ''),
   );
 
-  if (checks.length > 0 && applicable.length === 0 && blockingApplicability.length > 0) {
+  if (checks.length > 0 && checks.every((check) => check.status === 'not_applicable') && blockingApplicability.length > 0) {
     facts.push('현재 프로필이나 제품 유형에는 이 정량 기준이 적용되지 않아요.');
     return { status: 'not_applicable', evidenceLevel: 'not_applicable', facts, confidence: 'insufficient' };
   }
@@ -563,10 +650,10 @@ export function evaluateHealthConcernsDetailed(
     );
     const state = deriveStatus(concernId, quantitativeChecks, tags, ingredients, selectedDomain);
     const missingRequiredFields = quantitativeChecks
-      .filter((check) => check.status === 'unknown')
+      .filter((check) => check.judgment === 'active' && check.status === 'unknown')
       .map((check) => check.nutrient);
     const cautionReasons = quantitativeChecks
-      .filter((check) => check.status === 'fail')
+      .filter((check) => check.judgment === 'active' && check.status === 'fail')
       .map((check) => check.message);
     const scoringContribution = Math.round(share * evidenceFactor(state.status, state.evidenceLevel) * 100) / 100;
 
