@@ -74,9 +74,7 @@ function buildCorsHeaders(req: Request): Record<string, string> {
 
 // 허용 관리자 토큰의 SHA-256 (btoa("id:pw") 문자열의 해시). 평문 자격증명은 두지 않는다.
 const ALLOWED_TOKEN_HASHES = new Set([
-  '9fa38188b90a4cae4cf3cc7a69e30d8880ff6ed74f3cfb3cff23a0e1d7497fbb',
-  'cb360248f2ecd593230ad22a2711ec2bf79ac8bc871922bdfdc78ab756ae77db',
-  '070dfb079a7cb48bcd522468d96f17bad97c64341f9eb87fd7683dbba55aff54',
+  'c73c599036f5f3391596bb4cbc9926a120d6343e7556b94207f9e8762a7a5c3c',
 ]);
 
 async function sha256Hex(input: string): Promise<string> {
