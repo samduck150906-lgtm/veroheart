@@ -31,3 +31,5 @@ __pycache__/
 # 검토용 생성물 (스크립트가 만들며, 확인 후 폐기)
 data/brand_extraction_review*.csv
 data/nutrition_import_report*.csv
+data/coupang_nutrition_report*.csv
+data/coupang_cache/
