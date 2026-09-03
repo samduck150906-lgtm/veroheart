@@ -78,8 +78,39 @@ NON_PRODUCT_HINTS = (
     "javascript:", "mailto:", "tel:", "#",
 )
 
-# 제품 상세 주소에 흔히 들어가는 조각. 하나라도 있으면 제품 페이지로 본다.
-PRODUCT_HINTS = ("/product", "/goods", "/item", "prodno", "goodsno", "product_no", "/shop/")
+# 제품 '상세' 주소의 모양. 하나라도 맞으면 제품 페이지로 본다.
+#
+# 처음엔 주소에 '/product' 가 들어가면 제품으로 봤는데, 그건 틀렸다. 쇼핑몰들은
+# 목록 페이지 주소에도 /product/ 를 쓴다(하림펫푸드: /product/list.html?cate_no=301,
+# /product/event7_list.html). 그래서 261개를 뽑아 놓고 앞 40개가 전부 상단 메뉴였다.
+# 지금은 '상세 페이지에는 제품 번호가 들어간다'는 것만 근거로 삼는다.
+PRODUCT_DETAIL_PATTERNS = (
+    re.compile(r"/product/[^/]+/\d+/", re.I),          # Cafe24 주소: /product/이름/1623/...
+    re.compile(r"[?&]product_no=\d+", re.I),           # Cafe24 예전 주소
+    re.compile(r"/product/detail", re.I),
+    re.compile(r"/goods/(?:view|detail)", re.I),
+    re.compile(r"[?&](?:goodsno|goods_no|prodno|prod_no|itemid)=\d+", re.I),
+    re.compile(r"/(?:item|products?)/\d+", re.I),
+)
+
+# 목록·안내 페이지 주소. 제품 번호가 없어 위 규칙에 걸리지 않지만, 명시해 두는 편이 낫다.
+LIST_PAGE_RE = re.compile(r"/[^/]*list[^/]*\.html", re.I)
+
+
+def product_key(url: str) -> str:
+    """
+    같은 제품의 다른 주소를 하나로 본다.
+
+    Cafe24 는 같은 제품을 카테고리마다 다른 주소로 내놓는다
+    (.../1623/category/36/... 과 .../1623/category/24/...). 제품 번호가 같으면
+    같은 제품이므로, 번호를 찾을 수 있으면 그걸 열쇠로 쓴다.
+    """
+    for pattern in (r"/product/[^/]+/(\d+)/", r"[?&]product_no=(\d+)",
+                    r"[?&](?:goodsno|goods_no|prodno|prod_no)=(\d+)", r"/(?:item|products?)/(\d+)"):
+        match = re.search(pattern, url, re.I)
+        if match:
+            return match.group(1)
+    return url
 
 
 def page_title(raw_html: str) -> str:
@@ -124,12 +155,16 @@ def collect_product_links(html: str, base_url: str, link_pattern: str | None) ->
         if link_pattern:
             if link_pattern not in absolute:
                 continue
-        elif not any(hint in absolute.lower() for hint in PRODUCT_HINTS):
-            continue
+        else:
+            if LIST_PAGE_RE.search(urllib.parse.urlparse(absolute).path):
+                continue
+            if not any(pattern.search(absolute) for pattern in PRODUCT_DETAIL_PATTERNS):
+                continue
 
-        if absolute in seen:
+        key = product_key(absolute)
+        if key in seen:
             continue
-        seen.add(absolute)
+        seen.add(key)
         found.append(absolute)
 
     return found
@@ -167,23 +202,30 @@ def run_self_test() -> int:
         if actual != expected:
             failures.append(f"{label}: {actual!r} != {expected!r}")
 
+    # 하림펫푸드 공식몰에서 실제로 나온 주소들이다. 목록 페이지에도 /product/ 가 들어가서
+    # 처음엔 261개 중 앞 40개가 전부 메뉴였다 — 그 실수를 여기서 고정해 둔다.
     listing = """
     <html><body>
-      <a href="/product/detail.html?no=12">더리얼 그레인프리</a>
-      <a href="/product/detail.html?no=34">밥이보약 오리</a>
+      <a href="/product/event7_list.html">이벤트</a>
+      <a href="/product/list_cal_dog.html">칼로리 안내</a>
+      <a href="/product/list.html?cate_no=301">빠른배송</a>
+      <a href="/product/더리얼-밀-강아지-화식-모음/1623/category/36/display/1/">더리얼 밀</a>
+      <a href="/product/더리얼-밀-강아지-화식-모음/1623/category/24/display/1/">같은 제품 다른 카테고리</a>
+      <a href="/product/detail.html?product_no=77">예전 주소</a>
       <a href="/member/login.html">로그인</a>
-      <a href="https://other-site.com/product/9">다른 사이트</a>
-      <a href="/notice/1">공지사항</a>
-      <a href="/product/detail.html?no=12">같은 주소 다시</a>
+      <a href="https://other-site.com/product/9/">다른 사이트</a>
     </body></html>
     """
     links = collect_product_links(listing, "https://brand.example/list", None)
     check(
-        "제품링크만 추림",
+        "목록페이지는 빼고 제품 상세만",
         links,
-        ["https://brand.example/product/detail.html?no=12",
-         "https://brand.example/product/detail.html?no=34"],
+        ["https://brand.example/product/더리얼-밀-강아지-화식-모음/1623/category/36/display/1/",
+         "https://brand.example/product/detail.html?product_no=77"],
     )
+    check("같은 제품 번호는 한 번만",
+          product_key("https://x/product/a/1623/category/36/"),
+          product_key("https://x/product/a/1623/category/24/"))
 
     check(
         "og:title 우선",
@@ -299,7 +341,10 @@ def main() -> int:
                     LOG.error("[%s] 목록을 열지 못했습니다: %s", brand, exc)
                     continue
                 links = collect_product_links(listing_html, list_url, link_pattern)
-                LOG.info("[%s] %s → 제품 링크 %d개", brand, list_url, len(links))
+                # 뽑은 주소를 한두 개 보여 준다 — 목록 페이지를 제품으로 착각했는지
+                # 로그만 보고 바로 알 수 있도록. 실제로 그 실수를 한 적이 있다.
+                LOG.info("[%s] %s → 제품 링크 %d개%s", brand, list_url, len(links),
+                         (" (예: " + ", ".join(links[:2]) + ")") if links else "")
                 product_links.extend(links)
                 time.sleep(args.delay)
 
