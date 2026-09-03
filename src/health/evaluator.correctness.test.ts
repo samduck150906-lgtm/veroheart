@@ -251,6 +251,125 @@ describe('health concern evaluator correctness characterization', () => {
     expect(result.status).toBe('unknown');
   });
 
+  it('preserves the exact lower-urinary domain for English and Korean cranberry evidence', () => {
+    for (const ingredient of [
+      { nameKo: '베리 추출물', nameEn: 'cranberry', purpose: '' },
+      { nameKo: '크랜베리', nameEn: '', purpose: '' },
+    ]) {
+      const result = evaluate('요로', {
+        ingredients: [{ id: 'cranberry', ...ingredient, riskLevel: 'safe' }],
+      });
+      expect(result.matchedIngredientEvidence).toEqual([ingredient.nameKo]);
+      expect(result.evidenceDomains).toEqual(['lower_urinary']);
+    }
+  });
+
+  it('preserves renal domains across English fields and purpose matches', () => {
+    const english = evaluate('신장', {
+      ingredients: [{ id: 'omega', nameKo: '정제 어유', nameEn: 'omega-3 oil', purpose: '', riskLevel: 'safe' }],
+    });
+    const purpose = evaluate('요로', {
+      ingredients: [{ id: 'purpose', nameKo: '', nameEn: '', purpose: 'cranberry support', riskLevel: 'safe' }],
+    });
+    expect(english.matchedIngredientEvidence).toEqual(['정제 어유']);
+    expect(english.evidenceDomains).toEqual(['renal']);
+    expect(purpose.matchedIngredientEvidence).toEqual(['cranberry support']);
+    expect(purpose.evidenceDomains).toEqual(['lower_urinary']);
+  });
+
+  it('does not cross renal and lower-urinary ingredient evidence domains', () => {
+    const renalForUrinary = evaluate('요로', {
+      ingredients: [{ id: 'omega', nameKo: '', nameEn: 'omega-3', purpose: '', riskLevel: 'safe' }],
+    });
+    const urinaryForRenal = evaluate('신장', {
+      ingredients: [{ id: 'cranberry', nameKo: '', nameEn: 'cranberry', purpose: '', riskLevel: 'safe' }],
+    });
+    expect(renalForUrinary.matchedIngredientEvidence).toEqual([]);
+    expect(renalForUrinary.status).toBe('unknown');
+    expect(urinaryForRenal.matchedIngredientEvidence).toEqual([]);
+    expect(urinaryForRenal.status).toBe('unknown');
+  });
+
+  it('does not match unrelated English ingredient substrings', () => {
+    const result = evaluate('요로', {
+      ingredients: [{ id: 'substring', nameKo: '', nameEn: 'cranberryish flavor', purpose: '', riskLevel: 'safe' }],
+    });
+    expect(result.matchedIngredientEvidence).toEqual([]);
+    expect(result.evidenceDomains).toEqual([]);
+  });
+
+  it('rejects invalid percentages without clamping them into comparisons', () => {
+    for (const field of ['crudeProtein', 'crudeFat', 'crudeFiber', 'moisture'] as const) {
+      const result = evaluate(field === 'crudeFiber' ? '소화기' : '비만·다이어트', {
+        guaranteedAnalysis: { [field]: 150, moisture: field === 'moisture' ? 150 : 10 } as GuaranteedAnalysis,
+      });
+      const matchingEvidence = result.quantitativeChecks
+        .flatMap((check) => check.inputEvidence)
+        .find((input) => input.field === `guaranteedAnalysis.${field}`);
+      expect(matchingEvidence).toMatchObject({ rawValue: 150, qualifier: 'unavailable', valueKind: 'unknown' });
+      expect(matchingEvidence).not.toHaveProperty('parsedValue');
+      expect(result.quantitativeChecks.every((check) => check.status !== 'pass')).toBe(true);
+      expect(result.status).not.toBe('supported');
+      expect(result.scoringContribution).toBe(0);
+    }
+
+    for (const value of [-1, '-1']) {
+      const result = evaluate('소화기', {
+        guaranteedAnalysis: malformedAnalysis('crudeFiber', value),
+      });
+      expect(result.quantitativeChecks[0].status).toBe('unknown');
+      expect(result.quantitativeChecks[0].inputEvidence[0]).toMatchObject({ qualifier: 'unavailable', valueKind: 'unknown' });
+    }
+  });
+
+  it('requires moisture below 100 for dry-matter calculation', () => {
+    for (const moisture of [100, 101, '100', '101']) {
+      const result = evaluate('소화기', {
+        guaranteedAnalysis: { crudeFiber: 4, moisture } as GuaranteedAnalysis,
+      });
+      expect(result.quantitativeChecks[0]).toMatchObject({ status: 'unknown', valueKind: 'unknown' });
+      expect(result.quantitativeChecks[0].inputEvidence[1]).toMatchObject({
+        rawValue: moisture,
+        qualifier: 'unavailable',
+        valueKind: 'unknown',
+      });
+    }
+  });
+
+  it('rejects percent-qualified, zero, and negative energy values', () => {
+    for (const kcalPer100g of ['350%', 0, -350]) {
+      const result = evaluate('신장', {
+        guaranteedAnalysis: { phosphorus: 0.14, kcalPer100g } as GuaranteedAnalysis,
+      });
+      expect(result.quantitativeChecks[0]).toMatchObject({ status: 'unknown', valueKind: 'unknown' });
+      expect(result.quantitativeChecks[0].inputEvidence[1]).toMatchObject({
+        rawValue: kcalPer100g,
+        qualifier: 'unavailable',
+        valueKind: 'unknown',
+      });
+      expect(result.status).not.toBe('supported');
+      expect(result.cautionReasons).toEqual([]);
+      expect(result.scoringContribution).toBe(0);
+    }
+  });
+
+  it('accepts valid numeric and string percentages and positive energy values', () => {
+    for (const crudeFiber of [4, '4', '4%']) {
+      const result = evaluate('소화기', {
+        guaranteedAnalysis: { crudeFiber, moisture: '10%' } as GuaranteedAnalysis,
+      });
+      expect(result.quantitativeChecks[0]).toMatchObject({ status: 'pass', valueKind: 'calculated' });
+      expect(result.quantitativeChecks[0].inputEvidence[0]).toMatchObject({ parsedValue: 4, qualifier: 'exact' });
+    }
+    for (const kcalPer100g of [350, '350']) {
+      const result = evaluate('신장', {
+        guaranteedAnalysis: { phosphorus: 0.14, kcalPer100g } as GuaranteedAnalysis,
+      });
+      expect(result.quantitativeChecks[0]).toMatchObject({ status: 'pass', actualValue: 400 });
+      expect(result.quantitativeChecks[0].inputEvidence[1]).toMatchObject({ parsedValue: 350, qualifier: 'exact' });
+    }
+  });
+
   it('keeps disabled renal evidence non-judgmental for the combined renal/urinary selection', () => {
     const result = evaluate('신장·비뇨기', {
       guaranteedAnalysis: { phosphorus: 0.14, kcalPer100g: 350 },

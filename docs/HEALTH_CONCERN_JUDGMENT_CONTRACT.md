@@ -104,6 +104,8 @@ Evaluator rules:
 - the exact first profile input label is preserved; unrecognized inputs are available from `evaluateHealthConcernsDetailed()` and receive no result or points
 - `immune` returns a real concern result without inventing a disease card
 
+Future shadow score integration must inspect `unrecognizedProfileInputs` explicitly. An empty `results` array does not prove that no concern was selected, selected-but-unrecognized concerns must not receive the default full 20-point concern score, and mixed recognized/unrecognized inputs must be represented explicitly in shadow impact output.
+
 ## Threshold Provenance Audit
 
 As of 2026-09-03, no quantitative threshold in the evaluator is enabled for health-concern judgment. The checks remain deterministic, structured, and informational so the data path can be audited without producing confirmed support, contradiction penalties, confidence, or score contribution.

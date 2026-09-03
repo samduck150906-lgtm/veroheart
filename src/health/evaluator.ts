@@ -1,5 +1,4 @@
 import type { Product, UserPetProfile } from '../types';
-import { toDryMatter } from '../analysis/nutrition';
 import {
   normalizeConcernToken,
   resolveHealthConcernId,
@@ -53,14 +52,45 @@ interface ComputedThresholdValue {
   inputEvidence: QuantitativeInputEvidence[];
 }
 
+interface IngredientEvidenceMatch {
+  displayName: string;
+  matchedField: 'nameKo' | 'nameEn' | 'purpose';
+  matchedValue: string;
+  matchedKeyword: string;
+  evidenceDomain: HealthConcernEvidenceDomain;
+}
+
 const FEDIAF_GUIDELINES_URL =
   'https://europeanpetfood.org/wp-content/uploads/2025/09/FEDIAF-Nutritional-Guidelines_2025-ONLINE.pdf';
 const WSAVA_GUIDELINES_URL = 'https://wsava.org/global-guidelines/global-nutrition-guidelines/';
 
-function parseDeclaredValue(field: string, rawValue: unknown): QuantitativeInputEvidence {
+interface DeclaredValueConstraints {
+  allowPercentSuffix: boolean;
+  min?: number;
+  minExclusive?: number;
+  max?: number;
+  maxExclusive?: number;
+}
+
+function parseDeclaredValue(
+  field: string,
+  rawValue: unknown,
+  constraints: DeclaredValueConstraints,
+): QuantitativeInputEvidence {
+  const exactEvidence = (parsedValue: number): QuantitativeInputEvidence => {
+    const outOfRange =
+      (constraints.min != null && parsedValue < constraints.min)
+      || (constraints.minExclusive != null && parsedValue <= constraints.minExclusive)
+      || (constraints.max != null && parsedValue > constraints.max)
+      || (constraints.maxExclusive != null && parsedValue >= constraints.maxExclusive);
+    return outOfRange
+      ? { field, rawValue, qualifier: 'unavailable', valueKind: 'unknown' }
+      : { field, rawValue, parsedValue, qualifier: 'exact', valueKind: 'label_declared' };
+  };
+
   if (typeof rawValue === 'number') {
-    return Number.isFinite(rawValue) && rawValue >= 0
-      ? { field, rawValue, parsedValue: rawValue, qualifier: 'exact', valueKind: 'label_declared' }
+    return Number.isFinite(rawValue)
+      ? exactEvidence(rawValue)
       : { field, rawValue, qualifier: 'unavailable', valueKind: 'unknown' };
   }
 
@@ -68,11 +98,19 @@ function parseDeclaredValue(field: string, rawValue: unknown): QuantitativeInput
     return { field, rawValue, qualifier: 'unavailable', valueKind: 'unknown' };
   }
 
-  const match = rawValue.match(/^\s*(<=|>=|<|>|≤|≥)?\s*(\d+(?:\.\d+)?)\s*%?\s*$/);
+  const match = rawValue.match(/^\s*(<=|>=|<|>|≤|≥)?\s*(\d+(?:\.\d+)?)\s*(%)?\s*$/);
   if (!match) return { field, rawValue, qualifier: 'unavailable', valueKind: 'unknown' };
 
+  if (match[3] && !constraints.allowPercentSuffix) {
+    return { field, rawValue, qualifier: 'unavailable', valueKind: 'unknown' };
+  }
+
   const parsedValue = Number(match[2]);
-  if (!Number.isFinite(parsedValue)) {
+  if (!Number.isFinite(parsedValue)
+    || (constraints.min != null && parsedValue < constraints.min)
+    || (constraints.minExclusive != null && parsedValue <= constraints.minExclusive)
+    || (constraints.max != null && parsedValue > constraints.max)
+    || (constraints.maxExclusive != null && parsedValue >= constraints.maxExclusive)) {
     return { field, rawValue, qualifier: 'unavailable', valueKind: 'unknown' };
   }
   const qualifier =
@@ -82,6 +120,22 @@ function parseDeclaredValue(field: string, rawValue: unknown): QuantitativeInput
           : match[1] === '>=' || match[1] === '≥' ? 'gte'
             : 'exact';
   return { field, rawValue, parsedValue, qualifier, valueKind: 'label_declared' };
+}
+
+function parsePercentageValue(field: string, rawValue: unknown, moisture = false): QuantitativeInputEvidence {
+  return parseDeclaredValue(field, rawValue, {
+    allowPercentSuffix: true,
+    min: 0,
+    ...(moisture ? { maxExclusive: 100 } : { max: 100 }),
+  });
+}
+
+function parseEnergyValue(field: string, rawValue: unknown): QuantitativeInputEvidence {
+  return parseDeclaredValue(field, rawValue, { allowPercentSuffix: false, minExclusive: 0 });
+}
+
+function parseUnitUnresolvedValue(field: string, rawValue: unknown): QuantitativeInputEvidence {
+  return parseDeclaredValue(field, rawValue, { allowPercentSuffix: false, min: 0 });
 }
 
 function comparableValue(input: QuantitativeInputEvidence): number | null {
@@ -98,24 +152,24 @@ function calculatedValue(value: number | null, inputEvidence: QuantitativeInputE
 
 function caloriesPer100g(product: Product): QuantitativeInputEvidence {
   return product.caloriesPer100g != null
-    ? parseDeclaredValue('caloriesPer100g', product.caloriesPer100g)
-    : parseDeclaredValue('guaranteedAnalysis.kcalPer100g', product.guaranteedAnalysis?.kcalPer100g);
+    ? parseEnergyValue('caloriesPer100g', product.caloriesPer100g)
+    : parseEnergyValue('guaranteedAnalysis.kcalPer100g', product.guaranteedAnalysis?.kcalPer100g);
 }
 
 function dmb(product: Product, field: 'crudeProtein' | 'crudeFat' | 'crudeFiber'): ComputedThresholdValue {
   const ga = product.guaranteedAnalysis;
-  const nutrient = parseDeclaredValue(`guaranteedAnalysis.${field}`, ga?.[field]);
-  const moisture = parseDeclaredValue('guaranteedAnalysis.moisture', ga?.moisture);
+  const nutrient = parsePercentageValue(`guaranteedAnalysis.${field}`, ga?.[field]);
+  const moisture = parsePercentageValue('guaranteedAnalysis.moisture', ga?.moisture, true);
   const value = comparableValue(nutrient);
   const moistureValue = comparableValue(moisture);
   return calculatedValue(
-    value == null || moistureValue == null ? null : toDryMatter(value, moistureValue),
+    value == null || moistureValue == null ? null : (value / (100 - moistureValue)) * 100,
     [nutrient, moisture],
   );
 }
 
 function percentToMgPer1000Kcal(product: Product, field: 'phosphorus' | 'calcium'): ComputedThresholdValue {
-  const nutrient = parseDeclaredValue(`guaranteedAnalysis.${field}`, product.guaranteedAnalysis?.[field]);
+  const nutrient = parsePercentageValue(`guaranteedAnalysis.${field}`, product.guaranteedAnalysis?.[field]);
   const energy = caloriesPer100g(product);
   const value = comparableValue(nutrient);
   const kcal = comparableValue(energy);
@@ -126,7 +180,7 @@ function percentToMgPer1000Kcal(product: Product, field: 'phosphorus' | 'calcium
 }
 
 function taurineWithUnverifiedInputUnit(product: Product): ComputedThresholdValue {
-  const nutrient = parseDeclaredValue('guaranteedAnalysis.taurine', product.guaranteedAnalysis?.taurine);
+  const nutrient = parseUnitUnresolvedValue('guaranteedAnalysis.taurine', product.guaranteedAnalysis?.taurine);
   const energy = caloriesPer100g(product);
   return { value: null, valueKind: 'unknown', inputEvidence: [nutrient, energy] };
 }
@@ -328,7 +382,7 @@ const FUNCTIONAL_INGREDIENTS: Record<HealthConcernId, readonly string[]> = {
   joint: ['글루코사민', '콘드로이틴', 'msm', '초록입홍합', 'green lipped mussel', 'epa', 'dha'],
   digestive: ['프로바이오틱스', '프리바이오틱스', '유산균', '이눌린', 'fos', 'prebiotic', 'probiotic'],
   weight: ['l-카르니틴', 'l카르니틴', 'carnitine'],
-  renal_urinary: ['크랜베리', 'cranberry', '오메가3', '오메가-3'],
+  renal_urinary: ['크랜베리', 'cranberry', '오메가3', '오메가-3', 'omega-3', 'omega 3'],
   heart: ['타우린', 'taurine', 'l-카르니틴', 'l카르니틴', 'carnitine', '코엔자임q10'],
   immune: ['비타민e', 'vitamin e', '아연', 'zinc', '셀레늄', 'selenium', '초유', 'colostrum'],
   eye: ['루테인', 'lutein', '타우린', 'taurine', '비타민a', 'vitamin a', 'dha'],
@@ -340,6 +394,8 @@ const RENAL_URINARY_INGREDIENT_DOMAINS: Record<string, HealthConcernEvidenceDoma
   cranberry: 'lower_urinary',
   '오메가3': 'renal',
   '오메가-3': 'renal',
+  'omega-3': 'renal',
+  'omega 3': 'renal',
 };
 
 function evidenceTextMatches(value: string, needle: string): boolean {
@@ -382,27 +438,31 @@ function matchedIngredients(
   product: Product,
   concernId: HealthConcernId,
   selectedDomain: HealthConcernEvidenceDomain,
-): string[] {
+): IngredientEvidenceMatch[] {
   const needles = FUNCTIONAL_INGREDIENTS[concernId];
-  return [
-    ...new Set(
-      (product.ingredients ?? [])
-        .filter((ingredient) =>
-          [ingredient.nameKo, ingredient.nameEn, ingredient.purpose].some(
-            (value) => value && needles.some((needle) => evidenceTextMatches(value, needle)),
-          )
-          && (concernId !== 'renal_urinary'
-            || needles.some((needle) =>
-              [ingredient.nameKo, ingredient.nameEn, ingredient.purpose].some(
-                (value) => value
-                  && evidenceTextMatches(value, needle)
-                  && domainMatches(selectedDomain, RENAL_URINARY_INGREDIENT_DOMAINS[needle] ?? 'general'),
-              ),
-            )),
-        )
-        .map((ingredient) => ingredient.nameKo),
-    ),
-  ];
+  const matches: IngredientEvidenceMatch[] = [];
+  const seen = new Set<string>();
+
+  for (const ingredient of product.ingredients ?? []) {
+    const displayName = ingredient.nameKo || ingredient.nameEn || ingredient.purpose;
+    for (const matchedField of ['nameKo', 'nameEn', 'purpose'] as const) {
+      const matchedValue = ingredient[matchedField];
+      if (!matchedValue) continue;
+      for (const matchedKeyword of needles) {
+        if (!evidenceTextMatches(matchedValue, matchedKeyword)) continue;
+        const evidenceDomain = concernId === 'renal_urinary'
+          ? RENAL_URINARY_INGREDIENT_DOMAINS[matchedKeyword] ?? 'general'
+          : 'general';
+        if (!domainMatches(selectedDomain, evidenceDomain)) continue;
+        const key = [displayName, matchedField, matchedValue, matchedKeyword, evidenceDomain].join('\u0000');
+        if (seen.has(key)) continue;
+        seen.add(key);
+        matches.push({ displayName, matchedField, matchedValue, matchedKeyword, evidenceDomain });
+      }
+    }
+  }
+
+  return matches;
 }
 
 export function healthRuleAppliesToSpecies(ruleSpecies: Species, profileSpecies: Species): boolean {
@@ -644,7 +704,8 @@ export function evaluateHealthConcernsDetailed(
 
   const results = canonical.map(({ concernId, originalProfileLabel, selectedDomain }) => {
     const tags = matchedTags(product, concernId, selectedDomain);
-    const ingredients = matchedIngredients(product, concernId, selectedDomain);
+    const ingredientMatches = matchedIngredients(product, concernId, selectedDomain);
+    const ingredients = [...new Set(ingredientMatches.map((match) => match.displayName))];
     const quantitativeChecks = (THRESHOLDS[concernId] ?? []).map((threshold) =>
       evaluateThreshold(threshold, product, profile, selectedDomain),
     );
@@ -673,11 +734,7 @@ export function evaluateHealthConcernsDetailed(
       sourceReferences: quantitativeChecks.flatMap((check) => (check.evidence ? [check.evidence] : [])),
       evidenceDomains: [...new Set([
         ...tags.map((tag) => concernId === 'renal_urinary' ? renalUrinaryDomain(tag) : 'general' as const),
-        ...ingredients.map((ingredient) => concernId === 'renal_urinary'
-          ? RENAL_URINARY_INGREDIENT_DOMAINS[
-              Object.keys(RENAL_URINARY_INGREDIENT_DOMAINS).find((key) => evidenceTextMatches(ingredient, key)) ?? ''
-            ] ?? 'general'
-          : 'general' as const),
+        ...ingredientMatches.map((match) => match.evidenceDomain),
         ...quantitativeChecks
           .filter((check) => check.status === 'pass' || check.status === 'fail')
           .map((check) => check.concernDomain),
