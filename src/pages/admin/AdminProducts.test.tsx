@@ -138,6 +138,40 @@ describe('AdminProducts', () => {
     });
   });
 
+  it("'영양정보 없음' 을 켜면 그 조건으로만 조회하고 1페이지로 돌아간다", async () => {
+    // 458건 중 어느 것이 비었는지 목록에서 눈으로 셀 수 없어, 조건으로 걸어야 한다.
+    renderProducts();
+    await screen.findByText('테스트 사료 1');
+
+    fireEvent.click(screen.getByLabelText('다음 페이지'));
+    await waitFor(() => expect(screen.getByText('2 / 3')).toBeTruthy());
+
+    fireEvent.click(screen.getByText('영양정보 없음'));
+
+    await waitFor(() => {
+      const last = h.fetchProductsPage.mock.calls.at(-1)?.[0] as ProductListParams;
+      expect(last.missingNutrition).toBe(true);
+      expect(last.page).toBe(1);
+    });
+  });
+
+  it("'영양정보 없음' 을 다시 끄면 조건이 풀린다", async () => {
+    renderProducts();
+    await screen.findByText('테스트 사료 1');
+
+    fireEvent.click(screen.getByText('영양정보 없음'));
+    await waitFor(() => {
+      const last = h.fetchProductsPage.mock.calls.at(-1)?.[0] as ProductListParams;
+      expect(last.missingNutrition).toBe(true);
+    });
+
+    fireEvent.click(screen.getByText('영양정보 없음'));
+    await waitFor(() => {
+      const last = h.fetchProductsPage.mock.calls.at(-1)?.[0] as ProductListParams;
+      expect(last.missingNutrition).toBe(false);
+    });
+  });
+
   it('제품 저장 시 원재료 연결을 같은 요청으로 함께 보낸다', async () => {
     renderProducts();
     fireEvent.click(await screen.findByText('신규 제품 등록'));

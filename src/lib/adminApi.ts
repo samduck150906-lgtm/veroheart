@@ -162,27 +162,44 @@ export interface ProductListParams {
   pageSize: number;
   search?: string;
   category?: string;
+  /** 등록성분이 아직 없는 제품만 — 채워 넣을 대상을 찾을 때 쓴다. */
+  missingNutrition?: boolean;
 }
 
 /**
  * 서버 페이지네이션 제품 목록.
  * 목록 렌더에 필요한 컬럼만 select 한다(전건 `select('*')` 금지).
+ *
+ * select 문자열은 반드시 리터럴로 둔다 — supabase-js 는 이 문자열을 타입으로 파싱해서,
+ * 템플릿 리터럴로 조합하면 컴파일이 깨진다. 그래서 조건마다 문장을 따로 쓴다.
  */
 export async function fetchProductsPage({
   page,
   pageSize,
   search,
   category,
+  missingNutrition,
 }: ProductListParams): Promise<Paged<AdminProductRow>> {
   const from = Math.max(0, (page - 1) * pageSize);
-  let builder = supabase
-    .from('products')
-    .select(
-      'id, name, brand_name, main_category, sub_category, target_pet_type, target_life_stage, image_url, min_price, created_at',
-      { count: 'exact' },
-    )
-    .order('created_at', { ascending: false })
-    .range(from, from + pageSize - 1);
+  let builder = missingNutrition
+    ? supabase
+        .from('products')
+        .select(
+          'id, name, brand_name, main_category, sub_category, target_pet_type, target_life_stage, image_url, min_price, created_at, nutritional_profiles!left(product_id)',
+          { count: 'exact' },
+        )
+        // 등록성분 행이 없는 제품만. 왼쪽 조인 뒤 빈 쪽을 거른다.
+        .is('nutritional_profiles', null)
+        .order('created_at', { ascending: false })
+        .range(from, from + pageSize - 1)
+    : supabase
+        .from('products')
+        .select(
+          'id, name, brand_name, main_category, sub_category, target_pet_type, target_life_stage, image_url, min_price, created_at',
+          { count: 'exact' },
+        )
+        .order('created_at', { ascending: false })
+        .range(from, from + pageSize - 1);
 
   const q = (search ?? '').trim();
   if (q) {
@@ -225,7 +242,11 @@ export async function fetchProductIngredients(productId: string): Promise<Produc
 
 export interface SaveProductPayload {
   product: Record<string, unknown>;
-  nutrition: Record<string, number> | null;
+  /**
+   * 등록성분. 모르는 성분은 null 이다 — 0 이 아니다.
+   * 0 으로 보내면 화면이 그걸 제조사 신고값("칼슘 0%")으로 읽는다.
+   */
+  nutrition: Record<string, number | null> | null;
   /** 지정하면 제품 저장과 같은 트랜잭션에서 원재료 연결을 교체한다. */
   ingredients?: { ingredient_id: string; sort_order: number }[];
 }

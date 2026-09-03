@@ -14,6 +14,13 @@ import {
   type AdminProductRow,
   type ProductIngredientLink,
 } from '../../lib/adminApi';
+import {
+  buildNutritionPayload,
+  EMPTY_NUTRITION,
+  NUTRITION_FIELDS,
+  toNutritionForm,
+  type NutritionForm,
+} from '../../utils/nutritionForm';
 
 interface ProductForm {
   id?: string;
@@ -33,30 +40,6 @@ interface ProductForm {
   kcal_per_100g?: number;
 }
 
-/** nutritional_profiles(보장성분) 입력 폼 — 값은 문자열로 다루고 저장 시 숫자로 변환 */
-type NutritionForm = {
-  crude_protein: string;
-  crude_fat: string;
-  crude_fiber: string;
-  crude_ash: string;
-  moisture: string;
-  calcium: string;
-  phosphorus: string;
-};
-
-const EMPTY_NUTRITION: NutritionForm = {
-  crude_protein: '', crude_fat: '', crude_fiber: '', crude_ash: '', moisture: '', calcium: '', phosphorus: '',
-};
-
-const NUTRITION_FIELDS: { key: keyof NutritionForm; label: string }[] = [
-  { key: 'crude_protein', label: '조단백질 (%)' },
-  { key: 'crude_fat', label: '조지방 (%)' },
-  { key: 'crude_fiber', label: '조섬유 (%)' },
-  { key: 'crude_ash', label: '조회분 (%)' },
-  { key: 'moisture', label: '수분 (%)' },
-  { key: 'calcium', label: '칼슘 (%)' },
-  { key: 'phosphorus', label: '인 (%)' },
-];
 
 const MAIN_CATEGORIES = [
   '사료',
@@ -84,6 +67,9 @@ const AdminProducts: React.FC = () => {
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('전체');
+  // 등록성분을 채워 넣을 대상을 찾기 위한 필터. 458건 중 어느 것이 비었는지
+  // 목록에서 눈으로 세는 건 불가능해서 조건으로 건다.
+  const [missingNutritionOnly, setMissingNutritionOnly] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<ProductForm>({});
@@ -123,6 +109,7 @@ const AdminProducts: React.FC = () => {
         pageSize: PAGE_SIZE,
         search,
         category: activeTab,
+        missingNutrition: missingNutritionOnly,
       });
       setProducts(rows);
       setTotal(count);
@@ -137,7 +124,7 @@ const AdminProducts: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, search, activeTab]);
+  }, [page, search, activeTab, missingNutritionOnly]);
 
   useEffect(() => {
     // 페이지/검색/카테고리 변경 시 서버에서 다시 조회한다.
@@ -178,18 +165,7 @@ const AdminProducts: React.FC = () => {
 
     setCurrentProduct((full ?? row) as ProductForm);
 
-    if (np) {
-      const s = (v: unknown) => (v === null || v === undefined ? '' : String(v));
-      setNutrition({
-        crude_protein: s(np.crude_protein),
-        crude_fat: s(np.crude_fat),
-        crude_fiber: s(np.crude_fiber),
-        crude_ash: s(np.crude_ash),
-        moisture: s(np.moisture),
-        calcium: s(np.calcium),
-        phosphorus: s(np.phosphorus),
-      });
-    }
+    setNutrition(toNutritionForm(np));
 
     try {
       setIngredientLinks(await fetchProductIngredients(row.id));
@@ -252,23 +228,8 @@ const AdminProducts: React.FC = () => {
       has_risk_factors: normalizeCommaValues(currentProduct.has_risk_factors),
     };
 
-    // 보장성분: 입력값이 하나라도 있을 때만 함께 전송(숫자로 변환)
-    const hasNutrition = NUTRITION_FIELDS.some(({ key }) => nutrition[key].trim() !== '');
-    const num = (s: string) => {
-      const n = parseFloat(s);
-      return Number.isFinite(n) ? n : 0;
-    };
-    const nutritionPayload = hasNutrition
-      ? {
-          crude_protein: num(nutrition.crude_protein),
-          crude_fat: num(nutrition.crude_fat),
-          crude_fiber: num(nutrition.crude_fiber),
-          crude_ash: num(nutrition.crude_ash),
-          moisture: num(nutrition.moisture),
-          calcium: num(nutrition.calcium),
-          phosphorus: num(nutrition.phosphorus),
-        }
-      : null;
+    // 보장성분: 채운 칸만 저장한다. 비운 칸은 0 이 아니라 '모름'(null)이다.
+    const nutritionPayload = buildNutritionPayload(nutrition);
 
     setIsSaving(true);
     setFormError('');
@@ -343,6 +304,17 @@ const AdminProducts: React.FC = () => {
             {tab}
           </button>
         ))}
+        <button
+          type="button"
+          className={`admin-chip ${missingNutritionOnly ? 'active' : ''}`}
+          aria-pressed={missingNutritionOnly}
+          onClick={() => {
+            setMissingNutritionOnly((on) => !on);
+            setPage(1);
+          }}
+        >
+          영양정보 없음
+        </button>
       </div>
 
       <div className="admin-search-wrap">
@@ -391,7 +363,7 @@ const AdminProducts: React.FC = () => {
               <tr>
                 <td colSpan={5}>
                   <div className="admin-empty">
-                    {search || activeTab !== '전체'
+                    {search || activeTab !== '전체' || missingNutritionOnly
                       ? '검색 조건에 맞는 제품이 없습니다.'
                       : '등록된 제품이 없습니다. "신규 제품 등록"으로 시작해 주세요.'}
                   </div>
