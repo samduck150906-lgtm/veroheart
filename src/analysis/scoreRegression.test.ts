@@ -92,14 +92,14 @@ function verdictFor(product: Product, profile: UserPetProfile) {
 }
 
 describe('적합도 점수 회귀 (golden)', () => {
-  it('건강한 강아지 × 문제 없는 사료 — 100점 A', () => {
+  it('건강한 강아지 × 문제 없는 사료 — quantity-unknown concern evidence는 90점 A', () => {
     const { raw, breakdown, verdict } = verdictFor(CLEAN_PRODUCT, DOG);
-    expect(raw).toBe(100);
-    expect(breakdown.baseScore).toBe(100);
+    expect(raw).toBe(90);
+    expect(breakdown.baseScore).toBe(90);
     expect(breakdown.ingredientSafety).toBe(50);
     expect(breakdown.healthSuitability).toBe(30);
-    expect(breakdown.concernFit).toBe(20);
-    expect(verdict).toEqual({ score: 100, grade: 'A', capReason: null });
+    expect(breakdown.concernFit).toBe(10);
+    expect(verdict).toEqual({ score: 90, grade: 'A', capReason: null });
   });
 
   it('배분 비율은 50 / 30 / 20 을 넘지 않는다', () => {
@@ -124,19 +124,19 @@ describe('적합도 점수 회귀 (golden)', () => {
     const { raw, breakdown, verdict } = verdictFor(CLEAN_PRODUCT, ALLERGIC_DOG);
     expect(breakdown.allergyHits.length).toBeGreaterThan(0);
     expect(breakdown.allergyPenalty).toBe(90);
-    expect(raw).toBe(10);
-    expect(verdict.score).toBe(9);
+    expect(raw).toBe(0);
+    expect(verdict.score).toBe(0);
     expect(verdict.grade).toBe('F');
-    expect(verdict.capReason).toBe('allergy');
+    expect(verdict.capReason).toBeNull();
   });
 
   it('위험 성분 포함 — 69점을 넘지 않는다', () => {
     const { raw, breakdown, verdict } = verdictFor(DANGER_PRODUCT, DOG);
-    expect(raw).toBe(66);
+    expect(raw).toBe(51);
     expect(breakdown.ingredientSafety).toBe(25);
     expect(verdict.score).toBeLessThanOrEqual(69);
-    expect(verdict.score).toBe(66);
-    expect(verdict.grade).toBe('C');
+    expect(verdict.score).toBe(51);
+    expect(verdict.grade).toBe('D');
   });
 
   it('하드캡 우선순위: 종 > 알레르기 > 위험 성분', () => {

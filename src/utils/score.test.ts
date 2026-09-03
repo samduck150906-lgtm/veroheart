@@ -3,6 +3,8 @@ import {
   buildRecommendationBreakdown,
   calculateCompatibilityScore,
   getCompatibilityBreakdown,
+  getHealthConcernScoreShadowDiff,
+  getLegacyConcernFitForShadowComparison,
   getProductRecommendationInsights,
   getRecommendationBreakdown,
   gradeFromScore,
@@ -58,6 +60,7 @@ function expectCurrentBreakdownShape(result: ReturnType<typeof getRecommendation
     // 가금 알레르기 정책 v1.0(#88)에서 "같은 계열 주의" 감점이 분리돼 들어왔다.
     // 직접 일치(allergyHits/allergyPenalty)와 계열 주의를 나눠 근거로 보여준다.
     allergyCautions: expect.any(Array),
+    healthConcernResults: expect.any(Array),
     allergyCautionPenalty: expect.any(Number),
     preferencePenalty: expect.any(Number),
     preferenceLevel: expect.toSatisfy((value: unknown) => value === null || typeof value === 'number'),
@@ -107,6 +110,29 @@ describe('ingredient-centered compatibility score', () => {
     );
   });
 
+  it('does not change when price, popularity, sales, or editorial metadata change', () => {
+    const lowExternalSignals = {
+      ...product(),
+      price: 1_000,
+      popularity: 0,
+      salesVolume: 0,
+      editorialPromotion: false,
+      productTrustGrade: 'D',
+    } as Product;
+    const highExternalSignals = {
+      ...product(),
+      price: 100_000,
+      popularity: 1_000_000,
+      salesVolume: 1_000_000,
+      editorialPromotion: true,
+      productTrustGrade: 'A',
+    } as Product;
+
+    expect(getRecommendationBreakdown(lowExternalSignals, profile)).toEqual(
+      getRecommendationBreakdown(highExternalSignals, profile),
+    );
+  });
+
   it('sets the final score to zero when the product species does not match', () => {
     const result = getRecommendationBreakdown(product({ targetPetType: 'cat' }), profile);
     expect(result.speciesMismatch).toBe(true);
@@ -150,8 +176,70 @@ describe('ingredient-centered compatibility score', () => {
       ingredients: [ingredient('닭고기')],
     });
 
-    expect(getRecommendationBreakdown(matched, concernProfile).concernFit).toBe(20);
-    expect(getRecommendationBreakdown(unmatched, concernProfile).concernFit).toBe(5);
+    expect(getRecommendationBreakdown(matched, concernProfile).concernFit).toBe(10);
+    expect(getRecommendationBreakdown(unmatched, concernProfile).concernFit).toBe(0);
+  });
+
+  it('keeps the old concern matcher available for shadow impact comparison', () => {
+    const concernProfile: UserPetProfile = {
+      ...profile,
+      healthConcerns: ['관절'],
+    };
+    const matched = product({
+      healthConcerns: ['관절'],
+      ingredients: [ingredient('글루코사민', 'safe', '관절 건강')],
+    });
+
+    const current = getRecommendationBreakdown(matched, concernProfile);
+    const legacy = getLegacyConcernFitForShadowComparison(matched, concernProfile);
+
+    expect(legacy.concernFit).toBe(20);
+    expect(current.concernFit).toBe(10);
+    expect(current.healthConcernResults[0]).toMatchObject({
+      concernId: 'joint',
+      status: 'possible',
+      evidenceLevel: 'tag_and_ingredient_quantity_unknown',
+    });
+  });
+
+  it('generates deterministic old-vs-new score and verdict diffs', () => {
+    const concernProfile: UserPetProfile = { ...profile, healthConcerns: ['관절'] };
+    const matched = product({
+      healthConcerns: ['관절'],
+      ingredients: [ingredient('글루코사민', 'safe', '관절 건강')],
+    });
+
+    const first = getHealthConcernScoreShadowDiff(matched, concernProfile);
+    const second = getHealthConcernScoreShadowDiff(matched, concernProfile);
+
+    expect(second).toEqual(first);
+    expect(first).toMatchObject({
+      productId: 'product-1',
+      legacy: { concernFit: 20, total: 87, verdict: { score: 87, grade: 'A' } },
+      canonical: { concernFit: 10, total: 77, verdict: { score: 77, grade: 'B' } },
+      scoreDelta: -10,
+      concernFitDelta: -10,
+      verdictChanged: true,
+    });
+  });
+
+  it('preserves species and HARD allergy invariants in shadow comparisons', () => {
+    const concernProfile: UserPetProfile = {
+      ...profile,
+      healthConcerns: ['관절'],
+      allergies: ['닭'],
+    };
+    const matched = product({ healthConcerns: ['관절'] });
+    const allergyDiff = getHealthConcernScoreShadowDiff(matched, concernProfile);
+    const speciesDiff = getHealthConcernScoreShadowDiff(
+      product({ targetPetType: 'cat', healthConcerns: ['관절'] }),
+      concernProfile,
+    );
+
+    expect(allergyDiff.legacy.verdict.score).toBeLessThanOrEqual(9);
+    expect(allergyDiff.canonical.verdict.score).toBeLessThanOrEqual(9);
+    expect(speciesDiff.legacy.verdict).toMatchObject({ score: 0, grade: 'F' });
+    expect(speciesDiff.canonical.verdict).toMatchObject({ score: 0, grade: 'F' });
   });
 
   it('penalizes danger and caution ingredients inside ingredient safety', () => {

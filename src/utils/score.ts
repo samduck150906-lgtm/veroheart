@@ -8,6 +8,8 @@ import {
 import { analyzeFeed } from '../analysis/feedAnalysis';
 import { resolveProductWithPhase2AliasAdapter } from '../lib/phase2AliasResolverProductAdapter';
 import { isPhase2AliasResolverRuntimeEnabled } from '../lib/phase2AliasResolverRuntimeFlag';
+import { evaluateHealthConcerns } from '../health/evaluator';
+import type { HealthConcernEvaluationResult } from '../health/concerns';
 
 /** 궁합 등급 — 점수(0~100)를 사용자에게 보여줄 A~F 등급으로 매핑한 단일 진실원천 */
 export type CompatibilityGrade = 'A' | 'B' | 'C' | 'D' | 'F';
@@ -89,10 +91,30 @@ export interface RecommendationBreakdown {
   speciesMismatch: boolean;
   allergyHits: string[];
   allergyCautions: AllergyRelationshipMatch[];
+  healthConcernResults: HealthConcernEvaluationResult[];
   matchedConcerns: string[];
   dangerCount: number;
   cautionCount: number;
   reasons: string[];
+}
+
+export interface HealthConcernScoreShadowDiff {
+  productId: string;
+  legacy: {
+    concernFit: number;
+    total: number;
+    verdict: DisplayVerdict;
+    matchedConcerns: string[];
+  };
+  canonical: {
+    concernFit: number;
+    total: number;
+    verdict: DisplayVerdict;
+    results: HealthConcernEvaluationResult[];
+  };
+  scoreDelta: number;
+  concernFitDelta: number;
+  verdictChanged: boolean;
 }
 
 function normalize(value: string) {
@@ -103,7 +125,7 @@ function normalize(value: string) {
     .replace(/[\s()[\]·,./_-]/g, '');
 }
 
-function countConcernMatches(product: Product, profile: UserPetProfile) {
+function countLegacyConcernMatches(product: Product, profile: UserPetProfile) {
   const matched = new Set<string>();
 
   for (const concern of profile.healthConcerns) {
@@ -124,6 +146,79 @@ function countConcernMatches(product: Product, profile: UserPetProfile) {
   }
 
   return [...matched];
+}
+
+export function getLegacyConcernFitForShadowComparison(product: Product, profile: UserPetProfile): {
+  matchedConcerns: string[];
+  concernFit: number;
+} {
+  const matchedConcerns = countLegacyConcernMatches(product, profile);
+  const uniqueConcerns = [...new Set(profile.healthConcerns.map(normalize).filter(Boolean))];
+  const concernFit =
+    uniqueConcerns.length === 0
+      ? 20
+      : Math.max(0, Math.min(20, Math.round(5 + 15 * (matchedConcerns.length / uniqueConcerns.length))));
+  return { matchedConcerns, concernFit };
+}
+
+/**
+ * Read-only impact comparison for the concern-fit migration. It reconstructs
+ * the legacy total with the old concern component while preserving every
+ * current allergy, preference, species, and danger rule.
+ */
+export function getHealthConcernScoreShadowDiff(
+  product: Product,
+  profile: UserPetProfile,
+): HealthConcernScoreShadowDiff {
+  const canonical = getRecommendationBreakdown(product, profile);
+  const legacyConcern = getLegacyConcernFitForShadowComparison(product, profile);
+  const legacyBaseScore = Math.max(
+    0,
+    Math.min(100, canonical.baseScore - canonical.concernFit + legacyConcern.concernFit),
+  );
+  const legacyTotal = canonical.speciesMismatch
+    ? 0
+    : Math.max(
+        0,
+        Math.min(
+          100,
+          Math.round(
+            legacyBaseScore
+              - canonical.allergyPenalty
+              - canonical.allergyCautionPenalty
+              - canonical.preferencePenalty,
+          ),
+        ),
+      );
+  const verdictOptions = {
+    speciesMismatch: canonical.speciesMismatch,
+    allergyHits: canonical.allergyHits.length,
+    dangerCount: canonical.dangerCount,
+  };
+  const legacyVerdict = resolveDisplayVerdict(legacyTotal, verdictOptions);
+  const canonicalVerdict = resolveDisplayVerdict(canonical.total, verdictOptions);
+
+  return {
+    productId: product.id,
+    legacy: {
+      concernFit: legacyConcern.concernFit,
+      total: legacyTotal,
+      verdict: legacyVerdict,
+      matchedConcerns: legacyConcern.matchedConcerns,
+    },
+    canonical: {
+      concernFit: canonical.concernFit,
+      total: canonical.total,
+      verdict: canonicalVerdict,
+      results: canonical.healthConcernResults,
+    },
+    scoreDelta: canonical.total - legacyTotal,
+    concernFitDelta: canonical.concernFit - legacyConcern.concernFit,
+    verdictChanged:
+      canonicalVerdict.score !== legacyVerdict.score
+      || canonicalVerdict.grade !== legacyVerdict.grade
+      || canonicalVerdict.capReason !== legacyVerdict.capReason,
+  };
 }
 
 /**
@@ -219,7 +314,10 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
   const ingredients = scoringProduct.ingredients ?? [];
   const allergyHits = countAllergyHits(scoringProduct, profile);
   const allergyCautions = countAllergyCautions(scoringProduct, profile);
-  const matchedConcerns = countConcernMatches(scoringProduct, profile);
+  const healthConcernResults = evaluateHealthConcerns(scoringProduct, profile);
+  const matchedConcerns = healthConcernResults
+    .filter((result) => result.scoringContribution > 0)
+    .map((result) => result.originalProfileLabel);
   const dangerCount = ingredients.filter((ingredient) => ingredient.riskLevel === 'danger').length;
   const cautionCount = ingredients.filter((ingredient) => ingredient.riskLevel === 'caution').length;
   const speciesMismatch = isSpeciesMismatch(scoringProduct, profile);
@@ -248,12 +346,20 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
   healthSuitability = Math.max(0, Math.min(30, healthSuitability));
 
   // 3) 사용자 고민 적합성 — 20점
-  // 특별한 건강 고민이 없으면 감점하지 않는다. 고민이 있으면 매칭 비율을 반영한다.
-  const uniqueConcerns = [...new Set(profile.healthConcerns.map(normalize).filter(Boolean))];
+  // 특별한 건강 고민이 없으면 감점하지 않는다. 고민이 있으면 canonical evaluator의
+  // 20점 evidence-factor 정책만 반영한다.
   const concernFit =
-    uniqueConcerns.length === 0
+    healthConcernResults.length === 0
       ? 20
-      : Math.max(0, Math.min(20, Math.round(5 + 15 * (matchedConcerns.length / uniqueConcerns.length))));
+      : Math.max(
+          0,
+          Math.min(
+            20,
+            Math.round(
+              healthConcernResults.reduce((sum, result) => sum + result.scoringContribution, 0),
+            ),
+          ),
+        );
 
   const baseScore = Math.max(
     0,
@@ -334,6 +440,7 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
     speciesMismatch,
     allergyHits,
     allergyCautions,
+    healthConcernResults,
     matchedConcerns,
     dangerCount,
     cautionCount,

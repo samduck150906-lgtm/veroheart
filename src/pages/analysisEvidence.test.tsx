@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { IngredientEvidenceCard, IngredientDetail, DiseaseFitCard } from './AnalysisResult';
 import { runScoringPipeline } from '../analysis/scoringPipeline';
-import { evaluateDiseases } from '../analysis/breedDiseaseEngine';
+import { evaluateHealthConcerns } from '../health/evaluator';
 import type { Ingredient, Product } from '../types';
 
 /**
@@ -68,16 +68,23 @@ describe('AnalysisResult — 성분 상세(성분 사전 근거)', () => {
   });
 });
 
-describe('AnalysisResult — 질환별 맞춤 분석 카드', () => {
-  const results = evaluateDiseases(['kidney', 'joint'], product);
+describe('AnalysisResult — 건강 고민 맞춤 분석 카드', () => {
+  const results = evaluateHealthConcerns(product, {
+    id: 'pet-1',
+    name: '로니',
+    species: 'Dog',
+    age: 4,
+    healthConcerns: ['신장·비뇨기', '관절'],
+    allergies: [],
+  });
 
-  it('질환명·정량 규칙·상태·보조 성분 추천·임상 노트를 렌더한다', () => {
+  it('점수와 같은 canonical 결과의 고민명·정량 상태·정보 부족 근거를 렌더한다', () => {
     const html = renderToStaticMarkup(<DiseaseFitCard results={results} petName="로니" />);
     expect(html).toContain('로니 건강 고민 맞춤 분석');
-    expect(html).toContain('신장 건강');
-    expect(html).toContain('관절 건강');
-    expect(html).toContain('인(P)'); // 정량 규칙명
-    expect(html).toContain('이런 성분이 더 있으면 도움돼요'); // 보조 성분 추천
-    expect(html).toContain('수의사'); // 신장 임상 노트
+    expect(html).toContain('신장·비뇨기');
+    expect(html).toContain('관절');
+    expect(html).toContain('인');
+    expect(html).toContain('정보 필요');
+    expect(html).not.toContain('NRC 기준');
   });
 });

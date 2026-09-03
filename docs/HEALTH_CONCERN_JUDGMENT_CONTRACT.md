@@ -99,3 +99,11 @@ Initial source references used for conservative runtime evidence records:
 - MSD/Merck Veterinary Manual, Renal Dysfunction in Dogs and Cats, accessed 2026-09-02
 
 Current numeric checks are internal label-comparison gates, not therapeutic diet certification. They must be shown with limitations and must not be described as complete NRC or AAFCO disease-specific rules.
+
+## Score Integration
+
+`src/utils/score.ts` derives the complete 20-point `concernFit` component from `evaluateHealthConcerns()`. The Analysis health-concern card consumes the same structured results from the score breakdown, so its status, quantitative checks, missing fields, and evidence facts cannot diverge from the displayed concern score.
+
+`getHealthConcernScoreShadowDiff()` preserves the previous string matcher only as a read-only comparison path. It reports legacy and canonical concern points, personalized totals, display verdicts, deltas, and whether the verdict changed. Building this report does not mutate products or profiles and does not alter runtime scoring.
+
+Reviews, ratings, price, popularity, sales volume, editorial promotion, verification status, and product trust grade are excluded from both legacy and canonical suitability calculations. Allergy HARD/caution penalties, historical preference penalties, species mismatch, and danger display caps remain unchanged by the concern evaluator migration.
