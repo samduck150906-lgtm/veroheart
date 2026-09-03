@@ -22,6 +22,7 @@ export type ConcernStatus =
 
 export type ConcernEvidenceLevel =
   | 'validated_quantitative'
+  | 'partial_quantitative'
   | 'tag_and_ingredient_quantity_unknown'
   | 'tag_only'
   | 'ingredient_only_quantity_unknown'
@@ -54,6 +55,7 @@ export interface MedicalThresholdEvidence {
   sourceDateOrVersion: string;
   species: 'dog' | 'cat' | 'all';
   lifeStage: string;
+  productCategory: 'complete_food' | 'treat' | 'supplement' | 'topper' | 'unknown';
   scope: 'healthy_animal' | 'diagnosed_disease' | 'general_wellness';
   nutrient: string;
   unit: string;
@@ -69,6 +71,7 @@ export interface QuantitativeConcernCheck {
   actualValue?: number;
   unit?: string;
   valueKind: EvidenceValueKind;
+  applicability?: 'species' | 'life_stage' | 'product_type' | 'product_species';
   inputEvidence: QuantitativeInputEvidence[];
   evidence?: MedicalThresholdEvidence;
   message: string;

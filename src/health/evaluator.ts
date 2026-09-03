@@ -16,6 +16,7 @@ import {
 } from './concerns';
 
 type Species = 'dog' | 'cat' | 'all';
+type ProductCategory = MedicalThresholdEvidence['productCategory'];
 
 interface Threshold {
   nutrient: string;
@@ -26,6 +27,7 @@ interface Threshold {
   unit: string;
   species: Species;
   lifeStage: string;
+  productCategory: ProductCategory;
   scope: MedicalThresholdEvidence['scope'];
   source: string;
   sourceDateOrVersion: string;
@@ -136,6 +138,7 @@ function sourceEvidence(threshold: Threshold, valueKind: EvidenceValueKind): Med
     sourceDateOrVersion: threshold.sourceDateOrVersion,
     species: threshold.species,
     lifeStage: threshold.lifeStage,
+    productCategory: threshold.productCategory,
     scope: threshold.scope,
     nutrient: threshold.nutrient,
     unit: threshold.unit,
@@ -157,6 +160,7 @@ const THRESHOLDS: Partial<Record<HealthConcernId, Threshold[]>> = {
       unit: '% DMB',
       species: 'all',
       lifeStage: 'adult',
+      productCategory: 'complete_food',
       scope: 'general_wellness',
       source: WELLNESS_SOURCE,
       sourceDateOrVersion: '2026-09-02',
@@ -174,6 +178,7 @@ const THRESHOLDS: Partial<Record<HealthConcernId, Threshold[]>> = {
       unit: '% DMB',
       species: 'all',
       lifeStage: 'adult',
+      productCategory: 'complete_food',
       scope: 'general_wellness',
       source: WSAVA_SOURCE,
       sourceDateOrVersion: 'Global Nutrition Guidelines, accessed 2026-09-02',
@@ -189,6 +194,7 @@ const THRESHOLDS: Partial<Record<HealthConcernId, Threshold[]>> = {
       unit: '% DMB',
       species: 'all',
       lifeStage: 'adult',
+      productCategory: 'complete_food',
       scope: 'general_wellness',
       source: WSAVA_SOURCE,
       sourceDateOrVersion: 'Global Nutrition Guidelines, accessed 2026-09-02',
@@ -206,6 +212,7 @@ const THRESHOLDS: Partial<Record<HealthConcernId, Threshold[]>> = {
       unit: 'mg/1000kcal',
       species: 'all',
       lifeStage: 'adult',
+      productCategory: 'complete_food',
       scope: 'diagnosed_disease',
       source: MERCK_RENAL_SOURCE,
       sourceDateOrVersion: 'accessed 2026-09-02',
@@ -223,6 +230,7 @@ const THRESHOLDS: Partial<Record<HealthConcernId, Threshold[]>> = {
       unit: 'mg/1000kcal',
       species: 'cat',
       lifeStage: 'adult',
+      productCategory: 'complete_food',
       scope: 'healthy_animal',
       source: FEDIAF_SOURCE,
       sourceDateOrVersion: '2024',
@@ -268,7 +276,72 @@ function matchedIngredients(product: Product, concernId: HealthConcernId): strin
   ];
 }
 
-function evaluateThreshold(threshold: Threshold, product: Product): QuantitativeConcernCheck {
+export function healthRuleAppliesToSpecies(ruleSpecies: Species, profileSpecies: Species): boolean {
+  return ruleSpecies === 'all' || ruleSpecies === profileSpecies;
+}
+
+function productCategory(product: Product): ProductCategory {
+  const values = [product.category, product.mainCategory, product.subCategory]
+    .filter((value): value is string => Boolean(value))
+    .map((value) => normalizeConcernToken(value));
+  if (values.some((value) => ['food', '사료', '주식', 'complete', 'complete food', 'complete_food'].includes(value))) {
+    return 'complete_food';
+  }
+  if (values.some((value) => ['treat', 'snack', '간식'].includes(value))) return 'treat';
+  if (values.some((value) => ['supplement', '영양제', '보충제'].includes(value))) return 'supplement';
+  if (values.some((value) => ['topper', '토퍼'].includes(value))) return 'topper';
+  return 'unknown';
+}
+
+function profileLifeStage(profile: UserPetProfile): 'growth' | 'adult' | 'senior' | 'unknown' {
+  if (!Number.isFinite(profile.age) || profile.age < 0) return 'unknown';
+  if (profile.age <= 1) return 'growth';
+  if (profile.age >= 8) return 'senior';
+  return 'adult';
+}
+
+function applicabilityReason(
+  threshold: Threshold,
+  product: Product,
+  profile: UserPetProfile,
+): { kind: NonNullable<QuantitativeConcernCheck['applicability']>; message: string } | null {
+  const species: Species = profile.species === 'Cat' ? 'cat' : 'dog';
+  if (!healthRuleAppliesToSpecies(threshold.species, species)) {
+    return {
+      kind: 'species',
+      message: `이 기준은 ${threshold.species === 'cat' ? '고양이' : '강아지'}용이라 현재 프로필에는 적용되지 않아요.`,
+    };
+  }
+  if (product.targetPetType && product.targetPetType !== 'all' && product.targetPetType !== species) {
+    return { kind: 'product_species', message: '제품 대상 동물과 프로필 종이 달라 이 기준을 적용할 수 없어요.' };
+  }
+  if (threshold.lifeStage !== 'all' && threshold.lifeStage !== profileLifeStage(profile)) {
+    return { kind: 'life_stage', message: '현재 생애주기에는 이 기준이 적용되지 않아요.' };
+  }
+  if (productCategory(product) !== threshold.productCategory) {
+    return { kind: 'product_type', message: '완전사료용 영양 기준을 이 제품 유형에 적용할 수 없어요.' };
+  }
+  return null;
+}
+
+function evaluateThreshold(
+  threshold: Threshold,
+  product: Product,
+  profile: UserPetProfile,
+): QuantitativeConcernCheck {
+  const notApplicableReason = applicabilityReason(threshold, product, profile);
+  if (notApplicableReason) {
+    return {
+      nutrient: threshold.nutrient,
+      status: 'not_applicable',
+      unit: threshold.unit,
+      valueKind: 'unknown',
+      applicability: notApplicableReason.kind,
+      inputEvidence: [],
+      evidence: sourceEvidence(threshold, 'unknown'),
+      message: notApplicableReason.message,
+    };
+  }
   const computed = threshold.compute(product);
   const evidence = sourceEvidence(threshold, computed.valueKind);
   if (computed.value == null) {
@@ -321,15 +394,30 @@ function deriveStatus(
   const facts: string[] = [];
   const failed = checks.filter((check) => check.status === 'fail');
   const passed = checks.filter((check) => check.status === 'pass');
+  const unknown = checks.filter((check) => check.status === 'unknown');
+  const applicable = checks.filter((check) => check.status !== 'not_applicable');
+  const blockingApplicability = checks.filter(
+    (check) => check.status === 'not_applicable' && check.applicability !== 'species',
+  );
+
+  if (checks.length > 0 && applicable.length === 0 && blockingApplicability.length > 0) {
+    facts.push('현재 프로필이나 제품 유형에는 이 정량 기준이 적용되지 않아요.');
+    return { status: 'not_applicable', evidenceLevel: 'not_applicable', facts, confidence: 'insufficient' };
+  }
 
   if (failed.length > 0) {
     facts.push('공개된 수치가 비교 기준을 벗어나 있어 급여 전 확인이 필요해요.');
     return { status: 'not_supported', evidenceLevel: 'contradictory', facts, confidence: 'sufficient' };
   }
 
-  if (passed.length > 0) {
+  if (passed.length > 0 && unknown.length === 0) {
     facts.push('공개된 라벨 수치가 내부 비교 기준 범위에 있어요.');
     return { status: 'supported', evidenceLevel: 'validated_quantitative', facts, confidence: 'sufficient' };
+  }
+
+  if (passed.length > 0 && unknown.length > 0) {
+    facts.push('일부 수치는 비교할 수 있지만 필요한 정보가 모두 공개되지는 않았어요.');
+    return { status: 'possible', evidenceLevel: 'partial_quantitative', facts, confidence: 'partial' };
   }
 
   const hasTag = tags.length > 0;
@@ -374,7 +462,7 @@ export function evaluateHealthConcerns(product: Product, profile: UserPetProfile
     const definition = HEALTH_CONCERN_DEFINITIONS[concernId];
     const tags = matchedTags(product, concernId);
     const ingredients = matchedIngredients(product, concernId);
-    const quantitativeChecks = (THRESHOLDS[concernId] ?? []).map((threshold) => evaluateThreshold(threshold, product));
+    const quantitativeChecks = (THRESHOLDS[concernId] ?? []).map((threshold) => evaluateThreshold(threshold, product, profile));
     const state = deriveStatus(concernId, quantitativeChecks, tags, ingredients);
     const missingRequiredFields = quantitativeChecks
       .filter((check) => check.status === 'unknown')

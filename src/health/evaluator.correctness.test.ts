@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { GuaranteedAnalysis } from '../analysis/types';
 import type { Product, UserPetProfile } from '../types';
 import { resolveHealthConcernId } from './concerns';
-import { evaluateHealthConcerns } from './evaluator';
+import { evaluateHealthConcerns, healthRuleAppliesToSpecies } from './evaluator';
 
 const baseProduct: Product = {
   id: 'correctness-product',
@@ -96,7 +96,7 @@ describe('health concern evaluator correctness characterization', () => {
     }
   });
 
-  it.fails('marks a cat-only taurine rule not applicable to a dog', () => {
+  it('marks a cat-only taurine rule not applicable to a dog', () => {
     const result = evaluate('심장', {
       guaranteedAnalysis: { taurine: 1_000, kcalPer100g: 350 },
     });
@@ -104,7 +104,16 @@ describe('health concern evaluator correctness characterization', () => {
     expect(result.status).not.toBe('supported');
   });
 
-  it.fails('does not apply complete-food nutrient rules to treats or supplements', () => {
+  it('applies species restrictions symmetrically for dog-only and cat-only rules', () => {
+    expect(healthRuleAppliesToSpecies('dog', 'cat')).toBe(false);
+    expect(healthRuleAppliesToSpecies('cat', 'dog')).toBe(false);
+    expect(healthRuleAppliesToSpecies('dog', 'dog')).toBe(true);
+    expect(healthRuleAppliesToSpecies('cat', 'cat')).toBe(true);
+    expect(healthRuleAppliesToSpecies('all', 'dog')).toBe(true);
+    expect(healthRuleAppliesToSpecies('all', 'cat')).toBe(true);
+  });
+
+  it('does not apply complete-food nutrient rules to treats or supplements', () => {
     for (const category of ['treat', 'supplement']) {
       const result = evaluate('소화기', {
         category,
@@ -116,7 +125,7 @@ describe('health concern evaluator correctness characterization', () => {
     }
   });
 
-  it.fails('does not aggregate one passing and one unknown required rule as supported', () => {
+  it('does not aggregate one passing and one unknown required rule as supported', () => {
     const result = evaluate('비만·다이어트', {
       guaranteedAnalysis: { crudeFat: 10, moisture: 10 },
     });
@@ -124,6 +133,52 @@ describe('health concern evaluator correctness characterization', () => {
     expect(result.status).toBe('possible');
     expect(result.confidence).toBe('partial');
     expect(result.scoringContribution).toBeLessThan(20);
+  });
+
+  it('does not apply adult-only rules to growth or senior profiles', () => {
+    for (const age of [0.5, 9]) {
+      const result = evaluate(
+        '소화기',
+        { guaranteedAnalysis: { crudeFiber: 4, moisture: 10 } },
+        { age },
+      );
+      expect(result.quantitativeChecks[0].status).toBe('not_applicable');
+      expect(result.status).toBe('not_applicable');
+    }
+  });
+
+  it('does not apply a nutrient rule across a pet/product species mismatch', () => {
+    const result = evaluate(
+      '심장',
+      {
+        targetPetType: 'dog',
+        guaranteedAnalysis: { taurine: 1_000, kcalPer100g: 350 },
+      },
+      { species: 'Cat' },
+    );
+    expect(result.quantitativeChecks[0].status).toBe('not_applicable');
+    expect(result.status).toBe('not_applicable');
+  });
+
+  it('keeps certainty monotonic when required data becomes missing', () => {
+    const complete = evaluate('비만·다이어트', {
+      guaranteedAnalysis: { crudeFat: 10, crudeProtein: 30, moisture: 10 },
+    });
+    const partial = evaluate('비만·다이어트', {
+      guaranteedAnalysis: { crudeFat: 10, moisture: 10 },
+    });
+    expect(complete).toMatchObject({ status: 'supported', confidence: 'sufficient', scoringContribution: 20 });
+    expect(partial).toMatchObject({ status: 'possible', confidence: 'partial', scoringContribution: 0 });
+  });
+
+  it('is deterministic and keeps concern contribution bounded', () => {
+    const input = {
+      guaranteedAnalysis: { crudeFat: 10, crudeProtein: 30, moisture: 10 },
+    } satisfies Partial<Product>;
+    const first = evaluate('비만·다이어트', input);
+    expect(evaluate('비만·다이어트', input)).toEqual(first);
+    expect(first.scoringContribution).toBeGreaterThanOrEqual(0);
+    expect(first.scoringContribution).toBeLessThanOrEqual(20);
   });
 
   it('keeps a confirmed failure distinguishable from missing required evidence', () => {

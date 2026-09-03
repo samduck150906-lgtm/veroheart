@@ -154,8 +154,8 @@ describe('evaluateHealthConcerns', () => {
       ingredients: [{ id: 'i1', nameKo: '타우린', nameEn: 'taurine', purpose: '', riskLevel: 'safe' }],
     });
     expect(result.status).toBe('possible');
-    expect(result.quantitativeChecks[0].status).toBe('unknown');
-    expect(result.missingRequiredFields).toContain('타우린');
+    expect(result.quantitativeChecks[0].status).toBe('not_applicable');
+    expect(result.missingRequiredFields).not.toContain('타우린');
   });
 
   it('supports immune consistently without inventing a fake disease category', () => {
