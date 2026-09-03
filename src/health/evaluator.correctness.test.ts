@@ -44,7 +44,7 @@ function malformedAnalysis(field: keyof GuaranteedAnalysis, value: unknown): Gua
 }
 
 describe('health concern evaluator correctness characterization', () => {
-  it.fails('keeps null, blank, whitespace, and malformed nutrient values unavailable', () => {
+  it('keeps null, blank, whitespace, and malformed nutrient values unavailable', () => {
     for (const value of [null, undefined, '', '   ', 'not-a-number']) {
       const result = evaluate('소화기', {
         guaranteedAnalysis: malformedAnalysis('crudeFiber', value),
@@ -54,10 +54,46 @@ describe('health concern evaluator correctness characterization', () => {
     }
   });
 
-  it.fails('does not confirm a dry-matter result when moisture is missing', () => {
+  it('does not confirm a dry-matter result when moisture is missing', () => {
     const result = evaluate('소화기', { guaranteedAnalysis: { crudeFiber: 4 } });
     expect(result.status).not.toBe('supported');
     expect(result.quantitativeChecks[0].valueKind).not.toBe('calculated');
+  });
+
+  it('distinguishes declared inputs from calculated and unavailable values', () => {
+    const calculated = evaluate('소화기', {
+      guaranteedAnalysis: { crudeFiber: 4, moisture: 10 },
+    });
+    expect(calculated.quantitativeChecks[0]).toMatchObject({
+      status: 'pass',
+      valueKind: 'calculated',
+      inputEvidence: [
+        { field: 'guaranteedAnalysis.crudeFiber', rawValue: 4, parsedValue: 4, qualifier: 'exact', valueKind: 'label_declared' },
+        { field: 'guaranteedAnalysis.moisture', rawValue: 10, parsedValue: 10, qualifier: 'exact', valueKind: 'label_declared' },
+      ],
+    });
+
+    const unavailable = evaluate('소화기', {
+      guaranteedAnalysis: { crudeFiber: Number.POSITIVE_INFINITY, moisture: 10 },
+    });
+    expect(unavailable.quantitativeChecks[0]).toMatchObject({
+      status: 'unknown',
+      valueKind: 'unknown',
+    });
+  });
+
+  it('preserves inequality-qualified declarations without treating them as exact', () => {
+    for (const rawValue of ['<4', '>4', '≤4', '≥4']) {
+      const result = evaluate('소화기', {
+        guaranteedAnalysis: malformedAnalysis('crudeFiber', rawValue),
+      });
+      expect(result.quantitativeChecks[0].status).toBe('unknown');
+      expect(result.quantitativeChecks[0].inputEvidence[0]).toMatchObject({
+        rawValue,
+        valueKind: 'label_declared',
+      });
+      expect(result.quantitativeChecks[0].inputEvidence[0].qualifier).not.toBe('exact');
+    }
   });
 
   it.fails('marks a cat-only taurine rule not applicable to a dog', () => {

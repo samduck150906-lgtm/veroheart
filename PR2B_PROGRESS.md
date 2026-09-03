@@ -9,7 +9,7 @@ Harden the canonical health-concern evaluator against missing, partial, inapplic
 - Remote main at task start: `afa18338c8ba6229ea4e37bae131943399f074c0`
 - Working branch: `codex/pr2b-evaluator-correctness`
 - Current HEAD: `afa18338c8ba6229ea4e37bae131943399f074c0`
-- Latest remote branch SHA: not pushed yet
+- Latest remote branch SHA: `564565c8f1fd331b0b5a57a7c9e527ecc710cc0b`
 - Protected reference branch: `codex/pr3-concern-score-integration` at `71e355d7e9253c44be0bdb18a72cee914831cffd`; must remain untouched
 
 ## Repository Instructions
@@ -32,12 +32,14 @@ Harden the canonical health-concern evaluator against missing, partial, inapplic
 
 - `PR2B_PROGRESS.md` (temporary branch-only recovery record)
 - `src/health/evaluator.correctness.test.ts` (expected-failure and passing characterization coverage only)
+- `src/health/concerns.ts` (quantitative input provenance contract)
+- `src/health/evaluator.ts` (safe declared-value parsing and calculation provenance)
 
 ## Checkpoints
 
-- Completed: repository instruction discovery; dirty primary worktree preserved; latest main fetched; incoming commits reviewed; isolated PR2B branch created; Checkpoint 1 baseline inspection and characterization tests
-- Current: Checkpoint 1 - commit, push, and verify remote SHA
-- Remaining: Checkpoints 2 through 6 implementation, validation, cleanup, push, and PR creation
+- Completed: repository setup; Checkpoint 1 at `564565c`; Checkpoint 2 safe parsing and evidence-quality implementation/validation
+- Current: Checkpoint 2 - commit, push, and verify remote SHA
+- Remaining: Checkpoints 3 through 6 implementation, validation, cleanup, push, and PR creation
 
 ## Decisions
 
@@ -46,6 +48,7 @@ Harden the canonical health-concern evaluator against missing, partial, inapplic
 - Existing risks confirmed: unsafe null/blank numeric coercion; default 10% moisture; no species/life-stage/product-type/form applicability; pass-plus-unknown aggregation as supported; canonical label replacing original input; evidence ingredients present in concern aliases; substring tag overmatching; combined renal/urinary evidence without an internal domain distinction; weak threshold provenance.
 - Checkpoint 1 uses Vitest `it.fails` for desired behavior that current production code does not yet satisfy, keeping the test command green while making each defect executable and visible.
 - No active dog-only evaluator threshold exists on main. The required unrelated-species invariant will be covered through the generic applicability implementation in Checkpoint 3 rather than inventing a production dog threshold.
+- Checkpoint 2 rejects unsafe coercion and inequality-qualified declarations for comparison. Missing moisture remains unavailable; no estimated moisture fallback is retained.
 
 ## Commands And Results
 
@@ -57,6 +60,11 @@ Harden the canonical health-concern evaluator against missing, partial, inapplic
 - Bundled `pnpm install --ignore-scripts`: succeeded; generated untracked pnpm metadata was removed and is not part of the checkpoint.
 - `vitest run src/health/concerns.test.ts src/health/evaluator.test.ts src/health/evaluator.correctness.test.ts`: 3 files, 72 tests passed (expected-failure characterizations included).
 - `git diff --check`: passed.
+- Checkpoint 1 commit/push: `564565c`; local and remote SHA matched.
+- Checkpoint 2 preflight fetch: `origin/main` remains `afa1833`; no incoming commits.
+- Checkpoint 2 targeted tests: 3 files, 74 tests passed.
+- Checkpoint 2 TypeScript `tsc -b --pretty false`: passed.
+- Checkpoint 2 `git diff --check`: passed.
 
 ## Known Failures
 
@@ -64,4 +72,4 @@ Harden the canonical health-concern evaluator against missing, partial, inapplic
 
 ## Exact Next Action
 
-Commit Checkpoint 1 as `fix(health): characterize evaluator correctness gaps`, push it, and verify the remote SHA.
+Commit Checkpoint 2 as `fix(health): harden nutrient parsing and evidence quality`, push it, and verify the remote SHA.

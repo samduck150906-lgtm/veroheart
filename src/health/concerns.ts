@@ -39,6 +39,16 @@ export type RecommendationEligibility =
 
 export type EvidenceValueKind = 'measured' | 'label_declared' | 'calculated' | 'estimated' | 'unknown';
 
+export type DeclaredValueQualifier = 'exact' | 'lt' | 'lte' | 'gt' | 'gte' | 'unavailable';
+
+export interface QuantitativeInputEvidence {
+  field: string;
+  rawValue: unknown;
+  parsedValue?: number;
+  qualifier: DeclaredValueQualifier;
+  valueKind: 'label_declared' | 'unknown';
+}
+
 export interface MedicalThresholdEvidence {
   source: string;
   sourceDateOrVersion: string;
@@ -59,6 +69,7 @@ export interface QuantitativeConcernCheck {
   actualValue?: number;
   unit?: string;
   valueKind: EvidenceValueKind;
+  inputEvidence: QuantitativeInputEvidence[];
   evidence?: MedicalThresholdEvidence;
   message: string;
 }

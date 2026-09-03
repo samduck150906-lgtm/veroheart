@@ -12,6 +12,7 @@ import {
   type HealthConcernId,
   type MedicalThresholdEvidence,
   type QuantitativeConcernCheck,
+  type QuantitativeInputEvidence,
 } from './concerns';
 
 type Species = 'dog' | 'cat' | 'all';
@@ -30,8 +31,13 @@ interface Threshold {
   sourceDateOrVersion: string;
   evidenceStrength: MedicalThresholdEvidence['evidenceStrength'];
   limitations: string;
+  compute: (product: Product) => ComputedThresholdValue;
+}
+
+interface ComputedThresholdValue {
+  value: number | null;
   valueKind: EvidenceValueKind;
-  compute: (product: Product) => number | null;
+  inputEvidence: QuantitativeInputEvidence[];
 }
 
 const WELLNESS_SOURCE = 'Internal label-comparison policy using public guaranteed-analysis fields';
@@ -39,37 +45,86 @@ const WSAVA_SOURCE = 'WSAVA Global Nutrition Guidelines';
 const FEDIAF_SOURCE = 'FEDIAF Nutritional Guidelines for Complete and Complementary Pet Food for Cats and Dogs';
 const MERCK_RENAL_SOURCE = 'MSD/Merck Veterinary Manual, Renal Dysfunction in Dogs and Cats';
 
-function numberOrNull(value: unknown): number | null {
-  const n = typeof value === 'number' ? value : Number(value);
-  return Number.isFinite(n) ? n : null;
+function parseDeclaredValue(field: string, rawValue: unknown): QuantitativeInputEvidence {
+  if (typeof rawValue === 'number') {
+    return Number.isFinite(rawValue) && rawValue >= 0
+      ? { field, rawValue, parsedValue: rawValue, qualifier: 'exact', valueKind: 'label_declared' }
+      : { field, rawValue, qualifier: 'unavailable', valueKind: 'unknown' };
+  }
+
+  if (typeof rawValue !== 'string' || rawValue.trim() === '') {
+    return { field, rawValue, qualifier: 'unavailable', valueKind: 'unknown' };
+  }
+
+  const match = rawValue.match(/^\s*(<=|>=|<|>|≤|≥)?\s*(\d+(?:\.\d+)?)\s*%?\s*$/);
+  if (!match) return { field, rawValue, qualifier: 'unavailable', valueKind: 'unknown' };
+
+  const parsedValue = Number(match[2]);
+  if (!Number.isFinite(parsedValue)) {
+    return { field, rawValue, qualifier: 'unavailable', valueKind: 'unknown' };
+  }
+  const qualifier =
+    match[1] === '<' ? 'lt'
+      : match[1] === '<=' || match[1] === '≤' ? 'lte'
+        : match[1] === '>' ? 'gt'
+          : match[1] === '>=' || match[1] === '≥' ? 'gte'
+            : 'exact';
+  return { field, rawValue, parsedValue, qualifier, valueKind: 'label_declared' };
 }
 
-function caloriesPer100g(product: Product): number | null {
-  return numberOrNull(product.caloriesPer100g ?? product.guaranteedAnalysis?.kcalPer100g);
+function comparableValue(input: QuantitativeInputEvidence): number | null {
+  return input.qualifier === 'exact' && input.parsedValue != null ? input.parsedValue : null;
 }
 
-function dmb(product: Product, field: 'crudeProtein' | 'crudeFat' | 'crudeFiber'): number | null {
+function calculatedValue(value: number | null, inputEvidence: QuantitativeInputEvidence[]): ComputedThresholdValue {
+  return {
+    value: value != null && Number.isFinite(value) ? value : null,
+    valueKind: value != null && Number.isFinite(value) ? 'calculated' : 'unknown',
+    inputEvidence,
+  };
+}
+
+function caloriesPer100g(product: Product): QuantitativeInputEvidence {
+  return product.caloriesPer100g != null
+    ? parseDeclaredValue('caloriesPer100g', product.caloriesPer100g)
+    : parseDeclaredValue('guaranteedAnalysis.kcalPer100g', product.guaranteedAnalysis?.kcalPer100g);
+}
+
+function dmb(product: Product, field: 'crudeProtein' | 'crudeFat' | 'crudeFiber'): ComputedThresholdValue {
   const ga = product.guaranteedAnalysis;
-  const value = numberOrNull(ga?.[field]);
-  if (value == null) return null;
-  return toDryMatter(value, numberOrNull(ga?.moisture) ?? 10);
+  const nutrient = parseDeclaredValue(`guaranteedAnalysis.${field}`, ga?.[field]);
+  const moisture = parseDeclaredValue('guaranteedAnalysis.moisture', ga?.moisture);
+  const value = comparableValue(nutrient);
+  const moistureValue = comparableValue(moisture);
+  return calculatedValue(
+    value == null || moistureValue == null ? null : toDryMatter(value, moistureValue),
+    [nutrient, moisture],
+  );
 }
 
-function percentToMgPer1000Kcal(product: Product, field: 'phosphorus' | 'calcium'): number | null {
-  const value = numberOrNull(product.guaranteedAnalysis?.[field]);
-  const kcal = caloriesPer100g(product);
-  if (value == null || kcal == null || kcal <= 0) return null;
-  return ((value * 1000) / kcal) * 1000;
+function percentToMgPer1000Kcal(product: Product, field: 'phosphorus' | 'calcium'): ComputedThresholdValue {
+  const nutrient = parseDeclaredValue(`guaranteedAnalysis.${field}`, product.guaranteedAnalysis?.[field]);
+  const energy = caloriesPer100g(product);
+  const value = comparableValue(nutrient);
+  const kcal = comparableValue(energy);
+  return calculatedValue(
+    value == null || kcal == null || kcal <= 0 ? null : ((value * 1000) / kcal) * 1000,
+    [nutrient, energy],
+  );
 }
 
-function mgKgToMgPer1000Kcal(product: Product, field: 'taurine'): number | null {
-  const value = numberOrNull(product.guaranteedAnalysis?.[field]);
-  const kcal = caloriesPer100g(product);
-  if (value == null || kcal == null || kcal <= 0) return null;
-  return ((value / 10) / kcal) * 1000;
+function mgKgToMgPer1000Kcal(product: Product, field: 'taurine'): ComputedThresholdValue {
+  const nutrient = parseDeclaredValue(`guaranteedAnalysis.${field}`, product.guaranteedAnalysis?.[field]);
+  const energy = caloriesPer100g(product);
+  const value = comparableValue(nutrient);
+  const kcal = comparableValue(energy);
+  return calculatedValue(
+    value == null || kcal == null || kcal <= 0 ? null : ((value / 10) / kcal) * 1000,
+    [nutrient, energy],
+  );
 }
 
-function sourceEvidence(threshold: Threshold): MedicalThresholdEvidence {
+function sourceEvidence(threshold: Threshold, valueKind: EvidenceValueKind): MedicalThresholdEvidence {
   const range =
     threshold.direction === 'range'
       ? `${threshold.min}-${threshold.max}`
@@ -85,7 +140,7 @@ function sourceEvidence(threshold: Threshold): MedicalThresholdEvidence {
     nutrient: threshold.nutrient,
     unit: threshold.unit,
     thresholdOrRange: range,
-    valueKind: threshold.valueKind,
+    valueKind,
     evidenceStrength: threshold.evidenceStrength,
     limitations: threshold.limitations,
   };
@@ -107,7 +162,6 @@ const THRESHOLDS: Partial<Record<HealthConcernId, Threshold[]>> = {
       sourceDateOrVersion: '2026-09-02',
       evidenceStrength: 'low',
       limitations: '조섬유는 총식이섬유가 아니므로 소화기 적합성의 보조 비교로만 사용한다.',
-      valueKind: 'calculated',
       compute: (product) => dmb(product, 'crudeFiber'),
     },
   ],
@@ -125,7 +179,6 @@ const THRESHOLDS: Partial<Record<HealthConcernId, Threshold[]>> = {
       sourceDateOrVersion: 'Global Nutrition Guidelines, accessed 2026-09-02',
       evidenceStrength: 'low',
       limitations: '체중 관리는 BCS, 급여량, 열량, 활동량이 함께 필요하며 지방 수치 하나로 감량 처방을 만들 수 없다.',
-      valueKind: 'calculated',
       compute: (product) => dmb(product, 'crudeFat'),
     },
     {
@@ -141,7 +194,6 @@ const THRESHOLDS: Partial<Record<HealthConcernId, Threshold[]>> = {
       sourceDateOrVersion: 'Global Nutrition Guidelines, accessed 2026-09-02',
       evidenceStrength: 'low',
       limitations: '근육량과 개체 상태 평가 없이 체중 감량 효과를 단정하지 않는다.',
-      valueKind: 'calculated',
       compute: (product) => dmb(product, 'crudeProtein'),
     },
   ],
@@ -159,7 +211,6 @@ const THRESHOLDS: Partial<Record<HealthConcernId, Threshold[]>> = {
       sourceDateOrVersion: 'accessed 2026-09-02',
       evidenceStrength: 'medium',
       limitations: '일반 신장·비뇨기 관심사는 진단이 아니며, CKD 식이는 수의사 판단과 처방식 검토가 필요하다.',
-      valueKind: 'calculated',
       compute: (product) => percentToMgPer1000Kcal(product, 'phosphorus'),
     },
   ],
@@ -177,7 +228,6 @@ const THRESHOLDS: Partial<Record<HealthConcernId, Threshold[]>> = {
       sourceDateOrVersion: '2024',
       evidenceStrength: 'medium',
       limitations: '타우린 표시는 특히 고양이 영양에서 중요하지만 DCM 예방이나 심장질환 치료를 의미하지 않는다.',
-      valueKind: 'calculated',
       compute: (product) => mgKgToMgPer1000Kcal(product, 'taurine'),
     },
   ],
@@ -219,14 +269,15 @@ function matchedIngredients(product: Product, concernId: HealthConcernId): strin
 }
 
 function evaluateThreshold(threshold: Threshold, product: Product): QuantitativeConcernCheck {
-  const actualValue = threshold.compute(product);
-  const evidence = sourceEvidence(threshold);
-  if (actualValue == null) {
+  const computed = threshold.compute(product);
+  const evidence = sourceEvidence(threshold, computed.valueKind);
+  if (computed.value == null) {
     return {
       nutrient: threshold.nutrient,
       status: 'unknown',
       unit: threshold.unit,
       valueKind: 'unknown',
+      inputEvidence: computed.inputEvidence,
       evidence,
       message: `${threshold.nutrient} 수치가 공개되어 있지 않아 비교할 수 없어요.`,
     };
@@ -234,17 +285,18 @@ function evaluateThreshold(threshold: Threshold, product: Product): Quantitative
 
   const pass =
     threshold.direction === 'range'
-      ? actualValue >= (threshold.min ?? Number.NEGATIVE_INFINITY) && actualValue <= (threshold.max ?? Number.POSITIVE_INFINITY)
+      ? computed.value >= (threshold.min ?? Number.NEGATIVE_INFINITY) && computed.value <= (threshold.max ?? Number.POSITIVE_INFINITY)
       : threshold.direction === 'min'
-        ? actualValue >= (threshold.min ?? Number.POSITIVE_INFINITY)
-        : actualValue <= (threshold.max ?? Number.NEGATIVE_INFINITY);
+        ? computed.value >= (threshold.min ?? Number.POSITIVE_INFINITY)
+        : computed.value <= (threshold.max ?? Number.NEGATIVE_INFINITY);
 
   return {
     nutrient: threshold.nutrient,
     status: pass ? 'pass' : 'fail',
-    actualValue,
+    actualValue: computed.value,
     unit: threshold.unit,
-    valueKind: threshold.valueKind,
+    valueKind: computed.valueKind,
+    inputEvidence: computed.inputEvidence,
     evidence,
     message: pass
       ? '공개된 라벨 수치가 내부 비교 기준 범위에 있어요.'
