@@ -51,3 +51,9 @@ A future local analysis can parse a copied JSON export into `Product[]` and opti
 Search still owns a local six-item concern list while Profile and the canonical taxonomy expose nine concerns; this unresolved UI taxonomy mismatch is intentionally unchanged here.
 
 After a real read-only impact report is reviewed, the owner must decide whether the candidate concern policy, unknown-input blocking behavior, and observed score/grade/ranking changes are acceptable. Any runtime activation, recommendation change, or UI/copy migration requires a separate explicitly approved PR.
+
+## Validation
+
+The final branch validation ran 199 focused shadow/evaluator/score/display/ranking/allergy/poultry tests and the complete 883-test repository suite successfully. TypeScript, the production Vite build, targeted ESLint, and `git diff --check` passed. Repository-wide ESLint still reports 17 pre-existing React hook errors in files outside this PR; no shadow file fails lint.
+
+The final path audit contains only this document and sidecar implementation/tests under `src/lib/`. Runtime score and `RecommendationBreakdown`, display verdict, ranking, analysis, UI, stores, allergy/poultry logic, Supabase, SQL/migrations, environment, and deployment files are unchanged. Static import guards confirm no runtime or UI surface imports the shadow modules.
