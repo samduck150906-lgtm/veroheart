@@ -8,7 +8,7 @@ Build a deterministic, sidecar-only comparison of the unchanged legacy health-co
 
 - Base `origin/main`: `4067436b34e4b38ef045026cce316370ea0c37c3`
 - Branch: `codex/pr3-health-concern-shadow`
-- Current HEAD: `4067436b34e4b38ef045026cce316370ea0c37c3`
+- Current HEAD: `b33e53d16079d47ee1fda5285b2aa663b868503b`
 - Historical read-only backup: `codex/pr3-concern-score-integration` at `71e355d7e9253c44be0bdb18a72cee914831cffd`
 - Remote shadow branch: absent at start
 
@@ -25,12 +25,13 @@ Build a deterministic, sidecar-only comparison of the unchanged legacy health-co
 - `src/utils/score.ts`, `src/utils/displayVerdict.ts`, score/ranking/allergy/poultry tests
 - Existing Phase 2 alias-resolver shadow report, invariance, and app-surface guard patterns
 - Historical commit `71e355d7` via read-only `git show`/`git diff`
+- Canonical evaluator report/status/evidence contracts and runtime penalty/grade formulas
 
 ## Checkpoints
 
-- Completed: safe setup; Checkpoint 1 baseline contract and invariance guard
-- Current: commit, push, and verify Checkpoint 1
-- Remaining: pure calculator; synthetic matrix/report; final validation and PR
+- Completed: safe setup; Checkpoint 1 at `b33e53d`; Checkpoint 2 pure calculator implementation and validation
+- Current: commit, push, and verify Checkpoint 2
+- Remaining: synthetic matrix/report; final validation and PR
 
 ## Decisions And Invariants
 
@@ -40,6 +41,9 @@ Build a deterministic, sidecar-only comparison of the unchanged legacy health-co
 - Historical PR3 is inspection-only and will not be reused by cherry-pick, merge, checkout, or rebase.
 - Reuse only historical concepts: explicit legacy/candidate deltas, deterministic fixtures, and read-only reporting.
 - Reject historical runtime `concernFit` replacement, `RecommendationBreakdown` expansion, AnalysisResult wiring, score-regression expectation changes, and all displayed score/grade changes.
+- Candidate rows reuse baseline ingredient/health components and all post-score penalties; only hypothetical `concernFit` is substituted locally.
+- Any unrecognized selected input blocks candidate concern/base/total/display/grade/deltas. No denominator policy is invented.
+- No-selection rows receive neutral 20 with an explicit non-suitability-evidence reason; missing evidence remains distinct from confirmed failure.
 
 ## Commands And Results
 
@@ -51,6 +55,12 @@ Build a deterministic, sidecar-only comparison of the unchanged legacy health-co
 - Focused Checkpoint 1 Vitest: 2 files, 3 tests passed.
 - `git diff --check`: passed.
 - Checkpoint fetch: `main` remains `4067436b`; no changes detected.
+- Checkpoint 1 commit/push: `b33e53d`; local and remote matched.
+- Added pure `buildHealthConcernScoreShadowRow()` with identity, legacy, candidate, deltas, unchanged safety signals, and invariant violations.
+- Checkpoint 2 focused Vitest: 3 files, 16 tests passed.
+- Checkpoint 2 TypeScript: passed.
+- Checkpoint 2 `git diff --check`: passed.
+- Checkpoint 2 fetch: `main` remains `4067436b`; no changes detected.
 
 ## Main Changes Detected During Work
 
@@ -62,8 +72,8 @@ Build a deterministic, sidecar-only comparison of the unchanged legacy health-co
 
 ## Remote Branch SHA
 
-- Not pushed yet.
+- `b33e53d16079d47ee1fda5285b2aa663b868503b`
 
 ## Exact Next Action
 
-Commit Checkpoint 1 as `test(health): establish shadow integration boundary`, push, verify the remote SHA, then implement the pure row calculator and focused cases.
+Commit Checkpoint 2 as `feat(health): add score-neutral shadow comparison`, push, verify the remote SHA, then build the synthetic matrix/report and fixture evidence document.
