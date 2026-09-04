@@ -76,6 +76,8 @@ Do not show reassuring phrases such as "추천합니다", "안심하고 먹을 �
 
 Medical or nutritional thresholds must carry evidence records describing source, source date/version, species, life stage, healthy-animal vs diagnosed-disease scope, nutrient, unit, threshold/range, measured/declared/calculated/estimated value type, evidence strength, and limitations.
 
+Every retained threshold must also identify its issuing organization, document title, exact URL when available, page/section/table, complete-food applicability, product form, nutrient basis, normative/clinical/internal classification, and whether it is enabled for judgment.
+
 Do not describe general profile concerns as diagnoses, treatments, prevention, cures, therapeutic suitability, or guaranteed improvement.
 
 ## Runtime Evaluator
@@ -87,15 +89,39 @@ Evaluator rules:
 - product tags are tag evidence only
 - named functional ingredients without an amount are possible evidence only
 - ingredient presence never passes an mg/1000 kcal threshold
-- quantitative support requires a comparable label-declared or calculated value
+- `null`, `undefined`, blank, whitespace, malformed, non-finite, negative, and inequality-qualified declarations are unavailable for exact comparison
+- dry-matter calculations require declared moisture; the evaluator does not assume 10% moisture
+- calculated values retain their exact label-declared inputs and qualifiers
+- quantitative support requires a comparable value, verified input units, an applicable rule, and `judgmentEnabled: true`
+- cat-only and dog-only rules do not cross species
+- adult-only and complete-food-only rules do not apply to incompatible life stages, treats, supplements, toppers, or unknown product categories
+- form-dependent rules require an explicit compatible dry/wet formulation
+- pass plus unknown required evidence cannot become `supported`
+- non-applicable rules do not count as passes, failures, or missing fields
 - contradictory quantitative checks return `not_supported`
 - renal/urinary and heart concerns cannot become `supported` from tags or ingredient names alone
+- renal and lower-urinary evidence remain separate inside the combined public concern
+- the exact first profile input label is preserved; unrecognized inputs are available from `evaluateHealthConcernsDetailed()` and receive no result or points
 - `immune` returns a real concern result without inventing a disease card
 
-Initial source references used for conservative runtime evidence records:
+Future shadow score integration must inspect `unrecognizedProfileInputs` explicitly. An empty `results` array does not prove that no concern was selected, selected-but-unrecognized concerns must not receive the default full 20-point concern score, and mixed recognized/unrecognized inputs must be represented explicitly in shadow impact output.
 
-- WSAVA Global Nutrition Guidelines, accessed 2026-09-02
-- FEDIAF Nutritional Guidelines for Complete and Complementary Pet Food for Cats and Dogs, 2024
-- MSD/Merck Veterinary Manual, Renal Dysfunction in Dogs and Cats, accessed 2026-09-02
+## Threshold Provenance Audit
 
-Current numeric checks are internal label-comparison gates, not therapeutic diet certification. They must be shown with limitations and must not be described as complete NRC or AAFCO disease-specific rules.
+As of 2026-09-03, no quantitative threshold in the evaluator is enabled for health-concern judgment. The checks remain deterministic, structured, and informational so the data path can be audited without producing confirmed support, contradiction penalties, confidence, or score contribution.
+
+| Concern/check | Audit outcome | Judgment status |
+| --- | --- | --- |
+| Digestive crude fiber 3-6% DMB | Internal exploratory heuristic. Crude fiber is not total dietary fiber and the range is not a complete digestive-suitability standard. | Disabled |
+| Weight crude fat <=12% DMB | The reviewed WSAVA nutrition resources emphasize patient assessment and body/muscle condition; no exact source for this universal product cutoff was found. The prior WSAVA attribution was removed. | Disabled |
+| Weight crude protein >=28% DMB | No exact WSAVA source and applicability for this universal cutoff was found. The prior WSAVA attribution was removed. | Disabled |
+| Renal phosphorus <=500 mg/1000 kcal | The prior universal renal/urinary attribution and exact primary table could not be verified. A clinical renal target cannot represent generic lower-urinary suitability. | Disabled |
+| Adult cat taurine, dry | FEDIAF 2025 Table III-4b, page 19 publishes 0.33 g/1000 kcal at MER 75 for complete dry cat food. The evaluator records 330 mg/1000 kcal, but the repository taurine input has no verified unit/provenance. | Disabled pending input-unit provenance |
+| Adult cat taurine, canned/wet | FEDIAF 2025 Table III-4b, page 19 publishes 0.67 g/1000 kcal at MER 75 for complete canned cat food. The evaluator records 670 mg/1000 kcal, but the repository taurine input has no verified unit/provenance. | Disabled pending input-unit provenance |
+
+Primary references reviewed:
+
+- FEDIAF, *Nutritional Guidelines for Complete and Complementary Pet Food for Cats and Dogs*, publication September 2025, Table III-4b page 19: https://europeanpetfood.org/wp-content/uploads/2025/09/FEDIAF-Nutritional-Guidelines_2025-ONLINE.pdf
+- WSAVA Global Nutrition Committee resources and 2011 nutritional assessment guidelines: https://wsava.org/global-guidelines/global-nutrition-guidelines/
+
+Healthy-animal complete-food recommendations are not disease-treatment guarantees. Product tags and named ingredients never prove therapeutic suitability. Reactivation requires a directly verified primary threshold, exact applicability metadata, a known input unit and provenance, conservative aggregation tests, and separate review before any score or UI integration.
