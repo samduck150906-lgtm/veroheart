@@ -8,7 +8,7 @@ Build a deterministic, sidecar-only comparison of the unchanged legacy health-co
 
 - Base `origin/main`: `4067436b34e4b38ef045026cce316370ea0c37c3`
 - Branch: `codex/pr3-health-concern-shadow`
-- Current HEAD: `b33e53d16079d47ee1fda5285b2aa663b868503b`
+- Current HEAD: `9cdeccb66f809548c5a533387c8f97ec7eb4320f`
 - Historical read-only backup: `codex/pr3-concern-score-integration` at `71e355d7e9253c44be0bdb18a72cee914831cffd`
 - Remote shadow branch: absent at start
 
@@ -26,12 +26,13 @@ Build a deterministic, sidecar-only comparison of the unchanged legacy health-co
 - Existing Phase 2 alias-resolver shadow report, invariance, and app-surface guard patterns
 - Historical commit `71e355d7` via read-only `git show`/`git diff`
 - Canonical evaluator report/status/evidence contracts and runtime penalty/grade formulas
+- Synthetic report requirements and fixture-only evidence output
 
 ## Checkpoints
 
-- Completed: safe setup; Checkpoint 1 at `b33e53d`; Checkpoint 2 pure calculator implementation and validation
-- Current: commit, push, and verify Checkpoint 2
-- Remaining: synthetic matrix/report; final validation and PR
+- Completed: safe setup; Checkpoint 1 at `b33e53d`; Checkpoint 2 at `9cdeccb`; Checkpoint 3 synthetic matrix/report implementation and validation
+- Current: commit, push, and verify Checkpoint 3
+- Remaining: final validation, progress-file cleanup, final push, and PR
 
 ## Decisions And Invariants
 
@@ -44,6 +45,9 @@ Build a deterministic, sidecar-only comparison of the unchanged legacy health-co
 - Candidate rows reuse baseline ingredient/health components and all post-score penalties; only hypothetical `concernFit` is substituted locally.
 - Any unrecognized selected input blocks candidate concern/base/total/display/grade/deltas. No denominator policy is invented.
 - No-selection rows receive neutral 20 with an explicit non-suitability-evidence reason; missing evidence remains distinct from confirmed failure.
+- Synthetic profiles use Cat only for cat-targeted products and Dog for dog/all/missing targets; caller profiles remain unchanged.
+- Candidate rankings exclude blocked rows and compare ranks only within the same comparable product set, with product ID as deterministic tie-breaker.
+- Missing ingredient arrays are recorded and evaluated through a shallow empty-array sidecar view because the unchanged legacy matcher cannot consume malformed missing arrays.
 
 ## Commands And Results
 
@@ -61,6 +65,14 @@ Build a deterministic, sidecar-only comparison of the unchanged legacy health-co
 - Checkpoint 2 TypeScript: passed.
 - Checkpoint 2 `git diff --check`: passed.
 - Checkpoint 2 fetch: `main` remains `4067436b`; no changes detected.
+- Checkpoint 2 commit/push: `9cdeccb`; local and remote matched.
+- Added pure matrix/report generator, 3-product fixture, 5 caller-profile fixtures, and durable shadow evidence document.
+- Fixture: 14 logical profiles, 42 rows, 36 computed, 6 blocked, 33 insufficient, 15 all-informational quantitative, delta -10..+5, 1 grade change, 0 ordering changes, 0 invariant violations.
+- Checkpoint 3 shadow Vitest: 4 files, 23 tests passed.
+- Checkpoint 3 targeted ESLint: passed.
+- Checkpoint 3 TypeScript: passed after correcting the report-row ordering helper type.
+- Checkpoint 3 `git diff --check`: passed.
+- Checkpoint 3 fetch: `main` remains `4067436b`; no changes detected.
 
 ## Main Changes Detected During Work
 
@@ -72,8 +84,8 @@ Build a deterministic, sidecar-only comparison of the unchanged legacy health-co
 
 ## Remote Branch SHA
 
-- `b33e53d16079d47ee1fda5285b2aa663b868503b`
+- `9cdeccb66f809548c5a533387c8f97ec7eb4320f`
 
 ## Exact Next Action
 
-Commit Checkpoint 2 as `feat(health): add score-neutral shadow comparison`, push, verify the remote SHA, then build the synthetic matrix/report and fixture evidence document.
+Commit Checkpoint 3 as `feat(health): add synthetic shadow impact report`, push, verify the remote SHA, then perform the final rebase audit and full validation matrix.

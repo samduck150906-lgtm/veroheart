@@ -22,6 +22,10 @@ export interface LegacyHealthConcernShadowBaseline {
   displayVerdict: DisplayVerdict;
 }
 
+function productForShadowBaseline(product: Product): Product {
+  return product.ingredients == null ? { ...product, ingredients: [] } : product;
+}
+
 export type HealthConcernCandidateStatus = 'not_selected' | 'computed' | 'blocked_unrecognized';
 
 export interface HealthConcernScoreShadowRow {
@@ -93,10 +97,11 @@ export function captureLegacyHealthConcernShadowBaseline(
   product: Product,
   profile: UserPetProfile,
 ): LegacyHealthConcernShadowBaseline {
-  const breakdown = getRecommendationBreakdown(product, profile);
+  const shadowProduct = productForShadowBaseline(product);
+  const breakdown = getRecommendationBreakdown(shadowProduct, profile);
   return {
     breakdown,
-    compatibilityScore: calculateCompatibilityScore(product, profile),
+    compatibilityScore: calculateCompatibilityScore(shadowProduct, profile),
     displayVerdict: resolveDisplayVerdict(breakdown.total, {
       speciesMismatch: breakdown.speciesMismatch,
       allergyHits: breakdown.allergyHits.length,
@@ -109,8 +114,9 @@ export function buildHealthConcernScoreShadowRow(
   product: Product,
   profile: UserPetProfile,
 ): HealthConcernScoreShadowRow {
+  const shadowProduct = productForShadowBaseline(product);
   const baseline = captureLegacyHealthConcernShadowBaseline(product, profile);
-  const evaluation = evaluateHealthConcernsDetailed(product, profile);
+  const evaluation = evaluateHealthConcernsDetailed(shadowProduct, profile);
   const selectedLabels = [...profile.healthConcerns];
   const recognizedConcernIds = evaluation.results.map((result) => result.concernId);
   const candidateStatus: HealthConcernCandidateStatus =
@@ -158,6 +164,7 @@ export function buildHealthConcernScoreShadowRow(
     blockedOrIncompleteReasons.push('neutral_no_concern_selection_not_health_suitability_evidence');
   }
   if (blocked) blockedOrIncompleteReasons.push('unrecognized_profile_inputs');
+  if (product.ingredients == null) blockedOrIncompleteReasons.push('missing_ingredient_array_normalized_to_empty_for_shadow');
   if (evaluation.results.some((result) => result.confidence === 'insufficient')) {
     blockedOrIncompleteReasons.push('insufficient_evidence');
   }
