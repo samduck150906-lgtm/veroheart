@@ -20,9 +20,11 @@ Missing evidence can produce zero candidate concern points but remains `unknown`
 
 ## Matrix And Ranking
 
-The report evaluates nine canonical single-concern profiles for every product: 피부·모질, 관절, 소화기, 비만·다이어트, 신장·비뇨기, 심장, 면역, 눈, and 구강. A cat-targeted product uses a synthetic cat profile; dog, all-species, or missing targets deterministically use a dog profile. This prevents synthetic species mismatch from hiding concern-score differences.
+The report evaluates nine canonical single-concern definitions for every product: 피부·모질, 관절, 소화기, 비만·다이어트, 신장·비뇨기, 심장, 면역, 눈, and 구강. A cat-targeted product instantiates a synthetic cat profile; dog, all-species, or missing targets deterministically instantiate a dog profile. The definition key remains concern-only, while the profile and ranking-cohort key includes species, such as `synthetic:Dog:skin_coat`. This prevents synthetic species mismatch from hiding concern-score differences without ranking Dog- and Cat-evaluated rows together.
 
-Caller-provided profiles are also accepted unchanged. Candidate ranking excludes blocked rows. Rank deltas compare only products eligible on both sides, use product ID as the deterministic score-tie breaker, and label blocked products `not_comparable` rather than calling their removal a genuine rank change. Runtime ranking is never called with candidate scores or replaced.
+Caller-provided profiles are also accepted unchanged. Each caller array entry receives an index-bearing key such as `caller:0:profile-id`, so duplicate or missing IDs and duplicate names cannot merge distinct inputs. Every matrix row retains its exact product/profile context for safety-invariant recomputation.
+
+Candidate ranking excludes blocked rows. Rank deltas compare only products eligible on both sides, use product ID and then the collision-proof product row key as deterministic score-tie breakers, and label blocked products `not_comparable` rather than calling their removal a genuine rank change. Duplicate product IDs are reported as `duplicate_product_id` input invariant violations, and all rows bearing those IDs are excluded from candidate ranking comparisons instead of being silently overwritten. Runtime ranking is never called with candidate scores or replaced.
 
 ## Safety Invariants
 
@@ -32,7 +34,7 @@ A missing ingredient array is recorded as a data-quality issue and evaluated thr
 
 ## Fixture Evidence
 
-The in-repository fixture is representative test data only. It contains 3 synthetic products and 14 logical profile definitions, producing 42 rows:
+The in-repository fixture is representative test data only. It contains 3 synthetic products and 14 logical profile definitions. Compatible-species instantiation produces 23 distinct profile variants and 23 ranking cohorts, while product/definition evaluation still produces 42 matrix rows:
 
 - 36 computed rows and 6 blocked-unrecognized rows
 - 33 rows with insufficient evidence
@@ -54,6 +56,6 @@ After a real read-only impact report is reviewed, the owner must decide whether 
 
 ## Validation
 
-The final branch validation ran 199 focused shadow/evaluator/score/display/ranking/allergy/poultry tests and the complete 883-test repository suite successfully. TypeScript, the production Vite build, targeted ESLint, and `git diff --check` passed. Repository-wide ESLint still reports 17 pre-existing React hook errors in files outside this PR; no shadow file fails lint.
+The final branch validation ran 220 focused shadow/evaluator/score/display/ranking/allergy/poultry tests and the complete 887-test repository suite successfully. TypeScript, the production Vite build, targeted ESLint, and `git diff --check` passed. Repository-wide ESLint still reports 17 pre-existing React hook errors in files outside this PR; no shadow file fails lint.
 
 The final path audit contains only this document and sidecar implementation/tests under `src/lib/`. Runtime score and `RecommendationBreakdown`, display verdict, ranking, analysis, UI, stores, allergy/poultry logic, Supabase, SQL/migrations, environment, and deployment files are unchanged. Static import guards confirm no runtime or UI surface imports the shadow modules.
