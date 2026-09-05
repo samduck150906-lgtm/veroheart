@@ -66,6 +66,14 @@ All 545 observed grade changes came from insufficient-confidence rows. The 565 p
 
 This export cannot support a runtime activation decision. Missing evidence is not negative evidence, and zero hypothetical candidate contribution must not be interpreted as product unsuitability. No runtime activation is authorized.
 
+### Confirmed Legacy Anatomical-Term Collision
+
+- Collision category: `heart_concern_vs_anatomical_source_part_name`
+- Affected legacy shadow rows: 4
+- Anatomical ingredient-name matches: 4
+
+All four `-20` rows are legacy lexical false positives in which an animal-organ ingredient name (`닭고기 심장` or `토끼 심장`) matched the selected heart concern `심장`. These source-part names are not heart-health suitability evidence. The diagnostic excludes matches supported by actual supplied health tags or ingredient-purpose evidence and does not claim every ingredient-name match is invalid. This PR does not change the runtime legacy matcher; correcting this confirmed false-positive class requires a separate runtime PR.
+
 ### Raw Exploratory Counts
 
 - Canonical concern definitions evaluated: 9
@@ -149,7 +157,7 @@ Row confidence is the weakest confidence among the row's selected concern result
 
 ## Evidence Limitations
 
-The export supplies none of the health-tag, formulation, guaranteed-analysis, calorie, or ingredient-purpose evidence fields. All 458 adapted products therefore retain empty or missing health tags, and 145 products retain missing ingredient arrays.
+The export supplies none of the health-tag, formulation, guaranteed-analysis, calorie, or ingredient-purpose evidence fields, and the adapter consumes none of those fields. Supply and consumption are distinct: if a future export includes an unsupported health-evidence column, the input audit must flag it as supplied but not consumed, the column cannot affect evaluation, and the analysis remains not decision-ready. All 458 adapted products therefore retain empty or missing health tags, and 145 products retain missing ingredient arrays.
 
 No matrix row reached sufficient confidence. Ingredient-name matches can support only the limited evidence encoded by the existing canonical evaluator; ingredient quantities are unavailable. Informational quantitative checks do not contribute points. Missing nutrition, purpose, tags, or ingredient links are **insufficient evidence**, not evidence that a product is unsuitable. No absent value was inferred from product names, categories, or other fields.
 

@@ -79,11 +79,16 @@ describe('health-concern production shadow input contract', () => {
       byCategory: { '<missing>': 1, food: 2 },
     });
     expect(audit.columns.healthEvidence).toEqual({
-      health_concerns: false,
-      formulation: false,
-      guaranteed_analysis: false,
-      calories_per_100g: false,
-      ingredient_purpose: false,
+      health_concerns: { supplied: false, consumedByAdapter: false },
+      formulation: { supplied: false, consumedByAdapter: false },
+      guaranteed_analysis: { supplied: false, consumedByAdapter: false },
+      calories_per_100g: { supplied: false, consumedByAdapter: false },
+      ingredient_purpose: { supplied: false, consumedByAdapter: false },
+    });
+    expect(audit.columns.suppliedButNotConsumedHealthEvidence).toEqual([]);
+    expect(audit.analysisReadiness).toEqual({
+      decisionReady: false,
+      reasons: ['no_consumed_health_evidence'],
     });
     expect(rows).toEqual(before);
     expect(audit.safety.authorizesRuntimeActivation).toBe(false);
@@ -93,5 +98,23 @@ describe('health-concern production shadow input contract', () => {
     const rows = parseHealthConcernProductionShadowInput(validRows);
     expect(JSON.stringify(auditHealthConcernProductionShadowInput(rows)))
       .toBe(JSON.stringify(auditHealthConcernProductionShadowInput(rows)));
+  });
+
+  it('flags future health-evidence columns as supplied but not consumed', () => {
+    const rows = parseHealthConcernProductionShadowInput([
+      { ...validRows[0], health_concerns: ['joint'] },
+    ]);
+    const audit = auditHealthConcernProductionShadowInput(rows);
+
+    expect(audit.columns.healthEvidence.health_concerns).toEqual({
+      supplied: true,
+      consumedByAdapter: false,
+    });
+    expect(audit.columns.suppliedButNotConsumedHealthEvidence).toEqual(['health_concerns']);
+    expect(audit.columns.unsupported).toContain('health_concerns');
+    expect(audit.analysisReadiness).toEqual({
+      decisionReady: false,
+      reasons: ['no_consumed_health_evidence', 'supplied_health_evidence_not_consumed'],
+    });
   });
 });

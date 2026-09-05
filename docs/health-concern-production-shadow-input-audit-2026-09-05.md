@@ -42,8 +42,12 @@ Ingredient IDs, Korean and English names, order, and supplied risk levels are av
 
 The export contains no health-concern tags, formulation, guaranteed analysis, calories, or ingredient-purpose columns. Those fields must remain absent. Their absence is **insufficient evidence**, not evidence that any product is unsuitable. No nutrition value, purpose, tag, suitability, or product property may be inferred from names or categories.
 
+Column presence and adapter consumption are separate audit states. In this export, none of the five health-evidence columns is supplied and none is consumed. If a future export contains one of these columns while the adapter does not support it, the audit must identify it as supplied but not consumed. Such a column must not be represented as having affected evaluation, and the resulting analysis must remain not decision-ready.
+
 ## Adapter Contract
 
 The later local-only adapter must group by product ID deterministically, preserve supplied metadata and ingredient order, keep missing ingredient arrays distinguishable from empty arrays, reject or report metadata conflicts without choosing a winner, and omit unsupported or invalid species values. Required `Product` display-only fields may use inert placeholders such as empty strings or zero counts only where the type requires them; placeholders must never become health evidence.
 
 The adapter may feed its products only to `buildHealthConcernScoreShadowReport()`. It cannot be imported by runtime or UI modules, cannot change scoring or ranking, and cannot authorize candidate behavior. No runtime activation is authorized.
+
+Ingredient-name preservation does not convert source-part anatomy into a health claim. In particular, an animal-organ name containing `심장` remains an ingredient identity, not heart-health purpose or suitability evidence.

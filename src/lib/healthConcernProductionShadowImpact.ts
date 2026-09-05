@@ -1,4 +1,5 @@
 import type { DataConfidence } from '../health/concerns';
+import type { Product } from '../types';
 import type {
   HealthConcernScoreShadowReport,
   HealthConcernShadowMatrixRow,
@@ -59,11 +60,95 @@ export interface HealthConcernProductionShadowImpactSummary {
   };
 }
 
+export interface HealthConcernProductionShadowAnatomicalCollisionDiagnostic {
+  category: 'heart_concern_vs_anatomical_source_part_name';
+  affectedShadowRows: number;
+  anatomicalIngredientMatches: number;
+  healthPurposeOrTagEvidenceExcluded: number;
+  changesRuntimeLegacyMatcher: false;
+  requiresSeparateRuntimeCorrection: true;
+}
+
 const CONFIDENCE_ORDER: Record<DataConfidence, number> = {
   insufficient: 0,
   partial: 1,
   sufficient: 2,
 };
+
+const KOREAN_ANIMAL_HEART = /(?:닭고기|닭|토끼|소고기|소|돼지고기|돼지|양고기|양|오리고기|오리|칠면조|사슴|염소|말|캥거루)\s*(?:의\s*)?심장/;
+const ENGLISH_ANIMAL_HEART = /\b(?:chicken|rabbit|beef|bovine|cow|pork|pig|lamb|sheep|duck|turkey|venison|deer|goat|horse|kangaroo)\s+hearts?\b/i;
+
+function normalizeLegacyTerm(value: string): string {
+  return value
+    .normalize('NFKC')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s()[\]·,./_-]/g, '');
+}
+
+function includesLegacyTerm(value: string | undefined, terms: string[]): boolean {
+  const normalizedValue = normalizeLegacyTerm(value ?? '');
+  return terms.some((term) => normalizedValue.includes(term));
+}
+
+function isAnimalHeartName(product: Product['ingredients'][number]): boolean {
+  return KOREAN_ANIMAL_HEART.test(product.nameKo.normalize('NFKC'))
+    || ENGLISH_ANIMAL_HEART.test((product.nameEn ?? '').normalize('NFKC'));
+}
+
+export function diagnoseHealthConcernProductionShadowAnatomicalCollisions(
+  products: Product[],
+  report: HealthConcernScoreShadowReport,
+): HealthConcernProductionShadowAnatomicalCollisionDiagnostic {
+  const snapshot = JSON.stringify(products);
+  const productsById = new Map<string, Product>();
+  const duplicateIds = new Set<string>();
+  for (const product of products) {
+    if (productsById.has(product.id)) duplicateIds.add(product.id);
+    else productsById.set(product.id, product);
+  }
+  let affectedShadowRows = 0;
+  let anatomicalIngredientMatches = 0;
+  let healthPurposeOrTagEvidenceExcluded = 0;
+
+  for (const matrixRow of report.matrix) {
+    if (!matrixRow.row.identity.recognizedConcernIds.includes('heart')) continue;
+    const productId = matrixRow.row.identity.productId;
+    if (duplicateIds.has(productId)) continue;
+    const product = productsById.get(productId);
+    if (product == null) continue;
+    const selectedHeartTerms = matrixRow.row.identity.rawSelectedConcernLabels
+      .map(normalizeLegacyTerm)
+      .filter((term) => term === normalizeLegacyTerm('심장') || term === 'heart' || term === 'cardiac');
+    if (selectedHeartTerms.length === 0) continue;
+    const legacyMatched = matrixRow.row.legacy.matchedConcerns.some((concern) =>
+      selectedHeartTerms.includes(normalizeLegacyTerm(concern)));
+    if (!legacyMatched) continue;
+    const hasPurposeOrTagEvidence = (product.healthConcerns ?? []).some((tag) =>
+      includesLegacyTerm(tag, selectedHeartTerms))
+      || (product.ingredients ?? []).some((ingredient) => includesLegacyTerm(ingredient.purpose, selectedHeartTerms));
+    const anatomicalMatches = (product.ingredients ?? []).filter(isAnimalHeartName).length;
+    if (anatomicalMatches === 0) continue;
+    if (hasPurposeOrTagEvidence) {
+      healthPurposeOrTagEvidenceExcluded += 1;
+      continue;
+    }
+    affectedShadowRows += 1;
+    anatomicalIngredientMatches += anatomicalMatches;
+  }
+
+  if (JSON.stringify(products) !== snapshot) {
+    throw new Error('Health-concern anatomical collision diagnostic mutated its product input.');
+  }
+  return {
+    category: 'heart_concern_vs_anatomical_source_part_name',
+    affectedShadowRows,
+    anatomicalIngredientMatches,
+    healthPurposeOrTagEvidenceExcluded,
+    changesRuntimeLegacyMatcher: false,
+    requiresSeparateRuntimeCorrection: true,
+  };
+}
 
 function rowConfidence(matrixRow: HealthConcernShadowMatrixRow): DataConfidence | null {
   const levels = matrixRow.row.candidate.confidenceLevels;

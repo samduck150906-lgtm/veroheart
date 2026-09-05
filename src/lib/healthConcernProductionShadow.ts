@@ -7,7 +7,9 @@ import {
 } from './healthConcernProductionShadowInput';
 import type { ProductionReadOnlyJoinedExportRow } from './productionReadOnlyJoinedExport';
 import {
+  diagnoseHealthConcernProductionShadowAnatomicalCollisions,
   summarizeHealthConcernProductionShadowImpact,
+  type HealthConcernProductionShadowAnatomicalCollisionDiagnostic,
   type HealthConcernProductionShadowImpactSummary,
 } from './healthConcernProductionShadowImpact';
 
@@ -59,6 +61,7 @@ export interface HealthConcernProductionShadowExecutionReport {
   adapter: HealthConcernProductionShadowAdapterReport;
   shadow: HealthConcernScoreShadowReport;
   impact: HealthConcernProductionShadowImpactSummary;
+  legacyAnatomicalCollisions: HealthConcernProductionShadowAnatomicalCollisionDiagnostic;
   safety: {
     localCopiedDataOnly: true;
     readOnlyOnly: true;
@@ -259,6 +262,7 @@ export function buildHealthConcernProductionShadowExecutionReport(
     adapter,
     shadow,
     impact: summarizeHealthConcernProductionShadowImpact(shadow),
+    legacyAnatomicalCollisions: diagnoseHealthConcernProductionShadowAnatomicalCollisions(adapter.products, shadow),
     safety: {
       localCopiedDataOnly: true,
       readOnlyOnly: true,

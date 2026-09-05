@@ -123,6 +123,8 @@ describe('health-concern production shadow adapter', () => {
     expect(first.impact.byConfidence.sufficient.rows).toBe(0);
     expect(first.impact.decisionGrade.rankingComparisonPossible).toBe(false);
     expect(first.impact.decisionReadiness.result).toBe('not_decision_ready');
+    expect(first.legacyAnatomicalCollisions.affectedShadowRows).toBe(0);
+    expect(first.legacyAnatomicalCollisions.changesRuntimeLegacyMatcher).toBe(false);
     expect(first.safety).toEqual({
       localCopiedDataOnly: true,
       readOnlyOnly: true,

@@ -52,7 +52,15 @@ export interface HealthConcernProductionShadowInputAudit {
   columns: {
     supplied: string[];
     unsupported: string[];
-    healthEvidence: Record<(typeof HEALTH_EVIDENCE_COLUMNS)[number], boolean>;
+    healthEvidence: Record<(typeof HEALTH_EVIDENCE_COLUMNS)[number], {
+      supplied: boolean;
+      consumedByAdapter: false;
+    }>;
+    suppliedButNotConsumedHealthEvidence: string[];
+  };
+  analysisReadiness: {
+    decisionReady: false;
+    reasons: Array<'no_consumed_health_evidence' | 'supplied_health_evidence_not_consumed'>;
   };
   safety: {
     localCopiedDataOnly: true;
@@ -194,6 +202,8 @@ export function auditHealthConcernProductionShadowInput(
     .filter(([, values]) => values.size > 1)
     .map(([key]) => key)
     .sort();
+  const suppliedButNotConsumedHealthEvidence = HEALTH_EVIDENCE_COLUMNS
+    .filter((column) => suppliedColumns.has(column));
 
   if (JSON.stringify(rows) !== snapshot) {
     throw new Error('Health-concern production shadow input audit mutated its source rows.');
@@ -229,8 +239,18 @@ export function auditHealthConcernProductionShadowInput(
       supplied: [...suppliedColumns].sort(),
       unsupported: [...suppliedColumns].filter((column) => !knownColumns.has(column)).sort(),
       healthEvidence: Object.fromEntries(
-        HEALTH_EVIDENCE_COLUMNS.map((column) => [column, suppliedColumns.has(column)]),
+        HEALTH_EVIDENCE_COLUMNS.map((column) => [column, {
+          supplied: suppliedColumns.has(column),
+          consumedByAdapter: false as const,
+        }]),
       ) as HealthConcernProductionShadowInputAudit['columns']['healthEvidence'],
+      suppliedButNotConsumedHealthEvidence,
+    },
+    analysisReadiness: {
+      decisionReady: false,
+      reasons: suppliedButNotConsumedHealthEvidence.length > 0
+        ? ['no_consumed_health_evidence', 'supplied_health_evidence_not_consumed']
+        : ['no_consumed_health_evidence'],
     },
     safety: {
       localCopiedDataOnly: true,

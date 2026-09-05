@@ -40,8 +40,12 @@ export function renderHealthConcernProductionShadowMarkdown(
   const adapter = report.adapter;
   const shadow = report.shadow.summary;
   const impact = report.impact;
+  const anatomicalCollisions = report.legacyAnatomicalCollisions;
   const healthEvidence = Object.entries(input.columns.healthEvidence)
-    .filter(([, supplied]) => supplied)
+    .filter(([, state]) => state.supplied)
+    .map(([column]) => column);
+  const consumedHealthEvidence = Object.entries(input.columns.healthEvidence)
+    .filter(([, state]) => state.consumedByAdapter)
     .map(([column]) => column);
 
   return `# Copied-Data Health-Concern Shadow Impact Report
@@ -100,6 +104,14 @@ ${bulletCounts(input.productCounts.byCategory)}
 - Decision readiness: \`${impact.decisionReadiness.result}\`
 
 Raw exploratory changes include insufficient-confidence rows and are not evidence-qualified product ranking changes. Missing evidence is not negative evidence, and zero hypothetical candidate contribution must not be interpreted as product unsuitability. This analysis cannot authorize runtime activation.
+
+### Legacy Anatomical-Term Collision Diagnostic
+
+- Collision category: \`${anatomicalCollisions.category}\`
+- Affected legacy shadow rows: ${anatomicalCollisions.affectedShadowRows.toLocaleString('en-US')}
+- Anatomical ingredient-name matches: ${anatomicalCollisions.anatomicalIngredientMatches.toLocaleString('en-US')}
+
+This aggregate identifies legacy heart-concern matches caused by animal-organ ingredient names, not heart-health tags or ingredient-purpose evidence. It does not claim every ingredient-name match is invalid and does not change the legacy matcher. Correcting that runtime false-positive class requires a separate PR.
 
 ### Raw Exploratory Counts
 
@@ -164,7 +176,7 @@ Row confidence is the weakest confidence among the row's selected concern result
 
 ## Evidence Limitations
 
-The export supplies ${healthEvidence.length === 0 ? 'none of' : healthEvidence.join(', ')} the health-tag, formulation, guaranteed-analysis, calorie, or ingredient-purpose evidence fields. All ${shadow.productsWithEmptyHealthTags.length.toLocaleString('en-US')} adapted products therefore retain empty or missing health tags, and ${shadow.productsWithMissingIngredientArrays.length.toLocaleString('en-US')} products retain missing ingredient arrays.
+The export ${healthEvidence.length === 0 ? 'supplies none of the' : `supplies these`} health-tag, formulation, guaranteed-analysis, calorie, or ingredient-purpose evidence fields${healthEvidence.length === 0 ? '' : `: ${healthEvidence.join(', ')}`}. The adapter consumes ${consumedHealthEvidence.length === 0 ? 'none' : consumedHealthEvidence.join(', ')} of those health-evidence columns. A supplied but unconsumed column is an explicit analysis limitation and cannot affect evaluation; this condition is not decision-ready. All ${shadow.productsWithEmptyHealthTags.length.toLocaleString('en-US')} adapted products therefore retain empty or missing health tags, and ${shadow.productsWithMissingIngredientArrays.length.toLocaleString('en-US')} products retain missing ingredient arrays.
 
 No matrix row reached sufficient confidence. Ingredient-name matches can support only the limited evidence encoded by the existing canonical evaluator; ingredient quantities are unavailable. Informational quantitative checks do not contribute points. Missing nutrition, purpose, tags, or ingredient links are **insufficient evidence**, not evidence that a product is unsuitable. No absent value was inferred from product names, categories, or other fields.
 

@@ -33,6 +33,9 @@ describe('health-concern production shadow aggregate Markdown', () => {
     expect(first).toContain('Raw exploratory changes include insufficient-confidence rows');
     expect(first).toContain('Decision readiness: `not_decision_ready`');
     expect(first).toContain('Sufficient-confidence ranking comparison possible: no');
+    expect(first).toContain('Legacy Anatomical-Term Collision Diagnostic');
+    expect(first).toContain('heart_concern_vs_anatomical_source_part_name');
+    expect(first).toContain('Correcting that runtime false-positive class requires a separate PR');
     expect(first).toContain('No runtime activation is authorized');
     expect(first).not.toContain('private-product-id');
     expect(first).not.toContain('Private product name');
