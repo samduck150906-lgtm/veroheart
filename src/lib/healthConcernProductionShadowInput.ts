@@ -45,6 +45,10 @@ export interface HealthConcernProductionShadowInputAudit {
     ingredientIds: string[];
     productIngredientKeys: string[];
   };
+  productCounts: {
+    byTargetSpecies: Record<string, number>;
+    byCategory: Record<string, number>;
+  };
   columns: {
     supplied: string[];
     unsupported: string[];
@@ -111,6 +115,10 @@ function addToSetMap(map: Map<string, Set<string>>, key: string, value: string):
   map.set(key, values);
 }
 
+function sortedCountRecord(values: Map<string, number>): Record<string, number> {
+  return Object.fromEntries([...values.entries()].sort(([a], [b]) => a.localeCompare(b)));
+}
+
 export function auditHealthConcernProductionShadowInput(
   rows: ProductionReadOnlyJoinedExportRow[],
 ): HealthConcernProductionShadowInputAudit {
@@ -124,6 +132,8 @@ export function auditHealthConcernProductionShadowInput(
   const ingredientMetadata = new Map<string, Set<string>>();
   const linkPositions = new Map<string, Set<string>>();
   const productIdsByName = new Map<string, Set<string>>();
+  const productsByTargetSpecies = new Map<string, number>();
+  const productsByCategory = new Map<string, number>();
   const suppliedColumns = new Set<string>();
   let rowsWithoutIngredientLinks = 0;
   let linkedRowsMissingIngredientNames = 0;
@@ -131,6 +141,12 @@ export function auditHealthConcernProductionShadowInput(
   let invalidIngredientRiskRows = 0;
 
   for (const row of rows) {
+    if (!productIds.has(row.product_id)) {
+      const species = row.target_pet_type ?? '<missing>';
+      const category = row.main_category ?? '<missing>';
+      productsByTargetSpecies.set(species, (productsByTargetSpecies.get(species) ?? 0) + 1);
+      productsByCategory.set(category, (productsByCategory.get(category) ?? 0) + 1);
+    }
     productIds.add(row.product_id);
     productNames.add(row.product_name);
     exactRows.add(JSON.stringify(row));
@@ -204,6 +220,10 @@ export function auditHealthConcernProductionShadowInput(
       productIds: productConflictIds,
       ingredientIds: ingredientConflictIds,
       productIngredientKeys: conflictingLinkKeys,
+    },
+    productCounts: {
+      byTargetSpecies: sortedCountRecord(productsByTargetSpecies),
+      byCategory: sortedCountRecord(productsByCategory),
     },
     columns: {
       supplied: [...suppliedColumns].sort(),

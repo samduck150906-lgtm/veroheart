@@ -74,6 +74,10 @@ describe('health-concern production shadow input contract', () => {
       invalidIngredientRiskRows: 1,
     });
     expect(audit.conflicts.productIds).toEqual(['p1']);
+    expect(audit.productCounts).toEqual({
+      byTargetSpecies: { bird: 1, dog: 2 },
+      byCategory: { '<missing>': 1, food: 2 },
+    });
     expect(audit.columns.healthEvidence).toEqual({
       health_concerns: false,
       formulation: false,
