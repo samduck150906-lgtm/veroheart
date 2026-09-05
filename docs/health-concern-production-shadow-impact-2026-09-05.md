@@ -114,3 +114,14 @@ The export supplies none of the health-tag, formulation, guaranteed-analysis, ca
 No matrix row reached sufficient confidence. Ingredient-name matches can support only the limited evidence encoded by the existing canonical evaluator; ingredient quantities are unavailable. Informational quantitative checks do not contribute points. Missing nutrition, purpose, tags, or ingredient links are **insufficient evidence**, not evidence that a product is unsuitable. No absent value was inferred from product names, categories, or other fields.
 
 The computed values are hypothetical candidate results for comparison only. They are not a new score, recommendation, medical conclusion, or production behavior. No runtime activation is authorized.
+
+## Validation
+
+- Focused input, adapter, health evaluator/shadow, scoring, display/ranking, allergy, and poultry tests: 24 files, 232 tests passed
+- Full Vitest suite: 141 files, 899 tests passed
+- TypeScript project build: passed
+- Production Vite build: passed; 1,988 modules transformed
+- Targeted ESLint for all new source and test files: passed
+- Repository-wide ESLint: the same 17 pre-existing React Hook errors outside this PR; no new-file errors
+- `git diff --check`: passed
+- Static surface guard: runtime, UI, stores, Supabase/network, SQL, and environment imports/usages absent
