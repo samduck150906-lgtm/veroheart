@@ -165,11 +165,11 @@ The computed values are hypothetical candidate results for comparison only. They
 
 ## Validation
 
-- Focused input, adapter, health evaluator/shadow, scoring, display/ranking, allergy, and poultry tests: 24 files, 232 tests passed
-- Full Vitest suite: 141 files, 899 tests passed
+- Focused input, adapter, health evaluator/shadow, scoring, display/ranking, allergy, and poultry tests: 30 files, 221 tests passed
+- Full Vitest suite: 142 files, 904 tests passed
 - TypeScript project build: passed
 - Production Vite build: passed; 1,988 modules transformed
 - Targeted ESLint for all new source and test files: passed
-- Repository-wide ESLint: the same 17 pre-existing React Hook errors outside this PR; no new-file errors
+- Repository-wide ESLint baseline remains the same 17 pre-existing React Hook errors outside this PR; targeted correction files have no errors
 - `git diff --check`: passed
 - Static surface guard: runtime, UI, stores, Supabase/network, SQL, and environment imports/usages absent
