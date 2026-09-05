@@ -3,8 +3,9 @@
 - Base SHA: `96d9d58526083dcdb81c3f52fe9aca9f22583680`
 - Branch: `codex/pr4-health-concern-production-shadow`
 - Input filename: `붙여넣은 텍스트 (1)(2).txt`
-- Completed step: created a fresh isolated worktree and branch; audited the existing health shadow, joined-export, physical-column-map, row-adapter, poultry report, relevant types/tests, and PR #104 documentation; searched attachment metadata, recent attachments, user folders, prior session records, and likely local data locations, but the named export is not present
-- Validation performed: verified `origin/main`, confirmed a clean new worktree, confirmed the PR4 branch did not previously exist, checked both historical PR3 remote branch SHAs read-only, and confirmed the existing joined-export path accepts the expected core columns but silently deduplicates IDs and therefore cannot be reused without a stricter conflict-reporting boundary
-- Current commit SHA: `96d9d58526083dcdb81c3f52fe9aca9f22583680`
-- Next exact action: obtain the actual local path for `붙여넣은 텍스트 (1)(2).txt`, validate its JSON and SHA-256 without changing it, and record the exact Phase 1 row/column/conflict/evidence audit before writing adapter implementation code
+- Completed step: Phase 1 complete; validated the copied JSON in place and added a strict structural input contract, adversarial tests, and aggregate non-identifying input audit documentation
+- Input validation: 1,868,544 bytes; SHA-256 `8feea2baadeec067d4c0e04f82e402ce7358c5cf9627de40507667c3c1a3dc19`; 4,410 rows; 458 product IDs; 431 product names; 539 ingredient IDs; 4,265 links; 145 rows without links; no malformed columns or metadata conflicts; no health tags, formulation, guaranteed analysis, calories, or ingredient purpose supplied
+- Validation performed: 4 focused input-contract tests passed; TypeScript passed; targeted ESLint passed; `git diff --check` passed
+- Current commit SHA: `9b25ac4f016a526f87afcbbc8fc93f27f349f5ed` (pre-Phase-1 checkpoint)
+- Next exact action: implement the smallest local-only deterministic joined-row-to-`Product[]` adapter and compose it only with `buildHealthConcernScoreShadowReport()`, with conflict/missing-evidence tests
 - `origin/main` moved: no; it remains `96d9d58526083dcdb81c3f52fe9aca9f22583680`
