@@ -39,8 +39,7 @@ export function renderHealthConcernProductionShadowMarkdown(
   const input = report.inputAudit;
   const adapter = report.adapter;
   const shadow = report.shadow.summary;
-  const changedRankingCohorts = report.shadow.rankings.filter((ranking) =>
-    ranking.products.some((product) => product.comparison === 'changed')).length;
+  const impact = report.impact;
   const healthEvidence = Object.entries(input.columns.healthEvidence)
     .filter(([, supplied]) => supplied)
     .map(([column]) => column);
@@ -89,6 +88,21 @@ ${bulletCounts(input.productCounts.byCategory)}
 
 ## Shadow Findings
 
+### Evidence-Qualified Interpretation
+
+- Raw exploratory grade changes: ${impact.rawExploratory.gradeChanges.toLocaleString('en-US')}
+- Grade changes from insufficient-confidence rows: ${impact.byConfidence.insufficient.gradeChanges.toLocaleString('en-US')}
+- Grade changes from partial-confidence rows: ${impact.byConfidence.partial.gradeChanges.toLocaleString('en-US')}
+- Grade changes from sufficient-confidence rows: ${impact.byConfidence.sufficient.gradeChanges.toLocaleString('en-US')}
+- Evidence-qualified grade changes at partial-or-better confidence: ${impact.evidenceQualified.gradeChanges.toLocaleString('en-US')}
+- Sufficient-confidence rows: ${impact.byConfidence.sufficient.rows.toLocaleString('en-US')}
+- Sufficient-confidence ranking comparison possible: ${impact.decisionGrade.rankingComparisonPossible ? 'yes' : 'no'}
+- Decision readiness: \`${impact.decisionReadiness.result}\`
+
+Raw exploratory changes include insufficient-confidence rows and are not evidence-qualified product ranking changes. Missing evidence is not negative evidence, and zero hypothetical candidate contribution must not be interpreted as product unsuitability. This analysis cannot authorize runtime activation.
+
+### Raw Exploratory Counts
+
 - Canonical concern definitions evaluated: ${shadow.profileDefinitionsEvaluated.toLocaleString('en-US')}
 - Species-aware profile variants: ${shadow.profileVariantsEvaluated.toLocaleString('en-US')}
 - Ranking cohorts: ${shadow.rankingCohortCount.toLocaleString('en-US')}
@@ -100,9 +114,9 @@ ${bulletCounts(input.productCounts.byCategory)}
 - Confidence: ${shadow.confidenceCounts.sufficient.toLocaleString('en-US')} sufficient, ${shadow.confidenceCounts.partial.toLocaleString('en-US')} partial, ${shadow.confidenceCounts.insufficient.toLocaleString('en-US')} insufficient
 - Maximum hypothetical increase: ${shadow.maximumIncrease?.delta ?? 'none'}
 - Maximum hypothetical decrease: ${shadow.maximumDecrease?.delta ?? 'none'}
-- Hypothetical grade changes: ${shadow.gradeChangeCounts.changed.toLocaleString('en-US')}
-- Products with a hypothetical ordering change in at least one cohort: ${shadow.productsWhoseHypotheticalOrderingChanges.length.toLocaleString('en-US')}
-- Ranking cohorts containing a hypothetical ordering change: ${changedRankingCohorts.toLocaleString('en-US')}
+- Non-decision-grade hypothetical grade changes: ${impact.rawExploratory.gradeChanges.toLocaleString('en-US')}
+- Products with a raw exploratory ordering change: ${impact.rawExploratory.ranking.productsWithOrderingChanges.toLocaleString('en-US')}
+- Raw exploratory cohorts containing an ordering change: ${impact.rawExploratory.ranking.cohortsWithOrderingChanges.toLocaleString('en-US')}
 - Invariant violations: ${shadow.invariantViolations.length.toLocaleString('en-US')}
 
 ### Concern Status Counts
@@ -126,6 +140,27 @@ ${numericBulletCounts(shadow.scoreDeltaDistribution)}
 - Changed: ${shadow.gradeChangeCounts.changed.toLocaleString('en-US')}
 - Unchanged: ${shadow.gradeChangeCounts.unchanged.toLocaleString('en-US')}
 - Not comparable: ${shadow.gradeChangeCounts.notComparable.toLocaleString('en-US')}
+
+### Changes By Confidence
+
+| Confidence | Rows | Grade changes | Score delta distribution |
+| --- | ---: | ---: | --- |
+| Insufficient | ${impact.byConfidence.insufficient.rows.toLocaleString('en-US')} | ${impact.byConfidence.insufficient.gradeChanges.toLocaleString('en-US')} | ${JSON.stringify(impact.byConfidence.insufficient.scoreDeltaDistribution)} |
+| Partial | ${impact.byConfidence.partial.rows.toLocaleString('en-US')} | ${impact.byConfidence.partial.gradeChanges.toLocaleString('en-US')} | ${JSON.stringify(impact.byConfidence.partial.scoreDeltaDistribution)} |
+| Sufficient | ${impact.byConfidence.sufficient.rows.toLocaleString('en-US')} | ${impact.byConfidence.sufficient.gradeChanges.toLocaleString('en-US')} | ${JSON.stringify(impact.byConfidence.sufficient.scoreDeltaDistribution)} |
+
+### Confidence-Qualified Ranking
+
+Row confidence is the weakest confidence among the row's selected concern results. Partial-or-better exploration excludes insufficient-confidence rows; sufficient-only analysis is the decision-grade threshold. A cohort requires at least ${impact.confidenceRule.minimumEligibleProductsPerRankingCohort} eligible products or it is non-comparable.
+
+- Partial-or-better eligible rows: ${impact.evidenceQualified.ranking.eligibleRows.toLocaleString('en-US')}
+- Partial-or-better comparable cohorts: ${impact.evidenceQualified.ranking.comparableCohorts.toLocaleString('en-US')}
+- Partial-or-better non-comparable cohorts: ${impact.evidenceQualified.ranking.nonComparableCohorts.toLocaleString('en-US')}
+- Partial-or-better cohorts with ordering changes: ${impact.evidenceQualified.ranking.cohortsWithOrderingChanges.toLocaleString('en-US')}
+- Partial-or-better products with ordering changes: ${impact.evidenceQualified.ranking.productsWithOrderingChanges.toLocaleString('en-US')}
+- Sufficient-only eligible rows: ${impact.decisionGrade.ranking.eligibleRows.toLocaleString('en-US')}
+- Sufficient-only comparable cohorts: ${impact.decisionGrade.ranking.comparableCohorts.toLocaleString('en-US')}
+- Sufficient-only non-comparable cohorts: ${impact.decisionGrade.ranking.nonComparableCohorts.toLocaleString('en-US')}
 
 ## Evidence Limitations
 

@@ -51,6 +51,23 @@ Category values are reported exactly as supplied and were not normalized or inte
 
 ## Shadow Findings
 
+### Evidence-Qualified Interpretation
+
+All 545 observed grade changes came from insufficient-confidence rows. The 565 partial-confidence rows produced zero score delta and zero grade changes. No sufficient-confidence row exists. The raw ordering changes below are therefore exploratory consequences of treating missing evidence as zero candidate contribution; they are not evidence-qualified product ranking changes.
+
+- Raw exploratory grade changes: 545
+- Insufficient-confidence grade changes: 545
+- Partial-confidence grade changes: 0
+- Sufficient-confidence grade changes: 0
+- Evidence-qualified grade changes at partial-or-better confidence: 0
+- Decision-grade sufficient-confidence rows: 0
+- Decision-grade ranking comparison possible: no
+- Decision readiness: `not_decision_ready`
+
+This export cannot support a runtime activation decision. Missing evidence is not negative evidence, and zero hypothetical candidate contribution must not be interpreted as product unsuitability. No runtime activation is authorized.
+
+### Raw Exploratory Counts
+
 - Canonical concern definitions evaluated: 9
 - Species-aware profile variants: 18
 - Ranking cohorts: 18
@@ -62,9 +79,9 @@ Category values are reported exactly as supplied and were not normalized or inte
 - Confidence: 0 sufficient, 565 partial, 3,557 insufficient
 - Maximum hypothetical increase: none
 - Maximum hypothetical decrease: -20
-- Hypothetical grade changes: 545
-- Products with a hypothetical ordering change in at least one cohort: 443
-- Ranking cohorts containing a hypothetical ordering change: 17
+- Non-decision-grade hypothetical grade changes: 545
+- Products with a raw exploratory ordering change in at least one cohort: 443
+- Raw exploratory cohorts containing an ordering change: 17
 - Invariant violations: 0
 
 “Computed” means only that the canonical synthetic concern input was recognized and a hypothetical candidate result could be calculated. It does not mean evidence was sufficient or that a product was suitable.
@@ -106,6 +123,29 @@ No concern produced a confirmed status under this export. `unknown` and `not_app
 - Changed: 545
 - Unchanged: 3,577
 - Not comparable: 0
+
+These unqualified comparisons are retained for auditability only. They include insufficient-confidence rows and are not production-impact findings.
+
+### Changes By Confidence
+
+| Confidence | Rows | Grade changes | Score delta distribution |
+| --- | ---: | ---: | --- |
+| Insufficient | 3,557 | 545 | `-20`: 4; `-5`: 3,553 |
+| Partial | 565 | 0 | `0`: 565 |
+| Sufficient | 0 | 0 | none |
+
+### Confidence-Qualified Ranking
+
+Row confidence is the weakest confidence among the row's selected concern results. Partial-or-better exploration excludes insufficient-confidence rows. Sufficient-only analysis is the decision-grade threshold. A cohort requires at least two eligible products; otherwise it is non-comparable, not unchanged.
+
+- Partial-or-better eligible rows: 565
+- Partial-or-better comparable cohorts: 13
+- Partial-or-better non-comparable cohorts: 5
+- Partial-or-better cohorts with ordering changes: 0
+- Partial-or-better products with ordering changes: 0
+- Sufficient-only eligible rows: 0
+- Sufficient-only comparable cohorts: 0
+- Sufficient-only non-comparable cohorts: 18
 
 ## Evidence Limitations
 

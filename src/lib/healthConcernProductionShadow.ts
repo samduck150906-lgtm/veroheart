@@ -6,6 +6,10 @@ import {
   type HealthConcernProductionShadowInputAudit,
 } from './healthConcernProductionShadowInput';
 import type { ProductionReadOnlyJoinedExportRow } from './productionReadOnlyJoinedExport';
+import {
+  summarizeHealthConcernProductionShadowImpact,
+  type HealthConcernProductionShadowImpactSummary,
+} from './healthConcernProductionShadowImpact';
 
 const VALID_SPECIES = new Set(['dog', 'cat', 'all']);
 const VALID_RISK_LEVELS = new Set<Ingredient['riskLevel']>(['safe', 'caution', 'danger']);
@@ -54,6 +58,7 @@ export interface HealthConcernProductionShadowExecutionReport {
   inputAudit: HealthConcernProductionShadowInputAudit;
   adapter: HealthConcernProductionShadowAdapterReport;
   shadow: HealthConcernScoreShadowReport;
+  impact: HealthConcernProductionShadowImpactSummary;
   safety: {
     localCopiedDataOnly: true;
     readOnlyOnly: true;
@@ -253,6 +258,7 @@ export function buildHealthConcernProductionShadowExecutionReport(
     inputAudit,
     adapter,
     shadow,
+    impact: summarizeHealthConcernProductionShadowImpact(shadow),
     safety: {
       localCopiedDataOnly: true,
       readOnlyOnly: true,

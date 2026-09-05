@@ -29,6 +29,10 @@ describe('health-concern production shadow aggregate Markdown', () => {
     expect(first).toContain('**shadow analysis**');
     expect(first).toContain('hypothetical candidate results');
     expect(first).toContain('**insufficient evidence**');
+    expect(first).toContain('Evidence-Qualified Interpretation');
+    expect(first).toContain('Raw exploratory changes include insufficient-confidence rows');
+    expect(first).toContain('Decision readiness: `not_decision_ready`');
+    expect(first).toContain('Sufficient-confidence ranking comparison possible: no');
     expect(first).toContain('No runtime activation is authorized');
     expect(first).not.toContain('private-product-id');
     expect(first).not.toContain('Private product name');
