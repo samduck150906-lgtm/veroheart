@@ -6,6 +6,7 @@ import {
   type AllergyRelationshipMatch,
 } from '../analysis/allergyFamilyMatcher';
 import { analyzeFeed } from '../analysis/feedAnalysis';
+import { classifyLegacyIngredientConcernEvidence } from '../health/anatomicalHeartEvidence';
 import { resolveProductWithPhase2AliasAdapter } from '../lib/phase2AliasResolverProductAdapter';
 import { isPhase2AliasResolverRuntimeEnabled } from '../lib/phase2AliasResolverRuntimeFlag';
 
@@ -114,10 +115,7 @@ function countConcernMatches(product: Product, profile: UserPetProfile) {
       normalize(item).includes(normalizedConcern),
     );
     const matchesIngredient = product.ingredients.some(
-      (ingredient) =>
-        normalize(ingredient.purpose).includes(normalizedConcern) ||
-        normalize(ingredient.nameKo).includes(normalizedConcern) ||
-        normalize(ingredient.nameEn || '').includes(normalizedConcern),
+      (ingredient) => classifyLegacyIngredientConcernEvidence(concern, ingredient).matches,
     );
 
     if (matchesConcernTag || matchesIngredient) matched.add(concern);
