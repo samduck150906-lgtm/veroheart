@@ -62,3 +62,14 @@ Invariant violations: 0.
 ## Interpretation
 
 This correction removes a confirmed runtime false positive while preserving legitimate matching health tags, explicit ingredient-purpose evidence, and independent non-anatomical name evidence. It does not make a medical claim, does not infer suitability from missing evidence, and does not resolve the separate missing-evidence policy question. No canonical health-concern score is activated by this change.
+
+## Validation
+
+- Focused classifier, runtime score/display, evaluator/shadow, allergy/poultry, ranking, and determinism tests: 34 files, 259 tests passed
+- Full Vitest suite: 145 files, 936 tests passed
+- TypeScript project build: passed
+- Production Vite build: passed; 1,989 modules transformed
+- Targeted ESLint: passed
+- `git diff --check`: passed
+- Runtime/import/path audit: passed
+- Raw attachment and product-level output history audit: passed
