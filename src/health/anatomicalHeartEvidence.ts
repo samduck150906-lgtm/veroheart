@@ -53,6 +53,16 @@ const ENGLISH_ANIMAL_SOURCES = [
   'kangaroo',
 ] as const;
 
+const KOREAN_ANIMAL_HEART_PATTERNS = [...KOREAN_ANIMAL_SOURCES]
+  .sort((a, b) => b.length - a.length)
+  .map((source) => {
+    const spacedSource = [...source].join('\\s*');
+    return new RegExp(
+      `(?:^|[^\\p{L}\\p{N}])${spacedSource}\\s*(?:의\\s*)?심장(?=$|[^\\p{L}\\p{N}])`,
+      'u',
+    );
+  });
+
 function normalizeLegacyMatch(value: string | null | undefined): string {
   return (value ?? '')
     .normalize('NFKC')
@@ -74,9 +84,8 @@ export function isAnatomicalHeartSourcePartName(
   nameKo: string | null | undefined,
   nameEn: string | null | undefined,
 ): boolean {
-  const compactKorean = normalizeLegacyMatch(nameKo);
-  const koreanMatch = KOREAN_ANIMAL_SOURCES.some((source) =>
-    compactKorean.includes(`${source}심장`) || compactKorean.includes(`${source}의심장`));
+  const normalizedKorean = (nameKo ?? '').normalize('NFKC');
+  const koreanMatch = KOREAN_ANIMAL_HEART_PATTERNS.some((pattern) => pattern.test(normalizedKorean));
   if (koreanMatch) return true;
 
   const englishWords = normalizeWords(nameEn);

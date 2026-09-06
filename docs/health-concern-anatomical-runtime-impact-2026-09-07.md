@@ -63,6 +63,8 @@ Invariant violations: 0.
 
 This correction removes a confirmed runtime false positive while preserving legitimate matching health tags, explicit ingredient-purpose evidence, and independent non-anatomical name evidence. It does not make a medical claim, does not infer suitability from missing evidence, and does not resolve the separate missing-evidence policy question. No canonical health-concern score is activated by this change.
 
+The Korean classifier requires an animal source to start at the value boundary or after a non-letter/non-number separator and requires a corresponding boundary after `심장`. It therefore preserves legitimate legacy name matches such as `효소 심장 건강 배합`, `채소 심장 건강 배합`, and `발효 효소 심장 포뮬러` instead of interpreting the embedded `소` syllable as an animal source.
+
 ## Validation
 
 - Focused classifier, runtime score/display, evaluator/shadow, allergy/poultry, ranking, and determinism tests: 34 files, 259 tests passed

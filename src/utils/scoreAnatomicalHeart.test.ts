@@ -83,6 +83,17 @@ describe('legacy concern fit anatomical-heart boundary', () => {
     });
   });
 
+  it.each([
+    '효소 심장 건강 배합',
+    '채소 심장 건강 배합',
+    '발효 효소 심장 포뮬러',
+  ])('retains the unchanged legacy match for non-anatomical Korean heart text: %s', (nameKo) => {
+    const breakdown = getRecommendationBreakdown(product([ingredient(nameKo)]), profile());
+    expect(breakdown.concernFit).toBe(20);
+    expect(breakdown.matchedConcerns).toEqual(['심장']);
+    expect(breakdown.reasons).toContain('심장 고민과 연관');
+  });
+
   it('leaves non-heart concern matching unchanged', () => {
     const breakdown = getRecommendationBreakdown(
       product([ingredient('관절 건강 원료', 'joint support ingredient')]),

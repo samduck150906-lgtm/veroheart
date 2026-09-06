@@ -25,6 +25,9 @@ describe('anatomical heart source-part classifier', () => {
   });
 
   it.each([
+    ['효소 심장 건강 배합', ''],
+    ['채소 심장 건강 배합', ''],
+    ['발효 효소 심장 포뮬러', ''],
     ['심장사상충 예방 원료', 'heartworm support'],
     ['타우린', 'taurine'],
     ['심장 건강 배합', 'heart health formula'],
@@ -32,6 +35,24 @@ describe('anatomical heart source-part classifier', () => {
     ['', 'heart'],
   ])('does not broadly classify unrelated heart text: %s / %s', (nameKo, nameEn) => {
     expect(isAnatomicalHeartSourcePartName(nameKo, nameEn)).toBe(false);
+  });
+
+  it.each([
+    '효소 심장 건강 배합',
+    '채소 심장 건강 배합',
+    '발효 효소 심장 포뮬러',
+  ])('retains a non-anatomical Korean legacy heart-name match: %s', (nameKo) => {
+    expect(classifyLegacyIngredientConcernEvidence('심장', {
+      nameKo,
+      nameEn: '',
+      purpose: '',
+    })).toMatchObject({
+      concernId: 'heart',
+      rawNameMatches: true,
+      anatomicalHeartNameCollision: false,
+      eligibleNameMatches: true,
+      matches: true,
+    });
   });
 
   it('uses the canonical concern resolver and leaves non-heart concerns unchanged', () => {
