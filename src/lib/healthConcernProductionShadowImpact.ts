@@ -1,4 +1,5 @@
 import type { DataConfidence } from '../health/concerns';
+import { classifyLegacyIngredientConcernEvidence } from '../health/anatomicalHeartEvidence';
 import type { Product } from '../types';
 import type {
   HealthConcernScoreShadowReport,
@@ -64,7 +65,7 @@ export interface HealthConcernProductionShadowAnatomicalCollisionDiagnostic {
   category: 'heart_concern_vs_anatomical_source_part_name';
   affectedShadowRows: number;
   anatomicalIngredientMatches: number;
-  healthPurposeOrTagEvidenceExcluded: number;
+  independentLegitimateEvidenceExcluded: number;
   changesRuntimeLegacyMatcher: false;
   requiresSeparateRuntimeCorrection: true;
 }
@@ -74,9 +75,6 @@ const CONFIDENCE_ORDER: Record<DataConfidence, number> = {
   partial: 1,
   sufficient: 2,
 };
-
-const KOREAN_ANIMAL_HEART = /(?:닭고기|닭|토끼|소고기|소|돼지고기|돼지|양고기|양|오리고기|오리|칠면조|사슴|염소|말|캥거루)\s*(?:의\s*)?심장/;
-const ENGLISH_ANIMAL_HEART = /\b(?:chicken|rabbit|beef|bovine|cow|pork|pig|lamb|sheep|duck|turkey|venison|deer|goat|horse|kangaroo)\s+hearts?\b/i;
 
 function normalizeLegacyTerm(value: string): string {
   return value
@@ -89,11 +87,6 @@ function normalizeLegacyTerm(value: string): string {
 function includesLegacyTerm(value: string | undefined, terms: string[]): boolean {
   const normalizedValue = normalizeLegacyTerm(value ?? '');
   return terms.some((term) => normalizedValue.includes(term));
-}
-
-function isAnimalHeartName(product: Product['ingredients'][number]): boolean {
-  return KOREAN_ANIMAL_HEART.test(product.nameKo.normalize('NFKC'))
-    || ENGLISH_ANIMAL_HEART.test((product.nameEn ?? '').normalize('NFKC'));
 }
 
 export function diagnoseHealthConcernProductionShadowAnatomicalCollisions(
@@ -109,7 +102,7 @@ export function diagnoseHealthConcernProductionShadowAnatomicalCollisions(
   }
   let affectedShadowRows = 0;
   let anatomicalIngredientMatches = 0;
-  let healthPurposeOrTagEvidenceExcluded = 0;
+  let independentLegitimateEvidenceExcluded = 0;
 
   for (const matrixRow of report.matrix) {
     if (!matrixRow.row.identity.recognizedConcernIds.includes('heart')) continue;
@@ -124,13 +117,17 @@ export function diagnoseHealthConcernProductionShadowAnatomicalCollisions(
     const legacyMatched = matrixRow.row.legacy.matchedConcerns.some((concern) =>
       selectedHeartTerms.includes(normalizeLegacyTerm(concern)));
     if (!legacyMatched) continue;
-    const hasPurposeOrTagEvidence = (product.healthConcerns ?? []).some((tag) =>
+    const classifications = selectedHeartTerms.flatMap((concern) =>
+      (product.ingredients ?? []).map((ingredient) =>
+        classifyLegacyIngredientConcernEvidence(concern, ingredient)));
+    const hasIndependentLegitimateEvidence = (product.healthConcerns ?? []).some((tag) =>
       includesLegacyTerm(tag, selectedHeartTerms))
-      || (product.ingredients ?? []).some((ingredient) => includesLegacyTerm(ingredient.purpose, selectedHeartTerms));
-    const anatomicalMatches = (product.ingredients ?? []).filter(isAnimalHeartName).length;
+      || classifications.some((classification) => classification.matches);
+    const anatomicalMatches = classifications.filter((classification) =>
+      classification.anatomicalHeartNameCollision).length;
     if (anatomicalMatches === 0) continue;
-    if (hasPurposeOrTagEvidence) {
-      healthPurposeOrTagEvidenceExcluded += 1;
+    if (hasIndependentLegitimateEvidence) {
+      independentLegitimateEvidenceExcluded += 1;
       continue;
     }
     affectedShadowRows += 1;
@@ -144,7 +141,7 @@ export function diagnoseHealthConcernProductionShadowAnatomicalCollisions(
     category: 'heart_concern_vs_anatomical_source_part_name',
     affectedShadowRows,
     anatomicalIngredientMatches,
-    healthPurposeOrTagEvidenceExcluded,
+    independentLegitimateEvidenceExcluded,
     changesRuntimeLegacyMatcher: false,
     requiresSeparateRuntimeCorrection: true,
   };

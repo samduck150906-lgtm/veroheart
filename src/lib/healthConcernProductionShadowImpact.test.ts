@@ -128,7 +128,7 @@ describe('health-concern production shadow legacy anatomical collision diagnosti
       category: 'heart_concern_vs_anatomical_source_part_name',
       affectedShadowRows: 2,
       anatomicalIngredientMatches: 2,
-      healthPurposeOrTagEvidenceExcluded: 0,
+      independentLegitimateEvidenceExcluded: 0,
       changesRuntimeLegacyMatcher: false,
       requiresSeparateRuntimeCorrection: true,
     });
@@ -150,6 +150,6 @@ describe('health-concern production shadow legacy anatomical collision diagnosti
 
     expect(diagnostic.affectedShadowRows).toBe(0);
     expect(diagnostic.anatomicalIngredientMatches).toBe(0);
-    expect(diagnostic.healthPurposeOrTagEvidenceExcluded).toBe(2);
+    expect(diagnostic.independentLegitimateEvidenceExcluded).toBe(2);
   });
 });
