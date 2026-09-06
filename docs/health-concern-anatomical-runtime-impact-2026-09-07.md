@@ -67,8 +67,8 @@ The Korean classifier requires an animal source to start at the value boundary o
 
 ## Validation
 
-- Focused classifier, runtime score/display, evaluator/shadow, allergy/poultry, ranking, and determinism tests: 34 files, 259 tests passed
-- Full Vitest suite: 145 files, 936 tests passed
+- Focused classifier and runtime regression tests: 6 files, 69 tests passed
+- Full Vitest suite: 145 files, 945 tests passed
 - TypeScript project build: passed
 - Production Vite build: passed; 1,989 modules transformed
 - Targeted ESLint: passed
