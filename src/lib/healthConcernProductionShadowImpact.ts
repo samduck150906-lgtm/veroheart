@@ -114,9 +114,6 @@ export function diagnoseHealthConcernProductionShadowAnatomicalCollisions(
       .map(normalizeLegacyTerm)
       .filter((term) => term === normalizeLegacyTerm('심장') || term === 'heart' || term === 'cardiac');
     if (selectedHeartTerms.length === 0) continue;
-    const legacyMatched = matrixRow.row.legacy.matchedConcerns.some((concern) =>
-      selectedHeartTerms.includes(normalizeLegacyTerm(concern)));
-    if (!legacyMatched) continue;
     const classifications = selectedHeartTerms.flatMap((concern) =>
       (product.ingredients ?? []).map((ingredient) =>
         classifyLegacyIngredientConcernEvidence(concern, ingredient)));
