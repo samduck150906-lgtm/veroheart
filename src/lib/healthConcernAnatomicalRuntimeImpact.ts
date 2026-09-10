@@ -210,7 +210,7 @@ export function buildHealthConcernAnatomicalRuntimeImpactReport(
     }
     if (!row.confirmedCollision) increment(invariantViolations, 'affected_row_not_confirmed_collision');
     if (row.concernId !== 'heart') increment(invariantViolations, 'non_heart_concern_changed');
-    if (row.before.concernFit !== 20 || row.after.concernFit !== 5) {
+    if (row.before.concernFit !== row.after.concernFit) {
       increment(invariantViolations, 'unexpected_concern_fit_transition');
     }
   }

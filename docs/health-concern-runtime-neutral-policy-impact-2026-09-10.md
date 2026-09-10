@@ -42,3 +42,14 @@ All 4,122 rows received the five-point neutral concern component. The copied exp
 The equality result verifies that runtime wiring implements the approved projection without changing allergy, poultry, species, preference, ingredient-safety, or general-health components. A five-point result means that unavailable or inapplicable evidence was reflected neutrally. It must not be presented as proof of suitability.
 
 No raw production data, database, migration, environment, deployment, or UI change is part of this runtime verification.
+
+## Validation
+
+- Focused runtime and regression tests: 7 files, 123 tests passed
+- Full Vitest suite after rebasing to Vitest 5: 153 files, 991 tests passed
+- TypeScript project build: passed
+- Production Vite build: passed; 2,017 modules transformed
+- Targeted ESLint for all PR files: passed
+- Full ESLint: 18 pre-existing React-effect errors in untouched `main` files; no PR7 file failed
+- `git diff --check`: passed
+- Runtime/import/path and raw-history audits: passed

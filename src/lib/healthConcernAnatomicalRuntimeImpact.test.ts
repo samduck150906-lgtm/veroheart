@@ -36,14 +36,17 @@ describe('health-concern anatomical runtime aggregate impact', () => {
     expect(report.rowsCompared).toBe(45);
     expect(report.affectedRows).toBe(2);
     expect(report.affectedConcernCounts).toEqual({ heart: 2 });
-    expect(report.concernFitTransitions).toEqual({ '20->5': 2 });
-    expect(report.totalScoreDeltaDistribution).toEqual({ '-15': 2 });
-    expect(report.displayScoreDeltaDistribution).toEqual({ '-15': 2 });
+    expect(report.concernFitTransitions).toEqual({ '5->5': 2 });
+    expect(report.totalScoreDeltaDistribution).toEqual({ '0': 2 });
+    expect(report.displayScoreDeltaDistribution).toEqual({ '0': 2 });
+    expect(report.gradeChanges).toBe(0);
     expect(report.reasonChanges).toEqual({
       matchedConcernReasonRemoved: 2,
       neutralNoDirectMatchReasonAdded: 2,
     });
     expect(report.ordering.cohortsCompared).toBe(9);
+    expect(report.ordering.cohortsChanged).toBe(0);
+    expect(report.ordering.productsWithChangedPosition).toBe(0);
     expect(report.otherConcernChanges).toBe(0);
     expect(report.everyAffectedRowConfirmedAnatomicalHeartCollision).toBe(true);
     expect(Object.values(report.nonConcernComponentChanges).every((count) => count === 0)).toBe(true);
