@@ -4,7 +4,10 @@ import { render, screen, waitFor, cleanup } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import type { DashboardPayload } from '../../lib/adminApi';
 
-const h = vi.hoisted(() => ({ fetchDashboard: vi.fn(), counts: {} as Record<string, number> }));
+const h = vi.hoisted(() => ({
+  fetchDashboard: vi.fn(),
+  categoryRows: [] as { main_category: string | null }[],
+}));
 
 vi.mock('../../lib/adminApi', () => ({ fetchDashboard: h.fetchDashboard }));
 
@@ -12,7 +15,10 @@ vi.mock('../../lib/supabase', () => ({
   supabase: {
     from: () => ({
       select: () => ({
-        eq: (_col: string, value: string) => Promise.resolve({ count: h.counts[value] ?? 0, error: null }),
+        range: (from: number, to: number) => {
+          const data = h.categoryRows.slice(from, to + 1);
+          return Promise.resolve({ data, count: h.categoryRows.length, error: null });
+        },
       }),
     }),
   },
@@ -56,7 +62,11 @@ function renderDashboard() {
 describe('AdminDashboard', () => {
   beforeEach(() => {
     h.fetchDashboard.mockReset().mockResolvedValue(PAYLOAD);
-    h.counts = { 사료: 300, 간식: 100 };
+    h.categoryRows = [
+      ...Array.from({ length: 300 }, () => ({ main_category: '사료' })),
+      ...Array.from({ length: 100 }, () => ({ main_category: '간식' })),
+      ...Array.from({ length: 58 }, () => ({ main_category: null })),
+    ];
   });
 
   afterEach(() => cleanup());
@@ -66,6 +76,14 @@ describe('AdminDashboard', () => {
     expect(await screen.findByText('458')).toBeTruthy();
     expect(screen.getByText('4,265')).toBeTruthy();
     expect(screen.getByText('509')).toBeTruthy();
+  });
+
+  it('미분류 제품도 포함해 카테고리 합계를 전체 제품수와 맞춘다', async () => {
+    renderDashboard();
+    expect(await screen.findByText('분류 합계 458 / 전체 458')).toBeTruthy();
+    expect(screen.getByText('미분류')).toBeTruthy();
+    expect(screen.getByText('58개 (12.7%)')).toBeTruthy();
+    expect(screen.getByText(/main_category.*아직 입력되지 않은/)).toBeTruthy();
   });
 
   it('하드코딩된 목데이터를 더 이상 렌더링하지 않는다', async () => {

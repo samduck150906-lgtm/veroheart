@@ -24,6 +24,40 @@ const MAIN_CATEGORIES = [
   '배변/위생',
   '생활용품',
 ];
+const UNCATEGORIZED_LABEL = '미분류';
+const CATEGORY_PAGE_SIZE = 1000;
+
+function categoryLabel(value: unknown): string {
+  return typeof value === 'string' && value.trim() ? value.trim() : UNCATEGORIZED_LABEL;
+}
+
+/**
+ * 고정 카테고리만 따로 count하면 목록 밖 값과 NULL 제품이 합계에서 사라진다.
+ * 모든 제품의 main_category를 페이지 끝까지 읽어 실제 제품 총수와 같은 모집단을 집계한다.
+ */
+async function fetchCategoryStats(): Promise<Record<string, number>> {
+  const stats: Record<string, number> = {};
+  let offset = 0;
+
+  while (offset < 100_000) {
+    const { data, count, error } = await supabase
+      .from('products')
+      .select('main_category', { count: 'exact' })
+      .range(offset, offset + CATEGORY_PAGE_SIZE - 1);
+    if (error) throw error;
+
+    const batch = (data ?? []) as { main_category: string | null }[];
+    for (const row of batch) {
+      const label = categoryLabel(row.main_category);
+      stats[label] = (stats[label] ?? 0) + 1;
+    }
+
+    offset += batch.length;
+    if (batch.length < CATEGORY_PAGE_SIZE || (count !== null && offset >= count)) return stats;
+  }
+
+  throw new Error('제품 카테고리 집계 범위를 초과했습니다.');
+}
 
 /** 실제 기간 비교로 산출한 증감률. 직전 기간이 0이면 비율을 만들 수 없어 null 을 준다. */
 function deltaPercent(current: number | null, previous: number | null): number | null {
@@ -62,18 +96,7 @@ const AdminDashboard: React.FC = () => {
   const loadCategories = useCallback(async () => {
     setCategoryError(false);
     try {
-      // 전건 조회 대신 카테고리별 count 쿼리(main_category 인덱스 사용)
-      const results = await Promise.all(
-        MAIN_CATEGORIES.map(async (category) => {
-          const { count, error: err } = await supabase
-            .from('products')
-            .select('id', { count: 'exact', head: true })
-            .eq('main_category', category);
-          if (err) throw err;
-          return [category, count ?? 0] as const;
-        }),
-      );
-      setCategoryStats(Object.fromEntries(results));
+      setCategoryStats(await fetchCategoryStats());
     } catch {
       setCategoryError(true);
       setCategoryStats(null);
@@ -151,6 +174,24 @@ const AdminDashboard: React.FC = () => {
   );
 
   const totalProducts = metrics?.products ?? 0;
+  const categoryTotal = useMemo(
+    () => Object.values(categoryStats ?? {}).reduce((sum, count) => sum + count, 0),
+    [categoryStats],
+  );
+  const displayedCategories = useMemo(() => {
+    if (!categoryStats) return MAIN_CATEGORIES;
+    const extras = Object.keys(categoryStats)
+      .filter((category) => !MAIN_CATEGORIES.includes(category) && category !== UNCATEGORIZED_LABEL)
+      .sort((a, b) => a.localeCompare(b, 'ko-KR'));
+    return [
+      ...MAIN_CATEGORIES,
+      ...extras,
+      ...(UNCATEGORIZED_LABEL in categoryStats ? [UNCATEGORIZED_LABEL] : []),
+    ];
+  }, [categoryStats]);
+  const hasProductTotal = metrics?.products !== null && metrics?.products !== undefined;
+  const categoryCountsMatch = hasProductTotal && categoryStats !== null && totalProducts === categoryTotal;
+  const categoryDenominator = totalProducts > 0 ? totalProducts : categoryTotal;
 
   return (
     <div>
@@ -210,7 +251,15 @@ const AdminDashboard: React.FC = () => {
 
       <div className="admin-two-col">
         <article className="admin-card">
-          <h3 className="admin-card-title">카테고리별 제품 분포</h3>
+          <div className="admin-card-title-row">
+            <h3 className="admin-card-title">카테고리별 제품 분포</h3>
+            {categoryStats !== null && (
+              <span className={`admin-tag ${!hasProductTotal || categoryCountsMatch ? 'green' : 'red'}`}>
+                분류 합계 {categoryTotal.toLocaleString()}
+                {hasProductTotal ? ` / 전체 ${totalProducts.toLocaleString()}` : ''}
+              </span>
+            )}
+          </div>
           {categoryError ? (
             <div className="admin-empty">
               카테고리 분포를 불러오지 못했습니다.
@@ -221,9 +270,9 @@ const AdminDashboard: React.FC = () => {
           ) : categoryStats === null ? (
             <div className="admin-empty">불러오는 중입니다…</div>
           ) : (
-            MAIN_CATEGORIES.map((cat) => {
+            displayedCategories.map((cat) => {
               const count = categoryStats[cat] ?? 0;
-              const percentage = totalProducts > 0 ? (count / totalProducts) * 100 : 0;
+              const percentage = categoryDenominator > 0 ? (count / categoryDenominator) * 100 : 0;
               return (
                 <div className="admin-progress-item" key={cat}>
                   <div className="admin-progress-row">
@@ -238,6 +287,11 @@ const AdminDashboard: React.FC = () => {
                 </div>
               );
             })
+          )}
+          {(categoryStats?.[UNCATEGORIZED_LABEL] ?? 0) > 0 && (
+            <p className="admin-item-sub admin-category-note">
+              미분류는 제품의 대분류(main_category)가 아직 입력되지 않은 항목입니다.
+            </p>
           )}
         </article>
 

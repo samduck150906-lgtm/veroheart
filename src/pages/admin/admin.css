@@ -685,6 +685,25 @@
   border-color: #86efac;
 }
 
+.admin-card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.admin-card-title-row .admin-card-title {
+  margin-bottom: 0;
+}
+
+.admin-category-note {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #eef0f3;
+  line-height: 1.6;
+}
+
 .admin-notice-location {
   margin: 0 0 12px;
   line-height: 1.65;
