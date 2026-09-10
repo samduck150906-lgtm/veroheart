@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 import {
   ALLOWED_ACTIONS,
   MAX_PAGE_SIZE,
+  SETTINGS_KEYS,
   ValidationError,
   actorFromToken,
   clampPage,
@@ -123,6 +124,103 @@ function recordFailure(key: string) {
 
 // deno-lint-ignore no-explicit-any
 type Db = any;
+
+interface AuthUserRecord {
+  id: string;
+  email?: string | null;
+  created_at?: string | null;
+  last_sign_in_at?: string | null;
+  email_confirmed_at?: string | null;
+  confirmed_at?: string | null;
+  is_anonymous?: boolean;
+  app_metadata?: Record<string, unknown>;
+  user_metadata?: Record<string, unknown>;
+}
+
+interface PublicUserProfile {
+  id: string;
+  nickname: string | null;
+  created_at: string | null;
+}
+
+/**
+ * 회원 목록의 원본은 public.users가 아니라 Supabase Auth다.
+ *
+ * 프로필 트리거가 생기기 전에 가입했거나 트리거가 일시 실패한 계정은
+ * auth.users에는 존재하지만 public.users에는 없을 수 있다. 관리자 콘솔에서
+ * 이런 실제 가입자를 놓치지 않도록 Auth Admin API를 끝까지 페이지 조회한다.
+ */
+async function listRegisteredAuthUsers(db: Db): Promise<AuthUserRecord[]> {
+  const users: AuthUserRecord[] = [];
+  const perPage = 1000;
+
+  for (let page = 1; page <= 100; page += 1) {
+    const { data, error } = await db.auth.admin.listUsers({ page, perPage });
+    if (error) throw error;
+    const batch = (data?.users ?? []) as AuthUserRecord[];
+    users.push(...batch);
+
+    const total = Number(data?.total ?? 0);
+    if (batch.length < perPage || (total > 0 && users.length >= total)) break;
+    if (page === 100) throw new Error('회원 수가 관리자 조회 한도를 초과했습니다.');
+  }
+
+  return users.filter((user) => {
+    const provider = typeof user.app_metadata?.provider === 'string' ? user.app_metadata.provider : '';
+    return !user.is_anonymous && provider !== 'anonymous';
+  });
+}
+
+async function loadPublicUserProfiles(db: Db, ids: string[]): Promise<Map<string, PublicUserProfile>> {
+  const profiles = new Map<string, PublicUserProfile>();
+  const chunkSize = 200;
+
+  for (let offset = 0; offset < ids.length; offset += chunkSize) {
+    const chunk = ids.slice(offset, offset + chunkSize);
+    const { data, error } = await db
+      .from('users')
+      .select('id, nickname, created_at')
+      .in('id', chunk);
+    if (error) throw error;
+    for (const profile of (data ?? []) as PublicUserProfile[]) profiles.set(profile.id, profile);
+  }
+
+  return profiles;
+}
+
+function authProvider(user: AuthUserRecord): string {
+  const provider = user.app_metadata?.provider;
+  if (typeof provider === 'string' && provider.trim()) return provider;
+  const providers = user.app_metadata?.providers;
+  if (Array.isArray(providers) && typeof providers[0] === 'string') return providers[0];
+  return 'email';
+}
+
+function memberNickname(user: AuthUserRecord, profile?: PublicUserProfile): string {
+  const metadata = user.user_metadata ?? {};
+  const candidates = [
+    profile?.nickname,
+    metadata.nickname,
+    metadata.name,
+    metadata.full_name,
+    user.email?.split('@')[0],
+  ];
+  const found = candidates.find((value) => typeof value === 'string' && value.trim().length > 0);
+  return typeof found === 'string' ? found.trim() : '이름 없음';
+}
+
+function toAdminMember(user: AuthUserRecord, profile?: PublicUserProfile) {
+  return {
+    id: user.id,
+    email: user.email ?? null,
+    nickname: memberNickname(user, profile),
+    provider: authProvider(user),
+    profileMissing: !profile,
+    emailConfirmed: Boolean(user.email_confirmed_at ?? user.confirmed_at),
+    lastSignInAt: user.last_sign_in_at ?? null,
+    createdAt: user.created_at ?? profile?.created_at ?? '',
+  };
+}
 
 async function audit(
   db: Db,
@@ -416,17 +514,38 @@ serve(async (req) => {
       }
 
       // ── 시스템 설정 ────────────────────────────────────────────────────
+      case 'getSettings': {
+        // 관리자 화면은 공개 RLS 상태와 무관하게 현재 저장값을 정확히 읽어야 한다.
+        const { data, error } = await db
+          .from('app_settings')
+          .select('key, value, description, updated_at, updated_by')
+          .in('key', [...SETTINGS_KEYS])
+          .order('key', { ascending: true });
+        if (error) throw error;
+        return json({ ok: true, settings: data ?? [] }, 200, cors);
+      }
+
       case 'saveSettings': {
         // 허용 키 화이트리스트 + 값 크기 검증. 목록 밖 키가 있으면 전체를 거부한다.
         const entries = normalizeSettingsPayload(body.settings);
 
         const now = new Date().toISOString();
-        for (const [key, value] of entries) {
-          const { error } = await db
-            .from('app_settings')
-            .update({ value, updated_at: now, updated_by: actor })
-            .eq('key', key);
-          if (error) throw error;
+        const rows = entries.map(([key, value]) => ({
+          key,
+          value,
+          is_public: true,
+          updated_at: now,
+          updated_by: actor,
+        }));
+        // UPDATE만 쓰면 행이 누락된 환경에서 0건이 바뀌어도 성공으로 보인다.
+        // UPSERT 후 반환 행 수까지 확인해 관리자에게 거짓 성공을 보여주지 않는다.
+        const { data, error } = await db
+          .from('app_settings')
+          .upsert(rows, { onConflict: 'key' })
+          .select('key');
+        if (error) throw error;
+        if ((data ?? []).length !== entries.length) {
+          throw new Error('설정 저장 결과를 확인할 수 없습니다. 다시 시도해 주세요.');
         }
 
         await audit(db, actor, 'saveSettings', 'app_settings', null, { keys: entries.map(([k]) => k) });
@@ -453,23 +572,33 @@ serve(async (req) => {
           return count ?? 0;
         };
 
+        const authUsersPromise = listRegisteredAuthUsers(db).catch((error: Error) => {
+          console.error('dashboard auth users failed:', error.message);
+          return null;
+        });
+
         const [
-          products, ingredients, links, users, pets, unmatchedPending,
-          productsLast7, productsPrev7, usersLast7, usersPrev7,
-          feedingLogsLast7,
+          products, ingredients, links, pets, unmatchedPending,
+          productsLast7, productsPrev7, feedingLogsLast7, authUsers,
         ] = await Promise.all([
           countOf('products'),
           countOf('ingredients'),
           countOf('product_ingredients'),
-          countOf('users'),
           countOf('pets'),
           countOf('unmatched_ingredients', (q) => q.eq('status', 'pending')),
           countOf('products', (q) => q.gte('created_at', last7)),
           countOf('products', (q) => q.gte('created_at', prev7).lt('created_at', last7)),
-          countOf('users', (q) => q.gte('created_at', last7)),
-          countOf('users', (q) => q.gte('created_at', prev7).lt('created_at', last7)),
           countOf('pet_feeding_logs', (q) => q.gte('created_at', last7)),
+          authUsersPromise,
         ]);
+
+        const joinedAt = (user: AuthUserRecord) => new Date(user.created_at ?? 0).getTime();
+        const users = authUsers?.length ?? null;
+        const usersLast7 = authUsers?.filter((user) => joinedAt(user) >= new Date(last7).getTime()).length ?? null;
+        const usersPrev7 = authUsers?.filter((user) => {
+          const joined = joinedAt(user);
+          return joined >= new Date(prev7).getTime() && joined < new Date(last7).getTime();
+        }).length ?? null;
 
         const { data: recentProducts } = await db
           .from('products')
@@ -511,27 +640,27 @@ serve(async (req) => {
         const page = clampPage(body.page);
         const pageSize = clampPageSize(body.pageSize);
         const from = (page - 1) * pageSize;
-
-        let query = db
-          .from('users')
-          .select('id, nickname, created_at', { count: 'exact' })
-          .order('created_at', { ascending: false })
-          .range(from, from + pageSize - 1);
-
         const search = optionalText(body.query, '검색어', 100);
-        if (search) {
-          // ilike 패턴 메타문자는 이스케이프해서 사용자 입력이 패턴이 되지 않게 한다.
-          query = query.ilike('nickname', `%${escapeLike(search)}%`);
-        }
 
-        const { data, count, error } = await query;
-        if (error) throw error;
+        const authUsers = await listRegisteredAuthUsers(db);
+        const profileMap = await loadPublicUserProfiles(db, authUsers.map((user) => user.id));
+        const normalizedSearch = search?.toLocaleLowerCase('ko-KR') ?? '';
+        const members = authUsers
+          .map((user) => toAdminMember(user, profileMap.get(user.id)))
+          .filter((member) => {
+            if (!normalizedSearch) return true;
+            return member.nickname.toLocaleLowerCase('ko-KR').includes(normalizedSearch)
+              || (member.email ?? '').toLocaleLowerCase('en-US').includes(normalizedSearch);
+          })
+          .sort((a, b) => Date.parse(b.createdAt || '0') - Date.parse(a.createdAt || '0'));
+        const data = members.slice(from, from + pageSize);
 
         // 반려동물 수는 별도 집계(사용자 목록 페이지 크기만큼만 조회)
-        const ids = (data ?? []).map((r: { id: string }) => r.id);
+        const ids = data.map((row) => row.id);
         const petCounts = new Map<string, number>();
         if (ids.length > 0) {
-          const { data: pets } = await db.from('pets').select('user_id').in('user_id', ids);
+          const { data: pets, error: petsError } = await db.from('pets').select('user_id').in('user_id', ids);
+          if (petsError) throw petsError;
           for (const row of pets ?? []) {
             petCounts.set(row.user_id, (petCounts.get(row.user_id) ?? 0) + 1);
           }
@@ -540,11 +669,9 @@ serve(async (req) => {
         return json(
           {
             ok: true,
-            total: count ?? 0,
-            members: (data ?? []).map((row: { id: string; nickname: string; created_at: string }) => ({
-              id: row.id,
-              nickname: row.nickname,
-              createdAt: row.created_at,
+            total: members.length,
+            members: data.map((row) => ({
+              ...row,
               petCount: petCounts.get(row.id) ?? 0,
             })),
           },
@@ -555,8 +682,9 @@ serve(async (req) => {
 
       case 'getMemberDetail': {
         const id = requireUuid(body.id, '회원 ID');
-        const [{ data: member, error: memberError }, { data: pets, error: petsError }, diaryResult] =
+        const [authResult, { data: profile, error: profileError }, { data: pets, error: petsError }, diaryResult] =
           await Promise.all([
+            db.auth.admin.getUserById(id),
             db.from('users').select('id, nickname, created_at').eq('id', id).maybeSingle(),
             db
               .from('pets')
@@ -568,17 +696,18 @@ serve(async (req) => {
               .select('id', { count: 'exact', head: true })
               .eq('user_id', id),
           ]);
-        if (memberError) throw memberError;
+        if (authResult.error) throw authResult.error;
+        if (profileError) throw profileError;
         if (petsError) throw petsError;
         if (diaryResult.error) throw diaryResult.error;
-        if (!member) throw new ValidationError('회원을 찾을 수 없습니다.');
+        const authUser = authResult.data?.user as AuthUserRecord | undefined;
+        if (!authUser) throw new ValidationError('회원을 찾을 수 없습니다.');
+        const member = toAdminMember(authUser, (profile ?? undefined) as PublicUserProfile | undefined);
 
         return json(
           {
             ok: true,
-            id: member.id,
-            nickname: member.nickname,
-            createdAt: member.created_at,
+            ...member,
             petCount: (pets ?? []).length,
             diaryCount: diaryResult.count ?? 0,
             pets: (pets ?? []).map((pet: Record<string, unknown>) => ({

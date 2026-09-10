@@ -4,7 +4,7 @@
  * 쓰기 규칙: 관리자 쓰기는 **절대** anon Supabase 클라이언트로 직접 하지 않는다.
  *   관리자 화면 → adminWrite(x-admin-token) → admin-write Edge Function(service_role) → DB
  * 읽기 규칙: 공개 SELECT 정책이 있는 테이블(products / ingredients /
- *   unmatched_ingredients / app_settings)만 anon 으로 읽고, RLS 로 막힌 데이터
+ *   unmatched_ingredients)만 anon 으로 읽고, RLS 로 막힌 데이터
  *   (회원 목록 등)는 Edge Function 조회 action 을 쓴다.
  */
 import { supabase, adminWrite } from './supabase';
@@ -96,7 +96,12 @@ export interface DashboardPayload {
 
 export interface AdminMember {
   id: string;
+  email: string | null;
   nickname: string;
+  provider: string;
+  profileMissing: boolean;
+  emailConfirmed: boolean;
+  lastSignInAt: string | null;
   createdAt: string;
   petCount: number;
 }
@@ -523,13 +528,10 @@ export interface AdminSettingRow {
 }
 
 export async function fetchSettings(): Promise<AdminSettingRow[]> {
-  const { data, error } = await supabase
-    .from('app_settings')
-    .select('key, value, description, updated_at, updated_by');
-  if (error) throw new Error(error.message);
+  const res = await adminWrite<{ settings: SettingRow[] }>('getSettings');
 
   const known = new Set<string>(SETTING_KEYS);
-  return ((data ?? []) as SettingRow[])
+  return (res.settings ?? [])
     .filter((row) => known.has(row.key))
     .map((row) => ({
       key: row.key as SettingKey,

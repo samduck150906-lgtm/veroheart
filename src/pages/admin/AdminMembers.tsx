@@ -11,11 +11,21 @@ function formatDate(value: string | null): string {
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
 }
 
+function providerLabel(provider: string): string {
+  const labels: Record<string, string> = {
+    email: '이메일',
+    kakao: '카카오',
+    google: '구글',
+    apple: '애플',
+  };
+  return labels[provider.toLowerCase()] ?? provider;
+}
+
 /**
  * 회원 목록 (읽기 전용).
  *
- * 운영 정책: 관리자 콘솔은 회원의 비밀번호를 보거나 바꿀 수 없다. 이메일 등
- * 식별 정보는 auth 스키마에 있어 이 화면에서 조회하지 않는다(최소 수집 원칙).
+ * 운영 정책: 가입 누락 방지를 위해 Supabase Auth 계정을 원본으로 조회하되,
+ * 비밀번호·인증 시크릿은 절대 조회하거나 표시하지 않는다.
  */
 const AdminMembers: React.FC = () => {
   const [rows, setRows] = useState<AdminMember[]>([]);
@@ -84,13 +94,13 @@ const AdminMembers: React.FC = () => {
       <div className="admin-search-wrap">
         <Search size={16} className="admin-search-icon" />
         <label htmlFor="admin-member-search" className="admin-visually-hidden">
-          닉네임 검색
+          이메일 또는 닉네임 검색
         </label>
         <input
           id="admin-member-search"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          placeholder="닉네임 검색"
+          placeholder="이메일 또는 닉네임 검색"
         />
       </div>
 
@@ -99,6 +109,8 @@ const AdminMembers: React.FC = () => {
           <thead>
             <tr>
               <th>닉네임</th>
+              <th>이메일</th>
+              <th>가입 경로</th>
               <th>회원 ID</th>
               <th>반려동물 수</th>
               <th>가입일</th>
@@ -108,13 +120,13 @@ const AdminMembers: React.FC = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={5}>
+                <td colSpan={7}>
                   <div className="admin-empty">데이터를 불러오는 중입니다...</div>
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan={5}>
+                <td colSpan={7}>
                   <div className="admin-empty">
                     회원 목록을 불러오지 못했습니다.
                     <button type="button" className="admin-btn-soft" style={{ marginLeft: 10 }} onClick={load}>
@@ -125,7 +137,7 @@ const AdminMembers: React.FC = () => {
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={5}>
+                <td colSpan={7}>
                   <div className="admin-empty">표시할 회원이 없습니다.</div>
                 </td>
               </tr>
@@ -134,7 +146,17 @@ const AdminMembers: React.FC = () => {
                 <tr key={member.id}>
                   <td>
                     <div className="admin-item-main">{member.nickname}</div>
+                    {member.profileMissing && <span className="admin-tag orange">프로필 미생성</span>}
                   </td>
+                  <td>
+                    <div className="admin-item-main admin-member-email">{member.email ?? '이메일 없음'}</div>
+                    {member.email && (
+                      <span className={`admin-tag ${member.emailConfirmed ? 'green' : 'gray'}`}>
+                        {member.emailConfirmed ? '인증됨' : '미인증'}
+                      </span>
+                    )}
+                  </td>
+                  <td><span className="admin-tag blue">{providerLabel(member.provider)}</span></td>
                   <td className="admin-item-sub">{member.id.slice(0, 8)}</td>
                   <td>
                     <strong>{member.petCount}</strong>
@@ -192,7 +214,11 @@ const AdminMembers: React.FC = () => {
               <>
                 <div className="admin-detail-summary">
                   <div><span>닉네임</span><strong>{detail.nickname}</strong></div>
+                  <div><span>이메일</span><strong>{detail.email ?? '이메일 없음'}</strong></div>
+                  <div><span>가입 경로</span><strong>{providerLabel(detail.provider)}</strong></div>
+                  <div><span>프로필</span><strong>{detail.profileMissing ? '미생성' : '정상'}</strong></div>
                   <div><span>가입일</span><strong>{formatDate(detail.createdAt)}</strong></div>
+                  <div><span>최근 로그인</span><strong>{formatDate(detail.lastSignInAt)}</strong></div>
                   <div><span><PawPrint size={13} /> 반려동물</span><strong>{detail.petCount.toLocaleString()}</strong></div>
                   <div><span><NotebookPen size={13} /> 다이어리</span><strong>{detail.diaryCount.toLocaleString()}</strong></div>
                 </div>

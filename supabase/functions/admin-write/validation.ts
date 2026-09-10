@@ -51,6 +51,7 @@ export const ALLOWED_ACTIONS = new Set([
   'mapUnmatchedIngredient',
   'ignoreUnmatchedIngredient',
   'reopenUnmatchedIngredient',
+  'getSettings',
   'saveSettings',
   'dashboardMetrics',
   'listMembers',
@@ -245,6 +246,22 @@ export function normalizeSettingsPayload(raw: unknown): [string, unknown][] {
   for (const [key, value] of entries) {
     if (JSON.stringify(value ?? null).length > 4000) {
       throw new ValidationError(`설정 값이 너무 큽니다: ${key}`);
+    }
+
+    if (key === 'service_notice') {
+      if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        throw new ValidationError('서비스 공지 형식이 올바르지 않습니다.');
+      }
+      const notice = value as Record<string, unknown>;
+      if (typeof notice.enabled !== 'boolean' || typeof notice.message !== 'string') {
+        throw new ValidationError('서비스 공지의 노출 여부와 문구를 확인해 주세요.');
+      }
+      if (notice.message.length > 300) {
+        throw new ValidationError('서비스 공지는 300자 이내로 입력해 주세요.');
+      }
+      if (notice.enabled && notice.message.trim().length === 0) {
+        throw new ValidationError('공지를 노출하려면 문구를 입력해 주세요.');
+      }
     }
   }
   return entries;

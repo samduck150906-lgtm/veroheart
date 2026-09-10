@@ -547,6 +547,7 @@ export async function getRecentViews(userId: string) {
 // ─── Brands ──────────────────────────────────────────────────────────────────
 
 export async function getBrands(): Promise<string[]> {
+  if (!isSupabaseConfigured) return [];
   const { data, error } = await supabase
     .from('products')
     .select('brand_name')
@@ -558,6 +559,7 @@ export async function getBrands(): Promise<string[]> {
 }
 
 export async function getProductsByBrand(brandName: string): Promise<Product[]> {
+  if (!isSupabaseConfigured || !brandName.trim()) return [];
   const { data, error } = await supabase
     .from('products')
     .select(`

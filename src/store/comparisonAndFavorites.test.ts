@@ -15,6 +15,7 @@ const notifyWarning = vi.fn();
 const notifyError = vi.fn();
 
 vi.mock('../lib/supabase', () => ({
+  isSupabaseConfigured: false,
   supabase: { auth: { onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }) } },
   getProducts: vi.fn(async () => []),
   getInitialSessionUser: vi.fn(async () => null),

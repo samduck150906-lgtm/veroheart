@@ -13,6 +13,7 @@ import {
   deleteIngredient,
   fetchDiaryPage,
   fetchMemberDetail,
+  fetchSettings,
   fetchWaitlistPage,
   saveIngredient,
   saveSettings,
@@ -82,6 +83,28 @@ describe('adminApi: 쓰기 경로', () => {
     expect(h.adminWrite).toHaveBeenNthCalledWith(3, 'listWaitlist', expect.objectContaining({
       marketingConsent: false,
     }));
+  });
+
+  it('관리자 설정 조회도 공개 RLS가 아니라 admin-write를 거친다', async () => {
+    h.adminWrite.mockResolvedValue({
+      settings: [
+        {
+          key: 'service_notice',
+          value: { enabled: true, message: '운영 공지' },
+          description: '서비스 공지',
+          updated_at: '2026-09-10T00:00:00.000Z',
+          updated_by: 'admin',
+        },
+      ],
+    });
+
+    await expect(fetchSettings()).resolves.toEqual([
+      expect.objectContaining({
+        key: 'service_notice',
+        value: { enabled: true, message: '운영 공지' },
+      }),
+    ]);
+    expect(h.adminWrite).toHaveBeenCalledWith('getSettings');
   });
 
   it('허용되지 않은 설정 키는 서버로 보내지 않는다', async () => {

@@ -685,6 +685,71 @@
   border-color: #86efac;
 }
 
+.admin-notice-location {
+  margin: 0 0 12px;
+  line-height: 1.65;
+}
+
+.admin-notice-location a {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: #765d00;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.admin-field-meta {
+  margin-top: 5px;
+  color: #94a3b8;
+  font-size: 11px;
+  text-align: right;
+}
+
+.admin-notice-preview-wrap {
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.admin-notice-preview-wrap > span,
+.admin-notice-preview-wrap > small {
+  display: block;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.admin-notice-preview {
+  margin: 8px 0 0;
+  padding: 10px 14px;
+  border: 1px solid #f4cb2e;
+  border-radius: 8px;
+  background: #fff7cc;
+  color: #574600;
+  font-size: 13px;
+  font-weight: 750;
+  text-align: center;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.admin-notice-preview.is-hidden {
+  opacity: 0.45;
+}
+
+.admin-notice-preview-wrap > small {
+  margin-top: 6px;
+}
+
+.admin-member-email {
+  max-width: 260px;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 1200px) {
   .admin-grid-cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));

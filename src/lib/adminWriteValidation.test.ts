@@ -165,6 +165,18 @@ describe('admin-write: 시스템 설정 검증', () => {
       ValidationError,
     );
   });
+
+  it('노출 중인 공지는 문구가 필요하고 300자를 넘길 수 없다', () => {
+    expect(() => normalizeSettingsPayload({ service_notice: { enabled: true, message: '   ' } })).toThrow(
+      ValidationError,
+    );
+    expect(() => normalizeSettingsPayload({ service_notice: { enabled: true, message: 'x'.repeat(301) } })).toThrow(
+      ValidationError,
+    );
+    expect(normalizeSettingsPayload({ service_notice: { enabled: true, message: '정상 공지' } })).toEqual([
+      ['service_notice', { enabled: true, message: '정상 공지' }],
+    ]);
+  });
 });
 
 describe('admin-write: 이미지 검증', () => {
@@ -227,6 +239,7 @@ describe('admin-write: 기타 유틸', () => {
     expect(ALLOWED_ACTIONS.has('listFeedingLogs')).toBe(true);
     expect(ALLOWED_ACTIONS.has('listWaitlist')).toBe(true);
     expect(ALLOWED_ACTIONS.has('getMemberDetail')).toBe(true);
+    expect(ALLOWED_ACTIONS.has('getSettings')).toBe(true);
     expect(ALLOWED_ACTIONS.has('dropTable')).toBe(false);
   });
 });

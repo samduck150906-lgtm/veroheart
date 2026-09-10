@@ -14,9 +14,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const getProductDetail = vi.fn();
 const saveUserPet = vi.fn();
 const supabaseSignOut = vi.fn(async () => {});
+const openRealtimeChannel = vi.fn();
 
 vi.mock('../lib/supabase', () => ({
-  supabase: { auth: { onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }) } },
+  isSupabaseConfigured: false,
+  supabase: {
+    auth: { onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }) },
+    channel: (...args: unknown[]) => openRealtimeChannel(...args),
+  },
   getProducts: vi.fn(async () => []),
   getProductDetail: (...a: unknown[]) => getProductDetail(...a),
   getInitialSessionUser: vi.fn(async () => null),
@@ -53,6 +58,16 @@ beforeEach(() => {
   useStore.setState({ ...initial, selectedProduct: null, userId: null, favorites: [] });
   getProductDetail.mockReset();
   saveUserPet.mockReset();
+  openRealtimeChannel.mockReset();
+});
+
+describe('Supabase 미설정 초기화', () => {
+  it('더미 호스트로 Realtime WebSocket 구독을 만들지 않는다', async () => {
+    await useStore.getState().initApp();
+
+    expect(openRealtimeChannel).not.toHaveBeenCalled();
+    expect(useStore.getState().isInitializing).toBe(false);
+  });
 });
 
 describe('제품 상세 요청 순서', () => {

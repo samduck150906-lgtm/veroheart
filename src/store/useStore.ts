@@ -4,6 +4,7 @@ import type { UserPetProfile, Product } from '../types';
 import { DEFAULT_USER_PET_PROFILE } from '../types';
 import {
   supabase,
+  isSupabaseConfigured,
   getProducts,
   getInitialSessionUser,
   getUserPets,
@@ -152,7 +153,12 @@ export const useStore = create<StoreState>((set, get) => ({
         }, 250);
       };
 
-      if (!adminDataSyncChannel) {
+      // 환경변수가 없는 로컬/프리뷰 빌드에서는 Supabase 클라이언트가 안전한
+      // 더미 호스트를 사용한다. 이때 Realtime 구독까지 열면 모든 화면에서
+      // veroro.invalid WebSocket 연결 오류가 반복되므로, 실제 설정이 있을 때만
+      // 변경 구독을 만든다. 일반 데이터 함수들은 이미 같은 조건에서 빈 결과로
+      // 폴백한다.
+      if (isSupabaseConfigured && !adminDataSyncChannel) {
         adminDataSyncChannel = supabase
           .channel('admin-data-sync')
           .on(

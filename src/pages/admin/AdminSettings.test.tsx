@@ -85,6 +85,25 @@ describe('AdminSettings', () => {
     expect(screen.getByText('VITE_SUPABASE_ANON_KEY')).toBeTruthy();
   });
 
+  it('공지가 보이는 위치와 실제 사용자 화면 형태를 미리 보여준다', async () => {
+    render(<AdminSettings />);
+    expect(await screen.findByText('사용자 앱 상단 공지 배너')).toBeTruthy();
+    expect(screen.getByText(/사용자 앱의 헤더 바로 아래/)).toBeTruthy();
+    expect(screen.getByLabelText('사용자 앱 공지 미리보기')).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText('공지 문구'), { target: { value: '오늘 오후 3시 점검 예정' } });
+    expect(screen.getByLabelText('사용자 앱 공지 미리보기').textContent).toContain('오늘 오후 3시 점검 예정');
+    expect(screen.getByText('14 / 300자')).toBeTruthy();
+  });
+
+  it('빈 문구인 공지는 노출 상태로 저장하지 않는다', async () => {
+    render(<AdminSettings />);
+    await screen.findByText('사용자 앱 상단 공지 배너');
+    fireEvent.click(screen.getByRole('button', { name: '숨김' }));
+    fireEvent.click(screen.getByText('변경사항 저장'));
+    expect(h.saveSettings).not.toHaveBeenCalled();
+  });
+
   it('설정 조회 실패 시 마이그레이션 안내와 재시도를 보여준다', async () => {
     h.fetchSettings.mockRejectedValue(new Error('relation "app_settings" does not exist'));
     render(<AdminSettings />);

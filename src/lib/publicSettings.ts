@@ -70,9 +70,10 @@ export function mapSettingsRows(rows: { key: string; value: unknown }[]): Public
  * 예전에는 세션당 1회만 읽고 영구 캐시했다. 그래서 관리자가 점검 모드를 켜거나
  * 가입을 닫아도, 이미 앱을 열어 둔 사용자에게는 새로고침 전까지 반영되지 않았다.
  * 운영 스위치는 "지금 눌러서 지금 먹히는" 것이 목적이므로 수명을 둔다.
- * (요청 자체는 공개 키 몇 줄짜리 SELECT 라 5분 간격이면 부담이 없다.)
+ * 공지는 운영 중 즉시성이 중요하고 요청은 공개 키 몇 줄짜리 SELECT뿐이므로
+ * 30초 간격으로 동기화한다.
  */
-const SETTINGS_TTL_MS = 5 * 60 * 1000;
+const SETTINGS_TTL_MS = 30 * 1000;
 
 let cached: PublicSettings | null = null;
 let cachedAt = 0;

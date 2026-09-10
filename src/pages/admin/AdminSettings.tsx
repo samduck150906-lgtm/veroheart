@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Lock } from 'lucide-react';
+import { ExternalLink, Lock, Megaphone } from 'lucide-react';
 import { notify } from '../../store/useNotification';
 import {
   fetchSettings,
@@ -102,6 +102,10 @@ const AdminSettings: React.FC = () => {
 
   const handleSave = async () => {
     if (saving || !dirty) return;
+    if (notice.enabled && notice.message.trim().length === 0) {
+      notify.error('공지를 노출하려면 공지 문구를 입력해 주세요.');
+      return;
+    }
     setSaving(true);
     try {
       const changed: SettingsMap = {};
@@ -109,7 +113,11 @@ const AdminSettings: React.FC = () => {
         if (original[key] !== JSON.stringify(value)) changed[key as SettingKey] = value;
       }
       const count = await saveSettings(changed);
-      notify.success(`설정 ${count}건을 저장했습니다.`);
+      notify.success(
+        'service_notice' in changed
+          ? `설정 ${count}건을 저장했습니다. 공지는 사용자 앱 헤더 바로 아래에 표시됩니다.`
+          : `설정 ${count}건을 저장했습니다.`,
+      );
       await load();
     } catch (err) {
       notify.error(`저장 실패: ${err instanceof Error ? err.message : String(err)}`);
@@ -175,7 +183,17 @@ const AdminSettings: React.FC = () => {
           </div>
 
           <article className="admin-card" style={{ marginTop: 14 }}>
-            <h3 className="admin-card-title">서비스 공지</h3>
+            <h3 className="admin-card-title">
+              <Megaphone size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />
+              사용자 앱 상단 공지 배너
+            </h3>
+            <p className="admin-item-sub admin-notice-location">
+              사용자 앱의 헤더 바로 아래, 모든 일반 화면에 표시됩니다. 저장 후 열린 앱에는 최대 30초 안에 반영되며
+              새로고침하면 즉시 확인할 수 있습니다.{' '}
+              <a href="https://veroro-app.netlify.app/" target="_blank" rel="noreferrer">
+                사용자 앱 열기 <ExternalLink size={12} />
+              </a>
+            </p>
             <button
               type="button"
               className={`admin-setting-toggle ${notice.enabled ? 'active' : ''}`}
@@ -204,6 +222,14 @@ const AdminSettings: React.FC = () => {
                 }
                 placeholder="사용자에게 보여줄 공지 문구"
               />
+              <div className="admin-field-meta">{notice.message.length} / 300자</div>
+            </div>
+            <div className="admin-notice-preview-wrap" aria-label="사용자 앱 공지 미리보기">
+              <span>사용자 화면 미리보기</span>
+              <div className={`admin-notice-preview ${notice.enabled ? '' : 'is-hidden'}`}>
+                {notice.message.trim() || '공지 문구가 이곳에 표시됩니다.'}
+              </div>
+              {!notice.enabled && <small>현재 숨김 상태입니다.</small>}
             </div>
           </article>
 
