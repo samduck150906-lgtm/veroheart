@@ -54,6 +54,13 @@ function expectCurrentBreakdownShape(result: ReturnType<typeof getRecommendation
     ingredientSafety: expect.any(Number),
     healthSuitability: expect.any(Number),
     concernFit: expect.any(Number),
+    healthConcernPolicy: expect.objectContaining({
+      policy: 'health_concern_missing_evidence_neutral_v1',
+      concernFit: expect.any(Number),
+      evaluation: expect.any(Object),
+      projection: expect.any(Object),
+      fallback: expect.any(Object),
+    }),
     allergyPenalty: expect.any(Number),
     // 가금 알레르기 정책 v1.0(#88)에서 "같은 계열 주의" 감점이 분리돼 들어왔다.
     // 직접 일치(allergyHits/allergyPenalty)와 계열 주의를 나눠 근거로 보여준다.
@@ -150,8 +157,34 @@ describe('ingredient-centered compatibility score', () => {
       ingredients: [ingredient('닭고기')],
     });
 
-    expect(getRecommendationBreakdown(matched, concernProfile).concernFit).toBe(20);
-    expect(getRecommendationBreakdown(unmatched, concernProfile).concernFit).toBe(5);
+    const matchedBreakdown = getRecommendationBreakdown(matched, concernProfile);
+    const unmatchedBreakdown = getRecommendationBreakdown(unmatched, concernProfile);
+    expect(matchedBreakdown.concernFit).toBe(10);
+    expect(matchedBreakdown.healthConcernPolicy.projection.results[0]).toMatchObject({
+      factor: 0.5,
+      disposition: 'limited_combined_evidence',
+    });
+    expect(unmatchedBreakdown.concernFit).toBe(5);
+    expect(unmatchedBreakdown.healthConcernPolicy.projection.results[0]).toMatchObject({
+      factor: 0.25,
+      disposition: 'neutral_missing_evidence',
+    });
+  });
+
+  it('keeps a selected concern neutral when the ingredient array is missing', () => {
+    const concernProfile: UserPetProfile = { ...profile, healthConcerns: ['관절'] };
+    const missingIngredients = product({
+      ingredients: undefined as unknown as Product['ingredients'],
+      healthConcerns: [],
+    });
+    const breakdown = getRecommendationBreakdown(missingIngredients, concernProfile);
+
+    expect(breakdown.concernFit).toBe(5);
+    expect(breakdown.ingredientSafety).toBe(25);
+    expect(breakdown.healthConcernPolicy.projection.results[0]).toMatchObject({
+      factor: 0.25,
+      disposition: 'neutral_missing_evidence',
+    });
   });
 
   it('penalizes danger and caution ingredients inside ingredient safety', () => {

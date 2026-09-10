@@ -56,10 +56,9 @@ describe('health-concern score shadow matrix report', () => {
     expect(first.summary.legacyConcernFitDistribution).not.toEqual({});
     expect(first.summary.candidateConcernFitDistribution).not.toEqual({});
     expect(first.summary.scoreDeltaDistribution).not.toEqual({});
-    expect(first.summary.maximumIncrease).not.toBeNull();
+    expect(first.summary.maximumIncrease).toBeNull();
     expect(first.summary.maximumDecrease).not.toBeNull();
-    expect(first.summary.maximumIncrease?.delta).toBe(5);
-    expect(first.summary.maximumDecrease?.delta).toBe(-10);
+    expect(first.summary.maximumDecrease?.delta).toBe(-5);
     expect(first.summary.topAffectedProducts.length).toBeGreaterThan(0);
     expect(first.summary.productsWithMissingIngredientArrays).toEqual(['fixture-cat-missing-data']);
     expect(first.summary.productsWithEmptyHealthTags).toEqual(['fixture-cat-missing-data']);

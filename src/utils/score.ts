@@ -7,6 +7,10 @@ import {
 } from '../analysis/allergyFamilyMatcher';
 import { analyzeFeed } from '../analysis/feedAnalysis';
 import { classifyLegacyIngredientConcernEvidence } from '../health/anatomicalHeartEvidence';
+import {
+  evaluateRuntimeConcernFit,
+  type RuntimeConcernFitResult,
+} from '../health/runtimeConcernFit';
 import { resolveProductWithPhase2AliasAdapter } from '../lib/phase2AliasResolverProductAdapter';
 import { isPhase2AliasResolverRuntimeEnabled } from '../lib/phase2AliasResolverRuntimeFlag';
 
@@ -83,6 +87,7 @@ export interface RecommendationBreakdown {
   ingredientSafety: number;
   healthSuitability: number;
   concernFit: number;
+  healthConcernPolicy: RuntimeConcernFitResult;
   allergyPenalty: number;
   allergyCautionPenalty: number;
   preferencePenalty: number;
@@ -114,7 +119,7 @@ function countConcernMatches(product: Product, profile: UserPetProfile) {
     const matchesConcernTag = product.healthConcerns?.some((item) =>
       normalize(item).includes(normalizedConcern),
     );
-    const matchesIngredient = product.ingredients.some(
+    const matchesIngredient = (product.ingredients ?? []).some(
       (ingredient) => classifyLegacyIngredientConcernEvidence(concern, ingredient).matches,
     );
 
@@ -248,10 +253,12 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
   // 3) 사용자 고민 적합성 — 20점
   // 특별한 건강 고민이 없으면 감점하지 않는다. 고민이 있으면 매칭 비율을 반영한다.
   const uniqueConcerns = [...new Set(profile.healthConcerns.map(normalize).filter(Boolean))];
-  const concernFit =
+  const legacyConcernFit =
     uniqueConcerns.length === 0
       ? 20
       : Math.max(0, Math.min(20, Math.round(5 + 15 * (matchedConcerns.length / uniqueConcerns.length))));
+  const healthConcernPolicy = evaluateRuntimeConcernFit(scoringProduct, profile, legacyConcernFit);
+  const concernFit = healthConcernPolicy.concernFit;
 
   const baseScore = Math.max(
     0,
@@ -325,6 +332,7 @@ export function getRecommendationBreakdown(product: Product, profile: UserPetPro
     ingredientSafety,
     healthSuitability,
     concernFit,
+    healthConcernPolicy,
     allergyPenalty,
     allergyCautionPenalty,
     preferencePenalty,
