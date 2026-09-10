@@ -55,6 +55,8 @@ import {
 import { gradeMetaFromScore } from '../components/pdp/gradeMeta';
 import { REVIEW_QUICK_TAGS } from '../constants/reviewTags';
 import ProductThumb from '../components/ProductThumb';
+import { HealthConcernEvidence } from '../components/HealthConcernEvidence';
+import { buildHealthConcernPresentation } from '../health/concernPresentation';
 import { normalizeProductDisplayName, resolveBrandLabel } from '../utils/productDisplay';
 import { gradePalette, gradeVerdict } from '../lib/veroroDesign';
 import {
@@ -243,7 +245,11 @@ export default function Detail() {
   const hasIngredientData = (product.ingredients?.length ?? 0) > 0;
   const allergyDisplay = buildAllergyDisplayState(breakdown, profile.name || '우리 아이', {
     hasIngredientData,
+    hasAllergyProfile: personalized && profile.allergies.length > 0,
   });
+  const concernPresentation = personalized
+    ? buildHealthConcernPresentation(breakdown.healthConcernPolicy)
+    : null;
   const conclusion = report
     ? buildProductConclusion(product, profile, { ...report, score: safetyScore }, { personalized })
     : null;
@@ -262,14 +268,14 @@ export default function Detail() {
       ? { icon: <AlertTriangle size={18} />, label: '안전도', value: `위험 ${breakdown.dangerCount}개`, tone: 'danger' }
       : breakdown.cautionCount > 0
         ? { icon: <AlertTriangle size={18} />, label: '안전도', value: `주의 ${breakdown.cautionCount}개`, tone: 'caution' }
-        : { icon: <ShieldCheck size={18} />, label: '안전도', value: '위험 성분 없음', tone: 'excellent' },
+        : { icon: <ShieldCheck size={18} />, label: '안전도', value: '등록 정보상 미확인', tone: 'excellent' },
     allergyDisplay.level === 'hard'
       ? { icon: <Ban size={18} />, label: '알레르기', value: `${breakdown.allergyHits.length}개 주의`, tone: 'danger' }
       : allergyDisplay.level === 'caution'
         ? { icon: <Ban size={18} />, label: '알레르기', value: allergyDisplay.shortText, tone: 'caution' }
         : allergyDisplay.level === 'unknown'
           ? { icon: <Ban size={18} />, label: '알레르기', value: allergyDisplay.shortText, tone: 'caution' }
-          : { icon: <Ban size={18} />, label: '알레르기', value: '해당 없음', tone: 'excellent' },
+          : { icon: <Ban size={18} />, label: '알레르기', value: allergyDisplay.shortText, tone: 'excellent' },
     { icon: <Dog size={18} />, label: '추천 대상', value: petTypeLabel, tone: 'neutral' },
     { icon: <Calendar size={18} />, label: '생애주기', value: (product.targetLifeStage && product.targetLifeStage[0]) || '전연령', tone: 'neutral' },
     { icon: <Flame size={18} />, label: '제형', value: product.formulation || '건식', tone: 'neutral' },
@@ -300,7 +306,7 @@ export default function Detail() {
     {
       icon: <ShieldCheck size={16} />,
       text: hasIngredientData
-        ? `안전성: ${breakdown.dangerCount === 0 ? '위험 성분 없음' : `위험 성분 ${breakdown.dangerCount}개`}${breakdown.cautionCount ? `, 주의 ${breakdown.cautionCount}개` : ''} — ${gradeLabel} 등급입니다.`
+        ? `안전성: ${breakdown.dangerCount === 0 ? '현재 등록 원료에서 위험 성분 미확인' : `위험 성분 ${breakdown.dangerCount}개`}${breakdown.cautionCount ? `, 주의 ${breakdown.cautionCount}개` : ''} — ${gradeLabel} 등급입니다.`
         : '안전성: 원료 정보가 부족해 위험 성분 포함 여부를 판정할 수 없어요.',
     },
     {
@@ -309,11 +315,11 @@ export default function Detail() {
     },
     {
       icon: <Check size={16} />,
-      text: `결론: ${profile.name} 적합도 ${safetyScore}% — ${safetyScore >= 75 ? '추천합니다.' : safetyScore >= 60 ? '급여 시 소량부터 확인하세요.' : '대체 상품을 함께 검토하세요.'}`,
+      text: `결론: ${profile.name}의 현재 궁합 점수는 ${safetyScore}점이에요. ${safetyScore >= 75 ? '아래 근거와 정보 부족 항목을 함께 확인해 주세요.' : safetyScore >= 60 ? '급여 시 소량부터 확인하세요.' : '대체 상품을 함께 검토하세요.'}`,
     },
   ];
 
-  // ── 대체 상품 (더 건강 / 주의 성분 없음 / 전문가 검수) — 표시 점수와 같은 캡 적용 ──
+  // ── 대체 상품 (점수 우위 / 등록 정보상 주의 미확인 / 정보 확인) ──
   const currentScore = safetyScore;
   const expectedPet = profile.species === 'Cat' ? 'cat' : 'dog';
   const altPool = products
@@ -333,7 +339,7 @@ export default function Detail() {
   };
   const riskCount = (p: typeof product) => (p.ingredients ?? []).filter(i => i.riskLevel === 'danger' || i.riskLevel === 'caution').length;
   pickAlt(altPool.filter(x => x.score > currentScore).sort((a, b) => b.score - a.score), '더 건강해요', 'excellent');
-  pickAlt(altPool.filter(x => riskCount(x.p) === 0 && x.score >= 60).sort((a, b) => b.score - a.score), '주의 성분 없음', 'good');
+  pickAlt(altPool.filter(x => riskCount(x.p) === 0 && x.score >= 60).sort((a, b) => b.score - a.score), '등록 정보상 주의 성분 미확인', 'good');
   pickAlt(altPool.filter(x => x.p.verificationStatus === 'verified' && x.score >= 75).sort((a, b) => b.score - a.score), '정보가 확인된 제품', 'neutral');
 
   // 영양 레이더 축 (product.nutrition 있을 때만) — 매크로%를 0~100 스케일로 정규화
@@ -373,7 +379,7 @@ export default function Detail() {
     if (cautionIngs.length > 0) {
       return { headline: `확인해야 할 성분이 ${cautionIngs.length}개 있어요`, headlineColor: '#F59E0B' };
     }
-    return { headline: `${profile.name}가 안심하고 먹을 수 있어요!`, headlineColor: 'var(--text-dark)' };
+    return { headline: '현재 등록된 원료에서 주의 항목을 확인하지 못했어요', headlineColor: 'var(--text-dark)' };
   })();
 
   // ── 리뷰 요약(별점 분포·태그) — 실제 reviews 데이터에서 파생 ──
@@ -532,6 +538,9 @@ export default function Detail() {
 
       <GlanceGrid tiles={glanceTiles} />
       <FitForPetCard petName={profile.name} percent={safetyScore} chips={fitChips} reasons={breakdown.reasons} />
+      <div style={{ marginBottom: 16 }}>
+        <HealthConcernEvidence presentation={concernPresentation} />
+      </div>
 
       <TossCard style={{ marginBottom: '24px', padding: '20px' }}>
         {brandLabel && (

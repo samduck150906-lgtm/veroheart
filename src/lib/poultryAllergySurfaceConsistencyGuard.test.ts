@@ -39,14 +39,14 @@ describe('poultry allergy surface consistency guard', () => {
     );
   });
 
-  it('requires both HARD hits and cautions to be absent before AnalysisResult shows allergy-free copy', () => {
+  it('routes AnalysisResult through bounded shared allergy display copy', () => {
     const analysisResult = source('../pages/AnalysisResult.tsx');
 
-    expect(analysisResult).toContain("breakdown?.allergyHits.length === 0");
-    expect(analysisResult).toContain("(breakdown?.allergyCautions.length ?? 0) === 0");
-    expect(analysisResult).toContain('ingredients.length > 0');
-    expect(analysisResult).toContain("'알레르기 성분 미포함'");
-    expect(analysisResult).toContain("'주의·위험 성분 없음'");
+    expect(analysisResult).toContain('buildAllergyDisplayState');
+    expect(analysisResult).toContain('hasAllergyProfile');
+    expect(analysisResult).toContain("allergyDisplay?.level === 'none'");
+    expect(analysisResult).not.toContain('알레르기 성분 미포함');
+    expect(analysisResult).not.toContain('주의·위험 성분 없음');
   });
 
   it('keeps feed-analysis quality score objective while surfacing profile caution copy', () => {
