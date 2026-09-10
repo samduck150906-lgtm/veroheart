@@ -6,6 +6,8 @@ const productionShadowModules = [
   'src/lib/healthConcernProductionShadow.ts',
   'src/lib/healthConcernProductionShadowInput.ts',
   'src/lib/healthConcernProductionShadowMarkdown.ts',
+  'src/lib/healthConcernNeutralPolicy.ts',
+  'src/lib/healthConcernNeutralPolicyImpact.ts',
 ];
 
 function sourceFilesUnder(relativeDirectory: string): string[] {
@@ -35,6 +37,8 @@ describe('health-concern production shadow surface guard', () => {
       const source = readFileSync(join(process.cwd(), relativePath), 'utf8');
       expect(source, `${relativePath} must not import the local production shadow`)
         .not.toContain('healthConcernProductionShadow');
+      expect(source, `${relativePath} must not import the neutral policy sidecar`)
+        .not.toContain('healthConcernNeutralPolicy');
     }
   });
 

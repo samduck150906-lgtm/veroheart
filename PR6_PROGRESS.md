@@ -10,5 +10,5 @@
 
 - [x] Audit existing evaluator and shadow contracts.
 - [x] Checkpoint 1: policy contract and pure calculator; 12 focused tests, TypeScript, targeted ESLint, and diff check passed.
-- [ ] Checkpoint 2: copied-data aggregate comparison.
+- [x] Checkpoint 2: impact calculator and copied-data aggregate complete; 4,122 rows, no runtime-equivalent score/grade/ranking changes, no invariant violations.
 - [ ] Final validation and PR creation; do not merge.
