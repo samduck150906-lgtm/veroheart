@@ -128,6 +128,7 @@ type Db = any;
 interface AuthUserRecord {
   id: string;
   email?: string | null;
+  phone?: string | null;
   created_at?: string | null;
   last_sign_in_at?: string | null;
   email_confirmed_at?: string | null;
@@ -135,6 +136,12 @@ interface AuthUserRecord {
   is_anonymous?: boolean;
   app_metadata?: Record<string, unknown>;
   user_metadata?: Record<string, unknown>;
+  identities?: Array<{
+    id?: string;
+    identity_id?: string;
+    provider?: string;
+    identity_data?: Record<string, unknown>;
+  }>;
 }
 
 interface PublicUserProfile {
@@ -209,10 +216,31 @@ function memberNickname(user: AuthUserRecord, profile?: PublicUserProfile): stri
   return typeof found === 'string' ? found.trim() : '이름 없음';
 }
 
+function memberLoginId(user: AuthUserRecord): { loginId: string; loginIdKind: string } {
+  if (user.email?.trim()) return { loginId: user.email.trim(), loginIdKind: 'email' };
+  if (user.phone?.trim()) return { loginId: user.phone.trim(), loginIdKind: 'phone' };
+
+  const identity = user.identities?.find((item) => item.provider && item.provider !== 'email');
+  const identityEmail = identity?.identity_data?.email;
+  if (typeof identityEmail === 'string' && identityEmail.trim()) {
+    return { loginId: identityEmail.trim(), loginIdKind: 'email' };
+  }
+
+  const provider = identity?.provider ?? authProvider(user);
+  const providerId = identity?.identity_data?.sub ?? identity?.identity_id ?? identity?.id;
+  if ((typeof providerId === 'string' || typeof providerId === 'number') && String(providerId).trim()) {
+    return { loginId: `${provider}:${String(providerId).trim()}`, loginIdKind: 'provider' };
+  }
+
+  return { loginId: user.id, loginIdKind: 'internal' };
+}
+
 function toAdminMember(user: AuthUserRecord, profile?: PublicUserProfile) {
+  const login = memberLoginId(user);
   return {
     id: user.id,
     email: user.email ?? null,
+    ...login,
     nickname: memberNickname(user, profile),
     provider: authProvider(user),
     profileMissing: !profile,
@@ -650,7 +678,7 @@ serve(async (req) => {
           .filter((member) => {
             if (!normalizedSearch) return true;
             return member.nickname.toLocaleLowerCase('ko-KR').includes(normalizedSearch)
-              || (member.email ?? '').toLocaleLowerCase('en-US').includes(normalizedSearch);
+              || member.loginId.toLocaleLowerCase('en-US').includes(normalizedSearch);
           })
           .sort((a, b) => Date.parse(b.createdAt || '0') - Date.parse(a.createdAt || '0'));
         const data = members.slice(from, from + pageSize);

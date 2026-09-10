@@ -97,6 +97,8 @@ export interface DashboardPayload {
 export interface AdminMember {
   id: string;
   email: string | null;
+  loginId: string;
+  loginIdKind: string;
   nickname: string;
   provider: string;
   profileMissing: boolean;

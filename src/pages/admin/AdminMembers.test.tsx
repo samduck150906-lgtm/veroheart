@@ -19,6 +19,8 @@ describe('AdminMembers', () => {
         {
           id: '11111111-1111-4111-8111-111111111111',
           email: 'old-member@example.com',
+          loginId: 'old-member@example.com',
+          loginIdKind: 'email',
           nickname: 'old-member',
           provider: 'email',
           profileMissing: true,
@@ -39,8 +41,29 @@ describe('AdminMembers', () => {
 
     expect(await screen.findByText('old-member@example.com')).toBeTruthy();
     expect(screen.getByText('프로필 미생성')).toBeTruthy();
-    expect(screen.getByText('인증됨')).toBeTruthy();
+    expect(screen.getByText(/이메일 아이디 · 인증됨/)).toBeTruthy();
     expect(screen.getByPlaceholderText('이메일 또는 닉네임 검색')).toBeTruthy();
+    expect(screen.getByText('로그인 아이디')).toBeTruthy();
+    expect(screen.queryByText('회원 ID')).toBeNull();
     await waitFor(() => expect(h.fetchMembers).toHaveBeenCalledWith(1, 20, ''));
+  });
+
+  it('이전 Edge 응답에는 읽기 쉬운 아이디가 없어도 화면이 깨지지 않는다', async () => {
+    h.fetchMembers.mockResolvedValue({
+      total: 1,
+      rows: [
+        {
+          id: '22222222-2222-4222-8222-222222222222',
+          nickname: '기존 회원',
+          createdAt: '2025-01-01T00:00:00.000Z',
+          petCount: 0,
+        },
+      ],
+    });
+
+    render(<AdminMembers />);
+    expect(await screen.findByText('22222222-2222-4222-8222-222222222222')).toBeTruthy();
+    expect(screen.getByText('내부 ID 대체 표시')).toBeTruthy();
+    expect(screen.getByText('미확인')).toBeTruthy();
   });
 });

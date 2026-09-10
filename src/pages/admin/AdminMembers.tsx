@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, Eye, NotebookPen, PawPrint, Search, X } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Copy, Eye, NotebookPen, PawPrint, Search, X } from 'lucide-react';
 import { fetchMemberDetail, fetchMembers, type AdminMember, type AdminMemberDetail } from '../../lib/adminApi';
 
 const PAGE_SIZE = 20;
@@ -11,7 +11,8 @@ function formatDate(value: string | null): string {
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function providerLabel(provider: string): string {
+function providerLabel(provider: string | null | undefined): string {
+  if (!provider) return '미확인';
   const labels: Record<string, string> = {
     email: '이메일',
     kakao: '카카오',
@@ -19,6 +20,24 @@ function providerLabel(provider: string): string {
     apple: '애플',
   };
   return labels[provider.toLowerCase()] ?? provider;
+}
+
+function visibleLoginId(member: AdminMember): string {
+  return member.loginId || member.email || member.id;
+}
+
+function visibleLoginKind(member: AdminMember): string {
+  return member.loginIdKind || (member.email ? 'email' : 'internal');
+}
+
+function loginIdKindLabel(kind: string): string {
+  const labels: Record<string, string> = {
+    email: '이메일 아이디',
+    phone: '휴대전화 아이디',
+    provider: '소셜 계정 ID',
+    internal: '내부 ID 대체 표시',
+  };
+  return labels[kind] ?? '로그인 아이디';
 }
 
 /**
@@ -37,6 +56,7 @@ const AdminMembers: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [detail, setDetail] = useState<AdminMemberDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [copiedValue, setCopiedValue] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -82,6 +102,16 @@ const AdminMembers: React.FC = () => {
     }
   };
 
+  const copyValue = async (value: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedValue(value);
+      window.setTimeout(() => setCopiedValue((current) => (current === value ? null : current)), 1500);
+    } catch {
+      setCopiedValue(null);
+    }
+  };
+
   return (
     <div>
       <div className="admin-toolbar">
@@ -108,10 +138,9 @@ const AdminMembers: React.FC = () => {
         <table className="admin-table">
           <thead>
             <tr>
+              <th>로그인 아이디</th>
               <th>닉네임</th>
-              <th>이메일</th>
               <th>가입 경로</th>
-              <th>회원 ID</th>
               <th>반려동물 수</th>
               <th>가입일</th>
               <th style={{ textAlign: 'right' }}>관리</th>
@@ -120,13 +149,13 @@ const AdminMembers: React.FC = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7}>
+                <td colSpan={6}>
                   <div className="admin-empty">데이터를 불러오는 중입니다...</div>
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan={7}>
+                <td colSpan={6}>
                   <div className="admin-empty">
                     회원 목록을 불러오지 못했습니다.
                     <button type="button" className="admin-btn-soft" style={{ marginLeft: 10 }} onClick={load}>
@@ -137,27 +166,41 @@ const AdminMembers: React.FC = () => {
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={7}>
+                <td colSpan={6}>
                   <div className="admin-empty">표시할 회원이 없습니다.</div>
                 </td>
               </tr>
             ) : (
-              rows.map((member) => (
+              rows.map((member) => {
+                const loginId = visibleLoginId(member);
+                const loginKind = visibleLoginKind(member);
+                return (
                 <tr key={member.id}>
+                  <td>
+                    <div className="admin-copyable-value">
+                      <div>
+                        <div className="admin-item-main admin-member-email">{loginId}</div>
+                        <span className={`admin-tag ${member.emailConfirmed ? 'green' : 'gray'}`}>
+                          {loginIdKindLabel(loginKind)}
+                          {loginKind === 'email' ? (member.emailConfirmed ? ' · 인증됨' : ' · 미인증') : ''}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        className="admin-copy-btn"
+                        onClick={() => copyValue(loginId)}
+                        aria-label={`${loginId} 복사`}
+                        title="로그인 아이디 복사"
+                      >
+                        {copiedValue === loginId ? <Check size={13} /> : <Copy size={13} />}
+                      </button>
+                    </div>
+                  </td>
                   <td>
                     <div className="admin-item-main">{member.nickname}</div>
                     {member.profileMissing && <span className="admin-tag orange">프로필 미생성</span>}
                   </td>
-                  <td>
-                    <div className="admin-item-main admin-member-email">{member.email ?? '이메일 없음'}</div>
-                    {member.email && (
-                      <span className={`admin-tag ${member.emailConfirmed ? 'green' : 'gray'}`}>
-                        {member.emailConfirmed ? '인증됨' : '미인증'}
-                      </span>
-                    )}
-                  </td>
                   <td><span className="admin-tag blue">{providerLabel(member.provider)}</span></td>
-                  <td className="admin-item-sub">{member.id.slice(0, 8)}</td>
                   <td>
                     <strong>{member.petCount}</strong>
                   </td>
@@ -168,7 +211,8 @@ const AdminMembers: React.FC = () => {
                     </button>
                   </td>
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>
@@ -213,10 +257,27 @@ const AdminMembers: React.FC = () => {
             ) : detail ? (
               <>
                 <div className="admin-detail-summary">
+                  <div>
+                    <span>로그인 아이디</span>
+                    <strong className="admin-detail-copyable">
+                      {visibleLoginId(detail)}
+                      <button type="button" className="admin-copy-btn" onClick={() => copyValue(visibleLoginId(detail))} aria-label="로그인 아이디 복사">
+                        {copiedValue === visibleLoginId(detail) ? <Check size={13} /> : <Copy size={13} />}
+                      </button>
+                    </strong>
+                  </div>
                   <div><span>닉네임</span><strong>{detail.nickname}</strong></div>
-                  <div><span>이메일</span><strong>{detail.email ?? '이메일 없음'}</strong></div>
                   <div><span>가입 경로</span><strong>{providerLabel(detail.provider)}</strong></div>
                   <div><span>프로필</span><strong>{detail.profileMissing ? '미생성' : '정상'}</strong></div>
+                  <div>
+                    <span>내부 식별자</span>
+                    <strong className="admin-detail-copyable">
+                      {detail.id}
+                      <button type="button" className="admin-copy-btn" onClick={() => copyValue(detail.id)} aria-label="내부 식별자 복사">
+                        {copiedValue === detail.id ? <Check size={13} /> : <Copy size={13} />}
+                      </button>
+                    </strong>
+                  </div>
                   <div><span>가입일</span><strong>{formatDate(detail.createdAt)}</strong></div>
                   <div><span>최근 로그인</span><strong>{formatDate(detail.lastSignInAt)}</strong></div>
                   <div><span><PawPrint size={13} /> 반려동물</span><strong>{detail.petCount.toLocaleString()}</strong></div>
