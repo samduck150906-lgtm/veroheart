@@ -119,7 +119,7 @@ function countConcernMatches(product: Product, profile: UserPetProfile) {
     const matchesConcernTag = product.healthConcerns?.some((item) =>
       normalize(item).includes(normalizedConcern),
     );
-    const matchesIngredient = product.ingredients.some(
+    const matchesIngredient = (product.ingredients ?? []).some(
       (ingredient) => classifyLegacyIngredientConcernEvidence(concern, ingredient).matches,
     );
 

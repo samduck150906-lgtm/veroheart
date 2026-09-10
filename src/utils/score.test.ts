@@ -171,6 +171,22 @@ describe('ingredient-centered compatibility score', () => {
     });
   });
 
+  it('keeps a selected concern neutral when the ingredient array is missing', () => {
+    const concernProfile: UserPetProfile = { ...profile, healthConcerns: ['관절'] };
+    const missingIngredients = product({
+      ingredients: undefined as unknown as Product['ingredients'],
+      healthConcerns: [],
+    });
+    const breakdown = getRecommendationBreakdown(missingIngredients, concernProfile);
+
+    expect(breakdown.concernFit).toBe(5);
+    expect(breakdown.ingredientSafety).toBe(25);
+    expect(breakdown.healthConcernPolicy.projection.results[0]).toMatchObject({
+      factor: 0.25,
+      disposition: 'neutral_missing_evidence',
+    });
+  });
+
   it('penalizes danger and caution ingredients inside ingredient safety', () => {
     const safe = getRecommendationBreakdown(product(), profile);
     const risky = getRecommendationBreakdown(
