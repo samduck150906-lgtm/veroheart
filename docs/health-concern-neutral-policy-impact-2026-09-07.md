@@ -65,3 +65,15 @@ The copied-data result supports the shared missing-evidence neutral rule but doe
 - Only sufficient, active, comparable contradictory evidence may score below neutral.
 - No treatment, prevention, cure, therapeutic-suitability, or guaranteed-improvement claim is permitted.
 - Runtime score, ranking, display verdict, UI, allergy/poultry logic, data stores, database, migrations, environment, and deployment remain unchanged.
+
+## Validation
+
+- Focused policy and shadow tests: 5 files, 34 tests passed
+- Full Vitest suite: 147 files, 960 tests passed
+- TypeScript project build: passed
+- Production Vite build: passed; 1,881 modules transformed
+- Targeted ESLint: passed
+- Full ESLint: passed
+- `git diff --check`: passed
+- Runtime/UI import boundary: passed
+- Raw input path and temporary-harness history audit: passed
