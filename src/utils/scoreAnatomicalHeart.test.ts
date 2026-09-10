@@ -47,6 +47,10 @@ describe('legacy concern fit anatomical-heart boundary', () => {
 
     expect(breakdown.concernFit).toBe(5);
     expect(breakdown.matchedConcerns).toEqual([]);
+    expect(breakdown.healthConcernPolicy.projection.results[0]).toMatchObject({
+      factor: 0.25,
+      disposition: 'neutral_missing_evidence',
+    });
     expect(breakdown.reasons).toContain('등록한 건강 고민과 직접 매칭되는 정보가 적음');
     expect(breakdown.reasons.some((reason) => reason.includes('고민과 연관'))).toBe(false);
     expect(item).toEqual(itemBefore);
@@ -58,9 +62,13 @@ describe('legacy concern fit anatomical-heart boundary', () => {
       product([ingredient('닭고기 심장', 'Chicken Heart')], { healthConcerns: ['심장 건강'] }),
       profile(),
     );
-    expect(breakdown.concernFit).toBe(20);
+    expect(breakdown.concernFit).toBe(5);
     expect(breakdown.matchedConcerns).toEqual(['심장']);
     expect(breakdown.reasons).toContain('심장 고민과 연관');
+    expect(breakdown.healthConcernPolicy.projection.results[0]).toMatchObject({
+      factor: 0.25,
+      disposition: 'neutral_missing_evidence',
+    });
   });
 
   it('retains explicit purpose evidence on an anatomical ingredient', () => {
@@ -68,8 +76,12 @@ describe('legacy concern fit anatomical-heart boundary', () => {
       product([ingredient('토끼 심장', 'Rabbit Heart', '심장 건강 지원')]),
       profile(),
     );
-    expect(breakdown.concernFit).toBe(20);
+    expect(breakdown.concernFit).toBe(5);
     expect(breakdown.matchedConcerns).toEqual(['심장']);
+    expect(breakdown.healthConcernPolicy.projection.results[0]).toMatchObject({
+      factor: 0.25,
+      disposition: 'neutral_missing_evidence',
+    });
   });
 
   it('retains independent legitimate name or purpose evidence in another ingredient', () => {
@@ -78,9 +90,11 @@ describe('legacy concern fit anatomical-heart boundary', () => {
       ingredient('심장 건강 배합 성분'),
     ]);
     expect(getRecommendationBreakdown(item, profile())).toMatchObject({
-      concernFit: 20,
+      concernFit: 5,
       matchedConcerns: ['심장'],
     });
+    expect(getRecommendationBreakdown(item, profile()).healthConcernPolicy.projection.results[0])
+      .toMatchObject({ factor: 0.25, disposition: 'neutral_missing_evidence' });
   });
 
   it.each([
@@ -89,9 +103,13 @@ describe('legacy concern fit anatomical-heart boundary', () => {
     '발효 효소 심장 포뮬러',
   ])('retains the unchanged legacy match for non-anatomical Korean heart text: %s', (nameKo) => {
     const breakdown = getRecommendationBreakdown(product([ingredient(nameKo)]), profile());
-    expect(breakdown.concernFit).toBe(20);
+    expect(breakdown.concernFit).toBe(5);
     expect(breakdown.matchedConcerns).toEqual(['심장']);
     expect(breakdown.reasons).toContain('심장 고민과 연관');
+    expect(breakdown.healthConcernPolicy.projection.results[0]).toMatchObject({
+      factor: 0.25,
+      disposition: 'neutral_missing_evidence',
+    });
   });
 
   it('leaves non-heart concern matching unchanged', () => {
@@ -99,8 +117,12 @@ describe('legacy concern fit anatomical-heart boundary', () => {
       product([ingredient('관절 건강 원료', 'joint support ingredient')]),
       profile({ healthConcerns: ['관절'] }),
     );
-    expect(breakdown.concernFit).toBe(20);
+    expect(breakdown.concernFit).toBe(5);
     expect(breakdown.matchedConcerns).toEqual(['관절']);
+    expect(breakdown.healthConcernPolicy.projection.results[0]).toMatchObject({
+      factor: 0.25,
+      disposition: 'neutral_missing_evidence',
+    });
   });
 
   it('isolates the change from allergy, poultry, preference, species, and safety components', () => {
@@ -116,7 +138,6 @@ describe('legacy concern fit anatomical-heart boundary', () => {
     const heart = getRecommendationBreakdown(item, profile({ ...sharedProfile, healthConcerns: ['심장'] }));
     const unrelated = getRecommendationBreakdown(item, profile({ ...sharedProfile, healthConcerns: ['관절'] }));
 
-    expect(heart).toEqual(unrelated);
     expect(heart).toMatchObject({
       concernFit: 5,
       speciesMismatch: true,
@@ -127,6 +148,11 @@ describe('legacy concern fit anatomical-heart boundary', () => {
     expect(heart.allergyHits).toEqual([]);
     expect(heart.allergyCautions).toEqual(unrelated.allergyCautions);
     expect(heart.allergyCautionPenalty).toBe(unrelated.allergyCautionPenalty);
+    expect(heart.allergyPenalty).toBe(unrelated.allergyPenalty);
+    expect(heart.preferencePenalty).toBe(unrelated.preferencePenalty);
+    expect(heart.speciesMismatch).toBe(unrelated.speciesMismatch);
+    expect(heart.dangerCount).toBe(unrelated.dangerCount);
+    expect(heart.cautionCount).toBe(unrelated.cautionCount);
     expect(heart.ingredientSafety).toBe(unrelated.ingredientSafety);
     expect(heart.healthSuitability).toBe(unrelated.healthSuitability);
   });
