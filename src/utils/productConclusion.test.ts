@@ -77,7 +77,10 @@ describe('buildProductConclusion — 판정 우선순위(§6)', () => {
   });
 
   it('위험/부적합/데이터부족이 없으면 점수 기반 결론(매칭/보통/신중)', () => {
-    expect(buildProductConclusion(product(), dog, report(85)).tone).toBe('match');
+    const high = buildProductConclusion(product(), dog, report(85));
+    expect(high.tone).toBe('match');
+    expect(high.headline).toContain('현재 궁합 점수');
+    expect(high.headline).not.toContain('잘 맞아요');
     expect(buildProductConclusion(product(), dog, report(60)).tone).toBe('caution');
     expect(buildProductConclusion(product(), dog, report(30)).tone).toBe('caution');
   });

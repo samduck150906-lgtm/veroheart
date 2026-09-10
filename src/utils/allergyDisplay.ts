@@ -16,6 +16,8 @@ export interface AllergyDisplayState {
 export interface AllergyDisplayOptions {
   /** False means the product has no ingredient rows, so absence cannot be established. */
   hasIngredientData?: boolean;
+  /** False means there is no saved allergy selection to compare against. */
+  hasAllergyProfile?: boolean;
 }
 
 function cautionShortText(matches: AllergyRelationshipMatch[]): string {
@@ -43,21 +45,29 @@ export function buildAllergyDisplayState(
     return {
       level: 'caution',
       shortText: cautionShortText(input.allergyCautions),
-      summaryText: `${petName}의 알레르기와 관련된 원료가 있어 급여 전 확인 필요`,
+      summaryText: `${petName}의 선택 알레르기와 직접 일치하는 원료는 확인되지 않았지만, 다른 가금류 관련 원료가 있어 성분표와 급여 반응 확인 필요`,
     };
   }
 
   if (options.hasIngredientData === false) {
     return {
       level: 'unknown',
-      shortText: '판정 불가',
-      summaryText: '원료 정보 부족으로 알레르기 판정 불가',
+      shortText: '원료 정보 부족',
+      summaryText: '원료 정보가 부족해 등록 알레르기와의 일치 여부를 확인할 수 없음',
+    };
+  }
+
+  if (options.hasAllergyProfile === false) {
+    return {
+      level: 'unknown',
+      shortText: '프로필 미등록',
+      summaryText: '프로필에 비교할 알레르기가 등록되지 않음',
     };
   }
 
   return {
     level: 'none',
-    shortText: '해당 없음',
-    summaryText: '등록된 알레르기 성분 없음',
+    shortText: '직접 일치 미확인',
+    summaryText: '현재 등록된 원료 정보에서 프로필 알레르기와 직접 일치하는 성분은 확인되지 않음',
   };
 }

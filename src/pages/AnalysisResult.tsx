@@ -22,6 +22,9 @@ import type { IngredientCategory } from '../analysis/types';
 import { isPhase2ObservationBuildEnabled } from '../lib/phase2ObservationFlag';
 import BottomSheet from '../components/BottomSheet';
 import StateView from '../components/StateView';
+import { HealthConcernEvidence } from '../components/HealthConcernEvidence';
+import { buildHealthConcernPresentation } from '../health/concernPresentation';
+import { buildAllergyDisplayState } from '../utils/allergyDisplay';
 import type { Ingredient, Product } from '../types';
 
 /* ── 등급·위험도 시각 토큰 (신호등) ───────────────────────── */
@@ -245,6 +248,19 @@ export default function AnalysisResult() {
     () => (product ? generateAnalysisReport(product, profile) : null),
     [product, profile],
   );
+  const concernPresentation = useMemo(
+    () => (breakdown ? buildHealthConcernPresentation(breakdown.healthConcernPolicy) : null),
+    [breakdown],
+  );
+  const allergyDisplay = useMemo(
+    () => breakdown
+      ? buildAllergyDisplayState(breakdown, profile.name || '우리 아이', {
+          hasIngredientData: ingredients.length > 0,
+          hasAllergyProfile: hasPetProfile && profile.allergies.length > 0,
+        })
+      : null,
+    [breakdown, profile.name, profile.allergies.length, ingredients.length, hasPetProfile],
+  );
 
   // ── Phase 2 별칭 관찰(기본 OFF) ──
   // 플래그가 꺼져 있으면 여기서 아무 일도 일어나지 않는다(네트워크 호출 0건).
@@ -285,26 +301,26 @@ export default function AnalysisResult() {
   // ── 좋은 점 / 주의 사항 (엔진 하이라이트 + 파생값, 중복 제거) ──
   const positives = useMemo(() => {
     const base = [
-      safeIngredients.length > 5 ? `안전 성분 ${safeIngredients.length}가지 확인` : null,
-      ingredients.length > 0 && cautionIngredients.length === 0 && dangerIngredients.length === 0 ? '주의·위험 성분 없음' : null,
-      hasPetProfile && ingredients.length > 0 && breakdown?.allergyHits.length === 0 && (breakdown?.allergyCautions.length ?? 0) === 0 ? '알레르기 성분 미포함' : null,
-      breakdown && breakdown.matchedConcerns.length > 0 ? `${breakdown.matchedConcerns.join(', ')} 건강 고민과 연관` : null,
+      safeIngredients.length > 5 ? `등록 정보상 일반 성분 ${safeIngredients.length}가지 확인` : null,
+      ingredients.length > 0 && cautionIngredients.length === 0 && dangerIngredients.length === 0 ? '현재 등록된 원료에서 주의·위험 항목은 확인되지 않았어요' : null,
+      allergyDisplay?.level === 'none' ? allergyDisplay.summaryText : null,
     ].filter(Boolean) as string[];
     const fromReport = (report?.highlights ?? []).filter((h) => h.type === 'positive').map((h) => h.text);
     return Array.from(new Set([...base, ...fromReport]));
-  }, [safeIngredients.length, cautionIngredients.length, dangerIngredients.length, ingredients.length, hasPetProfile, breakdown, report]);
+  }, [safeIngredients.length, cautionIngredients.length, dangerIngredients.length, ingredients.length, allergyDisplay, report]);
 
   const cautions = useMemo(() => {
     const base = [
       cautionIngredients.length > 0 ? `주의 성분 ${cautionIngredients.length}가지: ${cautionIngredients.map((i) => i.nameKo).slice(0, 3).join(', ')}` : null,
       dangerIngredients.length > 0 ? `위험 성분 ${dangerIngredients.length}가지: ${dangerIngredients.map((i) => i.nameKo).slice(0, 2).join(', ')}` : null,
       breakdown && breakdown.allergyHits.length > 0 ? `알레르기 의심: ${breakdown.allergyHits.join(', ')}` : null,
+      allergyDisplay?.level === 'caution' || allergyDisplay?.level === 'unknown' ? allergyDisplay.summaryText : null,
       pipeline?.hasDCMRisk ? `상위 원료의 콩류(${pipeline.dcmLegumes.join(', ')})와 확장성 심근병증(DCM)의 연관성이 논의되고 있어요` : null,
       pipeline?.hasProteinInflation ? `식물성 단백(${pipeline.inflationDetails.join(', ')})이 단백질 수치를 실제보다 높여 보이게 할 수 있어요` : null,
     ].filter(Boolean) as string[];
     const fromReport = (report?.highlights ?? []).filter((h) => h.type !== 'positive').map((h) => h.text);
     return Array.from(new Set([...base, ...fromReport]));
-  }, [cautionIngredients, dangerIngredients, breakdown, report, pipeline]);
+  }, [cautionIngredients, dangerIngredients, breakdown, allergyDisplay, report, pipeline]);
 
   // ── 영양 구성: 보장성분(실측)이 있으면 사용, 없으면 형태 기반 추정 ──
   const nutrition = useMemo(() => {
@@ -353,15 +369,15 @@ export default function AnalysisResult() {
     if (product?.targetPetType === 'cat') t.push('고양이 보호자');
     else if (product?.targetPetType === 'dog') t.push('강아지 보호자');
     if (product?.targetLifeStage?.length) t.push(`${lifeStage} 반려동물`);
-    if (product?.healthConcerns?.length) t.push(`${product.healthConcerns.slice(0, 2).join('·')} 관리가 필요한 경우`);
-    return t.length ? t : ['일반적인 건강 상태의 반려동물'];
+    if (product?.healthConcerns?.length) t.push(`${product.healthConcerns.slice(0, 2).join('·')} 관련 태그 등록`);
+    return t.length ? t : ['등록된 대상 정보가 없어요'];
   }, [product, lifeStage]);
 
   const notRecommendTargets = useMemo(() => {
     const t: string[] = [];
     if (breakdown && breakdown.allergyHits.length > 0) t.push(`${breakdown.allergyHits.join(', ')} 알레르기가 있는 경우`);
     if (dangerIngredients.length > 0) t.push('민감성·기저질환이 있어 위험 성분을 피해야 하는 경우');
-    return t.length ? t : ['특별히 피해야 할 대상은 확인되지 않았어요'];
+    return t.length ? t : ['현재 등록 정보에서 별도 회피 대상은 확인되지 않았어요'];
   }, [breakdown, dangerIngredients.length]);
 
 
@@ -468,11 +484,12 @@ export default function AnalysisResult() {
           )}
           {pipeline && <IngredientEvidenceCard pipeline={pipeline} />}
           {diseaseResults.length > 0 && <DiseaseFitCard results={diseaseResults} petName={profile.name} />}
+          <HealthConcernEvidence presentation={concernPresentation} />
           <InfoBlock title="좋은 점" color={RISK.safe.color} items={positives} empty="특별히 강조할 좋은 점을 찾지 못했어요." />
-          <InfoBlock title="주의 사항" color={RISK.caution.color} items={cautions} empty="주의할 점은 발견되지 않았어요." />
+          <InfoBlock title="주의 사항" color={RISK.caution.color} items={cautions} empty="현재 등록된 정보에서 별도 주의 항목은 확인되지 않았어요." />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <TargetCard title="추천 대상" tone="good" items={recommendTargets} />
-            <TargetCard title="비추천 대상" tone="bad" items={notRecommendTargets} />
+            <TargetCard title="등록 대상" tone="good" items={recommendTargets} />
+            <TargetCard title="확인 필요" tone="bad" items={notRecommendTargets} />
           </div>
         </div>
       )}

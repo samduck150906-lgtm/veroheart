@@ -28,7 +28,8 @@ describe('allergy display state', () => {
     );
     expect(state.level).toBe('caution');
     expect(state.shortText).toBe('관련 가금류 주의');
-    expect(state.summaryText).toContain('알레르기와 관련된 원료');
+    expect(state.summaryText).toContain('직접 일치하는 원료는 확인되지 않았지만');
+    expect(state.summaryText).toContain('성분표와 급여 반응 확인');
   });
 
   it('uses kind-specific caution labels for uncertainty and processing forms', () => {
@@ -37,11 +38,27 @@ describe('allergy display state', () => {
     expect(buildAllergyDisplayState({ allergyHits: [], allergyCautions: [caution('processing_caution', '닭지방')] }).shortText).toBe('가금류 지방 주의');
   });
 
-  it('only says none when hard hits and cautions are both absent', () => {
-    expect(buildAllergyDisplayState({ allergyHits: [], allergyCautions: [] }, '보리')).toEqual({
+  it('uses bounded no-match copy only with ingredient data and a saved allergy profile', () => {
+    expect(buildAllergyDisplayState(
+      { allergyHits: [], allergyCautions: [] },
+      '보리',
+      { hasIngredientData: true, hasAllergyProfile: true },
+    )).toEqual({
       level: 'none',
-      shortText: '해당 없음',
-      summaryText: '등록된 알레르기 성분 없음',
+      shortText: '직접 일치 미확인',
+      summaryText: '현재 등록된 원료 정보에서 프로필 알레르기와 직접 일치하는 성분은 확인되지 않음',
+    });
+  });
+
+  it('does not call an empty allergy profile a no-match', () => {
+    expect(buildAllergyDisplayState(
+      { allergyHits: [], allergyCautions: [] },
+      '보리',
+      { hasIngredientData: true, hasAllergyProfile: false },
+    )).toEqual({
+      level: 'unknown',
+      shortText: '프로필 미등록',
+      summaryText: '프로필에 비교할 알레르기가 등록되지 않음',
     });
   });
 
@@ -54,8 +71,8 @@ describe('allergy display state', () => {
       ),
     ).toEqual({
       level: 'unknown',
-      shortText: '판정 불가',
-      summaryText: '원료 정보 부족으로 알레르기 판정 불가',
+      shortText: '원료 정보 부족',
+      summaryText: '원료 정보가 부족해 등록 알레르기와의 일치 여부를 확인할 수 없음',
     });
   });
 

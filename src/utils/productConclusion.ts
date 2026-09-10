@@ -78,7 +78,7 @@ export function buildProductConclusion(
         return {
           tone: 'caution',
           headline: '관련 가금류 성분을 주의해 주세요',
-          subline: `${profile.name}의 등록 알레르기와 같은 가금류 계열인 ${ingredients.join(', ')} 성분이 있어요. 교차반응 가능성이 보고되어 있어 처음 급여하거나 과거 반응 이력이 있다면 특히 주의해 주세요.`,
+          subline: `${profile.name}의 선택 알레르기와 직접 일치하는 원료는 확인되지 않았지만 같은 가금류 계열인 ${ingredients.join(', ')} 성분이 있어요. 교차반응 가능성을 고려해 성분표와 급여 반응을 확인해 주세요.`,
         };
       }
 
@@ -120,21 +120,21 @@ export function buildProductConclusion(
   if (score >= 85) {
     return {
       tone: 'match',
-      headline: `${profile.name}에게 ${score}% 잘 맞아요`,
+      headline: `${profile.name}의 현재 궁합 점수는 ${score}점이에요`,
       subline: report?.summary,
     };
   }
   if (score >= 70) {
     return {
       tone: 'match',
-      headline: `${profile.name}에게 대체로 잘 맞아요 (${score}%)`,
+      headline: `${profile.name}의 현재 궁합 점수는 ${score}점이에요`,
       subline: report?.summary,
     };
   }
   if (score >= 55) {
     return {
       tone: 'caution',
-      headline: `${profile.name}에게 보통이에요 (${score}%)`,
+      headline: `${profile.name}의 현재 궁합 점수는 ${score}점이에요`,
       subline: '성분표와 건강 고민 항목을 함께 확인해 주세요.',
     };
   }

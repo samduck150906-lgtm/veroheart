@@ -79,13 +79,6 @@ export function generateAnalysisReport(product: Product, profile: UserPetProfile
     });
   }
 
-  if (compatibility.matchedConcerns.length > 0) {
-    highlights.push({
-      text: `${compatibility.matchedConcerns.join(', ')} 고민과 연관된 성분·제품 정보가 확인됐어요.`,
-      type: 'positive',
-    });
-  }
-
   if (compatibility.preferencePenalty > 0 && compatibility.preferenceLevel != null) {
     highlights.push({
       text: `과거 기호도 ${compatibility.preferenceLevel.toFixed(1)}점으로, 잘 먹지 않았던 기록을 반영했어요.`,
@@ -94,7 +87,7 @@ export function generateAnalysisReport(product: Product, profile: UserPetProfile
   }
 
   let grade: AnalysisReport['grade'] = 'Fair';
-  let summary = `${profile.name}에게 무난한 편이지만 성분표를 함께 확인해 주세요.`;
+  let summary = `현재 등록된 성분·프로필 정보로 계산한 ${profile.name}의 궁합 점수예요. 근거와 정보 부족 항목을 함께 확인해 주세요.`;
 
   if (compatibility.speciesMismatch) {
     grade = 'Poor';
@@ -107,10 +100,10 @@ export function generateAnalysisReport(product: Product, profile: UserPetProfile
     summary = `관련 가금류 성분이 있어 교차반응 가능성에 주의가 필요해요.`;
   } else if (compatibility.total >= 85) {
     grade = 'Excellent';
-    summary = `${profile.name}에게 성분과 건강 조건이 매우 잘 맞는 제품입니다.`;
+    summary = `현재 등록된 성분·프로필 정보 기준 궁합 점수가 높은 편이에요. 근거와 정보 부족 항목을 함께 확인해 주세요.`;
   } else if (compatibility.total >= 70) {
     grade = 'Good';
-    summary = `${profile.name}에게 대체로 잘 맞는 제품입니다.`;
+    summary = `현재 등록된 성분·프로필 정보 기준 궁합 점수가 비교적 높은 편이에요. 세부 근거를 함께 확인해 주세요.`;
   } else if (compatibility.total < 50) {
     grade = 'Poor';
     summary = '급여 전 성분과 건강 조건을 다시 확인하는 편이 좋아요.';
