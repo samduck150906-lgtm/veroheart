@@ -26,6 +26,7 @@ const PAYLOAD: DashboardPayload = {
     ingredients: 539,
     productIngredientLinks: 4265,
     users: 120,
+    pets: 164,
     unmatchedPending: 509,
     feedingLogsLast7: 33,
     productsLast7: 12,

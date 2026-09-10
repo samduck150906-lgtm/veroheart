@@ -8,6 +8,7 @@ import {
   Link2,
   NotebookPen,
   Package,
+  PawPrint,
   Users,
   AlertCircle,
 } from 'lucide-react';
@@ -119,7 +120,15 @@ const AdminDashboard: React.FC = () => {
         icon: <Users size={18} />,
         delta: deltaPercent(metrics?.usersLast7 ?? null, metrics?.usersPrev7 ?? null),
         deltaLabel: '최근 7일 vs 직전 7일',
-        to: '/admin/members',
+        to: '/admin/users',
+      },
+      {
+        label: '전체 반려동물',
+        value: metrics?.pets ?? null,
+        icon: <PawPrint size={18} />,
+        delta: null,
+        deltaLabel: null,
+        to: '/admin/users',
       },
       {
         label: '검토 대기 미매칭 성분',
@@ -135,7 +144,7 @@ const AdminDashboard: React.FC = () => {
         icon: <NotebookPen size={18} />,
         delta: null,
         deltaLabel: null,
-        to: null,
+        to: '/admin/diary',
       },
     ],
     [metrics],
@@ -161,7 +170,7 @@ const AdminDashboard: React.FC = () => {
             <>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span className="admin-stat-label">{card.label}</span>
-                <span style={{ color: '#4f46e5' }}>{card.icon}</span>
+                <span style={{ color: '#9b7b00' }}>{card.icon}</span>
               </div>
               <div className="admin-stat-value">
                 {loading ? <span className="admin-skeleton" /> : card.value === null ? '–' : card.value.toLocaleString()}
@@ -242,7 +251,7 @@ const AdminDashboard: React.FC = () => {
             <>
               {payload.recentProducts.map((item) => (
                 <div className="admin-activity-item" key={`p-${item.id}`}>
-                  <div className="admin-activity-dot" style={{ background: '#6366f1' }} />
+                  <div className="admin-activity-dot" style={{ background: '#d4a900' }} />
                   <div className="admin-activity-body">
                     <strong>제품 등록 · {item.brand_name}</strong>
                     <p>

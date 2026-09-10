@@ -11,9 +11,10 @@ const migrationPath = resolve(
   process.cwd(),
   'supabase/migrations/20260630090000_non_destructive_ingredient_schema.sql',
 );
-const sql = readFileSync(preflightPath, 'utf8');
-const runbook = readFileSync(runbookPath, 'utf8');
-const migration = readFileSync(migrationPath, 'utf8');
+const readText = (path: string) => readFileSync(path, 'utf8').replace(/\r\n/g, '\n');
+const sql = readText(preflightPath);
+const runbook = readText(runbookPath);
+const migration = readText(migrationPath);
 
 function executableSql(source: string) {
   return source

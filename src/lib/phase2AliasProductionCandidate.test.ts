@@ -20,11 +20,12 @@ const rollbackPath = resolve(
   'supabase/tests/manual/phase2_alias_production_rollback_candidate.sql',
 );
 
-const runbook = readFileSync(runbookPath, 'utf8');
-const preflightSql = readFileSync(preflightPath, 'utf8');
-const applySql = readFileSync(applyPath, 'utf8');
-const verifySql = readFileSync(verifyPath, 'utf8');
-const rollbackSql = readFileSync(rollbackPath, 'utf8');
+const readText = (path: string) => readFileSync(path, 'utf8').replace(/\r\n/g, '\n');
+const runbook = readText(runbookPath);
+const preflightSql = readText(preflightPath);
+const applySql = readText(applyPath);
+const verifySql = readText(verifyPath);
+const rollbackSql = readText(rollbackPath);
 const allCandidateText = [runbook, preflightSql, applySql, verifySql, rollbackSql].join('\n');
 
 const approvedKeys = [

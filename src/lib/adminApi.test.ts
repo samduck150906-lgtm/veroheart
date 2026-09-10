@@ -11,6 +11,9 @@ import {
   PRODUCT_IMAGE_MAX_BYTES,
   SETTING_KEYS,
   deleteIngredient,
+  fetchDiaryPage,
+  fetchMemberDetail,
+  fetchWaitlistPage,
   saveIngredient,
   saveSettings,
   validateProductImage,
@@ -56,6 +59,29 @@ describe('adminApi: 쓰기 경로', () => {
     expect(h.adminWrite).toHaveBeenCalledWith('deleteIngredient', {
       id: '11111111-1111-4111-8111-111111111111',
     });
+  });
+
+  it('개인 데이터 운영 조회는 admin-write를 거친다', async () => {
+    h.adminWrite
+      .mockResolvedValueOnce({ id: 'member-1', nickname: '베로로', pets: [] })
+      .mockResolvedValueOnce({ total: 0, logs: [] })
+      .mockResolvedValueOnce({ total: 0, entries: [] });
+
+    await fetchMemberDetail('11111111-1111-4111-8111-111111111111');
+    await fetchDiaryPage({ page: 2, pageSize: 20, petType: 'cat', hasPhoto: true });
+    await fetchWaitlistPage({ page: 1, pageSize: 20, marketingConsent: false });
+
+    expect(h.adminWrite).toHaveBeenNthCalledWith(1, 'getMemberDetail', {
+      id: '11111111-1111-4111-8111-111111111111',
+    });
+    expect(h.adminWrite).toHaveBeenNthCalledWith(2, 'listFeedingLogs', expect.objectContaining({
+      page: 2,
+      petType: 'cat',
+      hasPhoto: true,
+    }));
+    expect(h.adminWrite).toHaveBeenNthCalledWith(3, 'listWaitlist', expect.objectContaining({
+      marketingConsent: false,
+    }));
   });
 
   it('허용되지 않은 설정 키는 서버로 보내지 않는다', async () => {

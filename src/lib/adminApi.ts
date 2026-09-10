@@ -42,6 +42,9 @@ export interface AdminProductRow {
   target_life_stage: string[] | null;
   image_url: string | null;
   min_price: number | null;
+  barcode?: string | null;
+  verification_status?: 'pending' | 'reviewed' | 'verified' | null;
+  ingredientCount?: number;
   created_at: string | null;
 }
 
@@ -75,6 +78,7 @@ export interface DashboardMetrics {
   ingredients: number | null;
   productIngredientLinks: number | null;
   users: number | null;
+  pets: number | null;
   unmatchedPending: number | null;
   feedingLogsLast7: number | null;
   productsLast7: number | null;
@@ -95,6 +99,66 @@ export interface AdminMember {
   nickname: string;
   createdAt: string;
   petCount: number;
+}
+
+export interface AdminMemberPet {
+  id: string;
+  name: string;
+  petType: 'dog' | 'cat';
+  ageGroup: 'baby' | 'adult' | 'senior';
+  breed: string | null;
+  weight: number | null;
+  allergies: string[];
+  conditions: string[];
+}
+
+export interface AdminMemberDetail extends AdminMember {
+  diaryCount: number;
+  pets: AdminMemberPet[];
+}
+
+export interface AdminDiaryRow {
+  id: string;
+  feedingDate: string;
+  feedingTime: string | null;
+  memberNickname: string;
+  petName: string;
+  petType: 'dog' | 'cat';
+  productName: string;
+  amount: number | null;
+  unit: string | null;
+  preferenceLevel: number | null;
+  imageUrl: string | null;
+  memo: string | null;
+  createdAt: string;
+}
+
+export interface DiaryListParams {
+  page: number;
+  pageSize: number;
+  query?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  petType?: 'dog' | 'cat' | '';
+  hasPhoto?: boolean | null;
+}
+
+export interface AdminWaitlistRow {
+  id: string;
+  email: string;
+  phone: string | null;
+  source: string;
+  marketingConsent: boolean;
+  privacyConsent: boolean;
+  createdAt: string;
+}
+
+export interface WaitlistListParams {
+  page: number;
+  pageSize: number;
+  query?: string;
+  source?: string;
+  marketingConsent?: boolean | null;
 }
 
 export interface Paged<T> {
@@ -162,6 +226,8 @@ export interface ProductListParams {
   pageSize: number;
   search?: string;
   category?: string;
+  petType?: string;
+  verificationStatus?: string;
 }
 
 /**
@@ -173,12 +239,14 @@ export async function fetchProductsPage({
   pageSize,
   search,
   category,
+  petType,
+  verificationStatus,
 }: ProductListParams): Promise<Paged<AdminProductRow>> {
   const from = Math.max(0, (page - 1) * pageSize);
   let builder = supabase
     .from('products')
     .select(
-      'id, name, brand_name, main_category, sub_category, target_pet_type, target_life_stage, image_url, min_price, created_at',
+      'id, name, brand_name, main_category, sub_category, target_pet_type, target_life_stage, image_url, min_price, barcode, verification_status, created_at, product_ingredients(count)',
       { count: 'exact' },
     )
     .order('created_at', { ascending: false })
@@ -187,15 +255,29 @@ export async function fetchProductsPage({
   const q = (search ?? '').trim();
   if (q) {
     const pattern = toOrIlikePattern(q);
-    builder = builder.or(`name.ilike.${pattern},brand_name.ilike.${pattern}`);
+    builder = builder.or(`name.ilike.${pattern},brand_name.ilike.${pattern},barcode.ilike.${pattern}`);
   }
   if (category && category !== '전체') {
     builder = builder.eq('main_category', category);
   }
+  if (petType && petType !== '전체') {
+    builder = builder.eq('target_pet_type', petType);
+  }
+  if (verificationStatus && verificationStatus !== '전체') {
+    builder = builder.eq('verification_status', verificationStatus);
+  }
 
   const { data, count, error } = await builder;
   if (error) throw new Error(error.message);
-  return { rows: (data ?? []) as AdminProductRow[], total: count ?? 0 };
+  const rows = (data ?? []).map((row) => {
+    const raw = row as unknown as AdminProductRow & { product_ingredients?: { count: number }[] };
+    return {
+      ...raw,
+      ingredientCount: raw.product_ingredients?.[0]?.count ?? 0,
+      product_ingredients: undefined,
+    } as AdminProductRow;
+  });
+  return { rows, total: count ?? 0 };
 }
 
 interface ProductIngredientJoinRow {
@@ -392,6 +474,34 @@ export async function fetchMembers(
     query: query ?? null,
   });
   return { rows: res.members ?? [], total: res.total ?? 0 };
+}
+
+export async function fetchMemberDetail(id: string): Promise<AdminMemberDetail> {
+  return adminWrite<AdminMemberDetail>('getMemberDetail', { id });
+}
+
+export async function fetchDiaryPage(params: DiaryListParams): Promise<Paged<AdminDiaryRow>> {
+  const res = await adminWrite<{ total: number; logs: AdminDiaryRow[] }>('listFeedingLogs', {
+    page: params.page,
+    pageSize: params.pageSize,
+    query: params.query ?? null,
+    dateFrom: params.dateFrom ?? null,
+    dateTo: params.dateTo ?? null,
+    petType: params.petType || null,
+    hasPhoto: params.hasPhoto ?? null,
+  });
+  return { rows: res.logs ?? [], total: res.total ?? 0 };
+}
+
+export async function fetchWaitlistPage(params: WaitlistListParams): Promise<Paged<AdminWaitlistRow>> {
+  const res = await adminWrite<{ total: number; entries: AdminWaitlistRow[] }>('listWaitlist', {
+    page: params.page,
+    pageSize: params.pageSize,
+    query: params.query ?? null,
+    source: params.source ?? null,
+    marketingConsent: params.marketingConsent ?? null,
+  });
+  return { rows: res.entries ?? [], total: res.total ?? 0 };
 }
 
 // ─── 시스템 설정 ─────────────────────────────────────────────────────────────

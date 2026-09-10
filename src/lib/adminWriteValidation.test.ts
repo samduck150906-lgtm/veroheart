@@ -13,6 +13,7 @@ import {
   detectImage,
   escapeLike,
   normalizeIngredientPayload,
+  normalizeNutritionPayload,
   normalizeProductIngredientItems,
   normalizeProductPayload,
   normalizeSettingsPayload,
@@ -93,6 +94,18 @@ describe('admin-write: 제품 payload 검증', () => {
     expect(out).not.toHaveProperty('avg_rating');
     expect(out).not.toHaveProperty('review_count');
     expect(out).not.toHaveProperty('created_at');
+  });
+});
+
+describe('admin-write: 보장성분 payload 검증', () => {
+  it('0~100 범위의 숫자만 허용한다', () => {
+    expect(normalizeNutritionPayload({ crude_protein: 31.5, moisture: '10' })).toEqual({
+      crude_protein: 31.5,
+      moisture: 10,
+    });
+    expect(() => normalizeNutritionPayload({ crude_fat: -1 })).toThrow(ValidationError);
+    expect(() => normalizeNutritionPayload({ moisture: 101 })).toThrow(ValidationError);
+    expect(() => normalizeNutritionPayload({ calcium: 'NaN' })).toThrow(ValidationError);
   });
 });
 
@@ -211,6 +224,9 @@ describe('admin-write: 기타 유틸', () => {
   it('허용 action 목록에 알 수 없는 action 이 없다', () => {
     expect(ALLOWED_ACTIONS.has('saveIngredient')).toBe(true);
     expect(ALLOWED_ACTIONS.has('deleteIngredient')).toBe(true);
+    expect(ALLOWED_ACTIONS.has('listFeedingLogs')).toBe(true);
+    expect(ALLOWED_ACTIONS.has('listWaitlist')).toBe(true);
+    expect(ALLOWED_ACTIONS.has('getMemberDetail')).toBe(true);
     expect(ALLOWED_ACTIONS.has('dropTable')).toBe(false);
   });
 });

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { Plus, Search, Edit2, Trash2, X, Upload, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
 import { notify } from '../../store/useNotification';
@@ -31,6 +31,7 @@ interface ProductForm {
   min_price?: number;
   barcode?: string;
   kcal_per_100g?: number;
+  verification_status?: 'pending' | 'reviewed' | 'verified';
 }
 
 /** nutritional_profiles(보장성분) 입력 폼 — 값은 문자열로 다루고 저장 시 숫자로 변환 */
@@ -74,16 +75,19 @@ const PAGE_SIZE = 20;
 
 const AdminProducts: React.FC = () => {
   const navigate = useNavigate();
+  const [urlParams, setUrlParams] = useSearchParams();
 
   const [products, setProducts] = useState<AdminProductRow[]>([]);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(() => Math.max(1, Number(urlParams.get('page')) || 1));
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState('전체');
+  const [searchInput, setSearchInput] = useState(() => urlParams.get('q') ?? '');
+  const [search, setSearch] = useState(() => urlParams.get('q') ?? '');
+  const [activeTab, setActiveTab] = useState(() => urlParams.get('category') ?? '전체');
+  const [petType, setPetType] = useState(() => urlParams.get('species') ?? '전체');
+  const [verificationStatus, setVerificationStatus] = useState(() => urlParams.get('status') ?? '전체');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<ProductForm>({});
@@ -114,6 +118,16 @@ const AdminProducts: React.FC = () => {
     };
   }, [searchInput]);
 
+  useEffect(() => {
+    const next = new URLSearchParams();
+    if (page > 1) next.set('page', String(page));
+    if (search) next.set('q', search);
+    if (activeTab !== '전체') next.set('category', activeTab);
+    if (petType !== '전체') next.set('species', petType);
+    if (verificationStatus !== '전체') next.set('status', verificationStatus);
+    setUrlParams(next, { replace: true });
+  }, [activeTab, page, petType, search, setUrlParams, verificationStatus]);
+
   const loadProducts = useCallback(async () => {
     setLoading(true);
     setLoadError(null);
@@ -123,6 +137,8 @@ const AdminProducts: React.FC = () => {
         pageSize: PAGE_SIZE,
         search,
         category: activeTab,
+        petType,
+        verificationStatus,
       });
       setProducts(rows);
       setTotal(count);
@@ -137,7 +153,7 @@ const AdminProducts: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, search, activeTab]);
+  }, [page, search, activeTab, petType, verificationStatus]);
 
   useEffect(() => {
     // 페이지/검색/카테고리 변경 시 서버에서 다시 조회한다.
@@ -156,6 +172,7 @@ const AdminProducts: React.FC = () => {
       product_health_concerns: [],
       has_risk_factors: [],
       min_price: 0,
+      verification_status: 'pending',
     });
     setNutrition(EMPTY_NUTRITION);
     setIngredientLinks([]);
@@ -225,6 +242,14 @@ const AdminProducts: React.FC = () => {
       setFormError('제품명과 브랜드는 필수입니다.');
       return;
     }
+    for (const { key, label } of NUTRITION_FIELDS) {
+      if (!nutrition[key].trim()) continue;
+      const value = Number(nutrition[key]);
+      if (!Number.isFinite(value) || value < 0 || value > 100) {
+        setFormError(`${label}은(는) 0에서 100 사이의 숫자로 입력해 주세요.`);
+        return;
+      }
+    }
 
     const normalizeCommaValues = (value?: string[] | string) =>
       (Array.isArray(value) ? value : (value || '').split(','))
@@ -254,10 +279,7 @@ const AdminProducts: React.FC = () => {
 
     // 보장성분: 입력값이 하나라도 있을 때만 함께 전송(숫자로 변환)
     const hasNutrition = NUTRITION_FIELDS.some(({ key }) => nutrition[key].trim() !== '');
-    const num = (s: string) => {
-      const n = parseFloat(s);
-      return Number.isFinite(n) ? n : 0;
-    };
+    const num = (s: string) => Number(s);
     const nutritionPayload = hasNutrition
       ? {
           crude_protein: num(nutrition.crude_protein),
@@ -345,16 +367,37 @@ const AdminProducts: React.FC = () => {
         ))}
       </div>
 
+      <div className="admin-query-bar admin-product-query-bar">
+        <label className="admin-compact-field">
+          <span>대상</span>
+          <select value={petType} onChange={(event) => { setPetType(event.target.value); setPage(1); }}>
+            <option value="전체">전체</option>
+            <option value="dog">Dog</option>
+            <option value="cat">Cat</option>
+            <option value="all">Dog + Cat</option>
+          </select>
+        </label>
+        <label className="admin-compact-field">
+          <span>검수 상태</span>
+          <select value={verificationStatus} onChange={(event) => { setVerificationStatus(event.target.value); setPage(1); }}>
+            <option value="전체">전체</option>
+            <option value="pending">검수 대기</option>
+            <option value="reviewed">검토됨</option>
+            <option value="verified">검수 완료</option>
+          </select>
+        </label>
+      </div>
+
       <div className="admin-search-wrap">
         <Search size={16} className="admin-search-icon" />
         <label htmlFor="admin-product-search" className="admin-visually-hidden">
-          제품명, 브랜드 검색
+          제품명, 브랜드, 바코드 검색
         </label>
         <input
           id="admin-product-search"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          placeholder="제품명, 브랜드 검색"
+          placeholder="제품명, 브랜드, 바코드 검색"
         />
       </div>
 
@@ -365,6 +408,8 @@ const AdminProducts: React.FC = () => {
               <th>아이템</th>
               <th>카테고리</th>
               <th>타겟</th>
+              <th>원재료</th>
+              <th>검수 상태</th>
               <th>가격</th>
               <th style={{ textAlign: 'right' }}>관리</th>
             </tr>
@@ -372,13 +417,13 @@ const AdminProducts: React.FC = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={5}>
+                <td colSpan={7}>
                   <div className="admin-empty">데이터를 불러오는 중입니다...</div>
                 </td>
               </tr>
             ) : loadError ? (
               <tr>
-                <td colSpan={5}>
+                <td colSpan={7}>
                   <div className="admin-empty">
                     제품을 불러오지 못했습니다.
                     <button type="button" className="admin-btn-soft" style={{ marginLeft: 10 }} onClick={loadProducts}>
@@ -389,9 +434,9 @@ const AdminProducts: React.FC = () => {
               </tr>
             ) : products.length === 0 ? (
               <tr>
-                <td colSpan={5}>
+                <td colSpan={7}>
                   <div className="admin-empty">
-                    {search || activeTab !== '전체'
+                    {search || activeTab !== '전체' || petType !== '전체' || verificationStatus !== '전체'
                       ? '검색 조건에 맞는 제품이 없습니다.'
                       : '등록된 제품이 없습니다. "신규 제품 등록"으로 시작해 주세요.'}
                   </div>
@@ -424,6 +469,12 @@ const AdminProducts: React.FC = () => {
                     <div className="admin-item-sub" style={{ marginTop: 6 }}>
                       {p.target_life_stage?.join(', ') || '전연령'}
                     </div>
+                  </td>
+                  <td><strong>{(p.ingredientCount ?? 0).toLocaleString()}</strong>개</td>
+                  <td>
+                    <span className={`admin-tag ${p.verification_status === 'verified' ? 'green' : p.verification_status === 'reviewed' ? 'yellow' : 'gray'}`}>
+                      {p.verification_status === 'verified' ? '검수 완료' : p.verification_status === 'reviewed' ? '검토됨' : '검수 대기'}
+                    </span>
                   </td>
                   <td>
                     <strong>₩{Number(p.min_price || 0).toLocaleString()}</strong>
@@ -588,6 +639,13 @@ const AdminProducts: React.FC = () => {
                 value={currentProduct.main_category}
                 options={MAIN_CATEGORIES}
                 onChange={(value) => setCurrentProduct({ ...currentProduct, main_category: value })}
+              />
+              <SelectField
+                id="pf-verification"
+                label="검수 상태"
+                value={currentProduct.verification_status}
+                options={['pending', 'reviewed', 'verified']}
+                onChange={(value) => setCurrentProduct({ ...currentProduct, verification_status: value as ProductForm['verification_status'] })}
               />
               <SelectField
                 id="pf-pet-type"

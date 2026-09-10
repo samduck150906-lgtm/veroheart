@@ -112,7 +112,7 @@ describe('AdminProducts', () => {
     fireEvent.click(screen.getByLabelText('다음 페이지'));
     await waitFor(() => expect(screen.getByText('2 / 3')).toBeTruthy());
 
-    fireEvent.change(screen.getByLabelText('제품명, 브랜드 검색'), { target: { value: '오리젠' } });
+    fireEvent.change(screen.getByLabelText('제품명, 브랜드, 바코드 검색'), { target: { value: '오리젠' } });
     await flushDebounce();
 
     await waitFor(() => {
@@ -135,6 +135,21 @@ describe('AdminProducts', () => {
       const last = h.fetchProductsPage.mock.calls.at(-1)?.[0] as ProductListParams;
       expect(last.page).toBe(1);
       expect(last.category).toBe('간식');
+    });
+  });
+
+  it('대상·검수 상태 필터를 서버 조회에 반영한다', async () => {
+    renderProducts();
+    await screen.findByText('테스트 사료 1');
+
+    fireEvent.change(screen.getByLabelText('대상'), { target: { value: 'cat' } });
+    fireEvent.change(screen.getByLabelText('검수 상태'), { target: { value: 'verified' } });
+
+    await waitFor(() => {
+      const last = h.fetchProductsPage.mock.calls.at(-1)?.[0] as ProductListParams;
+      expect(last.petType).toBe('cat');
+      expect(last.verificationStatus).toBe('verified');
+      expect(last.page).toBe(1);
     });
   });
 

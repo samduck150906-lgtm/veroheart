@@ -1,7 +1,7 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { ShieldCheck, Lock, Loader2 } from 'lucide-react';
 import { adminWrite } from '../../lib/supabase';
-import { readAdminToken, storeAdminToken } from '../../lib/adminSession';
+import { clearAdminSession, readAdminToken, storeAdminToken } from '../../lib/adminSession';
 import './admin.css';
 
 interface AdminAuthGuardProps {
@@ -17,9 +17,30 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // 로그인 시 서버 검증을 통과한 토큰만 저장되고, TTL 이 지나면 자동 만료된다.
-    if (readAdminToken()) setIsAuthenticated(true);
-    setIsLoading(false);
+    // 탭을 새로고침할 때도 세션 값만 믿지 않고 서버에서 다시 검증한다.
+    const token = readAdminToken();
+    let active = true;
+    if (!token) {
+      queueMicrotask(() => {
+        if (active) setIsLoading(false);
+      });
+      return () => {
+        active = false;
+      };
+    }
+    adminWrite('verifyAdmin', {}, token)
+      .then(() => {
+        if (active) setIsAuthenticated(true);
+      })
+      .catch(() => {
+        clearAdminSession();
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const handleAdminLogin = async () => {
@@ -40,7 +61,7 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
       setIsAuthenticated(true);
     } catch {
       // 아이디 존재 여부를 구분하지 않는 단일 메시지 — 계정 열거 방지
-      setError('관리자 인증에 실패했습니다.');
+      setError('아이디 또는 비밀번호를 확인해주세요.');
       setAdminPassword('');
     } finally {
       setIsSubmitting(false);
@@ -50,7 +71,7 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
   if (isLoading) {
     return (
       <div className="admin-auth-page">
-        <Loader2 size={40} style={{ animation: 'spin 1s linear infinite', color: '#a78bfa' }} />
+        <Loader2 size={40} style={{ animation: 'spin 1s linear infinite', color: '#FFD633' }} />
         <p style={{ marginTop: '14px', color: '#cbd5e1', fontWeight: 700 }}>인증 확인 중...</p>
         <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
       </div>
@@ -66,18 +87,19 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
               width: '72px',
               height: '72px',
               borderRadius: '20px',
-              backgroundColor: 'rgba(99,102,241,0.15)',
+              backgroundColor: '#FFF8D6',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               margin: '0 auto 20px',
             }}
           >
-            <ShieldCheck size={36} color="#6366f1" />
+            <ShieldCheck size={36} color="#171712" />
           </div>
 
-          <h1>VeRoRo Admin</h1>
-          <p>관리자 콘솔에 접근하려면 인증이 필요합니다.</p>
+          <div className="admin-auth-wordmark">VERORO</div>
+          <h1>Admin Console</h1>
+          <p>관리자 계정으로 로그인하세요.</p>
           <p style={{ marginTop: '-8px' }}>추가 가입은 불가하며 지정된 관리자만 로그인할 수 있습니다.</p>
 
           <div className="admin-auth-field">
@@ -124,7 +146,7 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
             <div>신규 관리자 가입: 불가</div>
             <div style={{ marginTop: '10px' }}>
               계정 문의:{' '}
-              <a href="mailto:veroro@eternalsix.com" style={{ color: '#6366f1' }}>
+              <a href="mailto:veroro@eternalsix.com" style={{ color: '#d4a900' }}>
                 veroro@eternalsix.com
               </a>
             </div>

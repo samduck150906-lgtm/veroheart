@@ -34,8 +34,11 @@ const AdminProducts = lazy(() => import('./pages/admin/AdminProducts'));
 const AdminIngredients = lazy(() => import('./pages/admin/AdminIngredients'));
 const AdminUnmatched = lazy(() => import('./pages/admin/AdminUnmatched'));
 const AdminMembers = lazy(() => import('./pages/admin/AdminMembers'));
+const AdminDiary = lazy(() => import('./pages/admin/AdminDiary'));
+const AdminWaitlist = lazy(() => import('./pages/admin/AdminWaitlist'));
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
 const AdminAuthGuard = lazy(() => import('./pages/admin/AdminAuthGuard'));
+const AdminNotFound = lazy(() => import('./pages/admin/AdminNotFound'));
 
 /** 라우트 전환 중 표시할 최소 로딩 인디케이터 — 레이아웃 시프트 없이 중앙에 고정 */
 function RouteFallback() {
@@ -158,8 +161,12 @@ function App() {
           <Route path="products" element={<AdminProducts />} />
           <Route path="ingredients" element={<AdminIngredients />} />
           <Route path="unmatched-ingredients" element={<AdminUnmatched />} />
-          <Route path="members" element={<AdminMembers />} />
+          <Route path="users" element={<AdminMembers />} />
+          <Route path="members" element={<Navigate to="/admin/users" replace />} />
+          <Route path="diary" element={<AdminDiary />} />
+          <Route path="waitlist" element={<AdminWaitlist />} />
           <Route path="settings" element={<AdminSettings />} />
+          <Route path="*" element={<AdminNotFound />} />
         </Route>
       </Routes>
       </Suspense>

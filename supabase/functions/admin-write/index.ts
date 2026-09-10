@@ -3,7 +3,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 import {
   ALLOWED_ACTIONS,
   MAX_PAGE_SIZE,
-  NUTRITION_COLUMNS,
   ValidationError,
   actorFromToken,
   clampPage,
@@ -12,12 +11,12 @@ import {
   detectImage,
   escapeLike,
   normalizeIngredientPayload,
+  normalizeNutritionPayload,
   normalizeProductIngredientItems,
   normalizeProductPayload,
   normalizeSettingsPayload,
   optionalText,
   optionalUuid,
-  pick,
   requireUuid,
 } from './validation.ts';
 
@@ -35,7 +34,6 @@ import {
  */
 const DEFAULT_ALLOWED_ORIGINS = [
   'https://veroro-admin.netlify.app',
-  'https://veroro-app.netlify.app',
   'http://localhost:5173',
   'http://localhost:4173',
 ];
@@ -218,7 +216,9 @@ serve(async (req) => {
         if (!productId) throw new Error('제품 ID를 확인할 수 없습니다.');
 
         // 보장성분(선택) — 값이 있을 때만 upsert
-        const nutrition = body.nutrition ? pick(body.nutrition as Record<string, unknown>, NUTRITION_COLUMNS) : null;
+        const nutrition = body.nutrition
+          ? normalizeNutritionPayload(body.nutrition as Record<string, unknown>)
+          : null;
         if (nutrition && Object.keys(nutrition).length > 0) {
           const { error: npErr } = await db
             .from('nutritional_profiles')
@@ -454,7 +454,7 @@ serve(async (req) => {
         };
 
         const [
-          products, ingredients, links, users, unmatchedPending,
+          products, ingredients, links, users, pets, unmatchedPending,
           productsLast7, productsPrev7, usersLast7, usersPrev7,
           feedingLogsLast7,
         ] = await Promise.all([
@@ -462,6 +462,7 @@ serve(async (req) => {
           countOf('ingredients'),
           countOf('product_ingredients'),
           countOf('users'),
+          countOf('pets'),
           countOf('unmatched_ingredients', (q) => q.eq('status', 'pending')),
           countOf('products', (q) => q.gte('created_at', last7)),
           countOf('products', (q) => q.gte('created_at', prev7).lt('created_at', last7)),
@@ -493,7 +494,7 @@ serve(async (req) => {
           {
             ok: true,
             metrics: {
-              products, ingredients, productIngredientLinks: links, users,
+              products, ingredients, productIngredientLinks: links, users, pets,
               unmatchedPending, feedingLogsLast7,
               productsLast7, productsPrev7, usersLast7, usersPrev7,
             },
@@ -545,6 +546,183 @@ serve(async (req) => {
               nickname: row.nickname,
               createdAt: row.created_at,
               petCount: petCounts.get(row.id) ?? 0,
+            })),
+          },
+          200,
+          cors,
+        );
+      }
+
+      case 'getMemberDetail': {
+        const id = requireUuid(body.id, '회원 ID');
+        const [{ data: member, error: memberError }, { data: pets, error: petsError }, diaryResult] =
+          await Promise.all([
+            db.from('users').select('id, nickname, created_at').eq('id', id).maybeSingle(),
+            db
+              .from('pets')
+              .select('id, name, pet_type, age_group, breed, weight, allergies, conditions')
+              .eq('user_id', id)
+              .order('created_at', { ascending: true }),
+            db
+              .from('pet_feeding_logs')
+              .select('id', { count: 'exact', head: true })
+              .eq('user_id', id),
+          ]);
+        if (memberError) throw memberError;
+        if (petsError) throw petsError;
+        if (diaryResult.error) throw diaryResult.error;
+        if (!member) throw new ValidationError('회원을 찾을 수 없습니다.');
+
+        return json(
+          {
+            ok: true,
+            id: member.id,
+            nickname: member.nickname,
+            createdAt: member.created_at,
+            petCount: (pets ?? []).length,
+            diaryCount: diaryResult.count ?? 0,
+            pets: (pets ?? []).map((pet: Record<string, unknown>) => ({
+              id: pet.id,
+              name: pet.name,
+              petType: pet.pet_type,
+              ageGroup: pet.age_group,
+              breed: pet.breed ?? null,
+              weight: pet.weight === null || pet.weight === undefined ? null : Number(pet.weight),
+              allergies: Array.isArray(pet.allergies) ? pet.allergies : [],
+              conditions: Array.isArray(pet.conditions) ? pet.conditions : [],
+            })),
+          },
+          200,
+          cors,
+        );
+      }
+
+      case 'listFeedingLogs': {
+        const page = clampPage(body.page);
+        const pageSize = clampPageSize(body.pageSize);
+        const from = (page - 1) * pageSize;
+        const petType = optionalText(body.petType, '대상 동물', 10);
+        if (petType && petType !== 'dog' && petType !== 'cat') {
+          throw new ValidationError('대상 동물 필터가 올바르지 않습니다.');
+        }
+
+        const parseDate = (value: unknown, label: string): string | null => {
+          const date = optionalText(value, label, 10);
+          if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            throw new ValidationError(`${label} 형식이 올바르지 않습니다.`);
+          }
+          return date;
+        };
+        const dateFrom = parseDate(body.dateFrom, '시작일');
+        const dateTo = parseDate(body.dateTo, '종료일');
+
+        let query = db
+          .from('pet_feeding_logs')
+          .select(
+            `id, feeding_date, feeding_time, amount, unit, preference_level, image_url, memo,
+             custom_product_name, created_at,
+             users (nickname), pets!inner (name, pet_type), products (name, brand_name)`,
+            { count: 'exact' },
+          )
+          .order('feeding_date', { ascending: false })
+          .order('feeding_time', { ascending: false, nullsFirst: false })
+          .range(from, from + pageSize - 1);
+
+        if (dateFrom) query = query.gte('feeding_date', dateFrom);
+        if (dateTo) query = query.lte('feeding_date', dateTo);
+        if (petType) query = query.eq('pets.pet_type', petType);
+        if (body.hasPhoto === true) query = query.not('image_url', 'is', null).neq('image_url', '');
+        if (body.hasPhoto === false) query = query.is('image_url', null);
+
+        const rawSearch = optionalText(body.query, '검색어', 100);
+        if (rawSearch) {
+          // PostgREST or() 구문의 구분자를 검색어에서 제거한다.
+          const search = rawSearch.replace(/[(),]/g, ' ').trim();
+          const like = `%${escapeLike(search)}%`;
+          const [{ data: members }, { data: pets }, { data: products }] = await Promise.all([
+            db.from('users').select('id').ilike('nickname', like).limit(100),
+            db.from('pets').select('id').ilike('name', like).limit(100),
+            db.from('products').select('id').or(`name.ilike.${like},brand_name.ilike.${like}`).limit(100),
+          ]);
+          const filters = [
+            `memo.ilike.${like}`,
+            `custom_product_name.ilike.${like}`,
+            ...((members ?? []).map((row: { id: string }) => `user_id.eq.${row.id}`)),
+            ...((pets ?? []).map((row: { id: string }) => `pet_id.eq.${row.id}`)),
+            ...((products ?? []).map((row: { id: string }) => `product_id.eq.${row.id}`)),
+          ];
+          query = query.or(filters.join(','));
+        }
+
+        const { data, count, error } = await query;
+        if (error) throw error;
+        const one = (value: unknown): Record<string, unknown> | null =>
+          Array.isArray(value)
+            ? ((value[0] as Record<string, unknown> | undefined) ?? null)
+            : ((value as Record<string, unknown> | null) ?? null);
+
+        return json(
+          {
+            ok: true,
+            total: count ?? 0,
+            logs: (data ?? []).map((row: Record<string, unknown>) => {
+              const member = one(row.users);
+              const pet = one(row.pets);
+              const product = one(row.products);
+              return {
+                id: row.id,
+                feedingDate: row.feeding_date,
+                feedingTime: row.feeding_time ?? null,
+                memberNickname: member?.nickname ?? '탈퇴 회원',
+                petName: pet?.name ?? '삭제된 반려동물',
+                petType: pet?.pet_type ?? 'dog',
+                productName: product?.name ?? row.custom_product_name ?? '제품 정보 없음',
+                amount: row.amount === null || row.amount === undefined ? null : Number(row.amount),
+                unit: row.unit ?? null,
+                preferenceLevel: row.preference_level ?? null,
+                imageUrl: row.image_url ?? null,
+                memo: row.memo ?? null,
+                createdAt: row.created_at,
+              };
+            }),
+          },
+          200,
+          cors,
+        );
+      }
+
+      case 'listWaitlist': {
+        const page = clampPage(body.page);
+        const pageSize = clampPageSize(body.pageSize);
+        const from = (page - 1) * pageSize;
+        let query = db
+          .from('launch_waitlist')
+          .select('id, email, phone, source, marketing_consent, privacy_consent, created_at', { count: 'exact' })
+          .order('created_at', { ascending: false })
+          .range(from, from + pageSize - 1);
+
+        const search = optionalText(body.query, '검색어', 100);
+        if (search) query = query.ilike('email', `%${escapeLike(search)}%`);
+        const source = optionalText(body.source, '유입 경로', 100);
+        if (source) query = query.eq('source', source);
+        if (typeof body.marketingConsent === 'boolean') {
+          query = query.eq('marketing_consent', body.marketingConsent);
+        }
+
+        const { data, count, error } = await query;
+        if (error) throw error;
+        return json(
+          {
+            ok: true,
+            total: count ?? 0,
+            entries: (data ?? []).map((row: Record<string, unknown>) => ({
+              id: row.id,
+              email: row.email,
+              phone: row.phone ?? null,
+              source: row.source,
+              marketingConsent: Boolean(row.marketing_consent),
+              privacyConsent: Boolean(row.privacy_consent),
+              createdAt: row.created_at,
             })),
           },
           200,

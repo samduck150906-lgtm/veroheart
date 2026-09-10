@@ -219,7 +219,7 @@ body.admin-desktop-mode {
   display: block;
   overflow: auto;
   overscroll-behavior-y: auto;
-  min-width: 1280px;
+  min-width: 0;
 }
 
 /* Mobile App Layout Container */
@@ -241,7 +241,7 @@ body.admin-desktop-mode #root {
   max-width: none;
   height: auto;
   min-height: 100vh;
-  min-width: 1280px;
+  min-width: 0;
   width: 100%;
   background: #f8fafc;
   box-shadow: none;

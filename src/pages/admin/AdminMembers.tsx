@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
-import { fetchMembers, type AdminMember } from '../../lib/adminApi';
+import { ChevronLeft, ChevronRight, Eye, NotebookPen, PawPrint, Search, X } from 'lucide-react';
+import { fetchMemberDetail, fetchMembers, type AdminMember, type AdminMemberDetail } from '../../lib/adminApi';
 
 const PAGE_SIZE = 20;
 
@@ -25,6 +25,8 @@ const AdminMembers: React.FC = () => {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [detail, setDetail] = useState<AdminMemberDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -59,6 +61,17 @@ const AdminMembers: React.FC = () => {
     load();
   }, [load]);
 
+  const openDetail = async (member: AdminMember) => {
+    setDetailLoading(true);
+    try {
+      setDetail(await fetchMemberDetail(member.id));
+    } catch {
+      setDetail(null);
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
   return (
     <div>
       <div className="admin-toolbar">
@@ -89,18 +102,19 @@ const AdminMembers: React.FC = () => {
               <th>회원 ID</th>
               <th>반려동물 수</th>
               <th>가입일</th>
+              <th style={{ textAlign: 'right' }}>관리</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={4}>
+                <td colSpan={5}>
                   <div className="admin-empty">데이터를 불러오는 중입니다...</div>
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan={4}>
+                <td colSpan={5}>
                   <div className="admin-empty">
                     회원 목록을 불러오지 못했습니다.
                     <button type="button" className="admin-btn-soft" style={{ marginLeft: 10 }} onClick={load}>
@@ -111,7 +125,7 @@ const AdminMembers: React.FC = () => {
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={4}>
+                <td colSpan={5}>
                   <div className="admin-empty">표시할 회원이 없습니다.</div>
                 </td>
               </tr>
@@ -126,6 +140,11 @@ const AdminMembers: React.FC = () => {
                     <strong>{member.petCount}</strong>
                   </td>
                   <td>{formatDate(member.createdAt)}</td>
+                  <td style={{ textAlign: 'right' }}>
+                    <button type="button" className="admin-icon-btn edit" onClick={() => openDetail(member)} aria-label={`${member.nickname} 상세 보기`}>
+                      <Eye size={14} />
+                    </button>
+                  </td>
                 </tr>
               ))
             )}
@@ -156,6 +175,56 @@ const AdminMembers: React.FC = () => {
           다음 <ChevronRight size={14} />
         </button>
       </nav>
+
+      {(detailLoading || detail) && (
+        <div className="admin-modal-backdrop" onClick={() => !detailLoading && setDetail(null)}>
+          <div className="admin-modal admin-member-detail" role="dialog" aria-modal="true" aria-label="회원 상세" onClick={(event) => event.stopPropagation()}>
+            <div className="admin-dialog-heading">
+              <div>
+                <h3>회원 상세</h3>
+                <p className="admin-item-sub">비밀번호·인증 시크릿은 표시하지 않습니다.</p>
+              </div>
+              <button type="button" className="admin-btn-soft" onClick={() => setDetail(null)} disabled={detailLoading} aria-label="상세 닫기"><X size={16} /></button>
+            </div>
+            {detailLoading ? (
+              <div className="admin-empty">회원 정보를 불러오는 중입니다…</div>
+            ) : detail ? (
+              <>
+                <div className="admin-detail-summary">
+                  <div><span>닉네임</span><strong>{detail.nickname}</strong></div>
+                  <div><span>가입일</span><strong>{formatDate(detail.createdAt)}</strong></div>
+                  <div><span><PawPrint size={13} /> 반려동물</span><strong>{detail.petCount.toLocaleString()}</strong></div>
+                  <div><span><NotebookPen size={13} /> 다이어리</span><strong>{detail.diaryCount.toLocaleString()}</strong></div>
+                </div>
+                <h4 className="admin-section-title">반려동물</h4>
+                {detail.pets.length === 0 ? (
+                  <div className="admin-empty">등록된 반려동물이 없습니다.</div>
+                ) : (
+                  <div className="admin-pet-grid">
+                    {detail.pets.map((pet) => (
+                      <article className="admin-pet-card" key={pet.id}>
+                        <div className="admin-pet-card-heading">
+                          <strong>{pet.name}</strong>
+                          <span className="admin-tag yellow">{pet.petType.toUpperCase()}</span>
+                        </div>
+                        <dl>
+                          <div><dt>품종</dt><dd>{pet.breed || '-'}</dd></div>
+                          <div><dt>라이프 스테이지</dt><dd>{pet.ageGroup}</dd></div>
+                          <div><dt>체중</dt><dd>{pet.weight === null ? '-' : `${pet.weight} kg`}</dd></div>
+                          <div><dt>알레르기</dt><dd>{pet.allergies.join(', ') || '없음'}</dd></div>
+                          <div><dt>건강 고민</dt><dd>{pet.conditions.join(', ') || '없음'}</dd></div>
+                        </dl>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="admin-empty">회원 정보를 불러오지 못했습니다.</div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

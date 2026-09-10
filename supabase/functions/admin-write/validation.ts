@@ -54,6 +54,9 @@ export const ALLOWED_ACTIONS = new Set([
   'saveSettings',
   'dashboardMetrics',
   'listMembers',
+  'getMemberDetail',
+  'listFeedingLogs',
+  'listWaitlist',
 ]);
 
 export const MAX_NAME_LEN = 200;
@@ -147,7 +150,36 @@ export function normalizeProductPayload(raw: Record<string, unknown>): Record<st
   const product = pick(raw, PRODUCT_COLUMNS);
   product.name = requireText(product.name, '제품명');
   product.brand_name = requireText(product.brand_name, '브랜드');
+
+  for (const key of ['min_price', 'kcal_per_100g', 'packaging_weight_g', 'sponsor_order']) {
+    if (product[key] === undefined || product[key] === null || product[key] === '') continue;
+    const value = Number(product[key]);
+    if (!Number.isFinite(value) || value < 0) throw new ValidationError(`${key} 값이 올바르지 않습니다.`);
+    product[key] = value;
+  }
+
+  if (product.target_pet_type && !['dog', 'cat', 'all'].includes(String(product.target_pet_type))) {
+    throw new ValidationError('대상 반려동물 값이 올바르지 않습니다.');
+  }
+  if (product.verification_status && !['pending', 'reviewed', 'verified'].includes(String(product.verification_status))) {
+    throw new ValidationError('검수 상태 값이 올바르지 않습니다.');
+  }
   return product;
+}
+
+/** 보장성분은 모두 백분율이므로 0~100 범위의 유한한 숫자만 허용한다. */
+export function normalizeNutritionPayload(raw: Record<string, unknown>): Record<string, number> {
+  const picked = pick(raw, NUTRITION_COLUMNS);
+  const normalized: Record<string, number> = {};
+  for (const [key, rawValue] of Object.entries(picked)) {
+    if (rawValue === null || rawValue === undefined || rawValue === '') continue;
+    const value = Number(rawValue);
+    if (!Number.isFinite(value) || value < 0 || value > 100) {
+      throw new ValidationError(`${key} 값은 0에서 100 사이의 숫자여야 합니다.`);
+    }
+    normalized[key] = value;
+  }
+  return normalized;
 }
 
 export function normalizeIngredientPayload(raw: Record<string, unknown>): Record<string, unknown> {

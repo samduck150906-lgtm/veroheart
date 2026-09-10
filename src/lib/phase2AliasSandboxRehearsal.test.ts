@@ -13,10 +13,11 @@ const rollbackPath = resolve(
   'supabase/tests/manual/phase2_alias_sandbox_rollback.sql',
 );
 
-const runbook = readFileSync(runbookPath, 'utf8');
-const rehearsalSql = readFileSync(rehearsalPath, 'utf8');
-const verifySql = readFileSync(verifyPath, 'utf8');
-const rollbackSql = readFileSync(rollbackPath, 'utf8');
+const readText = (path: string) => readFileSync(path, 'utf8').replace(/\r\n/g, '\n');
+const runbook = readText(runbookPath);
+const rehearsalSql = readText(rehearsalPath);
+const verifySql = readText(verifyPath);
+const rollbackSql = readText(rollbackPath);
 const allSql = [rehearsalSql, verifySql, rollbackSql].join('\n');
 
 const approvedKeys = [
