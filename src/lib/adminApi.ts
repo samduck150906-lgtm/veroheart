@@ -16,6 +16,7 @@ export type RiskLevel = 'safe' | 'caution' | 'danger';
 
 export interface AdminIngredient {
   id: string;
+  created_at?: string | null;
   name_ko: string;
   name_en: string | null;
   risk_level: RiskLevel;
@@ -209,7 +210,7 @@ export type SettingsMap = Partial<Record<SettingKey, unknown>>;
 // ─── 성분 ────────────────────────────────────────────────────────────────────
 
 const INGREDIENT_CORE_COLUMNS =
-  'id, name_ko, name_en, risk_level, description, category, caution_conditions, allergy_triggers';
+  'id, created_at, name_ko, name_en, risk_level, description, category, caution_conditions, allergy_triggers';
 const INGREDIENT_ENRICHED_COLUMNS =
   `${INGREDIENT_CORE_COLUMNS}, aliases, nutrition_tags, moisture_pct, crude_protein_pct, crude_fat_pct, crude_ash_pct, crude_fiber_pct, nutrition_source`;
 const NUTRITION_VALUE_KEYS = [

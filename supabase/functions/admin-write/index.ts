@@ -138,7 +138,7 @@ function savedProductMatches(saved: Record<string, unknown> | null, expected: Re
 }
 
 const SAVED_INGREDIENT_COLUMNS =
-  'id, name_ko, name_en, risk_level, description, category, aliases, nutrition_tags, caution_conditions, allergy_triggers, moisture_pct, crude_protein_pct, crude_fat_pct, crude_ash_pct, crude_fiber_pct, nutrition_source';
+  'id, created_at, name_ko, name_en, risk_level, description, category, aliases, nutrition_tags, caution_conditions, allergy_triggers, moisture_pct, crude_protein_pct, crude_fat_pct, crude_ash_pct, crude_fiber_pct, nutrition_source';
 
 interface AuthUserRecord {
   id: string;

@@ -48,6 +48,33 @@ const NUTRITION_FIELDS = [
 
 const STANDARD_FEED_SOURCE = '한국표준사료성분표 2022';
 
+type IngredientSort = 'newest' | 'oldest' | 'name-asc' | 'name-desc' | 'risk';
+type NutritionFilter = '전체' | 'linked' | 'missing';
+
+function hasStructuredNutrition(ingredient: AdminIngredient): boolean {
+  return NUTRITION_FIELDS.some(
+    ([key]) => ingredient[key] !== null && ingredient[key] !== undefined,
+  );
+}
+
+function registrationTime(value: string | null | undefined): number | null {
+  if (!value) return null;
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? timestamp : null;
+}
+
+function formatRegistrationDate(value: string | null | undefined): string {
+  const timestamp = registrationTime(value);
+  if (timestamp === null) return '-';
+  return new Intl.DateTimeFormat('ko-KR', {
+    year: '2-digit',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(timestamp);
+}
+
 function splitTerms(value: string): string[] {
   return [...new Set(value.split(/[,\n]/).map((item) => item.trim()).filter(Boolean))];
 }
@@ -121,6 +148,10 @@ const AdminIngredients: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('전체');
+  const [riskFilter, setRiskFilter] = useState<'전체' | RiskLevel>('전체');
+  const [nutritionFilter, setNutritionFilter] = useState<NutritionFilter>('전체');
+  const [sortOrder, setSortOrder] = useState<IngredientSort>('newest');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
@@ -153,18 +184,57 @@ const AdminIngredients: React.FC = () => {
     loadIngredients();
   }, [loadIngredients]);
 
-  const filteredIngredients = useMemo(() => {
+  const availableCategories = useMemo(
+    () => [...new Set([
+      ...INGREDIENT_CATEGORIES,
+      ...ingredients.map((item) => item.category).filter((value): value is string => Boolean(value)),
+    ])]
+      .sort((a, b) => a.localeCompare(b, 'ko-KR')),
+    [ingredients],
+  );
+
+  const visibleIngredients = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
-    if (!q) return ingredients;
-    return ingredients.filter(
-      (ingredient) =>
+    const riskWeight: Record<RiskLevel, number> = { danger: 0, caution: 1, safe: 2 };
+    const filtered = ingredients.filter((ingredient) => {
+      const matchesQuery = !q ||
         ingredient.name_ko.toLowerCase().includes(q) ||
         (ingredient.name_en ?? '').toLowerCase().includes(q) ||
         (ingredient.category ?? '').toLowerCase().includes(q) ||
         (ingredient.description ?? '').toLowerCase().includes(q) ||
-        (ingredient.aliases ?? []).some((alias) => alias.toLowerCase().includes(q)),
-    );
-  }, [ingredients, searchTerm]);
+        (ingredient.aliases ?? []).some((alias) => alias.toLowerCase().includes(q));
+      const matchesCategory = categoryFilter === '전체' || ingredient.category === categoryFilter;
+      const matchesRisk = riskFilter === '전체' || ingredient.risk_level === riskFilter;
+      const nutritionLinked = hasStructuredNutrition(ingredient);
+      const matchesNutrition = nutritionFilter === '전체' ||
+        (nutritionFilter === 'linked' ? nutritionLinked : !nutritionLinked);
+      return matchesQuery && matchesCategory && matchesRisk && matchesNutrition;
+    });
+
+    return filtered.sort((a, b) => {
+      if (sortOrder === 'name-asc') return a.name_ko.localeCompare(b.name_ko, 'ko-KR');
+      if (sortOrder === 'name-desc') return b.name_ko.localeCompare(a.name_ko, 'ko-KR');
+      if (sortOrder === 'risk') {
+        return riskWeight[a.risk_level] - riskWeight[b.risk_level] || a.name_ko.localeCompare(b.name_ko, 'ko-KR');
+      }
+      const aTime = registrationTime(a.created_at);
+      const bTime = registrationTime(b.created_at);
+      if (aTime === null && bTime === null) return a.name_ko.localeCompare(b.name_ko, 'ko-KR');
+      if (aTime === null) return 1;
+      if (bTime === null) return -1;
+      return sortOrder === 'newest' ? bTime - aTime : aTime - bTime;
+    });
+  }, [categoryFilter, ingredients, nutritionFilter, riskFilter, searchTerm, sortOrder]);
+
+  const filtersActive = Boolean(searchTerm.trim()) || categoryFilter !== '전체' ||
+    riskFilter !== '전체' || nutritionFilter !== '전체';
+
+  const resetFilters = () => {
+    setSearchTerm('');
+    setCategoryFilter('전체');
+    setRiskFilter('전체');
+    setNutritionFilter('전체');
+  };
 
   const stats = useMemo(
     () => ({
@@ -173,7 +243,7 @@ const AdminIngredients: React.FC = () => {
       danger: ingredients.filter((i) => i.risk_level === 'danger').length,
       classified: ingredients.filter((i) => Boolean(i.category)).length,
       nutrition: ingredients.filter((i) =>
-        NUTRITION_FIELDS.some(([key]) => i[key] !== null && i[key] !== undefined),
+        hasStructuredNutrition(i),
       ).length,
     }),
     [ingredients],
@@ -364,17 +434,78 @@ const AdminIngredients: React.FC = () => {
         </article>
       </div>
 
-      <div className="admin-search-wrap">
-        <Search size={16} className="admin-search-icon" />
-        <label htmlFor="admin-ingredient-search" className="admin-visually-hidden">
-          성분명 검색
+      <div className="admin-query-bar admin-ingredient-query-bar">
+        <div className="admin-search-wrap admin-query-search">
+          <Search size={16} className="admin-search-icon" />
+          <label htmlFor="admin-ingredient-search" className="admin-visually-hidden">
+            성분명 검색
+          </label>
+          <input
+            id="admin-ingredient-search"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="성분명·영문명·동의어·분류·설명 검색"
+          />
+        </div>
+        <label className="admin-compact-field">
+          <span>분류</span>
+          <select
+            aria-label="성분 분류 필터"
+            value={categoryFilter}
+            onChange={(event) => setCategoryFilter(event.target.value)}
+          >
+            <option value="전체">전체 분류</option>
+            {availableCategories.map((category) => (
+              <option key={category} value={category}>{category}</option>
+            ))}
+          </select>
         </label>
-        <input
-          id="admin-ingredient-search"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="성분명·영문명·동의어·분류·설명 검색"
-        />
+        <label className="admin-compact-field">
+          <span>위험도</span>
+          <select
+            aria-label="성분 위험도 필터"
+            value={riskFilter}
+            onChange={(event) => setRiskFilter(event.target.value as '전체' | RiskLevel)}
+          >
+            <option value="전체">전체 위험도</option>
+            <option value="danger">위험</option>
+            <option value="caution">주의</option>
+            <option value="safe">안전</option>
+          </select>
+        </label>
+        <label className="admin-compact-field">
+          <span>영양 DB</span>
+          <select
+            aria-label="영양 DB 필터"
+            value={nutritionFilter}
+            onChange={(event) => setNutritionFilter(event.target.value as NutritionFilter)}
+          >
+            <option value="전체">전체</option>
+            <option value="linked">연결됨</option>
+            <option value="missing">미등록</option>
+          </select>
+        </label>
+        <label className="admin-compact-field">
+          <span>보이는 순서</span>
+          <select
+            aria-label="성분 정렬 순서"
+            value={sortOrder}
+            onChange={(event) => setSortOrder(event.target.value as IngredientSort)}
+          >
+            <option value="newest">최근 등록순</option>
+            <option value="oldest">오래된 등록순</option>
+            <option value="name-asc">이름 가나다순</option>
+            <option value="name-desc">이름 가나다 역순</option>
+            <option value="risk">위험도 높은순</option>
+          </select>
+        </label>
+      </div>
+
+      <div className="admin-filter-summary" aria-live="polite">
+        <span>전체 {ingredients.length.toLocaleString()}개 중 <strong>{visibleIngredients.length.toLocaleString()}개</strong> 표시</span>
+        {filtersActive && (
+          <button type="button" className="admin-btn-soft" onClick={resetFilters}>필터 초기화</button>
+        )}
       </div>
 
       <div className="admin-table-wrap">
@@ -385,6 +516,7 @@ const AdminIngredients: React.FC = () => {
               <th>위험도</th>
               <th>분류</th>
               <th>영양 DB</th>
+              <th>등록일</th>
               <th>설명</th>
               <th style={{ textAlign: 'right' }}>관리</th>
             </tr>
@@ -392,13 +524,13 @@ const AdminIngredients: React.FC = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6}>
+                <td colSpan={7}>
                   <div className="admin-empty">데이터를 불러오는 중입니다...</div>
                 </td>
               </tr>
             ) : loadError ? (
               <tr>
-                <td colSpan={6}>
+                <td colSpan={7}>
                   <div className="admin-empty">
                     성분을 불러오지 못했습니다.
                     <button type="button" className="admin-btn-soft" style={{ marginLeft: 10 }} onClick={loadIngredients}>
@@ -407,9 +539,9 @@ const AdminIngredients: React.FC = () => {
                   </div>
                 </td>
               </tr>
-            ) : filteredIngredients.length === 0 ? (
+            ) : visibleIngredients.length === 0 ? (
               <tr>
-                <td colSpan={6}>
+                <td colSpan={7}>
                   <div className="admin-empty">
                     {ingredients.length === 0
                       ? '등록된 성분이 없습니다. "신규 성분 등록"으로 사전을 채워주세요.'
@@ -418,7 +550,7 @@ const AdminIngredients: React.FC = () => {
                 </td>
               </tr>
             ) : (
-              filteredIngredients.map((ingredient) => (
+              visibleIngredients.map((ingredient) => (
                 <tr key={ingredient.id}>
                   <td>
                     <div className="admin-item-main">{ingredient.name_ko}</div>
@@ -431,10 +563,11 @@ const AdminIngredients: React.FC = () => {
                   </td>
                   <td>{ingredient.category || '-'}</td>
                   <td>
-                    {NUTRITION_FIELDS.some(([key]) => ingredient[key] !== null && ingredient[key] !== undefined)
+                    {hasStructuredNutrition(ingredient)
                       ? <span className="admin-tag green">연결됨</span>
                       : <span className="admin-tag gray">미등록</span>}
                   </td>
+                  <td className="admin-registration-date">{formatRegistrationDate(ingredient.created_at)}</td>
                   <td>{ingredient.description || '-'}</td>
                   <td style={{ textAlign: 'right' }}>
                     <div className="admin-actions">

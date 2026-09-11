@@ -1231,6 +1231,36 @@
   justify-content: flex-end;
 }
 
+.admin-ingredient-query-bar .admin-compact-field {
+  min-width: 138px;
+}
+
+.admin-filter-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 34px;
+  margin: -4px 0 10px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.admin-filter-summary strong {
+  color: #0f172a;
+}
+
+.admin-filter-summary .admin-btn-soft {
+  padding: 6px 9px;
+  font-size: 11px;
+}
+
+.admin-registration-date {
+  min-width: 118px;
+  color: #64748b !important;
+  white-space: nowrap;
+}
+
 .admin-compact-field {
   display: flex;
   flex-direction: column;
