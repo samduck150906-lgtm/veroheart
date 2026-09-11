@@ -169,7 +169,16 @@ Supabase local SQL execution: not run (Docker/Deno unavailable)
 
 ## 15. Browser QA
 
-운영 REST 읽기 감사와 공식 사이트 조사는 수행했다. 로그인 후 쓰기, DB trigger, 신규 데이터 품질 화면의 운영 브라우저 QA는 migration/Edge Function 미배포 상태라 성공으로 보고하지 않는다.
+Netlify 배포 commit `27ede6d`에서 다음을 확인했다.
+
+```text
+GET https://veroro-app.netlify.app/               -> 200
+GET https://veroro-app.netlify.app/admin/products -> 404 (custom not-found page)
+GET https://veroro-admin.netlify.app/              -> 302 /admin
+GET https://veroro-admin.netlify.app/admin         -> 200
+```
+
+실제 Chrome 렌더링에서도 관리자 루트가 `/admin`으로 이동하고 관리자 로그인 화면이 표시됐으며, 공개 앱의 관리자 경로는 전용 404 화면으로 차단됐다. 운영 REST 읽기 감사와 공식 사이트 조사도 수행했다. 로그인 제출, 로그인 후 쓰기, DB trigger, 신규 데이터 품질 화면의 운영 브라우저 QA는 Supabase migration/`admin-write` Edge Function 미배포 상태이므로 성공으로 보고하지 않는다.
 
 ## 16. Remaining Issues
 
