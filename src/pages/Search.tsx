@@ -25,6 +25,7 @@ import FilterChip from '../components/ui/FilterChip';
 import { COMPANY } from '../constants/companyInfo';
 import { buildSearchSuggestions, deriveBrandOptions, type Suggestion } from '../utils/searchSuggestions';
 import { productsForPetFilter, visibleSymptomKeywords } from '../utils/searchKeywords';
+import { isHealthFilterAvailable } from '../utils/healthFilterAvailability';
 import { VR } from '../lib/veroroDesign';
 
 interface StandardFeedItem {
@@ -134,6 +135,16 @@ export default function Search() {
   const [showSuggest, setShowSuggest] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const brandOptions = useMemo(() => deriveBrandOptions(products), [products]);
+  const healthFilterAvailable = useMemo(() => isHealthFilterAvailable(products), [products]);
+
+  useEffect(() => {
+    if (healthFilterAvailable) return;
+    setFilters((current) => (
+      current.healthConcerns.length === 0 && !current.dietPreset
+        ? current
+        : { ...current, healthConcerns: [], dietPreset: false }
+    ));
+  }, [healthFilterAvailable]);
 
   const [excludedIngredients, setExcludedIngredients] = useState<string[]>([]);
   const [isStandardFeedModalOpen, setIsStandardFeedModalOpen] = useState(false);
@@ -636,7 +647,7 @@ export default function Search() {
           </div>
         </TossFilterSection>
 
-        <TossFilterSection title="특화 · 다이어트">
+        {healthFilterAvailable && <TossFilterSection title="특화 · 다이어트">
           <button
             type="button"
             onClick={() => setFilters(f => ({ ...f, dietPreset: !f.dietPreset }))}
@@ -651,7 +662,7 @@ export default function Search() {
           <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px', lineHeight: 1.5 }}>
             상품에 등록된 건강 태그(비만, 다이어트, 체중 등) 중 하나라도 있으면 표시됩니다.
           </p>
-        </TossFilterSection>
+        </TossFilterSection>}
 
         <TossFilterSection title="급여 형태">
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -681,7 +692,7 @@ export default function Search() {
           </TossFilterSection>
         )}
 
-        <TossFilterSection title="건강 고민 (복수 선택 · OR)">
+        {healthFilterAvailable ? <TossFilterSection title="건강 고민 (복수 선택 · OR)">
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             {HEALTH_CONCERN_OPTIONS.map(concern => (
               <FilterChip
@@ -692,7 +703,11 @@ export default function Search() {
               />
             ))}
           </div>
-        </TossFilterSection>
+        </TossFilterSection> : (
+          <div role="status" style={{ padding: '12px 14px', borderRadius: 12, background: 'var(--surface-alt)', color: 'var(--text-muted)', fontSize: 12.5, lineHeight: 1.5 }}>
+            건강 고민 정보가 더 채워지면 이 필터를 이용할 수 있어요.
+          </div>
+        )}
 
         <TossFilterSection title="성분 제외 필터">
           {excludedIngredients.length > 0 && (

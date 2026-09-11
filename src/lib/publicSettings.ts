@@ -3,7 +3,7 @@
  *
  * - `is_public = true` 인 키만 anon SELECT 정책으로 읽을 수 있다.
  * - 관리자 콘솔(admin-write Edge Function)만 쓸 수 있다.
- * - 앱 세션당 1회만 조회하고 캐시한다. 조회 실패 시 안전한 기본값으로 되돌아가
+ * - 짧은 TTL로 조회하고 캐시한다. 조회 실패 시 안전한 기본값으로 되돌아가
  *   설정 테이블이 없는 환경(마이그레이션 미적용)에서도 기능이 끊기지 않는다.
  */
 import { useEffect, useState } from 'react';
@@ -22,11 +22,16 @@ export interface PublicSettings {
   phase2AliasObservationEnabled: boolean;
 }
 
-/** 설정을 못 읽었을 때의 기본값 — 서비스가 열려 있는 상태를 기본으로 둔다. */
+/**
+ * 설정을 못 읽었을 때의 기본값.
+ *
+ * 핵심 서비스는 열어 두되, 운영자가 명시적으로 켜야 하는 홍보/이벤트 진입점은
+ * fail-close 한다. DB 장애 때문에 종료된 이벤트가 다시 노출되면 안 된다.
+ */
 export const DEFAULT_PUBLIC_SETTINGS: PublicSettings = {
   maintenanceMode: false,
   signupEnabled: true,
-  viralEventVisible: true,
+  viralEventVisible: false,
   serviceNotice: { enabled: false, message: '' },
   phase2AliasObservationEnabled: false,
 };

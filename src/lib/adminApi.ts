@@ -67,6 +67,7 @@ export interface AdminProductRow {
   verification_status?: 'pending' | 'reviewed' | 'verified' | null;
   is_visible: boolean;
   ingredientCount?: number;
+  nutritionCount?: number;
   created_at: string | null;
 }
 
@@ -107,6 +108,11 @@ export interface DashboardMetrics {
   productsPrev7: number | null;
   usersLast7: number | null;
   usersPrev7: number | null;
+  verifiedProducts: number | null;
+  productsWithoutIngredients: number | null;
+  productsWithoutNutrition: number | null;
+  productsWithoutBarcode: number | null;
+  dataQualityIssues: number | null;
 }
 
 export interface DashboardPayload {
@@ -230,6 +236,68 @@ function isMissingIngredientNutritionSchema(error: unknown): boolean {
   );
 }
 
+export type EnrichmentStatus =
+  | 'pending'
+  | 'in_progress'
+  | 'needs_variant'
+  | 'ready_for_review'
+  | 'completed'
+  | 'blocked';
+
+export interface EnrichmentQueueRow {
+  product_id: string;
+  status: EnrichmentStatus;
+  missing_fields: string[];
+  review_note: string | null;
+  reviewed_at: string | null;
+  updated_at: string;
+  products: {
+    id: string;
+    name: string;
+    brand_name: string;
+    target_pet_type: string | null;
+    main_category: string | null;
+    image_url: string | null;
+    barcode: string | null;
+    verification_status: string | null;
+  };
+  source_count: number;
+}
+
+export async function fetchEnrichmentQueue(input: {
+  page: number;
+  pageSize: number;
+  status?: string;
+  missingField?: string;
+}): Promise<Paged<EnrichmentQueueRow>> {
+  const response = await adminWrite<{ rows: EnrichmentQueueRow[]; total: number }>(
+    'listEnrichmentQueue',
+    input,
+  );
+  return { rows: response.rows ?? [], total: response.total ?? 0 };
+}
+
+export async function saveProductSource(input: {
+  productId: string;
+  sourceUrl: string;
+  sourceTitle?: string;
+  sourceType: string;
+  confidence: string;
+  fieldsVerified: string[];
+  rawIngredientText?: string;
+  notes?: string;
+}): Promise<void> {
+  await adminWrite('saveProductSource', input);
+}
+
+export async function updateEnrichmentStatus(input: {
+  productId: string;
+  status: EnrichmentStatus;
+  note?: string;
+}): Promise<void> {
+  await adminWrite('updateEnrichmentStatus', input);
+}
+
 function ingredientWithDefaults(row: Record<string, unknown>): AdminIngredient {
   return {
     ...(row as unknown as AdminIngredient),
@@ -350,7 +418,7 @@ export interface ProductListParams {
 }
 
 const ADMIN_PRODUCT_COLUMNS =
-  'id, name, brand_name, main_category, sub_category, target_pet_type, target_life_stage, image_url, min_price, barcode, verification_status, created_at, product_ingredients(count)';
+  'id, name, brand_name, main_category, sub_category, target_pet_type, target_life_stage, image_url, min_price, barcode, verification_status, created_at, product_ingredients(count), nutritional_profiles(count)';
 
 function isMissingVisibilityColumn(error: unknown): boolean {
   const value = error as { code?: string; message?: string } | null;
@@ -408,12 +476,17 @@ export async function fetchProductsPage({
   const { data, count, error } = result;
   if (error) throw new Error(error.message);
   const rows = (data ?? []).map((row) => {
-    const raw = row as unknown as AdminProductRow & { product_ingredients?: { count: number }[] };
+    const raw = row as unknown as AdminProductRow & {
+      product_ingredients?: { count: number }[];
+      nutritional_profiles?: { count: number }[];
+    };
     return {
       ...raw,
       is_visible: raw.is_visible !== false,
       ingredientCount: raw.product_ingredients?.[0]?.count ?? 0,
+      nutritionCount: raw.nutritional_profiles?.[0]?.count ?? 0,
       product_ingredients: undefined,
+      nutritional_profiles: undefined,
     } as AdminProductRow;
   });
   return { rows, total: count ?? 0 };

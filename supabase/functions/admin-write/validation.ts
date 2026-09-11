@@ -12,7 +12,7 @@ export class ValidationError extends Error {}
 export const PRODUCT_COLUMNS = [
   'name', 'brand_name', 'product_type', 'target_pet_type', 'image_url', 'min_price',
   'main_category', 'sub_category', 'target_life_stage', 'formulation',
-  'product_health_concerns', 'has_risk_factors', 'manufacturer_name',
+  'product_health_concerns', 'manufacturer_name',
   'verification_status', 'coupang_product_id', 'coupang_link', 'barcode',
   'kcal_per_100g', 'packaging_weight_g', 'allergen_free_tags',
   'is_sponsored', 'sponsor_label', 'sponsor_order',
@@ -43,6 +43,7 @@ export const SETTINGS_KEYS = new Set([
 
 /** 인증 없이 호출할 수 없는 action 목록 — 여기 없는 action 은 거부된다. */
 export const ALLOWED_ACTIONS = new Set([
+  'createAdminSession',
   'verifyAdmin',
   'saveProduct',
   'setProductVisibility',
@@ -58,6 +59,9 @@ export const ALLOWED_ACTIONS = new Set([
   'getSettings',
   'saveSettings',
   'dashboardMetrics',
+  'listEnrichmentQueue',
+  'saveProductSource',
+  'updateEnrichmentStatus',
   'listMembers',
   'getMemberDetail',
   'listFeedingLogs',

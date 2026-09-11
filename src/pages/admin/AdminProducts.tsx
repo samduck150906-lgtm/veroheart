@@ -27,7 +27,6 @@ interface ProductForm {
   target_life_stage?: string[];
   formulation?: string;
   product_health_concerns?: string[];
-  has_risk_factors?: string[];
   image_url?: string;
   min_price?: number;
   barcode?: string;
@@ -74,6 +73,20 @@ const MAIN_CATEGORIES = [
 
 const PET_TYPES = ['dog', 'cat', 'all'];
 const PAGE_SIZE = 20;
+
+function productCompleteness(product: AdminProductRow): number {
+  const fields = [
+    Boolean(product.name?.trim()),
+    Boolean(product.brand_name?.trim()),
+    Boolean(product.target_pet_type),
+    Boolean(product.main_category),
+    (product.ingredientCount ?? 0) > 0,
+    (product.nutritionCount ?? 0) > 0,
+    Boolean(product.barcode?.trim()),
+    Boolean(product.image_url?.trim()),
+  ];
+  return Math.round((fields.filter(Boolean).length / fields.length) * 100);
+}
 
 const AdminProducts: React.FC = () => {
   const navigate = useNavigate();
@@ -179,7 +192,6 @@ const AdminProducts: React.FC = () => {
       target_pet_type: 'dog',
       target_life_stage: [],
       product_health_concerns: [],
-      has_risk_factors: [],
       min_price: 0,
       verification_status: 'pending',
       is_visible: true,
@@ -284,7 +296,6 @@ const AdminProducts: React.FC = () => {
       min_price: Number.isFinite(Number(currentProduct.min_price)) ? Math.max(0, Number(currentProduct.min_price)) : 0,
       target_life_stage: normalizeCommaValues(currentProduct.target_life_stage),
       product_health_concerns: normalizeCommaValues(currentProduct.product_health_concerns),
-      has_risk_factors: normalizeCommaValues(currentProduct.has_risk_factors),
     };
 
     // 보장성분: 입력값이 하나라도 있을 때만 함께 전송(숫자로 변환)
@@ -456,6 +467,7 @@ const AdminProducts: React.FC = () => {
               <th>카테고리</th>
               <th>타겟</th>
               <th>원재료</th>
+              <th>정보완성도</th>
               <th>검수 상태</th>
               <th>앱 노출</th>
               <th>가격</th>
@@ -465,13 +477,13 @@ const AdminProducts: React.FC = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={8}>
+                <td colSpan={9}>
                   <div className="admin-empty">데이터를 불러오는 중입니다...</div>
                 </td>
               </tr>
             ) : loadError ? (
               <tr>
-                <td colSpan={8}>
+                <td colSpan={9}>
                   <div className="admin-empty">
                     제품을 불러오지 못했습니다.
                     <button type="button" className="admin-btn-soft" style={{ marginLeft: 10 }} onClick={loadProducts}>
@@ -482,7 +494,7 @@ const AdminProducts: React.FC = () => {
               </tr>
             ) : products.length === 0 ? (
               <tr>
-                <td colSpan={8}>
+                <td colSpan={9}>
                   <div className="admin-empty">
                     {search || activeTab !== '전체' || petType !== '전체' || verificationStatus !== '전체' || visibility !== '전체'
                       ? '검색 조건에 맞는 제품이 없습니다.'
@@ -519,6 +531,11 @@ const AdminProducts: React.FC = () => {
                     </div>
                   </td>
                   <td><strong>{(p.ingredientCount ?? 0).toLocaleString()}</strong>개</td>
+                  <td>
+                    <span className={`admin-tag ${productCompleteness(p) >= 80 ? 'green' : productCompleteness(p) >= 50 ? 'yellow' : 'red'}`}>
+                      {productCompleteness(p)}%
+                    </span>
+                  </td>
                   <td>
                     <span className={`admin-tag ${p.verification_status === 'verified' ? 'green' : p.verification_status === 'reviewed' ? 'yellow' : 'gray'}`}>
                       {p.verification_status === 'verified' ? '검수 완료' : p.verification_status === 'reviewed' ? '검토됨' : '검수 대기'}

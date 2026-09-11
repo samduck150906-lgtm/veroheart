@@ -1,0 +1,82 @@
+{
+  "generatedAt": "2026-09-11T02:15:00.000Z",
+  "policy": {
+    "variantGuessing": false,
+    "automaticDatabaseWrites": false,
+    "sourcePriority": [
+      "manufacturer",
+      "brand_official",
+      "official_distributor",
+      "retailer"
+    ]
+  },
+  "candidates": [
+    {
+      "productId": "60bc1503-38fb-424a-b6ea-72fc8f849e48",
+      "databaseName": "now 어덜트 강아지 그레인프리 스몰브리드 건식사료, 칠면조, 2kg, 1개",
+      "normalizedCandidate": "NOW FRESH Small Breed Adult Turkey, Salmon & Duck Grain-Free Dry Dog Food",
+      "status": "needs_variant",
+      "reason": "제품군과 생애단계는 일치하지만 현재 제조사 표기와 국내 2kg 유통 표기의 조지방 수치가 17%와 13%로 다르다. 국내 유통 formula/리뉴얼 시점을 라벨로 확정하기 전에는 원재료·영양을 자동 입력하지 않는다.",
+      "sources": [
+        {
+          "type": "manufacturer",
+          "url": "https://nowfresh.com/en-ca/dog-food/dry/grain-free-small-breed-adult-recipe-with-turkey-salmon-duck",
+          "confidence": "official",
+          "fieldsObserved": ["official_name", "ingredients", "guaranteed_analysis", "calories", "country"],
+          "observations": {
+            "crudeProteinMinPct": 27,
+            "crudeFatMinPct": 17,
+            "crudeFiberMaxPct": 4.5,
+            "moistureMaxPct": 10,
+            "calciumMinPct": 1.2,
+            "phosphorusMinPct": 0.7,
+            "caloriesKcalPerKg": 3711
+          }
+        },
+        {
+          "type": "retailer",
+          "url": "https://prod.danawa.com/info/?pcode=33139994",
+          "confidence": "medium",
+          "fieldsObserved": ["korean_name", "package_weight", "guaranteed_analysis", "manufacturer"],
+          "observations": {
+            "packageWeightG": 2000,
+            "crudeProteinPct": 27,
+            "crudeFatPct": 13,
+            "crudeFiberPct": 4.5,
+            "moisturePct": 10,
+            "calciumPct": 1.2,
+            "phosphorusPct": 0.7
+          }
+        }
+      ],
+      "requiredNextEvidence": "국내 판매 2kg 포장 뒷면의 제품 등록번호·원재료·보장성분 라벨"
+    },
+    {
+      "productId": "ddb77408-2476-451c-99b2-74b99726cb9b",
+      "databaseName": "이나바 챠오츄르",
+      "status": "needs_variant",
+      "reason": "DB 제품명이 시리즈명뿐이라 맛, 총합영양식 여부, 연령, 포장 수를 식별할 수 없다. 제조사 공식 사이트에도 서로 다른 원재료·열량·바코드를 가진 다수 variant가 존재하므로 어느 하나를 대신 입력하지 않는다.",
+      "sources": [
+        {
+          "type": "manufacturer",
+          "url": "https://www.inaba-petfood.co.jp/product/detail/CIAO%2B%E3%81%A1%E3%82%85%EF%BD%9E%E3%82%8B/3112",
+          "confidence": "official",
+          "fieldsObserved": ["variant_name", "ingredients", "guaranteed_analysis", "barcode"]
+        },
+        {
+          "type": "manufacturer",
+          "url": "https://www.inaba-petfood.co.jp/product/detail/CIAO%2B%E3%81%A1%E3%82%85%EF%BD%9E%E3%82%8B/6498",
+          "confidence": "official",
+          "fieldsObserved": ["different_variant_name", "different_ingredients", "different_guaranteed_analysis", "different_barcode"]
+        }
+      ],
+      "requiredNextEvidence": "실제 판매 제품의 맛·연령·포장 수 또는 JAN 바코드가 보이는 앞/뒤 라벨"
+    }
+  ],
+  "summary": {
+    "researched": 2,
+    "safeToAutoApply": 0,
+    "needsVariantIdentification": 2,
+    "databaseRowsMutated": 0
+  }
+}

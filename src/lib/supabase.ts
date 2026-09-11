@@ -208,19 +208,25 @@ export async function deleteUserPet(petId: string, userId: string): Promise<bool
 }
 
 // Products
-export async function getProducts(): Promise<Product[]> {
+export const MOBILE_PRODUCT_PAGE_SIZE = 50;
+
+/**
+ * 초기 홈/검색 제안용 경량 제품 페이지.
+ *
+ * 원재료 4,265개는 상세·실제 검색 결과에서 필요할 때만 가져온다. 앱 시작 시에는
+ * 50개 요약만 읽어 전체 458개 + 원재료 중첩 응답을 만들지 않는다.
+ */
+export async function getProductsPage(page = 1, pageSize = MOBILE_PRODUCT_PAGE_SIZE): Promise<Product[]> {
   if (!isSupabaseConfigured) return [];
-  // 목록에서는 ingredient_id 를 받지 않는다. 원료 행에서 id 를 읽을 수 있고,
-  // 링크 4,265건마다 UUID 를 한 번 더 실으면 응답이 다시 커진다.
+  const safePage = Math.max(1, Math.floor(page));
+  const safePageSize = Math.min(100, Math.max(1, Math.floor(pageSize)));
+  const from = (safePage - 1) * safePageSize;
   const { data, error } = await queryVisibleProducts((withVisibilityFilter) => {
     let builder = supabase.from('products').select(`
       id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
       target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
-      verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
-      product_ingredients (
-        ingredients (id, name_ko, name_en, risk_level, description)
-      )
-    `);
+      verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating
+    `).order('created_at', { ascending: false }).range(from, from + safePageSize - 1);
     if (withVisibilityFilter) builder = builder.eq('is_visible', true);
     return builder;
   });
@@ -230,6 +236,10 @@ export async function getProducts(): Promise<Product[]> {
     return [];
   }
   return asProductRows(data).map(mapProductFromSupabaseRow);
+}
+
+export async function getProducts(): Promise<Product[]> {
+  return getProductsPage(1, MOBILE_PRODUCT_PAGE_SIZE);
 }
 
 export async function getProductDetail(productId: string): Promise<Product | null> {

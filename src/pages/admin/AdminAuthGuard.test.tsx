@@ -35,7 +35,7 @@ describe('AdminAuthGuard', () => {
   });
 
   it('로그인 성공 후에만 보호된 화면을 연다', async () => {
-    h.adminWrite.mockResolvedValue({ ok: true });
+    h.adminWrite.mockResolvedValue({ ok: true, sessionToken: 'v1.payload.signature' });
     render(<AdminAuthGuard><div>보호된 화면</div></AdminAuthGuard>);
     await screen.findByText('Admin Console');
 
@@ -44,8 +44,8 @@ describe('AdminAuthGuard', () => {
     fireEvent.click(screen.getByText('인증하기'));
 
     expect(await screen.findByText('보호된 화면')).toBeTruthy();
-    expect(h.adminWrite).toHaveBeenCalledWith('verifyAdmin', {}, btoa('admin:secret'));
-    expect(h.storeAdminToken).toHaveBeenCalledWith(btoa('admin:secret'));
+    expect(h.adminWrite).toHaveBeenCalledWith('createAdminSession', {}, btoa('admin:secret'));
+    expect(h.storeAdminToken).toHaveBeenCalledWith('v1.payload.signature');
   });
 
   it('저장된 토큰도 서버 재검증에 실패하면 폐기한다', async () => {
@@ -56,5 +56,20 @@ describe('AdminAuthGuard', () => {
     expect(await screen.findByText('Admin Console')).toBeTruthy();
     await waitFor(() => expect(h.clearAdminSession).toHaveBeenCalled());
     expect(screen.queryByText('보호된 화면')).toBeNull();
+  });
+
+  it('구버전 Edge Function과의 배포 순서도 호환한다', async () => {
+    h.adminWrite
+      .mockRejectedValueOnce(new Error('알 수 없는 action'))
+      .mockResolvedValueOnce({ ok: true });
+    render(<AdminAuthGuard><div>보호된 화면</div></AdminAuthGuard>);
+    await screen.findByText('Admin Console');
+
+    fireEvent.change(screen.getByLabelText('관리자 아이디'), { target: { value: 'admin' } });
+    fireEvent.change(screen.getByLabelText('관리자 비밀번호'), { target: { value: 'secret' } });
+    fireEvent.click(screen.getByText('인증하기'));
+
+    expect(await screen.findByText('보호된 화면')).toBeTruthy();
+    expect(h.adminWrite).toHaveBeenNthCalledWith(2, 'verifyAdmin', {}, btoa('admin:secret'));
   });
 });

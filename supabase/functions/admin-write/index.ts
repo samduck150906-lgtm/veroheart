@@ -137,6 +137,72 @@ function savedProductMatches(saved: Record<string, unknown> | null, expected: Re
   );
 }
 
+const ADMIN_SESSION_SECONDS = 8 * 60 * 60;
+
+function base64UrlEncode(bytes: Uint8Array): string {
+  return btoa(String.fromCharCode(...bytes)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+}
+
+function base64UrlDecode(value: string): Uint8Array {
+  const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
+  return Uint8Array.from(atob(padded), (character) => character.charCodeAt(0));
+}
+
+async function sessionKey(secret: string, usage: KeyUsage[]): Promise<CryptoKey> {
+  return crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    usage,
+  );
+}
+
+async function issueAdminSession(actor: string, secret: string): Promise<string> {
+  const payload = base64UrlEncode(new TextEncoder().encode(JSON.stringify({
+    actor,
+    exp: Math.floor(Date.now() / 1000) + ADMIN_SESSION_SECONDS,
+    nonce: crypto.randomUUID(),
+  })));
+  const message = `v1.${payload}`;
+  const signature = new Uint8Array(await crypto.subtle.sign(
+    'HMAC',
+    await sessionKey(secret, ['sign']),
+    new TextEncoder().encode(message),
+  ));
+  return `${message}.${base64UrlEncode(signature)}`;
+}
+
+async function verifyAdminSession(token: string, secret: string): Promise<string | null> {
+  const parts = token.split('.');
+  if (parts.length !== 3 || parts[0] !== 'v1') return null;
+  try {
+    const valid = await crypto.subtle.verify(
+      'HMAC',
+      await sessionKey(secret, ['verify']),
+      base64UrlDecode(parts[2]),
+      new TextEncoder().encode(`${parts[0]}.${parts[1]}`),
+    );
+    if (!valid) return null;
+    const payload = JSON.parse(new TextDecoder().decode(base64UrlDecode(parts[1]))) as {
+      actor?: unknown;
+      exp?: unknown;
+    };
+    if (typeof payload.actor !== 'string' || !payload.actor || payload.actor.length > 64) return null;
+    if (typeof payload.exp !== 'number' || payload.exp <= Math.floor(Date.now() / 1000)) return null;
+    return payload.actor;
+  } catch {
+    return null;
+  }
+}
+
+async function authenticateAdminToken(token: string, secret: string): Promise<string | null> {
+  if (token.startsWith('v1.')) return verifyAdminSession(token, secret);
+  if (!ALLOWED_TOKEN_HASHES.has(await sha256Hex(token))) return null;
+  return actorFromToken(token);
+}
+
 const SAVED_INGREDIENT_COLUMNS =
   'id, created_at, name_ko, name_en, risk_level, description, category, aliases, nutrition_tags, caution_conditions, allergy_triggers, moisture_pct, crude_protein_pct, crude_fat_pct, crude_ash_pct, crude_fiber_pct, nutrition_source';
 
@@ -301,6 +367,13 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405, cors);
 
+  const url = Deno.env.get('SUPABASE_URL') ?? '';
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+  if (!url || !serviceKey) return json({ error: '서버 환경변수 누락' }, 500, cors);
+  // 별도 세션 시크릿이 없을 때도 서버 전용 service_role을 KDF 입력으로 사용한다.
+  // 어떤 경우에도 이 값이나 원본 관리자 자격증명은 응답/로그에 남기지 않는다.
+  const sessionSecret = Deno.env.get('ADMIN_SESSION_SECRET') ?? serviceKey;
+
   // ── 관리자 토큰 검증 (가장 먼저) ──
   const ipKey = clientKey(req);
   if (isRateLimited(ipKey)) {
@@ -308,16 +381,12 @@ serve(async (req) => {
   }
 
   const token = req.headers.get('x-admin-token') ?? '';
-  if (!token || !ALLOWED_TOKEN_HASHES.has(await sha256Hex(token))) {
+  const actor = token ? await authenticateAdminToken(token, sessionSecret) : null;
+  if (!actor) {
     recordFailure(ipKey);
     // 계정 존재 여부를 구분하지 않는 단일 메시지
     return json({ error: '관리자 인증 실패' }, 401, cors);
   }
-  const actor = actorFromToken(token);
-
-  const url = Deno.env.get('SUPABASE_URL') ?? '';
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-  if (!url || !serviceKey) return json({ error: '서버 환경변수 누락' }, 500, cors);
 
   const db = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
 
@@ -333,6 +402,9 @@ serve(async (req) => {
   try {
     switch (action) {
       // ── 인증 확인 ──────────────────────────────────────────────────────
+      case 'createAdminSession':
+        return json({ ok: true, sessionToken: await issueAdminSession(actor, sessionSecret) }, 200, cors);
+
       case 'verifyAdmin':
         return json({ ok: true, actor }, 200, cors);
 
@@ -675,6 +747,122 @@ serve(async (req) => {
         return json({ ok: true, saved: entries.length }, 200, cors);
       }
 
+      // ── 제품 데이터 보완 큐 / 출처 ────────────────────────────────────
+      case 'listEnrichmentQueue': {
+        const page = clampPage(body.page);
+        const pageSize = clampPageSize(body.pageSize);
+        const from = (page - 1) * pageSize;
+        const status = optionalText(body.status, '상태', 40);
+        const missingField = optionalText(body.missingField, '누락 필드', 40);
+
+        let query = db
+          .from('product_enrichment_queue')
+          .select(
+            'product_id, status, missing_fields, review_note, reviewed_by, reviewed_at, updated_at, products!inner(id, name, brand_name, target_pet_type, main_category, image_url, barcode, verification_status)',
+            { count: 'exact' },
+          )
+          .order('updated_at', { ascending: false })
+          .range(from, from + pageSize - 1);
+        if (status && status !== 'all') query = query.eq('status', status);
+        if (missingField && missingField !== 'all') query = query.contains('missing_fields', [missingField]);
+
+        const { data, count, error } = await query;
+        if (error) throw error;
+        const productIds = (data ?? []).map((row: { product_id: string }) => row.product_id);
+        const sourceCounts = new Map<string, number>();
+        if (productIds.length > 0) {
+          const { data: sources, error: sourceError } = await db
+            .from('product_data_sources')
+            .select('product_id')
+            .in('product_id', productIds);
+          if (sourceError) throw sourceError;
+          for (const source of sources ?? []) {
+            sourceCounts.set(source.product_id, (sourceCounts.get(source.product_id) ?? 0) + 1);
+          }
+        }
+        const rows = (data ?? []).map((row: { product_id: string }) => ({
+          ...row,
+          source_count: sourceCounts.get(row.product_id) ?? 0,
+        }));
+        return json({ ok: true, rows, total: count ?? 0 }, 200, cors);
+      }
+
+      case 'saveProductSource': {
+        const productId = requireUuid(body.productId ?? body.product_id, '제품 ID');
+        const sourceUrl = requireText(body.sourceUrl ?? body.source_url, '출처 URL', 2000);
+        let parsedUrl: URL;
+        try {
+          parsedUrl = new URL(sourceUrl);
+        } catch {
+          throw new ValidationError('출처 URL 형식이 올바르지 않습니다.');
+        }
+        if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+          throw new ValidationError('출처 URL은 http 또는 https만 허용됩니다.');
+        }
+
+        const sourceType = requireText(body.sourceType ?? body.source_type, '출처 유형', 40);
+        const confidence = requireText(body.confidence, '신뢰도', 40);
+        const allowedSourceTypes = new Set([
+          'manufacturer', 'brand_official', 'official_distributor', 'retailer', 'label_image', 'other',
+        ]);
+        const allowedConfidence = new Set(['official', 'high', 'medium_high', 'medium', 'low', 'unverified']);
+        if (!allowedSourceTypes.has(sourceType)) throw new ValidationError('출처 유형이 올바르지 않습니다.');
+        if (!allowedConfidence.has(confidence)) throw new ValidationError('출처 신뢰도가 올바르지 않습니다.');
+
+        const fieldsVerified = Array.isArray(body.fieldsVerified)
+          ? body.fieldsVerified.map((value) => String(value).trim()).filter(Boolean).slice(0, 30)
+          : [];
+        const row = {
+          product_id: productId,
+          source_type: sourceType,
+          source_url: parsedUrl.toString(),
+          source_title: optionalText(body.sourceTitle, '출처 제목', 500),
+          fields_verified: fieldsVerified,
+          confidence,
+          raw_ingredient_text: optionalText(body.rawIngredientText, '원재료 원문', 20_000),
+          notes: optionalText(body.notes, '출처 메모', 2_000),
+          updated_at: new Date().toISOString(),
+        };
+        const { data, error } = await db
+          .from('product_data_sources')
+          .upsert(row, { onConflict: 'product_id,source_url' })
+          .select('id, product_id, source_type, source_url, confidence, fields_verified, updated_at')
+          .single();
+        if (error) throw error;
+        await audit(db, actor, 'saveProductSource', 'product_data_sources', data.id, {
+          productId,
+          sourceType,
+          confidence,
+          fieldsVerified,
+        });
+        return json({ ok: true, source: data }, 200, cors);
+      }
+
+      case 'updateEnrichmentStatus': {
+        const productId = requireUuid(body.productId ?? body.product_id, '제품 ID');
+        const status = requireText(body.status, '상태', 40);
+        const allowedStatuses = new Set([
+          'pending', 'in_progress', 'needs_variant', 'ready_for_review', 'completed', 'blocked',
+        ]);
+        if (!allowedStatuses.has(status)) throw new ValidationError('보완 상태가 올바르지 않습니다.');
+        const now = new Date().toISOString();
+        const { data, error } = await db
+          .from('product_enrichment_queue')
+          .update({
+            status,
+            review_note: optionalText(body.note, '검수 메모', 2_000),
+            reviewed_by: actor,
+            reviewed_at: now,
+            updated_at: now,
+          })
+          .eq('product_id', productId)
+          .select('product_id, status, review_note, reviewed_at')
+          .single();
+        if (error) throw error;
+        await audit(db, actor, 'updateEnrichmentStatus', 'product_enrichment_queue', productId, { status });
+        return json({ ok: true, row: data }, 200, cors);
+      }
+
       // ── 운영 조회 (RLS 때문에 anon 으로는 볼 수 없는 것만) ───────────────
       case 'dashboardMetrics': {
         const sinceIso = (days: number) => new Date(Date.now() - days * 86_400_000).toISOString();
@@ -700,9 +888,37 @@ serve(async (req) => {
           return null;
         });
 
+        const productQualityPromise = Promise.all([
+          db.from('products').select('id, verification_status, barcode'),
+          db.from('product_ingredients').select('product_id'),
+          db.from('nutritional_profiles').select('product_id'),
+        ]).then(([productResult, linkResult, nutritionResult]) => {
+          const error = productResult.error ?? linkResult.error ?? nutritionResult.error;
+          if (error) throw error;
+          const productRows = (productResult.data ?? []) as Array<{
+            id: string;
+            verification_status: string | null;
+            barcode: string | null;
+          }>;
+          const linked = new Set((linkResult.data ?? []).map((row: { product_id: string }) => row.product_id));
+          const nourished = new Set((nutritionResult.data ?? []).map((row: { product_id: string }) => row.product_id));
+          return {
+            verifiedProducts: productRows.filter((row) => row.verification_status === 'verified').length,
+            productsWithoutIngredients: productRows.filter((row) => !linked.has(row.id)).length,
+            productsWithoutNutrition: productRows.filter((row) => !nourished.has(row.id)).length,
+            productsWithoutBarcode: productRows.filter((row) => !row.barcode?.trim()).length,
+            dataQualityIssues: productRows.filter(
+              (row) => !linked.has(row.id) || !nourished.has(row.id) || !row.barcode?.trim(),
+            ).length,
+          };
+        }).catch((error: Error) => {
+          console.error('dashboard product quality failed:', error.message);
+          return null;
+        });
+
         const [
           products, ingredients, links, pets, unmatchedPending,
-          productsLast7, productsPrev7, feedingLogsLast7, authUsers,
+          productsLast7, productsPrev7, feedingLogsLast7, authUsers, productQuality,
         ] = await Promise.all([
           countOf('products'),
           countOf('ingredients'),
@@ -713,6 +929,7 @@ serve(async (req) => {
           countOf('products', (q) => q.gte('created_at', prev7).lt('created_at', last7)),
           countOf('pet_feeding_logs', (q) => q.gte('created_at', last7)),
           authUsersPromise,
+          productQualityPromise,
         ]);
 
         const joinedAt = (user: AuthUserRecord) => new Date(user.created_at ?? 0).getTime();
@@ -749,6 +966,11 @@ serve(async (req) => {
               products, ingredients, productIngredientLinks: links, users, pets,
               unmatchedPending, feedingLogsLast7,
               productsLast7, productsPrev7, usersLast7, usersPrev7,
+              verifiedProducts: productQuality?.verifiedProducts ?? null,
+              productsWithoutIngredients: productQuality?.productsWithoutIngredients ?? null,
+              productsWithoutNutrition: productQuality?.productsWithoutNutrition ?? null,
+              productsWithoutBarcode: productQuality?.productsWithoutBarcode ?? null,
+              dataQualityIssues: productQuality?.dataQualityIssues ?? null,
             },
             recentProducts: recentProducts ?? [],
             recentIngredients: recentIngredients ?? [],

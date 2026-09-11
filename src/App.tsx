@@ -37,6 +37,7 @@ const AdminMembers = lazy(() => import('./pages/admin/AdminMembers'));
 const AdminDiary = lazy(() => import('./pages/admin/AdminDiary'));
 const AdminWaitlist = lazy(() => import('./pages/admin/AdminWaitlist'));
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
+const AdminDataQuality = lazy(() => import('./pages/admin/AdminDataQuality'));
 const AdminAuthGuard = lazy(() => import('./pages/admin/AdminAuthGuard'));
 const AdminNotFound = lazy(() => import('./pages/admin/AdminNotFound'));
 
@@ -166,6 +167,7 @@ function App() {
           <Route path="diary" element={<AdminDiary />} />
           <Route path="waitlist" element={<AdminWaitlist />} />
           <Route path="settings" element={<AdminSettings />} />
+          <Route path="data-quality" element={<AdminDataQuality />} />
           <Route path="*" element={<AdminNotFound />} />
         </Route>
       </Routes>

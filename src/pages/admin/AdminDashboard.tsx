@@ -11,6 +11,8 @@ import {
   PawPrint,
   Users,
   AlertCircle,
+  BadgeCheck,
+  DatabaseZap,
 } from 'lucide-react';
 import { fetchDashboard, type DashboardPayload } from '../../lib/adminApi';
 
@@ -120,6 +122,46 @@ const AdminDashboard: React.FC = () => {
         delta: deltaPercent(metrics?.productsLast7 ?? null, metrics?.productsPrev7 ?? null),
         deltaLabel: '최근 7일 vs 직전 7일',
         to: '/admin/products',
+      },
+      {
+        label: '검수 완료 제품',
+        value: metrics?.verifiedProducts ?? null,
+        icon: <BadgeCheck size={18} />,
+        delta: null,
+        deltaLabel: null,
+        to: '/admin/products?status=verified',
+      },
+      {
+        label: '데이터 품질 보완 대상',
+        value: metrics?.dataQualityIssues ?? null,
+        icon: <DatabaseZap size={18} />,
+        delta: null,
+        deltaLabel: null,
+        to: '/admin/data-quality',
+      },
+      {
+        label: '원재료 없는 제품',
+        value: metrics?.productsWithoutIngredients ?? null,
+        icon: <AlertCircle size={18} />,
+        delta: null,
+        deltaLabel: null,
+        to: '/admin/data-quality?missing=ingredients',
+      },
+      {
+        label: '영양정보 없는 제품',
+        value: metrics?.productsWithoutNutrition ?? null,
+        icon: <AlertCircle size={18} />,
+        delta: null,
+        deltaLabel: null,
+        to: '/admin/data-quality?missing=nutrition',
+      },
+      {
+        label: '바코드 없는 제품',
+        value: metrics?.productsWithoutBarcode ?? null,
+        icon: <AlertCircle size={18} />,
+        delta: null,
+        deltaLabel: null,
+        to: '/admin/data-quality?missing=barcode',
       },
       {
         label: '분석 성분수',

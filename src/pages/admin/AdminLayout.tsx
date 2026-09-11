@@ -13,6 +13,7 @@ import {
   Settings,
   ShoppingBag,
   Users,
+  DatabaseZap,
   X,
 } from 'lucide-react';
 import { clearAdminSession } from '../../lib/adminSession';
@@ -28,6 +29,7 @@ const AdminLayout: React.FC = () => {
       { path: '/admin/products', icon: <ShoppingBag size={18} />, label: '제품 관리' },
       { path: '/admin/ingredients', icon: <FlaskConical size={18} />, label: '성분 관리' },
       { path: '/admin/unmatched-ingredients', icon: <ListChecks size={18} />, label: '미매칭 성분' },
+      { path: '/admin/data-quality', icon: <DatabaseZap size={18} />, label: '데이터 품질' },
       { path: '/admin/users', icon: <Users size={18} />, label: '회원 관리' },
       { path: '/admin/diary', icon: <NotebookPen size={18} />, label: '식이 다이어리' },
       { path: '/admin/waitlist', icon: <Mail size={18} />, label: '대기자 명단' },

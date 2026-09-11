@@ -34,6 +34,7 @@ describe('publicSettings', () => {
     expect(settings).toEqual(DEFAULT_PUBLIC_SETTINGS);
     expect(settings.signupEnabled).toBe(true);
     expect(settings.maintenanceMode).toBe(false);
+    expect(settings.viralEventVisible).toBe(false);
   });
 
   it('Phase 2 관찰 기본값은 꺼짐이다', () => {

@@ -51,13 +51,27 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
       setError('아이디와 비밀번호를 입력해 주세요.');
       return;
     }
-    // 자격증명은 클라이언트에 두지 않는다. 입력값으로 토큰을 만들어 서버(Edge Function)가 검증한다.
-    const token = btoa(`${id}:${pw}`);
+    // 자격증명은 이 요청 한 번에만 쓰고, 브라우저에는 서버가 발급한 단기 서명 세션만 둔다.
+    const credentialToken = btoa(`${id}:${pw}`);
     setIsSubmitting(true);
     setError('');
     try {
-      await adminWrite('verifyAdmin', {}, token);
-      storeAdminToken(token);
+      let sessionToken: string;
+      try {
+        const response = await adminWrite<{ sessionToken?: string }>('createAdminSession', {}, credentialToken);
+        if (!response.sessionToken) throw new Error('관리자 세션을 발급받지 못했습니다.');
+        sessionToken = response.sessionToken;
+      } catch (sessionError) {
+        // 프런트가 Edge Function보다 먼저 배포되는 짧은 구간만 구버전 인증으로
+        // 이어 간다. 새 서버가 배포되면 이 경로는 더 이상 실행되지 않는다.
+        if (!(sessionError instanceof Error) || !sessionError.message.includes('알 수 없는 action')) {
+          throw sessionError;
+        }
+        await adminWrite('verifyAdmin', {}, credentialToken);
+        sessionToken = credentialToken;
+      }
+      storeAdminToken(sessionToken);
+      setAdminPassword('');
       setIsAuthenticated(true);
     } catch {
       // 아이디 존재 여부를 구분하지 않는 단일 메시지 — 계정 열거 방지

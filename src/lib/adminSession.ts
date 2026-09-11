@@ -1,14 +1,12 @@
 /**
  * 관리자 세션 토큰 보관소.
  *
- * 토큰은 `btoa("id:pw")` 이므로 암호화가 아니라 인코딩이다. 서버(admin-write)가
- * SHA-256 화이트리스트로 검증하므로 이 값만으로 DB 를 우회할 수는 없지만,
- * 브라우저에 무기한 남는 것은 위험하다. 그래서
+ * 로그인 입력값 자체는 저장하지 않는다. 서버(admin-write)가 발급한 HMAC 서명
+ * 단기 세션만 보관한다. 추가로
  *   - sessionStorage(탭 종료 시 소멸) 에만 저장하고
  *   - 발급 시각을 함께 저장해 TTL 이 지나면 스스로 만료시킨다.
  *
- * 장기적으로는 Supabase Auth role 또는 단기 서명 토큰으로 옮겨야 한다.
- * 전환 계획은 docs/ADMIN_AUTH_MIGRATION.md 참고.
+ * 서버도 매 요청마다 서명과 만료시각을 검증한다.
  */
 
 export const ADMIN_TOKEN_KEY = 'vh_admin_auth';

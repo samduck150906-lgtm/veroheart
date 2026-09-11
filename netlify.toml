@@ -17,6 +17,22 @@
   status = 302
   conditions = {Host = ["veroro-admin.netlify.app"]}
 
+# 공개 앱 도메인에서는 관리자 번들과 경로를 노출하지 않는다. SPA catch-all보다
+# 먼저 평가되며, public/404.html을 실제 404 응답으로 반환한다.
+[[redirects]]
+  from = "/admin"
+  to = "/404.html"
+  status = 404
+  force = true
+  conditions = {Host = ["veroro-app.netlify.app"]}
+
+[[redirects]]
+  from = "/admin/*"
+  to = "/404.html"
+  status = 404
+  force = true
+  conditions = {Host = ["veroro-app.netlify.app"]}
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

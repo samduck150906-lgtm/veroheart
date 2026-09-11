@@ -39,6 +39,11 @@ const PAYLOAD: DashboardPayload = {
     productsPrev7: 10,
     usersLast7: 4,
     usersPrev7: 8,
+    verifiedProducts: 21,
+    productsWithoutIngredients: 145,
+    productsWithoutNutrition: 455,
+    productsWithoutBarcode: 458,
+    dataQualityIssues: 458,
   },
   recentProducts: [
     { id: 'p1', name: '오리젠 피트앤트림', brand_name: '오리젠', created_at: '2026-07-20T00:00:00Z' },
@@ -73,9 +78,12 @@ describe('AdminDashboard', () => {
 
   it('실제 지표를 표시한다', async () => {
     renderDashboard();
-    expect(await screen.findByText('458')).toBeTruthy();
+    expect((await screen.findAllByText('458')).length).toBeGreaterThan(0);
     expect(screen.getByText('4,265')).toBeTruthy();
     expect(screen.getByText('509')).toBeTruthy();
+    expect(screen.getByText('검수 완료 제품')).toBeTruthy();
+    expect(screen.getByText('원재료 없는 제품')).toBeTruthy();
+    expect(screen.getByText('145')).toBeTruthy();
   });
 
   it('미분류 제품도 포함해 카테고리 합계를 전체 제품수와 맞춘다', async () => {
@@ -88,7 +96,7 @@ describe('AdminDashboard', () => {
 
   it('하드코딩된 목데이터를 더 이상 렌더링하지 않는다', async () => {
     renderDashboard();
-    await screen.findByText('458');
+    expect((await screen.findAllByText('458')).length).toBeGreaterThan(0);
 
     // 이전 버전의 가짜 활동/증감률
     expect(screen.queryByText(/사용자_772/)).toBeNull();
@@ -100,7 +108,7 @@ describe('AdminDashboard', () => {
 
   it('커머스 제거 이후 주문 지표를 표시하지 않는다', async () => {
     renderDashboard();
-    await screen.findByText('458');
+    expect((await screen.findAllByText('458')).length).toBeGreaterThan(0);
     expect(screen.queryByText(/누적 주문수/)).toBeNull();
   });
 
