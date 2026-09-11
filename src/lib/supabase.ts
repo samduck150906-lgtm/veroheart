@@ -75,6 +75,38 @@ function asProductRow(data: unknown): SupabaseProductRow {
   return data as SupabaseProductRow;
 }
 
+type VisibilityQueryError = { code?: string; message: string };
+type VisibilityQueryResult<T> = { data: T | null; error: VisibilityQueryError | null };
+let productVisibilityColumnAvailable: boolean | null = null;
+
+function isMissingProductVisibilityColumn(error: VisibilityQueryError | null): boolean {
+  return Boolean(
+    error &&
+    (error.code === '42703' || error.code === 'PGRST204') &&
+    error.message.includes('is_visible'),
+  );
+}
+
+/**
+ * 사용자 제품 조회에 is_visible=true를 적용한다.
+ *
+ * Git 연동 프런트가 DB 마이그레이션보다 먼저 배포될 수 있으므로, 컬럼이 아직
+ * 없는 짧은 배포 구간에는 한 번만 기존 조회로 폴백한다. 마이그레이션 적용 후
+ * 새로고침하면 모든 사용자 제품 경로가 노출 제품만 반환한다.
+ */
+async function queryVisibleProducts<T>(
+  run: (withVisibilityFilter: boolean) => PromiseLike<VisibilityQueryResult<T>>,
+): Promise<VisibilityQueryResult<T>> {
+  const shouldFilter = productVisibilityColumnAvailable !== false;
+  const result = await run(shouldFilter);
+  if (shouldFilter && isMissingProductVisibilityColumn(result.error)) {
+    productVisibilityColumnAvailable = false;
+    return run(false);
+  }
+  if (!result.error && shouldFilter) productVisibilityColumnAvailable = true;
+  return result;
+}
+
 /**
  * 제품 조회가 받아오는 컬럼.
  *
@@ -180,14 +212,18 @@ export async function getProducts(): Promise<Product[]> {
   if (!isSupabaseConfigured) return [];
   // 목록에서는 ingredient_id 를 받지 않는다. 원료 행에서 id 를 읽을 수 있고,
   // 링크 4,265건마다 UUID 를 한 번 더 실으면 응답이 다시 커진다.
-  const { data, error } = await supabase.from('products').select(`
-    id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
-    target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
-    verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
-    product_ingredients (
-      ingredients (id, name_ko, name_en, risk_level, description)
-    )
-  `);
+  const { data, error } = await queryVisibleProducts((withVisibilityFilter) => {
+    let builder = supabase.from('products').select(`
+      id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
+      target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
+      verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
+      product_ingredients (
+        ingredients (id, name_ko, name_en, risk_level, description)
+      )
+    `);
+    if (withVisibilityFilter) builder = builder.eq('is_visible', true);
+    return builder;
+  });
   
   if (error) {
     console.error('getProducts error:', error.message);
@@ -198,20 +234,23 @@ export async function getProducts(): Promise<Product[]> {
 
 export async function getProductDetail(productId: string): Promise<Product | null> {
   if (!isSupabaseConfigured) return null;
-  const { data, error } = await supabase
-    .from('products')
-    .select(`
-      id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
-      target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
-      verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
-      product_ingredients (
-        ingredient_id,
-        ingredients (id, name_ko, name_en, risk_level, description)
-      ),
-      nutritional_profiles (crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus)
-    `)
-    .eq('id', productId)
-    .single();
+  const { data, error } = await queryVisibleProducts((withVisibilityFilter) => {
+    let builder = supabase
+      .from('products')
+      .select(`
+        id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
+        target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
+        verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
+        product_ingredients (
+          ingredient_id,
+          ingredients (id, name_ko, name_en, risk_level, description)
+        ),
+        nutritional_profiles (crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus)
+      `)
+      .eq('id', productId);
+    if (withVisibilityFilter) builder = builder.eq('is_visible', true);
+    return builder.single();
+  });
 
   if (error) {
     console.error('getProductDetail error:', error);
@@ -228,21 +267,23 @@ export async function getProductDetail(productId: string): Promise<Product | nul
 export async function getProductByBarcode(barcode: string): Promise<Product | null> {
   if (!isSupabaseConfigured || !barcode) return null;
   try {
-    const { data, error } = await supabase
-      .from('products')
-      .select(`
-        id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
-        target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
-        verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
-        product_ingredients (
-          ingredient_id,
-          ingredients (id, name_ko, name_en, risk_level, description)
-        ),
-        nutritional_profiles (crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus)
-      `)
-      .eq('barcode', barcode)
-      .limit(1)
-      .maybeSingle();
+    const { data, error } = await queryVisibleProducts((withVisibilityFilter) => {
+      let builder = supabase
+        .from('products')
+        .select(`
+          id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
+          target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
+          verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
+          product_ingredients (
+            ingredient_id,
+            ingredients (id, name_ko, name_en, risk_level, description)
+          ),
+          nutritional_profiles (crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus)
+        `)
+        .eq('barcode', barcode);
+      if (withVisibilityFilter) builder = builder.eq('is_visible', true);
+      return builder.limit(1).maybeSingle();
+    });
 
     if (error || !data) return null;
     return mapProductFromSupabaseRow(asProductRow(data));
@@ -354,23 +395,27 @@ export async function searchProducts(
 ): Promise<Product[]> {
   if (!isSupabaseConfigured) return [];
   const normalizedQuery = query.trim();
-  let builder = supabase.from('products').select(`
-    id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
-    target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
-    verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
-    product_ingredients (
-      ingredient_id,
-      ingredients (id, name_ko, risk_level)
-    )
-  `);
-  
-  if (normalizedQuery) {
+  const searchTerms = normalizedQuery.split(/\s+/).filter(Boolean).slice(0, 8);
+  const ingredientIdsByTerm = await Promise.all(
+    searchTerms.map((term) => findProductIdsByIngredientName(term)),
+  );
+
+  const { data, error } = await queryVisibleProducts((withVisibilityFilter) => {
+    let builder = supabase.from('products').select(`
+      id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
+      target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
+      verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
+      product_ingredients (
+        ingredient_id,
+        ingredients (id, name_ko, risk_level)
+      )
+    `);
+
     // 공백으로 나눈 모든 단어가 제품명·브랜드·바코드·원료 중 하나에는 맞아야 한다.
     // 예: "오리젠 퍼피"처럼 브랜드와 제품명에 단어가 나뉜 검색도 찾는다.
-    const searchTerms = normalizedQuery.split(/\s+/).filter(Boolean).slice(0, 8);
-    for (const term of searchTerms) {
+    for (const [index, term] of searchTerms.entries()) {
       const pattern = toOrIlikePattern(term);
-      const ingredientProductIds = await findProductIdsByIngredientName(term);
+      const ingredientProductIds = ingredientIdsByTerm[index];
       const clauses = [
         `name.ilike.${pattern}`,
         `brand_name.ilike.${pattern}`,
@@ -381,51 +426,52 @@ export async function searchProducts(
       }
       builder = builder.or(clauses.join(','));
     }
-  }
 
-  if (category && category !== '전체') {
-    builder = builder.eq('main_category', category);
-  }
+    if (category && category !== '전체') {
+      builder = builder.eq('main_category', category);
+    }
 
-  const pet = filters.targetPetType?.toLowerCase();
-  if (pet === 'dog') {
-    builder = builder.in('target_pet_type', ['dog', 'all']);
-  } else if (pet === 'cat') {
-    builder = builder.in('target_pet_type', ['cat', 'all']);
-  } else if (pet === 'all') {
-    builder = builder.eq('target_pet_type', 'all');
-  }
+    const pet = filters.targetPetType?.toLowerCase();
+    if (pet === 'dog') {
+      builder = builder.in('target_pet_type', ['dog', 'all']);
+    } else if (pet === 'cat') {
+      builder = builder.in('target_pet_type', ['cat', 'all']);
+    } else if (pet === 'all') {
+      builder = builder.eq('target_pet_type', 'all');
+    }
 
-  if (filters.subCategory) {
-    builder = builder.eq('sub_category', filters.subCategory);
-  }
+    if (filters.subCategory) {
+      builder = builder.eq('sub_category', filters.subCategory);
+    }
 
-  if (filters.targetLifeStage) {
-    const lifeStageValues = LIFE_STAGE_DB_VALUES[filters.targetLifeStage] ?? [filters.targetLifeStage];
-    builder = builder.overlaps('target_life_stage', lifeStageValues);
-  }
+    if (filters.targetLifeStage) {
+      const lifeStageValues = LIFE_STAGE_DB_VALUES[filters.targetLifeStage] ?? [filters.targetLifeStage];
+      builder = builder.overlaps('target_life_stage', lifeStageValues);
+    }
 
-  if (filters.formulation) {
-    builder = builder.eq('formulation', filters.formulation);
-  }
+    if (filters.formulation) {
+      builder = builder.eq('formulation', filters.formulation);
+    }
 
-  if (filters.brand) {
-    builder = builder.eq('brand_name', filters.brand);
-  }
+    if (filters.brand) {
+      builder = builder.eq('brand_name', filters.brand);
+    }
 
-  let healthOverlap: string[] = (filters.healthConcerns || []).flatMap((concern) => [
-    concern,
-    ...(HEALTH_CONCERN_DB_TOKENS[concern] ?? []),
-  ]);
-  if (filters.dietPreset) {
-    healthOverlap = [...healthOverlap, ...DIET_HEALTH_TAGS];
-  }
-  healthOverlap = [...new Set(healthOverlap)];
-  if (healthOverlap.length > 0) {
-    builder = builder.overlaps('product_health_concerns', healthOverlap);
-  }
+    let healthOverlap: string[] = (filters.healthConcerns || []).flatMap((concern) => [
+      concern,
+      ...(HEALTH_CONCERN_DB_TOKENS[concern] ?? []),
+    ]);
+    if (filters.dietPreset) {
+      healthOverlap = [...healthOverlap, ...DIET_HEALTH_TAGS];
+    }
+    healthOverlap = [...new Set(healthOverlap)];
+    if (healthOverlap.length > 0) {
+      builder = builder.overlaps('product_health_concerns', healthOverlap);
+    }
 
-  const { data, error } = await builder;
+    if (withVisibilityFilter) builder = builder.eq('is_visible', true);
+    return builder;
+  });
   if (error) {
     console.error('searchProducts error:', error);
     return [];
@@ -531,20 +577,22 @@ export async function addRecentView(userId: string, productId: string) {
 }
 
 export async function getRecentViews(userId: string) {
-  const { data, error } = await supabase
-    .from('recent_views')
-    .select(`
-      product_id,
-      viewed_at,
-      products (
-        id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
-        target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
-        verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating
-      )
-    `)
-    .eq('user_id', userId)
-    .order('viewed_at', { ascending: false })
-    .limit(10);
+  const { data, error } = await queryVisibleProducts((withVisibilityFilter) => {
+    let builder = supabase
+      .from('recent_views')
+      .select(`
+        product_id,
+        viewed_at,
+        products (
+          id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
+          target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
+          verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating
+        )
+      `)
+      .eq('user_id', userId);
+    if (withVisibilityFilter) builder = builder.eq('products.is_visible', true);
+    return builder.order('viewed_at', { ascending: false }).limit(10);
+  });
   if (error) return [];
   const rows = (data ?? []) as unknown as SupabaseRecentViewRow[];
   return rows
@@ -556,10 +604,11 @@ export async function getRecentViews(userId: string) {
 
 export async function getBrands(): Promise<string[]> {
   if (!isSupabaseConfigured) return [];
-  const { data, error } = await supabase
-    .from('products')
-    .select('brand_name')
-    .order('brand_name');
+  const { data, error } = await queryVisibleProducts((withVisibilityFilter) => {
+    let builder = supabase.from('products').select('brand_name');
+    if (withVisibilityFilter) builder = builder.eq('is_visible', true);
+    return builder.order('brand_name');
+  });
   if (error) return [];
   const rows = (data ?? []) as SupabaseBrandNameRow[];
   const brands = [...new Set(rows.map((r) => r.brand_name).filter((name): name is string => Boolean(name)))];
@@ -568,17 +617,21 @@ export async function getBrands(): Promise<string[]> {
 
 export async function getProductsByBrand(brandName: string): Promise<Product[]> {
   if (!isSupabaseConfigured || !brandName.trim()) return [];
-  const { data, error } = await supabase
-    .from('products')
-    .select(`
-      id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
-      target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
-      verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
-      product_ingredients (
-        ingredients (id, name_ko, name_en, risk_level, description)
-      )
-    `)
-    .eq('brand_name', brandName);
+  const { data, error } = await queryVisibleProducts((withVisibilityFilter) => {
+    let builder = supabase
+      .from('products')
+      .select(`
+        id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
+        target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
+        verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
+        product_ingredients (
+          ingredients (id, name_ko, name_en, risk_level, description)
+        )
+      `)
+      .eq('brand_name', brandName);
+    if (withVisibilityFilter) builder = builder.eq('is_visible', true);
+    return builder;
+  });
   if (error) return [];
   return asProductRows(data).map(mapProductFromSupabaseRow);
 }
@@ -638,29 +691,28 @@ export async function searchDiaryProducts(
   productType?: 'food' | 'snack' | 'supplement',
 ): Promise<Product[]> {
   if (!isSupabaseConfigured) return [];
-  let builder = supabase
-    .from('products')
-    .select(`
-      id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
-      target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
-      verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
-      product_ingredients (
-        ingredient_id,
-        ingredients (id, name_ko, risk_level)
-      )
-    `)
-    .limit(30);
-
-  if (productType) {
-    builder = builder.eq('product_type', productType);
-  }
   const q = query.trim();
-  if (q) {
-    const pattern = toOrIlikePattern(q);
-    builder = builder.or(`name.ilike.${pattern},brand_name.ilike.${pattern}`);
-  }
+  const { data, error } = await queryVisibleProducts((withVisibilityFilter) => {
+    let builder = supabase
+      .from('products')
+      .select(`
+        id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
+        target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
+        verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
+        product_ingredients (
+          ingredient_id,
+          ingredients (id, name_ko, risk_level)
+        )
+      `);
 
-  const { data, error } = await builder;
+    if (productType) builder = builder.eq('product_type', productType);
+    if (q) {
+      const pattern = toOrIlikePattern(q);
+      builder = builder.or(`name.ilike.${pattern},brand_name.ilike.${pattern}`);
+    }
+    if (withVisibilityFilter) builder = builder.eq('is_visible', true);
+    return builder.limit(30);
+  });
   if (error) {
     console.error('searchDiaryProducts error:', error.message);
     return [];

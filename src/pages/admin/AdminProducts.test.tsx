@@ -8,6 +8,7 @@ const h = vi.hoisted(() => ({
   fetchProductsPage: vi.fn(),
   fetchProductIngredients: vi.fn(),
   saveProduct: vi.fn(),
+  setProductVisibility: vi.fn(),
   deleteProduct: vi.fn(),
   uploadProductImage: vi.fn(),
   searchIngredients: vi.fn(),
@@ -17,6 +18,7 @@ vi.mock('../../lib/adminApi', () => ({
   fetchProductsPage: h.fetchProductsPage,
   fetchProductIngredients: h.fetchProductIngredients,
   saveProduct: h.saveProduct,
+  setProductVisibility: h.setProductVisibility,
   deleteProduct: h.deleteProduct,
   uploadProductImage: h.uploadProductImage,
   searchIngredients: h.searchIngredients,
@@ -48,6 +50,7 @@ function makeRow(index: number): AdminProductRow {
     target_life_stage: ['adult'],
     image_url: null,
     min_price: 10000,
+    is_visible: true,
     created_at: '2026-07-20T00:00:00Z',
   };
 }
@@ -84,9 +87,11 @@ describe('AdminProducts', () => {
         sub_category: null,
         target_pet_type: 'dog',
         verification_status: 'pending',
+        is_visible: true,
       },
     });
     h.deleteProduct.mockReset().mockResolvedValue(undefined);
+    h.setProductVisibility.mockReset().mockResolvedValue(false);
     h.searchIngredients.mockReset().mockResolvedValue([]);
   });
 
@@ -164,6 +169,31 @@ describe('AdminProducts', () => {
     });
   });
 
+  it('노출 상태 필터를 서버 조회에 반영한다', async () => {
+    renderProducts();
+    await screen.findByText('테스트 사료 1');
+
+    fireEvent.change(screen.getByLabelText('앱 노출'), { target: { value: 'hidden' } });
+
+    await waitFor(() => {
+      const last = h.fetchProductsPage.mock.calls.at(-1)?.[0] as ProductListParams;
+      expect(last.visibility).toBe('hidden');
+      expect(last.page).toBe(1);
+    });
+  });
+
+  it('목록에서 제품을 삭제하지 않고 앱 비노출로 전환한다', async () => {
+    renderProducts();
+    await screen.findByText('테스트 사료 1');
+
+    fireEvent.click(screen.getByLabelText('테스트 사료 1 앱 비노출로 변경'));
+
+    await waitFor(() => {
+      expect(h.setProductVisibility).toHaveBeenCalledWith(makeRow(1).id, false);
+    });
+    expect(screen.getByLabelText('테스트 사료 1 앱 노출로 변경')).toBeTruthy();
+  });
+
   it('제품 저장 시 원재료 연결을 같은 요청으로 함께 보낸다', async () => {
     renderProducts();
     fireEvent.click(await screen.findByText('신규 제품 등록'));
@@ -174,7 +204,11 @@ describe('AdminProducts', () => {
 
     await waitFor(() => expect(h.saveProduct).toHaveBeenCalledTimes(1));
     const payload = h.saveProduct.mock.calls[0][0];
-    expect(payload.product).toMatchObject({ name: '새 사료', brand_name: '베로로' });
+    expect(payload.product).toMatchObject({
+      name: '새 사료',
+      brand_name: '베로로',
+      is_visible: true,
+    });
     expect(Array.isArray(payload.ingredients)).toBe(true);
   });
 

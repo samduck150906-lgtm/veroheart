@@ -95,6 +95,16 @@ describe('admin-write: 제품 payload 검증', () => {
     expect(out).not.toHaveProperty('review_count');
     expect(out).not.toHaveProperty('created_at');
   });
+
+  it('제품 노출 상태는 불리언만 허용한다', () => {
+    expect(normalizeProductPayload({
+      name: '노출 제품', brand_name: '베로로', is_visible: false,
+    })).toMatchObject({ is_visible: false });
+    expect(() => normalizeProductPayload({
+      name: '노출 제품', brand_name: '베로로', is_visible: 'false',
+    })).toThrow(ValidationError);
+    expect(ALLOWED_ACTIONS.has('setProductVisibility')).toBe(true);
+  });
 });
 
 describe('admin-write: 보장성분 payload 검증', () => {

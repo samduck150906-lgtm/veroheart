@@ -126,7 +126,16 @@ function recordFailure(key: string) {
 type Db = any;
 
 const SAVED_PRODUCT_COLUMNS =
-  'id, name, brand_name, main_category, sub_category, target_pet_type, verification_status';
+  'id, name, brand_name, main_category, sub_category, target_pet_type, verification_status, is_visible';
+
+function savedProductMatches(saved: Record<string, unknown> | null, expected: Record<string, unknown>): boolean {
+  return Boolean(
+    saved &&
+    saved.name === expected.name &&
+    saved.brand_name === expected.brand_name &&
+    (typeof expected.is_visible !== 'boolean' || saved.is_visible === expected.is_visible),
+  );
+}
 
 interface AuthUserRecord {
   id: string;
@@ -344,7 +353,7 @@ serve(async (req) => {
             .select(SAVED_PRODUCT_COLUMNS)
             .single();
           if (error) throw error;
-          if (!updated || updated.name !== product.name || updated.brand_name !== product.brand_name) {
+          if (!savedProductMatches(updated, product)) {
             throw new Error('제품 수정 결과가 요청한 제품명/브랜드와 일치하지 않습니다.');
           }
         } else {
@@ -355,7 +364,7 @@ serve(async (req) => {
             .single();
           if (error) throw error;
           productId = data?.id ?? null;
-          if (!data || data.name !== product.name || data.brand_name !== product.brand_name) {
+          if (!savedProductMatches(data, product)) {
             throw new Error('제품 등록 결과가 요청한 제품명/브랜드와 일치하지 않습니다.');
           }
         }
@@ -385,17 +394,14 @@ serve(async (req) => {
           .eq('id', productId)
           .single();
         if (confirmErr) throw confirmErr;
-        if (
-          !confirmedProduct ||
-          confirmedProduct.name !== product.name ||
-          confirmedProduct.brand_name !== product.brand_name
-        ) {
+        if (!savedProductMatches(confirmedProduct, product)) {
           throw new Error('저장 후 제품 조회 결과가 요청한 값과 일치하지 않습니다.');
         }
 
         await audit(db, actor, 'saveProduct', 'products', productId, {
           previousName,
           name: confirmedProduct.name,
+          isVisible: confirmedProduct.is_visible,
           ingredientCount,
         });
         return json({ ok: true, id: productId, ingredientCount, product: confirmedProduct }, 200, cors);
@@ -407,6 +413,28 @@ serve(async (req) => {
         if (error) throw error;
         await audit(db, actor, 'deleteProduct', 'products', id);
         return json({ ok: true }, 200, cors);
+      }
+
+      case 'setProductVisibility': {
+        const id = requireUuid(body.id, '제품 ID');
+        if (typeof body.isVisible !== 'boolean') {
+          throw new ValidationError('제품 노출 상태는 불리언이어야 합니다.');
+        }
+        const { data: product, error } = await db
+          .from('products')
+          .update({ is_visible: body.isVisible })
+          .eq('id', id)
+          .select('id, name, is_visible')
+          .single();
+        if (error) throw error;
+        if (!product || product.is_visible !== body.isVisible) {
+          throw new Error('제품 노출 상태 저장 결과가 요청과 일치하지 않습니다.');
+        }
+        await audit(db, actor, 'setProductVisibility', 'products', id, {
+          name: product.name,
+          isVisible: product.is_visible,
+        });
+        return json({ ok: true, product }, 200, cors);
       }
 
       case 'saveProductIngredients': {
@@ -938,6 +966,15 @@ serve(async (req) => {
     // 외래 키 위반(23503)은 운영자가 바로 조치할 수 있는 상황이다.
     // 일반 500 문구로 뭉개면 "왜 삭제가 안 되는지" 알 수 없어 재시도만 반복하게 된다.
     const code = (err as { code?: string } | null)?.code;
+    const message = (err as { message?: string } | null)?.message ?? '';
+    if ((code === '42703' || code === 'PGRST204') && message.includes('is_visible')) {
+      console.error(`admin-write action=${action} actor=${actor} visibility schema missing:`, err);
+      return json(
+        { error: '제품 노출 기능 DB 마이그레이션이 아직 적용되지 않았습니다.' },
+        503,
+        cors,
+      );
+    }
     if (code === '23503') {
       console.error(`admin-write action=${action} actor=${actor} FK violation:`, err);
       return json(

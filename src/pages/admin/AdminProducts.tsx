@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { Plus, Search, Edit2, Trash2, X, Upload, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, X, Upload, ChevronLeft, ChevronRight, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import { notify } from '../../store/useNotification';
 import ProductIngredientsEditor from './ProductIngredientsEditor';
 import {
@@ -9,6 +9,7 @@ import {
   fetchProductIngredients,
   fetchProductsPage,
   saveProduct as saveProductApi,
+  setProductVisibility as setProductVisibilityApi,
   uploadProductImage,
   validateProductImage,
   type AdminProductRow,
@@ -32,6 +33,7 @@ interface ProductForm {
   barcode?: string;
   kcal_per_100g?: number;
   verification_status?: 'pending' | 'reviewed' | 'verified';
+  is_visible?: boolean;
 }
 
 /** nutritional_profiles(보장성분) 입력 폼 — 값은 문자열로 다루고 저장 시 숫자로 변환 */
@@ -88,6 +90,10 @@ const AdminProducts: React.FC = () => {
   const [activeTab, setActiveTab] = useState(() => urlParams.get('category') ?? '전체');
   const [petType, setPetType] = useState(() => urlParams.get('species') ?? '전체');
   const [verificationStatus, setVerificationStatus] = useState(() => urlParams.get('status') ?? '전체');
+  const [visibility, setVisibility] = useState<'전체' | 'visible' | 'hidden'>(() => {
+    const value = urlParams.get('visibility');
+    return value === 'visible' || value === 'hidden' ? value : '전체';
+  });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<ProductForm>({});
@@ -100,6 +106,7 @@ const AdminProducts: React.FC = () => {
 
   const [deleteTarget, setDeleteTarget] = useState<AdminProductRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [visibilitySavingId, setVisibilitySavingId] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -125,8 +132,9 @@ const AdminProducts: React.FC = () => {
     if (activeTab !== '전체') next.set('category', activeTab);
     if (petType !== '전체') next.set('species', petType);
     if (verificationStatus !== '전체') next.set('status', verificationStatus);
+    if (visibility !== '전체') next.set('visibility', visibility);
     setUrlParams(next, { replace: true });
-  }, [activeTab, page, petType, search, setUrlParams, verificationStatus]);
+  }, [activeTab, page, petType, search, setUrlParams, verificationStatus, visibility]);
 
   const loadProducts = useCallback(async () => {
     setLoading(true);
@@ -139,6 +147,7 @@ const AdminProducts: React.FC = () => {
         category: activeTab,
         petType,
         verificationStatus,
+        visibility,
       });
       setProducts(rows);
       setTotal(count);
@@ -153,7 +162,7 @@ const AdminProducts: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, search, activeTab, petType, verificationStatus]);
+  }, [page, search, activeTab, petType, verificationStatus, visibility]);
 
   useEffect(() => {
     // 페이지/검색/카테고리 변경 시 서버에서 다시 조회한다.
@@ -173,6 +182,7 @@ const AdminProducts: React.FC = () => {
       has_risk_factors: [],
       min_price: 0,
       verification_status: 'pending',
+      is_visible: true,
     });
     setNutrition(EMPTY_NUTRITION);
     setIngredientLinks([]);
@@ -336,6 +346,28 @@ const AdminProducts: React.FC = () => {
     }
   };
 
+  const toggleVisibility = async (product: AdminProductRow) => {
+    if (visibilitySavingId) return;
+    const nextVisible = !product.is_visible;
+    setVisibilitySavingId(product.id);
+    try {
+      await setProductVisibilityApi(product.id, nextVisible);
+      setProducts((rows) => rows.map((row) => (
+        row.id === product.id ? { ...row, is_visible: nextVisible } : row
+      )));
+      notify.success(
+        nextVisible
+          ? `“${product.name}” 제품을 사용자 앱에 노출했습니다.`
+          : `“${product.name}” 제품을 사용자 앱에서 비노출 처리했습니다.`,
+      );
+      if (visibility !== '전체') await loadProducts();
+    } catch (err) {
+      notify.error(`노출 상태 변경 실패: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setVisibilitySavingId(null);
+    }
+  };
+
   const rangeLabel = useMemo(() => {
     if (total === 0) return '0';
     const from = (page - 1) * PAGE_SIZE + 1;
@@ -382,6 +414,17 @@ const AdminProducts: React.FC = () => {
           </select>
         </label>
         <label className="admin-compact-field">
+          <span>앱 노출</span>
+          <select value={visibility} onChange={(event) => {
+            setVisibility(event.target.value as '전체' | 'visible' | 'hidden');
+            setPage(1);
+          }}>
+            <option value="전체">전체</option>
+            <option value="visible">노출</option>
+            <option value="hidden">비노출</option>
+          </select>
+        </label>
+        <label className="admin-compact-field">
           <span>검수 상태</span>
           <select value={verificationStatus} onChange={(event) => { setVerificationStatus(event.target.value); setPage(1); }}>
             <option value="전체">전체</option>
@@ -414,6 +457,7 @@ const AdminProducts: React.FC = () => {
               <th>타겟</th>
               <th>원재료</th>
               <th>검수 상태</th>
+              <th>앱 노출</th>
               <th>가격</th>
               <th style={{ textAlign: 'right' }}>관리</th>
             </tr>
@@ -421,13 +465,13 @@ const AdminProducts: React.FC = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7}>
+                <td colSpan={8}>
                   <div className="admin-empty">데이터를 불러오는 중입니다...</div>
                 </td>
               </tr>
             ) : loadError ? (
               <tr>
-                <td colSpan={7}>
+                <td colSpan={8}>
                   <div className="admin-empty">
                     제품을 불러오지 못했습니다.
                     <button type="button" className="admin-btn-soft" style={{ marginLeft: 10 }} onClick={loadProducts}>
@@ -438,9 +482,9 @@ const AdminProducts: React.FC = () => {
               </tr>
             ) : products.length === 0 ? (
               <tr>
-                <td colSpan={7}>
+                <td colSpan={8}>
                   <div className="admin-empty">
-                    {search || activeTab !== '전체' || petType !== '전체' || verificationStatus !== '전체'
+                    {search || activeTab !== '전체' || petType !== '전체' || verificationStatus !== '전체' || visibility !== '전체'
                       ? '검색 조건에 맞는 제품이 없습니다.'
                       : '등록된 제품이 없습니다. "신규 제품 등록"으로 시작해 주세요.'}
                   </div>
@@ -479,6 +523,18 @@ const AdminProducts: React.FC = () => {
                     <span className={`admin-tag ${p.verification_status === 'verified' ? 'green' : p.verification_status === 'reviewed' ? 'yellow' : 'gray'}`}>
                       {p.verification_status === 'verified' ? '검수 완료' : p.verification_status === 'reviewed' ? '검토됨' : '검수 대기'}
                     </span>
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      className={`admin-visibility-btn ${p.is_visible ? 'is-visible' : 'is-hidden'}`}
+                      onClick={() => toggleVisibility(p)}
+                      disabled={visibilitySavingId !== null}
+                      aria-label={`${p.name} 앱 ${p.is_visible ? '비노출' : '노출'}로 변경`}
+                    >
+                      {p.is_visible ? <Eye size={13} /> : <EyeOff size={13} />}
+                      {visibilitySavingId === p.id ? '저장 중' : p.is_visible ? '노출' : '비노출'}
+                    </button>
                   </td>
                   <td>
                     <strong>₩{Number(p.min_price || 0).toLocaleString()}</strong>
@@ -651,6 +707,21 @@ const AdminProducts: React.FC = () => {
                 options={['pending', 'reviewed', 'verified']}
                 onChange={(value) => setCurrentProduct({ ...currentProduct, verification_status: value as ProductForm['verification_status'] })}
               />
+              <label className="admin-visibility-field" htmlFor="pf-visible">
+                <input
+                  id="pf-visible"
+                  type="checkbox"
+                  checked={currentProduct.is_visible !== false}
+                  onChange={(event) => setCurrentProduct({
+                    ...currentProduct,
+                    is_visible: event.target.checked,
+                  })}
+                />
+                <span>
+                  <strong>사용자 앱에 노출</strong>
+                  <small>끄면 검색·목록·바코드·상세 화면에서 숨겨집니다.</small>
+                </span>
+              </label>
               <SelectField
                 id="pf-pet-type"
                 label="타겟 반려동물"

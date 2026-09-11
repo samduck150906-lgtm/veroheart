@@ -16,6 +16,7 @@ export const PRODUCT_COLUMNS = [
   'verification_status', 'coupang_product_id', 'coupang_link', 'barcode',
   'kcal_per_100g', 'packaging_weight_g', 'allergen_free_tags',
   'is_sponsored', 'sponsor_label', 'sponsor_order',
+  'is_visible',
 ] as const;
 
 export const NUTRITION_COLUMNS = [
@@ -42,6 +43,7 @@ export const SETTINGS_KEYS = new Set([
 export const ALLOWED_ACTIONS = new Set([
   'verifyAdmin',
   'saveProduct',
+  'setProductVisibility',
   'deleteProduct',
   'saveProductIngredients',
   'uploadProductImage',
@@ -164,6 +166,9 @@ export function normalizeProductPayload(raw: Record<string, unknown>): Record<st
   }
   if (product.verification_status && !['pending', 'reviewed', 'verified'].includes(String(product.verification_status))) {
     throw new ValidationError('검수 상태 값이 올바르지 않습니다.');
+  }
+  if (product.is_visible !== undefined && typeof product.is_visible !== 'boolean') {
+    throw new ValidationError('제품 노출 상태는 불리언이어야 합니다.');
   }
   return product;
 }

@@ -16,6 +16,7 @@ import {
   fetchSettings,
   fetchWaitlistPage,
   saveProduct,
+  setProductVisibility,
   saveIngredient,
   saveSettings,
   validateProductImage,
@@ -73,6 +74,7 @@ describe('adminApi: 쓰기 경로', () => {
       sub_category: null,
       target_pet_type: 'dog',
       verification_status: 'verified',
+      is_visible: true,
     };
     const single = vi.fn().mockResolvedValue({ data: confirmed, error: null });
     const eq = vi.fn().mockReturnValue({ single });
@@ -112,6 +114,24 @@ describe('adminApi: 쓰기 경로', () => {
       product: { name: '바뀐 제품명', brand_name: '베로로' },
       nutrition: null,
     })).rejects.toThrow('저장 확인 불일치');
+  });
+
+  it('제품 노출 상태 변경은 관리자 프록시의 확인 응답까지 검사한다', async () => {
+    h.adminWrite.mockResolvedValue({
+      product: {
+        id: '11111111-1111-4111-8111-111111111111',
+        is_visible: false,
+      },
+    });
+
+    await expect(setProductVisibility(
+      '11111111-1111-4111-8111-111111111111',
+      false,
+    )).resolves.toBe(false);
+    expect(h.adminWrite).toHaveBeenCalledWith('setProductVisibility', {
+      id: '11111111-1111-4111-8111-111111111111',
+      isVisible: false,
+    });
   });
 
   it('개인 데이터 운영 조회는 admin-write를 거친다', async () => {

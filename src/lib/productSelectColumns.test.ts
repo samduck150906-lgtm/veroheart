@@ -97,4 +97,30 @@ describe('제품 조회 컬럼', () => {
       );
     }
   });
+
+  it('모든 사용자 제품 진입 경로가 노출 제품 조회 래퍼를 사용한다', () => {
+    const names = [
+      'getProducts',
+      'getProductDetail',
+      'getProductByBarcode',
+      'searchProducts',
+      'getRecentViews',
+      'getBrands',
+      'getProductsByBrand',
+      'searchDiaryProducts',
+    ];
+
+    for (const [index, name] of names.entries()) {
+      const start = SOURCE.indexOf(`export async function ${name}`);
+      expect(start, `${name} 함수를 찾지 못했다`).toBeGreaterThanOrEqual(0);
+      const nextStarts = names
+        .slice(index + 1)
+        .map((nextName) => SOURCE.indexOf(`export async function ${nextName}`, start + 1))
+        .filter((position) => position > start);
+      const end = nextStarts.length > 0 ? Math.min(...nextStarts) : SOURCE.length;
+      expect(SOURCE.slice(start, end), `${name}에서 비노출 제품을 걸러야 한다`).toContain(
+        'queryVisibleProducts',
+      );
+    }
+  });
 });

@@ -44,6 +44,7 @@ export interface AdminProductRow {
   min_price: number | null;
   barcode?: string | null;
   verification_status?: 'pending' | 'reviewed' | 'verified' | null;
+  is_visible: boolean;
   ingredientCount?: number;
   created_at: string | null;
 }
@@ -235,6 +236,19 @@ export interface ProductListParams {
   category?: string;
   petType?: string;
   verificationStatus?: string;
+  visibility?: 'visible' | 'hidden' | '전체';
+}
+
+const ADMIN_PRODUCT_COLUMNS =
+  'id, name, brand_name, main_category, sub_category, target_pet_type, target_life_stage, image_url, min_price, barcode, verification_status, created_at, product_ingredients(count)';
+
+function isMissingVisibilityColumn(error: unknown): boolean {
+  const value = error as { code?: string; message?: string } | null;
+  return Boolean(
+    value &&
+    (value.code === '42703' || value.code === 'PGRST204') &&
+    value.message?.includes('is_visible'),
+  );
 }
 
 /**
@@ -248,38 +262,46 @@ export async function fetchProductsPage({
   category,
   petType,
   verificationStatus,
+  visibility,
 }: ProductListParams): Promise<Paged<AdminProductRow>> {
   const from = Math.max(0, (page - 1) * pageSize);
-  let builder = supabase
-    .from('products')
-    .select(
-      'id, name, brand_name, main_category, sub_category, target_pet_type, target_life_stage, image_url, min_price, barcode, verification_status, created_at, product_ingredients(count)',
-      { count: 'exact' },
-    )
-    .order('created_at', { ascending: false })
-    .range(from, from + pageSize - 1);
+  const runQuery = (includeVisibility: boolean) => {
+    let builder = supabase
+      .from('products')
+      .select(
+        includeVisibility ? `${ADMIN_PRODUCT_COLUMNS}, is_visible` : ADMIN_PRODUCT_COLUMNS,
+        { count: 'exact' },
+      )
+      .order('created_at', { ascending: false })
+      .range(from, from + pageSize - 1);
 
-  const q = (search ?? '').trim();
-  if (q) {
-    const pattern = toOrIlikePattern(q);
-    builder = builder.or(`name.ilike.${pattern},brand_name.ilike.${pattern},barcode.ilike.${pattern}`);
-  }
-  if (category && category !== '전체') {
-    builder = builder.eq('main_category', category);
-  }
-  if (petType && petType !== '전체') {
-    builder = builder.eq('target_pet_type', petType);
-  }
-  if (verificationStatus && verificationStatus !== '전체') {
-    builder = builder.eq('verification_status', verificationStatus);
-  }
+    const q = (search ?? '').trim();
+    if (q) {
+      const pattern = toOrIlikePattern(q);
+      builder = builder.or(`name.ilike.${pattern},brand_name.ilike.${pattern},barcode.ilike.${pattern}`);
+    }
+    if (category && category !== '전체') builder = builder.eq('main_category', category);
+    if (petType && petType !== '전체') builder = builder.eq('target_pet_type', petType);
+    if (verificationStatus && verificationStatus !== '전체') {
+      builder = builder.eq('verification_status', verificationStatus);
+    }
+    if (includeVisibility && visibility && visibility !== '전체') {
+      builder = builder.eq('is_visible', visibility === 'visible');
+    }
+    return builder;
+  };
 
-  const { data, count, error } = await builder;
+  let result = await runQuery(true);
+  // Git 연동 프런트가 DB 마이그레이션보다 먼저 배포돼도 관리자 목록은 유지한다.
+  // 이 경우 모든 기존 행을 노출 상태로 표시하며 토글 시 서버가 명시적 오류를 준다.
+  if (isMissingVisibilityColumn(result.error)) result = await runQuery(false);
+  const { data, count, error } = result;
   if (error) throw new Error(error.message);
   const rows = (data ?? []).map((row) => {
     const raw = row as unknown as AdminProductRow & { product_ingredients?: { count: number }[] };
     return {
       ...raw,
+      is_visible: raw.is_visible !== false,
       ingredientCount: raw.product_ingredients?.[0]?.count ?? 0,
       product_ingredients: undefined,
     } as AdminProductRow;
@@ -327,6 +349,7 @@ export interface SavedProductConfirmation {
   sub_category: string | null;
   target_pet_type: string | null;
   verification_status: 'pending' | 'reviewed' | 'verified' | null;
+  is_visible: boolean;
 }
 
 export interface SaveProductResult {
@@ -349,17 +372,35 @@ export async function saveProduct(payload: SaveProductPayload): Promise<SaveProd
   const id = response.id;
   if (!id) throw new Error('저장된 제품 ID를 받지 못했습니다.');
 
-  const { data, error } = await supabase
+  let confirmation = await supabase
     .from('products')
-    .select('id, name, brand_name, main_category, sub_category, target_pet_type, verification_status')
+    .select('id, name, brand_name, main_category, sub_category, target_pet_type, verification_status, is_visible')
     .eq('id', id)
     .single();
+  if (isMissingVisibilityColumn(confirmation.error)) {
+    const legacy = await supabase
+      .from('products')
+      .select('id, name, brand_name, main_category, sub_category, target_pet_type, verification_status')
+      .eq('id', id)
+      .single();
+    confirmation = {
+      ...legacy,
+      data: legacy.data ? { ...legacy.data, is_visible: true } : null,
+    } as typeof confirmation;
+  }
+  const { data, error } = confirmation;
   if (error) throw new Error(`저장 후 사용자 앱 조회 확인 실패: ${error.message}`);
 
   const confirmed = data as SavedProductConfirmation | null;
   const expectedName = String(payload.product.name ?? '').trim();
   const expectedBrand = String(payload.product.brand_name ?? '').trim();
-  if (!confirmed || confirmed.name !== expectedName || confirmed.brand_name !== expectedBrand) {
+  const expectedVisibility = payload.product.is_visible;
+  if (
+    !confirmed ||
+    confirmed.name !== expectedName ||
+    confirmed.brand_name !== expectedBrand ||
+    (typeof expectedVisibility === 'boolean' && confirmed.is_visible !== expectedVisibility)
+  ) {
     throw new Error(
       `저장 확인 불일치: 요청한 제품명/브랜드가 사용자 앱 DB에 반영되지 않았습니다. ` +
       `(요청: ${expectedBrand} / ${expectedName}, 실제: ${confirmed?.brand_name ?? '없음'} / ${confirmed?.name ?? '없음'})`,
@@ -367,6 +408,18 @@ export async function saveProduct(payload: SaveProductPayload): Promise<SaveProd
   }
 
   return { id, product: confirmed };
+}
+
+/** 제품 행은 삭제하지 않고 사용자 앱 노출 여부만 바꾼다. */
+export async function setProductVisibility(id: string, isVisible: boolean): Promise<boolean> {
+  const response = await adminWrite<{ product?: { id?: string; is_visible?: boolean } }>(
+    'setProductVisibility',
+    { id, isVisible },
+  );
+  if (response.product?.id !== id || response.product.is_visible !== isVisible) {
+    throw new Error('제품 노출 상태 저장 결과를 확인하지 못했습니다.');
+  }
+  return response.product.is_visible;
 }
 
 export async function deleteProduct(id: string): Promise<void> {
