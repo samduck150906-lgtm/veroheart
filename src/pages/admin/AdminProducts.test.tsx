@@ -74,7 +74,18 @@ describe('AdminProducts', () => {
       total: 45,
     });
     h.fetchProductIngredients.mockReset().mockResolvedValue([]);
-    h.saveProduct.mockReset().mockResolvedValue({ id: 'p1' });
+    h.saveProduct.mockReset().mockResolvedValue({
+      id: 'p1',
+      product: {
+        id: 'p1',
+        name: '새 사료',
+        brand_name: '베로로',
+        main_category: '',
+        sub_category: null,
+        target_pet_type: 'dog',
+        verification_status: 'pending',
+      },
+    });
     h.deleteProduct.mockReset().mockResolvedValue(undefined);
     h.searchIngredients.mockReset().mockResolvedValue([]);
   });

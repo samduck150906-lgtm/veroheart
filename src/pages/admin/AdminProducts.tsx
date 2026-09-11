@@ -296,8 +296,8 @@ const AdminProducts: React.FC = () => {
     setFormError('');
     try {
       // anon 키로는 RLS에 막히므로 service_role Edge Function 프록시로 쓴다.
-      // 제품 저장과 원재료 연결 교체는 같은 요청 안에서 처리된다(RPC 트랜잭션).
-      await saveProductApi({
+      // 제품 저장과 원재료 연결 교체는 같은 관리자 요청 안에서 처리된다.
+      const saved = await saveProductApi({
         product: payload,
         nutrition: nutritionPayload,
         ingredients: ingredientLinks.map((link, index) => ({
@@ -305,7 +305,11 @@ const AdminProducts: React.FC = () => {
           sort_order: index,
         })),
       });
-      notify.success(currentProduct.id ? '제품 정보가 수정되었습니다.' : '신규 제품이 등록되었습니다.');
+      notify.success(
+        currentProduct.id
+          ? `제품명 “${saved.product.name}” 저장 및 앱 조회 확인이 완료되었습니다.`
+          : `신규 제품 “${saved.product.name}” 등록 및 앱 조회 확인이 완료되었습니다.`,
+      );
       setIsModalOpen(false);
       await loadProducts();
     } catch (err) {

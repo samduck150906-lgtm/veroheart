@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-const h = vi.hoisted(() => ({ adminWrite: vi.fn() }));
+const h = vi.hoisted(() => ({ adminWrite: vi.fn(), from: vi.fn() }));
 
 vi.mock('./supabase', () => ({
   adminWrite: h.adminWrite,
-  supabase: { from: () => ({ select: () => ({ order: () => Promise.resolve({ data: [], error: null }) }) }) },
+  supabase: { from: h.from },
 }));
 
 import {
@@ -15,6 +15,7 @@ import {
   fetchMemberDetail,
   fetchSettings,
   fetchWaitlistPage,
+  saveProduct,
   saveIngredient,
   saveSettings,
   validateProductImage,
@@ -46,6 +47,7 @@ describe('adminApi: 제품 이미지 사전 검증', () => {
 describe('adminApi: 쓰기 경로', () => {
   beforeEach(() => {
     h.adminWrite.mockReset().mockResolvedValue({ ok: true });
+    h.from.mockReset();
   });
 
   it('성분 저장은 anon 클라이언트가 아니라 admin-write 프록시를 호출한다', async () => {
@@ -60,6 +62,56 @@ describe('adminApi: 쓰기 경로', () => {
     expect(h.adminWrite).toHaveBeenCalledWith('deleteIngredient', {
       id: '11111111-1111-4111-8111-111111111111',
     });
+  });
+
+  it('제품 저장 뒤 사용자 앱과 같은 공개 조회로 제품명과 브랜드를 확인한다', async () => {
+    const confirmed = {
+      id: '11111111-1111-4111-8111-111111111111',
+      name: '바뀐 제품명',
+      brand_name: '베로로',
+      main_category: '사료',
+      sub_category: null,
+      target_pet_type: 'dog',
+      verification_status: 'verified',
+    };
+    const single = vi.fn().mockResolvedValue({ data: confirmed, error: null });
+    const eq = vi.fn().mockReturnValue({ single });
+    const select = vi.fn().mockReturnValue({ eq });
+    h.from.mockReturnValue({ select });
+    h.adminWrite.mockResolvedValue({ id: confirmed.id });
+
+    await expect(saveProduct({
+      product: { name: ' 바뀐 제품명 ', brand_name: ' 베로로 ' },
+      nutrition: null,
+    })).resolves.toEqual({ id: confirmed.id, product: confirmed });
+
+    expect(h.adminWrite).toHaveBeenCalledWith('saveProduct', expect.objectContaining({
+      product: expect.objectContaining({ name: ' 바뀐 제품명 ' }),
+    }));
+    expect(h.from).toHaveBeenCalledWith('products');
+    expect(eq).toHaveBeenCalledWith('id', confirmed.id);
+  });
+
+  it('저장 응답이 성공이어도 공개 DB 값이 다르면 성공으로 처리하지 않는다', async () => {
+    const single = vi.fn().mockResolvedValue({
+      data: {
+        id: '11111111-1111-4111-8111-111111111111',
+        name: '예전 제품명',
+        brand_name: '베로로',
+      },
+      error: null,
+    });
+    h.from.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({ single }),
+      }),
+    });
+    h.adminWrite.mockResolvedValue({ id: '11111111-1111-4111-8111-111111111111' });
+
+    await expect(saveProduct({
+      product: { name: '바뀐 제품명', brand_name: '베로로' },
+      nutrition: null,
+    })).rejects.toThrow('저장 확인 불일치');
   });
 
   it('개인 데이터 운영 조회는 admin-write를 거친다', async () => {

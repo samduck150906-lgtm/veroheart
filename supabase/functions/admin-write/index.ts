@@ -125,6 +125,9 @@ function recordFailure(key: string) {
 // deno-lint-ignore no-explicit-any
 type Db = any;
 
+const SAVED_PRODUCT_COLUMNS =
+  'id, name, brand_name, main_category, sub_category, target_pet_type, verification_status';
+
 interface AuthUserRecord {
   id: string;
   email?: string | null;
@@ -327,17 +330,34 @@ serve(async (req) => {
         const rawProduct = (body.product ?? {}) as Record<string, unknown>;
 
         let productId = optionalUuid(rawProduct.id, '제품 ID');
+        let previousName: string | null = null;
         if (productId) {
           const { data: existing, error: findErr } = await db
-            .from('products').select('id').eq('id', productId).maybeSingle();
+            .from('products').select('id, name').eq('id', productId).maybeSingle();
           if (findErr) throw findErr;
           if (!existing) throw new ValidationError('수정할 제품을 찾을 수 없습니다.');
-          const { error } = await db.from('products').update(product).eq('id', productId);
+          previousName = typeof existing.name === 'string' ? existing.name : null;
+          const { data: updated, error } = await db
+            .from('products')
+            .update(product)
+            .eq('id', productId)
+            .select(SAVED_PRODUCT_COLUMNS)
+            .single();
           if (error) throw error;
+          if (!updated || updated.name !== product.name || updated.brand_name !== product.brand_name) {
+            throw new Error('제품 수정 결과가 요청한 제품명/브랜드와 일치하지 않습니다.');
+          }
         } else {
-          const { data, error } = await db.from('products').insert([product]).select('id').single();
+          const { data, error } = await db
+            .from('products')
+            .insert([product])
+            .select(SAVED_PRODUCT_COLUMNS)
+            .single();
           if (error) throw error;
           productId = data?.id ?? null;
+          if (!data || data.name !== product.name || data.brand_name !== product.brand_name) {
+            throw new Error('제품 등록 결과가 요청한 제품명/브랜드와 일치하지 않습니다.');
+          }
         }
         if (!productId) throw new Error('제품 ID를 확인할 수 없습니다.');
 
@@ -352,17 +372,33 @@ serve(async (req) => {
           if (npErr) throw npErr;
         }
 
-        // 원재료 연결(선택) — 제품 저장과 같은 요청에서 원자적으로 교체
+        // 원재료 연결(선택) — 연결 목록 자체는 RPC 한 트랜잭션으로 교체
         let ingredientCount: number | null = null;
         if (body.ingredients !== undefined) {
           ingredientCount = await replaceProductIngredients(db, productId, body.ingredients);
         }
 
+        // 모든 부가 저장이 끝난 뒤 최종 행을 다시 읽어 응답과 감사 로그의 근거로 쓴다.
+        const { data: confirmedProduct, error: confirmErr } = await db
+          .from('products')
+          .select(SAVED_PRODUCT_COLUMNS)
+          .eq('id', productId)
+          .single();
+        if (confirmErr) throw confirmErr;
+        if (
+          !confirmedProduct ||
+          confirmedProduct.name !== product.name ||
+          confirmedProduct.brand_name !== product.brand_name
+        ) {
+          throw new Error('저장 후 제품 조회 결과가 요청한 값과 일치하지 않습니다.');
+        }
+
         await audit(db, actor, 'saveProduct', 'products', productId, {
-          name: product.name,
+          previousName,
+          name: confirmedProduct.name,
           ingredientCount,
         });
-        return json({ ok: true, id: productId, ingredientCount }, 200, cors);
+        return json({ ok: true, id: productId, ingredientCount, product: confirmedProduct }, 200, cors);
       }
 
       case 'deleteProduct': {

@@ -353,6 +353,7 @@ export async function searchProducts(
   } = {}
 ): Promise<Product[]> {
   if (!isSupabaseConfigured) return [];
+  const normalizedQuery = query.trim();
   let builder = supabase.from('products').select(`
     id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
     target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
@@ -363,16 +364,23 @@ export async function searchProducts(
     )
   `);
   
-  if (query) {
-    const pattern = toOrIlikePattern(query);
-    // 제품명·브랜드에 더해 '그 원료가 들어간 제품'도 결과에 넣는다.
-    // 필터(카테고리·종·건강태그 등)는 아래에서 한 번만 적용되므로 두 경로가 갈라지지 않는다.
-    const ingredientProductIds = await findProductIdsByIngredientName(query);
-    const clauses = [`name.ilike.${pattern}`, `brand_name.ilike.${pattern}`];
-    if (ingredientProductIds.length > 0) {
-      clauses.push(`id.in.(${ingredientProductIds.join(',')})`);
+  if (normalizedQuery) {
+    // 공백으로 나눈 모든 단어가 제품명·브랜드·바코드·원료 중 하나에는 맞아야 한다.
+    // 예: "오리젠 퍼피"처럼 브랜드와 제품명에 단어가 나뉜 검색도 찾는다.
+    const searchTerms = normalizedQuery.split(/\s+/).filter(Boolean).slice(0, 8);
+    for (const term of searchTerms) {
+      const pattern = toOrIlikePattern(term);
+      const ingredientProductIds = await findProductIdsByIngredientName(term);
+      const clauses = [
+        `name.ilike.${pattern}`,
+        `brand_name.ilike.${pattern}`,
+        `barcode.ilike.${pattern}`,
+      ];
+      if (ingredientProductIds.length > 0) {
+        clauses.push(`id.in.(${ingredientProductIds.join(',')})`);
+      }
+      builder = builder.or(clauses.join(','));
     }
-    builder = builder.or(clauses.join(','));
   }
 
   if (category && category !== '전체') {

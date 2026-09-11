@@ -315,12 +315,58 @@ export async function fetchProductIngredients(productId: string): Promise<Produc
 export interface SaveProductPayload {
   product: Record<string, unknown>;
   nutrition: Record<string, number> | null;
-  /** 지정하면 제품 저장과 같은 트랜잭션에서 원재료 연결을 교체한다. */
+  /** 지정하면 제품 저장과 같은 관리자 요청에서 원재료 연결을 교체한다. */
   ingredients?: { ingredient_id: string; sort_order: number }[];
 }
 
-export async function saveProduct(payload: SaveProductPayload): Promise<{ id: string }> {
-  return adminWrite<{ id: string }>('saveProduct', payload as unknown as Record<string, unknown>);
+export interface SavedProductConfirmation {
+  id: string;
+  name: string;
+  brand_name: string;
+  main_category: string | null;
+  sub_category: string | null;
+  target_pet_type: string | null;
+  verification_status: 'pending' | 'reviewed' | 'verified' | null;
+}
+
+export interface SaveProductResult {
+  id: string;
+  product: SavedProductConfirmation;
+}
+
+/**
+ * 제품 저장 뒤 사용자 앱과 동일한 공개 products 조회 경로로 다시 읽는다.
+ *
+ * Edge Function이 200을 반환했더라도 UPDATE가 실제 행을 바꾸지 못했거나 다른
+ * 환경을 바라보면 관리자 화면만 성공처럼 보일 수 있다. 저장 직후 제품명과
+ * 브랜드까지 대조해야 "앱 검색에 보이는 DB에 반영됨"을 확인할 수 있다.
+ */
+export async function saveProduct(payload: SaveProductPayload): Promise<SaveProductResult> {
+  const response = await adminWrite<{ id?: string }>(
+    'saveProduct',
+    payload as unknown as Record<string, unknown>,
+  );
+  const id = response.id;
+  if (!id) throw new Error('저장된 제품 ID를 받지 못했습니다.');
+
+  const { data, error } = await supabase
+    .from('products')
+    .select('id, name, brand_name, main_category, sub_category, target_pet_type, verification_status')
+    .eq('id', id)
+    .single();
+  if (error) throw new Error(`저장 후 사용자 앱 조회 확인 실패: ${error.message}`);
+
+  const confirmed = data as SavedProductConfirmation | null;
+  const expectedName = String(payload.product.name ?? '').trim();
+  const expectedBrand = String(payload.product.brand_name ?? '').trim();
+  if (!confirmed || confirmed.name !== expectedName || confirmed.brand_name !== expectedBrand) {
+    throw new Error(
+      `저장 확인 불일치: 요청한 제품명/브랜드가 사용자 앱 DB에 반영되지 않았습니다. ` +
+      `(요청: ${expectedBrand} / ${expectedName}, 실제: ${confirmed?.brand_name ?? '없음'} / ${confirmed?.name ?? '없음'})`,
+    );
+  }
+
+  return { id, product: confirmed };
 }
 
 export async function deleteProduct(id: string): Promise<void> {

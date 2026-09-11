@@ -116,6 +116,7 @@ export default function Search() {
   }, [qParam]);
   const [recentSearches, setRecentSearches] = useState<string[]>(() => loadRecentSearches());
   const [searchResults, setSearchResults] = useState<Product[]>([]);
+  const [isShowingBroadMatches, setIsShowingBroadMatches] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [sortBy, setSortBy] = useState<'default' | 'rating'>('default');
 
@@ -168,7 +169,7 @@ export default function Search() {
       setIsLoading(true);
       try {
         const pet = filters.targetPetType;
-        const results = await searchProducts(query, category, excludedIngredients, {
+        let results = await searchProducts(query, category, excludedIngredients, {
           targetPetType: pet === '' ? undefined : pet,
           targetLifeStage: filters.targetLifeStage || undefined,
           formulation: filters.formulation || undefined,
@@ -177,8 +178,19 @@ export default function Search() {
           healthConcerns: filters.healthConcerns,
           dietPreset: filters.dietPreset,
         });
+        let showingBroadMatches = false;
+        // 직접 입력한 검색어가 카테고리·프로필 종·상세 필터에 가려져 0건이면,
+        // 같은 운영 DB를 필터 없이 한 번 더 확인해 제품 자체가 누락되지 않게 한다.
+        if (query.trim() && results.length === 0) {
+          const broadMatches = await searchProducts(query.trim());
+          if (broadMatches.length > 0) {
+            results = broadMatches;
+            showingBroadMatches = true;
+          }
+        }
         if (cancelled) return;
         setSearchResults(results);
+        setIsShowingBroadMatches(showingBroadMatches);
         if (query.trim() && results.length > 0) {
           const t = query.trim();
           setRecentSearches((prev) => {
@@ -237,7 +249,7 @@ export default function Search() {
 
   const resetFilters = () => {
     setFilters({
-      targetPetType: defaultPetFromProfile(profile),
+      targetPetType: '',
       targetLifeStage: '',
       formulation: '',
       subCategory: '',
@@ -247,6 +259,12 @@ export default function Search() {
     });
     setExcludedIngredients([]);
     setSortBy('default');
+  };
+
+  const clearAllSearchRestrictions = () => {
+    resetFilters();
+    setCategory('전체');
+    setIsShowingBroadMatches(false);
   };
 
   const recordRecent = (term: string) => {
@@ -297,8 +315,9 @@ export default function Search() {
     setShowSuggest(false);
   };
 
-  /** 활성 필터 개수 — 필터 버튼 배지에 노출 (종 필터는 기본값이라 카운트 제외) */
+  /** 활성 필터 개수 — 프로필에서 자동 적용된 종 필터도 숨기지 않고 표시한다. */
   const activeFilterCount =
+    (filters.targetPetType ? 1 : 0) +
     (filters.targetLifeStage ? 1 : 0) +
     (filters.formulation ? 1 : 0) +
     (filters.subCategory ? 1 : 0) +
@@ -467,6 +486,29 @@ export default function Search() {
       )}
 
       {/* 결과 수 + 정렬 */}
+      {isShowingBroadMatches && (
+        <div
+          role="status"
+          style={{
+            marginBottom: '12px', padding: '12px 14px', borderRadius: '13px',
+            background: 'rgba(250, 204, 21, 0.14)', border: '1px solid rgba(180, 140, 0, 0.24)',
+            color: 'var(--vr-ink)', fontSize: '13px', lineHeight: 1.5,
+          }}
+        >
+          <strong>검색어와 일치하는 제품을 찾았어요.</strong>{' '}
+          현재 카테고리나 반려동물·상세 필터와 맞지 않아 전체 제품에서 보여드리고 있습니다.
+          <button
+            type="button"
+            onClick={clearAllSearchRestrictions}
+            style={{
+              marginLeft: '8px', border: 'none', background: 'none', padding: 0,
+              color: 'var(--vr-ink)', fontWeight: 800, textDecoration: 'underline', cursor: 'pointer',
+            }}
+          >
+            필터 모두 해제
+          </button>
+        </div>
+      )}
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '10px' }}>
         <span style={{ fontSize: '13px', fontWeight: 700, color: VR.muted }}>
           {isLoading
