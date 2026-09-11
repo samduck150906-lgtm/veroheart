@@ -24,15 +24,71 @@ interface StandardFeedItem {
 }
 
 const INGREDIENT_CATEGORIES = [
-  '단백질원',
-  '탄수화물원',
-  '지방원',
+  '동물성 단백질',
+  '식물성 단백질',
+  '탄수화물·곡물',
+  '지방·오일',
+  '과일·채소·식이섬유',
   '비타민·미네랄',
   '기능성 성분',
   '보존료·산화방지제',
-  '유산균',
+  '유산균·프리바이오틱스',
+  '첨가물·기호성',
+  '조사료',
   '기타',
 ];
+
+const NUTRITION_FIELDS = [
+  ['moisture_pct', '수분'],
+  ['crude_protein_pct', '조단백질'],
+  ['crude_fat_pct', '조지방'],
+  ['crude_ash_pct', '조회분'],
+  ['crude_fiber_pct', '조섬유'],
+] as const;
+
+const STANDARD_FEED_SOURCE = '한국표준사료성분표 2022';
+
+function splitTerms(value: string): string[] {
+  return [...new Set(value.split(/[,\n]/).map((item) => item.trim()).filter(Boolean))];
+}
+
+function standardFeedCategory(id: number): string {
+  if (id >= 29 && id <= 57) return '식물성 단백질';
+  if (id >= 58 && id <= 78) return '과일·채소·식이섬유';
+  if (id >= 79 && id <= 87) return '기능성 성분';
+  if (id >= 88 && id <= 133) return '조사료';
+  if (id >= 134 && id <= 137) return '식물성 단백질';
+  if (id >= 138 && id <= 142) return '탄수화물·곡물';
+  if (id === 143) return '기능성 성분';
+  if (id >= 144 && id <= 167) return '동물성 단백질';
+  if (id >= 168 && id <= 174) return '지방·오일';
+  if (id >= 175 && id <= 182) return '비타민·미네랄';
+  return '탄수화물·곡물';
+}
+
+function standardFeedTags(item: StandardFeedItem): string[] {
+  return [
+    item.protein >= 20 ? '고단백' : null,
+    item.fat >= 10 ? '고지방' : null,
+    item.fiber >= 5 ? '식이섬유' : null,
+    item.ash >= 8 ? '미네랄' : null,
+  ].filter((tag): tag is string => Boolean(tag));
+}
+
+function standardFeedSafety(item: StandardFeedItem): { risk: RiskLevel; cautions: string[] } {
+  const name = `${item.name_ko} ${item.name_en}`.toLowerCase();
+  if (/커피|coffee/.test(name)) {
+    return { risk: 'danger', cautions: ['카페인 잔류 가능성이 있어 반려동물 급여 금지'] };
+  }
+  if (/포도|grape/.test(name)) {
+    return { risk: 'danger', cautions: ['개에게 급여 금지'] };
+  }
+  if ((item.id >= 58 && item.id <= 78) || (item.id >= 88 && item.id <= 143) || item.id >= 175 ||
+      /겨자|면실|채종|mustard|cottonseed|rapeseed/.test(name)) {
+    return { risk: 'caution', cautions: ['축산용 표준사료 자료이므로 반려동물 적용 전 수의영양 검토 필요'] };
+  }
+  return { risk: 'safe', cautions: [] };
+}
 
 const RISK_META: Record<RiskLevel, { label: string; color: string; tag: string }> = {
   safe: { label: '안전', color: '#10B981', tag: 'green' },
@@ -48,6 +104,16 @@ const EMPTY_FORM: FormState = {
   risk_level: 'safe',
   description: '',
   category: '',
+  aliases: [],
+  nutrition_tags: [],
+  caution_conditions: [],
+  allergy_triggers: [],
+  moisture_pct: null,
+  crude_protein_pct: null,
+  crude_fat_pct: null,
+  crude_ash_pct: null,
+  crude_fiber_pct: null,
+  nutrition_source: '',
 };
 
 const AdminIngredients: React.FC = () => {
@@ -93,7 +159,10 @@ const AdminIngredients: React.FC = () => {
     return ingredients.filter(
       (ingredient) =>
         ingredient.name_ko.toLowerCase().includes(q) ||
-        (ingredient.name_en ?? '').toLowerCase().includes(q),
+        (ingredient.name_en ?? '').toLowerCase().includes(q) ||
+        (ingredient.category ?? '').toLowerCase().includes(q) ||
+        (ingredient.description ?? '').toLowerCase().includes(q) ||
+        (ingredient.aliases ?? []).some((alias) => alias.toLowerCase().includes(q)),
     );
   }, [ingredients, searchTerm]);
 
@@ -102,6 +171,10 @@ const AdminIngredients: React.FC = () => {
       safe: ingredients.filter((i) => i.risk_level === 'safe').length,
       caution: ingredients.filter((i) => i.risk_level === 'caution').length,
       danger: ingredients.filter((i) => i.risk_level === 'danger').length,
+      classified: ingredients.filter((i) => Boolean(i.category)).length,
+      nutrition: ingredients.filter((i) =>
+        NUTRITION_FIELDS.some(([key]) => i[key] !== null && i[key] !== undefined),
+      ).length,
     }),
     [ingredients],
   );
@@ -120,6 +193,16 @@ const AdminIngredients: React.FC = () => {
       risk_level: ingredient.risk_level,
       description: ingredient.description ?? '',
       category: ingredient.category ?? '',
+      aliases: ingredient.aliases ?? [],
+      nutrition_tags: ingredient.nutrition_tags ?? [],
+      caution_conditions: ingredient.caution_conditions ?? [],
+      allergy_triggers: ingredient.allergy_triggers ?? [],
+      moisture_pct: ingredient.moisture_pct ?? null,
+      crude_protein_pct: ingredient.crude_protein_pct ?? null,
+      crude_fat_pct: ingredient.crude_fat_pct ?? null,
+      crude_ash_pct: ingredient.crude_ash_pct ?? null,
+      crude_fiber_pct: ingredient.crude_fiber_pct ?? null,
+      nutrition_source: ingredient.nutrition_source ?? '',
     });
     setFormError('');
     setIsModalOpen(true);
@@ -130,7 +213,14 @@ const AdminIngredients: React.FC = () => {
     if (state.name_ko.trim().length > 200) return '한글 성분명이 너무 깁니다. (최대 200자)';
     if ((state.name_en ?? '').length > 200) return '영문 성분명이 너무 깁니다. (최대 200자)';
     if ((state.description ?? '').length > 2000) return '설명이 너무 깁니다. (최대 2000자)';
+    if (!state.id && !state.category) return '신규 성분의 분류를 선택해 주세요.';
     if (!['safe', 'caution', 'danger'].includes(state.risk_level)) return '위험도를 선택해 주세요.';
+    for (const [key, label] of NUTRITION_FIELDS) {
+      const value = state[key];
+      if (value !== null && value !== undefined && (!Number.isFinite(value) || value < 0 || value > 100)) {
+        return `${label}은(는) 0~100 사이 숫자로 입력해 주세요.`;
+      }
+    }
     return null;
   };
 
@@ -153,6 +243,16 @@ const AdminIngredients: React.FC = () => {
         risk_level: form.risk_level,
         description: (form.description ?? '').trim() || null,
         category: (form.category ?? '').trim() || null,
+        aliases: splitTerms((form.aliases ?? []).join(',')),
+        nutrition_tags: splitTerms((form.nutrition_tags ?? []).join(',')),
+        caution_conditions: splitTerms((form.caution_conditions ?? []).join('\n')),
+        allergy_triggers: splitTerms((form.allergy_triggers ?? []).join(',')),
+        moisture_pct: form.moisture_pct ?? null,
+        crude_protein_pct: form.crude_protein_pct ?? null,
+        crude_fat_pct: form.crude_fat_pct ?? null,
+        crude_ash_pct: form.crude_ash_pct ?? null,
+        crude_fiber_pct: form.crude_fiber_pct ?? null,
+        nutrition_source: (form.nutrition_source ?? '').trim() || null,
       });
       notify.success(form.id ? '성분 정보가 수정되었습니다.' : '신규 성분이 등록되었습니다.');
       setIsModalOpen(false);
@@ -205,12 +305,23 @@ const AdminIngredients: React.FC = () => {
   }, [standardFeedSearch]);
 
   const handleSelectStandardFeed = (item: StandardFeedItem) => {
+    const safety = standardFeedSafety(item);
     setForm((prev) => ({
       ...prev,
-      name_ko: item.name_ko,
-      name_en: item.name_en,
-      description: `수분: ${item.moisture}% / 조단백질: ${item.protein}% / 조지방: ${item.fat}% / 조회분: ${item.ash}% / 조섬유: ${item.fiber}% (출처: 한국표준사료성분표 2022)`,
-      risk_level: 'safe',
+      // 기존 성분 편집 시 관리자가 붙인 이름/설명/위험도를 덮어쓰지 않고 영양값만 연결한다.
+      name_ko: prev.id ? prev.name_ko : item.name_ko,
+      name_en: prev.id ? prev.name_en : item.name_en,
+      description: prev.description || `${item.name_ko}의 표준 사료 영양 성분 데이터`,
+      category: prev.category || standardFeedCategory(item.id),
+      nutrition_tags: standardFeedTags(item),
+      risk_level: prev.id ? prev.risk_level : safety.risk,
+      caution_conditions: prev.id ? prev.caution_conditions : safety.cautions,
+      moisture_pct: item.moisture,
+      crude_protein_pct: item.protein,
+      crude_fat_pct: item.fat,
+      crude_ash_pct: item.ash,
+      crude_fiber_pct: item.fiber,
+      nutrition_source: STANDARD_FEED_SOURCE,
     }));
     setIsStandardFeedModalOpen(false);
   };
@@ -222,7 +333,7 @@ const AdminIngredients: React.FC = () => {
       <div className="admin-toolbar">
         <div className="admin-title-wrap">
           <h2>성분 사전 관리</h2>
-          <p>총 {ingredients.length.toLocaleString()}개 성분</p>
+          <p>기존 성분 수정 · 표준 영양값 연결 · 신규 성분 등록</p>
         </div>
         <button type="button" className="admin-btn-primary" onClick={openCreateModal}>
           <Plus size={16} />
@@ -239,6 +350,18 @@ const AdminIngredients: React.FC = () => {
             </div>
           </article>
         ))}
+        <article className="admin-card">
+          <span className="admin-stat-label">분류 완료</span>
+          <div className="admin-stat-value">{stats.classified.toLocaleString()}</div>
+        </article>
+        <article className="admin-card">
+          <span className="admin-stat-label">구조화 영양값</span>
+          <div className="admin-stat-value">{stats.nutrition.toLocaleString()}</div>
+        </article>
+        <article className="admin-card">
+          <span className="admin-stat-label">전체 성분</span>
+          <div className="admin-stat-value">{ingredients.length.toLocaleString()}</div>
+        </article>
       </div>
 
       <div className="admin-search-wrap">
@@ -250,7 +373,7 @@ const AdminIngredients: React.FC = () => {
           id="admin-ingredient-search"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="성분명(한글/영문) 검색"
+          placeholder="성분명·영문명·동의어·분류·설명 검색"
         />
       </div>
 
@@ -261,6 +384,7 @@ const AdminIngredients: React.FC = () => {
               <th>성분명</th>
               <th>위험도</th>
               <th>분류</th>
+              <th>영양 DB</th>
               <th>설명</th>
               <th style={{ textAlign: 'right' }}>관리</th>
             </tr>
@@ -268,13 +392,13 @@ const AdminIngredients: React.FC = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={5}>
+                <td colSpan={6}>
                   <div className="admin-empty">데이터를 불러오는 중입니다...</div>
                 </td>
               </tr>
             ) : loadError ? (
               <tr>
-                <td colSpan={5}>
+                <td colSpan={6}>
                   <div className="admin-empty">
                     성분을 불러오지 못했습니다.
                     <button type="button" className="admin-btn-soft" style={{ marginLeft: 10 }} onClick={loadIngredients}>
@@ -285,7 +409,7 @@ const AdminIngredients: React.FC = () => {
               </tr>
             ) : filteredIngredients.length === 0 ? (
               <tr>
-                <td colSpan={5}>
+                <td colSpan={6}>
                   <div className="admin-empty">
                     {ingredients.length === 0
                       ? '등록된 성분이 없습니다. "신규 성분 등록"으로 사전을 채워주세요.'
@@ -306,6 +430,11 @@ const AdminIngredients: React.FC = () => {
                     </span>
                   </td>
                   <td>{ingredient.category || '-'}</td>
+                  <td>
+                    {NUTRITION_FIELDS.some(([key]) => ingredient[key] !== null && ingredient[key] !== undefined)
+                      ? <span className="admin-tag green">연결됨</span>
+                      : <span className="admin-tag gray">미등록</span>}
+                  </td>
                   <td>{ingredient.description || '-'}</td>
                   <td style={{ textAlign: 'right' }}>
                     <div className="admin-actions">
@@ -356,15 +485,13 @@ const AdminIngredients: React.FC = () => {
               </button>
             </div>
 
-            {!form.id && (
-              <button
-                type="button"
-                className="admin-standard-feed-btn"
-                onClick={() => setIsStandardFeedModalOpen(true)}
-              >
-                <Database size={18} /> 한국표준사료성분표 데이터에서 불러오기
-              </button>
-            )}
+            <button
+              type="button"
+              className="admin-standard-feed-btn"
+              onClick={() => setIsStandardFeedModalOpen(true)}
+            >
+              <Database size={18} /> {form.id ? '기존 성분에 표준 영양값 연결' : '한국표준사료성분표 데이터에서 불러오기'}
+            </button>
 
             <div className="admin-form-grid">
               <div className="admin-form-group">
@@ -420,12 +547,89 @@ const AdminIngredients: React.FC = () => {
                   onChange={(e) => setForm({ ...form, category: e.target.value })}
                 >
                   <option value="">선택하세요</option>
+                  {form.category && !INGREDIENT_CATEGORIES.includes(form.category) && (
+                    <option value={form.category}>{form.category}</option>
+                  )}
                   {INGREDIENT_CATEGORIES.map((option) => (
                     <option key={option} value={option}>
                       {option}
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div className="admin-form-group">
+                <label htmlFor="ing-aliases">동의어·다른 표기</label>
+                <input
+                  id="ing-aliases"
+                  value={(form.aliases ?? []).join(', ')}
+                  onChange={(e) => setForm({ ...form, aliases: e.target.value.split(',') })}
+                  placeholder="예: 치킨, 계육 (쉼표로 구분)"
+                />
+              </div>
+
+              <div className="admin-form-group">
+                <label htmlFor="ing-allergies">알레르기 태그</label>
+                <input
+                  id="ing-allergies"
+                  value={(form.allergy_triggers ?? []).join(', ')}
+                  onChange={(e) => setForm({ ...form, allergy_triggers: e.target.value.split(',') })}
+                  placeholder="예: 닭고기, 가금류"
+                />
+              </div>
+
+              <div className="admin-form-group">
+                <label htmlFor="ing-nutrition-tags">영양·기능 태그</label>
+                <input
+                  id="ing-nutrition-tags"
+                  value={(form.nutrition_tags ?? []).join(', ')}
+                  onChange={(e) => setForm({ ...form, nutrition_tags: e.target.value.split(',') })}
+                  placeholder="예: 고단백, 오메가3"
+                />
+              </div>
+
+              <div className="admin-form-group admin-form-span-2">
+                <label htmlFor="ing-cautions">주의 조건</label>
+                <textarea
+                  id="ing-cautions"
+                  value={(form.caution_conditions ?? []).join('\n')}
+                  onChange={(e) => setForm({ ...form, caution_conditions: e.target.value.split('\n') })}
+                  rows={2}
+                  placeholder="조건별로 줄을 나눠 입력하세요. 예: 신장 질환은 수의사 상담"
+                />
+              </div>
+
+              <div className="admin-form-group admin-form-span-2">
+                <span className="admin-form-legend">구조화 영양값 (%)</span>
+                <div className="admin-nutrition-fields">
+                  {NUTRITION_FIELDS.map(([key, label]) => (
+                    <label key={key} htmlFor={`ing-${key}`}>
+                      <span>{label}</span>
+                      <input
+                        id={`ing-${key}`}
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        value={form[key] ?? ''}
+                        onChange={(e) => setForm({
+                          ...form,
+                          [key]: e.target.value === '' ? null : Number(e.target.value),
+                        })}
+                      />
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="admin-form-group admin-form-span-2">
+                <label htmlFor="ing-nutrition-source">영양정보 출처</label>
+                <input
+                  id="ing-nutrition-source"
+                  value={form.nutrition_source ?? ''}
+                  onChange={(e) => setForm({ ...form, nutrition_source: e.target.value })}
+                  placeholder="예: 한국표준사료성분표 2022"
+                />
               </div>
 
               <div className="admin-form-group admin-form-span-2">

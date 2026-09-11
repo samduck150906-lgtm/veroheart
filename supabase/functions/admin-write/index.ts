@@ -137,6 +137,9 @@ function savedProductMatches(saved: Record<string, unknown> | null, expected: Re
   );
 }
 
+const SAVED_INGREDIENT_COLUMNS =
+  'id, name_ko, name_en, risk_level, description, category, aliases, nutrition_tags, caution_conditions, allergy_triggers, moisture_pct, crude_protein_pct, crude_fat_pct, crude_ash_pct, crude_fiber_pct, nutrition_source';
+
 interface AuthUserRecord {
   id: string;
   email?: string | null;
@@ -477,25 +480,53 @@ serve(async (req) => {
 
           // name_ko 는 UNIQUE — 다른 행과 충돌하는지 먼저 확인해 친절한 메시지를 준다.
           const { data: dupe, error: dupErr } = await db
-            .from('ingredients').select('id').eq('name_ko', ingredient.name_ko).neq('id', id).maybeSingle();
+            .from('ingredients')
+            .select('id')
+            .ilike('name_ko', escapeLike(ingredient.name_ko as string))
+            .neq('id', id)
+            .maybeSingle();
           if (dupErr) throw dupErr;
           if (dupe) throw new ValidationError('같은 이름의 성분이 이미 있습니다.');
 
-          const { error } = await db.from('ingredients').update(ingredient).eq('id', id);
+          const { data: updated, error } = await db
+            .from('ingredients')
+            .update(ingredient)
+            .eq('id', id)
+            .select(SAVED_INGREDIENT_COLUMNS)
+            .single();
           if (error) throw error;
-          await audit(db, actor, 'saveIngredient', 'ingredients', id, { name_ko: ingredient.name_ko });
-          return json({ ok: true, id }, 200, cors);
+          if (!updated || updated.name_ko !== ingredient.name_ko || updated.risk_level !== ingredient.risk_level) {
+            throw new Error('성분 수정 결과가 요청한 값과 일치하지 않습니다.');
+          }
+          await audit(db, actor, 'saveIngredient', 'ingredients', id, {
+            name_ko: updated.name_ko,
+            category: updated.category,
+          });
+          return json({ ok: true, id, ingredient: updated }, 200, cors);
         }
 
         const { data: dupe, error: dupErr } = await db
-          .from('ingredients').select('id').eq('name_ko', ingredient.name_ko).maybeSingle();
+          .from('ingredients')
+          .select('id')
+          .ilike('name_ko', escapeLike(ingredient.name_ko as string))
+          .maybeSingle();
         if (dupErr) throw dupErr;
         if (dupe) throw new ValidationError('같은 이름의 성분이 이미 있습니다.');
 
-        const { data, error } = await db.from('ingredients').insert([ingredient]).select('id').single();
+        const { data, error } = await db
+          .from('ingredients')
+          .insert([ingredient])
+          .select(SAVED_INGREDIENT_COLUMNS)
+          .single();
         if (error) throw error;
-        await audit(db, actor, 'saveIngredient', 'ingredients', data?.id ?? null, { name_ko: ingredient.name_ko });
-        return json({ ok: true, id: data?.id ?? null }, 200, cors);
+        if (!data || data.name_ko !== ingredient.name_ko || data.risk_level !== ingredient.risk_level) {
+          throw new Error('성분 등록 결과가 요청한 값과 일치하지 않습니다.');
+        }
+        await audit(db, actor, 'saveIngredient', 'ingredients', data.id, {
+          name_ko: data.name_ko,
+          category: data.category,
+        });
+        return json({ ok: true, id: data.id, ingredient: data }, 200, cors);
       }
 
       case 'deleteIngredient': {

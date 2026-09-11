@@ -52,10 +52,46 @@ describe('adminApi: 쓰기 경로', () => {
   });
 
   it('성분 저장은 anon 클라이언트가 아니라 admin-write 프록시를 호출한다', async () => {
-    await saveIngredient({ name_ko: '연어', risk_level: 'safe' });
+    const confirmed = {
+      id: '11111111-1111-4111-8111-111111111111',
+      name_ko: '연어',
+      name_en: 'Salmon',
+      risk_level: 'safe',
+      description: null,
+      category: '동물성 단백질',
+    };
+    h.adminWrite.mockResolvedValue({ id: confirmed.id });
+    h.from.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({ data: confirmed, error: null }),
+        }),
+      }),
+    });
+
+    await expect(saveIngredient({ name_ko: '연어', risk_level: 'safe' }))
+      .resolves.toEqual({ id: confirmed.id, ingredient: expect.objectContaining(confirmed) });
     expect(h.adminWrite).toHaveBeenCalledWith('saveIngredient', {
       ingredient: { name_ko: '연어', risk_level: 'safe' },
     });
+    expect(h.from).toHaveBeenCalledWith('ingredients');
+  });
+
+  it('성분 저장 응답과 공개 DB 값이 다르면 성공으로 처리하지 않는다', async () => {
+    h.adminWrite.mockResolvedValue({ id: '11111111-1111-4111-8111-111111111111' });
+    h.from.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({
+            data: { name_ko: '이전 이름', risk_level: 'safe' },
+            error: null,
+          }),
+        }),
+      }),
+    });
+
+    await expect(saveIngredient({ name_ko: '새 이름', risk_level: 'safe' }))
+      .rejects.toThrow('저장 확인 불일치');
   });
 
   it('성분 삭제도 프록시를 거친다', async () => {

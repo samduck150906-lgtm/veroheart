@@ -25,7 +25,9 @@ export const NUTRITION_COLUMNS = [
 
 export const INGREDIENT_COLUMNS = [
   'name_ko', 'name_en', 'risk_level', 'description', 'category',
-  'caution_conditions', 'allergy_triggers',
+  'aliases', 'nutrition_tags', 'caution_conditions', 'allergy_triggers',
+  'moisture_pct', 'crude_protein_pct', 'crude_fat_pct', 'crude_ash_pct', 'crude_fiber_pct',
+  'nutrition_source',
 ] as const;
 
 export const RISK_LEVELS = new Set(['safe', 'caution', 'danger']);
@@ -195,16 +197,41 @@ export function normalizeIngredientPayload(raw: Record<string, unknown>): Record
   ingredient.name_en = optionalText(ingredient.name_en, '영문 성분명', MAX_NAME_LEN);
   ingredient.description = optionalText(ingredient.description, '설명');
   ingredient.category = optionalText(ingredient.category, '성분 분류', MAX_NAME_LEN);
+  // 구버전 관리자 화면이 새 영양 컬럼을 보내지 않아도 기존 값을 지우지 않는다.
+  if ('nutrition_source' in ingredient) {
+    ingredient.nutrition_source = optionalText(ingredient.nutrition_source, '영양정보 출처', MAX_NAME_LEN);
+  }
 
   const risk = typeof ingredient.risk_level === 'string' ? ingredient.risk_level.trim() : 'safe';
   if (!RISK_LEVELS.has(risk)) throw new ValidationError('위험도 값이 올바르지 않습니다.');
   ingredient.risk_level = risk;
 
-  if ('caution_conditions' in ingredient) {
-    ingredient.caution_conditions = textArray(ingredient.caution_conditions, '주의 조건');
+  for (const [key, label] of [
+    ['aliases', '동의어'],
+    ['nutrition_tags', '영양 태그'],
+    ['caution_conditions', '주의 조건'],
+    ['allergy_triggers', '알레르기 트리거'],
+  ] as const) {
+    if (key in ingredient) ingredient[key] = textArray(ingredient[key], label);
   }
-  if ('allergy_triggers' in ingredient) {
-    ingredient.allergy_triggers = textArray(ingredient.allergy_triggers, '알레르기 트리거');
+
+  for (const key of [
+    'moisture_pct',
+    'crude_protein_pct',
+    'crude_fat_pct',
+    'crude_ash_pct',
+    'crude_fiber_pct',
+  ]) {
+    if (!(key in ingredient)) continue;
+    if (ingredient[key] === undefined || ingredient[key] === null || ingredient[key] === '') {
+      ingredient[key] = null;
+      continue;
+    }
+    const value = Number(ingredient[key]);
+    if (!Number.isFinite(value) || value < 0 || value > 100) {
+      throw new ValidationError(`${key} 값은 0에서 100 사이의 숫자여야 합니다.`);
+    }
+    ingredient[key] = value;
   }
 
   return ingredient;

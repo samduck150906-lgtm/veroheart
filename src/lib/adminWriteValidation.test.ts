@@ -96,6 +96,30 @@ describe('admin-write: 제품 payload 검증', () => {
     expect(out).not.toHaveProperty('created_at');
   });
 
+  it('동의어와 구조화 영양값을 정규화한다', () => {
+    expect(normalizeIngredientPayload({
+      name_ko: '연어',
+      risk_level: 'safe',
+      aliases: [' Salmon ', ''],
+      nutrition_tags: ['고단백'],
+      crude_protein_pct: '22.5',
+      moisture_pct: '',
+      nutrition_source: ' 한국표준사료성분표 2022 ',
+    })).toMatchObject({
+      aliases: ['Salmon'],
+      nutrition_tags: ['고단백'],
+      crude_protein_pct: 22.5,
+      moisture_pct: null,
+      nutrition_source: '한국표준사료성분표 2022',
+    });
+  });
+
+  it('영양값이 백분율 범위를 벗어나면 거부한다', () => {
+    expect(() => normalizeIngredientPayload({
+      name_ko: '연어', risk_level: 'safe', crude_fat_pct: 101,
+    })).toThrow(ValidationError);
+  });
+
   it('제품 노출 상태는 불리언만 허용한다', () => {
     expect(normalizeProductPayload({
       name: '노출 제품', brand_name: '베로로', is_visible: false,

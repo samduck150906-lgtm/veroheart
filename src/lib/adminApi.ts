@@ -21,6 +21,16 @@ export interface AdminIngredient {
   risk_level: RiskLevel;
   description: string | null;
   category: string | null;
+  aliases?: string[] | null;
+  nutrition_tags?: string[] | null;
+  caution_conditions?: string[] | null;
+  allergy_triggers?: string[] | null;
+  moisture_pct?: number | null;
+  crude_protein_pct?: number | null;
+  crude_fat_pct?: number | null;
+  crude_ash_pct?: number | null;
+  crude_fiber_pct?: number | null;
+  nutrition_source?: string | null;
 }
 
 export interface AdminIngredientInput {
@@ -30,6 +40,16 @@ export interface AdminIngredientInput {
   risk_level: RiskLevel;
   description?: string | null;
   category?: string | null;
+  aliases?: string[];
+  nutrition_tags?: string[];
+  caution_conditions?: string[];
+  allergy_triggers?: string[];
+  moisture_pct?: number | null;
+  crude_protein_pct?: number | null;
+  crude_fat_pct?: number | null;
+  crude_ash_pct?: number | null;
+  crude_fiber_pct?: number | null;
+  nutrition_source?: string | null;
 }
 
 export interface AdminProductRow {
@@ -188,34 +208,123 @@ export type SettingsMap = Partial<Record<SettingKey, unknown>>;
 
 // ─── 성분 ────────────────────────────────────────────────────────────────────
 
+const INGREDIENT_CORE_COLUMNS =
+  'id, name_ko, name_en, risk_level, description, category, caution_conditions, allergy_triggers';
+const INGREDIENT_ENRICHED_COLUMNS =
+  `${INGREDIENT_CORE_COLUMNS}, aliases, nutrition_tags, moisture_pct, crude_protein_pct, crude_fat_pct, crude_ash_pct, crude_fiber_pct, nutrition_source`;
+const NUTRITION_VALUE_KEYS = [
+  'moisture_pct',
+  'crude_protein_pct',
+  'crude_fat_pct',
+  'crude_ash_pct',
+  'crude_fiber_pct',
+] as const;
+
+function isMissingIngredientNutritionSchema(error: unknown): boolean {
+  const value = error as { code?: string; message?: string } | null;
+  return Boolean(
+    value &&
+    (value.code === '42703' || value.code === 'PGRST204') &&
+    /aliases|nutrition_tags|moisture_pct|crude_(protein|fat|ash|fiber)_pct|nutrition_source/i.test(value.message ?? ''),
+  );
+}
+
+function ingredientWithDefaults(row: Record<string, unknown>): AdminIngredient {
+  return {
+    ...(row as unknown as AdminIngredient),
+    aliases: (row.aliases as string[] | null | undefined) ?? [],
+    nutrition_tags: (row.nutrition_tags as string[] | null | undefined) ?? [],
+    moisture_pct: (row.moisture_pct as number | null | undefined) ?? null,
+    crude_protein_pct: (row.crude_protein_pct as number | null | undefined) ?? null,
+    crude_fat_pct: (row.crude_fat_pct as number | null | undefined) ?? null,
+    crude_ash_pct: (row.crude_ash_pct as number | null | undefined) ?? null,
+    crude_fiber_pct: (row.crude_fiber_pct as number | null | undefined) ?? null,
+    nutrition_source: (row.nutrition_source as string | null | undefined) ?? null,
+  };
+}
+
 export async function fetchIngredients(): Promise<AdminIngredient[]> {
-  const { data, error } = await supabase
+  const enriched = await supabase
     .from('ingredients')
-    .select('id, name_ko, name_en, risk_level, description, category')
+    .select(INGREDIENT_ENRICHED_COLUMNS)
     .order('name_ko', { ascending: true });
-  if (error) throw new Error(error.message);
-  return (data ?? []) as AdminIngredient[];
+  if (enriched.error && isMissingIngredientNutritionSchema(enriched.error)) {
+    const fallback = await supabase
+      .from('ingredients')
+      .select(INGREDIENT_CORE_COLUMNS)
+      .order('name_ko', { ascending: true });
+    if (fallback.error) throw new Error(fallback.error.message);
+    return (fallback.data ?? []).map((row) => ingredientWithDefaults(row as Record<string, unknown>));
+  }
+  if (enriched.error) throw new Error(enriched.error.message);
+  return (enriched.data ?? []).map((row) => ingredientWithDefaults(row as Record<string, unknown>));
 }
 
 /** 원재료 편집기용 성분 검색 (한글/영문). */
 export async function searchIngredients(query: string, limit = 20): Promise<AdminIngredient[]> {
   const q = query.trim();
-  let builder = supabase
-    .from('ingredients')
-    .select('id, name_ko, name_en, risk_level, description, category')
-    .order('name_ko', { ascending: true })
-    .limit(limit);
-  if (q) {
-    const pattern = toOrIlikePattern(q);
-    builder = builder.or(`name_ko.ilike.${pattern},name_en.ilike.${pattern}`);
+  const run = (columns: string) => {
+    let builder = supabase
+      .from('ingredients')
+      .select(columns)
+      .order('name_ko', { ascending: true })
+      .limit(limit);
+    if (q) {
+      const pattern = toOrIlikePattern(q);
+      builder = builder.or(`name_ko.ilike.${pattern},name_en.ilike.${pattern}`);
+    }
+    return builder;
+  };
+  const enriched = await run(INGREDIENT_ENRICHED_COLUMNS);
+  if (enriched.error && isMissingIngredientNutritionSchema(enriched.error)) {
+    const fallback = await run(INGREDIENT_CORE_COLUMNS);
+    if (fallback.error) throw new Error(fallback.error.message);
+    return ((fallback.data ?? []) as unknown as Record<string, unknown>[]).map(ingredientWithDefaults);
   }
-  const { data, error } = await builder;
-  if (error) throw new Error(error.message);
-  return (data ?? []) as AdminIngredient[];
+  if (enriched.error) throw new Error(enriched.error.message);
+  return ((enriched.data ?? []) as unknown as Record<string, unknown>[]).map(ingredientWithDefaults);
 }
 
-export async function saveIngredient(input: AdminIngredientInput): Promise<{ id: string }> {
-  return adminWrite<{ id: string }>('saveIngredient', { ingredient: input });
+export async function saveIngredient(input: AdminIngredientInput): Promise<{ id: string; ingredient: AdminIngredient }> {
+  const response = await adminWrite<{ id?: string }>('saveIngredient', { ingredient: input });
+  if (!response.id) throw new Error('저장된 성분 ID를 받지 못했습니다.');
+
+  let confirmation = await supabase
+    .from('ingredients')
+    .select(INGREDIENT_ENRICHED_COLUMNS)
+    .eq('id', response.id)
+    .single();
+  if (confirmation.error && isMissingIngredientNutritionSchema(confirmation.error)) {
+    confirmation = await supabase
+      .from('ingredients')
+      .select(INGREDIENT_CORE_COLUMNS)
+      .eq('id', response.id)
+      .single() as typeof confirmation;
+  }
+  if (confirmation.error) throw new Error(`저장 후 성분 조회 확인 실패: ${confirmation.error.message}`);
+
+  const confirmed = confirmation.data
+    ? ingredientWithDefaults(confirmation.data as Record<string, unknown>)
+    : null;
+  const text = (value: string | null | undefined) => value?.trim() || null;
+  const terms = (value: string[] | null | undefined) => (value ?? []).map((item) => item.trim()).filter(Boolean);
+  const numeric = (value: number | null | undefined) => value === null || value === undefined ? null : Number(value);
+  const mismatch = !confirmed ||
+    confirmed.name_ko !== input.name_ko.trim() ||
+    confirmed.risk_level !== input.risk_level ||
+    ('name_en' in input && text(confirmed.name_en) !== text(input.name_en)) ||
+    ('description' in input && text(confirmed.description) !== text(input.description)) ||
+    ('category' in input && text(confirmed.category) !== text(input.category)) ||
+    ('nutrition_source' in input && text(confirmed.nutrition_source) !== text(input.nutrition_source)) ||
+    ('aliases' in input && JSON.stringify(terms(confirmed.aliases)) !== JSON.stringify(terms(input.aliases))) ||
+    ('nutrition_tags' in input && JSON.stringify(terms(confirmed.nutrition_tags)) !== JSON.stringify(terms(input.nutrition_tags))) ||
+    ('caution_conditions' in input && JSON.stringify(terms(confirmed.caution_conditions)) !== JSON.stringify(terms(input.caution_conditions))) ||
+    ('allergy_triggers' in input && JSON.stringify(terms(confirmed.allergy_triggers)) !== JSON.stringify(terms(input.allergy_triggers))) ||
+    NUTRITION_VALUE_KEYS.some((key) => key in input && numeric(confirmed[key]) !== numeric(input[key]));
+  if (mismatch) {
+    throw new Error('저장 확인 불일치: 요청한 성분 정보가 운영 DB에 모두 반영되지 않았습니다. DB 마이그레이션과 Edge Function 배포 상태를 확인해 주세요.');
+  }
+  return { id: response.id, ingredient: confirmed };
 }
 
 export async function deleteIngredient(id: string): Promise<void> {

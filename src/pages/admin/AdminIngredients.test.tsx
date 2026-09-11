@@ -30,12 +30,16 @@ const CHICKEN: AdminIngredient = {
   risk_level: 'safe',
   description: '단백질원',
   category: '단백질원',
+  aliases: ['치킨', '계육'],
+  nutrition_tags: ['고단백'],
+  caution_conditions: [],
+  allergy_triggers: ['닭고기'],
 };
 
 describe('AdminIngredients', () => {
   beforeEach(() => {
     h.ingredients = [CHICKEN];
-    h.saveIngredient.mockReset().mockResolvedValue({ id: CHICKEN.id });
+    h.saveIngredient.mockReset().mockResolvedValue({ id: CHICKEN.id, ingredient: CHICKEN });
     h.deleteIngredient.mockReset().mockResolvedValue(undefined);
     h.getIngredientUsage.mockReset().mockResolvedValue(0);
   });
@@ -63,6 +67,7 @@ describe('AdminIngredients', () => {
     render(<AdminIngredients />);
     fireEvent.click(await screen.findByText('신규 성분 등록'));
     fireEvent.change(screen.getByLabelText('한글 성분명*'), { target: { value: '연어' } });
+    fireEvent.change(screen.getByLabelText('성분 분류'), { target: { value: '동물성 단백질' } });
     fireEvent.click(screen.getByText('주의'));
     fireEvent.click(screen.getByText('저장하기'));
 
@@ -77,12 +82,46 @@ describe('AdminIngredients', () => {
     render(<AdminIngredients />);
     fireEvent.click(await screen.findByText('신규 성분 등록'));
     fireEvent.change(screen.getByLabelText('한글 성분명*'), { target: { value: '닭고기' } });
+    fireEvent.change(screen.getByLabelText('성분 분류'), { target: { value: '동물성 단백질' } });
     fireEvent.click(screen.getByText('저장하기'));
 
     expect(await screen.findByRole('alert')).toHaveProperty(
       'textContent',
       '같은 이름의 성분이 이미 있습니다.',
     );
+  });
+
+  it('기존 성분의 이름·분류·영양값을 수정한다', async () => {
+    render(<AdminIngredients />);
+    fireEvent.click(await screen.findByLabelText('닭고기 수정'));
+    fireEvent.change(screen.getByLabelText('영문 성분명'), { target: { value: 'Chicken meat' } });
+    fireEvent.change(screen.getByLabelText('성분 분류'), { target: { value: '동물성 단백질' } });
+    fireEvent.change(screen.getByLabelText('조단백질'), { target: { value: '27.5' } });
+    fireEvent.click(screen.getByText('저장하기'));
+
+    await waitFor(() => expect(h.saveIngredient).toHaveBeenCalledWith(expect.objectContaining({
+      id: CHICKEN.id,
+      name_en: 'Chicken meat',
+      category: '동물성 단백질',
+      crude_protein_pct: 27.5,
+    })));
+  });
+
+  it('표준사료 DB를 신규 성분의 구조화 영양값으로 불러온다', async () => {
+    render(<AdminIngredients />);
+    fireEvent.click(await screen.findByText('신규 성분 등록'));
+    fireEvent.click(screen.getByText('한국표준사료성분표 데이터에서 불러오기'));
+    fireEvent.change(screen.getByLabelText('표준사료성분 검색'), { target: { value: '귀리 (연맥)' } });
+    fireEvent.click(await screen.findByText('귀리 (연맥)'));
+
+    expect(screen.getByLabelText('영양정보 출처')).toHaveProperty('value', '한국표준사료성분표 2022');
+    expect(screen.getByLabelText('조단백질')).not.toHaveProperty('value', '');
+    fireEvent.click(screen.getByText('저장하기'));
+    await waitFor(() => expect(h.saveIngredient).toHaveBeenCalledWith(expect.objectContaining({
+      name_ko: '귀리 (연맥)',
+      nutrition_source: '한국표준사료성분표 2022',
+      crude_protein_pct: expect.any(Number),
+    })));
   });
 
   it('삭제는 확인 모달을 거친다', async () => {
