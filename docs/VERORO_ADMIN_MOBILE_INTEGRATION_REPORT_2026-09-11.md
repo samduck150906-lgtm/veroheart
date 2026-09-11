@@ -45,7 +45,7 @@ Admin credentials stored in browser: no (signed session only after new Edge depl
 - C-1 리뷰 집계: 완료(신규 migration). INSERT/UPDATE/DELETE trigger와 기존 전체 backfill.
 - C-2 위험성분 단일 원본: 완료(신규 migration + 관리자 수기입력 제거). `product_ingredients JOIN ingredients`를 파생 캐시의 유일한 원본으로 사용.
 - C-3 앱 설정 fail-close: 완료. 설정 조회 실패 시 바이럴 이벤트 비노출.
-- C-4 도메인 경계: 완료. Netlify 도메인 수준 404와 공개 앱 런타임 차단을 함께 적용.
+- C-4 도메인 경계: 완료. 공개 앱은 Netlify 도메인 수준 404와 런타임 차단을 함께 적용하고, 관리자 루트는 호스트 판별 Edge redirect를 적용.
 - C-5 누락 제품 운영: 완료(스키마/API/관리자 화면). 누락 제품을 삭제하지 않고 보완 큐에 백필.
 
 ## 4. 해결한 High
@@ -160,7 +160,7 @@ reference light-query payload: 34,665 bytes (same production dataset, 50 rows)
 ## 14. Tests
 
 ```text
-vitest: 1,047 / 1,047 passed (163 files)
+vitest: 1,048 / 1,048 passed (163 files)
 tsc: passed through npm run build
 eslint: 0 errors
 vite production build: passed
