@@ -9,7 +9,7 @@ import Notification from './components/Notification';
 import ErrorBoundary from './components/ErrorBoundary';
 import EntryGate from './components/EntryGate';
 import { markEntryGateDone, readEntryGateDone } from './lib/entryGateStorage';
-import { isAdminExperience, toggleAdminDesktopMode } from './utils/adminHost';
+import { isAdminExperience, isBlockedAdminRoute, toggleAdminDesktopMode } from './utils/adminHost';
 
 // 첫 진입 화면(Home)만 즉시 로드하고, 나머지 라우트는 코드 스플릿으로 지연 로드한다.
 // 관리자 라우트는 일반 사용자 번들에서 완전히 분리된다.
@@ -53,7 +53,7 @@ function RouteFallback() {
   );
 }
 
-function App() {
+function Application() {
   const { initApp, isInitializing, isLoggedIn } = useStore();
   const [splashLine] = useState(() => pickSplashTagline());
   const adminMode = typeof window !== 'undefined'
@@ -195,6 +195,23 @@ function App() {
       )}
     </BrowserRouter>
   );
+}
+
+/** CDN 설정이 지연되거나 우회돼도 공개 앱에서는 관리자 React 트리를 만들지 않는다. */
+function App() {
+  const blocked = typeof window !== 'undefined'
+    && isBlockedAdminRoute(window.location.hostname, window.location.pathname);
+  if (blocked) {
+    return (
+      <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 24, textAlign: 'center' }}>
+        <div>
+          <h1 style={{ fontSize: 24, marginBottom: 8 }}>페이지를 찾을 수 없습니다.</h1>
+          <a href="/">베로로 홈으로 이동</a>
+        </div>
+      </main>
+    );
+  }
+  return <Application />;
 }
 
 export default App;
