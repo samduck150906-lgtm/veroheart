@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>REUMLAB · MELIQ MVP · Relevant Project Experience</title>
+<style>
+  :root{
+    --ink:#141414;
+    --ink-2:#3a3a3a;
+    --ink-3:#6b6b6b;
+    --rule:#d8d8d8;
+    --rule-soft:#ececec;
+    --page:1040px;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;
+    background:#fff;
+    color:var(--ink);
+    font-family:"Pretendard","Pretendard Variable",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
+    font-size:14.5px;
+    line-height:1.75;
+    -webkit-font-smoothing:antialiased;
+  }
+  .page{max-width:var(--page);margin:0 auto;padding-block:0;padding-left:40px;padding-right:40px;}
+
+  /* ---------- Cover ---------- */
+  .cover{padding-top:120px;padding-bottom:110px;border-bottom:1px solid var(--ink);}
+  .brand{font-size:12px;letter-spacing:.28em;font-weight:700;color:var(--ink-3);text-transform:uppercase;}
+  .cover h1{
+    margin:34px 0 0;
+    font-size:46px;line-height:1.22;font-weight:800;letter-spacing:-.02em;
+  }
+  .cover h1 .sub{display:block;font-size:26px;font-weight:600;color:var(--ink-2);margin-top:12px;letter-spacing:-.01em;}
+  .cover .lede{margin-top:38px;max-width:660px;font-size:15px;color:var(--ink-2);}
+  .cover-meta{margin-top:56px;display:flex;flex-wrap:wrap;gap:0 56px;border-top:1px solid var(--rule);padding-top:20px;}
+  .cover-meta div{min-width:150px;}
+  .cover-meta dt{font-size:11px;letter-spacing:.14em;color:var(--ink-3);text-transform:uppercase;font-weight:700;}
+  .cover-meta dd{margin:5px 0 0;font-size:14px;font-weight:600;}
+
+  /* ---------- Contents ---------- */
+  .toc{padding-top:34px;padding-bottom:44px;border-bottom:1px solid var(--rule);}
+  .toc h2{font-size:11px;letter-spacing:.2em;color:var(--ink-3);text-transform:uppercase;margin:0 0 16px;font-weight:700;}
+  .toc ol{list-style:none;margin:0;padding:0;}
+  .toc li{display:flex;gap:18px;padding:9px 0;border-bottom:1px solid var(--rule-soft);font-size:14.5px;}
+  .toc li:last-child{border-bottom:0;}
+  .toc .num{font-variant-numeric:tabular-nums;color:var(--ink-3);font-weight:700;min-width:26px;}
+  .toc .nm{font-weight:600;}
+  .toc .desc{color:var(--ink-3);margin-left:auto;text-align:right;font-size:13px;}
+
+  /* ---------- Sections ---------- */
+  section.case{padding-top:52px;padding-bottom:16px;}
+  .sec-head{border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:26px;}
+  .sec-num{font-size:11px;letter-spacing:.2em;font-weight:700;color:var(--ink-3);}
+  .sec-head h2{margin:8px 0 0;font-size:28px;font-weight:800;letter-spacing:-.015em;}
+  .sec-head .en{font-size:13px;color:var(--ink-3);font-weight:500;margin-left:8px;letter-spacing:0;}
+  .sec-head p.role{margin:10px 0 0;font-size:13.5px;color:var(--ink-2);}
+
+  h3{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin:34px 0 12px;}
+  h3:first-of-type{margin-top:26px;}
+  p{margin:0 0 12px;}
+  .muted{color:var(--ink-2);}
+
+  ul.plain{margin:0 0 14px;padding-left:18px;}
+  ul.plain li{margin-bottom:5px;}
+
+  /* ---------- Tables ---------- */
+  table{width:100%;border-collapse:collapse;margin:6px 0 18px;font-size:13px;}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--rule-soft);vertical-align:top;}
+  thead th{border-bottom:1px solid var(--ink);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:700;white-space:nowrap;}
+  tbody tr:last-child td{border-bottom:1px solid var(--rule);}
+  td.k{font-weight:600;white-space:nowrap;width:150px;}
+  .mark{text-align:center;font-weight:700;width:88px;}
+  .tbl-wrap{overflow-x:auto;}
+
+  /* ---------- Stats strip ---------- */
+  .stats{display:flex;flex-wrap:wrap;gap:0;border-top:1px solid var(--ink);border-bottom:1px solid var(--rule);margin:6px 0 20px;}
+  .stats div{flex:1 1 150px;padding:14px 16px 13px;border-right:1px solid var(--rule-soft);}
+  .stats div:last-child{border-right:0;}
+  .stats .v{font-size:22px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.2;}
+  .stats .l{font-size:11.5px;color:var(--ink-3);margin-top:3px;font-weight:600;}
+
+  /* ---------- Figures ---------- */
+  figure{margin:22px 0 26px;}
+  figure img{display:block;width:100%;height:auto;border:1px solid var(--rule);}
+  figcaption{margin-top:9px;font-size:12.5px;color:var(--ink-2);line-height:1.65;}
+  figcaption b{color:var(--ink);font-weight:700;}
+
+  .mobile-row{display:flex;gap:18px;flex-wrap:wrap;margin:22px 0 8px;}
+  .mobile-row figure{margin:0;flex:1 1 200px;min-width:0;max-width:290px;}
+  .mobile-row img{border:1px solid var(--rule);}
+
+  .stack{display:flex;gap:18px;flex-wrap:wrap;margin:22px 0 26px;}
+  .stack figure{margin:0;flex:1 1 380px;min-width:0;}
+
+  /* ---------- Diagram ---------- */
+  pre.arch{
+    margin:8px 0 20px;padding:18px 20px;border:1px solid var(--rule);background:#fafafa;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:12px;line-height:1.7;color:var(--ink-2);overflow-x:auto;white-space:pre;
+  }
+
+  /* ---------- Callout ---------- */
+  .callout{border-left:3px solid var(--ink);padding:4px 0 4px 16px;margin:18px 0 20px;}
+  .callout p{margin:0 0 6px;}
+  .callout p:last-child{margin-bottom:0;}
+
+  .note{font-size:12px;color:var(--ink-3);border-top:1px solid var(--rule-soft);padding-top:12px;margin-top:26px;line-height:1.7;}
+
+  footer.doc{border-top:1px solid var(--ink);margin-top:40px;padding:20px 0 60px;font-size:12px;color:var(--ink-3);}
+  footer.doc strong{color:var(--ink-2);}
+
+  /* ---------- Print ---------- */
+  @page{size:A4;margin:16mm 14mm;}
+  @media print{
+    body{font-size:9pt;line-height:1.5;}
+    .page{max-width:none;padding-left:0;padding-right:0;}
+    .cover{padding-top:26mm;padding-bottom:16mm;}
+    .cover h1{font-size:27pt;}
+    .cover h1 .sub{font-size:15pt;}
+    .cover .lede{margin-top:20px;font-size:9.5pt;}
+    .cover-meta{margin-top:26px;}
+    .toc{padding-top:20px;padding-bottom:0;border-bottom:0;}
+    .toc li{padding:5px 0;}
+
+    section.case{break-before:page;page-break-before:always;padding-top:0;padding-bottom:0;}
+    .sec-head{margin-bottom:14px;padding-bottom:9px;}
+    .sec-head h2{font-size:17pt;}
+    h3{margin:16px 0 7px;font-size:8.5pt;}
+    p{margin:0 0 7px;}
+    ul.plain li{margin-bottom:3px;}
+
+    .stats{margin:4px 0 12px;}
+    .stats div{padding:8px 10px 7px;}
+    .stats .v{font-size:15pt;}
+    .stats .l{font-size:7.5pt;}
+
+    table{font-size:8pt;margin:4px 0 10px;}
+    th,td{padding:5px 8px;}
+    thead th{font-size:7.5pt;}
+    pre.arch{font-size:7.5pt;padding:10px 12px;margin:4px 0 12px;line-height:1.55;}
+    .callout{margin:12px 0;}
+    .note{margin-top:14px;padding-top:8px;font-size:8pt;}
+
+    /* Screenshots stay large but bounded, so the deck does not balloon in page count. */
+    figure{margin:12px 0 14px;text-align:center;}
+    figure img{border:1px solid #ccc;max-height:88mm;width:auto;max-width:100%;margin:0 auto;}
+    figcaption{margin-top:6px;font-size:8pt;line-height:1.5;text-align:left;}
+    .stack{gap:10px;margin:12px 0 14px;}
+    .stack figure{flex:1 1 45%;margin:0;}
+    .stack figure img{max-height:62mm;}
+    .mobile-row{gap:10px;margin:12px 0 6px;}
+    .mobile-row figure{flex:1 1 30%;margin:0;max-width:none;}
+    .mobile-row figure img{max-height:108mm;}
+
+    figure,table,.stats,pre.arch,.mobile-row,.stack,.callout{break-inside:avoid;page-break-inside:avoid;}
+    h3{break-after:avoid;page-break-after:avoid;}
+    footer.doc{padding-bottom:0;margin-top:20px;}
+    a{color:inherit;text-decoration:none;}
+  }
+
+  @media (max-width:640px){
+    .page{padding-left:18px;padding-right:18px;}
+    .cover{padding-top:64px;padding-bottom:56px;}
+    .cover h1{font-size:30px;}
+    .cover h1 .sub{font-size:19px;}
+    .sec-head h2{font-size:22px;}
+    .toc li{flex-wrap:wrap;}
+    .toc .desc{margin-left:0;text-align:left;width:100%;}
+    .stats div{flex:1 1 50%;border-right:0;border-bottom:1px solid var(--rule-soft);}
+    td.k{width:auto;white-space:normal;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ COVER ============ -->
+<div class="page">
+  <header class="cover">
+    <div class="brand">REUMLAB</div>
+    <h1>MELIQ MVP
+      <span class="sub">Relevant Project Experience · 유사 프로젝트 구축 사례</span>
+    </h1>
+    <p class="lede">
+      름랩은 사용자 화면만 제작하는 방식이 아니라 회원·Backend·Database·Admin을 함께 구성하여
+      실제 운영 가능한 Web/Mobile 서비스를 구축해 왔습니다. 본 문서는 MELIQ MVP가 요구하는 구조와
+      대응되는 수행 사례 3건을, 각 프로젝트의 소스코드·데이터베이스 스키마·API 정의를 직접 확인하여 정리한 것입니다.
+    </p>
+    <dl class="cover-meta">
+      <div><dt>Prepared for</dt><dd>MELIQ</dd></div>
+      <div><dt>Prepared by</dt><dd>REUMLAB · 름랩</dd></div>
+      <div><dt>Scope</dt><dd>Mobile-first Responsive Web MVP</dd></div>
+      <div><dt>Date</dt><dd>2026. 09. 12</dd></div>
+    </dl>
+  </header>
+
+  <nav class="toc">
+    <h2>Contents</h2>
+    <ol>
+      <li><span class="num">01</span><span class="nm">학우너 Hakwooner</span><span class="desc">소비자 앱 + 사업자 ERP · 추천 엔진</span></li>
+      <li><span class="num">02</span><span class="nm">VeRoRo</span><span class="desc">개인화 분석 · Product DB · 운영자 콘솔</span></li>
+      <li><span class="num">03</span><span class="nm">Laundry Service · A.care</span><span class="desc">주문 워크플로 · 권한 · 정산</span></li>
+      <li><span class="num">04</span><span class="nm">Relevant Experience for MELIQ</span><span class="desc">비교표 및 적용 방향</span></li>
+    </ol>
+  </nav>
+</div>
+
+<!-- ============ 01 HAKWOONER ============ -->
+<div class="page">
+<section class="case">
+  <div class="sec-head">
+    <div class="sec-num">01</div>
+    <h2>학우너 <span class="en">Hakwooner</span></h2>
+    <p class="role">수행 범위 — 사용자 앱(Flutter) · REST API(Express) · 원장 ERP(Next.js) · PostgreSQL 스키마 설계 및 운영 전체</p>
+  </div>
+
+  <p class="muted">
+    학원 검색·상담 신청을 제공하는 학부모·학생용 모바일 앱과, 학원 원장이 원생·수업·수납·인사를 관리하는
+    원장용 ERP를 하나의 데이터베이스 위에서 운영하는 플랫폼입니다.
+    소비자 서비스와 사업자 운영 시스템이 같은 백엔드를 공유하는 양면(two-sided) 구조입니다.
+  </p>
+
+  <div class="stats">
+    <div><div class="v">222</div><div class="l">DB 테이블</div></div>
+    <div><div class="v">310</div><div class="l">마이그레이션</div></div>
+    <div><div class="v">459</div><div class="l">RLS 정책</div></div>
+    <div><div class="v">126</div><div class="l">ERP 화면</div></div>
+    <div><div class="v">33</div><div class="l">API 라우트 모듈</div></div>
+    <div><div class="v">8</div><div class="l">사용자 역할</div></div>
+  </div>
+
+  <h3>주요 구현 기능</h3>
+  <div class="tbl-wrap">
+  <table>
+    <tbody>
+      <tr><td class="k">인증</td><td>Supabase Auth 기반 Bearer 토큰 검증, Kakao·Apple 소셜 로그인(SHA-256 nonce)</td></tr>
+      <tr><td class="k">권한</td><td><code>users.roles text[]</code> 배열 기반 8개 역할(super_admin·admin·owner·staff·teacher·student·parent·operator), 미들웨어 역할 가드 및 Row Level Security</td></tr>
+      <tr><td class="k">추천</td><td>거리·과목·목표·수업형태·예산·리뷰 6개 축 가중치 합산, 태그 유사도(Jaccard·코사인) 매칭, 0~100 정규화 점수와 추천 사유 문장 자동 생성</td></tr>
+      <tr><td class="k">검색</td><td>위치 기반 학원 검색 RPC, 지오코딩, 지하철역·행정구역 데이터</td></tr>
+      <tr><td class="k">운영</td><td>상담 칸반, 알림톡·SMS 발송 및 수신거부 관리, 감사 로그, 운영자 대시보드 스냅샷</td></tr>
+      <tr><td class="k">ERP</td><td>원생·출결·성적·시간표·수납·급여·인사평가·SOP·구독 결제</td></tr>
+      <tr><td class="k">앱 연동</td><td>원장이 ERP에서 설정한 학원 정보·수업 상품이 사용자 앱 노출에 반영</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>기술스택</h3>
+  <p class="muted">Flutter · Dart · Express · TypeScript · Next.js 14(App Router) · React 18 · PostgreSQL · Supabase(Auth·RLS·Storage) · Prisma · TanStack Query/Table · Tailwind CSS · Sentry · Firebase(Analytics·Crashlytics·Messaging) · Toss Payments · Netlify · Railway · Docker</p>
+
+  <h3>서비스 구조</h3>
+<pre class="arch">[사용자 앱 (Flutter)]            [원장 ERP (Next.js 14)]         [운영자 콘솔]
+        │                                 │                           │
+        └───────────┬─────────────────────┴───────────────────────────┘
+                    │
+        [REST API (Express · /api/v1 · 라우트 33종)]
+                    │
+        [PostgreSQL · 222 테이블 · RLS 459 정책]</pre>
+
+  <h3>대표 화면</h3>
+
+  <figure>
+    <img src="screenshots/hakwooner/01-owner-dashboard.png" alt="학우너 원장 ERP 통합 대시보드">
+    <figcaption><b>원장 ERP · 통합 대시보드.</b> 미응답 상담, 미납 수납, 당일 수업이 한 화면에 모이고 각 항목에서 처리 화면으로 바로 이동합니다. 사용자 앱에서 들어온 상담이 그대로 원장의 처리 대기열이 되는 구조입니다.</figcaption>
+  </figure>
+
+  <figure>
+    <img src="screenshots/hakwooner/02-student-management.png" alt="학우너 원생 관리 화면">
+    <figcaption><b>원생 관리.</b> 출석률·미납·이탈 위험이 목록 단계에서 계산되어 표시되고, 우측 패널에서 개별 원생의 출결·성적·수납·상담 기록으로 이어집니다. 연락처는 시스템이 자동으로 마스킹하여 표시합니다.</figcaption>
+  </figure>
+
+  <div class="stack">
+    <figure>
+      <img src="screenshots/hakwooner/03-finance-payments.png" alt="학우너 수납·결제 대사 화면">
+      <figcaption><b>수납 · 결제 대사.</b> 앱 결제와 계좌 이체를 대조하여 금액이 맞지 않는 건을 운영자가 찾아낼 수 있도록 대사(reconciliation) 흐름을 별도 화면으로 분리했습니다.</figcaption>
+    </figure>
+    <figure>
+      <img src="screenshots/hakwooner/04-roles-permissions.png" alt="학우너 직원·권한 관리 화면">
+      <figcaption><b>직원 · 권한 관리.</b> 역할은 데이터베이스의 <code>users.roles</code> 배열과 RLS 정책에 연결되어 있어, 화면에서 막는 것과 별개로 데이터 계층에서도 접근이 제한됩니다.</figcaption>
+    </figure>
+  </div>
+
+  <div class="stack">
+    <figure>
+      <img src="screenshots/hakwooner/05-consult-workflow.png" alt="학우너 상담 문의 처리 화면">
+      <figcaption><b>상담 처리 워크플로.</b> 앱(소비자)과 ERP(사업자)가 같은 테이블을 공유하기 때문에 별도 연동 없이 상태가 양쪽에 반영됩니다.</figcaption>
+    </figure>
+    <figure>
+      <img src="screenshots/hakwooner/06-mobile-dashboard.png" alt="학우너 모바일 폭 대시보드" style="max-width:290px;">
+      <figcaption><b>모바일 폭(390px) 대시보드.</b> 원장이 현장에서 휴대폰으로 확인하는 경우를 전제로, 동일한 데이터와 기능을 유지한 채 레이아웃만 재구성했습니다.</figcaption>
+    </figure>
+  </div>
+
+  <h3>MELIQ와의 구조적 관련성</h3>
+  <p>MELIQ가 요구하는 <b>Recommendation Module · Fit Score · Why it fits</b>가 학우너에서 이미 동일한 형태로 구현되어 있습니다.</p>
+  <ul class="plain">
+    <li><b>규칙 기반 추천 모듈</b> — 거리·과목·목표·수업형태·예산·리뷰 6개 축에 가중치를 부여해 합산합니다. 가중치는 코드 상단 상수로 분리되어 있어 정책 변경 시 조정이 용이합니다.</li>
+    <li><b>Fit Score</b> — 합산 결과를 0~100으로 정규화한 점수와, 사용자에게 보여줄 라벨("우리 아이와 XX% 일치")을 함께 반환합니다.</li>
+    <li><b>Why it fits</b> — 점수를 만든 각 항목을 사람이 읽을 수 있는 문장으로 되돌려 줍니다. 점수만 보여 주고 끝내지 않는 구조입니다.</li>
+    <li><b>Data Confidence</b> — 리뷰에서 80% 이상 반복 검증된 태그에만 가중치를 부여하여, 근거가 약한 신호가 점수를 끌어올리지 않도록 임계값을 두었습니다.</li>
+    <li><b>Admin ↔ 사용자 서비스 연결</b> — 원장이 ERP에서 등록·수정한 정보가 사용자 앱 노출에 반영되는 구조로, MELIQ의 Admin Dashboard ↔ Product DB ↔ 사용자 Fit Check 연결과 동일한 흐름입니다.</li>
+  </ul>
+  <p>도메인은 학원이지만, <b>사용자 입력을 받아 규칙으로 점수화하고 그 근거를 설명한 뒤 결과를 저장하고, 운영자가 관리 화면에서 원천 데이터를 관리하는</b> 전체 골격이 MELIQ MVP와 그대로 대응됩니다.</p>
+</section>
+</div>
+
+<!-- ============ 02 VERORO ============ -->
+<div class="page">
+<section class="case">
+  <div class="sec-head">
+    <div class="sec-num">02</div>
+    <h2>VeRoRo</h2>
+    <p class="role">수행 범위 — 모바일 우선 사용자 웹(React 19) · 관리자 콘솔 · Supabase 스키마 및 Edge Function · iOS/Android 패키징</p>
+  </div>
+
+  <p class="muted">
+    반려동물 사료·간식의 원재료를 분석해 우리 아이 기준의 적합도와 등급으로 환산해 주는 모바일 우선 서비스입니다.
+    사용자는 반려동물 프로필(품종·나이·알레르기·건강 우려)을 등록하고, 제품을 검색하거나 바코드를 찍어 개인화된 분석 결과를 받습니다.
+    운영자는 별도 관리자 콘솔에서 제품·원재료 사전·데이터 품질을 관리합니다.
+  </p>
+
+  <div class="stats">
+    <div><div class="v">45</div><div class="l">DB 테이블</div></div>
+    <div><div class="v">37</div><div class="l">마이그레이션</div></div>
+    <div><div class="v">95</div><div class="l">RLS 정책</div></div>
+    <div><div class="v">10</div><div class="l">관리자 화면</div></div>
+    <div><div class="v">4</div><div class="l">Edge Function</div></div>
+    <div><div class="v">163</div><div class="l">테스트 파일</div></div>
+  </div>
+
+  <h3>주요 구현 기능</h3>
+  <div class="tbl-wrap">
+  <table>
+    <tbody>
+      <tr><td class="k">사용자 인증</td><td>Supabase Auth(이메일·OAuth), Kakao 로그인</td></tr>
+      <tr><td class="k">관리자 인증</td><td>사용자 인증과 분리된 별도 체계 — 서버 발급 HMAC 서명 세션, <code>sessionStorage</code> 전용, TTL 8시간, 새로고침 시 서버 재검증</td></tr>
+      <tr><td class="k">권한 경계</td><td>관리자 쓰기는 공개 키 클라이언트로 불가. 전용 Edge Function만 경유하도록 강제</td></tr>
+      <tr><td class="k">제품 DB</td><td>제품·원재료·동의어·알레르겐 매핑·영양 프로파일을 분리한 정규화 스키마</td></tr>
+      <tr><td class="k">분석 엔진</td><td>원재료 품질 등급, 기능성 성분 분류, 영양 공개 수준, 위험 성분 검출, 품종별 질환 규칙, 알레르기 교차반응 계열 매칭</td></tr>
+      <tr><td class="k">적합도</td><td>기준 점수에서 알레르기·교차반응·기호도 감점을 적용해 0~100 산출, A~F 등급 및 판정 문구로 환산</td></tr>
+      <tr><td class="k">결과 저장</td><td>분석 결과·리포트·최근 본 제품·비교함·찜 목록</td></tr>
+      <tr><td class="k">데이터 품질</td><td>미매칭 성분 큐, 제품 보강 큐, 정보 완성도 지표, 관리자 감사 로그</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>기술스택</h3>
+  <p class="muted">React 19 · TypeScript · Vite 8 · React Router 7 · Zustand · Supabase(PostgreSQL·Auth·RLS·Edge Functions·Storage) · Deno · Capacitor(iOS·Android) · Vitest · Playwright · Netlify</p>
+
+  <h3>서비스 구조</h3>
+<pre class="arch">[사용자 웹/앱 (React + Capacitor)]        [관리자 콘솔 (/admin · 별도 도메인)]
+        │                                            │
+        │ 공개 키 (공개 SELECT + RLS)                  │ 관리자 토큰
+        │                                            ▼
+        │                            [admin-write Edge Function (service_role)]
+        └────────────────┬───────────────────────────┘
+                         ▼
+        [PostgreSQL · 45 테이블 · RLS 95 정책]</pre>
+
+  <h3>대표 화면 — 사용자 서비스</h3>
+  <div class="mobile-row">
+    <figure>
+      <img src="screenshots/veroro/01-mobile-home.png" alt="VeRoRo 모바일 홈">
+      <figcaption><b>홈.</b> 390px 폭 기준 설계. 바코드 스캔을 최상단 진입점으로 두고, 등록된 프로필 기준 적합도와 등급을 제품마다 함께 표시합니다.</figcaption>
+    </figure>
+    <figure>
+      <img src="screenshots/veroro/02-mobile-search.png" alt="VeRoRo 제품 탐색·필터">
+      <figcaption><b>탐색 · 필터.</b> 기본 정렬이 '우리 아이에게 잘 맞는 순'이며, 등급·점수와 함께 '우리 아이에게 딱'·'무난해' 판정 문구가 붙습니다.</figcaption>
+    </figure>
+    <figure>
+      <img src="screenshots/veroro/03-mobile-product-analysis.png" alt="VeRoRo 개인화 분석 결과">
+      <figcaption><b>분석 결과.</b> 적합도와 판정을 상단에, 그 근거를 문장으로 제시합니다. 안전도(위험 성분 수)와 알레르기 항목이 분리되어 있습니다.</figcaption>
+    </figure>
+  </div>
+
+  <div class="callout">
+    <p><b>MELIQ 요건과의 직접 대응.</b> 분석 결과 화면 한 장에 MELIQ가 요구하는 요소가 함께 놓여 있습니다 —
+      <b>Fit Score</b>(적합도 %), <b>Risk Filter</b>(안전도 · 위험 성분 검출 수),
+      <b>Data Confidence</b>(프로필 미등록 시 그 사실을 그대로 표기),
+      <b>Why it fits / What to watch</b>(판정 근거 문장).</p>
+  </div>
+
+  <h3>대표 화면 — 운영자 콘솔</h3>
+
+  <figure>
+    <img src="screenshots/veroro/04-admin-dashboard.png" alt="VeRoRo 관리자 대시보드">
+    <figcaption><b>관리자 대시보드.</b> 제품 수·검수 완료 수와 함께 <b>데이터 품질 보완 대상</b>(원재료 없는 제품, 영양정보 없는 제품, 바코드 없는 제품, 검토 대기 미매칭 성분)을 지표로 노출해, 분석 품질을 떨어뜨리는 결손 데이터를 운영자가 추적할 수 있게 했습니다. 화면의 수치는 로컬 데모 데이터 기준입니다.</figcaption>
+  </figure>
+
+  <figure>
+    <img src="screenshots/veroro/05-admin-products.png" alt="VeRoRo 제품 관리 CRUD">
+    <figcaption><b>제품 관리(CRUD).</b> 카테고리·대상·앱 노출·검수 상태로 필터링하고, 행마다 원재료 연결 수, 정보 완성도(%), 검수 상태, <b>앱 노출 여부</b>를 확인·변경합니다. 관리자가 노출을 끄면 사용자 서비스 목록에서 즉시 빠집니다.</figcaption>
+  </figure>
+
+  <div class="stack">
+    <figure>
+      <img src="screenshots/veroro/06-admin-ingredients.png" alt="VeRoRo 원재료 사전 관리">
+      <figcaption><b>원재료 사전 관리.</b> 위험도(safe·caution·danger), 분류, 별칭, 알레르기 유발 태그, 영양 성분을 편집합니다. 이 사전이 곧 사용자 화면 적합도 계산의 입력이 됩니다.</figcaption>
+    </figure>
+    <figure>
+      <img src="screenshots/veroro/07-admin-data-quality.png" alt="VeRoRo 미매칭 성분 처리">
+      <figcaption><b>미매칭 성분 처리.</b> 사전과 매칭되지 않은 성분을 운영자가 매핑하거나 무시 처리하면 이후 분석에 반영됩니다. 데이터가 늘수록 정확도가 올라가는 운영 루프입니다.</figcaption>
+    </figure>
+  </div>
+
+  <h3>MELIQ와의 구조적 관련성</h3>
+  <p>VeRoRo는 MELIQ MVP와 <b>도메인만 다르고 구조가 거의 동일한 사례</b>입니다.</p>
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>MELIQ 요구</th><th>VeRoRo 대응 구현</th></tr></thead>
+    <tbody>
+      <tr><td class="k">사용자 입력 기반 Fit Check</td><td>반려동물 프로필(알레르기·건강 우려·기호도) 입력 → 제품별 재계산</td></tr>
+      <tr><td class="k">Product DB</td><td>제품·원재료·동의어·알레르겐 매핑·영양 프로파일 정규화 스키마</td></tr>
+      <tr><td class="k">규칙 기반 Recommendation Module</td><td>원재료 품질·위험도·질환 규칙·교차반응 계열 매칭으로 구성된 룰 엔진</td></tr>
+      <tr><td class="k">Risk Filter</td><td>원재료 위험도 등급(safe/caution/danger) 및 제품 위험 요소 플래그로 필터·감점</td></tr>
+      <tr><td class="k">Fit Score</td><td>0~100 적합도 + A~F 등급 + 판정 문구</td></tr>
+      <tr><td class="k">Data Confidence</td><td>검수 상태(pending/reviewed/verified), 정보 완성도 %, 프로필 미등록 시 "모른다"를 그대로 표기</td></tr>
+      <tr><td class="k">Why it fits / What to watch</td><td>감점 사유를 문장으로 반환("교차반응 주의 · N점 감점")</td></tr>
+      <tr><td class="k">결과 저장 / History</td><td>분석 결과·리포트·최근 본 제품·비교함</td></tr>
+      <tr><td class="k">Admin Dashboard · Product CRUD</td><td>관리자 콘솔 10화면, 제품·원재료 CRUD, 앱 노출 제어</td></tr>
+      <tr><td class="k">사용자 ↔ 관리자 데이터 연결</td><td>관리자 등록·검수 → 사용자 앱 노출 및 분석 입력으로 직결</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>특히 MELIQ가 요구하는 <b>"점수와 함께 근거를 설명하고, 모르는 값은 모른다고 표시한다"</b>는 요건은 VeRoRo에서 이미 제품 원칙으로 구현되어 있습니다. 분석 규칙과 점수는 버전 관리 및 회귀 테스트로 고정해 두어, 규칙을 변경했을 때 기존 제품의 점수가 의도치 않게 흔들리는지 검증하는 장치도 함께 갖추고 있습니다.</p>
+  <p class="note">다만 MELIQ가 요구하는 <b>Affiliate Click Tracking</b>은 VeRoRo에 제휴 링크 필드까지만 구현되어 있고 클릭 집계는 포함되어 있지 않습니다. MELIQ에서는 이 부분을 신규 구현 범위로 산정하고 있습니다.</p>
+</section>
+</div>
+
+<!-- ============ 03 ACARE ============ -->
+<div class="page">
+<section class="case">
+  <div class="sec-head">
+    <div class="sec-num">03</div>
+    <h2>세탁 서비스 앱 <span class="en">A.care</span></h2>
+    <p class="role">수행 범위 — 거래처 주문 앱(Flutter) · 관리자 웹(React 19) · API 서버(Express 5) · PostgreSQL 스키마 · OpenAPI 공용 계약</p>
+  </div>
+
+  <p class="muted">
+    세탁 공장과 거래처(식당·병원·웨딩홀 등) 사이의 주문–세탁–배송–정산 전 과정을 하나의 시스템으로 운영하는 B2B 서비스입니다.
+    거래처는 전용 모바일 앱으로 주문하고, 공장 운영진은 관리자 웹에서 주문 처리·배송 동선·예치금 원장·결제 대사·통계를 관리합니다.
+  </p>
+
+  <div class="stats">
+    <div><div class="v">29</div><div class="l">DB 테이블</div></div>
+    <div><div class="v">24</div><div class="l">마이그레이션</div></div>
+    <div><div class="v">6 × 31</div><div class="l">역할 × 권한</div></div>
+    <div><div class="v">12</div><div class="l">관리자 화면</div></div>
+    <div><div class="v">2,133</div><div class="l">OpenAPI 계약(줄)</div></div>
+    <div><div class="v">5</div><div class="l">반응형 검사 폭</div></div>
+  </div>
+
+  <h3>주요 구현 기능</h3>
+  <div class="tbl-wrap">
+  <table>
+    <tbody>
+      <tr><td class="k">주문 워크플로</td><td>수량 입력 → 주문 확인 → 결제 → 접수 → 세탁 → 배송 → 완료</td></tr>
+      <tr><td class="k">상태 관리</td><td>주문 상태 5종(결제대기·주문완료·배송완료·주문취소·결제실패)과 이행 단계 4종(접수·세탁·배송·완료)을 <b>별도 축</b>으로 분리, 허용 전이표로 관리</td></tr>
+      <tr><td class="k">동시성</td><td>모든 상태 변경이 단일 서비스를 경유 — 행 잠금 → 소유권 확인 → 버전 확인(낙관적 동시성) → 전이 검증 → 업무조건 검증 → 원장 처리 → 이력 기록 → 커밋</td></tr>
+      <tr><td class="k">멱등성</td><td>취소·결제에 멱등 키를 두어 중복 요청이 원장에 두 번 반영되지 않도록 보장</td></tr>
+      <tr><td class="k">이력</td><td>주문 상태 이력, 관리자 감사 로그, 로그인 로그, 설정 변경 이력, 반출 로그</td></tr>
+      <tr><td class="k">권한</td><td>역할 6종 × 권한 31종 매트릭스. 서버가 권한 판정의 정본이고 프런트 가드는 UX용. 알 수 없는 역할은 거부</td></tr>
+      <tr><td class="k">개인정보 보호</td><td>거래처 명부·주문 엑셀 등 <b>대량 반출 권한을 조회 권한과 분리</b></td></tr>
+      <tr><td class="k">인증 보안</td><td>세션 토큰 해시 저장 및 상수 시간 비교, IP·계정 단위 로그인 제한과 잠금, 유휴 자동 로그아웃</td></tr>
+      <tr><td class="k">정산 · 결제</td><td>예치금 원장(충전·차감·취소 복원·관리자 보정·결제 취소), Toss PG 연동, 웹훅 수신, 승인·취소 대사</td></tr>
+      <tr><td class="k">운영</td><td>배송 동선 정렬, 거래처별 마감 시각 정책, 출력 미리보기, 기간별 통계·엑셀 반출</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>기술스택</h3>
+  <p class="muted">Flutter · Dart · React 19 · TypeScript · Vite 6 · React Router 8 · Express 5 · node-postgres · Zod · JWT · PostgreSQL · MSW · Vitest · Playwright · Netlify · Railway · Docker Compose</p>
+
+  <h3>서비스 구조</h3>
+<pre class="arch">[거래처 주문 앱 (Flutter)]              [관리자 웹 (React · 권한별 12화면)]
+        │                                        │
+        └──────────────┬─────────────────────────┘
+                       ▼
+        [API 서버 (Express 5 · OpenAPI 2,133줄 공용 계약)]
+                       │
+        [상태 전이 서비스 — 모든 주문 상태 변경의 단일 통로]
+                       │
+        [PostgreSQL · 29 테이블 · 24단계 마이그레이션]</pre>
+
+  <h3>대표 화면</h3>
+
+  <figure>
+    <img src="screenshots/acare/01-order-management.png" alt="A.care 주문 관리 화면">
+    <figcaption><b>주문 관리.</b> 공장 운영진이 하루 업무를 처리하는 핵심 화면입니다. 기간·거래처·주문상태로 조회하고 수량·공급가·VAT·합계·배송예정일·상태·결제수단을 확인합니다. 행 왼쪽 핸들을 끌어 <b>배송 동선 순서</b>를 지정할 수 있으며, 순서는 배송예정일 단위로 저장됩니다.</figcaption>
+  </figure>
+
+  <div class="stack">
+    <figure>
+      <img src="screenshots/acare/04-deposit-ledger.png" alt="A.care 예치금 원장">
+      <figcaption><b>예치금 원장.</b> 거래처 예치금의 증감을 거래유형별(PG 충전·주문 차감·취소 복원·관리자 보정·결제 취소)로 추적하고, 각 행에 참조번호와 처리 후 잔액을 남깁니다.</figcaption>
+    </figure>
+    <figure>
+      <img src="screenshots/acare/02-order-statistics.png" alt="A.care 기간별 통계">
+      <figcaption><b>기간별 통계.</b> 통계 수치가 주문 목록의 요약과 항상 같은 값을 내도록 필터 로직을 공유하게 설계했습니다. 운영자가 두 화면에서 다른 숫자를 보고 혼란을 겪지 않도록 한 조치입니다.</figcaption>
+    </figure>
+  </div>
+
+  <div class="stack">
+    <figure>
+      <img src="screenshots/acare/03-product-management.png" alt="A.care 상품·단가 관리">
+      <figcaption><b>상품 · 단가 관리(CRUD).</b> 판매 단위·환산 수량·공급 단가·판매 상태를 관리하고 노출 순서를 드래그로 변경합니다. 상품관리자 역할은 이 화면만 수정할 수 있고 주문·예치금은 조회만 가능합니다.</figcaption>
+    </figure>
+    <figure>
+      <img src="screenshots/acare/05-delivery-policy.png" alt="A.care 배송 정책">
+      <figcaption><b>배송 정책.</b> 거래처별 주문 마감 시각과 배송 요일을 관리합니다. 전체 공통 정책과 거래처별 개별 적용을 함께 지원하며, 마감 시각은 주문 취소 가능 시점과 연결됩니다.</figcaption>
+    </figure>
+  </div>
+
+  <div class="mobile-row">
+    <figure>
+      <img src="screenshots/acare/06-mobile-orders.png" alt="A.care 모바일 폭 주문 관리">
+      <figcaption><b>모바일 폭(390px) 주문 관리.</b> 관리자 웹은 매장 노트북·태블릿 사용을 전제로 5개 폭(768·1024·1054·1280·1440px)에서 레이아웃 결함을 실제 브라우저로 자동 검사하도록 구성했습니다.</figcaption>
+    </figure>
+  </div>
+
+  <h3>MELIQ와의 구조적 관련성</h3>
+  <p>세탁앱에는 추천 기능이 없습니다. 이 사례가 MELIQ와 맞닿는 지점은 <b>운영 가능한 SaaS 구조를 실제로 만들어 본 경험</b>입니다.</p>
+  <ul class="plain">
+    <li><b>Mobile-first + Structured User Flow</b> — 수량 입력부터 완료까지의 단계를 화면으로 쪼개고 각 단계의 상태를 데이터로 정의했습니다. MELIQ의 Fit Check 입력 흐름과 같은 종류의 설계 문제입니다.</li>
+    <li><b>Status / History</b> — 상태를 임의로 바꾸지 않고 허용 전이표로 관리하며, 모든 변경이 단일 통로를 지나 이력으로 남습니다. MELIQ의 결과 저장·History 요건에 그대로 적용할 수 있습니다.</li>
+    <li><b>Auth / Role / Permission</b> — 역할 6종과 권한 31종을 매트릭스 한 곳에서 결정하고, 서버를 권한 판정의 정본으로 둡니다.</li>
+    <li><b>개인정보 취급 분리</b> — 한 건을 화면에서 보는 것과 전체를 파일로 반출하는 것을 다른 권한으로 분리했습니다. 미국 소비자 데이터를 다루는 MELIQ에서도 동일한 원칙이 필요합니다.</li>
+    <li><b>앱·관리자·서버 공용 계약</b> — OpenAPI와 enum 정의를 공용 계약으로 두어 세 구성요소가 같은 값·같은 이름을 쓰도록 강제했습니다.</li>
+  </ul>
+</section>
+</div>
+
+<!-- ============ 04 SUMMARY ============ -->
+<div class="page">
+<section class="case">
+  <div class="sec-head">
+    <div class="sec-num">04</div>
+    <h2>MELIQ 관련 구축 경험 <span class="en">Relevant Experience for MELIQ</span></h2>
+    <p class="role">실제 코드 · 스키마 · 설정에서 확인된 사항만 표기 — ● 확인 · △ 부분 확인 · — 확인 안 됨</p>
+  </div>
+
+  <h3>기능별 비교</h3>
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>기능</th><th class="mark">학우너</th><th class="mark">VeRoRo</th><th class="mark">세탁앱</th><th>표기 근거</th></tr></thead>
+    <tbody>
+      <tr><td class="k">Mobile / Responsive</td><td class="mark">●</td><td class="mark">●</td><td class="mark">●</td><td>Flutter 앱 / 모바일 우선 웹 + Capacitor / Flutter 앱 + 5개 폭 반응형 자동 검사</td></tr>
+      <tr><td class="k">회원 / Auth</td><td class="mark">●</td><td class="mark">●</td><td class="mark">●</td><td>Supabase Auth + Kakao·Apple / Supabase Auth + 관리자 별도 서명 세션 / 자체 세션(해시 저장·로그인 제한)</td></tr>
+      <tr><td class="k">User Data</td><td class="mark">●</td><td class="mark">●</td><td class="mark">●</td><td>학생·학부모 프로필·설문 / 반려동물·알레르기 프로필·급여 일지 / 거래처 계정·잔액·단가</td></tr>
+      <tr><td class="k">Structured DB</td><td class="mark">●</td><td class="mark">●</td><td class="mark">●</td><td>222테이블·310마이그레이션 / 45·37 / 29·24</td></tr>
+      <tr><td class="k">Backend / API</td><td class="mark">●</td><td class="mark">△</td><td class="mark">●</td><td>Express 33라우트 + Next 서버 라우트 / Supabase + Edge Function(전용 API 서버 없음) / Express 5 + OpenAPI</td></tr>
+      <tr><td class="k">Admin Dashboard</td><td class="mark">●</td><td class="mark">●</td><td class="mark">●</td><td>ERP 126화면 / 관리자 10화면 / 관리자 12화면</td></tr>
+      <tr><td class="k">CRUD</td><td class="mark">●</td><td class="mark">●</td><td class="mark">●</td><td>원생·수업·상품·직원 / 제품·원재료·미매칭 성분 / 상품·거래처·배송정책</td></tr>
+      <tr><td class="k">Role / Permission</td><td class="mark">●</td><td class="mark">△</td><td class="mark">●</td><td>8역할 + RLS 459정책 / 사용자·관리자 2계층(세분 역할 없음) / 6역할 × 31권한 매트릭스</td></tr>
+      <tr><td class="k">Workflow / Status</td><td class="mark">●</td><td class="mark">△</td><td class="mark">●</td><td>상담 처리·구독 결제 상태 / 검수 상태·보강 큐(상태 머신 없음) / 상태 5종 × 단계 4종 + 전이표</td></tr>
+      <tr><td class="k">History</td><td class="mark">●</td><td class="mark">●</td><td class="mark">●</td><td>추천 결과·감사 로그 / 분석 결과·리포트·최근 본 제품 / 상태 이력·감사 로그·반출 로그</td></tr>
+      <tr><td class="k">Analytics</td><td class="mark">●</td><td class="mark">—</td><td class="mark">●</td><td>Firebase Analytics + 운영 스냅샷 / 분석 SDK 미검출 / 기간별 통계 서비스 + 엑셀 반출</td></tr>
+      <tr><td class="k">Deployment</td><td class="mark">●</td><td class="mark">●</td><td class="mark">●</td><td>Netlify·Railway·Docker / Netlify(Edge Functions 포함) / Netlify·Railway·Docker Compose</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>MELIQ 요구 구조에 대한 적용 방향</h3>
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>MELIQ 요구</th><th>적용 가능한 기존 구축 경험</th></tr></thead>
+    <tbody>
+      <tr><td class="k">회원가입 · 로그인 · 사용자 데이터</td><td>3개 프로젝트 모두에서 인증·세션·프로필 스키마를 직접 구축</td></tr>
+      <tr><td class="k">Mobile-first Responsive Web</td><td>VeRoRo(모바일 우선 웹), 세탁앱(다중 폭 반응형 자동 검사)</td></tr>
+      <tr><td class="k">Fit Check 입력 흐름</td><td>VeRoRo 반려동물 프로필 단계별 입력, 세탁앱 단계별 주문 흐름</td></tr>
+      <tr><td class="k">Product DB</td><td>VeRoRo 제품·원재료 정규화 스키마 및 데이터 품질 운영</td></tr>
+      <tr><td class="k">규칙 기반 Recommendation Module</td><td>학우너 가중치 추천 엔진, VeRoRo 룰 기반 분석 엔진</td></tr>
+      <tr><td class="k">Risk Filter</td><td>VeRoRo 원재료 위험도 등급 및 위험 요소 플래그</td></tr>
+      <tr><td class="k">Fit Score</td><td>학우너 0~100 정규화 점수, VeRoRo 적합도·등급</td></tr>
+      <tr><td class="k">Data Confidence</td><td>학우너 리뷰 검증 임계값, VeRoRo 검수 상태·정보 완성도</td></tr>
+      <tr><td class="k">Why it fits / What to watch</td><td>학우너 추천 사유 생성, VeRoRo 감점 사유 문장화</td></tr>
+      <tr><td class="k">결과 저장 / History</td><td>3개 프로젝트 모두 결과·이력 테이블 운영</td></tr>
+      <tr><td class="k">Affiliate Click Tracking</td><td><b>신규 구현 범위</b> (VeRoRo는 제휴 링크 필드까지만 보유)</td></tr>
+      <tr><td class="k">Feedback</td><td>학우너·VeRoRo 리뷰 및 구조화 응답</td></tr>
+      <tr><td class="k">Analytics</td><td>학우너 Firebase Analytics·운영 스냅샷, 세탁앱 통계 서비스</td></tr>
+      <tr><td class="k">Admin Dashboard · Product CRUD</td><td>3개 프로젝트 모두 운영자 관리 화면 구축</td></tr>
+      <tr><td class="k">Auth / Role / Permission</td><td>세탁앱 역할×권한 매트릭스, 학우너 RLS 정책</td></tr>
+      <tr><td class="k">Backend / API · 관계형 DB</td><td>학우너·세탁앱 REST API 및 PostgreSQL 스키마 운영</td></tr>
+      <tr><td class="k">사용자 서비스 ↔ 관리자 데이터 연결</td><td>3개 프로젝트 모두 동일 DB 기반 양방향 반영 구조</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout">
+    <p>MELIQ에서는 위 경험을 기반으로 <b>Mobile-first 사용자 서비스, Product/User DB, Recommendation Module, Admin Dashboard를 각각 독립된 구성요소로 분리하여</b>, 규칙과 가중치를 코드 배포 없이 조정할 수 있고 이후 확장·운영이 가능한 구조로 구현할 수 있습니다.</p>
+  </div>
+
+  <p class="note">
+    <b>자료 작성 기준.</b> 본 문서의 모든 기술 사항은 2026년 9월 12일 기준 각 프로젝트 저장소의 소스코드·데이터베이스 마이그레이션·API 정의를 직접 확인하여 작성했습니다.
+    코드에서 확인되지 않은 기능·성과·사용자 수·매출은 기재하지 않았습니다.
+    수록된 모든 화면은 로컬 실행 환경에서 각 제품의 데모·픽스처 데이터로 촬영한 것이며, 운영 데이터베이스 접속이나 실제 회원 정보 노출은 없습니다.
+  </p>
+
+  <footer class="doc">
+    <strong>REUMLAB · 름랩</strong><br>
+    MELIQ MVP · Relevant Project Experience · 2026.09.12
+  </footer>
+</section>
+</div>
+
+</body>
+</html>
