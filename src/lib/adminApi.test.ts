@@ -235,6 +235,7 @@ describe('adminApi: 쓰기 경로', () => {
 
   it('설정 키 목록이 Edge Function 화이트리스트와 같은 값을 쓴다', () => {
     expect([...SETTING_KEYS].sort()).toEqual([
+      'hide_unverified_products',
       'maintenance_mode',
       'phase2_alias_observation_enabled',
       'service_notice',

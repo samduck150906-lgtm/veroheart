@@ -7,7 +7,7 @@
  *   설정 테이블이 없는 환경(마이그레이션 미적용)에서도 기능이 끊기지 않는다.
  */
 import { useEffect, useState } from 'react';
-import { supabase, isSupabaseConfigured } from './supabase';
+import { supabase, isSupabaseConfigured, setHideUnverifiedProducts } from './supabase';
 
 export interface ServiceNotice {
   enabled: boolean;
@@ -20,6 +20,8 @@ export interface PublicSettings {
   viralEventVisible: boolean;
   serviceNotice: ServiceNotice;
   phase2AliasObservationEnabled: boolean;
+  /** 켜면 검수 완료(verified) 제품만 사용자 앱에 노출한다. */
+  hideUnverifiedProducts: boolean;
 }
 
 /**
@@ -34,6 +36,8 @@ export const DEFAULT_PUBLIC_SETTINGS: PublicSettings = {
   viralEventVisible: false,
   serviceNotice: { enabled: false, message: '' },
   phase2AliasObservationEnabled: false,
+  // 기본은 끔 — 설정을 못 읽었다고 제품 목록이 통째로 비면 안 된다.
+  hideUnverifiedProducts: false,
 };
 
 function asBoolean(value: unknown, fallback: boolean): boolean {
@@ -65,6 +69,10 @@ export function mapSettingsRows(rows: { key: string; value: unknown }[]): Public
     phase2AliasObservationEnabled: asBoolean(
       byKey.get('phase2_alias_observation_enabled'),
       DEFAULT_PUBLIC_SETTINGS.phase2AliasObservationEnabled,
+    ),
+    hideUnverifiedProducts: asBoolean(
+      byKey.get('hide_unverified_products'),
+      DEFAULT_PUBLIC_SETTINGS.hideUnverifiedProducts,
     ),
   };
 }
@@ -107,6 +115,8 @@ export async function loadPublicSettings(): Promise<PublicSettings> {
       const settings = mapSettingsRows(data as { key: string; value: unknown }[]);
       cached = settings;
       cachedAt = Date.now();
+      // 제품 조회 경로가 매번 설정을 다시 읽지 않도록 현재 값을 넘겨 둔다.
+      setHideUnverifiedProducts(settings.hideUnverifiedProducts);
       return settings;
     } catch {
       return DEFAULT_PUBLIC_SETTINGS;

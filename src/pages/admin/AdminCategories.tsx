@@ -14,9 +14,11 @@ interface FormState {
   name: string;
   hint: string;
   isActive: boolean;
+  /** 빈 문자열이면 메인 카테고리. */
+  parentId: string;
 }
 
-const EMPTY_FORM: FormState = { name: '', hint: '', isActive: true };
+const EMPTY_FORM: FormState = { name: '', hint: '', isActive: true, parentId: '' };
 
 /**
  * 앱 카테고리 관리.
@@ -55,8 +57,8 @@ const AdminCategories: React.FC = () => {
     load();
   }, [load]);
 
-  const openCreate = () => {
-    setForm({ ...EMPTY_FORM });
+  const openCreate = (parentId = '') => {
+    setForm({ ...EMPTY_FORM, parentId });
     setFormError('');
     setIsModalOpen(true);
   };
@@ -67,6 +69,7 @@ const AdminCategories: React.FC = () => {
       name: category.name,
       hint: category.hint ?? '',
       isActive: category.isActive,
+      parentId: category.parentId ?? '',
     });
     setFormError('');
     setIsModalOpen(true);
@@ -92,6 +95,7 @@ const AdminCategories: React.FC = () => {
         name,
         hint: form.hint.trim() || null,
         isActive: form.isActive,
+        parentId: form.parentId || null,
       });
       notify.success(
         result.movedProducts > 0
@@ -109,19 +113,28 @@ const AdminCategories: React.FC = () => {
     }
   };
 
-  /** 화면에서 먼저 순서를 바꾸고 서버에 반영한다. 실패하면 서버 상태로 되돌린다. */
-  const move = async (index: number, direction: -1 | 1) => {
+  /**
+   * 같은 부모를 가진 형제끼리만 순서를 바꾼다.
+   * 화면에서 먼저 바꾸고 서버에 반영하며, 실패하면 서버 상태로 되돌린다.
+   */
+  const move = async (category: AdminCategory, direction: -1 | 1) => {
+    if (savingOrder) return;
+    const siblings = rows.filter((row) => (row.parentId ?? null) === (category.parentId ?? null));
+    const index = siblings.findIndex((row) => row.id === category.id);
     const target = index + direction;
-    if (savingOrder || target < 0 || target >= rows.length) return;
+    if (index < 0 || target < 0 || target >= siblings.length) return;
+
+    const reordered = [...siblings];
+    [reordered[index], reordered[target]] = [reordered[target], reordered[index]];
+    const orderById = new Map(reordered.map((row, order) => [row.id, (order + 1) * 10]));
 
     const previous = rows;
-    const next = [...rows];
-    [next[index], next[target]] = [next[target], next[index]];
-    setRows(next);
+    setRows((current) => current.map((row) => (
+      orderById.has(row.id) ? { ...row, sortOrder: orderById.get(row.id) as number } : row
+    )));
     setSavingOrder(true);
     try {
-      await reorderCategories(next.map((row) => row.id));
-      setRows(next.map((row, order) => ({ ...row, sortOrder: (order + 1) * 10 })));
+      await reorderCategories(reordered.map((row) => row.id));
     } catch (err) {
       setRows(previous);
       notify.error(`순서 변경 실패: ${err instanceof Error ? err.message : String(err)}`);
@@ -139,6 +152,7 @@ const AdminCategories: React.FC = () => {
         name: category.name,
         hint: category.hint,
         isActive: !category.isActive,
+        parentId: category.parentId,
       });
       setRows((current) => current.map((row) => (
         row.id === category.id ? { ...row, isActive: !row.isActive } : row
@@ -170,6 +184,23 @@ const AdminCategories: React.FC = () => {
     }
   };
 
+  const mainCategories = rows
+    .filter((row) => !row.parentId)
+    .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'ko-KR'));
+  const subCategoriesOf = (parentId: string) => rows
+    .filter((row) => row.parentId === parentId)
+    .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'ko-KR'));
+
+  /** 메인 → 그 아래 서브 순서로 펼친 표시용 목록. */
+  const displayRows: { category: AdminCategory; depth: 0 | 1; position: number; siblings: number }[] = [];
+  mainCategories.forEach((main, mainIndex) => {
+    displayRows.push({ category: main, depth: 0, position: mainIndex, siblings: mainCategories.length });
+    const children = subCategoriesOf(main.id);
+    children.forEach((child, childIndex) => {
+      displayRows.push({ category: child, depth: 1, position: childIndex, siblings: children.length });
+    });
+  });
+
   const activeCount = rows.filter((row) => row.isActive).length;
 
   return (
@@ -183,7 +214,7 @@ const AdminCategories: React.FC = () => {
           <button type="button" className="admin-btn-soft" onClick={load} disabled={loading}>
             <RefreshCw size={15} /> 새로고침
           </button>
-          <button type="button" className="admin-btn-primary" onClick={openCreate}>
+          <button type="button" className="admin-btn-primary" onClick={() => openCreate()}>
             <Plus size={16} /> 카테고리 등록
           </button>
         </div>
@@ -195,8 +226,11 @@ const AdminCategories: React.FC = () => {
           <strong>검색 화면 상단 칩</strong>에 이 순서 그대로 나타납니다. 위/아래 버튼으로 순서를 바꾸면
           앱에도 즉시 반영됩니다.
           <br />
-          카테고리 이름은 제품의 <code>대분류</code> 값과 글자 그대로 대조합니다. 이름을 바꾸면 그
-          분류로 등록된 제품도 함께 옮겨져 필터가 끊기지 않습니다.
+          카테고리 이름은 제품의 <code>대분류</code>·<code>소분류</code> 값과 글자 그대로 대조합니다.
+          이름을 바꾸면 그 분류로 등록된 제품도 함께 옮겨져 필터가 끊기지 않습니다.
+          <br />
+          메인 카테고리 행의 <strong>＋서브</strong> 버튼으로 서브 카테고리를 등록하면, 제품 등록
+          화면에서 대분류를 고를 때 그 아래 소분류만 골라 쓸 수 있습니다.
         </p>
       </div>
 
@@ -228,15 +262,15 @@ const AdminCategories: React.FC = () => {
               </tr>
             ) : rows.length === 0 ? (
               <tr><td colSpan={6}><div className="admin-empty">등록된 카테고리가 없습니다.</div></td></tr>
-            ) : rows.map((row, index) => (
+            ) : displayRows.map(({ category: row, depth, position, siblings }) => (
               <tr key={row.id}>
                 <td>
                   <div className="admin-actions">
                     <button
                       type="button"
                       className="admin-icon-btn"
-                      onClick={() => move(index, -1)}
-                      disabled={index === 0 || savingOrder}
+                      onClick={() => move(row, -1)}
+                      disabled={position === 0 || savingOrder}
                       aria-label={`${row.name} 순서 위로`}
                     >
                       <ArrowUp size={14} />
@@ -244,17 +278,24 @@ const AdminCategories: React.FC = () => {
                     <button
                       type="button"
                       className="admin-icon-btn"
-                      onClick={() => move(index, 1)}
-                      disabled={index === rows.length - 1 || savingOrder}
+                      onClick={() => move(row, 1)}
+                      disabled={position === siblings - 1 || savingOrder}
                       aria-label={`${row.name} 순서 아래로`}
                     >
                       <ArrowDown size={14} />
                     </button>
                   </div>
                 </td>
-                <td>
-                  <div className="admin-item-main">{row.name}</div>
-                  <div className="admin-item-sub">{index + 1}번째 노출</div>
+                <td style={{ paddingLeft: depth === 1 ? 30 : undefined }}>
+                  <div className="admin-item-main">
+                    {depth === 1 && <span aria-hidden="true" style={{ color: '#94a3b8', marginRight: 6 }}>└</span>}
+                    {row.name}
+                  </div>
+                  <div className="admin-item-sub">
+                    {depth === 1
+                      ? `${row.parentName} 서브 · ${position + 1}번째`
+                      : `메인 · ${position + 1}번째 노출`}
+                  </div>
                 </td>
                 <td className="admin-item-sub">{row.hint || '-'}</td>
                 <td><strong>{row.productCount.toLocaleString()}</strong>개</td>
@@ -272,6 +313,17 @@ const AdminCategories: React.FC = () => {
                 </td>
                 <td style={{ textAlign: 'right' }}>
                   <div className="admin-actions">
+                    {depth === 0 && (
+                      <button
+                        type="button"
+                        className="admin-btn-soft"
+                        onClick={() => openCreate(row.id)}
+                        aria-label={`${row.name}에 서브 카테고리 추가`}
+                        title="서브 카테고리 추가"
+                      >
+                        <Plus size={13} /> 서브
+                      </button>
+                    )}
                     <button
                       type="button"
                       className="admin-icon-btn edit"
@@ -309,6 +361,24 @@ const AdminCategories: React.FC = () => {
             </div>
 
             <div className="admin-form-group" style={{ marginTop: 14 }}>
+              <label htmlFor="category-parent">분류 위치</label>
+              <select
+                id="category-parent"
+                value={form.parentId}
+                onChange={(event) => setForm((prev) => ({ ...prev, parentId: event.target.value }))}
+                disabled={Boolean(form.id)}
+              >
+                <option value="">메인 카테고리 (홈·검색 칩)</option>
+                {mainCategories.map((main) => (
+                  <option key={main.id} value={main.id}>{main.name}의 서브 카테고리</option>
+                ))}
+              </select>
+              {form.id && (
+                <p className="admin-hint">등록 후에는 분류 위치를 바꿀 수 없습니다. 삭제 후 다시 등록해 주세요.</p>
+              )}
+            </div>
+
+            <div className="admin-form-group" style={{ marginTop: 12 }}>
               <label htmlFor="category-name">카테고리 이름 *</label>
               <input
                 id="category-name"
@@ -319,7 +389,7 @@ const AdminCategories: React.FC = () => {
               />
             </div>
 
-            <div className="admin-form-group" style={{ marginTop: 12 }}>
+            <div className="admin-form-group" style={{ marginTop: 12 }} hidden={Boolean(form.parentId)}>
               <label htmlFor="category-hint">홈 카드 설명</label>
               <input
                 id="category-hint"

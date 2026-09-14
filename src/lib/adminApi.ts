@@ -157,10 +157,14 @@ export interface AdminMemberDetail extends AdminMember {
   pets: AdminMemberPet[];
 }
 
+export type MealPeriod = 'morning' | 'lunch' | 'dinner' | 'snack';
+
 export interface AdminDiaryRow {
   id: string;
   feedingDate: string;
   feedingTime: string | null;
+  /** 앱 입력 화면의 아침·점심·저녁·간식 구분. 값이 없는 과거 기록도 있다. */
+  mealPeriod: MealPeriod | string | null;
   memberNickname: string;
   petName: string;
   petType: 'dog' | 'cat';
@@ -170,6 +174,8 @@ export interface AdminDiaryRow {
   preferenceLevel: number | null;
   imageUrl: string | null;
   memo: string | null;
+  /** 앱의 '특이사항' 칸. 배변·구토 등 급여 후 반응을 적는다. */
+  reactionNote: string | null;
   createdAt: string;
 }
 
@@ -213,6 +219,7 @@ export const SETTING_KEYS = [
   'viral_event_visible',
   'service_notice',
   'phase2_alias_observation_enabled',
+  'hide_unverified_products',
 ] as const;
 
 export type SettingKey = (typeof SETTING_KEYS)[number];
@@ -901,6 +908,9 @@ export interface AdminCategory {
   hint: string | null;
   sortOrder: number;
   isActive: boolean;
+  /** NULL 이면 메인 카테고리, 값이 있으면 그 카테고리의 서브 카테고리. */
+  parentId: string | null;
+  parentName: string | null;
   /** 이 분류로 등록된 제품 수 — 비활성·삭제 전 영향 범위 확인용. */
   productCount: number;
   createdAt: string | null;
@@ -912,6 +922,7 @@ export interface AdminCategoryInput {
   name: string;
   hint?: string | null;
   isActive?: boolean;
+  parentId?: string | null;
 }
 
 export async function fetchCategories(): Promise<AdminCategory[]> {
@@ -925,6 +936,7 @@ export async function saveCategory(input: AdminCategoryInput): Promise<{ id: str
     name: input.name,
     hint: input.hint ?? null,
     isActive: input.isActive ?? true,
+    parentId: input.parentId ?? null,
   });
   if (!res.id) throw new Error('저장된 카테고리 ID를 받지 못했습니다.');
   return { id: res.id, movedProducts: res.movedProducts ?? 0 };

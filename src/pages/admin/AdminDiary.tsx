@@ -10,6 +10,19 @@ function formatDateTime(date: string, time: string | null): string {
   return time ? `${normalized} ${time.slice(0, 5)}` : normalized;
 }
 
+/** 앱 입력 화면과 같은 구분을 관리자에서도 같은 말로 보여 준다. */
+const MEAL_PERIOD_LABEL: Record<string, { label: string; tag: string }> = {
+  morning: { label: '아침', tag: 'yellow' },
+  lunch: { label: '점심', tag: 'blue' },
+  dinner: { label: '저녁', tag: 'gray' },
+  snack: { label: '간식', tag: 'green' },
+};
+
+function mealPeriodBadge(value: string | null) {
+  if (!value) return null;
+  return MEAL_PERIOD_LABEL[value] ?? { label: value, tag: 'gray' };
+}
+
 const AdminDiary: React.FC = () => {
   const [params, setParams] = useSearchParams();
   const page = Math.max(1, Number(params.get('page')) || 1);
@@ -139,28 +152,35 @@ const AdminDiary: React.FC = () => {
           <thead>
             <tr>
               <th>급여 일시</th>
+              <th>시간대</th>
               <th>회원 / 반려동물</th>
               <th>제품</th>
               <th>급여량</th>
               <th>기호도</th>
               <th>사진</th>
-              <th>메모</th>
+              <th>메모 · 특이사항</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               Array.from({ length: 5 }, (_, index) => (
                 <tr key={index} aria-hidden="true">
-                  <td colSpan={7}><span className="admin-skeleton admin-skeleton-row" /></td>
+                  <td colSpan={8}><span className="admin-skeleton admin-skeleton-row" /></td>
                 </tr>
               ))
             ) : error ? (
-              <tr><td colSpan={7}><div className="admin-empty">다이어리 기록을 불러오지 못했습니다: {error} <button type="button" className="admin-btn-soft" onClick={load}>다시 시도</button></div></td></tr>
+              <tr><td colSpan={8}><div className="admin-empty">다이어리 기록을 불러오지 못했습니다: {error} <button type="button" className="admin-btn-soft" onClick={load}>다시 시도</button></div></td></tr>
             ) : rows.length === 0 ? (
-              <tr><td colSpan={7}><div className="admin-empty">조건에 맞는 다이어리 기록이 없습니다.</div></td></tr>
+              <tr><td colSpan={8}><div className="admin-empty">조건에 맞는 다이어리 기록이 없습니다.</div></td></tr>
             ) : rows.map((row) => (
               <tr key={row.id}>
                 <td>{formatDateTime(row.feedingDate, row.feedingTime)}</td>
+                <td>
+                  {(() => {
+                    const badge = mealPeriodBadge(row.mealPeriod as string | null);
+                    return badge ? <span className={`admin-tag ${badge.tag}`}>{badge.label}</span> : '-';
+                  })()}
+                </td>
                 <td>
                   <div className="admin-item-main">{row.memberNickname}</div>
                   <div className="admin-item-sub">{row.petName} · {row.petType.toUpperCase()}</div>
@@ -175,7 +195,12 @@ const AdminDiary: React.FC = () => {
                     </a>
                   ) : '-'}
                 </td>
-                <td className="admin-truncate" title={row.memo ?? undefined}>{row.memo || '-'}</td>
+                <td className="admin-truncate" title={[row.memo, row.reactionNote].filter(Boolean).join(' / ') || undefined}>
+                  <div>{row.memo || '-'}</div>
+                  {row.reactionNote && (
+                    <div className="admin-item-sub" style={{ color: '#b45309' }}>특이사항: {row.reactionNote}</div>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

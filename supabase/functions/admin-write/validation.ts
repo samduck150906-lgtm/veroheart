@@ -39,6 +39,7 @@ export const SETTINGS_KEYS = new Set([
   'viral_event_visible',
   'service_notice',
   'phase2_alias_observation_enabled',
+  'hide_unverified_products',
 ]);
 
 /** 인증 없이 호출할 수 없는 action 목록 — 여기 없는 action 은 거부된다. */
@@ -197,6 +198,8 @@ export interface CategoryPayload {
   name: string;
   hint: string | null;
   is_active: boolean;
+  /** NULL 이면 메인 카테고리, 값이 있으면 그 카테고리의 서브 카테고리. */
+  parent_id: string | null;
 }
 
 /**
@@ -211,6 +214,7 @@ export function normalizeCategoryPayload(raw: Record<string, unknown>): Category
     is_active: raw.isActive === undefined && raw.is_active === undefined
       ? true
       : Boolean(raw.isActive ?? raw.is_active),
+    parent_id: optionalUuid(raw.parentId ?? raw.parent_id, '상위 카테고리 ID'),
   };
 }
 

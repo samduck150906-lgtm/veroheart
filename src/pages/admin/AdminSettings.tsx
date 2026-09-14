@@ -27,6 +27,14 @@ const BOOLEAN_SETTINGS: { key: SettingKey; title: string; description: string }[
     description: '성향 테스트·공유 이벤트 진입 노출 여부입니다.',
   },
   {
+    key: 'hide_unverified_products',
+    title: '검수 대기 제품 숨기기',
+    description:
+      '켜면 검수 상태가 "검수 완료"인 제품만 사용자 앱에 노출합니다. ' +
+      '지금은 등록된 제품 대부분이 검수 대기라 켜면 앱 목록이 거의 비게 되니, ' +
+      '검수를 진행한 뒤 켜 주세요.',
+  },
+  {
     key: 'phase2_alias_observation_enabled',
     title: 'Phase 2 별칭 관찰 모드',
     description:

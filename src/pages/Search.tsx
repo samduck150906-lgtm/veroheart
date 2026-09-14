@@ -87,11 +87,14 @@ const HEALTH_CONCERN_OPTIONS = [
 // 값은 DB products.main_category 와 글자 그대로 대조된다.
 // 건식/습식 구분은 필터 시트의 '제형'이 담당한다.
 
-function defaultPetFromProfile(profile: { species?: string } | undefined): '' | 'dog' | 'cat' | 'all' {
-  if (profile?.species === 'Cat') return 'cat';
-  if (profile?.species === 'Dog') return 'dog';
-  return '';
-}
+/**
+ * 검색은 종 필터를 미리 걸지 않는다.
+ *
+ * 예전에는 프로필 종(Cat/Dog)을 기본 필터로 적용해서, 고양이 보호자에게는
+ * 강아지용 제품이 검색 자체에서 사라졌다. 성분을 확인하려고 찾는 제품이
+ * "우리 아이 전용"이 아닐 수 있으므로 기본값은 전체로 두고, 종 필터는 필터
+ * 시트에서 직접 고르게 한다. 우리 아이에게 맞는지는 등급·경고로 알려 준다.
+ */
 
 export default function Search() {
   const { profile, products, comparisonList } = useStore();
@@ -130,7 +133,7 @@ export default function Search() {
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filters, setFilters] = useState({
-    targetPetType: defaultPetFromProfile(profile) as '' | 'dog' | 'cat' | 'all',
+    targetPetType: '' as '' | 'dog' | 'cat' | 'all',
     targetLifeStage: '',
     formulation: '',
     subCategory: '',

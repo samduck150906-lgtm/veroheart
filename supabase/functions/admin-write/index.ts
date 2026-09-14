@@ -1353,36 +1353,55 @@ serve(async (req) => {
       case 'listCategories': {
         const { data, error } = await db
           .from('product_categories')
-          .select('id, name, hint, sort_order, is_active, created_at, updated_at')
+          .select('id, name, hint, sort_order, is_active, parent_id, created_at, updated_at')
           .order('sort_order', { ascending: true })
           .order('name', { ascending: true });
         if (error) throw error;
 
         // 카테고리별 제품 수 — 삭제·비활성 전에 영향 범위를 알려 주기 위함이다.
+        // 메인은 main_category, 서브는 (메인, 서브) 쌍으로 센다.
         const { data: products, error: productError } = await db
           .from('products')
-          .select('main_category');
+          .select('main_category, sub_category');
         if (productError) throw productError;
-        const counts = new Map<string, number>();
+        const mainCounts = new Map<string, number>();
+        const subCounts = new Map<string, number>();
         for (const row of products ?? []) {
-          const key = String((row as { main_category: string | null }).main_category ?? '').trim();
-          if (!key) continue;
-          counts.set(key, (counts.get(key) ?? 0) + 1);
+          const product = row as { main_category: string | null; sub_category: string | null };
+          const main = String(product.main_category ?? '').trim();
+          if (main) mainCounts.set(main, (mainCounts.get(main) ?? 0) + 1);
+          const sub = String(product.sub_category ?? '').trim();
+          if (main && sub) {
+            const key = `${main}\u0000${sub}`;
+            subCounts.set(key, (subCounts.get(key) ?? 0) + 1);
+          }
         }
+
+        const rows = (data ?? []) as Record<string, unknown>[];
+        const nameById = new Map(rows.map((row) => [String(row.id), String(row.name)]));
 
         return json(
           {
             ok: true,
-            categories: (data ?? []).map((row: Record<string, unknown>) => ({
-              id: row.id,
-              name: row.name,
-              hint: row.hint ?? null,
-              sortOrder: row.sort_order ?? 0,
-              isActive: row.is_active !== false,
-              productCount: counts.get(String(row.name).trim()) ?? 0,
-              createdAt: row.created_at ?? null,
-              updatedAt: row.updated_at ?? null,
-            })),
+            categories: rows.map((row) => {
+              const parentId = (row.parent_id as string | null) ?? null;
+              const name = String(row.name).trim();
+              const parentName = parentId ? (nameById.get(parentId) ?? null) : null;
+              return {
+                id: row.id,
+                name: row.name,
+                hint: row.hint ?? null,
+                sortOrder: row.sort_order ?? 0,
+                isActive: row.is_active !== false,
+                parentId,
+                parentName,
+                productCount: parentId
+                  ? (subCounts.get(`${String(parentName ?? '').trim()}\u0000${name}`) ?? 0)
+                  : (mainCounts.get(name) ?? 0),
+                createdAt: row.created_at ?? null,
+                updatedAt: row.updated_at ?? null,
+              };
+            }),
           },
           200,
           cors,
@@ -1394,19 +1413,29 @@ serve(async (req) => {
         const id = optionalUuid(body.id ?? (body.category as Record<string, unknown> | undefined)?.id, '카테고리 ID');
         const now = new Date().toISOString();
 
-        const { data: duplicate, error: duplicateError } = await db
-          .from('product_categories')
-          .select('id')
-          .eq('name', payload.name)
-          .maybeSingle();
+        // 유니크 범위는 "같은 부모 안에서"다. 사료/건식과 간식/건식은 공존할 수 있다.
+        let duplicateQuery = db.from('product_categories').select('id').eq('name', payload.name);
+        duplicateQuery = payload.parent_id
+          ? duplicateQuery.eq('parent_id', payload.parent_id)
+          : duplicateQuery.is('parent_id', null);
+        const { data: duplicate, error: duplicateError } = await duplicateQuery.maybeSingle();
         if (duplicateError) throw duplicateError;
         if (duplicate && duplicate.id !== id) {
           throw new ValidationError('같은 이름의 카테고리가 이미 있습니다.');
         }
 
+        if (payload.parent_id) {
+          const { data: parent, error: parentError } = await db
+            .from('product_categories').select('id, parent_id').eq('id', payload.parent_id).maybeSingle();
+          if (parentError) throw parentError;
+          if (!parent) throw new ValidationError('상위 카테고리를 찾을 수 없습니다.');
+          if (parent.parent_id) throw new ValidationError('서브 카테고리 아래에 또 하위를 둘 수 없습니다.');
+          if (parent.id === id) throw new ValidationError('카테고리를 자기 자신의 하위로 둘 수 없습니다.');
+        }
+
         if (id) {
           const { data: existing, error: findError } = await db
-            .from('product_categories').select('id, name').eq('id', id).maybeSingle();
+            .from('product_categories').select('id, name, parent_id').eq('id', id).maybeSingle();
           if (findError) throw findError;
           if (!existing) throw new ValidationError('수정할 카테고리를 찾을 수 없습니다.');
 
@@ -1414,21 +1443,34 @@ serve(async (req) => {
             .from('product_categories')
             .update({ ...payload, updated_at: now })
             .eq('id', id)
-            .select('id, name, hint, sort_order, is_active')
+            .select('id, name, hint, sort_order, is_active, parent_id')
             .single();
           if (error) throw error;
 
-          // 이름이 바뀌면 그 카테고리로 등록된 제품도 같은 값으로 따라가야
-          // 앱 칩 필터가 계속 맞는다(products.main_category 는 텍스트 매칭이다).
+          // 이름이 바뀌면 그 분류로 등록된 제품도 같은 값으로 따라가야
+          // 앱 칩 필터가 계속 맞는다(products 의 분류는 텍스트 매칭이다).
           let movedProducts = 0;
           if (existing.name !== payload.name) {
-            const { data: moved, error: moveError } = await db
-              .from('products')
-              .update({ main_category: payload.name })
-              .eq('main_category', existing.name)
-              .select('id');
-            if (moveError) throw moveError;
-            movedProducts = (moved ?? []).length;
+            if (payload.parent_id) {
+              const { data: parent } = await db
+                .from('product_categories').select('name').eq('id', payload.parent_id).maybeSingle();
+              const { data: moved, error: moveError } = await db
+                .from('products')
+                .update({ sub_category: payload.name })
+                .eq('sub_category', existing.name)
+                .eq('main_category', parent?.name ?? '')
+                .select('id');
+              if (moveError) throw moveError;
+              movedProducts = (moved ?? []).length;
+            } else {
+              const { data: moved, error: moveError } = await db
+                .from('products')
+                .update({ main_category: payload.name })
+                .eq('main_category', existing.name)
+                .select('id');
+              if (moveError) throw moveError;
+              movedProducts = (moved ?? []).length;
+            }
           }
 
           await audit(db, actor, 'saveCategory', 'product_categories', id, {
@@ -1439,19 +1481,22 @@ serve(async (req) => {
           return json({ ok: true, id, category: data, movedProducts }, 200, cors);
         }
 
-        // 새 카테고리는 항상 목록 맨 뒤에 붙인다. 순서는 reorderCategories 로 바꾼다.
-        const { data: last, error: lastError } = await db
+        // 새 카테고리는 같은 부모의 형제들 맨 뒤에 붙인다. 순서는 reorderCategories 로 바꾼다.
+        let lastQuery = db
           .from('product_categories')
           .select('sort_order')
           .order('sort_order', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+          .limit(1);
+        lastQuery = payload.parent_id
+          ? lastQuery.eq('parent_id', payload.parent_id)
+          : lastQuery.is('parent_id', null);
+        const { data: last, error: lastError } = await lastQuery.maybeSingle();
         if (lastError) throw lastError;
 
         const { data, error } = await db
           .from('product_categories')
           .insert([{ ...payload, sort_order: Number(last?.sort_order ?? 0) + 10, updated_at: now }])
-          .select('id, name, hint, sort_order, is_active')
+          .select('id, name, hint, sort_order, is_active, parent_id')
           .single();
         if (error) throw error;
         await audit(db, actor, 'saveCategory', 'product_categories', data?.id ?? null, { name: payload.name });
@@ -1461,16 +1506,34 @@ serve(async (req) => {
       case 'deleteCategory': {
         const id = requireUuid(body.id, '카테고리 ID');
         const { data: existing, error: findError } = await db
-          .from('product_categories').select('id, name').eq('id', id).maybeSingle();
+          .from('product_categories').select('id, name, parent_id').eq('id', id).maybeSingle();
         if (findError) throw findError;
         if (!existing) throw new ValidationError('삭제할 카테고리를 찾을 수 없습니다.');
 
-        // 제품이 남아 있으면 삭제하지 않는다. 삭제해도 제품의 main_category 텍스트는
+        if (!existing.parent_id) {
+          const { count: childCount, error: childError } = await db
+            .from('product_categories')
+            .select('id', { count: 'exact', head: true })
+            .eq('parent_id', id);
+          if (childError) throw childError;
+          if ((childCount ?? 0) > 0) {
+            throw new ValidationError(
+              `이 카테고리에 서브 카테고리 ${childCount}개가 있어 삭제할 수 없습니다. 먼저 서브 카테고리를 정리해 주세요.`,
+            );
+          }
+        }
+
+        // 제품이 남아 있으면 삭제하지 않는다. 삭제해도 제품의 분류 텍스트는
         // 그대로 남아 앱에서는 필터 없는 유령 분류가 되기 때문이다.
-        const { count, error: countError } = await db
-          .from('products')
-          .select('id', { count: 'exact', head: true })
-          .eq('main_category', existing.name);
+        let countQuery = db.from('products').select('id', { count: 'exact', head: true });
+        if (existing.parent_id) {
+          const { data: parent } = await db
+            .from('product_categories').select('name').eq('id', existing.parent_id).maybeSingle();
+          countQuery = countQuery.eq('sub_category', existing.name).eq('main_category', parent?.name ?? '');
+        } else {
+          countQuery = countQuery.eq('main_category', existing.name);
+        }
+        const { count, error: countError } = await countQuery;
         if (countError) throw countError;
         if ((count ?? 0) > 0) {
           return json(
@@ -1582,8 +1645,8 @@ serve(async (req) => {
         let query = db
           .from('pet_feeding_logs')
           .select(
-            `id, feeding_date, feeding_time, amount, unit, preference_level, image_url, memo,
-             custom_product_name, created_at,
+            `id, feeding_date, feeding_time, meal_period, amount, unit, preference_level, image_url, memo,
+             reaction_note, custom_product_name, created_at,
              users (nickname), pets!inner (name, pet_type), products (name, brand_name)`,
             { count: 'exact' },
           )
@@ -1636,6 +1699,7 @@ serve(async (req) => {
                 id: row.id,
                 feedingDate: row.feeding_date,
                 feedingTime: row.feeding_time ?? null,
+                mealPeriod: row.meal_period ?? null,
                 memberNickname: member?.nickname ?? '탈퇴 회원',
                 petName: pet?.name ?? '삭제된 반려동물',
                 petType: pet?.pet_type ?? 'dog',
@@ -1645,6 +1709,7 @@ serve(async (req) => {
                 preferenceLevel: row.preference_level ?? null,
                 imageUrl: row.image_url ?? null,
                 memo: row.memo ?? null,
+                reactionNote: row.reaction_note ?? null,
                 createdAt: row.created_at,
               };
             }),

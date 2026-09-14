@@ -95,6 +95,26 @@ function isMissingProductVisibilityColumn(error: VisibilityQueryError | null): b
  * 없는 짧은 배포 구간에는 한 번만 기존 조회로 폴백한다. 마이그레이션 적용 후
  * 새로고침하면 모든 사용자 제품 경로가 노출 제품만 반환한다.
  */
+/**
+ * 관리자가 "검수 대기 제품 숨기기"를 켰는지.
+ *
+ * 제품 조회마다 설정을 새로 읽으면 요청이 배로 늘고, 설정 조회가 실패한 순간
+ * 목록이 통째로 비어 버린다. 그래서 publicSettings 로더가 값을 여기에 밀어
+ * 넣고(setHideUnverifiedProducts), 조회는 그 값만 본다. 아직 한 번도 읽지
+ * 못했다면 "숨기지 않음"이 기본이다.
+ *
+ * (publicSettings 가 이 모듈을 import 하므로 반대 방향 import 는 두지 않는다.)
+ */
+let hideUnverifiedProducts = false;
+
+export function setHideUnverifiedProducts(value: boolean): void {
+  hideUnverifiedProducts = value;
+}
+
+function shouldHideUnverifiedProducts(): boolean {
+  return hideUnverifiedProducts;
+}
+
 async function queryVisibleProducts<T>(
   run: (withVisibilityFilter: boolean) => PromiseLike<VisibilityQueryResult<T>>,
 ): Promise<VisibilityQueryResult<T>> {
@@ -234,6 +254,7 @@ export async function getProductsPage(page = 1, pageSize = MOBILE_PRODUCT_PAGE_S
         .eq('is_visible', true)
         .order('is_pinned', { ascending: false })
         .order('pinned_order', { ascending: true });
+      if (shouldHideUnverifiedProducts()) builder = builder.eq('verification_status', 'verified');
     }
     return builder.order('created_at', { ascending: false }).range(from, from + safePageSize - 1);
   });
@@ -491,6 +512,7 @@ export async function searchProducts(
         .eq('is_visible', true)
         .order('is_pinned', { ascending: false })
         .order('pinned_order', { ascending: true });
+      if (shouldHideUnverifiedProducts()) builder = builder.eq('verification_status', 'verified');
     }
     return builder;
   });

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { Plus, Search, Edit2, Trash2, X, Upload, ChevronLeft, ChevronRight, AlertTriangle, Eye, EyeOff, Pin, PinOff } from 'lucide-react';
 import { notify } from '../../store/useNotification';
@@ -7,6 +7,7 @@ import ProductIngredientsEditor from './ProductIngredientsEditor';
 import {
   deleteProduct as deleteProductApi,
   fetchCategories,
+  saveIngredient,
   fetchProductIngredients,
   fetchProductsPage,
   saveProduct as saveProductApi,
@@ -14,8 +15,10 @@ import {
   setProductVisibility as setProductVisibilityApi,
   uploadProductImage,
   validateProductImage,
+  type AdminCategory,
   type AdminProductRow,
   type ProductIngredientLink,
+  type RiskLevel,
 } from '../../lib/adminApi';
 
 interface ProductForm {
@@ -69,6 +72,13 @@ const NUTRITION_FIELDS: { key: keyof NutritionForm; label: string }[] = [
 const FALLBACK_CATEGORIES = ['사료', '간식', '영양제'];
 
 const PET_TYPES = ['dog', 'cat', 'all'];
+
+/** 빠른 성분 등록에서 고를 수 있는 분류 — 성분 관리 화면과 같은 목록이다. */
+const INGREDIENT_CATEGORIES = [
+  '동물성 단백질', '식물성 단백질', '탄수화물·곡물', '지방·오일', '과일·채소·식이섬유',
+  '비타민·미네랄', '기능성 성분', '보존료·산화방지제', '유산균·프리바이오틱스',
+  '첨가물·기호성', '조사료', '기타',
+];
 const PAGE_SIZE = 20;
 
 function productCompleteness(product: AdminProductRow): number {
@@ -86,7 +96,6 @@ function productCompleteness(product: AdminProductRow): number {
 }
 
 const AdminProducts: React.FC = () => {
-  const navigate = useNavigate();
   const [urlParams, setUrlParams] = useSearchParams();
 
   const [products, setProducts] = useState<AdminProductRow[]>([]);
@@ -118,7 +127,16 @@ const AdminProducts: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [visibilitySavingId, setVisibilitySavingId] = useState<string | null>(null);
   const [pinSavingId, setPinSavingId] = useState<string | null>(null);
-  const [categories, setCategories] = useState<string[]>(FALLBACK_CATEGORIES);
+  const [categoryRows, setCategoryRows] = useState<AdminCategory[]>([]);
+  // 건강 고민 태그는 입력 중 원문을 그대로 들고 있어야 콤마를 칠 수 있다.
+  // (배열로 바로 파싱하면 "피부," 를 다시 렌더할 때 콤마가 지워진다.)
+  const [healthConcernText, setHealthConcernText] = useState('');
+  // 가격도 문자열로 다룬다. 숫자 입력창은 0 이 남아 있어 커서가 뒤로 밀렸다.
+  const [priceText, setPriceText] = useState('');
+  const [quickIngredientName, setQuickIngredientName] = useState<string | null>(null);
+  const [quickIngredientRisk, setQuickIngredientRisk] = useState<RiskLevel>('safe');
+  const [quickIngredientCategory, setQuickIngredientCategory] = useState('기타');
+  const [quickIngredientSaving, setQuickIngredientSaving] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -188,7 +206,7 @@ const AdminProducts: React.FC = () => {
     fetchCategories()
       .then((rows) => {
         if (cancelled || rows.length === 0) return;
-        setCategories(rows.map((row) => row.name));
+        setCategoryRows(rows);
       })
       .catch(() => {
         // 실패해도 기본 분류로 계속 운영할 수 있어야 한다.
@@ -214,6 +232,8 @@ const AdminProducts: React.FC = () => {
     });
     setNutrition(EMPTY_NUTRITION);
     setIngredientLinks([]);
+    setHealthConcernText('');
+    setPriceText('');
     setFormError('');
     setIsModalOpen(true);
   };
@@ -222,6 +242,8 @@ const AdminProducts: React.FC = () => {
     setFormError('');
     setNutrition(EMPTY_NUTRITION);
     setIngredientLinks([]);
+    setHealthConcernText('');
+    setPriceText('');
     setIsModalOpen(true);
     setIngredientsLoading(true);
 
@@ -231,7 +253,10 @@ const AdminProducts: React.FC = () => {
       supabase.from('nutritional_profiles').select('*').eq('product_id', row.id).maybeSingle(),
     ]);
 
-    setCurrentProduct((full ?? row) as ProductForm);
+    const loaded = (full ?? row) as ProductForm;
+    setCurrentProduct(loaded);
+    setHealthConcernText((loaded.product_health_concerns ?? []).join(', '));
+    setPriceText(loaded.min_price ? String(loaded.min_price) : '');
 
     if (np) {
       const s = (v: unknown) => (v === null || v === undefined ? '' : String(v));
@@ -309,9 +334,9 @@ const AdminProducts: React.FC = () => {
         Number.isFinite(Number(currentProduct.kcal_per_100g)) && Number(currentProduct.kcal_per_100g) > 0
           ? Number(currentProduct.kcal_per_100g)
           : null,
-      min_price: Number.isFinite(Number(currentProduct.min_price)) ? Math.max(0, Number(currentProduct.min_price)) : 0,
+      min_price: Math.max(0, Number(priceText.replace(/[^0-9]/g, '') || 0)),
       target_life_stage: normalizeCommaValues(currentProduct.target_life_stage),
-      product_health_concerns: normalizeCommaValues(currentProduct.product_health_concerns),
+      product_health_concerns: normalizeCommaValues(healthConcernText),
     };
 
     // 보장성분: 입력값이 하나라도 있을 때만 함께 전송(숫자로 변환)
@@ -395,6 +420,55 @@ const AdminProducts: React.FC = () => {
     }
   };
 
+  const mainCategoryNames = categoryRows.length > 0
+    ? categoryRows.filter((row) => !row.parentId).map((row) => row.name)
+    : FALLBACK_CATEGORIES;
+
+  /** 선택한 대분류 아래 등록된 소분류만 고르게 한다. */
+  const subCategoryNames = (() => {
+    const parent = categoryRows.find(
+      (row) => !row.parentId && row.name === (currentProduct.main_category ?? '').trim(),
+    );
+    if (!parent) return [];
+    return categoryRows.filter((row) => row.parentId === parent.id).map((row) => row.name);
+  })();
+
+  /**
+   * 원재료 검색에 없는 성분을 제품 폼을 벗어나지 않고 바로 등록한다.
+   *
+   * 예전에는 성분 사전 화면으로 이동시켰는데, 그 순간 입력 중이던 제품 정보가
+   * 전부 사라졌다. 여기서 등록하면 그대로 이 제품의 원재료로 붙는다.
+   */
+  const saveQuickIngredient = async () => {
+    const name = (quickIngredientName ?? '').trim();
+    if (!name || quickIngredientSaving) return;
+    setQuickIngredientSaving(true);
+    try {
+      const { id, ingredient } = await saveIngredient({
+        name_ko: name,
+        risk_level: quickIngredientRisk,
+        category: quickIngredientCategory,
+      });
+      setIngredientLinks((links) => (
+        links.some((link) => link.ingredientId === id)
+          ? links
+          : [...links, {
+              ingredientId: id,
+              nameKo: ingredient.name_ko,
+              nameEn: ingredient.name_en,
+              riskLevel: ingredient.risk_level,
+              sortOrder: links.length,
+            }]
+      ));
+      notify.success(`성분 “${ingredient.name_ko}”을(를) 사전에 등록하고 이 제품에 연결했습니다.`);
+      setQuickIngredientName(null);
+    } catch (err) {
+      notify.error(`성분 등록 실패: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setQuickIngredientSaving(false);
+    }
+  };
+
   const togglePinned = async (product: AdminProductRow) => {
     if (pinSavingId) return;
     const nextPinned = !product.is_pinned;
@@ -441,7 +515,7 @@ const AdminProducts: React.FC = () => {
       </div>
 
       <div className="admin-filter-row">
-        {['전체', ...categories].map((tab) => (
+        {['전체', ...mainCategoryNames].map((tab) => (
           <button
             type="button"
             key={tab}
@@ -660,13 +734,13 @@ const AdminProducts: React.FC = () => {
       </nav>
 
       {isModalOpen && (
-        <div className="admin-modal-backdrop" onClick={() => !isSaving && setIsModalOpen(false)}>
+        // 입력 도중 바깥을 눌러 폼이 통째로 사라지는 사고를 막는다 — 닫기는 X/취소로만.
+        <div className="admin-modal-backdrop">
           <div
             className="admin-modal"
             role="dialog"
             aria-modal="true"
             aria-label={currentProduct.id ? '제품 정보 수정' : '신규 제품 등록'}
-            onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3>{currentProduct.id ? '제품 정보 수정' : '신규 제품 등록'}</h3>
@@ -696,10 +770,11 @@ const AdminProducts: React.FC = () => {
               />
               <InputField
                 id="pf-price"
-                label="가격"
-                type="number"
-                value={currentProduct.min_price}
-                onChange={(value) => setCurrentProduct({ ...currentProduct, min_price: Number(value || 0) })}
+                label="가격 (원)"
+                inputMode="numeric"
+                placeholder="예: 32000"
+                value={priceText ? Number(priceText).toLocaleString() : ''}
+                onChange={(value) => setPriceText(value.replace(/[^0-9]/g, '').slice(0, 9))}
               />
               <InputField
                 id="pf-barcode"
@@ -766,7 +841,7 @@ const AdminProducts: React.FC = () => {
                 id="pf-main-cat"
                 label="메인 카테고리"
                 value={currentProduct.main_category}
-                options={categories}
+                options={mainCategoryNames}
                 onChange={(value) => setCurrentProduct({ ...currentProduct, main_category: value })}
               />
               <SelectField
@@ -798,12 +873,29 @@ const AdminProducts: React.FC = () => {
                 options={PET_TYPES}
                 onChange={(value) => setCurrentProduct({ ...currentProduct, target_pet_type: value })}
               />
-              <InputField
-                id="pf-sub-cat"
-                label="서브 카테고리"
-                value={currentProduct.sub_category}
-                onChange={(value) => setCurrentProduct({ ...currentProduct, sub_category: value })}
-              />
+              {subCategoryNames.length > 0 ? (
+                <SelectField
+                  id="pf-sub-cat"
+                  label="서브 카테고리"
+                  value={currentProduct.sub_category}
+                  options={subCategoryNames}
+                  onChange={(value) => setCurrentProduct({ ...currentProduct, sub_category: value })}
+                />
+              ) : (
+                <div className="admin-form-group">
+                  <label htmlFor="pf-sub-cat">서브 카테고리</label>
+                  <select id="pf-sub-cat" value="" disabled>
+                    <option value="">
+                      {currentProduct.main_category
+                        ? '등록된 서브 카테고리가 없습니다'
+                        : '먼저 메인 카테고리를 고르세요'}
+                    </option>
+                  </select>
+                  <p className="admin-hint">
+                    서브 카테고리는 <strong>카테고리 관리</strong>에서 메인 카테고리 아래에 등록합니다.
+                  </p>
+                </div>
+              )}
               <InputField
                 id="pf-formulation"
                 label="제형"
@@ -813,17 +905,10 @@ const AdminProducts: React.FC = () => {
               <InputField
                 id="pf-concerns"
                 className="admin-form-span-2"
-                label="건강 고민 태그 (콤마 구분)"
-                value={currentProduct.product_health_concerns?.join(', ')}
-                onChange={(value) =>
-                  setCurrentProduct({
-                    ...currentProduct,
-                    product_health_concerns: value
-                      .split(',')
-                      .map((v) => v.trim())
-                      .filter(Boolean),
-                  })
-                }
+                label="건강 고민 태그 (콤마로 구분)"
+                placeholder="예: 피부, 관절, 소화"
+                value={healthConcernText}
+                onChange={setHealthConcernText}
               />
 
               {/* 원재료 구성 — 분석 엔진의 핵심 입력 */}
@@ -835,7 +920,11 @@ const AdminProducts: React.FC = () => {
                     value={ingredientLinks}
                     onChange={setIngredientLinks}
                     disabled={isSaving}
-                    onRequestCreateIngredient={() => navigate('/admin/ingredients')}
+                    onRequestCreateIngredient={(name) => {
+                      setQuickIngredientName(name);
+                      setQuickIngredientRisk('safe');
+                      setQuickIngredientCategory('기타');
+                    }}
                   />
                 )}
               </div>
@@ -881,6 +970,83 @@ const AdminProducts: React.FC = () => {
         </div>
       )}
 
+      {quickIngredientName !== null && (
+        <div className="admin-modal-backdrop" style={{ zIndex: 1200 }}>
+          <div className="admin-modal admin-modal-sm" role="dialog" aria-modal="true" aria-label="성분 빠른 등록">
+            <div className="admin-dialog-heading">
+              <h3>성분 사전에 등록</h3>
+              <button
+                type="button"
+                className="admin-btn-soft"
+                onClick={() => setQuickIngredientName(null)}
+                disabled={quickIngredientSaving}
+                aria-label="닫기"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <p className="admin-modal-desc">
+              등록하면 성분 사전에 추가되고, 편집 중인 이 제품의 원재료로 바로 연결됩니다.
+              상세 설명·영양값은 나중에 성분 관리에서 채울 수 있습니다.
+            </p>
+
+            <div className="admin-form-group" style={{ marginTop: 14 }}>
+              <label htmlFor="qi-name">성분명 *</label>
+              <input
+                id="qi-name"
+                value={quickIngredientName}
+                onChange={(event) => setQuickIngredientName(event.target.value)}
+                maxLength={200}
+              />
+            </div>
+            <div className="admin-form-group" style={{ marginTop: 12 }}>
+              <label htmlFor="qi-category">분류 *</label>
+              <select
+                id="qi-category"
+                value={quickIngredientCategory}
+                onChange={(event) => setQuickIngredientCategory(event.target.value)}
+              >
+                {INGREDIENT_CATEGORIES.map((option) => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            </div>
+            <div className="admin-form-group" style={{ marginTop: 12 }}>
+              <label htmlFor="qi-risk">위험도 *</label>
+              <select
+                id="qi-risk"
+                value={quickIngredientRisk}
+                onChange={(event) => setQuickIngredientRisk(event.target.value as RiskLevel)}
+              >
+                <option value="safe">안전</option>
+                <option value="caution">주의</option>
+                <option value="danger">위험</option>
+              </select>
+              <p className="admin-hint">확실하지 않으면 안전으로 두고, 나중에 성분 관리에서 검수하세요.</p>
+            </div>
+
+            <div className="admin-modal-footer">
+              <button
+                type="button"
+                className="admin-btn-soft"
+                onClick={() => setQuickIngredientName(null)}
+                disabled={quickIngredientSaving}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                className="admin-btn-primary"
+                onClick={saveQuickIngredient}
+                disabled={quickIngredientSaving || !quickIngredientName.trim()}
+              >
+                {quickIngredientSaving ? '등록 중…' : '등록하고 연결'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {deleteTarget && (
         <div className="admin-modal-backdrop" style={{ zIndex: 1200 }} onClick={() => !isDeleting && setDeleteTarget(null)}>
           <div className="admin-modal admin-modal-sm" role="alertdialog" aria-modal="true" aria-label="제품 삭제 확인" onClick={(e) => e.stopPropagation()}>
@@ -916,6 +1082,7 @@ function InputField({
   type = 'text',
   className,
   placeholder,
+  inputMode,
 }: {
   id: string;
   label: string;
@@ -924,6 +1091,7 @@ function InputField({
   type?: string;
   className?: string;
   placeholder?: string;
+  inputMode?: 'numeric' | 'text' | 'decimal';
 }) {
   return (
     <div className={`admin-form-group ${className || ''}`}>
@@ -931,6 +1099,7 @@ function InputField({
       <input
         id={id}
         type={type}
+        inputMode={inputMode}
         value={value ?? ''}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
