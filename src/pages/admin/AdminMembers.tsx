@@ -1,6 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Check, ChevronLeft, ChevronRight, Copy, Eye, NotebookPen, PawPrint, Search, X } from 'lucide-react';
-import { fetchMemberDetail, fetchMembers, type AdminMember, type AdminMemberDetail } from '../../lib/adminApi';
+import { Check, ChevronLeft, ChevronRight, Copy, Eye, MessageSquare, NotebookPen, PawPrint, Search, UserMinus, X } from 'lucide-react';
+import { notify } from '../../store/useNotification';
+import {
+  deleteMember,
+  fetchMemberDetail,
+  fetchMembers,
+  type AdminMember,
+  type AdminMemberDetail,
+} from '../../lib/adminApi';
 
 const PAGE_SIZE = 20;
 
@@ -9,6 +16,18 @@ function formatDate(value: string | null): string {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return '-';
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** 마지막 접속일은 "언제 마지막으로 왔는지"가 핵심이라 경과일을 함께 보여 준다. */
+function formatLastSeen(value: string | null): { text: string; stale: boolean } {
+  if (!value) return { text: '기록 없음', stale: true };
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) return { text: '기록 없음', stale: true };
+  const days = Math.floor((Date.now() - timestamp) / 86_400_000);
+  if (days <= 0) return { text: '오늘', stale: false };
+  if (days === 1) return { text: '어제', stale: false };
+  if (days < 30) return { text: `${days}일 전`, stale: false };
+  return { text: `${days}일 전`, stale: true };
 }
 
 function providerLabel(provider: string | null | undefined): string {
@@ -57,6 +76,10 @@ const AdminMembers: React.FC = () => {
   const [detail, setDetail] = useState<AdminMemberDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [copiedValue, setCopiedValue] = useState<string | null>(null);
+  const [withdrawTarget, setWithdrawTarget] = useState<AdminMember | null>(null);
+  const [withdrawReason, setWithdrawReason] = useState('');
+  const [withdrawConfirm, setWithdrawConfirm] = useState('');
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -102,6 +125,31 @@ const AdminMembers: React.FC = () => {
     }
   };
 
+  const openWithdraw = (member: AdminMember) => {
+    setWithdrawTarget(member);
+    setWithdrawReason('');
+    setWithdrawConfirm('');
+  };
+
+  const confirmWithdraw = async () => {
+    if (!withdrawTarget || isWithdrawing) return;
+    setIsWithdrawing(true);
+    try {
+      const result = await deleteMember(withdrawTarget.id, withdrawReason);
+      notify.success(
+        `“${withdrawTarget.nickname}” 회원을 탈퇴 처리했습니다. ` +
+        `(반려동물 ${result.petCount}건 · 다이어리 ${result.diaryCount}건 함께 삭제)`,
+      );
+      setWithdrawTarget(null);
+      setDetail((current) => (current?.id === withdrawTarget.id ? null : current));
+      await load();
+    } catch (err) {
+      notify.error(`탈퇴 처리 실패: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setIsWithdrawing(false);
+    }
+  };
+
   const copyValue = async (value: string) => {
     try {
       await navigator.clipboard.writeText(value);
@@ -117,7 +165,7 @@ const AdminMembers: React.FC = () => {
       <div className="admin-toolbar">
         <div className="admin-title-wrap">
           <h2>회원 관리</h2>
-          <p>총 {total.toLocaleString()}명 · 읽기 전용</p>
+          <p>총 {total.toLocaleString()}명 · 조회와 탈퇴 처리만 가능합니다</p>
         </div>
       </div>
 
@@ -141,21 +189,22 @@ const AdminMembers: React.FC = () => {
               <th>로그인 아이디</th>
               <th>닉네임</th>
               <th>가입 경로</th>
-              <th>반려동물 수</th>
+              <th>활동</th>
               <th>가입일</th>
+              <th>마지막 접속일</th>
               <th style={{ textAlign: 'right' }}>관리</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6}>
+                <td colSpan={7}>
                   <div className="admin-empty">데이터를 불러오는 중입니다...</div>
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan={6}>
+                <td colSpan={7}>
                   <div className="admin-empty">
                     회원 목록을 불러오지 못했습니다.
                     <button type="button" className="admin-btn-soft" style={{ marginLeft: 10 }} onClick={load}>
@@ -166,7 +215,7 @@ const AdminMembers: React.FC = () => {
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={6}>
+                <td colSpan={7}>
                   <div className="admin-empty">표시할 회원이 없습니다.</div>
                 </td>
               </tr>
@@ -202,13 +251,28 @@ const AdminMembers: React.FC = () => {
                   </td>
                   <td><span className="admin-tag blue">{providerLabel(member.provider)}</span></td>
                   <td>
-                    <strong>{member.petCount}</strong>
+                    <div className="admin-member-activity">
+                      <span title="반려동물"><PawPrint size={12} /> {member.petCount}</span>
+                      <span title="다이어리 기록"><NotebookPen size={12} /> {member.diaryCount}</span>
+                      <span title="작성 리뷰"><MessageSquare size={12} /> {member.reviewCount}</span>
+                    </div>
                   </td>
                   <td>{formatDate(member.createdAt)}</td>
+                  <td>
+                    <div className="admin-item-main">{formatDate(member.lastSignInAt)}</div>
+                    <span className={`admin-tag ${formatLastSeen(member.lastSignInAt).stale ? 'gray' : 'green'}`}>
+                      {formatLastSeen(member.lastSignInAt).text}
+                    </span>
+                  </td>
                   <td style={{ textAlign: 'right' }}>
-                    <button type="button" className="admin-icon-btn edit" onClick={() => openDetail(member)} aria-label={`${member.nickname} 상세 보기`}>
-                      <Eye size={14} />
-                    </button>
+                    <div className="admin-actions">
+                      <button type="button" className="admin-icon-btn edit" onClick={() => openDetail(member)} aria-label={`${member.nickname} 상세 보기`}>
+                        <Eye size={14} />
+                      </button>
+                      <button type="button" className="admin-icon-btn delete" onClick={() => openWithdraw(member)} aria-label={`${member.nickname} 탈퇴 처리`} title="탈퇴 처리">
+                        <UserMinus size={14} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
                 );
@@ -279,9 +343,18 @@ const AdminMembers: React.FC = () => {
                     </strong>
                   </div>
                   <div><span>가입일</span><strong>{formatDate(detail.createdAt)}</strong></div>
-                  <div><span>최근 로그인</span><strong>{formatDate(detail.lastSignInAt)}</strong></div>
+                  <div>
+                    <span>마지막 접속일</span>
+                    <strong>
+                      {formatDate(detail.lastSignInAt)}
+                      <span className="admin-item-sub" style={{ marginLeft: 6 }}>
+                        {formatLastSeen(detail.lastSignInAt).text}
+                      </span>
+                    </strong>
+                  </div>
                   <div><span><PawPrint size={13} /> 반려동물</span><strong>{detail.petCount.toLocaleString()}</strong></div>
                   <div><span><NotebookPen size={13} /> 다이어리</span><strong>{detail.diaryCount.toLocaleString()}</strong></div>
+                  <div><span><MessageSquare size={13} /> 작성 리뷰</span><strong>{detail.reviewCount.toLocaleString()}</strong></div>
                 </div>
                 <h4 className="admin-section-title">반려동물</h4>
                 {detail.pets.length === 0 ? (
@@ -309,6 +382,74 @@ const AdminMembers: React.FC = () => {
             ) : (
               <div className="admin-empty">회원 정보를 불러오지 못했습니다.</div>
             )}
+            {detail && (
+              <div className="admin-modal-footer">
+                <button
+                  type="button"
+                  className="admin-btn-danger"
+                  onClick={() => openWithdraw(detail)}
+                >
+                  <UserMinus size={15} /> 탈퇴 처리
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {withdrawTarget && (
+        <div
+          className="admin-modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !isWithdrawing) setWithdrawTarget(null);
+          }}
+        >
+          <div className="admin-modal admin-modal-sm" role="dialog" aria-modal="true" aria-label="회원 탈퇴 확인">
+            <h3>회원을 탈퇴 처리할까요?</h3>
+            <p className="admin-modal-desc">
+              <strong>{withdrawTarget.nickname}</strong>({visibleLoginId(withdrawTarget)}) 계정을 삭제합니다.
+              <br />
+              등록된 반려동물 {withdrawTarget.petCount.toLocaleString()}마리, 다이어리 기록{' '}
+              {withdrawTarget.diaryCount.toLocaleString()}건, 리뷰 {withdrawTarget.reviewCount.toLocaleString()}건이
+              함께 삭제되며 <strong>되돌릴 수 없습니다.</strong>
+            </p>
+
+            <div className="admin-form-group" style={{ marginTop: 14 }}>
+              <label htmlFor="withdraw-reason">탈퇴 사유 (감사 로그에 기록)</label>
+              <input
+                id="withdraw-reason"
+                value={withdrawReason}
+                onChange={(event) => setWithdrawReason(event.target.value)}
+                placeholder="예: 본인 요청, 약관 위반"
+                maxLength={500}
+              />
+            </div>
+
+            <div className="admin-form-group" style={{ marginTop: 12 }}>
+              <label htmlFor="withdraw-confirm">확인을 위해 <code>탈퇴</code> 를 입력해 주세요</label>
+              <input
+                id="withdraw-confirm"
+                value={withdrawConfirm}
+                onChange={(event) => setWithdrawConfirm(event.target.value)}
+                placeholder="탈퇴"
+                autoComplete="off"
+              />
+            </div>
+
+            <div className="admin-modal-footer">
+              <button type="button" className="admin-btn-soft" onClick={() => setWithdrawTarget(null)} disabled={isWithdrawing}>
+                취소
+              </button>
+              <button
+                type="button"
+                className="admin-btn-danger"
+                onClick={confirmWithdraw}
+                disabled={isWithdrawing || withdrawConfirm.trim() !== '탈퇴'}
+              >
+                <UserMinus size={15} /> {isWithdrawing ? '처리 중…' : '탈퇴 처리'}
+              </button>
+            </div>
           </div>
         </div>
       )}

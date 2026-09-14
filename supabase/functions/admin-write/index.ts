@@ -13,11 +13,14 @@ import {
   escapeLike,
   normalizeIngredientPayload,
   normalizeNutritionPayload,
+  normalizeCategoryOrder,
+  normalizeCategoryPayload,
   normalizeProductIngredientItems,
   normalizeProductPayload,
   normalizeSettingsPayload,
   optionalText,
   optionalUuid,
+  requireText,
   requireUuid,
 } from './validation.ts';
 
@@ -362,6 +365,56 @@ async function replaceProductIngredients(db: Db, productId: string, rawItems: un
   return typeof data === 'number' ? data : items.length;
 }
 
+// ── 삭제 안전망(휴지통) ──────────────────────────────────────────────────────
+//
+// 삭제 자체는 그대로 두고, 삭제 직전 상태를 스냅샷으로 남긴다. soft delete 로
+// 바꾸면 앱의 모든 제품 조회에 필터를 더해야 하고 한 곳만 빠져도 삭제한 제품이
+// 사용자에게 다시 보이기 때문이다.
+
+/** 제품 스냅샷 — 제품 행 + cascade 로 함께 사라지는 자식 행. */
+async function snapshotProduct(db: Db, id: string): Promise<Record<string, unknown> | null> {
+  const { data: product, error } = await db.from('products').select('*').eq('id', id).maybeSingle();
+  if (error) throw error;
+  if (!product) return null;
+
+  const [links, nutrition, reviews] = await Promise.all([
+    db.from('product_ingredients').select('*').eq('product_id', id),
+    db.from('nutritional_profiles').select('*').eq('product_id', id),
+    db.from('reviews').select('*').eq('product_id', id),
+  ]);
+  if (links.error) throw links.error;
+  if (nutrition.error) throw nutrition.error;
+  if (reviews.error) throw reviews.error;
+
+  return {
+    product,
+    product_ingredients: links.data ?? [],
+    nutritional_profiles: nutrition.data ?? [],
+    reviews: reviews.data ?? [],
+  };
+}
+
+async function putInTrash(
+  db: Db,
+  actor: string,
+  entityType: 'product' | 'ingredient',
+  entityId: string,
+  label: string,
+  subLabel: string | null,
+  snapshot: Record<string, unknown>,
+): Promise<void> {
+  const { error } = await db.from('admin_trash').insert({
+    entity_type: entityType,
+    entity_id: entityId,
+    label,
+    sub_label: subLabel,
+    snapshot,
+    deleted_by: actor,
+  });
+  // 스냅샷을 남기지 못하면 삭제하지 않는다 — 복원할 수 없는 삭제는 만들지 않는다.
+  if (error) throw error;
+}
+
 serve(async (req) => {
   const cors = buildCorsHeaders(req);
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
@@ -484,10 +537,24 @@ serve(async (req) => {
 
       case 'deleteProduct': {
         const id = requireUuid(body.id, '제품 ID');
+        const snapshot = await snapshotProduct(db, id);
+        if (!snapshot) throw new ValidationError('삭제할 제품을 찾을 수 없습니다.');
+        const product = snapshot.product as Record<string, unknown>;
+
+        await putInTrash(
+          db,
+          actor,
+          'product',
+          id,
+          String(product.name ?? '이름 없는 제품'),
+          (product.brand_name as string | null) ?? null,
+          snapshot,
+        );
+
         const { error } = await db.from('products').delete().eq('id', id);
         if (error) throw error;
-        await audit(db, actor, 'deleteProduct', 'products', id);
-        return json({ ok: true }, 200, cors);
+        await audit(db, actor, 'deleteProduct', 'products', id, { name: product.name, restorable: true });
+        return json({ ok: true, restorable: true }, 200, cors);
       }
 
       case 'setProductVisibility': {
@@ -622,10 +689,28 @@ serve(async (req) => {
           );
         }
 
+        const { data: ingredient, error: loadError } = await db
+          .from('ingredients').select('*').eq('id', id).maybeSingle();
+        if (loadError) throw loadError;
+        if (!ingredient) throw new ValidationError('삭제할 성분을 찾을 수 없습니다.');
+
+        await putInTrash(
+          db,
+          actor,
+          'ingredient',
+          id,
+          String(ingredient.name_ko ?? '이름 없는 성분'),
+          (ingredient.name_en as string | null) ?? null,
+          { ingredient },
+        );
+
         const { error } = await db.from('ingredients').delete().eq('id', id);
         if (error) throw error;
-        await audit(db, actor, 'deleteIngredient', 'ingredients', id);
-        return json({ ok: true }, 200, cors);
+        await audit(db, actor, 'deleteIngredient', 'ingredients', id, {
+          name_ko: ingredient.name_ko,
+          restorable: true,
+        });
+        return json({ ok: true, restorable: true }, 200, cors);
       }
 
       case 'ingredientUsage': {
@@ -1000,16 +1085,25 @@ serve(async (req) => {
           .sort((a, b) => Date.parse(b.createdAt || '0') - Date.parse(a.createdAt || '0'));
         const data = members.slice(from, from + pageSize);
 
-        // 반려동물 수는 별도 집계(사용자 목록 페이지 크기만큼만 조회)
+        // 활동량 집계는 현재 페이지에 보이는 회원만 조회한다(전체 스캔 금지).
         const ids = data.map((row) => row.id);
-        const petCounts = new Map<string, number>();
-        if (ids.length > 0) {
-          const { data: pets, error: petsError } = await db.from('pets').select('user_id').in('user_id', ids);
-          if (petsError) throw petsError;
-          for (const row of pets ?? []) {
-            petCounts.set(row.user_id, (petCounts.get(row.user_id) ?? 0) + 1);
+        const countBy = async (table: string): Promise<Map<string, number>> => {
+          const counts = new Map<string, number>();
+          if (ids.length === 0) return counts;
+          const { data: rows, error } = await db.from(table).select('user_id').in('user_id', ids);
+          if (error) throw error;
+          for (const row of rows ?? []) {
+            const key = (row as { user_id: string }).user_id;
+            counts.set(key, (counts.get(key) ?? 0) + 1);
           }
-        }
+          return counts;
+        };
+
+        const [petCounts, diaryCounts, reviewCounts] = await Promise.all([
+          countBy('pets'),
+          countBy('pet_feeding_logs'),
+          countBy('reviews'),
+        ]);
 
         return json(
           {
@@ -1018,6 +1112,8 @@ serve(async (req) => {
             members: data.map((row) => ({
               ...row,
               petCount: petCounts.get(row.id) ?? 0,
+              diaryCount: diaryCounts.get(row.id) ?? 0,
+              reviewCount: reviewCounts.get(row.id) ?? 0,
             })),
           },
           200,
@@ -1027,8 +1123,13 @@ serve(async (req) => {
 
       case 'getMemberDetail': {
         const id = requireUuid(body.id, '회원 ID');
-        const [authResult, { data: profile, error: profileError }, { data: pets, error: petsError }, diaryResult] =
-          await Promise.all([
+        const [
+          authResult,
+          { data: profile, error: profileError },
+          { data: pets, error: petsError },
+          diaryResult,
+          reviewResult,
+        ] = await Promise.all([
             db.auth.admin.getUserById(id),
             db.from('users').select('id, nickname, created_at').eq('id', id).maybeSingle(),
             db
@@ -1040,11 +1141,16 @@ serve(async (req) => {
               .from('pet_feeding_logs')
               .select('id', { count: 'exact', head: true })
               .eq('user_id', id),
+            db
+              .from('reviews')
+              .select('id', { count: 'exact', head: true })
+              .eq('user_id', id),
           ]);
         if (authResult.error) throw authResult.error;
         if (profileError) throw profileError;
         if (petsError) throw petsError;
         if (diaryResult.error) throw diaryResult.error;
+        if (reviewResult.error) throw reviewResult.error;
         const authUser = authResult.data?.user as AuthUserRecord | undefined;
         if (!authUser) throw new ValidationError('회원을 찾을 수 없습니다.');
         const member = toAdminMember(authUser, (profile ?? undefined) as PublicUserProfile | undefined);
@@ -1055,6 +1161,7 @@ serve(async (req) => {
             ...member,
             petCount: (pets ?? []).length,
             diaryCount: diaryResult.count ?? 0,
+            reviewCount: reviewResult.count ?? 0,
             pets: (pets ?? []).map((pet: Record<string, unknown>) => ({
               id: pet.id,
               name: pet.name,
@@ -1069,6 +1176,388 @@ serve(async (req) => {
           200,
           cors,
         );
+      }
+
+      /**
+       * 관리자에 의한 회원 탈퇴 처리.
+       *
+       * Auth 계정을 지우면 public.users 를 시작으로 pets / pet_feeding_logs /
+       * favorites 등 user_id FK 가 ON DELETE CASCADE 로 함께 사라진다. 되돌릴 수
+       * 없으므로 (1) 대상이 실재하는지 확인하고 (2) 삭제 전 스냅샷을 감사 로그에
+       * 남긴 뒤 (3) 삭제한다. 닉네임·가입경로 외의 개인정보는 로그에 넣지 않는다.
+       */
+      case 'deleteMember': {
+        const id = requireUuid(body.id, '회원 ID');
+        const reason = optionalText(body.reason, '탈퇴 사유', 500);
+
+        const authResult = await db.auth.admin.getUserById(id);
+        if (authResult.error) throw authResult.error;
+        const authUser = authResult.data?.user as AuthUserRecord | undefined;
+        if (!authUser) throw new ValidationError('회원을 찾을 수 없습니다.');
+
+        const [{ count: petCount }, { count: diaryCount }] = await Promise.all([
+          db.from('pets').select('id', { count: 'exact', head: true }).eq('user_id', id),
+          db.from('pet_feeding_logs').select('id', { count: 'exact', head: true }).eq('user_id', id),
+        ]);
+
+        // 삭제 사실과 범위는 삭제 전에 기록한다(삭제 후에는 원본을 재현할 수 없다).
+        await audit(db, actor, 'deleteMember', 'auth.users', id, {
+          provider: authProvider(authUser),
+          createdAt: authUser.created_at ?? null,
+          lastSignInAt: authUser.last_sign_in_at ?? null,
+          petCount: petCount ?? 0,
+          diaryCount: diaryCount ?? 0,
+          reason,
+        });
+
+        const { error } = await db.auth.admin.deleteUser(id);
+        if (error) throw error;
+
+        // Auth 삭제가 프로필을 정리하지 못한 경우(FK 미설정 환경)를 대비한 보정.
+        await db.from('users').delete().eq('id', id);
+
+        const recheck = await db.auth.admin.getUserById(id);
+        if (recheck.data?.user) {
+          throw new Error('회원 탈퇴 처리가 반영되지 않았습니다.');
+        }
+
+        return json(
+          { ok: true, id, petCount: petCount ?? 0, diaryCount: diaryCount ?? 0 },
+          200,
+          cors,
+        );
+      }
+
+      // ── 휴지통 ──────────────────────────────────────────────────────────
+      case 'listTrash': {
+        const page = clampPage(body.page);
+        const pageSize = clampPageSize(body.pageSize);
+        const from = (page - 1) * pageSize;
+        const entityType = optionalText(body.entityType, '항목 유형', 20);
+        if (entityType && entityType !== 'product' && entityType !== 'ingredient') {
+          throw new ValidationError('항목 유형이 올바르지 않습니다.');
+        }
+
+        let query = db
+          .from('admin_trash')
+          .select('id, entity_type, entity_id, label, sub_label, deleted_by, deleted_at, restored_by, restored_at', {
+            count: 'exact',
+          })
+          .order('deleted_at', { ascending: false })
+          .range(from, from + pageSize - 1);
+        if (entityType) query = query.eq('entity_type', entityType);
+        if (body.includeRestored !== true) query = query.is('restored_at', null);
+
+        const { data, count, error } = await query;
+        if (error) throw error;
+        return json(
+          {
+            ok: true,
+            total: count ?? 0,
+            items: (data ?? []).map((row: Record<string, unknown>) => ({
+              id: row.id,
+              entityType: row.entity_type,
+              entityId: row.entity_id,
+              label: row.label,
+              subLabel: row.sub_label ?? null,
+              deletedBy: row.deleted_by,
+              deletedAt: row.deleted_at,
+              restoredBy: row.restored_by ?? null,
+              restoredAt: row.restored_at ?? null,
+            })),
+          },
+          200,
+          cors,
+        );
+      }
+
+      case 'restoreTrash': {
+        const id = requireUuid(body.id, '휴지통 항목 ID');
+        const { data: entry, error: findError } = await db
+          .from('admin_trash').select('*').eq('id', id).maybeSingle();
+        if (findError) throw findError;
+        if (!entry) throw new ValidationError('복원할 항목을 찾을 수 없습니다.');
+        if (entry.restored_at) throw new ValidationError('이미 복원된 항목입니다.');
+
+        const snapshot = (entry.snapshot ?? {}) as Record<string, unknown>;
+
+        if (entry.entity_type === 'ingredient') {
+          const ingredient = snapshot.ingredient as Record<string, unknown> | undefined;
+          if (!ingredient) throw new ValidationError('복원할 성분 정보가 비어 있습니다.');
+
+          const { data: clash, error: clashError } = await db
+            .from('ingredients').select('id').eq('name_ko', ingredient.name_ko).maybeSingle();
+          if (clashError) throw clashError;
+          if (clash) throw new ValidationError('같은 이름의 성분이 이미 있어 복원할 수 없습니다.');
+
+          const { error } = await db.from('ingredients').insert([ingredient]);
+          if (error) throw error;
+        } else {
+          const product = snapshot.product as Record<string, unknown> | undefined;
+          if (!product) throw new ValidationError('복원할 제품 정보가 비어 있습니다.');
+
+          const { data: clash, error: clashError } = await db
+            .from('products').select('id').eq('id', product.id).maybeSingle();
+          if (clashError) throw clashError;
+          if (clash) throw new ValidationError('같은 ID의 제품이 이미 있어 복원할 수 없습니다.');
+
+          const { error } = await db.from('products').insert([product]);
+          if (error) throw error;
+
+          // 자식 행은 실패해도 제품 복원 자체는 유지한다(부분 복원이 전무 복원보다 낫다).
+          for (const [table, key] of [
+            ['product_ingredients', 'product_ingredients'],
+            ['nutritional_profiles', 'nutritional_profiles'],
+            ['reviews', 'reviews'],
+          ] as const) {
+            const rows = snapshot[key];
+            if (!Array.isArray(rows) || rows.length === 0) continue;
+            const { error: childError } = await db.from(table).insert(rows);
+            if (childError) console.error(`restoreTrash child ${table} failed:`, childError.message);
+          }
+        }
+
+        const now = new Date().toISOString();
+        const { error: markError } = await db
+          .from('admin_trash')
+          .update({ restored_by: actor, restored_at: now })
+          .eq('id', id);
+        if (markError) throw markError;
+
+        await audit(db, actor, 'restoreTrash', 'admin_trash', id, {
+          entityType: entry.entity_type,
+          entityId: entry.entity_id,
+          label: entry.label,
+        });
+        return json({ ok: true, entityType: entry.entity_type, entityId: entry.entity_id }, 200, cors);
+      }
+
+      case 'purgeTrash': {
+        const id = requireUuid(body.id, '휴지통 항목 ID');
+        const { data: entry, error: findError } = await db
+          .from('admin_trash').select('id, entity_type, entity_id, label').eq('id', id).maybeSingle();
+        if (findError) throw findError;
+        if (!entry) throw new ValidationError('삭제할 항목을 찾을 수 없습니다.');
+
+        const { error } = await db.from('admin_trash').delete().eq('id', id);
+        if (error) throw error;
+        await audit(db, actor, 'purgeTrash', 'admin_trash', id, {
+          entityType: entry.entity_type,
+          entityId: entry.entity_id,
+          label: entry.label,
+        });
+        return json({ ok: true }, 200, cors);
+      }
+
+      // ── 앱 카테고리 ─────────────────────────────────────────────────────
+      case 'listCategories': {
+        const { data, error } = await db
+          .from('product_categories')
+          .select('id, name, hint, sort_order, is_active, created_at, updated_at')
+          .order('sort_order', { ascending: true })
+          .order('name', { ascending: true });
+        if (error) throw error;
+
+        // 카테고리별 제품 수 — 삭제·비활성 전에 영향 범위를 알려 주기 위함이다.
+        const { data: products, error: productError } = await db
+          .from('products')
+          .select('main_category');
+        if (productError) throw productError;
+        const counts = new Map<string, number>();
+        for (const row of products ?? []) {
+          const key = String((row as { main_category: string | null }).main_category ?? '').trim();
+          if (!key) continue;
+          counts.set(key, (counts.get(key) ?? 0) + 1);
+        }
+
+        return json(
+          {
+            ok: true,
+            categories: (data ?? []).map((row: Record<string, unknown>) => ({
+              id: row.id,
+              name: row.name,
+              hint: row.hint ?? null,
+              sortOrder: row.sort_order ?? 0,
+              isActive: row.is_active !== false,
+              productCount: counts.get(String(row.name).trim()) ?? 0,
+              createdAt: row.created_at ?? null,
+              updatedAt: row.updated_at ?? null,
+            })),
+          },
+          200,
+          cors,
+        );
+      }
+
+      case 'saveCategory': {
+        const payload = normalizeCategoryPayload((body.category ?? body) as Record<string, unknown>);
+        const id = optionalUuid(body.id ?? (body.category as Record<string, unknown> | undefined)?.id, '카테고리 ID');
+        const now = new Date().toISOString();
+
+        const { data: duplicate, error: duplicateError } = await db
+          .from('product_categories')
+          .select('id')
+          .eq('name', payload.name)
+          .maybeSingle();
+        if (duplicateError) throw duplicateError;
+        if (duplicate && duplicate.id !== id) {
+          throw new ValidationError('같은 이름의 카테고리가 이미 있습니다.');
+        }
+
+        if (id) {
+          const { data: existing, error: findError } = await db
+            .from('product_categories').select('id, name').eq('id', id).maybeSingle();
+          if (findError) throw findError;
+          if (!existing) throw new ValidationError('수정할 카테고리를 찾을 수 없습니다.');
+
+          const { data, error } = await db
+            .from('product_categories')
+            .update({ ...payload, updated_at: now })
+            .eq('id', id)
+            .select('id, name, hint, sort_order, is_active')
+            .single();
+          if (error) throw error;
+
+          // 이름이 바뀌면 그 카테고리로 등록된 제품도 같은 값으로 따라가야
+          // 앱 칩 필터가 계속 맞는다(products.main_category 는 텍스트 매칭이다).
+          let movedProducts = 0;
+          if (existing.name !== payload.name) {
+            const { data: moved, error: moveError } = await db
+              .from('products')
+              .update({ main_category: payload.name })
+              .eq('main_category', existing.name)
+              .select('id');
+            if (moveError) throw moveError;
+            movedProducts = (moved ?? []).length;
+          }
+
+          await audit(db, actor, 'saveCategory', 'product_categories', id, {
+            name: payload.name,
+            renamedFrom: existing.name === payload.name ? null : existing.name,
+            movedProducts,
+          });
+          return json({ ok: true, id, category: data, movedProducts }, 200, cors);
+        }
+
+        // 새 카테고리는 항상 목록 맨 뒤에 붙인다. 순서는 reorderCategories 로 바꾼다.
+        const { data: last, error: lastError } = await db
+          .from('product_categories')
+          .select('sort_order')
+          .order('sort_order', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (lastError) throw lastError;
+
+        const { data, error } = await db
+          .from('product_categories')
+          .insert([{ ...payload, sort_order: Number(last?.sort_order ?? 0) + 10, updated_at: now }])
+          .select('id, name, hint, sort_order, is_active')
+          .single();
+        if (error) throw error;
+        await audit(db, actor, 'saveCategory', 'product_categories', data?.id ?? null, { name: payload.name });
+        return json({ ok: true, id: data?.id ?? null, category: data, movedProducts: 0 }, 200, cors);
+      }
+
+      case 'deleteCategory': {
+        const id = requireUuid(body.id, '카테고리 ID');
+        const { data: existing, error: findError } = await db
+          .from('product_categories').select('id, name').eq('id', id).maybeSingle();
+        if (findError) throw findError;
+        if (!existing) throw new ValidationError('삭제할 카테고리를 찾을 수 없습니다.');
+
+        // 제품이 남아 있으면 삭제하지 않는다. 삭제해도 제품의 main_category 텍스트는
+        // 그대로 남아 앱에서는 필터 없는 유령 분류가 되기 때문이다.
+        const { count, error: countError } = await db
+          .from('products')
+          .select('id', { count: 'exact', head: true })
+          .eq('main_category', existing.name);
+        if (countError) throw countError;
+        if ((count ?? 0) > 0) {
+          return json(
+            {
+              error: `이 카테고리에 제품 ${count}개가 등록되어 있어 삭제할 수 없습니다. 먼저 제품의 분류를 바꾸거나 카테고리를 비활성으로 두세요.`,
+              productCount: count,
+            },
+            409,
+            cors,
+          );
+        }
+
+        const { error } = await db.from('product_categories').delete().eq('id', id);
+        if (error) throw error;
+        await audit(db, actor, 'deleteCategory', 'product_categories', id, { name: existing.name });
+        return json({ ok: true }, 200, cors);
+      }
+
+      case 'reorderCategories': {
+        const ids = normalizeCategoryOrder(body.ids ?? body.order);
+        const now = new Date().toISOString();
+
+        const { data: existing, error: findError } = await db
+          .from('product_categories')
+          .select('id')
+          .in('id', ids);
+        if (findError) throw findError;
+        if ((existing ?? []).length !== ids.length) {
+          throw new ValidationError('순서에 존재하지 않는 카테고리가 포함되어 있습니다.');
+        }
+
+        for (const [index, id] of ids.entries()) {
+          const { error } = await db
+            .from('product_categories')
+            .update({ sort_order: (index + 1) * 10, updated_at: now })
+            .eq('id', id);
+          if (error) throw error;
+        }
+
+        await audit(db, actor, 'reorderCategories', 'product_categories', null, { count: ids.length });
+        return json({ ok: true, count: ids.length }, 200, cors);
+      }
+
+      case 'setProductPinned': {
+        const id = requireUuid(body.id, '제품 ID');
+        if (typeof body.isPinned !== 'boolean') {
+          throw new ValidationError('상단 고정 여부는 불리언이어야 합니다.');
+        }
+        const isPinned = body.isPinned;
+
+        const { data: existing, error: findError } = await db
+          .from('products').select('id, name').eq('id', id).maybeSingle();
+        if (findError) throw findError;
+        if (!existing) throw new ValidationError('제품을 찾을 수 없습니다.');
+
+        let pinnedOrder = 0;
+        if (isPinned) {
+          const requested = Number(body.pinnedOrder);
+          if (Number.isFinite(requested) && requested >= 0) {
+            pinnedOrder = Math.floor(requested);
+          } else {
+            // 순서를 지정하지 않으면 이미 고정된 제품들 뒤에 붙인다.
+            const { data: last, error: lastError } = await db
+              .from('products')
+              .select('pinned_order')
+              .eq('is_pinned', true)
+              .order('pinned_order', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            if (lastError) throw lastError;
+            pinnedOrder = Number(last?.pinned_order ?? 0) + 10;
+          }
+        }
+
+        const { data, error } = await db
+          .from('products')
+          .update({ is_pinned: isPinned, pinned_order: pinnedOrder })
+          .eq('id', id)
+          .select('id, name, is_pinned, pinned_order')
+          .single();
+        if (error) throw error;
+        if (data?.id !== id || data.is_pinned !== isPinned) {
+          throw new Error('제품 상단 고정 상태 저장 결과를 확인하지 못했습니다.');
+        }
+
+        await audit(db, actor, 'setProductPinned', 'products', id, { isPinned, pinnedOrder });
+        return json({ ok: true, product: data }, 200, cors);
       }
 
       case 'listFeedingLogs': {

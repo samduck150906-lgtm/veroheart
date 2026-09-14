@@ -1500,3 +1500,25 @@
   outline: 3px solid rgba(255, 214, 51, 0.55);
   outline-offset: 2px;
 }
+
+/* 회원 목록의 활동 지표(반려동물·다이어리·리뷰) — 좁은 칸에 세 값을 나란히 둔다. */
+.admin-member-activity {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.admin-member-activity span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.admin-visibility-btn.is-pinned {
+  border-color: #fde68a;
+  background: #fef3c7;
+  color: #92400e;
+}

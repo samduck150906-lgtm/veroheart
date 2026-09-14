@@ -66,6 +66,8 @@ export interface AdminProductRow {
   barcode?: string | null;
   verification_status?: 'pending' | 'reviewed' | 'verified' | null;
   is_visible: boolean;
+  is_pinned: boolean;
+  pinned_order: number;
   ingredientCount?: number;
   nutritionCount?: number;
   created_at: string | null;
@@ -134,6 +136,10 @@ export interface AdminMember {
   lastSignInAt: string | null;
   createdAt: string;
   petCount: number;
+  /** 급여 일지 기록 수 — 실제로 앱을 쓰고 있는 회원인지 판단하는 지표. */
+  diaryCount: number;
+  /** 작성한 리뷰 수. */
+  reviewCount: number;
 }
 
 export interface AdminMemberPet {
@@ -148,7 +154,6 @@ export interface AdminMemberPet {
 }
 
 export interface AdminMemberDetail extends AdminMember {
-  diaryCount: number;
   pets: AdminMemberPet[];
 }
 
@@ -419,13 +424,21 @@ export interface ProductListParams {
 
 const ADMIN_PRODUCT_COLUMNS =
   'id, name, brand_name, main_category, sub_category, target_pet_type, target_life_stage, image_url, min_price, barcode, verification_status, created_at, product_ingredients(count), nutritional_profiles(count)';
+/** 마이그레이션이 적용된 DB 에서만 붙는 운영 컬럼. */
+const ADMIN_PRODUCT_OPERATION_COLUMNS = 'is_visible, is_pinned, pinned_order';
 
+/**
+ * 노출·상단고정 컬럼이 아직 없는 DB인지.
+ *
+ * Git 연동 프런트가 DB 마이그레이션보다 먼저 배포돼도 관리자 목록은 살아 있어야
+ * 한다. 두 기능 모두 같은 방식(컬럼 없으면 기본값으로 축소)으로 처리한다.
+ */
 function isMissingVisibilityColumn(error: unknown): boolean {
   const value = error as { code?: string; message?: string } | null;
   return Boolean(
     value &&
     (value.code === '42703' || value.code === 'PGRST204') &&
-    value.message?.includes('is_visible'),
+    /is_visible|is_pinned|pinned_order/.test(value.message ?? ''),
   );
 }
 
@@ -447,7 +460,9 @@ export async function fetchProductsPage({
     let builder = supabase
       .from('products')
       .select(
-        includeVisibility ? `${ADMIN_PRODUCT_COLUMNS}, is_visible` : ADMIN_PRODUCT_COLUMNS,
+        includeVisibility
+          ? `${ADMIN_PRODUCT_COLUMNS}, ${ADMIN_PRODUCT_OPERATION_COLUMNS}`
+          : ADMIN_PRODUCT_COLUMNS,
         { count: 'exact' },
       )
       .order('created_at', { ascending: false })
@@ -483,6 +498,8 @@ export async function fetchProductsPage({
     return {
       ...raw,
       is_visible: raw.is_visible !== false,
+      is_pinned: raw.is_pinned === true,
+      pinned_order: Number(raw.pinned_order ?? 0),
       ingredientCount: raw.product_ingredients?.[0]?.count ?? 0,
       nutritionCount: raw.nutritional_profiles?.[0]?.count ?? 0,
       product_ingredients: undefined,
@@ -603,6 +620,27 @@ export async function setProductVisibility(id: string, isVisible: boolean): Prom
     throw new Error('제품 노출 상태 저장 결과를 확인하지 못했습니다.');
   }
   return response.product.is_visible;
+}
+
+/**
+ * 제품 상단 고정 토글.
+ *
+ * 목록에서만 쓰는 광고(sponsor) 슬롯과 달리, 운영자가 직접 특정 제품을 앱
+ * 목록·검색 결과 맨 위로 올리기 위한 플래그다.
+ */
+export async function setProductPinned(
+  id: string,
+  isPinned: boolean,
+  pinnedOrder?: number,
+): Promise<{ isPinned: boolean; pinnedOrder: number }> {
+  const response = await adminWrite<{ product?: { id?: string; is_pinned?: boolean; pinned_order?: number } }>(
+    'setProductPinned',
+    { id, isPinned, pinnedOrder: pinnedOrder ?? null },
+  );
+  if (response.product?.id !== id || response.product.is_pinned !== isPinned) {
+    throw new Error('제품 상단 고정 상태 저장 결과를 확인하지 못했습니다.');
+  }
+  return { isPinned, pinnedOrder: Number(response.product.pinned_order ?? 0) };
 }
 
 export async function deleteProduct(id: string): Promise<void> {
@@ -769,6 +807,25 @@ export async function fetchMemberDetail(id: string): Promise<AdminMemberDetail> 
   return adminWrite<AdminMemberDetail>('getMemberDetail', { id });
 }
 
+export interface DeleteMemberResult {
+  petCount: number;
+  diaryCount: number;
+}
+
+/**
+ * 관리자에 의한 회원 탈퇴 처리.
+ *
+ * Auth 계정과 함께 프로필·반려동물·식이 다이어리가 모두 삭제되며 되돌릴 수 없다.
+ * 호출 전에 반드시 확인 절차를 거친다.
+ */
+export async function deleteMember(id: string, reason?: string): Promise<DeleteMemberResult> {
+  const res = await adminWrite<{ petCount?: number; diaryCount?: number }>('deleteMember', {
+    id,
+    reason: reason?.trim() || null,
+  });
+  return { petCount: res.petCount ?? 0, diaryCount: res.diaryCount ?? 0 };
+}
+
 export async function fetchDiaryPage(params: DiaryListParams): Promise<Paged<AdminDiaryRow>> {
   const res = await adminWrite<{ total: number; logs: AdminDiaryRow[] }>('listFeedingLogs', {
     page: params.page,
@@ -791,6 +848,121 @@ export async function fetchWaitlistPage(params: WaitlistListParams): Promise<Pag
     marketingConsent: params.marketingConsent ?? null,
   });
   return { rows: res.entries ?? [], total: res.total ?? 0 };
+}
+
+// ─── 휴지통(삭제 복원) ───────────────────────────────────────────────────────
+
+export type TrashEntityType = 'product' | 'ingredient';
+
+export interface AdminTrashItem {
+  id: string;
+  entityType: TrashEntityType;
+  entityId: string;
+  label: string;
+  subLabel: string | null;
+  deletedBy: string;
+  deletedAt: string;
+  restoredBy: string | null;
+  restoredAt: string | null;
+}
+
+export interface TrashListParams {
+  page: number;
+  pageSize: number;
+  entityType?: TrashEntityType | '';
+  includeRestored?: boolean;
+}
+
+export async function fetchTrashPage(params: TrashListParams): Promise<Paged<AdminTrashItem>> {
+  const res = await adminWrite<{ total: number; items: AdminTrashItem[] }>('listTrash', {
+    page: params.page,
+    pageSize: params.pageSize,
+    entityType: params.entityType || null,
+    includeRestored: params.includeRestored ?? false,
+  });
+  return { rows: res.items ?? [], total: res.total ?? 0 };
+}
+
+/** 스냅샷을 되살려 원래 테이블에 다시 넣는다. 같은 이름/ID가 이미 있으면 실패한다. */
+export async function restoreTrashItem(id: string): Promise<void> {
+  await adminWrite('restoreTrash', { id });
+}
+
+/** 휴지통에서 완전히 지운다. 이 시점부터는 복원할 수 없다. */
+export async function purgeTrashItem(id: string): Promise<void> {
+  await adminWrite('purgeTrash', { id });
+}
+
+// ─── 앱 카테고리 ─────────────────────────────────────────────────────────────
+
+export interface AdminCategory {
+  id: string;
+  name: string;
+  hint: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  /** 이 분류로 등록된 제품 수 — 비활성·삭제 전 영향 범위 확인용. */
+  productCount: number;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+export interface AdminCategoryInput {
+  id?: string;
+  name: string;
+  hint?: string | null;
+  isActive?: boolean;
+}
+
+export async function fetchCategories(): Promise<AdminCategory[]> {
+  const res = await adminWrite<{ categories: AdminCategory[] }>('listCategories');
+  return res.categories ?? [];
+}
+
+export async function saveCategory(input: AdminCategoryInput): Promise<{ id: string; movedProducts: number }> {
+  const res = await adminWrite<{ id?: string; movedProducts?: number }>('saveCategory', {
+    id: input.id ?? null,
+    name: input.name,
+    hint: input.hint ?? null,
+    isActive: input.isActive ?? true,
+  });
+  if (!res.id) throw new Error('저장된 카테고리 ID를 받지 못했습니다.');
+  return { id: res.id, movedProducts: res.movedProducts ?? 0 };
+}
+
+export async function deleteCategory(id: string): Promise<void> {
+  await adminWrite('deleteCategory', { id });
+}
+
+/** 전달한 배열 순서 그대로 노출 순서를 다시 매긴다. */
+export async function reorderCategories(ids: string[]): Promise<number> {
+  const res = await adminWrite<{ count?: number }>('reorderCategories', { ids });
+  return res.count ?? ids.length;
+}
+
+/**
+ * 앱이 실제로 노출하는 카테고리(활성 + 순서).
+ *
+ * 관리자 토큰이 없는 사용자 앱에서도 읽어야 하므로 공개 SELECT 정책이 있는
+ * product_categories 를 anon 으로 직접 읽는다.
+ */
+export interface PublicCategory {
+  name: string;
+  hint: string | null;
+}
+
+export async function fetchPublicCategories(): Promise<PublicCategory[]> {
+  const { data, error } = await supabase
+    .from('product_categories')
+    .select('name, hint, sort_order')
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true })
+    .order('name', { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row) => ({
+    name: String((row as { name: string }).name),
+    hint: (row as { hint: string | null }).hint ?? null,
+  }));
 }
 
 // ─── 시스템 설정 ─────────────────────────────────────────────────────────────

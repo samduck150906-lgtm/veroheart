@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useRef } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, RefreshCw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -8,6 +8,12 @@ import { LogoChip } from '../components/Wordmark';
 import { VR } from '../lib/veroroDesign';
 import { usePublicSettings } from '../lib/publicSettings';
 import { isKakaoLoginEnabled, signInWithKakao } from '../lib/kakaoAuth';
+import {
+  NICKNAME_MAX_LENGTH,
+  checkNicknameAvailable,
+  validateNickname,
+  type NicknameAvailability,
+} from '../lib/nickname';
 
 const PASSWORD_RULES = [
   {
@@ -46,6 +52,8 @@ function passwordPolicyOk(password: string): boolean {
 }
 
 const RESEND_COOLDOWN_SEC = 60;
+/** 닉네임 중복 확인 디바운스(ms) — 타자 중 매 글자마다 조회하지 않는다. */
+const NICKNAME_CHECK_DEBOUNCE_MS = 400;
 
 export default function Login() {
   const navigate = useNavigate();
@@ -55,6 +63,8 @@ export default function Login() {
   // 관리자 콘솔(시스템 설정)에서 신규 가입을 잠글 수 있다.
   const { signupEnabled } = usePublicSettings();
   const [email, setEmail] = useState('');
+  const [nickname, setNickname] = useState('');
+  const [nicknameStatus, setNicknameStatus] = useState<NicknameAvailability>('idle');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -65,6 +75,29 @@ export default function Login() {
   const resendIntervalRef = useRef<number | null>(null);
   // 카카오 키가 준비되기 전에는 버튼을 잠가 둔다 (lib/kakaoAuth 참고).
   const kakaoReady = isKakaoLoginEnabled();
+
+  // 가입 모드에서만, 형식이 맞는 닉네임에 대해 중복 여부를 미리 확인한다.
+  useEffect(() => {
+    if (mode !== 'signup') {
+      setNicknameStatus('idle');
+      return;
+    }
+    if (validateNickname(nickname)) {
+      setNicknameStatus('idle');
+      return;
+    }
+    let cancelled = false;
+    setNicknameStatus('checking');
+    const timer = window.setTimeout(() => {
+      checkNicknameAvailable(nickname).then((status) => {
+        if (!cancelled) setNicknameStatus(status);
+      });
+    }, NICKNAME_CHECK_DEBOUNCE_MS);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [mode, nickname]);
 
   const redirectTo = useMemo(() => {
     const from = (location.state as { from?: string } | null)?.from;
@@ -166,6 +199,17 @@ export default function Login() {
       notify.error('비밀번호 정책을 모두 충족해 주세요.');
       return;
     }
+    if (mode === 'signup') {
+      const invalidNickname = validateNickname(nickname);
+      if (invalidNickname) {
+        notify.error(invalidNickname);
+        return;
+      }
+      if (nicknameStatus === 'taken') {
+        notify.error('이미 사용 중인 닉네임이에요. 다른 닉네임을 골라 주세요.');
+        return;
+      }
+    }
 
     setIsLoading(true);
     try {
@@ -181,6 +225,9 @@ export default function Login() {
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/login`,
+            // handle_new_user 트리거가 이 값을 그대로 public.users.nickname 으로 옮긴다.
+            // 관리자 회원 관리에 보이는 이름도 같은 값이다.
+            data: { nickname: nickname.trim() },
           },
         });
         if (error) throw error;
@@ -206,6 +253,9 @@ export default function Login() {
         // DB 트리거(enforce_signup_enabled)가 막은 경우. 프론트 스위치가 캐시 때문에
         // 아직 열려 있어도 서버에서 걸리므로, 원문 대신 같은 안내를 보여준다.
         notify.error('현재 신규 회원 가입이 일시 중단되었습니다.');
+      } else if (lower.includes('users_nickname_unique') || (lower.includes('duplicate key') && lower.includes('nickname'))) {
+        notify.error('이미 사용 중인 닉네임이에요. 다른 닉네임을 골라 주세요.');
+        setNicknameStatus('taken');
       } else if (lower.includes('email not confirmed')) {
         notify.error('이메일 인증이 아직 완료되지 않았습니다. 메일함을 확인하거나 아래에서 재전송해 주세요.');
         setPendingVerification(true);
@@ -218,9 +268,14 @@ export default function Login() {
   };
 
   const emailOk = isValidEmail(email);
+  const nicknameError = mode === 'signup' && nickname.trim() ? validateNickname(nickname) : null;
   const canSubmit = mode === 'login'
     ? Boolean(email.trim()) && password.length > 0
-    : emailOk && passwordPolicyOk(password);
+    : emailOk
+      && passwordPolicyOk(password)
+      && !validateNickname(nickname)
+      && nicknameStatus !== 'taken'
+      && nicknameStatus !== 'checking';
 
   return (
     <div style={{ padding: '22px 4px 40px' }}>
@@ -259,6 +314,46 @@ export default function Login() {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '11px' }}>
+        {mode === 'signup' && (
+          <div>
+            <input
+              type="text"
+              className="vr-input"
+              placeholder="닉네임 (2~20자, 공백 없이)"
+              autoComplete="nickname"
+              maxLength={NICKNAME_MAX_LENGTH}
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && void handleSubmit()}
+              aria-label="닉네임"
+              aria-describedby="nickname-status"
+            />
+            <p
+              id="nickname-status"
+              role="status"
+              style={{
+                margin: '6px 2px 0',
+                fontSize: '12px',
+                fontWeight: 700,
+                minHeight: '16px',
+                color: nicknameError || nicknameStatus === 'taken'
+                  ? 'var(--danger-strong, #DC2626)'
+                  : nicknameStatus === 'available'
+                    ? 'var(--safe-strong)'
+                    : VR.faint,
+              }}
+            >
+              {nicknameError
+                ?? (nicknameStatus === 'checking'
+                  ? '중복 확인 중…'
+                  : nicknameStatus === 'taken'
+                    ? '이미 사용 중인 닉네임이에요.'
+                    : nicknameStatus === 'available'
+                      ? '사용할 수 있는 닉네임이에요.'
+                      : '앱과 관리자 화면에 이 이름으로 표시돼.')}
+            </p>
+          </div>
+        )}
         <input
           type="email"
           className="vr-input"

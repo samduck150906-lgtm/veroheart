@@ -83,7 +83,8 @@ function isMissingProductVisibilityColumn(error: VisibilityQueryError | null): b
   return Boolean(
     error &&
     (error.code === '42703' || error.code === 'PGRST204') &&
-    error.message.includes('is_visible'),
+    // 노출 필터와 상단 고정 정렬은 같은 마이그레이션 계열이라 폴백 조건을 공유한다.
+    /is_visible|is_pinned|pinned_order/.test(error.message),
   );
 }
 
@@ -226,9 +227,15 @@ export async function getProductsPage(page = 1, pageSize = MOBILE_PRODUCT_PAGE_S
       id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
       target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
       verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating
-    `).order('created_at', { ascending: false }).range(from, from + safePageSize - 1);
-    if (withVisibilityFilter) builder = builder.eq('is_visible', true);
-    return builder;
+    `);
+    // 운영자가 고정한 제품이 항상 먼저 나온다(관리자 → 제품 관리 → 상단 고정).
+    if (withVisibilityFilter) {
+      builder = builder
+        .eq('is_visible', true)
+        .order('is_pinned', { ascending: false })
+        .order('pinned_order', { ascending: true });
+    }
+    return builder.order('created_at', { ascending: false }).range(from, from + safePageSize - 1);
   });
   
   if (error) {
@@ -479,7 +486,12 @@ export async function searchProducts(
       builder = builder.overlaps('product_health_concerns', healthOverlap);
     }
 
-    if (withVisibilityFilter) builder = builder.eq('is_visible', true);
+    if (withVisibilityFilter) {
+      builder = builder
+        .eq('is_visible', true)
+        .order('is_pinned', { ascending: false })
+        .order('pinned_order', { ascending: true });
+    }
     return builder;
   });
   if (error) {

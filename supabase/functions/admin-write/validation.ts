@@ -16,7 +16,7 @@ export const PRODUCT_COLUMNS = [
   'verification_status', 'coupang_product_id', 'coupang_link', 'barcode',
   'kcal_per_100g', 'packaging_weight_g', 'allergen_free_tags',
   'is_sponsored', 'sponsor_label', 'sponsor_order',
-  'is_visible',
+  'is_visible', 'is_pinned', 'pinned_order',
 ] as const;
 
 export const NUTRITION_COLUMNS = [
@@ -64,8 +64,17 @@ export const ALLOWED_ACTIONS = new Set([
   'updateEnrichmentStatus',
   'listMembers',
   'getMemberDetail',
+  'deleteMember',
   'listFeedingLogs',
   'listWaitlist',
+  'listCategories',
+  'saveCategory',
+  'deleteCategory',
+  'reorderCategories',
+  'setProductPinned',
+  'listTrash',
+  'restoreTrash',
+  'purgeTrash',
 ]);
 
 export const MAX_NAME_LEN = 200;
@@ -160,7 +169,7 @@ export function normalizeProductPayload(raw: Record<string, unknown>): Record<st
   product.name = requireText(product.name, '제품명');
   product.brand_name = requireText(product.brand_name, '브랜드');
 
-  for (const key of ['min_price', 'kcal_per_100g', 'packaging_weight_g', 'sponsor_order']) {
+  for (const key of ['min_price', 'kcal_per_100g', 'packaging_weight_g', 'sponsor_order', 'pinned_order']) {
     if (product[key] === undefined || product[key] === null || product[key] === '') continue;
     const value = Number(product[key]);
     if (!Number.isFinite(value) || value < 0) throw new ValidationError(`${key} 값이 올바르지 않습니다.`);
@@ -176,7 +185,49 @@ export function normalizeProductPayload(raw: Record<string, unknown>): Record<st
   if (product.is_visible !== undefined && typeof product.is_visible !== 'boolean') {
     throw new ValidationError('제품 노출 상태는 불리언이어야 합니다.');
   }
+  if (product.is_pinned !== undefined && typeof product.is_pinned !== 'boolean') {
+    throw new ValidationError('제품 상단 고정 상태는 불리언이어야 합니다.');
+  }
   return product;
+}
+
+export const MAX_CATEGORY_REORDER = 100;
+
+export interface CategoryPayload {
+  name: string;
+  hint: string | null;
+  is_active: boolean;
+}
+
+/**
+ * 카테고리 이름은 products.main_category 의 텍스트와 그대로 대조되므로
+ * 앞뒤 공백과 내부 연속 공백을 정리해 "사료 " 같은 값이 따로 생기지 않게 한다.
+ */
+export function normalizeCategoryPayload(raw: Record<string, unknown>): CategoryPayload {
+  const name = requireText(raw.name, '카테고리 이름', 40).replace(/\s+/g, ' ');
+  return {
+    name,
+    hint: optionalText(raw.hint, '카테고리 설명', 80),
+    is_active: raw.isActive === undefined && raw.is_active === undefined
+      ? true
+      : Boolean(raw.isActive ?? raw.is_active),
+  };
+}
+
+/** 순서 변경 요청의 id 배열 — 중복 없이 UUID 만 허용한다. */
+export function normalizeCategoryOrder(raw: unknown): string[] {
+  if (!Array.isArray(raw)) throw new ValidationError('카테고리 순서 형식이 올바르지 않습니다.');
+  if (raw.length === 0) throw new ValidationError('순서를 변경할 카테고리가 없습니다.');
+  if (raw.length > MAX_CATEGORY_REORDER) {
+    throw new ValidationError(`카테고리는 최대 ${MAX_CATEGORY_REORDER}개까지 정렬할 수 있습니다.`);
+  }
+  const seen = new Set<string>();
+  return raw.map((value) => {
+    const id = requireUuid(value, '카테고리 ID');
+    if (seen.has(id)) throw new ValidationError('같은 카테고리가 순서에 중복으로 들어 있습니다.');
+    seen.add(id);
+    return id;
+  });
 }
 
 /** 보장성분은 모두 백분율이므로 0~100 범위의 유한한 숫자만 허용한다. */

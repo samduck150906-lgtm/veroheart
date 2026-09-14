@@ -32,7 +32,8 @@ const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const AdminProducts = lazy(() => import('./pages/admin/AdminProducts'));
 const AdminIngredients = lazy(() => import('./pages/admin/AdminIngredients'));
-const AdminUnmatched = lazy(() => import('./pages/admin/AdminUnmatched'));
+const AdminCategories = lazy(() => import('./pages/admin/AdminCategories'));
+const AdminTrash = lazy(() => import('./pages/admin/AdminTrash'));
 const AdminMembers = lazy(() => import('./pages/admin/AdminMembers'));
 const AdminDiary = lazy(() => import('./pages/admin/AdminDiary'));
 const AdminWaitlist = lazy(() => import('./pages/admin/AdminWaitlist'));
@@ -160,14 +161,20 @@ function Application() {
         <Route path="/admin" element={<AdminAuthGuard><AdminLayout /></AdminAuthGuard>}>
           <Route index element={<AdminDashboard />} />
           <Route path="products" element={<AdminProducts />} />
+          <Route path="categories" element={<AdminCategories />} />
           <Route path="ingredients" element={<AdminIngredients />} />
-          <Route path="unmatched-ingredients" element={<AdminUnmatched />} />
+          {/* 미매칭 성분은 성분 사전 안의 탭으로 옮겼다. 기존 링크·북마크는 그 탭으로 보낸다. */}
+          <Route
+            path="unmatched-ingredients"
+            element={<Navigate to="/admin/ingredients?tab=unmatched" replace />}
+          />
           <Route path="users" element={<AdminMembers />} />
           <Route path="members" element={<Navigate to="/admin/users" replace />} />
           <Route path="diary" element={<AdminDiary />} />
           <Route path="waitlist" element={<AdminWaitlist />} />
           <Route path="settings" element={<AdminSettings />} />
           <Route path="data-quality" element={<AdminDataQuality />} />
+          <Route path="trash" element={<AdminTrash />} />
           <Route path="*" element={<AdminNotFound />} />
         </Route>
       </Routes>

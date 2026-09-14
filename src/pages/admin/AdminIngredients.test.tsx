@@ -1,6 +1,7 @@
 import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import { render as renderComponent, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import type { AdminIngredient } from '../../lib/adminApi';
 
 const h = vi.hoisted(() => ({
@@ -22,6 +23,9 @@ vi.mock('../../store/useNotification', () => ({
 }));
 
 import AdminIngredients from './AdminIngredients';
+
+// 성분 사전은 미매칭 성분 탭과 한 화면을 쓰게 되면서 ?tab= 쿼리를 읽는다.
+const render = (ui: React.ReactElement) => renderComponent(<MemoryRouter>{ui}</MemoryRouter>);
 
 const CHICKEN: AdminIngredient = {
   id: '11111111-1111-4111-8111-111111111111',

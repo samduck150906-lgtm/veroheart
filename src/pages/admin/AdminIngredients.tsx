@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, Search, Edit2, Trash2, X, Database, AlertTriangle } from 'lucide-react';
 import { notify } from '../../store/useNotification';
 import standardFeedData from '../../data/standard_feed_data.json';
+import AdminUnmatched from './AdminUnmatched';
 import {
   deleteIngredient,
   fetchIngredients,
@@ -143,7 +145,17 @@ const EMPTY_FORM: FormState = {
   nutrition_source: '',
 };
 
+type IngredientTab = 'dictionary' | 'unmatched';
+
 const AdminIngredients: React.FC = () => {
+  const [urlParams, setUrlParams] = useSearchParams();
+  // 미매칭 성분은 별도 사이드바 메뉴였으나, 같은 성분 사전을 두 곳에서 관리하게 돼
+  // 여기 탭으로 합쳤다. 기존 링크(?tab=unmatched)도 그대로 열린다.
+  const tab: IngredientTab = urlParams.get('tab') === 'unmatched' ? 'unmatched' : 'dictionary';
+  const selectTab = (next: IngredientTab) => {
+    setUrlParams(next === 'unmatched' ? { tab: 'unmatched' } : {}, { replace: true });
+  };
+
   const [ingredients, setIngredients] = useState<AdminIngredient[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -398,8 +410,39 @@ const AdminIngredients: React.FC = () => {
 
   const deleteBlocked = (deleteUsage ?? 0) > 0;
 
+  const tabs: { key: IngredientTab; label: string }[] = [
+    { key: 'dictionary', label: '성분 사전' },
+    { key: 'unmatched', label: '미매칭 성분 검수' },
+  ];
+
+  const tabNav = (
+    <div className="admin-filter-row" style={{ marginBottom: 14 }}>
+      {tabs.map((item) => (
+        <button
+          type="button"
+          key={item.key}
+          className={`admin-chip ${tab === item.key ? 'active' : ''}`}
+          onClick={() => selectTab(item.key)}
+          aria-current={tab === item.key ? 'page' : undefined}
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
+  );
+
+  if (tab === 'unmatched') {
+    return (
+      <div>
+        {tabNav}
+        <AdminUnmatched />
+      </div>
+    );
+  }
+
   return (
     <div>
+      {tabNav}
       <div className="admin-toolbar">
         <div className="admin-title-wrap">
           <h2>성분 사전 관리</h2>
@@ -854,7 +897,13 @@ const AdminIngredients: React.FC = () => {
                 ? ' — 연결된 제품 수를 확인하는 중입니다.'
                 : deleteBlocked
                   ? ` 은(는) ${deleteUsage}개 제품에 연결되어 있어 삭제할 수 없습니다. 먼저 제품 관리에서 연결을 해제해 주세요.`
-                  : ' 은(는) 연결된 제품이 없어 안전하게 삭제할 수 있습니다. 삭제 후에는 되돌릴 수 없습니다.'}
+                  : ' 은(는) 연결된 제품이 없어 안전하게 삭제할 수 있습니다.'}
+              {!deleteBlocked && deleteUsage !== null && (
+                <>
+                  <br />
+                  삭제 직전 상태는 <strong>휴지통</strong>에 보관되므로 필요하면 그대로 복원할 수 있습니다.
+                </>
+              )}
             </p>
             <div className="admin-modal-footer">
               <button type="button" className="admin-btn-soft" onClick={() => setDeleteTarget(null)} disabled={isDeleting}>

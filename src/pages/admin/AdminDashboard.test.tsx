@@ -9,7 +9,11 @@ const h = vi.hoisted(() => ({
   categoryRows: [] as { main_category: string | null }[],
 }));
 
-vi.mock('../../lib/adminApi', () => ({ fetchDashboard: h.fetchDashboard }));
+vi.mock('../../lib/adminApi', () => ({
+  fetchDashboard: h.fetchDashboard,
+  // 카테고리 행 순서만 쓰는 부가 조회 — 대시보드 지표 검증과는 무관하다.
+  fetchCategories: () => Promise.resolve([]),
+}));
 
 vi.mock('../../lib/supabase', () => ({
   supabase: {

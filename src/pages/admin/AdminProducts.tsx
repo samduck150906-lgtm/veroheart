@@ -1,14 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { Plus, Search, Edit2, Trash2, X, Upload, ChevronLeft, ChevronRight, AlertTriangle, Eye, EyeOff } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, X, Upload, ChevronLeft, ChevronRight, AlertTriangle, Eye, EyeOff, Pin, PinOff } from 'lucide-react';
 import { notify } from '../../store/useNotification';
 import ProductIngredientsEditor from './ProductIngredientsEditor';
 import {
   deleteProduct as deleteProductApi,
+  fetchCategories,
   fetchProductIngredients,
   fetchProductsPage,
   saveProduct as saveProductApi,
+  setProductPinned as setProductPinnedApi,
   setProductVisibility as setProductVisibilityApi,
   uploadProductImage,
   validateProductImage,
@@ -60,16 +62,11 @@ const NUTRITION_FIELDS: { key: keyof NutritionForm; label: string }[] = [
   { key: 'phosphorus', label: '인 (%)' },
 ];
 
-const MAIN_CATEGORIES = [
-  '사료',
-  '간식',
-  '영양제',
-  '구강관리',
-  '피부·목욕·위생',
-  '눈·귀 케어',
-  '배변/위생',
-  '생활용품',
-];
+/**
+ * 카테고리 목록을 아직 불러오지 못했을 때만 쓰는 대비값.
+ * 실제 목록은 카테고리 관리 화면이 관리하는 product_categories 를 따른다.
+ */
+const FALLBACK_CATEGORIES = ['사료', '간식', '영양제'];
 
 const PET_TYPES = ['dog', 'cat', 'all'];
 const PAGE_SIZE = 20;
@@ -120,6 +117,8 @@ const AdminProducts: React.FC = () => {
   const [deleteTarget, setDeleteTarget] = useState<AdminProductRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [visibilitySavingId, setVisibilitySavingId] = useState<string | null>(null);
+  const [pinSavingId, setPinSavingId] = useState<string | null>(null);
+  const [categories, setCategories] = useState<string[]>(FALLBACK_CATEGORIES);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -181,6 +180,23 @@ const AdminProducts: React.FC = () => {
     // 페이지/검색/카테고리 변경 시 서버에서 다시 조회한다.
     loadProducts();
   }, [loadProducts]);
+
+  useEffect(() => {
+    // 분류 목록은 카테고리 관리 화면이 단일 원본이다. 비활성 카테고리도 기존
+    // 제품이 그 값을 쓰고 있을 수 있으므로 관리자 화면에서는 모두 보여 준다.
+    let cancelled = false;
+    fetchCategories()
+      .then((rows) => {
+        if (cancelled || rows.length === 0) return;
+        setCategories(rows.map((row) => row.name));
+      })
+      .catch(() => {
+        // 실패해도 기본 분류로 계속 운영할 수 있어야 한다.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const selectTab = (tab: string) => {
     setActiveTab(tab);
@@ -379,6 +395,29 @@ const AdminProducts: React.FC = () => {
     }
   };
 
+  const togglePinned = async (product: AdminProductRow) => {
+    if (pinSavingId) return;
+    const nextPinned = !product.is_pinned;
+    setPinSavingId(product.id);
+    try {
+      const result = await setProductPinnedApi(product.id, nextPinned);
+      setProducts((rows) => rows.map((row) => (
+        row.id === product.id
+          ? { ...row, is_pinned: result.isPinned, pinned_order: result.pinnedOrder }
+          : row
+      )));
+      notify.success(
+        nextPinned
+          ? `“${product.name}” 제품을 앱 목록 상단에 고정했습니다.`
+          : `“${product.name}” 제품의 상단 고정을 해제했습니다.`,
+      );
+    } catch (err) {
+      notify.error(`상단 고정 변경 실패: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setPinSavingId(null);
+    }
+  };
+
   const rangeLabel = useMemo(() => {
     if (total === 0) return '0';
     const from = (page - 1) * PAGE_SIZE + 1;
@@ -402,7 +441,7 @@ const AdminProducts: React.FC = () => {
       </div>
 
       <div className="admin-filter-row">
-        {['전체', ...MAIN_CATEGORIES].map((tab) => (
+        {['전체', ...categories].map((tab) => (
           <button
             type="button"
             key={tab}
@@ -470,6 +509,7 @@ const AdminProducts: React.FC = () => {
               <th>정보완성도</th>
               <th>검수 상태</th>
               <th>앱 노출</th>
+              <th>상단 고정</th>
               <th>가격</th>
               <th style={{ textAlign: 'right' }}>관리</th>
             </tr>
@@ -477,13 +517,13 @@ const AdminProducts: React.FC = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={9}>
+                <td colSpan={10}>
                   <div className="admin-empty">데이터를 불러오는 중입니다...</div>
                 </td>
               </tr>
             ) : loadError ? (
               <tr>
-                <td colSpan={9}>
+                <td colSpan={10}>
                   <div className="admin-empty">
                     제품을 불러오지 못했습니다.
                     <button type="button" className="admin-btn-soft" style={{ marginLeft: 10 }} onClick={loadProducts}>
@@ -494,7 +534,7 @@ const AdminProducts: React.FC = () => {
               </tr>
             ) : products.length === 0 ? (
               <tr>
-                <td colSpan={9}>
+                <td colSpan={10}>
                   <div className="admin-empty">
                     {search || activeTab !== '전체' || petType !== '전체' || verificationStatus !== '전체' || visibility !== '전체'
                       ? '검색 조건에 맞는 제품이 없습니다.'
@@ -551,6 +591,18 @@ const AdminProducts: React.FC = () => {
                     >
                       {p.is_visible ? <Eye size={13} /> : <EyeOff size={13} />}
                       {visibilitySavingId === p.id ? '저장 중' : p.is_visible ? '노출' : '비노출'}
+                    </button>
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      className={`admin-visibility-btn ${p.is_pinned ? 'is-pinned' : 'is-hidden'}`}
+                      onClick={() => togglePinned(p)}
+                      disabled={pinSavingId !== null}
+                      aria-label={`${p.name} 상단 고정 ${p.is_pinned ? '해제' : '설정'}`}
+                    >
+                      {p.is_pinned ? <Pin size={13} /> : <PinOff size={13} />}
+                      {pinSavingId === p.id ? '저장 중' : p.is_pinned ? `고정 ${p.pinned_order}` : '해제'}
                     </button>
                   </td>
                   <td>
@@ -714,7 +766,7 @@ const AdminProducts: React.FC = () => {
                 id="pf-main-cat"
                 label="메인 카테고리"
                 value={currentProduct.main_category}
-                options={MAIN_CATEGORIES}
+                options={categories}
                 onChange={(value) => setCurrentProduct({ ...currentProduct, main_category: value })}
               />
               <SelectField
@@ -837,7 +889,9 @@ const AdminProducts: React.FC = () => {
               제품을 삭제할까요?
             </h3>
             <p className="admin-modal-desc">
-              <strong>{deleteTarget.name}</strong> 을(를) 삭제하면 연결된 원재료·보장성분 정보도 함께 사라집니다. 되돌릴 수 없습니다.
+              <strong>{deleteTarget.name}</strong> 을(를) 앱과 관리자 목록에서 내립니다. 연결된 원재료·보장성분·리뷰도 함께 사라집니다.
+              <br />
+              삭제 직전 상태는 <strong>휴지통</strong>에 보관되므로, 실수로 지웠다면 휴지통에서 그대로 복원할 수 있습니다.
             </p>
             <div className="admin-modal-footer">
               <button type="button" className="admin-btn-soft" onClick={() => setDeleteTarget(null)} disabled={isDeleting}>

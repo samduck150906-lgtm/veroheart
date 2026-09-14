@@ -14,18 +14,10 @@ import {
   BadgeCheck,
   DatabaseZap,
 } from 'lucide-react';
-import { fetchDashboard, type DashboardPayload } from '../../lib/adminApi';
+import { fetchCategories, fetchDashboard, type DashboardPayload } from '../../lib/adminApi';
 
-const MAIN_CATEGORIES = [
-  '사료',
-  '간식',
-  '영양제',
-  '구강관리',
-  '피부·목욕·위생',
-  '눈·귀 케어',
-  '배변/위생',
-  '생활용품',
-];
+/** 카테고리 목록을 아직 불러오지 못했을 때만 쓰는 대비값(카테고리 관리가 단일 원본). */
+const FALLBACK_CATEGORIES = ['사료', '간식', '영양제'];
 const UNCATEGORIZED_LABEL = '미분류';
 const CATEGORY_PAGE_SIZE = 1000;
 
@@ -81,6 +73,7 @@ const AdminDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [categoryStats, setCategoryStats] = useState<Record<string, number> | null>(null);
+  const [knownCategories, setKnownCategories] = useState<string[]>(FALLBACK_CATEGORIES);
   const [categoryError, setCategoryError] = useState(false);
 
   const load = useCallback(async () => {
@@ -110,6 +103,22 @@ const AdminDashboard: React.FC = () => {
     load();
     loadCategories();
   }, [load, loadCategories]);
+
+  useEffect(() => {
+    // 카테고리 분포의 행 순서는 카테고리 관리에서 정한 순서를 따른다.
+    let cancelled = false;
+    fetchCategories()
+      .then((rows) => {
+        if (cancelled || rows.length === 0) return;
+        setKnownCategories(rows.map((row) => row.name));
+      })
+      .catch(() => {
+        // 실패해도 기본 분류로 분포를 보여 준다.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const metrics = payload?.metrics;
 
@@ -201,7 +210,7 @@ const AdminDashboard: React.FC = () => {
         icon: <AlertCircle size={18} />,
         delta: null,
         deltaLabel: null,
-        to: '/admin/unmatched-ingredients',
+        to: '/admin/ingredients?tab=unmatched',
       },
       {
         label: '최근 7일 다이어리 기록',
@@ -221,16 +230,17 @@ const AdminDashboard: React.FC = () => {
     [categoryStats],
   );
   const displayedCategories = useMemo(() => {
-    if (!categoryStats) return MAIN_CATEGORIES;
+    if (!categoryStats) return knownCategories;
+    // 등록된 카테고리를 먼저, 목록에 없는 실측 값은 뒤에 붙여 합계가 맞게 한다.
     const extras = Object.keys(categoryStats)
-      .filter((category) => !MAIN_CATEGORIES.includes(category) && category !== UNCATEGORIZED_LABEL)
+      .filter((category) => !knownCategories.includes(category) && category !== UNCATEGORIZED_LABEL)
       .sort((a, b) => a.localeCompare(b, 'ko-KR'));
     return [
-      ...MAIN_CATEGORIES,
+      ...knownCategories,
       ...extras,
       ...(UNCATEGORIZED_LABEL in categoryStats ? [UNCATEGORIZED_LABEL] : []),
     ];
-  }, [categoryStats]);
+  }, [categoryStats, knownCategories]);
   const hasProductTotal = metrics?.products !== null && metrics?.products !== undefined;
   const categoryCountsMatch = hasProductTotal && categoryStats !== null && totalProducts === categoryTotal;
   const categoryDenominator = totalProducts > 0 ? totalProducts : categoryTotal;
@@ -385,7 +395,7 @@ const AdminDashboard: React.FC = () => {
                 )}
             </>
           )}
-          <Link className="admin-btn-soft" style={{ width: '100%', marginTop: 8 }} to="/admin/unmatched-ingredients">
+          <Link className="admin-btn-soft" style={{ width: '100%', marginTop: 8 }} to="/admin/ingredients?tab=unmatched">
             미매칭 성분 검수하기
           </Link>
         </article>

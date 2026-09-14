@@ -6,21 +6,19 @@ import ProductThumb from '../components/ProductThumb';
 import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import { normalizeProductDisplayName, resolveBrandLabel } from '../utils/productDisplay';
 import { gradePalette, VR } from '../lib/veroroDesign';
+import { useProductCategories } from '../lib/productCategories';
 import type { PetSafetyScan } from '../utils/petSafety';
 import type { Product } from '../types';
 
-// category 값은 DB products.main_category 실측값('사료'/'간식'/'영양제')과 일치해야 한다.
+// 카테고리 목록·순서는 관리자 콘솔(카테고리 관리)이 단일 원본이다.
+// name 은 DB products.main_category 값과 글자 그대로 대조된다.
 // 부제는 등록 건수 대신 카테고리가 무엇인지 알려 준다. 건수는 보호자에게 의미가 없고,
 // DB 가 작아 보이는 역효과만 있었다.
-const CATEGORIES = [
-  { label: '사료', hint: '매일 먹는 주식' },
-  { label: '간식', hint: '훈련·보상용' },
-  { label: '영양제', hint: '부족한 영양 보충' },
-] as const;
 
 export default function Home() {
   const { profile, products, recentViews, isLoggedIn } = useStore();
   const navigate = useNavigate();
+  const categories = useProductCategories();
 
   const [safetyScan, setSafetyScan] = useState<PetSafetyScan | null>(null);
   useEffect(() => {
@@ -116,23 +114,30 @@ export default function Home() {
       </button>
 
       {/* 카테고리 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '9px', marginBottom: '22px' }}>
-        {CATEGORIES.map(({ label, hint }) => (
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(${Math.min(3, Math.max(1, categories.length))}, 1fr)`,
+        gap: '9px',
+        marginBottom: '22px',
+      }}>
+        {categories.map(({ name, hint }) => (
           <button
-            key={label}
+            key={name}
             type="button"
-            onClick={() => goCategory(label)}
+            onClick={() => goCategory(name)}
             style={{
               background: 'var(--vr-soft)', borderRadius: '15px', padding: '14px 12px',
               border: 'none', cursor: 'pointer', textAlign: 'left',
             }}
           >
             <span style={{ display: 'block', fontSize: '15px', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--vr-ink)' }}>
-              {label}
+              {name}
             </span>
-            <span style={{ display: 'block', fontSize: '11.5px', color: VR.sub, marginTop: '3px', fontWeight: 600 }}>
-              {hint}
-            </span>
+            {hint && (
+              <span style={{ display: 'block', fontSize: '11.5px', color: VR.sub, marginTop: '3px', fontWeight: 600 }}>
+                {hint}
+              </span>
+            )}
           </button>
         ))}
       </div>

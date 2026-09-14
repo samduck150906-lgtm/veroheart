@@ -27,6 +27,7 @@ import { buildSearchSuggestions, deriveBrandOptions, type Suggestion } from '../
 import { productsForPetFilter, visibleSymptomKeywords } from '../utils/searchKeywords';
 import { isHealthFilterAvailable } from '../utils/healthFilterAvailability';
 import { VR } from '../lib/veroroDesign';
+import { useProductCategories } from '../lib/productCategories';
 
 interface StandardFeedItem {
   id: number;
@@ -82,8 +83,9 @@ const HEALTH_CONCERN_OPTIONS = [
   '간', '면역', '눈', '구강', '스트레스·분리불안', '임신·수유',
 ];
 
-// DB products.main_category 실측값 기준. 건식/습식 구분은 필터 시트의 '제형'이 담당한다.
-const SEARCH_MAIN_CATEGORIES = ['전체', '사료', '간식', '영양제'];
+// 카테고리 칩 목록·순서는 관리자 콘솔(카테고리 관리)이 단일 원본이다.
+// 값은 DB products.main_category 와 글자 그대로 대조된다.
+// 건식/습식 구분은 필터 시트의 '제형'이 담당한다.
 
 function defaultPetFromProfile(profile: { species?: string } | undefined): '' | 'dog' | 'cat' | 'all' {
   if (profile?.species === 'Cat') return 'cat';
@@ -94,6 +96,11 @@ function defaultPetFromProfile(profile: { species?: string } | undefined): '' | 
 export default function Search() {
   const { profile, products, comparisonList } = useStore();
   const navigate = useNavigate();
+  const activeCategories = useProductCategories();
+  const categoryChips = useMemo(
+    () => ['전체', ...activeCategories.map((item) => item.name)],
+    [activeCategories],
+  );
   const [searchParams, setSearchParams] = useSearchParams();
   const category = resolveCategoryFromSearchParams(searchParams.get('category'));
 
@@ -432,7 +439,7 @@ export default function Search() {
           </svg>
           필터 {activeFilterCount > 0 ? activeFilterCount : ''}
         </button>
-        {SEARCH_MAIN_CATEGORIES.map((name) => (
+        {categoryChips.map((name) => (
           <button
             key={name}
             type="button"

@@ -5,6 +5,7 @@ import { MemoryRouter } from 'react-router-dom';
 import type { AdminProductRow, ProductListParams } from '../../lib/adminApi';
 
 const h = vi.hoisted(() => ({
+  setProductPinned: vi.fn(),
   fetchProductsPage: vi.fn(),
   fetchProductIngredients: vi.fn(),
   saveProduct: vi.fn(),
@@ -15,6 +16,8 @@ const h = vi.hoisted(() => ({
 }));
 
 vi.mock('../../lib/adminApi', () => ({
+  fetchCategories: () => Promise.resolve([]),
+  setProductPinned: h.setProductPinned,
   fetchProductsPage: h.fetchProductsPage,
   fetchProductIngredients: h.fetchProductIngredients,
   saveProduct: h.saveProduct,
