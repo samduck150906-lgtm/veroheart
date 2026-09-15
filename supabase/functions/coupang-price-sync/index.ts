@@ -130,6 +130,14 @@ async function authorizationHeader(
   return `CEA algorithm=HmacSHA256, access-key=${accessKey}, signed-date=${now}, signature=${signature}`;
 }
 
+/**
+ * 계속 돌려도 결과가 같은 오류 — 키가 틀렸거나, 권한이 없거나, 호출 한도를 넘었다.
+ *
+ * 제품별 실패와 구분해야 한다. 이걸 제품별 실패로 세면 25개 제품에 대해 같은
+ * 인증 오류를 30초 동안 반복하고, 운영자는 "실패 25건"만 보게 된다.
+ */
+class CoupangFatalError extends Error {}
+
 interface CoupangProduct {
   productId?: number | string;
   productName?: string;
@@ -157,7 +165,17 @@ async function fetchCoupangPrice(
     headers: { Authorization: authorization, 'Content-Type': 'application/json;charset=UTF-8' },
   });
   if (!response.ok) {
-    throw new Error(`쿠팡 API ${response.status}: ${(await response.text()).slice(0, 200)}`);
+    const detail = (await response.text()).slice(0, 200);
+    if (response.status === 401 || response.status === 403) {
+      throw new CoupangFatalError(
+        `쿠팡 API 인증에 실패했습니다(${response.status}). Supabase → Edge Functions → Secrets 의 `
+        + `COUPANG_ACCESS_KEY / COUPANG_SECRET_KEY 와 파트너스 계정 승인 상태를 확인해 주세요. ${detail}`,
+      );
+    }
+    if (response.status === 429) {
+      throw new CoupangFatalError('쿠팡 API 호출 한도를 넘었습니다(429). 잠시 뒤에 다시 실행해 주세요.');
+    }
+    throw new Error(`쿠팡 API ${response.status}: ${detail}`);
   }
 
   const body = await response.json() as { data?: { productData?: CoupangProduct[] } };
@@ -256,6 +274,9 @@ serve(async (req) => {
         if (upsertError) throw upsertError;
         changed += 1;
       } catch (err) {
+        // 키·권한·한도 문제면 남은 제품도 같은 결과다. 여기서 멈춰야 운영자가
+        // "실패 25건"이 아니라 무엇을 고쳐야 하는지 본다.
+        if (err instanceof CoupangFatalError) throw err;
         failed += 1;
         if (failures.length < 5) {
           failures.push(`${product.name}: ${err instanceof Error ? err.message : String(err)}`);
