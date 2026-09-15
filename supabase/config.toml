@@ -272,6 +272,10 @@ verify_jwt = false
 [functions.admin-ingredient-review]
 verify_jwt = false
 
+# 바코드·보장성분 일괄 입력 — 같은 x-admin-token 으로 자체 검증한다
+[functions.admin-product-facts]
+verify_jwt = false
+
 # This hook runs before a new user is created and allows developers to reject the request based on the incoming user object.
 # [auth.hook.before_user_created]
 # enabled = true

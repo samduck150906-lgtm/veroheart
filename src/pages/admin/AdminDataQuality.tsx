@@ -10,6 +10,7 @@ import {
 } from '../../lib/adminApi';
 import { notify } from '../../store/useNotification';
 import AdminProductCleanup from './AdminProductCleanup';
+import AdminProductFacts from './AdminProductFacts';
 
 const PAGE_SIZE = 20;
 const STATUS_OPTIONS: Array<{ value: 'all' | EnrichmentStatus; label: string }> = [
@@ -34,12 +35,13 @@ function sourceCount(row: EnrichmentQueueRow): number {
   return row.source_count ?? 0;
 }
 
-type QualityTab = 'queue' | 'names';
+type QualityTab = 'queue' | 'names' | 'facts';
 
 export default function AdminDataQuality() {
   const [params, setParams] = useSearchParams();
   // 데이터 품질은 "덜 채워진 제품"과 "지저분한 제품명" 두 가지 작업을 다룬다.
-  const tab: QualityTab = params.get('tab') === 'names' ? 'names' : 'queue';
+  const rawTab = params.get('tab');
+  const tab: QualityTab = rawTab === 'names' || rawTab === 'facts' ? rawTab : 'queue';
   const [rows, setRows] = useState<EnrichmentQueueRow[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -149,13 +151,14 @@ export default function AdminDataQuality() {
     <div className="admin-filter-row" style={{ marginBottom: 14 }}>
       {([
         { key: 'queue' as const, label: '보완 큐' },
+        { key: 'facts' as const, label: '바코드·영양정보 입력' },
         { key: 'names' as const, label: '제품명 정리' },
       ]).map((item) => (
         <button
           type="button"
           key={item.key}
           className={`admin-chip ${tab === item.key ? 'active' : ''}`}
-          onClick={() => setParams(item.key === 'names' ? { tab: 'names' } : {}, { replace: true })}
+          onClick={() => setParams(item.key === 'queue' ? {} : { tab: item.key }, { replace: true })}
           aria-current={tab === item.key ? 'page' : undefined}
         >
           {item.label}
@@ -169,6 +172,15 @@ export default function AdminDataQuality() {
       <div>
         {tabNav}
         <AdminProductCleanup />
+      </div>
+    );
+  }
+
+  if (tab === 'facts') {
+    return (
+      <div>
+        {tabNav}
+        <AdminProductFacts />
       </div>
     );
   }

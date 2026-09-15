@@ -1205,3 +1205,139 @@ export async function applyRiskDecisions(
   );
   return { updated: res.updated ?? 0, created: res.created ?? 0, skipped: res.skipped ?? [] };
 }
+
+// ── 바코드·보장성분 일괄 입력 ───────────────────────────────────────────────
+
+/** 라벨의 보장성분 5종 + 선택 항목 2종. 화면 열 순서와 같다. */
+export const NUTRITION_KEYS = [
+  'crude_protein', 'crude_fat', 'crude_fiber', 'crude_ash', 'moisture', 'calcium', 'phosphorus',
+] as const;
+
+export type NutritionKey = typeof NUTRITION_KEYS[number];
+
+export const NUTRITION_LABELS: Record<NutritionKey, string> = {
+  crude_protein: '조단백',
+  crude_fat: '조지방',
+  crude_fiber: '조섬유',
+  crude_ash: '조회분',
+  moisture: '수분',
+  calcium: '칼슘',
+  phosphorus: '인',
+};
+
+export interface ProductFactsRow {
+  id: string;
+  name: string;
+  brandName: string;
+  imageUrl: string | null;
+  sourceUrl: string | null;
+  barcode: string | null;
+  kcalPer100g: number | null;
+  nutrition: Record<NutritionKey, number | null>;
+  hasNutrition: boolean;
+}
+
+export type ProductFactsFilter = 'missing' | 'missing_barcode' | 'missing_nutrition' | 'all';
+
+interface ProductFactsJoinRow {
+  id: string;
+  name: string;
+  brand_name: string | null;
+  image_url: string | null;
+  coupang_link: string | null;
+  barcode: string | null;
+  kcal_per_100g: number | null;
+  nutritional_profiles: Record<string, number | null>[] | Record<string, number | null> | null;
+}
+
+function emptyNutrition(): Record<NutritionKey, number | null> {
+  return Object.fromEntries(NUTRITION_KEYS.map((key) => [key, null])) as Record<NutritionKey, number | null>;
+}
+
+/**
+ * 입력 화면이 쓸 제품 목록.
+ *
+ * products 와 nutritional_profiles 는 공개 SELECT 라 anon 키로 직접 읽는다 —
+ * 관리자 화면의 다른 목록과 같은 경로다. service_role 이 필요한 것은 쓰기뿐이다.
+ *
+ * '영양정보 없음'은 조인 결과를 봐야 알 수 있어 서버 필터로 거를 수 없다.
+ * 그래서 바코드 조건만 쿼리에 걸고, 영양 조건은 받아 온 뒤 거른다.
+ */
+export async function fetchProductFacts(params: {
+  filter: ProductFactsFilter;
+  search?: string;
+  limit?: number;
+}): Promise<ProductFactsRow[]> {
+  const limit = Math.min(params.limit ?? 100, 300);
+  let query = supabase
+    .from('products')
+    .select(
+      'id, name, brand_name, image_url, coupang_link, barcode, kcal_per_100g, '
+      + 'nutritional_profiles(crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus)',
+    )
+    .order('name', { ascending: true })
+    .limit(limit);
+
+  if (params.filter === 'missing' || params.filter === 'missing_barcode') {
+    query = query.is('barcode', null);
+  }
+  const search = params.search?.trim();
+  if (search) {
+    const pattern = toOrIlikePattern(search);
+    query = query.or(`name.ilike.${pattern},brand_name.ilike.${pattern}`);
+  }
+
+  const { data, error } = await query;
+  if (error) throw new Error(`제품을 불러오지 못했습니다: ${error.message}`);
+
+  const rows = ((data ?? []) as unknown as ProductFactsJoinRow[]).map((raw) => {
+    const profile = (Array.isArray(raw.nutritional_profiles)
+      ? raw.nutritional_profiles[0]
+      : raw.nutritional_profiles) ?? null;
+    const nutrition = emptyNutrition();
+    let hasNutrition = false;
+    for (const key of NUTRITION_KEYS) {
+      const value = profile?.[key];
+      if (value !== null && value !== undefined) {
+        nutrition[key] = Number(value);
+        hasNutrition = true;
+      }
+    }
+    return {
+      id: raw.id,
+      name: raw.name,
+      brandName: raw.brand_name ?? '',
+      imageUrl: raw.image_url,
+      sourceUrl: raw.coupang_link,
+      barcode: raw.barcode,
+      kcalPer100g: raw.kcal_per_100g === null ? null : Number(raw.kcal_per_100g),
+      nutrition,
+      hasNutrition,
+    };
+  });
+
+  if (params.filter === 'missing' || params.filter === 'missing_nutrition') {
+    return rows.filter((row) => !row.hasNutrition);
+  }
+  return rows;
+}
+
+export interface ProductFactsInput {
+  id: string;
+  name: string;
+  barcode: string | null;
+  kcalPer100g: number | null;
+  nutrition: Record<NutritionKey, number | null>;
+}
+
+/** 한 요청에 담을 수 있는 제품 수 — Edge Function 의 상한과 같다. */
+export const PRODUCT_FACTS_BATCH = 100;
+
+/** 바코드·kcal·보장성분만 저장한다. 제품의 다른 값은 건드리지 않는다. */
+export async function saveProductFacts(items: ProductFactsInput[]): Promise<{ saved: number }> {
+  const res = await callAdminFunction<{ saved?: number }>('admin-product-facts', {
+    action: 'saveProductFacts',
+    items,
+  });
+  return { saved: res.saved ?? 0 };
+}
