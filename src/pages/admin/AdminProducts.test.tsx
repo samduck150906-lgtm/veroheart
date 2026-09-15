@@ -203,6 +203,9 @@ describe('AdminProducts', () => {
 
     fireEvent.change(screen.getByLabelText('제품명*'), { target: { value: '새 사료' } });
     fireEvent.change(screen.getByLabelText('브랜드*'), { target: { value: '베로로' } });
+    fireEvent.change(screen.getByLabelText('판매처 링크 *'), {
+      target: { value: 'https://www.coupang.com/vp/products/7654321?itemId=1' },
+    });
     fireEvent.click(screen.getByText('저장하기'));
 
     await waitFor(() => expect(h.saveProduct).toHaveBeenCalledTimes(1));
@@ -211,8 +214,26 @@ describe('AdminProducts', () => {
       name: '새 사료',
       brand_name: '베로로',
       is_visible: true,
+      coupang_link: 'https://www.coupang.com/vp/products/7654321?itemId=1',
+      // 링크에서 뽑은 상품번호가 판매가 확인의 열쇠다.
+      coupang_product_id: '7654321',
     });
     expect(Array.isArray(payload.ingredients)).toBe(true);
+  });
+
+  it('판매처 링크가 없으면 저장하지 않는다', async () => {
+    renderProducts();
+    fireEvent.click(await screen.findByText('신규 제품 등록'));
+
+    fireEvent.change(screen.getByLabelText('제품명*'), { target: { value: '새 사료' } });
+    fireEvent.change(screen.getByLabelText('브랜드*'), { target: { value: '베로로' } });
+    fireEvent.click(screen.getByText('저장하기'));
+
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      '판매처 링크는 필수입니다. 가격 확인의 근거가 됩니다.',
+    );
+    expect(h.saveProduct).not.toHaveBeenCalled();
   });
 
   it('제품명이 비면 저장하지 않는다', async () => {

@@ -34,6 +34,7 @@ const AdminProducts = lazy(() => import('./pages/admin/AdminProducts'));
 const AdminIngredients = lazy(() => import('./pages/admin/AdminIngredients'));
 const AdminCategories = lazy(() => import('./pages/admin/AdminCategories'));
 const AdminTrash = lazy(() => import('./pages/admin/AdminTrash'));
+const AdminPriceApprovals = lazy(() => import('./pages/admin/AdminPriceApprovals'));
 const AdminMembers = lazy(() => import('./pages/admin/AdminMembers'));
 const AdminDiary = lazy(() => import('./pages/admin/AdminDiary'));
 const AdminWaitlist = lazy(() => import('./pages/admin/AdminWaitlist'));
@@ -175,6 +176,7 @@ function Application() {
           <Route path="settings" element={<AdminSettings />} />
           <Route path="data-quality" element={<AdminDataQuality />} />
           <Route path="trash" element={<AdminTrash />} />
+          <Route path="price-approvals" element={<AdminPriceApprovals />} />
           <Route path="*" element={<AdminNotFound />} />
         </Route>
       </Routes>

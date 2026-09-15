@@ -38,6 +38,22 @@ interface ProductForm {
   kcal_per_100g?: number;
   verification_status?: 'pending' | 'reviewed' | 'verified';
   is_visible?: boolean;
+  /** 판매처 링크 — 판매가 확인의 근거이므로 필수로 받는다. */
+  coupang_link?: string;
+  /** 링크에서 뽑은 쿠팡 productId. 판매가 동기화가 이 값으로 제품을 찾는다. */
+  coupang_product_id?: string;
+}
+
+/**
+ * 쿠팡 상품 링크에서 productId 를 뽑는다.
+ *
+ * 형태: https://www.coupang.com/vp/products/{productId}?itemId=...
+ * 단축 링크(link.coupang.com)에는 productId 가 없어 null 을 돌려준다 —
+ * 그 경우 판매가 자동 확인 대상에서 빠지고 화면이 그 사실을 알려 준다.
+ */
+function extractCoupangProductId(link: string): string | null {
+  const match = link.match(/\/vp\/products\/(\d+)/);
+  return match ? match[1] : null;
 }
 
 /** nutritional_profiles(보장성분) 입력 폼 — 값은 문자열로 다루고 저장 시 숫자로 변환 */
@@ -305,6 +321,15 @@ const AdminProducts: React.FC = () => {
       setFormError('제품명과 브랜드는 필수입니다.');
       return;
     }
+    const sellerLink = (currentProduct.coupang_link || '').trim();
+    if (!sellerLink) {
+      setFormError('판매처 링크는 필수입니다. 가격 확인의 근거가 됩니다.');
+      return;
+    }
+    if (!/^https?:\/\//i.test(sellerLink)) {
+      setFormError('판매처 링크는 http 또는 https 로 시작해야 합니다.');
+      return;
+    }
     for (const { key, label } of NUTRITION_FIELDS) {
       if (!nutrition[key].trim()) continue;
       const value = Number(nutrition[key]);
@@ -330,6 +355,10 @@ const AdminProducts: React.FC = () => {
       image_url: (currentProduct.image_url || '').trim(),
       // 빈 문자열은 부분 유니크 인덱스에서 충돌하므로 null로 정규화
       barcode: (currentProduct.barcode || '').trim() || null,
+      coupang_link: sellerLink,
+      // 링크에서 뽑히면 저장한다. 없으면 기존 값을 지우지 않는다.
+      coupang_product_id:
+        extractCoupangProductId(sellerLink) ?? (currentProduct.coupang_product_id || null),
       kcal_per_100g:
         Number.isFinite(Number(currentProduct.kcal_per_100g)) && Number(currentProduct.kcal_per_100g) > 0
           ? Number(currentProduct.kcal_per_100g)
@@ -782,6 +811,25 @@ const AdminProducts: React.FC = () => {
                 value={currentProduct.barcode}
                 onChange={(value) => setCurrentProduct({ ...currentProduct, barcode: value })}
               />
+              <div className="admin-form-group admin-form-span-2">
+                <label htmlFor="pf-seller-link">판매처 링크 *</label>
+                <input
+                  id="pf-seller-link"
+                  value={currentProduct.coupang_link ?? ''}
+                  onChange={(event) => setCurrentProduct({ ...currentProduct, coupang_link: event.target.value })}
+                  placeholder="https://www.coupang.com/vp/products/1234567890"
+                />
+                <p className="admin-hint">
+                  {(() => {
+                    const link = (currentProduct.coupang_link || '').trim();
+                    if (!link) return '가격이 바뀌었을 때 확인할 근거입니다. 상품 상세 페이지 주소를 넣어 주세요.';
+                    const id = extractCoupangProductId(link);
+                    return id
+                      ? `상품번호 ${id} 를 찾았습니다. 판매가 변동을 자동으로 확인합니다.`
+                      : '이 주소에서는 상품번호를 찾지 못했습니다. 저장은 되지만 판매가 자동 확인 대상에서 빠집니다.';
+                  })()}
+                </p>
+              </div>
 
               {/* 이미지: 업로드가 기본, 외부 URL 직접 입력은 보조 수단으로 유지 */}
               <div className="admin-form-group admin-form-span-2">

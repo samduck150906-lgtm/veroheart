@@ -36,8 +36,23 @@ export async function adminWrite<T = unknown>(
   data: Record<string, unknown> = {},
   tokenOverride?: string,
 ): Promise<T> {
+  return callAdminFunction<T>('admin-write', { action, ...data }, tokenOverride);
+}
+
+/**
+ * 관리자 토큰으로 보호되는 Edge Function 호출.
+ *
+ * admin-write 말고도 관리자만 돌릴 수 있는 함수(예: coupang-price-sync)가 있어
+ * 호출 규약을 한곳에 둔다. 외부 API 키는 함수별 시크릿으로 분리해 두므로,
+ * 관리자 프록시가 쿠팡 키를 알 필요가 없다.
+ */
+export async function callAdminFunction<T = unknown>(
+  functionName: string,
+  body: Record<string, unknown> = {},
+  tokenOverride?: string,
+): Promise<T> {
   const token = tokenOverride ?? readAdminToken() ?? '';
-  const res = await fetch(`${supabaseUrl}/functions/v1/admin-write`, {
+  const res = await fetch(`${supabaseUrl}/functions/v1/${functionName}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -45,7 +60,7 @@ export async function adminWrite<T = unknown>(
       Authorization: `Bearer ${supabaseKey}`,
       'x-admin-token': token,
     },
-    body: JSON.stringify({ action, ...data }),
+    body: JSON.stringify(body),
   });
   const payload = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error((payload as { error?: string })?.error || `요청 실패 (${res.status})`);

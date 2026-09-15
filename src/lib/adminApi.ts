@@ -7,7 +7,7 @@
  *   unmatched_ingredients)만 anon 으로 읽고, RLS 로 막힌 데이터
  *   (회원 목록 등)는 Edge Function 조회 action 을 쓴다.
  */
-import { supabase, adminWrite } from './supabase';
+import { supabase, adminWrite, callAdminFunction } from './supabase';
 import { toOrIlikePattern } from './postgrestPattern';
 
 // ─── 공통 타입 ───────────────────────────────────────────────────────────────
@@ -855,6 +855,90 @@ export async function fetchWaitlistPage(params: WaitlistListParams): Promise<Pag
     marketingConsent: params.marketingConsent ?? null,
   });
   return { rows: res.entries ?? [], total: res.total ?? 0 };
+}
+
+// ─── 판매가 변동 승인 ────────────────────────────────────────────────────────
+
+export type PriceProposalStatus = 'pending' | 'approved' | 'rejected';
+
+export interface PriceProposal {
+  id: string;
+  productId: string;
+  productName: string;
+  brandName: string;
+  imageUrl: string | null;
+  /** 변동을 감지한 시점의 가격. */
+  currentPrice: number | null;
+  /** 지금 DB 에 들어 있는 가격 — 감지 이후 수동으로 바뀌었을 수 있다. */
+  livePrice: number | null;
+  proposedPrice: number;
+  source: 'coupang' | 'manual';
+  sourceUrl: string | null;
+  status: PriceProposalStatus;
+  detectedAt: string;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  note: string | null;
+}
+
+export interface PriceSyncRun {
+  started_at: string;
+  finished_at: string | null;
+  checked: number;
+  changed: number;
+  failed: number;
+  error: string | null;
+}
+
+export async function fetchPriceProposals(params: {
+  page: number;
+  pageSize: number;
+  status?: PriceProposalStatus | 'all';
+}): Promise<Paged<PriceProposal> & { lastRun: PriceSyncRun | null }> {
+  const res = await callAdminFunction<{
+    total: number; proposals: PriceProposal[]; lastRun: PriceSyncRun | null;
+  }>('admin-price-review', {
+    action: 'listPriceProposals',
+    page: params.page,
+    pageSize: params.pageSize,
+    status: params.status ?? 'pending',
+  });
+  return { rows: res.proposals ?? [], total: res.total ?? 0, lastRun: res.lastRun ?? null };
+}
+
+/** 승인하면 그때 products.min_price 가 바뀐다. 거절하면 제품은 그대로다. */
+export async function reviewPriceProposal(
+  id: string,
+  decision: 'approve' | 'reject',
+  note?: string,
+): Promise<{ appliedPrice: number | null }> {
+  const res = await callAdminFunction<{ appliedPrice?: number | null }>('admin-price-review', {
+    action: 'reviewPriceProposal',
+    id,
+    decision,
+    note: note?.trim() || null,
+  });
+  return { appliedPrice: res.appliedPrice ?? null };
+}
+
+/**
+ * 쿠팡 판매가 동기화를 지금 실행한다.
+ *
+ * admin-write 가 아니라 전용 함수(coupang-price-sync)를 호출한다 — 쿠팡 키가
+ * 관리자 프록시와 섞이지 않도록 시크릿을 분리해 두었다.
+ */
+export async function runCoupangPriceSync(): Promise<{
+  checked: number; changed: number; failed: number; failures: string[];
+}> {
+  const res = await callAdminFunction<{
+    checked?: number; changed?: number; failed?: number; failures?: string[];
+  }>('coupang-price-sync', {});
+  return {
+    checked: res.checked ?? 0,
+    changed: res.changed ?? 0,
+    failed: res.failed ?? 0,
+    failures: res.failures ?? [],
+  };
 }
 
 // ─── 제품명 일괄 정리 ────────────────────────────────────────────────────────
