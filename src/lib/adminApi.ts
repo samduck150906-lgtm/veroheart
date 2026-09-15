@@ -1154,3 +1154,54 @@ export async function saveSettings(settings: SettingsMap): Promise<number> {
   const res = await adminWrite<{ saved: number }>('saveSettings', { settings: filtered });
   return res.saved ?? 0;
 }
+
+// ── 성분 위험도 검수 ────────────────────────────────────────────────────────
+
+/**
+ * 검수 화면이 쓰는 성분 전체 + 성분별 사용 제품 수.
+ *
+ * 제품 수는 anon 키로는 한 번에 집계할 수 없어 전용 함수를 쓴다. 이 값이 있어야
+ * "몇 개 제품에 영향이 가는지" 보고 우선순위를 정할 수 있다.
+ */
+export async function fetchRiskReviewIngredients(): Promise<ReviewedIngredientRow[]> {
+  const res = await callAdminFunction<{ ingredients?: ReviewedIngredientRow[] }>(
+    'admin-ingredient-review',
+    { action: 'listRiskReview' },
+  );
+  return res.ingredients ?? [];
+}
+
+export interface ReviewedIngredientRow {
+  id: string;
+  name_ko: string;
+  name_en: string | null;
+  risk_level: RiskLevel;
+  category: string | null;
+  description: string | null;
+  productCount: number;
+}
+
+export interface RiskDecisionInput {
+  updates: { id: string; riskLevel: RiskLevel }[];
+  creates: {
+    nameKo: string;
+    nameEn: string | null;
+    riskLevel: RiskLevel;
+    category: string | null;
+    description: string | null;
+  }[];
+}
+
+/** 한 요청에 담을 수 있는 결정 수 — Edge Function 의 상한과 같다. */
+export const RISK_DECISION_BATCH = 100;
+
+/** 운영자가 고른 검수 결정을 반영한다. 바뀐 내역은 서버에서 감사 로그에 남는다. */
+export async function applyRiskDecisions(
+  input: RiskDecisionInput,
+): Promise<{ updated: number; created: number; skipped: string[] }> {
+  const res = await callAdminFunction<{ updated?: number; created?: number; skipped?: string[] }>(
+    'admin-ingredient-review',
+    { action: 'applyRiskDecisions', updates: input.updates, creates: input.creates },
+  );
+  return { updated: res.updated ?? 0, created: res.created ?? 0, skipped: res.skipped ?? [] };
+}

@@ -4,6 +4,7 @@ import { Plus, Search, Edit2, Trash2, X, Database, AlertTriangle } from 'lucide-
 import { notify } from '../../store/useNotification';
 import standardFeedData from '../../data/standard_feed_data.json';
 import AdminUnmatched from './AdminUnmatched';
+import AdminRiskReview from './AdminRiskReview';
 import {
   deleteIngredient,
   fetchIngredients,
@@ -145,15 +146,16 @@ const EMPTY_FORM: FormState = {
   nutrition_source: '',
 };
 
-type IngredientTab = 'dictionary' | 'unmatched';
+type IngredientTab = 'dictionary' | 'unmatched' | 'risk';
 
 const AdminIngredients: React.FC = () => {
   const [urlParams, setUrlParams] = useSearchParams();
   // 미매칭 성분은 별도 사이드바 메뉴였으나, 같은 성분 사전을 두 곳에서 관리하게 돼
   // 여기 탭으로 합쳤다. 기존 링크(?tab=unmatched)도 그대로 열린다.
-  const tab: IngredientTab = urlParams.get('tab') === 'unmatched' ? 'unmatched' : 'dictionary';
+  const rawTab = urlParams.get('tab');
+  const tab: IngredientTab = rawTab === 'unmatched' || rawTab === 'risk' ? rawTab : 'dictionary';
   const selectTab = (next: IngredientTab) => {
-    setUrlParams(next === 'unmatched' ? { tab: 'unmatched' } : {}, { replace: true });
+    setUrlParams(next === 'dictionary' ? {} : { tab: next }, { replace: true });
   };
 
   const [ingredients, setIngredients] = useState<AdminIngredient[]>([]);
@@ -412,6 +414,7 @@ const AdminIngredients: React.FC = () => {
 
   const tabs: { key: IngredientTab; label: string }[] = [
     { key: 'dictionary', label: '성분 사전' },
+    { key: 'risk', label: '위험도 검수' },
     { key: 'unmatched', label: '미매칭 성분 검수' },
   ];
 
@@ -436,6 +439,15 @@ const AdminIngredients: React.FC = () => {
       <div>
         {tabNav}
         <AdminUnmatched />
+      </div>
+    );
+  }
+
+  if (tab === 'risk') {
+    return (
+      <div>
+        {tabNav}
+        <AdminRiskReview />
       </div>
     );
   }
