@@ -76,6 +76,7 @@ export const ALLOWED_ACTIONS = new Set([
   'listTrash',
   'restoreTrash',
   'purgeTrash',
+  'applyProductCleanup',
 ]);
 
 export const MAX_NAME_LEN = 200;
@@ -231,6 +232,42 @@ export function normalizeCategoryOrder(raw: unknown): string[] {
     if (seen.has(id)) throw new ValidationError('같은 카테고리가 순서에 중복으로 들어 있습니다.');
     seen.add(id);
     return id;
+  });
+}
+
+/** 제품명 일괄 정리는 한 번에 이만큼까지만 받는다(요청 하나가 너무 길어지지 않게). */
+export const MAX_PRODUCT_CLEANUP_ITEMS = 100;
+
+export interface ProductCleanupItem {
+  id: string;
+  name: string;
+  brand_name: string;
+}
+
+/**
+ * 제품명·브랜드 일괄 정리 payload.
+ *
+ * 값 자체는 관리자가 화면에서 보고 고른 결과이므로 여기서 다시 문구를 고치지
+ * 않는다. 다만 빈 이름이나 잘못된 id 가 섞여 제품이 망가지는 것만 막는다.
+ */
+export function normalizeProductCleanupItems(raw: unknown): ProductCleanupItem[] {
+  if (!Array.isArray(raw)) throw new ValidationError('정리할 제품 목록 형식이 올바르지 않습니다.');
+  if (raw.length === 0) throw new ValidationError('정리할 제품이 없습니다.');
+  if (raw.length > MAX_PRODUCT_CLEANUP_ITEMS) {
+    throw new ValidationError(`한 번에 최대 ${MAX_PRODUCT_CLEANUP_ITEMS}개까지 정리할 수 있습니다.`);
+  }
+
+  const seen = new Set<string>();
+  return raw.map((item) => {
+    const row = (item ?? {}) as Record<string, unknown>;
+    const id = requireUuid(row.id, '제품 ID');
+    if (seen.has(id)) throw new ValidationError('같은 제품이 목록에 중복으로 들어 있습니다.');
+    seen.add(id);
+    return {
+      id,
+      name: requireText(row.name, '제품명'),
+      brand_name: requireText(row.brandName ?? row.brand_name, '브랜드'),
+    };
   });
 }
 

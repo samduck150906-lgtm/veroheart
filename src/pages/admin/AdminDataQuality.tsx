@@ -9,6 +9,7 @@ import {
   type EnrichmentStatus,
 } from '../../lib/adminApi';
 import { notify } from '../../store/useNotification';
+import AdminProductCleanup from './AdminProductCleanup';
 
 const PAGE_SIZE = 20;
 const STATUS_OPTIONS: Array<{ value: 'all' | EnrichmentStatus; label: string }> = [
@@ -33,8 +34,12 @@ function sourceCount(row: EnrichmentQueueRow): number {
   return row.source_count ?? 0;
 }
 
+type QualityTab = 'queue' | 'names';
+
 export default function AdminDataQuality() {
   const [params, setParams] = useSearchParams();
+  // 데이터 품질은 "덜 채워진 제품"과 "지저분한 제품명" 두 가지 작업을 다룬다.
+  const tab: QualityTab = params.get('tab') === 'names' ? 'names' : 'queue';
   const [rows, setRows] = useState<EnrichmentQueueRow[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -72,14 +77,18 @@ export default function AdminDataQuality() {
     }
   }, [missingField, page, status]);
 
-  useEffect(() => { load(); }, [load]);
   useEffect(() => {
+    // 제품명 정리 탭에서는 보완 큐를 조회하지 않는다.
+    if (tab === 'queue') load();
+  }, [load, tab]);
+  useEffect(() => {
+    if (tab !== 'queue') return;
     const next = new URLSearchParams();
     if (page > 1) next.set('page', String(page));
     if (status !== 'all') next.set('status', status);
     if (missingField !== 'all') next.set('missing', missingField);
     setParams(next, { replace: true });
-  }, [missingField, page, setParams, status]);
+  }, [missingField, page, setParams, status, tab]);
 
   const displayedRange = useMemo(() => {
     if (total === 0) return '0건';
@@ -136,8 +145,37 @@ export default function AdminDataQuality() {
     }
   };
 
+  const tabNav = (
+    <div className="admin-filter-row" style={{ marginBottom: 14 }}>
+      {([
+        { key: 'queue' as const, label: '보완 큐' },
+        { key: 'names' as const, label: '제품명 정리' },
+      ]).map((item) => (
+        <button
+          type="button"
+          key={item.key}
+          className={`admin-chip ${tab === item.key ? 'active' : ''}`}
+          onClick={() => setParams(item.key === 'names' ? { tab: 'names' } : {}, { replace: true })}
+          aria-current={tab === item.key ? 'page' : undefined}
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
+  );
+
+  if (tab === 'names') {
+    return (
+      <div>
+        {tabNav}
+        <AdminProductCleanup />
+      </div>
+    );
+  }
+
   return (
     <div>
+      {tabNav}
       <div className="admin-card" style={{ marginBottom: 14 }}>
         <div className="admin-card-title-row">
           <div>

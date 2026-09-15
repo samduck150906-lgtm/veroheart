@@ -1522,3 +1522,11 @@
   background: #fef3c7;
   color: #92400e;
 }
+
+/* 제품명 정리 — 긴 판매 제목을 줄바꿈해 전후를 나란히 비교한다. */
+.admin-cleanup-name {
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.5;
+  max-width: 34ch;
+}

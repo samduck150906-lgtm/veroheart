@@ -15,6 +15,7 @@ import {
   normalizeNutritionPayload,
   normalizeCategoryOrder,
   normalizeCategoryPayload,
+  normalizeProductCleanupItems,
   normalizeProductIngredientItems,
   normalizeProductPayload,
   normalizeSettingsPayload,
@@ -1347,6 +1348,61 @@ serve(async (req) => {
           label: entry.label,
         });
         return json({ ok: true }, 200, cors);
+      }
+
+      /**
+       * 제품명·브랜드 일괄 정리.
+       *
+       * 쿠팡 판매 제목이 그대로 들어와 옵션 문자열과 키워드 나열이 붙어 있다.
+       * 제안은 클라이언트가 만들고 운영자가 화면에서 고른 뒤, 여기서는 고른 값만
+       * 그대로 저장한다. 되돌릴 수 있도록 바꾸기 전 값을 감사 로그에 남긴다.
+       */
+      case 'applyProductCleanup': {
+        const items = normalizeProductCleanupItems(body.items);
+        const ids = items.map((item) => item.id);
+
+        const { data: before, error: loadError } = await db
+          .from('products')
+          .select('id, name, brand_name')
+          .in('id', ids);
+        if (loadError) throw loadError;
+        const previous = new Map(
+          (before ?? []).map((row: { id: string; name: string; brand_name: string }) => [
+            row.id,
+            { name: row.name, brand_name: row.brand_name },
+          ]),
+        );
+
+        const applied: { id: string; from: unknown; to: unknown }[] = [];
+        for (const item of items) {
+          const original = previous.get(item.id);
+          if (!original) continue;
+          // 이미 같은 값이면 굳이 쓰지 않는다.
+          if (original.name === item.name && original.brand_name === item.brand_name) continue;
+
+          const { data, error } = await db
+            .from('products')
+            .update({ name: item.name, brand_name: item.brand_name })
+            .eq('id', item.id)
+            .select('id, name, brand_name')
+            .single();
+          if (error) throw error;
+          if (!data || data.name !== item.name || data.brand_name !== item.brand_name) {
+            throw new Error(`제품 정리 결과를 확인하지 못했습니다: ${item.name}`);
+          }
+          applied.push({
+            id: item.id,
+            from: original,
+            to: { name: item.name, brand_name: item.brand_name },
+          });
+        }
+
+        await audit(db, actor, 'applyProductCleanup', 'products', null, {
+          requested: items.length,
+          applied: applied.length,
+          changes: applied,
+        });
+        return json({ ok: true, requested: items.length, applied: applied.length }, 200, cors);
       }
 
       // ── 앱 카테고리 ─────────────────────────────────────────────────────

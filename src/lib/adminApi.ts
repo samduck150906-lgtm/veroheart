@@ -857,6 +857,57 @@ export async function fetchWaitlistPage(params: WaitlistListParams): Promise<Pag
   return { rows: res.entries ?? [], total: res.total ?? 0 };
 }
 
+// ─── 제품명 일괄 정리 ────────────────────────────────────────────────────────
+
+/** 정리 대상 후보를 만들기 위해 제품명·브랜드만 가볍게 전건 조회한다. */
+export interface ProductNameRow {
+  id: string;
+  name: string;
+  brand_name: string;
+  main_category: string | null;
+  image_url: string | null;
+}
+
+export async function fetchProductNames(): Promise<ProductNameRow[]> {
+  const rows: ProductNameRow[] = [];
+  const pageSize = 1000;
+
+  for (let offset = 0; offset < 100_000; offset += pageSize) {
+    const { data, error } = await supabase
+      .from('products')
+      .select('id, name, brand_name, main_category, image_url')
+      .order('name', { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (error) throw new Error(error.message);
+    const batch = (data ?? []) as ProductNameRow[];
+    rows.push(...batch);
+    if (batch.length < pageSize) return rows;
+  }
+  throw new Error('제품 수가 정리 도구 조회 한도를 초과했습니다.');
+}
+
+export interface ProductCleanupItem {
+  id: string;
+  name: string;
+  brandName: string;
+}
+
+/** 한 번에 보낼 수 있는 최대 건수 — Edge Function 검증과 같은 값이어야 한다. */
+export const PRODUCT_CLEANUP_BATCH = 100;
+
+export async function applyProductCleanup(
+  items: ProductCleanupItem[],
+): Promise<{ requested: number; applied: number }> {
+  if (items.length === 0) return { requested: 0, applied: 0 };
+  if (items.length > PRODUCT_CLEANUP_BATCH) {
+    throw new Error(`한 번에 최대 ${PRODUCT_CLEANUP_BATCH}개까지 정리할 수 있습니다.`);
+  }
+  const res = await adminWrite<{ requested?: number; applied?: number }>('applyProductCleanup', {
+    items,
+  });
+  return { requested: res.requested ?? items.length, applied: res.applied ?? 0 };
+}
+
 // ─── 휴지통(삭제 복원) ───────────────────────────────────────────────────────
 
 export type TrashEntityType = 'product' | 'ingredient';
