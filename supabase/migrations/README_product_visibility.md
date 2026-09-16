@@ -10,13 +10,17 @@
 
 ```
 is_visible = true
-AND (NOT hide_unverified_products_enabled() OR verification_status = 'verified')
+AND (NOT private.hide_unverified_products_enabled() OR verification_status = 'verified')
 ```
 
 - `is_visible = false` → 언제나 미노출
 - 검수 게이트(`app_settings.hide_unverified_products`)가 켜지면 `verified` 만 노출
 
 `service_role` 은 RLS 를 우회하므로 관리자 경로는 영향받지 않는다.
+
+게이트 판정 함수는 `private` 스키마에 둔다. `public` 에 두면 SECURITY DEFINER
+함수가 `/rest/v1/rpc/...` 로 외부에 노출된다 — 정책이 부르려면 anon 에게
+EXECUTE 가 필요해 권한을 회수할 수 없으므로, 노출 스키마 밖으로 옮겨서 막는다.
 
 ## 검수 게이트를 켜기 전에
 
