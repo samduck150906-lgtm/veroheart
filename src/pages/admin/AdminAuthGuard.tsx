@@ -1,7 +1,12 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { ShieldCheck, Lock, Loader2 } from 'lucide-react';
 import { adminWrite } from '../../lib/supabase';
-import { clearAdminSession, readAdminToken, storeAdminToken } from '../../lib/adminSession';
+import {
+  ADMIN_SESSION_EXPIRED_EVENT,
+  clearAdminSession,
+  readAdminToken,
+  storeAdminToken,
+} from '../../lib/adminSession';
 import './admin.css';
 
 interface AdminAuthGuardProps {
@@ -41,6 +46,22 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
     return () => {
       active = false;
     };
+  }, []);
+
+  // 세션이 끊기면(8시간 TTL 만료, 서버 401) 어느 화면에 있든 로그인으로 돌린다.
+  //
+  // 이 처리가 없으면 화면마다 자기 문구로 감싼 오류가 뜬다 — 설정 화면은
+  // "설정을 불러오지 못했습니다", 다이어리는 "다이어리 기록을 불러오지
+  // 못했습니다". 정작 필요한 행동은 다시 로그인하는 것 하나뿐인데, 그 말이
+  // 어디에도 나오지 않아 운영자는 기능이 고장 난 것으로 읽는다.
+  useEffect(() => {
+    const onExpired = () => {
+      setIsAuthenticated(false);
+      setIsLoading(false);
+      setError('로그인이 만료되었습니다. 다시 로그인해 주세요.');
+    };
+    window.addEventListener(ADMIN_SESSION_EXPIRED_EVENT, onExpired);
+    return () => window.removeEventListener(ADMIN_SESSION_EXPIRED_EVENT, onExpired);
   }, []);
 
   const handleAdminLogin = async () => {

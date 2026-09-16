@@ -4,6 +4,7 @@ import {
   ExternalLink,
   FlaskConical,
   Home,
+  Inbox,
   LayoutDashboard,
   LayoutList,
   LogOut,
@@ -27,6 +28,7 @@ const MENU_DESCRIPTIONS: Record<string, string> = {
   '/admin/products': '앱에 노출되는 제품을 등록·수정하고 노출 여부와 상단 고정을 관리합니다.',
   '/admin/categories': '앱 홈·검색에 보이는 카테고리와 그 순서를 직접 관리합니다.',
   '/admin/price-approvals': '판매처에서 가격이 바뀐 제품입니다. 승인해야 앱 가격이 바뀝니다.',
+  '/admin/product-requests': '사용자가 검색했지만 없어서 등록을 요청한 제품입니다.',
   '/admin/ingredients': '성분 사전을 관리하고, 사전에 없어 매칭되지 않은 원료명을 검수합니다.',
   '/admin/data-quality': '원재료·영양정보·바코드·이미지가 빠진 제품을 공식 출처로 채워 넣는 작업 목록입니다.',
   '/admin/users': '가입한 회원을 조회하고 필요하면 탈퇴 처리합니다.',
@@ -46,6 +48,7 @@ const AdminLayout: React.FC = () => {
       { path: '/admin/products', icon: <ShoppingBag size={18} />, label: '제품 관리' },
       { path: '/admin/categories', icon: <LayoutList size={18} />, label: '카테고리 관리' },
       { path: '/admin/price-approvals', icon: <Tag size={18} />, label: '판매가 승인' },
+      { path: '/admin/product-requests', icon: <Inbox size={18} />, label: '제품 등록 요청' },
       // 미매칭 성분은 성분 사전 안의 탭으로 옮겼다(같은 사전을 두 곳에서 관리하지 않는다).
       { path: '/admin/ingredients', icon: <FlaskConical size={18} />, label: '성분 관리' },
       { path: '/admin/data-quality', icon: <DatabaseZap size={18} />, label: '데이터 품질' },

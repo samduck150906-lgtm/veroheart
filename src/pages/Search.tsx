@@ -13,6 +13,7 @@ import {
 import ProductRow from '../components/ProductRow';
 import StateView from '../components/StateView';
 import BottomSheet from '../components/BottomSheet';
+import ProductRequestSheet from '../components/ProductRequestSheet';
 import { ProductGridSkeleton } from '../components/Skeleton';
 import type { Product } from '../types';
 import { TossFilterSection } from '../components/TossUI';
@@ -22,8 +23,7 @@ import standardFeedData from '../data/standard_feed_data.json';
 import { rankProductsForProfile } from '../utils/score';
 import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import FilterChip from '../components/ui/FilterChip';
-import { COMPANY } from '../constants/companyInfo';
-import { buildSearchSuggestions, deriveBrandOptions, type Suggestion } from '../utils/searchSuggestions';
+import { buildSearchSuggestions, deriveBrandOptions, ingredientsUsedBy, type Suggestion } from '../utils/searchSuggestions';
 import { productsForPetFilter, visibleSymptomKeywords } from '../utils/searchKeywords';
 import { isHealthFilterAvailable } from '../utils/healthFilterAvailability';
 import { VR } from '../lib/veroroDesign';
@@ -162,9 +162,25 @@ export default function Search() {
   const [allIngredients, setAllIngredients] = useState<{ id: string; name_ko: string; risk_level: string }[]>([]);
   const [ingredientSearch, setIngredientSearch] = useState('');
 
+  const [requestOpen, setRequestOpen] = useState(false);
+
+  // 제안은 결과와 같은 조건에서 만든다.
+  //
+  // 결과 조회(searchProducts)는 종 필터를 함께 걸기 때문에, 제안만 전체 목록에서
+  // 뽑으면 고양이 보호자에게 강아지 전용 제품·그 제품에만 있는 성분이 뜨고,
+  // 눌렀을 때 "검색 결과가 없어요"가 된다. 아래 shownKeywords 가 이미 같은
+  // 이유로 productsForPetFilter 를 쓰고 있다 — 제안도 같은 기준을 따른다.
+  const suggestibleProducts = useMemo(
+    () => productsForPetFilter(products, filters.targetPetType),
+    [products, filters.targetPetType],
+  );
+  const suggestibleIngredients = useMemo(
+    () => ingredientsUsedBy(suggestibleProducts, allIngredients),
+    [suggestibleProducts, allIngredients],
+  );
   const suggestions = useMemo<Suggestion[]>(
-    () => buildSearchSuggestions(query, products, allIngredients),
-    [query, products, allIngredients],
+    () => buildSearchSuggestions(query, suggestibleProducts, suggestibleIngredients),
+    [query, suggestibleProducts, suggestibleIngredients],
   );
 
   const filteredIngList = useMemo(
@@ -350,8 +366,8 @@ export default function Search() {
   // 눌렀을 때 결과가 0건인 키워드는 보여주지 않는다.
   // 검색이 종 필터까지 함께 걸기 때문에 같은 조건에서 세어야 어긋나지 않는다.
   const shownKeywords = useMemo(
-    () => visibleSymptomKeywords(productsForPetFilter(products, filters.targetPetType)),
-    [products, filters.targetPetType],
+    () => visibleSymptomKeywords(suggestibleProducts),
+    [suggestibleProducts],
   );
 
   const showDiscovery = query.trim() === '';
@@ -589,18 +605,19 @@ export default function Search() {
           action={{ label: '필터 조정', onClick: () => setIsFilterOpen(true) }}
           secondaryAction={{
             label: '＋ 제품 등록 요청하기',
-            onClick: () => {
-              const q = query.trim();
-              const subject = encodeURIComponent(`[제품 등록 요청] ${q}`.trim());
-              const body = encodeURIComponent(
-                `등록을 요청하는 제품명: ${q}\n브랜드/용량(선택): \n제품 링크(선택): \n\n※ 베로로 검색에서 찾을 수 없어 등록을 요청합니다.`,
-              );
-              window.location.href = `mailto:${COMPANY.email}?subject=${subject}&body=${body}`;
-            },
+            // mailto: 는 메일 앱이 없는 기기에서 아무 일도 일어나지 않았고, 열려도
+            // 기록이 남지 않아 무엇이 요청됐는지 알 수 없었다. 이제 DB 에 남긴다.
+            onClick: () => setRequestOpen(true),
           }}
           minHeight={280}
         />
       )}
+
+      <ProductRequestSheet
+        isOpen={requestOpen}
+        onClose={() => setRequestOpen(false)}
+        searchQuery={query.trim()}
+      />
 
       <BottomSheet
         isOpen={isFilterOpen}

@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { notify } from '../store/useNotification';
 import type { FeedingLogInput, PetFeedingLog, Product, SupabasePet } from '../types';
-import { readAdminToken } from './adminSession';
+import { AdminSessionExpiredError, notifyAdminSessionExpired, readAdminToken } from './adminSession';
 import { toExactIlikePattern, toOrIlikePattern } from './postgrestPattern';
 import {
   mapFeedingLogFromRow,
@@ -52,6 +52,14 @@ export async function callAdminFunction<T = unknown>(
   tokenOverride?: string,
 ): Promise<T> {
   const token = tokenOverride ?? readAdminToken() ?? '';
+  // 토큰이 없으면(= TTL 이 지나 readAdminToken 이 비웠으면) 서버에 빈 헤더를 보내
+  // 401 을 받아 오지 말고 여기서 끝낸다. 그래야 화면이 "설정을 불러오지
+  // 못했습니다" 같은 엉뚱한 문구 대신 로그인 만료로 처리할 수 있다.
+  if (!token) {
+    notifyAdminSessionExpired();
+    throw new AdminSessionExpiredError();
+  }
+
   const res = await fetch(`${supabaseUrl}/functions/v1/${functionName}`, {
     method: 'POST',
     headers: {
@@ -63,6 +71,12 @@ export async function callAdminFunction<T = unknown>(
     body: JSON.stringify(body),
   });
   const payload = await res.json().catch(() => ({}));
+  // 서버가 서명·만료를 다시 검증하므로, 클라이언트 TTL 이 남아 있어도 401 이 올 수
+  // 있다(시계 차이, 시크릿 교체 등). 같은 만료 처리로 보낸다.
+  if (res.status === 401) {
+    notifyAdminSessionExpired();
+    throw new AdminSessionExpiredError();
+  }
   if (!res.ok) throw new Error((payload as { error?: string })?.error || `요청 실패 (${res.status})`);
   return payload as T;
 }
@@ -1007,3 +1021,63 @@ export async function deleteFeedingLog(logId: string, userId: string): Promise<b
 }
 
 
+
+// ─── 제품 등록 요청 (product_requests) ──────────────────────────────────────
+
+export interface ProductRequestInput {
+  /** 등록을 요청하는 제품명. 검색어를 기본값으로 채워 준다. */
+  requestedName: string;
+  /** 요청 당시 검색어 — 요청명과 다를 수 있어 따로 남긴다. */
+  searchQuery?: string;
+  productUrl?: string;
+  note?: string;
+}
+
+export type ProductRequestResult =
+  | { ok: true }
+  | { ok: false; reason: 'unauthenticated' | 'duplicate' | 'error'; message: string };
+
+/**
+ * 제품 등록 요청을 저장한다.
+ *
+ * 예전에는 mailto: 링크였다 — 메일 앱이 없는 기기에서는 아무 일도 일어나지 않고,
+ * 열리더라도 기록이 남지 않아 무엇이 얼마나 요청됐는지 알 수 없었다. 지금은 행을
+ * 남겨 관리자가 "어떤 제품을 먼저 채워야 하는지" 판단할 수 있게 한다.
+ *
+ * 같은 사람이 같은 제품을 반복 요청하면 DB 의 부분 UNIQUE 인덱스가 막는다.
+ * 그건 오류가 아니라 "이미 접수됨"이므로 그렇게 구분해 돌려준다.
+ */
+export async function createProductRequest(
+  input: ProductRequestInput,
+): Promise<ProductRequestResult> {
+  if (!isSupabaseConfigured) {
+    return { ok: false, reason: 'error', message: '서버에 연결할 수 없습니다.' };
+  }
+
+  const name = input.requestedName.trim();
+  if (!name) return { ok: false, reason: 'error', message: '제품명을 입력해 주세요.' };
+
+  const { data: auth } = await supabase.auth.getUser();
+  const userId = auth?.user?.id;
+  if (!userId) {
+    return { ok: false, reason: 'unauthenticated', message: '로그인 후 요청할 수 있습니다.' };
+  }
+
+  const { error } = await supabase.from('product_requests').insert({
+    user_id: userId,
+    requested_name: name.slice(0, 200),
+    search_query: input.searchQuery?.trim()?.slice(0, 200) || null,
+    product_url: input.productUrl?.trim()?.slice(0, 500) || null,
+    note: input.note?.trim()?.slice(0, 1000) || null,
+  });
+
+  if (error) {
+    // 23505 = 부분 UNIQUE 인덱스 충돌 → 같은 사람의 같은 제품 대기 요청이 이미 있다.
+    if (error.code === '23505') {
+      return { ok: false, reason: 'duplicate', message: '이미 등록을 요청한 제품이에요.' };
+    }
+    console.error('createProductRequest error:', error.message);
+    return { ok: false, reason: 'error', message: '요청을 저장하지 못했습니다.' };
+  }
+  return { ok: true };
+}

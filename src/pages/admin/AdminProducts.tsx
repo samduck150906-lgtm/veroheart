@@ -3,8 +3,11 @@ import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { Plus, Search, Edit2, Trash2, X, Upload, ChevronLeft, ChevronRight, AlertTriangle, Eye, EyeOff, Pin, PinOff } from 'lucide-react';
 import { notify } from '../../store/useNotification';
+import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
 import ProductIngredientsEditor from './ProductIngredientsEditor';
-import {
+import {  type BulkProductPatch,
+  bulkUpdateProducts,
+  BULK_PRODUCT_LIMIT,
   deleteProduct as deleteProductApi,
   fetchCategories,
   saveIngredient,
@@ -115,6 +118,8 @@ const AdminProducts: React.FC = () => {
   const [urlParams, setUrlParams] = useSearchParams();
 
   const [products, setProducts] = useState<AdminProductRow[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(() => Math.max(1, Number(urlParams.get('page')) || 1));
   const [loading, setLoading] = useState(true);
@@ -196,6 +201,8 @@ const AdminProducts: React.FC = () => {
         visibility,
       });
       setProducts(rows);
+      // 목록이 바뀌면 선택을 비운다 — 화면에 없는 제품이 선택된 채 남지 않게.
+      setSelectedIds(new Set());
       setTotal(count);
       // 삭제 등으로 현재 페이지가 비면 이전 페이지로 이동
       if (rows.length === 0 && count > 0 && page > 1) {
@@ -528,6 +535,58 @@ const AdminProducts: React.FC = () => {
     return `${from.toLocaleString()}–${to.toLocaleString()}`;
   }, [page, total]);
 
+  // 등록/수정 폼이 열려 있는 동안 탭 닫기·새로고침·뒤로가기를 경고한다.
+  // 모달 바깥 클릭은 이미 막아 두었지만 그 경로들은 따로 막히지 않는다.
+  useUnsavedChangesWarning(isModalOpen);
+
+  const allSelected = products.length > 0 && products.every((row) => selectedIds.has(row.id));
+
+  const toggleAll = () => {
+    setSelectedIds(allSelected ? new Set() : new Set(products.map((row) => row.id)));
+  };
+
+  const toggleOne = (id: string) => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  /**
+   * 선택한 제품을 한 번에 바꾼다.
+   *
+   * 요청 수와 실제 반영 수를 비교해 알린다 — 일부만 바뀌었는데 "전부 성공"으로
+   * 보여 주면 운영자가 확인하지 않고 넘어간다.
+   */
+  const runBulk = async (patch: BulkProductPatch, label: string, destructive = false) => {
+    const ids = [...selectedIds];
+    if (bulkBusy || ids.length === 0) return;
+    if (ids.length > BULK_PRODUCT_LIMIT) {
+      notify.error(`한 번에 최대 ${BULK_PRODUCT_LIMIT}개까지 변경할 수 있습니다.`);
+      return;
+    }
+    if (destructive && !window.confirm(`선택한 ${ids.length}개 제품을 ${label} 처리할까요?`)) return;
+
+    setBulkBusy(true);
+    try {
+      const result = await bulkUpdateProducts(ids, patch);
+      if (result.updated === result.requested) {
+        notify.success(`제품 ${result.updated.toLocaleString()}개를 ${label} 처리했습니다.`);
+      } else {
+        notify.warning(
+          `${result.requested.toLocaleString()}개 중 ${result.updated.toLocaleString()}개만 ${label} 처리됐습니다.`,
+        );
+      }
+      await loadProducts();
+    } catch (err) {
+      notify.error(`일괄 처리 실패: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
   return (
     <div>
       <div className="admin-toolbar">
@@ -601,10 +660,37 @@ const AdminProducts: React.FC = () => {
         />
       </div>
 
+      {selectedIds.size > 0 && (
+        <div className="admin-card" style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <strong style={{ fontSize: 14 }}>{selectedIds.size.toLocaleString()}개 선택됨</strong>
+          <div className="admin-actions" style={{ flexWrap: 'wrap' }}>
+            <button type="button" className="admin-btn-soft" disabled={bulkBusy}
+              onClick={() => runBulk({ isVisible: true }, '앱 노출')}>앱 노출</button>
+            <button type="button" className="admin-btn-soft" disabled={bulkBusy}
+              onClick={() => runBulk({ isVisible: false }, '앱 미노출', true)}>앱 미노출</button>
+            <button type="button" className="admin-btn-soft" disabled={bulkBusy}
+              onClick={() => runBulk({ verificationStatus: 'verified' }, '검수 완료')}>검수 완료</button>
+            <button type="button" className="admin-btn-soft" disabled={bulkBusy}
+              onClick={() => runBulk({ verificationStatus: 'pending' }, '검수 대기', true)}>검수 대기로</button>
+            <button type="button" className="admin-btn-soft" disabled={bulkBusy}
+              onClick={() => setSelectedIds(new Set())}>선택 해제</button>
+          </div>
+        </div>
+      )}
+
       <div className="admin-table-wrap">
         <table className="admin-table">
           <thead>
             <tr>
+              <th style={{ width: 40 }}>
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={toggleAll}
+                  disabled={products.length === 0}
+                  aria-label="이 페이지 제품 전체 선택"
+                />
+              </th>
               <th>아이템</th>
               <th>카테고리</th>
               <th>타겟</th>
@@ -620,13 +706,13 @@ const AdminProducts: React.FC = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={10}>
+                <td colSpan={11}>
                   <div className="admin-empty">데이터를 불러오는 중입니다...</div>
                 </td>
               </tr>
             ) : loadError ? (
               <tr>
-                <td colSpan={10}>
+                <td colSpan={11}>
                   <div className="admin-empty">
                     제품을 불러오지 못했습니다.
                     <button type="button" className="admin-btn-soft" style={{ marginLeft: 10 }} onClick={loadProducts}>
@@ -637,7 +723,7 @@ const AdminProducts: React.FC = () => {
               </tr>
             ) : products.length === 0 ? (
               <tr>
-                <td colSpan={10}>
+                <td colSpan={11}>
                   <div className="admin-empty">
                     {search || activeTab !== '전체' || petType !== '전체' || verificationStatus !== '전체' || visibility !== '전체'
                       ? '검색 조건에 맞는 제품이 없습니다.'
@@ -648,6 +734,14 @@ const AdminProducts: React.FC = () => {
             ) : (
               products.map((p) => (
                 <tr key={p.id}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(p.id)}
+                      onChange={() => toggleOne(p.id)}
+                      aria-label={`${p.name} 선택`}
+                    />
+                  </td>
                   <td>
                     <div className="admin-item-cell">
                       {p.image_url ? (

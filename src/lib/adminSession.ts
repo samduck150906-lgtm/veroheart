@@ -55,3 +55,34 @@ export function clearAdminSession(): void {
   store.removeItem(ADMIN_TOKEN_KEY);
   store.removeItem(ADMIN_TOKEN_ISSUED_KEY);
 }
+
+/**
+ * 관리자 세션이 끊겼을 때 던지는 오류.
+ *
+ * 화면마다 자기 도메인 문구로 감싸면 안 되는 오류다. 세션이 만료되면 설정·
+ * 다이어리·제품 화면이 각각 "설정을 불러오지 못했습니다", "다이어리 기록을
+ * 불러오지 못했습니다"를 띄우는데, 실제로 필요한 행동은 다시 로그인하는 것
+ * 하나뿐이다. 이 타입으로 구분해 로그인 화면으로 돌려보낸다.
+ */
+export class AdminSessionExpiredError extends Error {
+  constructor(message = '관리자 세션이 만료되었습니다. 다시 로그인해 주세요.') {
+    super(message);
+    this.name = 'AdminSessionExpiredError';
+  }
+}
+
+/** 세션 만료를 화면(AdminAuthGuard)에 알리는 이벤트 이름. */
+export const ADMIN_SESSION_EXPIRED_EVENT = 'veroro:admin-session-expired';
+
+/**
+ * 세션을 정리하고 만료를 알린다.
+ *
+ * 호출부가 여러 곳(토큰 없음/서버 401)이라 한곳에 모아 둔다. 이벤트를 쓰는 이유는
+ * lib 계층이 라우터에 의존하지 않게 하기 위해서다.
+ */
+export function notifyAdminSessionExpired(): void {
+  clearAdminSession();
+  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+    window.dispatchEvent(new CustomEvent(ADMIN_SESSION_EXPIRED_EVENT));
+  }
+}

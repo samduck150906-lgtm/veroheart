@@ -1341,3 +1341,76 @@ export async function saveProductFacts(items: ProductFactsInput[]): Promise<{ sa
   });
   return { saved: res.saved ?? 0 };
 }
+
+// ── 사용자 제품 등록 요청 ───────────────────────────────────────────────────
+
+export type ProductRequestStatus = 'pending' | 'registered' | 'rejected';
+
+export interface AdminProductRequest {
+  id: string;
+  requestedName: string;
+  searchQuery: string | null;
+  productUrl: string | null;
+  note: string | null;
+  status: ProductRequestStatus;
+  createdAt: string;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  reviewNote: string | null;
+  nickname: string;
+  /** 같은 제품을 요청한 대기 건수 — 무엇부터 채울지 정하는 근거. */
+  requestCount: number;
+}
+
+export async function fetchProductRequests(params: {
+  page: number;
+  pageSize: number;
+  status: ProductRequestStatus | 'all';
+}): Promise<Paged<AdminProductRequest>> {
+  const res = await callAdminFunction<{ total?: number; requests?: AdminProductRequest[] }>(
+    'admin-operations',
+    { action: 'listProductRequests', ...params },
+  );
+  return { rows: res.requests ?? [], total: res.total ?? 0 };
+}
+
+export async function reviewProductRequest(
+  id: string,
+  status: ProductRequestStatus,
+  note?: string,
+): Promise<void> {
+  await callAdminFunction('admin-operations', {
+    action: 'reviewProductRequest',
+    id,
+    status,
+    note: note?.trim() || null,
+  });
+}
+
+// ── 제품 일괄 변경 ──────────────────────────────────────────────────────────
+
+/** 한 요청에 담을 수 있는 제품 수 — Edge Function 의 상한과 같다. */
+export const BULK_PRODUCT_LIMIT = 200;
+
+export interface BulkProductPatch {
+  isVisible?: boolean;
+  verificationStatus?: 'pending' | 'reviewed' | 'verified';
+  mainCategory?: string;
+}
+
+/**
+ * 선택한 제품을 한 번에 바꾼다.
+ *
+ * 요청 수와 실제 반영 수를 함께 돌려준다 — 둘이 다르면 화면이 "전부 성공"으로
+ * 보여 주지 않고 차이를 알려야 한다.
+ */
+export async function bulkUpdateProducts(
+  ids: string[],
+  patch: BulkProductPatch,
+): Promise<{ requested: number; updated: number }> {
+  const res = await callAdminFunction<{ requested?: number; updated?: number }>(
+    'admin-operations',
+    { action: 'bulkUpdateProducts', ids, ...patch },
+  );
+  return { requested: res.requested ?? ids.length, updated: res.updated ?? 0 };
+}
