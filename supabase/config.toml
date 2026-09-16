@@ -280,6 +280,10 @@ verify_jwt = false
 [functions.admin-operations]
 verify_jwt = false
 
+# 관리자 제품 조회(service_role) — 공개 정책이 좁혀져 anon 으로는 볼 수 없다
+[functions.admin-products-read]
+verify_jwt = false
+
 # This hook runs before a new user is created and allows developers to reject the request based on the incoming user object.
 # [auth.hook.before_user_created]
 # enabled = true

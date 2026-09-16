@@ -9,6 +9,7 @@
  */
 import { supabase, adminWrite, callAdminFunction } from './supabase';
 import { toOrIlikePattern } from './postgrestPattern';
+import { notify } from '../store/useNotification';
 
 // ─── 공통 타입 ───────────────────────────────────────────────────────────────
 
@@ -429,25 +430,7 @@ export interface ProductListParams {
   visibility?: 'visible' | 'hidden' | '전체';
 }
 
-const ADMIN_PRODUCT_COLUMNS =
-  'id, name, brand_name, main_category, sub_category, target_pet_type, target_life_stage, image_url, min_price, barcode, verification_status, created_at, product_ingredients(count), nutritional_profiles(count)';
-/** 마이그레이션이 적용된 DB 에서만 붙는 운영 컬럼. */
-const ADMIN_PRODUCT_OPERATION_COLUMNS = 'is_visible, is_pinned, pinned_order';
 
-/**
- * 노출·상단고정 컬럼이 아직 없는 DB인지.
- *
- * Git 연동 프런트가 DB 마이그레이션보다 먼저 배포돼도 관리자 목록은 살아 있어야
- * 한다. 두 기능 모두 같은 방식(컬럼 없으면 기본값으로 축소)으로 처리한다.
- */
-function isMissingVisibilityColumn(error: unknown): boolean {
-  const value = error as { code?: string; message?: string } | null;
-  return Boolean(
-    value &&
-    (value.code === '42703' || value.code === 'PGRST204') &&
-    /is_visible|is_pinned|pinned_order/.test(value.message ?? ''),
-  );
-}
 
 /**
  * 서버 페이지네이션 제품 목록.
@@ -462,43 +445,23 @@ export async function fetchProductsPage({
   verificationStatus,
   visibility,
 }: ProductListParams): Promise<Paged<AdminProductRow>> {
-  const from = Math.max(0, (page - 1) * pageSize);
-  const runQuery = (includeVisibility: boolean) => {
-    let builder = supabase
-      .from('products')
-      .select(
-        includeVisibility
-          ? `${ADMIN_PRODUCT_COLUMNS}, ${ADMIN_PRODUCT_OPERATION_COLUMNS}`
-          : ADMIN_PRODUCT_COLUMNS,
-        { count: 'exact' },
-      )
-      .order('created_at', { ascending: false })
-      .range(from, from + pageSize - 1);
+  // anon 이 아니라 service_role(Edge Function)로 읽는다.
+  //
+  // products 의 공개 SELECT 정책이 "앱에 실제로 보이는 제품"으로 좁혀져 있어,
+  // anon 으로 읽으면 관리자가 비노출·검수대기 제품을 볼 수 없다. 정작 그 제품을
+  // 관리하는 것이 이 화면의 일이다.
+  const res = await callAdminFunction<{ rows?: unknown[]; total?: number }>(
+    'admin-products-read',
+    {
+      view: 'list',
+      page,
+      pageSize,
+      filters: { search, category, petType, verificationStatus, visibility },
+    },
+  );
 
-    const q = (search ?? '').trim();
-    if (q) {
-      const pattern = toOrIlikePattern(q);
-      builder = builder.or(`name.ilike.${pattern},brand_name.ilike.${pattern},barcode.ilike.${pattern}`);
-    }
-    if (category && category !== '전체') builder = builder.eq('main_category', category);
-    if (petType && petType !== '전체') builder = builder.eq('target_pet_type', petType);
-    if (verificationStatus && verificationStatus !== '전체') {
-      builder = builder.eq('verification_status', verificationStatus);
-    }
-    if (includeVisibility && visibility && visibility !== '전체') {
-      builder = builder.eq('is_visible', visibility === 'visible');
-    }
-    return builder;
-  };
-
-  let result = await runQuery(true);
-  // Git 연동 프런트가 DB 마이그레이션보다 먼저 배포돼도 관리자 목록은 유지한다.
-  // 이 경우 모든 기존 행을 노출 상태로 표시하며 토글 시 서버가 명시적 오류를 준다.
-  if (isMissingVisibilityColumn(result.error)) result = await runQuery(false);
-  const { data, count, error } = result;
-  if (error) throw new Error(error.message);
-  const rows = (data ?? []).map((row) => {
-    const raw = row as unknown as AdminProductRow & {
+  const rows = (res.rows ?? []).map((row) => {
+    const raw = row as AdminProductRow & {
       product_ingredients?: { count: number }[];
       nutritional_profiles?: { count: number }[];
     };
@@ -513,7 +476,7 @@ export async function fetchProductsPage({
       nutritional_profiles: undefined,
     } as AdminProductRow;
   });
-  return { rows, total: count ?? 0 };
+  return { rows, total: res.total ?? 0 };
 }
 
 interface ProductIngredientJoinRow {
@@ -579,26 +542,14 @@ export async function saveProduct(payload: SaveProductPayload): Promise<SaveProd
   const id = response.id;
   if (!id) throw new Error('저장된 제품 ID를 받지 못했습니다.');
 
-  let confirmation = await supabase
-    .from('products')
-    .select('id, name, brand_name, main_category, sub_category, target_pet_type, verification_status, is_visible')
-    .eq('id', id)
-    .single();
-  if (isMissingVisibilityColumn(confirmation.error)) {
-    const legacy = await supabase
-      .from('products')
-      .select('id, name, brand_name, main_category, sub_category, target_pet_type, verification_status')
-      .eq('id', id)
-      .single();
-    confirmation = {
-      ...legacy,
-      data: legacy.data ? { ...legacy.data, is_visible: true } : null,
-    } as typeof confirmation;
-  }
-  const { data, error } = confirmation;
-  if (error) throw new Error(`저장 후 사용자 앱 조회 확인 실패: ${error.message}`);
+  // 저장 결과를 다시 읽어 확인한다.
+  //
+  // 예전에는 공개(anon) 경로로 읽어 "앱에 보이는 DB에 반영됐다"를 함께 증명했다.
+  // 이제 공개 정책이 "앱에 실제로 보이는 제품"으로 좁혀져 있어, 비노출로 저장한
+  // 제품은 공개 경로에서 안 보이는 것이 정상이다. 그래서 저장 확인은 관리자
+  // 경로로 하고, 공개 노출 여부는 따로 확인해 필요할 때만 경고한다.
+  const confirmed = await fetchProductForEdit(id) as SavedProductConfirmation | null;
 
-  const confirmed = data as SavedProductConfirmation | null;
   const expectedName = String(payload.product.name ?? '').trim();
   const expectedBrand = String(payload.product.brand_name ?? '').trim();
   const expectedVisibility = payload.product.is_visible;
@@ -609,9 +560,24 @@ export async function saveProduct(payload: SaveProductPayload): Promise<SaveProd
     (typeof expectedVisibility === 'boolean' && confirmed.is_visible !== expectedVisibility)
   ) {
     throw new Error(
-      `저장 확인 불일치: 요청한 제품명/브랜드가 사용자 앱 DB에 반영되지 않았습니다. ` +
+      `저장 확인 불일치: 요청한 제품명/브랜드가 DB에 반영되지 않았습니다. ` +
       `(요청: ${expectedBrand} / ${expectedName}, 실제: ${confirmed?.brand_name ?? '없음'} / ${confirmed?.name ?? '없음'})`,
     );
+  }
+
+  // 노출로 저장했는데 앱 공개 경로에서 보이지 않으면 알려 준다.
+  // 검수 게이트가 켜져 있고 이 제품이 아직 '검수 대기'인 경우가 대표적이다.
+  if (confirmed.is_visible) {
+    const { data: publiclyVisible } = await supabase
+      .from('products')
+      .select('id')
+      .eq('id', id)
+      .maybeSingle();
+    if (!publiclyVisible) {
+      notify.warning(
+        '저장은 됐지만 이 제품은 아직 앱에 보이지 않습니다. 검수 상태를 확인해 주세요.',
+      );
+    }
   }
 
   return { id, product: confirmed };
@@ -953,22 +919,14 @@ export interface ProductNameRow {
 }
 
 export async function fetchProductNames(): Promise<ProductNameRow[]> {
-  const rows: ProductNameRow[] = [];
-  const pageSize = 1000;
-
-  for (let offset = 0; offset < 100_000; offset += pageSize) {
-    const { data, error } = await supabase
-      .from('products')
-      .select('id, name, brand_name, main_category, image_url')
-      .order('name', { ascending: true })
-      .range(offset, offset + pageSize - 1);
-    if (error) throw new Error(error.message);
-    const batch = (data ?? []) as ProductNameRow[];
-    rows.push(...batch);
-    if (batch.length < pageSize) return rows;
-  }
-  throw new Error('제품 수가 정리 도구 조회 한도를 초과했습니다.');
+  // 정리 대상에는 비노출 제품도 포함돼야 하므로 service_role 로 읽는다.
+  const res = await callAdminFunction<{ rows?: ProductNameRow[] }>(
+    'admin-products-read',
+    { view: 'names' },
+  );
+  return res.rows ?? [];
 }
+
 
 export interface ProductCleanupItem {
   id: string;
@@ -1268,29 +1226,20 @@ export async function fetchProductFacts(params: {
   search?: string;
   limit?: number;
 }): Promise<ProductFactsRow[]> {
-  const limit = Math.min(params.limit ?? 100, 300);
-  let query = supabase
-    .from('products')
-    .select(
-      'id, name, brand_name, image_url, coupang_link, barcode, kcal_per_100g, '
-      + 'nutritional_profiles(crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus)',
-    )
-    .order('name', { ascending: true })
-    .limit(limit);
+  // 바코드·영양정보가 비어 있는 제품에는 비노출 제품도 섞여 있어 service_role 로
+  // 읽는다. 공개 경로로 읽으면 채워야 할 제품이 목록에서 빠진다.
+  const res = await callAdminFunction<{ rows?: ProductFactsJoinRow[] }>(
+    'admin-products-read',
+    {
+      view: 'facts',
+      filters: {
+        search: params.search,
+        missingBarcode: params.filter === 'missing' || params.filter === 'missing_barcode',
+      },
+    },
+  );
 
-  if (params.filter === 'missing' || params.filter === 'missing_barcode') {
-    query = query.is('barcode', null);
-  }
-  const search = params.search?.trim();
-  if (search) {
-    const pattern = toOrIlikePattern(search);
-    query = query.or(`name.ilike.${pattern},brand_name.ilike.${pattern}`);
-  }
-
-  const { data, error } = await query;
-  if (error) throw new Error(`제품을 불러오지 못했습니다: ${error.message}`);
-
-  const rows = ((data ?? []) as unknown as ProductFactsJoinRow[]).map((raw) => {
+  const rows = (res.rows ?? []).map((raw) => {
     const profile = (Array.isArray(raw.nutritional_profiles)
       ? raw.nutritional_profiles[0]
       : raw.nutritional_profiles) ?? null;
@@ -1316,10 +1265,11 @@ export async function fetchProductFacts(params: {
     };
   });
 
+  const limited = rows.slice(0, Math.min(params.limit ?? 100, 300));
   if (params.filter === 'missing' || params.filter === 'missing_nutrition') {
-    return rows.filter((row) => !row.hasNutrition);
+    return limited.filter((row) => !row.hasNutrition);
   }
-  return rows;
+  return limited;
 }
 
 export interface ProductFactsInput {
@@ -1413,4 +1363,27 @@ export async function bulkUpdateProducts(
     { action: 'bulkUpdateProducts', ids, ...patch },
   );
   return { requested: res.requested ?? ids.length, updated: res.updated ?? 0 };
+}
+
+/**
+ * 대시보드 카테고리 집계용 — 모든 제품의 main_category.
+ *
+ * service_role 로 읽는다. 관리자 지표는 비노출·검수대기 제품까지 세야 하고,
+ * 공개 경로로 읽으면 정작 채워야 할 제품이 집계에서 빠진다.
+ */
+export async function fetchAllProductCategories(): Promise<{ main_category: string | null }[]> {
+  const res = await callAdminFunction<{ rows?: { main_category: string | null }[] }>(
+    'admin-products-read',
+    { view: 'categories' },
+  );
+  return res.rows ?? [];
+}
+
+/** 편집 화면이 쓰는 제품 단건 전체 컬럼. 비노출 제품도 열 수 있어야 한다. */
+export async function fetchProductForEdit(id: string): Promise<Record<string, unknown> | null> {
+  const res = await callAdminFunction<{ product?: Record<string, unknown> | null }>(
+    'admin-products-read',
+    { view: 'full', id },
+  );
+  return res.product ?? null;
 }

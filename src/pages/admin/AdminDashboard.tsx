@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -14,12 +13,12 @@ import {
   BadgeCheck,
   DatabaseZap,
 } from 'lucide-react';
-import { fetchCategories, fetchDashboard, type DashboardPayload } from '../../lib/adminApi';
+import {
+  fetchAllProductCategories, fetchCategories, fetchDashboard, type DashboardPayload } from '../../lib/adminApi';
 
 /** 카테고리 목록을 아직 불러오지 못했을 때만 쓰는 대비값(카테고리 관리가 단일 원본). */
 const FALLBACK_CATEGORIES = ['사료', '간식', '영양제'];
 const UNCATEGORIZED_LABEL = '미분류';
-const CATEGORY_PAGE_SIZE = 1000;
 
 function categoryLabel(value: unknown): string {
   return typeof value === 'string' && value.trim() ? value.trim() : UNCATEGORIZED_LABEL;
@@ -30,27 +29,15 @@ function categoryLabel(value: unknown): string {
  * 모든 제품의 main_category를 페이지 끝까지 읽어 실제 제품 총수와 같은 모집단을 집계한다.
  */
 async function fetchCategoryStats(): Promise<Record<string, number>> {
+  // service_role 로 읽는다 — 관리자 통계는 비노출·검수대기 제품까지 세야 한다.
+  // 공개 경로로 읽으면 "채워야 할 제품"이 집계에서 빠져 지표가 실제보다 좋아 보인다.
+  const rows = await fetchAllProductCategories();
   const stats: Record<string, number> = {};
-  let offset = 0;
-
-  while (offset < 100_000) {
-    const { data, count, error } = await supabase
-      .from('products')
-      .select('main_category', { count: 'exact' })
-      .range(offset, offset + CATEGORY_PAGE_SIZE - 1);
-    if (error) throw error;
-
-    const batch = (data ?? []) as { main_category: string | null }[];
-    for (const row of batch) {
-      const label = categoryLabel(row.main_category);
-      stats[label] = (stats[label] ?? 0) + 1;
-    }
-
-    offset += batch.length;
-    if (batch.length < CATEGORY_PAGE_SIZE || (count !== null && offset >= count)) return stats;
+  for (const row of rows) {
+    const label = categoryLabel(row.main_category);
+    stats[label] = (stats[label] ?? 0) + 1;
   }
-
-  throw new Error('제품 카테고리 집계 범위를 초과했습니다.');
+  return stats;
 }
 
 /** 실제 기간 비교로 산출한 증감률. 직전 기간이 0이면 비율을 만들 수 없어 null 을 준다. */

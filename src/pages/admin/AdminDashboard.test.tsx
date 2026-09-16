@@ -13,19 +13,9 @@ vi.mock('../../lib/adminApi', () => ({
   fetchDashboard: h.fetchDashboard,
   // 카테고리 행 순서만 쓰는 부가 조회 — 대시보드 지표 검증과는 무관하다.
   fetchCategories: () => Promise.resolve([]),
-}));
-
-vi.mock('../../lib/supabase', () => ({
-  supabase: {
-    from: () => ({
-      select: () => ({
-        range: (from: number, to: number) => {
-          const data = h.categoryRows.slice(from, to + 1);
-          return Promise.resolve({ data, count: h.categoryRows.length, error: null });
-        },
-      }),
-    }),
-  },
+  // 카테고리 집계는 anon 이 아니라 service_role(Edge Function)로 읽는다 —
+  // 관리자 지표는 비노출·검수대기 제품까지 세야 하기 때문이다.
+  fetchAllProductCategories: () => Promise.resolve(h.categoryRows),
 }));
 
 import AdminDashboard from './AdminDashboard';

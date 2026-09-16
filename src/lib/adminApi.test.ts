@@ -1,9 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-const h = vi.hoisted(() => ({ adminWrite: vi.fn(), from: vi.fn() }));
+const h = vi.hoisted(() => ({
+  adminWrite: vi.fn(),
+  callAdminFunction: vi.fn(),
+  from: vi.fn(),
+}));
 
 vi.mock('./supabase', () => ({
   adminWrite: h.adminWrite,
+  callAdminFunction: h.callAdminFunction,
   supabase: { from: h.from },
 }));
 
@@ -101,7 +106,10 @@ describe('adminApi: 쓰기 경로', () => {
     });
   });
 
-  it('제품 저장 뒤 사용자 앱과 같은 공개 조회로 제품명과 브랜드를 확인한다', async () => {
+  it('제품 저장 뒤 관리자 경로로 다시 읽어 제품명과 브랜드를 확인한다', async () => {
+    // 공개 조회로 확인하던 예전 방식은 쓸 수 없다. products 의 공개 정책이
+    // "앱에 실제로 보이는 제품"으로 좁혀져서, 비노출로 저장한 제품은 공개
+    // 경로에서 안 보이는 것이 정상이기 때문이다.
     const confirmed = {
       id: '11111111-1111-4111-8111-111111111111',
       name: '바뀐 제품명',
@@ -112,11 +120,16 @@ describe('adminApi: 쓰기 경로', () => {
       verification_status: 'verified',
       is_visible: true,
     };
-    const single = vi.fn().mockResolvedValue({ data: confirmed, error: null });
-    const eq = vi.fn().mockReturnValue({ single });
-    const select = vi.fn().mockReturnValue({ eq });
-    h.from.mockReturnValue({ select });
     h.adminWrite.mockResolvedValue({ id: confirmed.id });
+    h.callAdminFunction.mockResolvedValue({ product: confirmed });
+    // 노출로 저장했으므로 앱에서도 보이는지 확인하는 조회가 뒤따른다.
+    h.from.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          maybeSingle: vi.fn().mockResolvedValue({ data: { id: confirmed.id }, error: null }),
+        }),
+      }),
+    });
 
     await expect(saveProduct({
       product: { name: ' 바뀐 제품명 ', brand_name: ' 베로로 ' },
@@ -126,30 +139,48 @@ describe('adminApi: 쓰기 경로', () => {
     expect(h.adminWrite).toHaveBeenCalledWith('saveProduct', expect.objectContaining({
       product: expect.objectContaining({ name: ' 바뀐 제품명 ' }),
     }));
-    expect(h.from).toHaveBeenCalledWith('products');
-    expect(eq).toHaveBeenCalledWith('id', confirmed.id);
+    expect(h.callAdminFunction).toHaveBeenCalledWith(
+      'admin-products-read',
+      { view: 'full', id: confirmed.id },
+    );
   });
 
-  it('저장 응답이 성공이어도 공개 DB 값이 다르면 성공으로 처리하지 않는다', async () => {
-    const single = vi.fn().mockResolvedValue({
-      data: {
+  it('저장 응답이 성공이어도 DB 값이 다르면 성공으로 처리하지 않는다', async () => {
+    h.adminWrite.mockResolvedValue({ id: '11111111-1111-4111-8111-111111111111' });
+    h.callAdminFunction.mockResolvedValue({
+      product: {
         id: '11111111-1111-4111-8111-111111111111',
         name: '예전 제품명',
         brand_name: '베로로',
+        is_visible: true,
       },
-      error: null,
     });
-    h.from.mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({ single }),
-      }),
-    });
-    h.adminWrite.mockResolvedValue({ id: '11111111-1111-4111-8111-111111111111' });
 
     await expect(saveProduct({
       product: { name: '바뀐 제품명', brand_name: '베로로' },
       nutrition: null,
     })).rejects.toThrow('저장 확인 불일치');
+  });
+
+  it('비노출로 저장한 제품은 앱에 안 보여도 저장 실패로 보지 않는다', async () => {
+    // 비노출 제품이 공개 경로에서 안 보이는 것은 정상이다 — 그걸 실패로
+    // 처리하면 제품을 내리는 순간 저장이 막힌다.
+    const hidden = {
+      id: '11111111-1111-4111-8111-111111111111',
+      name: '내린 제품',
+      brand_name: '베로로',
+      is_visible: false,
+    };
+    h.adminWrite.mockResolvedValue({ id: hidden.id });
+    h.callAdminFunction.mockResolvedValue({ product: hidden });
+    h.from.mockReset();
+
+    await expect(saveProduct({
+      product: { name: '내린 제품', brand_name: '베로로', is_visible: false },
+      nutrition: null,
+    })).resolves.toMatchObject({ id: hidden.id });
+    // 공개 조회 자체를 하지 않는다.
+    expect(h.from).not.toHaveBeenCalled();
   });
 
   it('제품 노출 상태 변경은 관리자 프록시의 확인 응답까지 검사한다', async () => {

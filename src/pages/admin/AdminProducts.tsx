@@ -5,7 +5,8 @@ import { Plus, Search, Edit2, Trash2, X, Upload, ChevronLeft, ChevronRight, Aler
 import { notify } from '../../store/useNotification';
 import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
 import ProductIngredientsEditor from './ProductIngredientsEditor';
-import {  type BulkProductPatch,
+import {
+  fetchProductForEdit,  type BulkProductPatch,
   bulkUpdateProducts,
   BULK_PRODUCT_LIMIT,
   deleteProduct as deleteProductApi,
@@ -271,8 +272,10 @@ const AdminProducts: React.FC = () => {
     setIngredientsLoading(true);
 
     // 목록은 경량 컬럼만 조회하므로, 편집 시 전체 필드를 다시 읽는다.
-    const [{ data: full }, { data: np }] = await Promise.all([
-      supabase.from('products').select('*').eq('id', row.id).maybeSingle(),
+    // 제품 본문은 service_role 로 읽는다 — 비노출 제품도 편집할 수 있어야 한다.
+    // 보장성분(nutritional_profiles)은 공개 SELECT 라 그대로 anon 으로 읽는다.
+    const [full, { data: np }] = await Promise.all([
+      fetchProductForEdit(row.id),
       supabase.from('nutritional_profiles').select('*').eq('product_id', row.id).maybeSingle(),
     ]);
 
