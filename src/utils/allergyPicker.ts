@@ -106,3 +106,44 @@ export function petAgeDisplay(age: number, species: 'Dog' | 'Cat'): string {
   if (years < 1) return `1살 미만 · ${stage}`;
   return `${years}살 · ${stage}`;
 }
+
+/**
+ * '없음' 선택지.
+ *
+ * 선택지를 하나도 고르지 않은 상태가 곧 "알레르기 없음"이다. 따로 저장하는
+ * 값이 아니라 빈 목록 자체를 그렇게 읽는다.
+ *
+ * 이렇게 두면 "'없음'과 다른 항목을 동시에 선택할 수 없다"가 규칙이 아니라
+ * 구조가 된다 — 항목이 하나라도 있으면 '없음'이 아니고, '없음'을 고르면 목록이
+ * 비워진다. 별도 표식을 목록에 섞어 넣으면 그 값이 분석 엔진까지 흘러가
+ * 어느 제품에도 걸리지 않는 회피 성분으로 남는다.
+ */
+export const NO_ALLERGY_LABEL = '없음';
+
+/** 지금 상태가 '없음'인지. */
+export function isNoAllergySelected(selected: string[]): boolean {
+  return selected.length === 0;
+}
+
+/** '없음'을 고른다 — 고른 항목을 모두 비운다. */
+export function selectNoAllergy(): string[] {
+  return [];
+}
+
+/**
+ * 회피 성분을 추가한다.
+ *
+ * 이미 있으면 그대로 둔다. '없음'이라는 이름 자체는 성분이 아니므로 받지 않는다
+ * (사전에 그런 이름이 들어와도 선택지로 새어 나가지 않게 한다).
+ */
+export function addAllergen(selected: string[], name: string): string[] {
+  const value = name.trim();
+  if (!value || value === NO_ALLERGY_LABEL) return selected;
+  if (selected.some((item) => normalize(item) === normalize(value))) return selected;
+  return [...selected, value];
+}
+
+/** 회피 성분을 뺀다. 마지막 하나를 빼면 자연스럽게 '없음' 상태가 된다. */
+export function removeAllergen(selected: string[], name: string): string[] {
+  return selected.filter((item) => normalize(item) !== normalize(name));
+}

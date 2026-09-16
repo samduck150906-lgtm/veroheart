@@ -17,6 +17,7 @@ import {
   CalendarCheck2,
   Search as SearchIcon,
   History,
+  AlertTriangle,
 } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import type { FeedingProductType, PetFeedingLog } from '../../types';
@@ -378,12 +379,15 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {daySections.map((section) => (
             <div key={section.period}>
-              {daySections.length > 1 && (
-                <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  {section.label}
-                  <span style={{ fontWeight: 600, color: 'var(--text-light)' }}>{section.logs.length}</span>
-                </div>
-              )}
+              {/*
+                끼니 머리글은 한 칸만 있어도 보여 준다. 조건부로 숨기면 기록이
+                하나일 때와 여러 개일 때 화면 구조가 달라져, 무엇을 보고 있는지
+                매번 다시 파악해야 한다.
+              */}
+              <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {section.label}
+                <span style={{ fontWeight: 600, color: 'var(--text-light)' }}>{section.logs.length}</span>
+              </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {section.logs.map((log) => (
                   <FeedingLogCard
@@ -873,11 +877,30 @@ function FeedingLogCard({
               {log.unit ? ` ${log.unit}` : ''}
             </div>
           )}
-          {log.memo && (
-            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>{log.memo}</p>
-          )}
-          {log.reactionNote && (
-            <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>· {log.reactionNote}</p>
+          {/*
+            메모와 특이사항을 구분해서 보여 준다.
+
+            예전에는 둘 다 같은 회색 문단이었고 특이사항에는 점 하나만 붙어
+            있었다. 특이사항은 먹은 뒤의 반응(구토·설사·가려움)을 적는 칸이라
+            다이어리에서 가장 중요한 정보인데, 메모와 섞여 눈에 띄지 않았다.
+          */}
+          {(log.memo || log.reactionNote) && (
+            <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {log.memo && (
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-start' }}>
+                  <span style={{ flexShrink: 0, fontSize: '11px', fontWeight: 800, color: 'var(--text-light)' }}>메모</span>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>{log.memo}</p>
+                </div>
+              )}
+              {log.reactionNote && (
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-start' }}>
+                  <span style={{ flexShrink: 0, fontSize: '11px', fontWeight: 800, color: '#B45309', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                    <AlertTriangle size={11} aria-hidden /> 특이사항
+                  </span>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#92400E', fontWeight: 600, lineHeight: 1.5 }}>{log.reactionNote}</p>
+                </div>
+              )}
+            </div>
           )}
         </div>
         {log.imageUrl && (

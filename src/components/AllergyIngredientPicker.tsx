@@ -1,7 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Search, X } from 'lucide-react';
 import { getAllIngredients } from '../lib/supabase';
-import { COMMON_ALLERGY_SUGGESTIONS, rankAllergyCandidates } from '../utils/allergyPicker';
+import {
+  COMMON_ALLERGY_SUGGESTIONS,
+  NO_ALLERGY_LABEL,
+  addAllergen,
+  isNoAllergySelected,
+  rankAllergyCandidates,
+  removeAllergen,
+  selectNoAllergy,
+} from '../utils/allergyPicker';
 
 interface AllergyIngredientPickerProps {
   /** 선택된 회피 성분 이름 목록. */
@@ -38,10 +46,13 @@ export default function AllergyIngredientPicker({ selected, onChange }: AllergyI
   );
 
   const add = (name: string) => {
-    if (!selected.includes(name)) onChange([...selected, name]);
+    onChange(addAllergen(selected, name));
     setQuery('');
   };
-  const remove = (name: string) => onChange(selected.filter((n) => n !== name));
+  const remove = (name: string) => onChange(removeAllergen(selected, name));
+  // '없음'은 따로 저장하는 값이 아니라 빈 목록 그 자체다. 그래서 '없음'과 다른
+  // 항목을 동시에 고르는 상태가 아예 만들어지지 않는다.
+  const noneSelected = isNoAllergySelected(selected);
 
   const trimmed = query.trim();
 
@@ -90,6 +101,24 @@ export default function AllergyIngredientPicker({ selected, onChange }: AllergyI
 
       {trimmed === '' && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+          {/*
+            '없음'을 맨 앞에 명시적으로 둔다. 빈 목록을 그냥 두면 "확인해 보니
+            없다"인지 "아직 안 봤다"인지 화면상 구분되지 않는다.
+          */}
+          <button
+            type="button"
+            onClick={() => onChange(selectNoAllergy())}
+            aria-pressed={noneSelected}
+            style={{
+              padding: '9px 14px', borderRadius: '999px', fontSize: '13.5px', fontWeight: 700,
+              border: noneSelected ? '1px solid var(--primary-dark)' : '1px solid var(--line)',
+              background: noneSelected ? 'rgba(250,204,21,0.2)' : 'var(--surface-elevated)',
+              color: noneSelected ? 'var(--primary-dark)' : 'var(--text-muted)',
+              cursor: 'pointer',
+            }}
+          >
+            {NO_ALLERGY_LABEL}
+          </button>
           {COMMON_ALLERGY_SUGGESTIONS.filter((name) => !selected.includes(name)).map((name) => (
             <button
               key={name}

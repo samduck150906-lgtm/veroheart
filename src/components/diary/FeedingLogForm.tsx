@@ -758,27 +758,35 @@ export default function FeedingLogForm({
           </div>
         </div>
 
-        {/* 메모 */}
+        {/*
+          메모와 특이사항은 서로 다른 것을 적는 칸이다.
+
+          메모의 안내 문구가 "특이사항·컨디션 등을 기록하세요" 였는데, 바로 아래
+          특이사항 칸이 따로 있다. 폼이 두 칸을 섞어 쓰라고 안내한 셈이라 반응이
+          어디에 적혔는지 알 수 없게 됐다. 각 칸이 무엇을 받는지 분명히 한다.
+        */}
         <div>
           <label style={sectionLabel}>메모 (선택)</label>
           <textarea
             value={memo}
             onChange={(e) => setMemo(e.target.value)}
-            placeholder="특이사항·컨디션 등을 기록하세요"
+            placeholder="급여 상황이나 컨디션을 자유롭게 적어 주세요"
             style={{ ...fieldInput, height: '72px', resize: 'none' }}
           />
         </div>
 
-        {/* 특이사항(반응 노트) */}
         <div>
           <label style={sectionLabel}>특이사항 (선택)</label>
           <input
             type="text"
             value={reaction}
             onChange={(e) => setReaction(e.target.value)}
-            placeholder="예: 먹고 나서 물을 많이 마셨어요"
+            placeholder="먹은 뒤 반응 — 예: 두 번 토했어요, 가려워했어요"
             style={fieldInput}
           />
+          <p style={{ margin: '6px 0 0', fontSize: '11px', color: 'var(--text-light)', lineHeight: 1.5 }}>
+            먹은 뒤 나타난 반응을 적어 두면, 나중에 어떤 제품과 겹치는지 찾기 쉬워요.
+          </p>
         </div>
 
         {/* 사진 (선택) */}
