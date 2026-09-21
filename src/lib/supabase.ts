@@ -1033,8 +1033,16 @@ export interface ProductRequestInput {
   note?: string;
 }
 
+/**
+ * 요청 결과.
+ *
+ * 성공 분기에도 `reason`/`message` 자리를 비워 둔다. 이 프로젝트의 tsconfig 는
+ * strict(=strictNullChecks) 를 끄고 있어, `if (result.ok)` 같은 참·거짓 검사로는
+ * 판별 유니온이 좁혀지지 않는다. 자리를 비워 두지 않으면 실패 분기의 필드를 읽는
+ * 호출부가 빌드에서 막힌다(TS2339).
+ */
 export type ProductRequestResult =
-  | { ok: true }
+  | { ok: true; reason?: undefined; message?: undefined }
   | { ok: false; reason: 'unauthenticated' | 'duplicate' | 'error'; message: string };
 
 /**

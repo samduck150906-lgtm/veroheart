@@ -548,7 +548,9 @@ export async function saveProduct(payload: SaveProductPayload): Promise<SaveProd
   // 이제 공개 정책이 "앱에 실제로 보이는 제품"으로 좁혀져 있어, 비노출로 저장한
   // 제품은 공개 경로에서 안 보이는 것이 정상이다. 그래서 저장 확인은 관리자
   // 경로로 하고, 공개 노출 여부는 따로 확인해 필요할 때만 경고한다.
-  const confirmed = await fetchProductForEdit(id) as SavedProductConfirmation | null;
+  // admin-products-read 는 화면마다 컬럼이 달라 타입 없는 행으로 돌려준다.
+  // 저장 확인에 필요한 필드만 보므로 여기서 한 번 좁혀 쓴다.
+  const confirmed = await fetchProductForEdit(id) as unknown as SavedProductConfirmation | null;
 
   const expectedName = String(payload.product.name ?? '').trim();
   const expectedBrand = String(payload.product.brand_name ?? '').trim();
