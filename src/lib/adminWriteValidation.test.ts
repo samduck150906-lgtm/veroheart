@@ -15,6 +15,7 @@ import {
   normalizeIngredientPayload,
   normalizeNutritionPayload,
   normalizeProductIngredientItems,
+  normalizeProductCleanupItems,
   normalizeProductPayload,
   normalizeSettingsPayload,
 } from '../../supabase/functions/admin-write/validation.ts';
@@ -128,6 +129,57 @@ describe('admin-write: 제품 payload 검증', () => {
       name: '노출 제품', brand_name: '베로로', is_visible: 'false',
     })).toThrow(ValidationError);
     expect(ALLOWED_ACTIONS.has('setProductVisibility')).toBe(true);
+  });
+});
+
+describe('admin-write: 제품명·브랜드 정리 payload 검증', () => {
+  it('기존값과 실제 변경 필드만 정규화한다', () => {
+    expect(normalizeProductCleanupItems([{
+      id: UUID_A,
+      expectedName: ' 기존 이름 ',
+      expectedBrandName: ' 기존 브랜드 ',
+      name: ' 새 이름 ',
+    }])).toEqual([{
+      id: UUID_A,
+      expected_name: '기존 이름',
+      expected_brand_name: '기존 브랜드',
+      name: '새 이름',
+      brand_name: null,
+    }]);
+  });
+
+  it('빈 제품명·브랜드와 변경 필드 없는 요청을 거부한다', () => {
+    expect(() => normalizeProductCleanupItems([{
+      id: UUID_A, expectedName: '기존', expectedBrandName: '브랜드', name: ' ',
+    }])).toThrow(ValidationError);
+    expect(() => normalizeProductCleanupItems([{
+      id: UUID_A, expectedName: '기존', expectedBrandName: '브랜드', brandName: '',
+    }])).toThrow(ValidationError);
+    expect(() => normalizeProductCleanupItems([{
+      id: UUID_A, expectedName: '기존', expectedBrandName: '브랜드',
+    }])).toThrow('변경할 제품명 또는 브랜드');
+  });
+
+  it('잘못된 ID·중복 ID·배치 한도 초과를 거부한다', () => {
+    expect(() => normalizeProductCleanupItems([{
+      id: 'missing', expectedName: '기존', expectedBrandName: '브랜드', name: '새 이름',
+    }])).toThrow(ValidationError);
+    const item = { id: UUID_A, expectedName: '기존', expectedBrandName: '브랜드', name: '새 이름' };
+    expect(() => normalizeProductCleanupItems([item, item])).toThrow('중복');
+    expect(() => normalizeProductCleanupItems(Array.from({ length: 101 }, (_, index) => ({
+      ...item,
+      id: `${String(index + 1).padStart(8, '0')}-1111-4111-8111-${String(index + 1).padStart(12, '0')}`,
+    })))).toThrow('최대 100개');
+  });
+
+  it('허용되지 않은 필드를 조용히 무시하지 않고 거부한다', () => {
+    expect(() => normalizeProductCleanupItems([{
+      id: UUID_A,
+      expectedName: '기존',
+      expectedBrandName: '브랜드',
+      name: '새 이름',
+      barcode: '8800000000000',
+    }])).toThrow('허용되지 않은 필드');
   });
 });
 

@@ -930,8 +930,29 @@ export async function fetchProductNames(): Promise<ProductNameRow[]> {
 
 export interface ProductCleanupItem {
   id: string;
-  name: string;
-  brandName: string;
+  expectedName: string;
+  expectedBrandName: string;
+  name?: string;
+  brandName?: string;
+}
+
+export type ProductCleanupStatus = 'applied' | 'already_applied' | 'conflict' | 'duplicate' | 'not_found' | 'failed';
+
+export interface ProductCleanupResult {
+  id: string;
+  status: ProductCleanupStatus;
+  message?: string;
+  duplicateProductId?: string;
+  current?: { name: string; brand_name: string };
+}
+
+export interface ProductCleanupBatchResult {
+  batchId: string | null;
+  requested: number;
+  applied: number;
+  conflicts: number;
+  failed: number;
+  results: ProductCleanupResult[];
 }
 
 /** 한 번에 보낼 수 있는 최대 건수 — Edge Function 검증과 같은 값이어야 한다. */
@@ -939,15 +960,24 @@ export const PRODUCT_CLEANUP_BATCH = 100;
 
 export async function applyProductCleanup(
   items: ProductCleanupItem[],
-): Promise<{ requested: number; applied: number }> {
-  if (items.length === 0) return { requested: 0, applied: 0 };
+): Promise<ProductCleanupBatchResult> {
+  if (items.length === 0) {
+    return { batchId: null, requested: 0, applied: 0, conflicts: 0, failed: 0, results: [] };
+  }
   if (items.length > PRODUCT_CLEANUP_BATCH) {
     throw new Error(`한 번에 최대 ${PRODUCT_CLEANUP_BATCH}개까지 정리할 수 있습니다.`);
   }
-  const res = await adminWrite<{ requested?: number; applied?: number }>('applyProductCleanup', {
+  const res = await adminWrite<Partial<ProductCleanupBatchResult>>('applyProductCleanup', {
     items,
   });
-  return { requested: res.requested ?? items.length, applied: res.applied ?? 0 };
+  return {
+    batchId: res.batchId ?? null,
+    requested: res.requested ?? items.length,
+    applied: res.applied ?? 0,
+    conflicts: res.conflicts ?? 0,
+    failed: res.failed ?? 0,
+    results: res.results ?? [],
+  };
 }
 
 // ─── 휴지통(삭제 복원) ───────────────────────────────────────────────────────

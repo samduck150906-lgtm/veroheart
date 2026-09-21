@@ -1359,50 +1359,12 @@ serve(async (req) => {
        */
       case 'applyProductCleanup': {
         const items = normalizeProductCleanupItems(body.items);
-        const ids = items.map((item) => item.id);
-
-        const { data: before, error: loadError } = await db
-          .from('products')
-          .select('id, name, brand_name')
-          .in('id', ids);
-        if (loadError) throw loadError;
-        const previous = new Map(
-          (before ?? []).map((row: { id: string; name: string; brand_name: string }) => [
-            row.id,
-            { name: row.name, brand_name: row.brand_name },
-          ]),
-        );
-
-        const applied: { id: string; from: unknown; to: unknown }[] = [];
-        for (const item of items) {
-          const original = previous.get(item.id);
-          if (!original) continue;
-          // 이미 같은 값이면 굳이 쓰지 않는다.
-          if (original.name === item.name && original.brand_name === item.brand_name) continue;
-
-          const { data, error } = await db
-            .from('products')
-            .update({ name: item.name, brand_name: item.brand_name })
-            .eq('id', item.id)
-            .select('id, name, brand_name')
-            .single();
-          if (error) throw error;
-          if (!data || data.name !== item.name || data.brand_name !== item.brand_name) {
-            throw new Error(`제품 정리 결과를 확인하지 못했습니다: ${item.name}`);
-          }
-          applied.push({
-            id: item.id,
-            from: original,
-            to: { name: item.name, brand_name: item.brand_name },
-          });
-        }
-
-        await audit(db, actor, 'applyProductCleanup', 'products', null, {
-          requested: items.length,
-          applied: applied.length,
-          changes: applied,
+        const { data, error } = await db.rpc('admin_apply_product_cleanup', {
+          p_items: items,
+          p_actor: actor,
         });
-        return json({ ok: true, requested: items.length, applied: applied.length }, 200, cors);
+        if (error) throw error;
+        return json({ ok: true, ...(data as Record<string, unknown>) }, 200, cors);
       }
 
       // ── 앱 카테고리 ─────────────────────────────────────────────────────
