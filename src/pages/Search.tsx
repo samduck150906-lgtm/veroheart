@@ -20,6 +20,7 @@ import { TossFilterSection } from '../components/TossUI';
 import { searchProducts, getAllIngredients } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import standardFeedData from '../data/standard_feed_data.json';
+import { useStandardFeedDetail, type StandardFeedDetail } from '../lib/standardFeedDetail';
 import { rankProductsForProfile } from '../utils/score';
 import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import FilterChip from '../components/ui/FilterChip';
@@ -159,6 +160,9 @@ export default function Search() {
   const [excludedIngredients, setExcludedIngredients] = useState<string[]>([]);
   const [isStandardFeedModalOpen, setIsStandardFeedModalOpen] = useState(false);
   const [standardFeedSearch, setStandardFeedSearch] = useState('');
+  // 상세 성분표(180kB)는 성분사전을 연 사람에게만 내려보낸다.
+  const [expandedFeedId, setExpandedFeedId] = useState<number | null>(null);
+  const standardFeedDetail = useStandardFeedDetail(isStandardFeedModalOpen);
   const [allIngredients, setAllIngredients] = useState<{ id: string; name_ko: string; risk_level: string }[]>([]);
   const [ingredientSearch, setIngredientSearch] = useState('');
 
@@ -788,7 +792,9 @@ export default function Search() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div>
                 <h2 style={{ fontSize: '18px', fontWeight: 800 }}>한국표준사료 성분사전</h2>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>공식 표준 성분 데이터 (총 {standardFeedData.length}개)</p>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                  {standardFeedDetail?.source ?? '공식 표준 성분 데이터'} · 총 {standardFeedData.length}개
+                </p>
               </div>
               <button onClick={() => setIsStandardFeedModalOpen(false)} aria-label="닫기" style={{ padding: '8px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={20} /></button>
             </div>
@@ -828,6 +834,17 @@ export default function Search() {
                         </div>
                       ))}
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => setExpandedFeedId((current) => (current === item.id ? null : item.id))}
+                      aria-expanded={expandedFeedId === item.id}
+                      style={{ alignSelf: 'flex-start', padding: '6px 10px', borderRadius: '8px', border: '1px solid var(--line)', background: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}
+                    >
+                      {expandedFeedId === item.id ? '영양성분 접기' : '아미노산·미네랄·비타민 보기'}
+                    </button>
+                    {expandedFeedId === item.id && (
+                      <StandardFeedDetailPanel detail={standardFeedDetail} item={item} />
+                    )}
                   </div>
                 ))
               )}
@@ -835,6 +852,60 @@ export default function Search() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ── 성분사전 상세 영양성분 ──────────────────────────────────────────
+ * 한국표준사료성분표 2022 의 74개 영양소 중 이 원료에 값이 있는 것만 묶음별로
+ * 보여 준다. 값이 없는 칸을 0 으로 채우면 "분석한 적 없음"과 "정말 0"이 구분되지
+ * 않아, 데이터셋 단계에서 빠진 영양소는 여기서도 자리를 만들지 않는다. */
+function StandardFeedDetailPanel({
+  detail,
+  item,
+}: {
+  detail: StandardFeedDetail | null;
+  item: StandardFeedItem;
+}) {
+  const note: React.CSSProperties = { fontSize: '12px', color: 'var(--text-muted)', padding: '4px 0' };
+  if (!detail) return <div style={note}>영양성분을 불러오는 중…</div>;
+
+  const found = detail.byId.get(item.id);
+  const groups = found
+    ? detail.groups.filter((group) => Object.keys(found.values[group.key] ?? {}).length > 0)
+    : [];
+  if (groups.length === 0) return <div style={note}>이 원료는 추가로 분석된 영양성분이 없어요.</div>;
+
+  const usesDryMatter = groups.some((group) => group.nutrients.some(
+    (nutrient) => nutrient.basis === 'dry_matter' && found!.values[group.key]?.[nutrient.key] !== undefined,
+  ));
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '2px' }}>
+      {groups.map((group) => (
+        <div key={group.key}>
+          <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '4px' }}>
+            {group.label} <span style={{ fontWeight: 600 }}>({group.unit})</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '4px 12px' }}>
+            {group.nutrients
+              .filter((nutrient) => found!.values[group.key]?.[nutrient.key] !== undefined)
+              .map((nutrient) => (
+                <div key={nutrient.key} style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', fontSize: '12px' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>
+                    {nutrient.key}{nutrient.basis === 'dry_matter' ? '*' : ''}
+                  </span>
+                  <span style={{ color: 'var(--text-dark)', fontWeight: 700 }}>
+                    {found!.values[group.key][nutrient.key]}
+                  </span>
+                </div>
+              ))}
+          </div>
+        </div>
+      ))}
+      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+        수치는 {detail.basis_label}{usesDryMatter ? ', * 표시는 건물(수분을 뺀 상태) 기준' : ''}이에요.
+      </div>
     </div>
   );
 }
