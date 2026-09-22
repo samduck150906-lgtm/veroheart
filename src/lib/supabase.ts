@@ -112,8 +112,10 @@ function isMissingProductVisibilityColumn(error: VisibilityQueryError | null): b
   return Boolean(
     error &&
     (error.code === '42703' || error.code === 'PGRST204') &&
-    // 노출 필터와 상단 고정 정렬은 같은 마이그레이션 계열이라 폴백 조건을 공유한다.
-    /is_visible|is_pinned|pinned_order/.test(error.message),
+    // 노출 필터·상단 고정·원재료 유무 정렬은 같은 마이그레이션 계열이라
+    // 폴백 조건을 공유한다. 프런트가 마이그레이션보다 먼저 배포돼도 한 번만
+    // 옛 조회로 되돌아가 목록이 비지 않는다.
+    /is_visible|is_pinned|pinned_order|has_ingredients/.test(error.message),
   );
 }
 
@@ -278,11 +280,17 @@ export async function getProductsPage(page = 1, pageSize = MOBILE_PRODUCT_PAGE_S
       verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating
     `);
     // 운영자가 고정한 제품이 항상 먼저 나온다(관리자 → 제품 관리 → 상단 고정).
+    //
+    // 그다음이 has_ingredients 다. 제품명만 수집하고 원재료를 못 채운 묶음이 들어오면
+    // 최신순만으로는 첫 화면이 통째로 "원료 정보 부족"이 된다 — 실제로 한 번 그랬다.
+    // 감추지 않고 뒤로 보내, 분석할 수 있는 제품이 이 50개 안에 들어오게 한다.
+    // (개수가 아니라 있다/없다로 가른다. 정렬 근거는 products.ingredient_count 캐시.)
     if (withVisibilityFilter) {
       builder = builder
         .eq('is_visible', true)
         .order('is_pinned', { ascending: false })
-        .order('pinned_order', { ascending: true });
+        .order('pinned_order', { ascending: true })
+        .order('has_ingredients', { ascending: false });
       if (shouldHideUnverifiedProducts()) builder = builder.eq('verification_status', 'verified');
     }
     return builder.order('created_at', { ascending: false }).range(from, from + safePageSize - 1);
@@ -540,7 +548,11 @@ export async function searchProducts(
       builder = builder
         .eq('is_visible', true)
         .order('is_pinned', { ascending: false })
-        .order('pinned_order', { ascending: true });
+        .order('pinned_order', { ascending: true })
+        // 목록과 같은 규칙 — 원재료가 있는 제품을 먼저 돌려준다. 프로필이 있으면
+        // 화면에서 궁합 점수로 다시 정렬하지만, 점수를 매길 수 없는 제품이 상위를
+        // 채우는 것은 그 전 단계에서 막는다.
+        .order('has_ingredients', { ascending: false });
       if (shouldHideUnverifiedProducts()) builder = builder.eq('verification_status', 'verified');
     }
     return builder;
