@@ -343,6 +343,52 @@ export async function fetchIngredients(): Promise<AdminIngredient[]> {
 }
 
 /** 원재료 편집기용 성분 검색 (한글/영문). */
+/** 라벨 붙여넣기 대조에 쓰는 성분 사전 한 벌. */
+export interface IngredientDictionaryEntry {
+  id: string;
+  nameKo: string;
+  nameEn: string | null;
+  aliases: string[];
+  riskLevel: RiskLevel;
+}
+
+/**
+ * 성분 사전 전체를 한 번에 읽는다.
+ *
+ * 라벨 원문에는 원재료가 보통 10~30개 들어 있다. 이름마다 검색을 보내면 화면을
+ * 한 번 쓸 때마다 요청이 그만큼 나간다. 사전은 500여 행에 이름·별칭뿐이라
+ * 한 번 받아 두고 메모리에서 대조하는 편이 싸다.
+ *
+ * 별칭 컬럼이 아직 없는 환경(마이그레이션 미적용)에서는 이름만으로 대조한다.
+ */
+export async function fetchIngredientDictionary(): Promise<IngredientDictionaryEntry[]> {
+  const run = (columns: string) => supabase
+    .from('ingredients')
+    .select(columns)
+    .order('name_ko', { ascending: true })
+    .limit(2000);
+
+  let rows: Record<string, unknown>[];
+  const withAliases = await run('id, name_ko, name_en, risk_level, aliases');
+  if (withAliases.error && isMissingIngredientNutritionSchema(withAliases.error)) {
+    const fallback = await run('id, name_ko, name_en, risk_level');
+    if (fallback.error) throw new Error(fallback.error.message);
+    rows = (fallback.data ?? []) as unknown as Record<string, unknown>[];
+  } else if (withAliases.error) {
+    throw new Error(withAliases.error.message);
+  } else {
+    rows = (withAliases.data ?? []) as unknown as Record<string, unknown>[];
+  }
+
+  return rows.map((row) => ({
+    id: String(row.id),
+    nameKo: String(row.name_ko ?? ''),
+    nameEn: (row.name_en as string | null) ?? null,
+    aliases: Array.isArray(row.aliases) ? (row.aliases as string[]) : [],
+    riskLevel: ((row.risk_level as RiskLevel) ?? 'safe'),
+  }));
+}
+
 export async function searchIngredients(query: string, limit = 20): Promise<AdminIngredient[]> {
   const q = query.trim();
   const run = (columns: string) => {
