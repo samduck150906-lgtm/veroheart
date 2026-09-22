@@ -287,8 +287,10 @@ export async function fetchEnrichmentQueue(input: {
   /** 'visible'(기본) · 'hidden' · 'all' */
   visibility?: string;
 }): Promise<Paged<EnrichmentQueueRow>> {
-  const response = await adminWrite<{ rows: EnrichmentQueueRow[]; total: number }>(
-    'listEnrichmentQueue',
+  // admin-write 가 아니라 전용 읽기 함수를 쓴다. 관리자 쓰기가 전부 지나가는
+  // 함수에 조회 조건을 걸어 두면, 필터 하나 고치자고 그 함수를 다시 배포해야 한다.
+  const response = await callAdminFunction<{ rows: EnrichmentQueueRow[]; total: number }>(
+    'admin-enrichment-read',
     input,
   );
   return { rows: response.rows ?? [], total: response.total ?? 0 };
