@@ -272,6 +272,8 @@ export interface EnrichmentQueueRow {
     main_category: string | null;
     image_url: string | null;
     barcode: string | null;
+    /** 노출 중인지. 정리로 내려둔 제품을 목록에서 구분해 보여 준다. */
+    is_visible?: boolean;
     verification_status: string | null;
   };
   source_count: number;
@@ -282,6 +284,8 @@ export async function fetchEnrichmentQueue(input: {
   pageSize: number;
   status?: string;
   missingField?: string;
+  /** 'visible'(기본) · 'hidden' · 'all' */
+  visibility?: string;
 }): Promise<Paged<EnrichmentQueueRow>> {
   const response = await adminWrite<{ rows: EnrichmentQueueRow[]; total: number }>(
     'listEnrichmentQueue',

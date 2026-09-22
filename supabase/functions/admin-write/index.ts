@@ -840,17 +840,23 @@ serve(async (req) => {
         const from = (page - 1) * pageSize;
         const status = optionalText(body.status, '상태', 40);
         const missingField = optionalText(body.missingField, '누락 필드', 40);
+        // 보완 큐에는 노출을 내린 제품도 그대로 남는다(정보를 채우면 다시 켜야 하므로).
+        // 다만 기본 작업 대상은 지금 사용자에게 보이는 제품이다 — 숨긴 제품이 목록을
+        // 덮으면 정작 채워야 할 제품을 찾지 못한다.
+        const visibility = optionalText(body.visibility, '노출 상태', 20);
 
         let query = db
           .from('product_enrichment_queue')
           .select(
-            'product_id, status, missing_fields, review_note, reviewed_by, reviewed_at, updated_at, products!inner(id, name, brand_name, target_pet_type, main_category, image_url, barcode, verification_status)',
+            'product_id, status, missing_fields, review_note, reviewed_by, reviewed_at, updated_at, products!inner(id, name, brand_name, target_pet_type, main_category, image_url, barcode, verification_status, is_visible)',
             { count: 'exact' },
           )
           .order('updated_at', { ascending: false })
           .range(from, from + pageSize - 1);
         if (status && status !== 'all') query = query.eq('status', status);
         if (missingField && missingField !== 'all') query = query.contains('missing_fields', [missingField]);
+        if (visibility === 'visible') query = query.eq('products.is_visible', true);
+        else if (visibility === 'hidden') query = query.eq('products.is_visible', false);
 
         const { data, count, error } = await query;
         if (error) throw error;
