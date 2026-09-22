@@ -834,45 +834,6 @@ serve(async (req) => {
       }
 
       // ── 제품 데이터 보완 큐 / 출처 ────────────────────────────────────
-      case 'listEnrichmentQueue': {
-        const page = clampPage(body.page);
-        const pageSize = clampPageSize(body.pageSize);
-        const from = (page - 1) * pageSize;
-        const status = optionalText(body.status, '상태', 40);
-        const missingField = optionalText(body.missingField, '누락 필드', 40);
-
-        let query = db
-          .from('product_enrichment_queue')
-          .select(
-            'product_id, status, missing_fields, review_note, reviewed_by, reviewed_at, updated_at, products!inner(id, name, brand_name, target_pet_type, main_category, image_url, barcode, verification_status)',
-            { count: 'exact' },
-          )
-          .order('updated_at', { ascending: false })
-          .range(from, from + pageSize - 1);
-        if (status && status !== 'all') query = query.eq('status', status);
-        if (missingField && missingField !== 'all') query = query.contains('missing_fields', [missingField]);
-
-        const { data, count, error } = await query;
-        if (error) throw error;
-        const productIds = (data ?? []).map((row: { product_id: string }) => row.product_id);
-        const sourceCounts = new Map<string, number>();
-        if (productIds.length > 0) {
-          const { data: sources, error: sourceError } = await db
-            .from('product_data_sources')
-            .select('product_id')
-            .in('product_id', productIds);
-          if (sourceError) throw sourceError;
-          for (const source of sources ?? []) {
-            sourceCounts.set(source.product_id, (sourceCounts.get(source.product_id) ?? 0) + 1);
-          }
-        }
-        const rows = (data ?? []).map((row: { product_id: string }) => ({
-          ...row,
-          source_count: sourceCounts.get(row.product_id) ?? 0,
-        }));
-        return json({ ok: true, rows, total: count ?? 0 }, 200, cors);
-      }
-
       case 'saveProductSource': {
         const productId = requireUuid(body.productId ?? body.product_id, '제품 ID');
         const sourceUrl = requireText(body.sourceUrl ?? body.source_url, '출처 URL', 2000);

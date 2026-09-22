@@ -7,9 +7,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
  * product_enrichment_queue 는 RLS 가 켜져 있고 정책이 하나도 없다. 관리자 화면이
  * anon 으로는 한 줄도 읽을 수 없어 service_role 경로가 필요하다.
  *
- * admin-write 에도 같은 조회(listEnrichmentQueue)가 있지만, 그 함수는 관리자
- * 쓰기가 전부 지나가는 80kB 짜리라 조회 조건 하나를 고치자고 다시 배포하기에는
- * 위험이 크다. 읽기는 admin-products-read 처럼 작은 함수로 떼어 둔다.
+ * 조회를 admin-write 에서 떼어 온 이유: 그 함수는 관리자 쓰기가 전부 지나가는
+ * 80kB 짜리라, 조회 조건 하나를 고치자고 다시 배포했다가 실패하면 관리자 콘솔이
+ * 통째로 멎는다. 읽기는 admin-products-read 처럼 작은 함수로 나눠 둔다.
  *
  * 인증: admin-write 와 같은 x-admin-token 규약.
  */
