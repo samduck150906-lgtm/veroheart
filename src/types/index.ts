@@ -100,11 +100,22 @@ export interface NutritionData {
   mineralScore?: number;
 }
 
+export type ProductVerificationStatus = 'pending' | 'reviewed' | 'verified';
+export type ProductAnalysisStatus = 'unavailable' | 'partial' | 'ready' | 'blocked';
+export type ProductCatalogSource = 'legacy' | 'community_scan' | 'external' | 'admin';
+
 export interface Product {
   id: string;
   brand: string;
   manufacturerName?: string;
+  /** 판매처 원문을 보존하는 기존 이름. 공개 표시는 displayName을 우선한다. */
   name: string;
+  displayName?: string;
+  variantName?: string;
+  netWeightText?: string;
+  slug?: string;
+  catalogSource?: ProductCatalogSource;
+  analysisStatus?: ProductAnalysisStatus;
   category: string;
   mainCategory?: string;
   subCategory?: string;
@@ -117,7 +128,7 @@ export interface Product {
   ingredients: Ingredient[];
   reviewsCount: number;
   averageRating: number;
-  verificationStatus?: 'pending' | 'verified' | 'needs_review';
+  verificationStatus?: ProductVerificationStatus;
   verifiedAt?: string | null;
   /** 보장성분 영양 밸런스 — 있을 때만 영양 섹션 노출 */
   nutrition?: NutritionData;

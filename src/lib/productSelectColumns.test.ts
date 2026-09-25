@@ -17,6 +17,12 @@ const SOURCE = readFileSync(join(process.cwd(), 'src/lib/supabase.ts'), 'utf8');
 const REQUIRED_PRODUCT_COLUMNS = [
   'id',
   'name',
+  'display_name',
+  'variant_name',
+  'net_weight_text',
+  'slug',
+  'catalog_source',
+  'analysis_status',
   'brand_name',
   'manufacturer_name',
   'product_type',

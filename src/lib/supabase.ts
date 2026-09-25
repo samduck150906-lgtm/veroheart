@@ -275,7 +275,8 @@ export async function getProductsPage(page = 1, pageSize = MOBILE_PRODUCT_PAGE_S
   const from = (safePage - 1) * safePageSize;
   const { data, error } = await queryVisibleProducts((withVisibilityFilter) => {
     let builder = supabase.from('products').select(`
-      id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
+      id, name, display_name, variant_name, net_weight_text, slug, catalog_source, analysis_status,
+      brand_name, manufacturer_name, product_type, main_category, sub_category,
       target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
       verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating
     `);
@@ -313,7 +314,8 @@ export async function getProductDetail(productId: string): Promise<Product | nul
     let builder = supabase
       .from('products')
       .select(`
-        id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
+        id, name, display_name, variant_name, net_weight_text, slug, catalog_source, analysis_status,
+        brand_name, manufacturer_name, product_type, main_category, sub_category,
         target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
         verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
         product_ingredients (
@@ -346,7 +348,8 @@ export async function getProductByBarcode(barcode: string): Promise<Product | nu
       let builder = supabase
         .from('products')
         .select(`
-          id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
+          id, name, display_name, variant_name, net_weight_text, slug, catalog_source, analysis_status,
+          brand_name, manufacturer_name, product_type, main_category, sub_category,
           target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
           verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
           product_ingredients (
@@ -477,7 +480,8 @@ export async function searchProducts(
 
   const { data, error } = await queryVisibleProducts((withVisibilityFilter) => {
     let builder = supabase.from('products').select(`
-      id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
+      id, name, display_name, variant_name, net_weight_text, slug, catalog_source, analysis_status,
+      brand_name, manufacturer_name, product_type, main_category, sub_category,
       target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
       verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
       product_ingredients (
@@ -669,7 +673,8 @@ export async function getRecentViews(userId: string) {
         product_id,
         viewed_at,
         products (
-          id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
+          id, name, display_name, variant_name, net_weight_text, slug, catalog_source, analysis_status,
+          brand_name, manufacturer_name, product_type, main_category, sub_category,
           target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
           verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating
         )
@@ -706,7 +711,8 @@ export async function getProductsByBrand(brandName: string): Promise<Product[]> 
     let builder = supabase
       .from('products')
       .select(`
-        id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
+        id, name, display_name, variant_name, net_weight_text, slug, catalog_source, analysis_status,
+        brand_name, manufacturer_name, product_type, main_category, sub_category,
         target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
         verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
         product_ingredients (
@@ -781,7 +787,8 @@ export async function searchDiaryProducts(
     let builder = supabase
       .from('products')
       .select(`
-        id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
+        id, name, display_name, variant_name, net_weight_text, slug, catalog_source, analysis_status,
+        brand_name, manufacturer_name, product_type, main_category, sub_category,
         target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
         verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
         product_ingredients (

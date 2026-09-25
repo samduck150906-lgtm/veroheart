@@ -14,6 +14,12 @@ export type SupabaseProductRow = {
   brand_name: string;
   manufacturer_name?: string | null;
   name: string;
+  display_name?: string | null;
+  variant_name?: string | null;
+  net_weight_text?: string | null;
+  slug?: string | null;
+  catalog_source?: string | null;
+  analysis_status?: string | null;
   product_type: string;
   main_category?: string | null;
   sub_category?: string | null;
@@ -219,14 +225,36 @@ export function mapProductFromSupabaseRow(p: SupabaseProductRow): Product {
     targetPet === 'dog' || targetPet === 'cat' || targetPet === 'all' ? targetPet : undefined;
   const verificationStatus = p.verification_status;
   const vs: Product['verificationStatus'] =
-    verificationStatus === 'verified' || verificationStatus === 'needs_review' || verificationStatus === 'pending'
+    verificationStatus === 'verified' || verificationStatus === 'reviewed' || verificationStatus === 'pending'
       ? verificationStatus
       : 'pending';
+  const catalogSource = p.catalog_source;
+  const mappedCatalogSource: Product['catalogSource'] =
+    catalogSource === 'legacy' ||
+    catalogSource === 'community_scan' ||
+    catalogSource === 'external' ||
+    catalogSource === 'admin'
+      ? catalogSource
+      : undefined;
+  const analysisStatus = p.analysis_status;
+  const mappedAnalysisStatus: Product['analysisStatus'] =
+    analysisStatus === 'unavailable' ||
+    analysisStatus === 'partial' ||
+    analysisStatus === 'ready' ||
+    analysisStatus === 'blocked'
+      ? analysisStatus
+      : undefined;
   return {
     id: p.id,
     brand: p.brand_name,
     manufacturerName: p.manufacturer_name || undefined,
     name: p.name,
+    displayName: p.display_name ?? undefined,
+    variantName: p.variant_name ?? undefined,
+    netWeightText: p.net_weight_text ?? undefined,
+    slug: p.slug ?? undefined,
+    catalogSource: mappedCatalogSource,
+    analysisStatus: mappedAnalysisStatus,
     category: p.product_type,
     mainCategory: p.main_category ?? undefined,
     subCategory: p.sub_category ?? undefined,

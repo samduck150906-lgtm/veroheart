@@ -56,4 +56,31 @@ describe('mapProductFromSupabaseRow', () => {
     const p = mapProductFromSupabaseRow(row);
     expect(p.ingredients[0].riskLevel).toBe('caution');
   });
+
+  it('preserves a raw retailer title while mapping clean catalog fields', () => {
+    const row: SupabaseProductRow = {
+      id: 'p3',
+      brand_name: '오리젠',
+      name: '오리젠 공식 사료 1개 로켓배송',
+      display_name: '오리지널 독',
+      variant_name: '닭고기 · 성견',
+      net_weight_text: '2kg',
+      slug: 'orijen-original-dog',
+      catalog_source: 'community_scan',
+      analysis_status: 'partial',
+      product_type: 'food',
+      verification_status: 'reviewed',
+    };
+
+    const product = mapProductFromSupabaseRow(row);
+
+    expect(product.name).toBe('오리젠 공식 사료 1개 로켓배송');
+    expect(product.displayName).toBe('오리지널 독');
+    expect(product.variantName).toBe('닭고기 · 성견');
+    expect(product.netWeightText).toBe('2kg');
+    expect(product.slug).toBe('orijen-original-dog');
+    expect(product.catalogSource).toBe('community_scan');
+    expect(product.analysisStatus).toBe('partial');
+    expect(product.verificationStatus).toBe('reviewed');
+  });
 });
