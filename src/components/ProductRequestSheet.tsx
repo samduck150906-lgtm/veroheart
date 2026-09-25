@@ -70,18 +70,18 @@ export default function ProductRequestSheet({
         productUrl: url,
         note,
       });
-      if (result.ok) {
+      if (result.ok === true) {
         notify.success('등록 요청이 완료됐어요. 확인 후 반영할게요.');
         onClose();
         return;
       }
       // 이미 요청한 제품은 실패가 아니라 "접수됨"이므로 시트를 닫아 준다.
-      if (result.reason === 'duplicate') {
+      if (result.ok === false && result.reason === 'duplicate') {
         notify.info(result.message);
         onClose();
         return;
       }
-      notify.error(result.message);
+      if (result.ok === false) notify.error(result.message);
     } catch (err) {
       notify.error(err instanceof Error ? err.message : '요청을 저장하지 못했습니다.');
     } finally {
