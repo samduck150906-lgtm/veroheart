@@ -1,6 +1,14 @@
 import type { AllergyRelationshipMatch } from '../analysis/allergyFamilyMatcher';
 
 export type AllergyDisplayLevel = 'hard' | 'caution' | 'none' | 'unknown';
+export type AllergyDisplayUnknownReason = 'missing_ingredients' | 'missing_profile';
+
+export interface AllergyDisplayNotice {
+  badge: string;
+  title: string;
+  description: string;
+  actionLabel?: string;
+}
 
 export interface AllergyDisplayInput {
   allergyHits: string[];
@@ -11,6 +19,8 @@ export interface AllergyDisplayState {
   level: AllergyDisplayLevel;
   shortText: string;
   summaryText: string;
+  unknownReason?: AllergyDisplayUnknownReason;
+  notice?: AllergyDisplayNotice;
 }
 
 export interface AllergyDisplayOptions {
@@ -54,6 +64,12 @@ export function buildAllergyDisplayState(
       level: 'unknown',
       shortText: '원료 정보 부족',
       summaryText: '원료 정보가 부족해 등록 알레르기와의 일치 여부를 확인할 수 없음',
+      unknownReason: 'missing_ingredients',
+      notice: {
+        badge: '원료 데이터 준비 중',
+        title: '아직 등록된 원료 정보가 없어요',
+        description: `제품의 전성분 정보가 준비되면 ${petName}의 알레르기와 비교해 알려드릴게요.`,
+      },
     };
   }
 
@@ -62,6 +78,13 @@ export function buildAllergyDisplayState(
       level: 'unknown',
       shortText: '프로필 미등록',
       summaryText: '프로필에 비교할 알레르기가 등록되지 않음',
+      unknownReason: 'missing_profile',
+      notice: {
+        badge: '맞춤 분석 준비',
+        title: '알레르기 프로필을 채워주세요',
+        description: '피해야 할 원료를 등록하면 이 제품의 전성분과 바로 비교해 드려요.',
+        actionLabel: '알레르기 등록하기',
+      },
     };
   }
 

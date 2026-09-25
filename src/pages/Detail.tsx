@@ -374,13 +374,20 @@ export default function Detail() {
       return { headline: '알레르기 관련 원료를 확인해 주세요', headlineColor: '#F59E0B' };
     }
     if (allergyDisplay.level === 'unknown') {
-      return { headline: '원료 정보가 부족해 알레르기를 확인할 수 없어요', headlineColor: '#F59E0B' };
+      return {
+        headline: allergyDisplay.notice?.title ?? '알레르기 분석을 준비하고 있어요',
+        headlineColor: 'var(--pdp-ink)',
+      };
     }
     if (cautionIngs.length > 0) {
       return { headline: `확인해야 할 성분이 ${cautionIngs.length}개 있어요`, headlineColor: '#F59E0B' };
     }
     return { headline: '현재 등록된 원료에서 주의 항목을 확인하지 못했어요', headlineColor: 'var(--text-dark)' };
   })();
+  const headlineNotice = allergyDisplay.level === 'unknown' && allergyIngs.length === 0 && dangerIngs.length === 0
+    ? allergyDisplay.notice
+    : undefined;
+  const isProfileNotice = allergyDisplay.unknownReason === 'missing_profile';
 
   // ── 리뷰 요약(별점 분포·태그) — 실제 reviews 데이터에서 파생 ──
   const reviewRatings = reviews.map(r => r.rating);
@@ -622,9 +629,89 @@ export default function Detail() {
 
       {/* Toss-style Ingredient Analysis */}
       <section style={{ marginBottom: '40px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: 900, color: headlineColor, lineHeight: 1.4, marginBottom: '24px', letterSpacing: '-0.02em' }}>
-          {headline}
-        </h2>
+        {headlineNotice ? (
+          <div
+            role="status"
+            aria-label={headlineNotice.title}
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '14px',
+              padding: '19px',
+              marginBottom: '24px',
+              borderRadius: '22px',
+              background: isProfileNotice ? 'var(--pdp-surface-soft)' : 'var(--pdp-caution-bg)',
+              border: isProfileNotice ? '1px solid var(--pdp-line)' : '1px solid var(--pdp-caution-line)',
+              boxShadow: 'var(--pdp-e1)',
+            }}
+          >
+            <div
+              aria-hidden
+              style={{
+                width: '42px',
+                height: '42px',
+                flex: '0 0 42px',
+                display: 'grid',
+                placeItems: 'center',
+                borderRadius: '14px',
+                color: isProfileNotice ? 'var(--pdp-ink)' : 'var(--pdp-caution-fg)',
+                background: isProfileNotice ? 'var(--pdp-surface)' : 'rgba(255,255,255,.55)',
+                border: isProfileNotice ? '1px solid var(--pdp-line)' : '1px solid var(--pdp-caution-line)',
+              }}
+            >
+              {isProfileNotice ? <Dog size={21} strokeWidth={2.3} /> : <AlertTriangle size={21} strokeWidth={2.3} />}
+            </div>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  minHeight: '24px',
+                  padding: '3px 9px',
+                  marginBottom: '8px',
+                  borderRadius: '999px',
+                  fontSize: '11px',
+                  fontWeight: 900,
+                  letterSpacing: '-0.01em',
+                  color: isProfileNotice ? 'var(--pdp-ink-muted)' : 'var(--pdp-caution-fg)',
+                  background: isProfileNotice ? 'var(--pdp-surface)' : 'rgba(255,255,255,.55)',
+                }}
+              >
+                {headlineNotice.badge}
+              </span>
+              <h2 style={{ margin: 0, fontSize: '21px', fontWeight: 900, color: 'var(--pdp-ink)', lineHeight: 1.35, letterSpacing: '-0.025em' }}>
+                {headlineNotice.title}
+              </h2>
+              <p style={{ margin: '7px 0 0', fontSize: '14px', fontWeight: 600, color: 'var(--pdp-ink-muted)', lineHeight: 1.55 }}>
+                {headlineNotice.description}
+              </p>
+              {headlineNotice.actionLabel ? (
+                <button
+                  type="button"
+                  onClick={() => navigate('/profile?tab=pets')}
+                  style={{
+                    minHeight: '42px',
+                    marginTop: '14px',
+                    padding: '0 16px',
+                    border: 'none',
+                    borderRadius: '13px',
+                    background: 'var(--pdp-ink)',
+                    color: 'var(--pdp-surface)',
+                    fontSize: '13px',
+                    fontWeight: 900,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {headlineNotice.actionLabel}
+                </button>
+              ) : null}
+            </div>
+          </div>
+        ) : (
+          <h2 style={{ fontSize: '26px', fontWeight: 900, color: headlineColor, lineHeight: 1.4, marginBottom: '24px', letterSpacing: '-0.02em' }}>
+            {headline}
+          </h2>
+        )}
         
         {/* 사료성분 분석 (규칙 기반 · 보장성분 + 원재료 실제 데이터) */}
         <FeedAnalysisCard product={product} profile={profile} />
