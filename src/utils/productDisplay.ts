@@ -73,7 +73,11 @@ export function normalizeProductDisplayName(product: NameSource): string {
  * 진짜 브랜드는 긴 제품명 안에 섞여 있어 추출이 필요하다 — 그건 데이터 작업이고,
  * 여기서는 내부 라벨을 화면에 내보내지 않는 것까지만 한다.
  */
-const SOURCE_LABEL_BRANDS = new Set(['쿠팡검색', '쿠팡상품', '쿠팡', 'coupang']);
+const SOURCE_LABEL_BRANDS = new Set([
+  '쿠팡검색', '쿠팡상품', '쿠팡', 'coupang',
+  '네이버쇼핑', '스마트스토어', '11번가', 'g마켓', '옥션', '롯데온', 'ssg',
+  '쇼핑몰', '온라인몰', '수집', '크롤링',
+]);
 
 /**
  * 화면에 쓸 브랜드명. 수집 출처 라벨이면 빈 문자열을 돌려주고, 호출부는 브랜드 줄을 숨긴다.
