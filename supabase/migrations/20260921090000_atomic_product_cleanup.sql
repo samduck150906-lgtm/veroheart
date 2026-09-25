@@ -36,6 +36,10 @@ BEGIN
     RAISE EXCEPTION '한 번에 최대 100개까지 정리할 수 있습니다.';
   END IF;
 
+  -- cleanup RPC 간 중복 검사와 갱신을 직렬화한다. 서로 다른 행을
+  -- 동시에 같은 정규화 이름·브랜드로 바꾸는 경우도 둘 다 통과하지 않는다.
+  PERFORM pg_advisory_xact_lock(hashtext('public.admin_apply_product_cleanup'));
+
   FOR v_item IN SELECT value FROM jsonb_array_elements(p_items)
   LOOP
     BEGIN

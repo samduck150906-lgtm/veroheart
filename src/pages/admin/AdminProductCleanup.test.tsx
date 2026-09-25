@@ -67,6 +67,30 @@ describe('AdminProductCleanup', () => {
     expect((screen.getByLabelText(`${SAFE_ID} 제품명 선택`) as HTMLInputElement).checked).toBe(false);
   });
 
+  it('운영자가 자동 제안값을 바꾸면 안전한 전체 선택에 포함하지 않는다', async () => {
+    render(<AdminProductCleanup />);
+    await screen.findByText('[특가] 오리젠 오리지널 캣');
+
+    fireEvent.change(screen.getByLabelText(`${SAFE_ID} 제안 제품명`), {
+      target: { value: '임의로 바꾼 제품명' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /안전한 제안 전체 선택/ }));
+
+    expect((screen.getByLabelText(`${SAFE_ID} 제품명 선택`) as HTMLInputElement).checked).toBe(false);
+    expect((screen.getByRole('button', { name: /선택 0건 검토/ }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('선택한 후 검색에서 숨겨져도 적용 대상을 유지한다', async () => {
+    render(<AdminProductCleanup />);
+    await screen.findByText('[특가] 오리젠 오리지널 캣');
+    fireEvent.click(screen.getByLabelText(`${SAFE_ID} 제품명 선택`));
+
+    fireEvent.change(screen.getByLabelText('현재 또는 제안 제품명·브랜드 검색'), { target: { value: '펫트리언츠' } });
+    expect(screen.queryByText('[특가] 오리젠 오리지널 캣')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /선택 1건 검토/ }));
+    expect(screen.getByRole('dialog').textContent).toContain('[특가] 오리젠 오리지널 캣');
+  });
+
   it('현재값과 제안값을 검색하고 제품명·브랜드를 독립 선택한다', async () => {
     render(<AdminProductCleanup />);
     await screen.findByText('[특가] 오리젠 오리지널 캣');

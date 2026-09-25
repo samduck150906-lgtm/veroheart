@@ -25,6 +25,25 @@ describe('제품명·브랜드 정리 제안', () => {
     }
   });
 
+  it('광고 단어와 식별 정보가 섞인 괄호를 통째로 제거하지 않는다', () => {
+    for (const identifier of ['닭고기', '연어맛', '전연령', '피부관리']) {
+      const original = `로얄캐닌 사료 [정품 ${identifier}]`;
+      const result = suggestProductNameCleanup({ name: original, brandName: '로얄캐닌' });
+      expect(result.name, identifier).toContain(identifier);
+      expect(result.name, identifier).toBe(original);
+    }
+  });
+
+  it('구분자와 쉼표 뒤의 광고·식별 혼합 문구도 제거하지 않는다', () => {
+    for (const [original, identifier] of [
+      ['로얄캐닌 사료 | 정품 닭고기', '닭고기'],
+      ['로얄캐닌 사료, 특가 연어맛', '연어맛'],
+    ]) {
+      const result = suggestProductNameCleanup({ name: original, brandName: '로얄캐닌' });
+      expect(result.name).toContain(identifier);
+    }
+  });
+
   it('중량·포장 수량이 있는 판매 옵션은 삭제하지 않고 확인 필요로 둔다', () => {
     const original = '굿포펫 엔자이츄 꿀고구마맛, 1개, 100g, 3팩';
     const result = suggestProductNameCleanup({ name: original, brandName: '굿포펫' });

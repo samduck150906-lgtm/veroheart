@@ -78,25 +78,26 @@ const AdminProductCleanup: React.FC = () => {
     id: row.id, name: row.name, brandName: row.brand_name,
   }))), [rows]);
 
+  const allCandidates = useMemo<Candidate[]>(() => rows
+    .map((product) => ({ product, suggestion: suggestionMap.get(product.id) }))
+    .filter((item): item is Candidate => Boolean(item.suggestion?.changed)), [rows, suggestionMap]);
+
   const candidates = useMemo<Candidate[]>(() => {
     const query = search.trim().toLowerCase();
-    return rows
-      .map((product) => ({ product, suggestion: suggestionMap.get(product.id) }))
-      .filter((item): item is Candidate => Boolean(item.suggestion?.changed))
-      .filter(({ product }) => {
+    return allCandidates.filter(({ product }) => {
         const draft = drafts[product.id];
         return !query || [product.name, product.brand_name, draft?.name, draft?.brandName]
           .some((value) => value?.toLowerCase().includes(query));
       });
-  }, [drafts, rows, search, suggestionMap]);
+  }, [allCandidates, drafts, search]);
 
-  const selectedChanges = useMemo(() => candidates.flatMap(({ product }) => {
+  const selectedChanges = useMemo(() => allCandidates.flatMap(({ product }) => {
     const draft = drafts[product.id] ?? { name: product.name, brandName: product.brand_name };
     const fields: CleanupField[] = [];
     if (selected.has(selectionKey(product.id, 'name')) && draft.name.trim() !== product.name) fields.push('name');
     if (selected.has(selectionKey(product.id, 'brand')) && draft.brandName.trim() !== product.brand_name) fields.push('brand');
     return fields.length ? [{ product, draft, fields }] : [];
-  }), [candidates, drafts, selected]);
+  }), [allCandidates, drafts, selected]);
 
   const selectedProductCount = new Set(selectedChanges.map(({ product }) => product.id)).size;
   const reviewCount = candidates.filter(({ suggestion }) => suggestion.needsReview).length;
@@ -118,10 +119,10 @@ const AdminProductCleanup: React.FC = () => {
     const next = new Set<string>();
     for (const { product, suggestion } of candidates) {
       const draft = drafts[product.id];
-      if (suggestion.nameChanged && !suggestion.nameNeedsReview && draft?.name.trim() !== product.name) {
+      if (suggestion.nameChanged && !suggestion.nameNeedsReview && draft?.name.trim() === suggestion.name) {
         next.add(selectionKey(product.id, 'name'));
       }
-      if (suggestion.brandChanged && !suggestion.brandNeedsReview && draft?.brandName.trim() !== product.brand_name) {
+      if (suggestion.brandChanged && !suggestion.brandNeedsReview && draft?.brandName.trim() === suggestion.brandName) {
         next.add(selectionKey(product.id, 'brand'));
       }
     }

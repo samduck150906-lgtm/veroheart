@@ -10,8 +10,7 @@ const PROMO_TOKENS = new Set([
 const PROMO_WORD_RE =
   /(?:무료\s*배송|로켓(?:배송|와우)?|오늘\s*출발|당일(?:발송|출고)|정품|공식\s*판매|본사\s*직영|최저가|초?특가|할인|세일|사은품|증정|쿠폰|이벤트|한정|핫딜|무배|빠른\s*배송|무료\s*반품)/i;
 
-const PROMO_BRACKET_RE =
-  /[[(【「{][^\])】」}]*(?:무료|로켓|배송|정품|공식|할인|특가|사은품|증정|쿠폰|택배|당일|오늘출발|이벤트|한정|최저가)[^\])】」}]*[\])】」}]/g;
+const BRACKET_SEGMENT_RE = /[[(【「{]([^\])】」}]*)[\])】」}]/g;
 
 /** 중량·포장 단위는 SKU 식별자일 수 있어 자동 삭제하지 않는다. */
 const SKU_TOKEN_RE = /\d+(?:\.\d+)?\s*(?:kg|g|mg|ml|l|리터|개입|세트|박스|캔|팩|봉|개|매|포|입|p|ea)(?![\p{L}\p{N}])/giu;
@@ -49,13 +48,24 @@ function skuTokens(value: string): string[] {
   return [...value.matchAll(SKU_TOKEN_RE)].map((match) => match[0].replace(/\s+/g, '').toLowerCase());
 }
 
+/** 광고 토큰과 기호만 남는 문구인지 보수적으로 판단한다. */
+function isPurelyPromotional(value: string): boolean {
+  let rest = value.normalize('NFKC').toLowerCase();
+  let previous = '';
+  while (rest !== previous) {
+    previous = rest;
+    rest = rest.replace(PROMO_WORD_RE, ' ');
+  }
+  return rest.replace(/[\p{P}\p{S}\s]+/gu, '') === '';
+}
+
 function stripClearlyPromotionalTail(value: string): { value: string; riskyTail: boolean } {
   const match = /\s*(?:_|\|)\s*/.exec(value);
   if (!match?.index) return { value, riskyTail: false };
   const head = value.slice(0, match.index).trim();
   const tail = value.slice(match.index + match[0].length).trim();
   if (!tail) return { value: head, riskyTail: false };
-  if (PROMO_WORD_RE.test(tail) && skuTokens(tail).length === 0) return { value: head, riskyTail: false };
+  if (isPurelyPromotional(tail) && skuTokens(tail).length === 0) return { value: head, riskyTail: false };
   return { value, riskyTail: true };
 }
 
@@ -63,7 +73,7 @@ function stripTrailingPromoSegments(value: string): string {
   const parts = value.split(',');
   while (parts.length > 1) {
     const tail = parts.at(-1)?.trim() ?? '';
-    if (!tail || PROMO_WORD_RE.test(tail) || PROMO_TOKENS.has(tail.toLowerCase())) parts.pop();
+    if (!tail || isPurelyPromotional(tail) || PROMO_TOKENS.has(tail.toLowerCase())) parts.pop();
     else break;
   }
   return parts.join(',');
@@ -115,7 +125,9 @@ export function suggestProductNameCleanup(input: {
   }
 
   let value = original;
-  const withoutBrackets = value.replace(PROMO_BRACKET_RE, ' ');
+  const withoutBrackets = value.replace(BRACKET_SEGMENT_RE, (whole, content: string) => (
+    isPurelyPromotional(content) ? ' ' : whole
+  ));
   if (withoutBrackets !== value) {
     reasons.push('광고성 괄호 문구 제거');
     value = withoutBrackets;

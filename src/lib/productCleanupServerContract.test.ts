@@ -19,6 +19,7 @@ describe('제품 정리 서버 저장 계약', () => {
   });
 
   it('행 잠금과 기존값 비교로 동시 수정 충돌을 감지한다', () => {
+    expect(migration).toContain("pg_advisory_xact_lock(hashtext('public.admin_apply_product_cleanup'))");
     expect(migration).toContain('FOR UPDATE');
     expect(migration).toContain('v_current.name <> v_expected_name');
     expect(migration).toContain('v_current.brand_name <> v_expected_brand');
