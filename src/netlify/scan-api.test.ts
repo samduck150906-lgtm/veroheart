@@ -57,7 +57,7 @@ class FakeRepository implements ScanRepository {
 
   async createSignedUploadUrl(path: string) {
     this.lastSignedPath = path;
-    return { path, token: 'signed-token' };
+    return { path, token: 'signed-token', signedUrl: 'https://storage.example.test/signed' };
   }
 }
 

@@ -31,7 +31,7 @@ export interface ScanRepository {
     barcode: string | null,
   ): Promise<{ id: string; status: 'draft'; scannedBarcode: string | null; ownerId?: string }>;
   findOwnedSubmission(id: string, userId: string): Promise<StoredScanSubmission | null>;
-  createSignedUploadUrl(path: string): Promise<{ path: string; token?: string; signedUrl?: string }>;
+  createSignedUploadUrl(path: string): Promise<{ path: string; token: string; signedUrl: string }>;
 }
 
 export interface ScanEndpointContext {
@@ -135,7 +135,9 @@ export function createScanRepository(client: SupabaseClient): ScanRepository {
       const { data, error } = await client.storage
         .from('product-scan-evidence')
         .createSignedUploadUrl(path);
-      if (error || !data) throw new Error('scan_upload_sign_failed');
+      if (error || !data?.path || !data.token || !data.signedUrl) {
+        throw new Error('scan_upload_sign_failed');
+      }
       return { path: data.path, token: data.token, signedUrl: data.signedUrl };
     },
   };
