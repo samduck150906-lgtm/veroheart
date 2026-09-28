@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "id": "fda-animal-food-ingredients",
+      "organization": "U.S. Food and Drug Administration",
+      "title": "Animal Food Ingredients",
+      "url": "https://www.fda.gov/animal-veterinary/animal-foods-feeds/animal-food-ingredients",
+      "sourceType": "government_guidance",
+      "jurisdiction": "US",
+      "accessedAt": "2026-09-28",
+      "allowedUses": ["regulatory_status", "ingredient_identity"]
+    },
+    {
+      "id": "fda-animal-food-labeling",
+      "organization": "U.S. Food and Drug Administration",
+      "title": "Animal Food Labeling and Pet Food Claims",
+      "url": "https://www.fda.gov/animal-veterinary/animal-foods-feeds/animal-food-labeling-and-pet-food-claims",
+      "sourceType": "government_guidance",
+      "jurisdiction": "US",
+      "accessedAt": "2026-09-28",
+      "allowedUses": ["label_order", "ingredient_identity"]
+    },
+    {
+      "id": "aafco-ingredient-list-guidance",
+      "organization": "Association of American Feed Control Officials",
+      "title": "What's in the Ingredients List?",
+      "url": "https://www.aafco.org/consumers/understanding-pet-food/whats-in-the-ingredients-list/",
+      "sourceType": "standards_guidance",
+      "jurisdiction": "US",
+      "accessedAt": "2026-09-28",
+      "allowedUses": ["label_order", "ingredient_identity"]
+    },
+    {
+      "id": "eu-feed-materials-68-2013",
+      "organization": "European Union",
+      "title": "Commission Regulation (EU) No 68/2013 on the Catalogue of feed materials",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/ALL/?uri=CELEX:32013R0068",
+      "sourceType": "regulation",
+      "jurisdiction": "EU",
+      "accessedAt": "2026-09-28",
+      "allowedUses": ["ingredient_identity", "processing_identity", "regulatory_status"]
+    },
+    {
+      "id": "kr-mafra-pet-food-labeling-2025",
+      "organization": "농림축산식품부",
+      "title": "반려동물사료의 기타 표시사항(사료 등의 기준 및 규격 별표 15의2)",
+      "url": "https://www.law.go.kr/LSW/flDownload.do?bylClsCd=200201&flNm=%5B%EB%B3%84%ED%91%9C+15%EC%9D%982%5D+%EB%B0%98%EB%A0%A4%EB%8F%99%EB%AC%BC%EC%82%AC%EB%A3%8C%EC%9D%98+%EA%B8%B0%ED%83%80+%ED%91%9C%EC%8B%9C%EC%82%AC%ED%95%AD%28%EC%A0%9C10%EC%A1%B0%EC%A0%9C1%ED%95%AD+%EA%B4%80%EB%A0%A8%29&flSeq=156118241",
+      "sourceType": "regulation",
+      "jurisdiction": "KR",
+      "accessedAt": "2026-09-28",
+      "allowedUses": ["label_requirements", "ingredient_identity", "processing_identity"]
+    },
+    {
+      "id": "merck-vet-cutaneous-food-allergy",
+      "organization": "Merck Veterinary Manual",
+      "title": "Cutaneous Food Allergy in Animals",
+      "url": "https://www.merckvetmanual.com/integumentary-system/food-allergy/cutaneous-food-allergy-in-animals",
+      "sourceType": "veterinary_reference",
+      "jurisdiction": "GLOBAL",
+      "accessedAt": "2026-09-28",
+      "allowedUses": ["allergen_context", "hydrolysis_context"]
+    },
+    {
+      "id": "cornell-small-animal-toxins",
+      "organization": "Cornell University College of Veterinary Medicine",
+      "title": "Small Animal Toxins",
+      "url": "https://www.vet.cornell.edu/hospitals/pharmacy/consumer-clinical-care-guidelines-animals/small-animal-toxins",
+      "sourceType": "veterinary_reference",
+      "jurisdiction": "GLOBAL",
+      "accessedAt": "2026-09-28",
+      "allowedUses": ["toxicity_rule", "species_scope"]
+    }
+  ]
+}
