@@ -20,6 +20,7 @@
     "@capacitor/cli": "^8.3.0",
     "@capacitor/core": "^8.3.0",
     "@capacitor/ios": "^8.3.0",
+    "@google/genai": "^2.24.0",
     "@supabase/supabase-js": "^2.100.1",
     "@tosspayments/payment-widget-sdk": "^0.12.1",
     "dotenv": "^17.4.2",
@@ -32,6 +33,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@netlify/edge-functions": "^4.0.0",
+    "@netlify/functions": "^6.0.0",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^24.12.0",
