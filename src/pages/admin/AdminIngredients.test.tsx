@@ -2,13 +2,18 @@ import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render as renderComponent, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import type { AdminIngredient } from '../../lib/adminApi';
+import type {
+  AdminIngredient,
+  CanonicalIngredientReviewData,
+} from '../../lib/adminApi';
 
 const h = vi.hoisted(() => ({
   ingredients: [] as AdminIngredient[],
   saveIngredient: vi.fn(),
   deleteIngredient: vi.fn(),
   getIngredientUsage: vi.fn(),
+  canonicalReview: { rows: [], canonicalIngredients: [], activeEngine: null } as CanonicalIngredientReviewData,
+  resolveCanonicalIngredientReview: vi.fn(),
 }));
 
 vi.mock('../../lib/adminApi', () => ({
@@ -16,6 +21,8 @@ vi.mock('../../lib/adminApi', () => ({
   saveIngredient: h.saveIngredient,
   deleteIngredient: h.deleteIngredient,
   getIngredientUsage: h.getIngredientUsage,
+  fetchCanonicalIngredientReview: () => Promise.resolve(h.canonicalReview),
+  resolveCanonicalIngredientReview: h.resolveCanonicalIngredientReview,
 }));
 
 vi.mock('../../store/useNotification', () => ({
@@ -25,7 +32,9 @@ vi.mock('../../store/useNotification', () => ({
 import AdminIngredients from './AdminIngredients';
 
 // 성분 사전은 미매칭 성분 탭과 한 화면을 쓰게 되면서 ?tab= 쿼리를 읽는다.
-const render = (ui: React.ReactElement) => renderComponent(<MemoryRouter>{ui}</MemoryRouter>);
+const render = (ui: React.ReactElement, route = '/') => renderComponent(
+  <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>,
+);
 
 const CHICKEN: AdminIngredient = {
   id: '11111111-1111-4111-8111-111111111111',
@@ -68,6 +77,8 @@ describe('AdminIngredients', () => {
     h.saveIngredient.mockReset().mockResolvedValue({ id: CHICKEN.id, ingredient: CHICKEN });
     h.deleteIngredient.mockReset().mockResolvedValue(undefined);
     h.getIngredientUsage.mockReset().mockResolvedValue(0);
+    h.resolveCanonicalIngredientReview.mockReset().mockResolvedValue({ enqueuedProducts: 3 });
+    h.canonicalReview = { rows: [], canonicalIngredients: [], activeEngine: null };
   });
 
   afterEach(() => cleanup());
@@ -216,5 +227,82 @@ describe('AdminIngredients', () => {
     expect(await screen.findByText(/7개 제품에 연결되어 있어 삭제할 수 없습니다/)).toBeTruthy();
     expect(screen.getByText('삭제하기')).toHaveProperty('disabled', true);
     expect(h.deleteIngredient).not.toHaveBeenCalled();
+  });
+
+  it('근거 검수 큐를 발생 횟수순으로 보여주고 영향 제품·원문·근거를 함께 표시한다', async () => {
+    h.canonicalReview = {
+      activeEngine: { id: '99999999-9999-4999-8999-999999999999', version: 'ingredient-v2' },
+      canonicalIngredients: [{
+        id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        canonicalNameKo: '닭고기분',
+        canonicalNameEn: 'Chicken meal',
+        status: 'active',
+        evidence: [{
+          sourceId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+          title: '공식 원료 근거',
+          organization: 'AAFCO',
+          url: 'https://example.com/evidence',
+          claimSummary: '검토된 원료 정의',
+        }],
+      }],
+      rows: [
+        {
+          id: '11111111-1111-4111-8111-111111111111', submittedText: '낮은 빈도', normalizedText: '낮은빈도',
+          occurrenceCount: 2, affectedProductCount: 1, rawExamples: ['낮은 빈도 1%'],
+          candidateIngredientIds: [], aliasOwnerCanonicalId: null, firstSeenAt: '', lastSeenAt: '',
+        },
+        {
+          id: '22222222-2222-4222-8222-222222222222', submittedText: '치킨 밀', normalizedText: '치킨밀',
+          occurrenceCount: 18, affectedProductCount: 7, rawExamples: ['치킨 밀 20%', 'Chicken meal'],
+          candidateIngredientIds: ['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'], aliasOwnerCanonicalId: null,
+          firstSeenAt: '', lastSeenAt: '',
+        },
+      ],
+    };
+    render(<AdminIngredients />, '/admin/ingredients?tab=canonical');
+    expect(await screen.findByText('치킨 밀')).toBeTruthy();
+    const names = Array.from(document.querySelectorAll('tbody .admin-item-main')).map((node) => node.textContent);
+    expect(names).toEqual(['치킨 밀', '낮은 빈도']);
+    expect(screen.getByText('7개')).toBeTruthy();
+    expect(screen.getByText('치킨 밀 20% · Chicken meal')).toBeTruthy();
+
+    fireEvent.click(screen.getAllByText('근거 연결')[0]);
+    expect(await screen.findByText('공식 원료 근거')).toBeTruthy();
+    const evidenceLink = screen.getByRole('link', { name: /AAFCO/ });
+    expect(evidenceLink.getAttribute('target')).toBe('_blank');
+    expect(evidenceLink.getAttribute('rel')).toBe('noopener noreferrer');
+    expect(screen.getByText('검수 반영')).toHaveProperty('disabled', true);
+    fireEvent.change(screen.getByLabelText('검수 메모*'), { target: { value: '공식 정의와 라벨 표기가 일치함' } });
+    expect(screen.getByText('검수 반영')).toHaveProperty('disabled', false);
+    fireEvent.click(screen.getByText('검수 반영'));
+    await waitFor(() => expect(h.resolveCanonicalIngredientReview).toHaveBeenCalledWith(expect.objectContaining({
+      aliasText: '치킨 밀',
+      resolutionNote: '공식 정의와 라벨 표기가 일치함',
+    })));
+    expect(await screen.findByText('검수 완료 · 3개 제품 재분석 대기')).toBeTruthy();
+  });
+
+  it('근거가 없거나 별칭이 충돌하면 검수 반영을 막는다', async () => {
+    h.canonicalReview = {
+      activeEngine: { id: '99999999-9999-4999-8999-999999999999', version: 'ingredient-v2' },
+      canonicalIngredients: [
+        { id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', canonicalNameKo: '근거 없음', canonicalNameEn: null, status: 'draft', evidence: [] },
+        { id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', canonicalNameKo: '기존 소유 원료', canonicalNameEn: null, status: 'active', evidence: [{ sourceId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', title: '근거', organization: null, url: null, claimSummary: '근거' }] },
+      ],
+      rows: [{
+        id: '11111111-1111-4111-8111-111111111111', submittedText: '충돌 별칭', normalizedText: '충돌별칭',
+        occurrenceCount: 4, affectedProductCount: 2, rawExamples: ['충돌 별칭'],
+        candidateIngredientIds: [], aliasOwnerCanonicalId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', firstSeenAt: '', lastSeenAt: '',
+      }],
+    };
+    render(<AdminIngredients />, '/admin/ingredients?tab=canonical');
+    fireEvent.click(await screen.findByText('근거 연결'));
+    fireEvent.change(screen.getByLabelText('표준 원료'), { target: { value: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' } });
+    expect(await screen.findByText('검토 완료된 근거가 없어 활성화할 수 없습니다.')).toBeTruthy();
+    expect(screen.getByText('검수 반영')).toHaveProperty('disabled', true);
+
+    fireEvent.change(screen.getByLabelText('표준 원료'), { target: { value: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' } });
+    expect(screen.getAllByRole('alert').map((alert) => alert.textContent).join(' ')).toContain('이미 기존 소유 원료에 연결');
+    expect(h.resolveCanonicalIngredientReview).not.toHaveBeenCalled();
   });
 });

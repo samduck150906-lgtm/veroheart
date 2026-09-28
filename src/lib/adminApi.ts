@@ -1218,6 +1218,70 @@ export async function applyRiskDecisions(
   return { updated: res.updated ?? 0, created: res.created ?? 0, skipped: res.skipped ?? [] };
 }
 
+// ── Canonical 원재료 근거 검수 ──────────────────────────────────────────────
+
+export interface CanonicalEvidenceLink {
+  sourceId: string;
+  title: string;
+  organization: string | null;
+  url: string | null;
+  claimSummary: string;
+}
+
+export interface CanonicalIngredientReviewCandidate {
+  id: string;
+  canonicalNameKo: string;
+  canonicalNameEn: string | null;
+  status: 'draft' | 'active' | 'retired';
+  evidence: CanonicalEvidenceLink[];
+}
+
+export interface CanonicalIngredientReviewRow {
+  id: string;
+  submittedText: string;
+  normalizedText: string;
+  occurrenceCount: number;
+  affectedProductCount: number;
+  rawExamples: string[];
+  candidateIngredientIds: string[];
+  aliasOwnerCanonicalId: string | null;
+  firstSeenAt: string;
+  lastSeenAt: string;
+}
+
+export interface CanonicalIngredientReviewData {
+  rows: CanonicalIngredientReviewRow[];
+  canonicalIngredients: CanonicalIngredientReviewCandidate[];
+  activeEngine: { id: string; version: string } | null;
+}
+
+export async function fetchCanonicalIngredientReview(): Promise<CanonicalIngredientReviewData> {
+  const response = await callAdminFunction<Partial<CanonicalIngredientReviewData>>(
+    'admin-ingredient-review',
+    { action: 'listCanonicalReview' },
+  );
+  return {
+    rows: response.rows ?? [],
+    canonicalIngredients: response.canonicalIngredients ?? [],
+    activeEngine: response.activeEngine ?? null,
+  };
+}
+
+export async function resolveCanonicalIngredientReview(input: {
+  reviewQueueId: string;
+  canonicalIngredientId: string;
+  aliasText: string;
+  evidenceSourceId: string;
+  resolutionNote: string;
+  engineVersionId: string;
+}): Promise<{ enqueuedProducts: number }> {
+  const response = await callAdminFunction<{ enqueuedProducts?: number }>(
+    'admin-ingredient-review',
+    { action: 'resolveCanonicalTerm', ...input },
+  );
+  return { enqueuedProducts: response.enqueuedProducts ?? 0 };
+}
+
 // ── 바코드·보장성분 일괄 입력 ───────────────────────────────────────────────
 
 /** 라벨의 보장성분 5종 + 선택 항목 2종. 화면 열 순서와 같다. */

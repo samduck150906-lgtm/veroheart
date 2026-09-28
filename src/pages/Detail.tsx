@@ -283,7 +283,7 @@ export default function Detail() {
           : analysisStatus === 'blocked'
             ? { icon: <AlertTriangle size={18} />, label: '안전도', value: '정보 확인 필요', tone: 'caution' }
             : analysisStatus === 'unavailable'
-              ? { icon: <AlertTriangle size={18} />, label: '안전도', value: '원료 정보 없음', tone: 'caution' }
+              ? { icon: <AlertTriangle size={18} />, label: '안전도', value: '원료 정보 부족', tone: 'caution' }
         : { icon: <ShieldCheck size={18} />, label: '안전도', value: '등록 정보상 미확인', tone: 'excellent' },
     allergyDisplay.level === 'hard'
       ? { icon: <Ban size={18} />, label: '알레르기', value: `${breakdown.allergyHits.length}개 주의`, tone: 'danger' }
