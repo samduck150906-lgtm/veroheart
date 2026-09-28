@@ -41,6 +41,17 @@ export type AllergenRelationshipType =
   | 'cross_contact';
 export type MappingConfidence = 'exact' | 'derived' | 'reviewed' | 'suspected';
 export type IngredientReviewStatus = 'pending' | 'in_review' | 'resolved' | 'rejected';
+export type IngredientProcessingForm =
+  | 'raw'
+  | 'fresh'
+  | 'dried'
+  | 'meal'
+  | 'oil'
+  | 'fat'
+  | 'hydrolyzed'
+  | 'extract'
+  | 'fermented'
+  | 'unknown';
 
 export type JsonObject = Record<string, unknown>;
 
@@ -49,6 +60,11 @@ export type AnalysisEngineVersionRow = {
   version: string;
   status: EngineVersionStatus;
   description: string | null;
+  source_family: string | null;
+  source_species: string | null;
+  source_part: string | null;
+  processing_form: IngredientProcessingForm | null;
+  identity_key: string | null;
   ruleset_checksum: string | null;
   released_at: IsoTimestamp | null;
   created_at: IsoTimestamp;
