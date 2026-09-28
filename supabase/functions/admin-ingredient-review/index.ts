@@ -327,6 +327,40 @@ serve(async (req) => {
         return json({ ok: true, updated, created, skipped }, 200, cors);
       }
 
+      /**
+       * Canonical 미매칭 표기를 근거가 검토된 원료에 연결한다.
+       * 별칭 반영·현재 라벨 갱신·영향 제품 재분석 enqueue는 DB 함수 한 트랜잭션에서
+       * 처리해 중간 상태가 공개되지 않게 한다.
+       */
+      case 'resolveCanonicalTerm': {
+        const reviewQueueId = requireUuid(body.reviewQueueId, '검수 항목 ID');
+        const canonicalIngredientId = requireUuid(body.canonicalIngredientId, '표준 원료 ID');
+        const evidenceSourceId = requireUuid(body.evidenceSourceId, '근거 출처 ID');
+        const engineVersionId = requireUuid(body.engineVersionId, '분석 엔진 버전 ID');
+        const aliasText = requireText(body.aliasText, '원료 표기', 300);
+        const resolutionNote = requireText(body.resolutionNote, '검수 메모', 1000);
+
+        const { data: enqueued, error } = await db.rpc('resolve_canonical_ingredient_review', {
+          p_review_queue_id: reviewQueueId,
+          p_canonical_ingredient_id: canonicalIngredientId,
+          p_alias_text: aliasText,
+          p_evidence_source_id: evidenceSourceId,
+          p_resolution_note: resolutionNote,
+          p_actor: actor,
+          p_engine_version_id: engineVersionId,
+        });
+        if (error) {
+          if (error.message?.includes('alias_collision')) {
+            throw new ValidationError('이미 다른 표준 원료가 사용하는 별칭입니다.');
+          }
+          if (error.message?.includes('reviewed_evidence_required')) {
+            throw new ValidationError('검토 완료된 근거를 먼저 연결해 주세요.');
+          }
+          throw error;
+        }
+        return json({ ok: true, enqueuedProducts: Number(enqueued ?? 0) }, 200, cors);
+      }
+
       default:
         return json({ error: `알 수 없는 action: ${action}` }, 400, cors);
     }
