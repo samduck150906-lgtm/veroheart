@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useStore } from '../store/useStore';
 import { getProductByBarcode } from '../lib/supabase';
+import { normalizeBarcode } from '../lib/productIdentity';
 
 type CamState = 'idle' | 'starting' | 'live' | 'denied' | 'unavailable' | 'no-detector';
 
@@ -35,6 +36,9 @@ export default function Scan() {
   const [camState, setCamState] = useState<CamState>('idle');
   const [torchOn, setTorchOn] = useState(false);
   const [detected, setDetected] = useState<string | null>(null);
+  const [manualBarcode, setManualBarcode] = useState('');
+  const [manualError, setManualError] = useState<string | null>(null);
+  const [checkingBarcode, setCheckingBarcode] = useState(false);
 
   const stopCamera = useCallback(() => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -47,24 +51,30 @@ export default function Scan() {
     async (code: string) => {
       if (handledRef.current) return;
       handledRef.current = true;
-      setDetected(code);
+      const normalized = normalizeBarcode(code);
+      if (!normalized) {
+        handledRef.current = false;
+        setManualError('8~14자리 바코드 번호를 확인해 주세요.');
+        return;
+      }
+      setDetected(normalized);
       stopCamera();
       // 1) 이미 로드된 상품의 바코드와 즉시 매칭.
       //    이 효과는 마운트 때 한 번만 도는데 제품 목록은 그 뒤에 채워지므로,
       //    클로저에 갇힌 값 대신 호출 시점의 스토어 값을 읽는다.
-      const local = useStore.getState().products.find((p) => p.barcode === code);
+      const local = useStore.getState().products.find((p) => normalizeBarcode(p.barcode ?? '') === normalized);
       if (local) {
         navigate(`/product/${local.id}`);
         return;
       }
       // 2) DB 조회 (products.barcode 컬럼이 있으면 매칭)
-      const remote = await getProductByBarcode(code);
+      const remote = await getProductByBarcode(normalized);
       if (remote) {
         navigate(`/product/${remote.id}`);
         return;
       }
-      // 3) 폴백: 바코드를 검색어로 넘겨 검색 화면으로 인계
-      navigate(`/search?q=${encodeURIComponent(code)}`);
+      // 3) 등록되지 않은 바코드는 사진 근거를 받는 신규 제품 등록으로 연결한다.
+      navigate(`/scan/new?barcode=${encodeURIComponent(normalized)}`);
     },
     [navigate, stopCamera],
   );
@@ -160,6 +170,17 @@ export default function Scan() {
     : showFallback
       ? '카메라를 쓸 수 없어. 직접 검색으로 넘어가자'
       : '바코드를 읽고 있어…';
+
+  const submitManualBarcode = useCallback(async () => {
+    setManualError(null);
+    setCheckingBarcode(true);
+    handledRef.current = false;
+    try {
+      await handleBarcode(manualBarcode);
+    } finally {
+      setCheckingBarcode(false);
+    }
+  }, [handleBarcode, manualBarcode]);
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#0A0A08', zIndex: 30, overflow: 'hidden', display: 'flex', flexDirection: 'column', maxWidth: '480px', margin: '0 auto' }}>
@@ -258,6 +279,28 @@ export default function Scan() {
       <div style={{ flex: 'none', padding: '16px 16px calc(16px + env(safe-area-inset-bottom,0px))' }}>
         {showFallback ? (
           <>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+              <input
+                aria-label="바코드 번호"
+                inputMode="numeric"
+                autoComplete="off"
+                value={manualBarcode}
+                onChange={(event) => setManualBarcode(event.target.value.replace(/\D/g, '').slice(0, 14))}
+                onKeyDown={(event) => { if (event.key === 'Enter') void submitManualBarcode(); }}
+                placeholder="바코드 숫자 입력"
+                style={{ flex: 1, minWidth: 0, border: '1.5px solid rgba(255,255,255,.28)', borderRadius: 12, background: 'rgba(255,255,255,.1)', color: '#fff', padding: '0 13px', fontSize: 16, letterSpacing: '.04em' }}
+              />
+              <button
+                type="button"
+                aria-label="바코드 확인"
+                disabled={checkingBarcode || manualBarcode.length < 8}
+                onClick={() => void submitManualBarcode()}
+                style={{ border: 0, borderRadius: 12, background: '#FFD90A', color: '#15150F', padding: '13px 15px', fontWeight: 850, opacity: checkingBarcode || manualBarcode.length < 8 ? .45 : 1 }}
+              >
+                {checkingBarcode ? '확인 중' : '확인'}
+              </button>
+            </div>
+            {manualError && <div role="alert" style={{ color: '#FFB3A7', fontSize: 12, margin: '-2px 0 10px' }}>{manualError}</div>}
             <button
               type="button"
               className="vr-btn vr-btn--primary"
@@ -285,7 +328,7 @@ export default function Scan() {
               {camState === 'denied'
                 ? '설정에서 카메라 접근을 허용하면 바로 스캔할 수 있어.'
                 : camState === 'no-detector'
-                  ? '이 브라우저는 바코드 자동 인식을 지원하지 않아. 제품명으로 검색해 줘.'
+                  ? '이 브라우저는 자동 인식을 지원하지 않아요. 바코드 숫자를 입력해 주세요.'
                   : '이 기기에서는 카메라 스캔을 쓸 수 없어.'}
             </div>
           </>

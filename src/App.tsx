@@ -19,6 +19,7 @@ const Detail = lazy(() => import('./pages/Detail'));
 const Comparison = lazy(() => import('./pages/Comparison'));
 const AnalysisResult = lazy(() => import('./pages/AnalysisResult'));
 const Scan = lazy(() => import('./pages/Scan'));
+const NewProductScan = lazy(() => import('./pages/NewProductScan'));
 const Brand = lazy(() => import('./pages/Brand'));
 const Login = lazy(() => import('./pages/Login'));
 const ViralEvent = lazy(() => import('./pages/ViralEvent'));
@@ -159,6 +160,7 @@ function Application() {
 
         {/* Immersive full-screen scanner (앱 헤더/네비 없이 카메라 전체화면) */}
         <Route path="/scan" element={<Scan />} />
+        <Route path="/scan/new" element={<NewProductScan />} />
 
         {/* Admin CMS Routes — Protected */}
         <Route path="/admin" element={<AdminAuthGuard><AdminLayout /></AdminAuthGuard>}>

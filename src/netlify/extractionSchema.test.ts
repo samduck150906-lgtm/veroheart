@@ -73,6 +73,18 @@ describe('extraction schema', () => {
     expect(() => validateExtractedProductLabel(empty)).toThrow(ExtractionValidationError);
   });
 
+  it('accepts a supplement with registered components when no ordinary ingredient list is printed', () => {
+    const supplement = validExtraction();
+    supplement.identity.productType = 'supplement';
+    supplement.ingredients = [];
+    supplement.guaranteedComponents = [];
+    supplement.registeredComponents = [
+      { name: 'EPA+DHA', value: 300, unit: 'mg', qualifier: 'exact' },
+    ];
+
+    expect(validateExtractedProductLabel(supplement)).toEqual(supplement);
+  });
+
   it('uses Gemini 2.5 Flash with JSON output and treats package text as untrusted data', () => {
     const request = buildExtractionRequest(['https://signed.example/front.webp']);
     expect(request.model).toBe('gemini-2.5-flash');

@@ -136,7 +136,11 @@ export function validateExtractedProductLabel(value: unknown): ExtractedProductL
 
   const panels = record(root.labelPanels);
   exactKeys(panels, PANEL_KEYS);
-  if (!Array.isArray(root.ingredients) || root.ingredients.length < 1 || root.ingredients.length > 200) {
+  if (
+    !Array.isArray(root.ingredients) ||
+    root.ingredients.length > 200 ||
+    (productType !== 'supplement' && root.ingredients.length < 1)
+  ) {
     throw new ExtractionValidationError();
   }
   const ingredients = root.ingredients.map((item, index) => {
@@ -163,6 +167,9 @@ export function validateExtractedProductLabel(value: unknown): ExtractedProductL
     throw new ExtractionValidationError();
   }
 
+  const guaranteedComponents = components(root.guaranteedComponents);
+  const registeredComponents = components(root.registeredComponents);
+
   return {
     identity: {
       name: requiredString(identity.name, 500),
@@ -179,8 +186,8 @@ export function validateExtractedProductLabel(value: unknown): ExtractedProductL
       registrationText: nullableString(panels.registrationText, 10_000),
     },
     ingredients,
-    guaranteedComponents: components(root.guaranteedComponents),
-    registeredComponents: components(root.registeredComponents),
+    guaranteedComponents,
+    registeredComponents,
     fieldConfidence,
     printedBarcode,
   };

@@ -87,4 +87,25 @@ describe('scan API client', () => {
     await expect(client.createScan(null)).rejects.toMatchObject({ code: 'auth_required' });
     expect(fetchImpl).not.toHaveBeenCalled();
   });
+
+  it('sends a confirmed printed barcode with user-corrected label data', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({ status: 'submitted' }));
+    const client = createScanApiClient({
+      getAccessToken: async () => 'session-token',
+      fetchImpl,
+    });
+    const confirmed = {
+      name: '오리지널 독', brand: '베로로', manufacturer: null,
+      species: 'dog' as const, productType: 'food' as const,
+      ingredients: ['연어'], guaranteedComponents: [], registeredComponents: [],
+    };
+
+    await client.confirmExtraction('scan-1', confirmed, '8801234567893');
+
+    const [, init] = fetchImpl.mock.calls[0];
+    expect(JSON.parse(String(init.body))).toEqual({
+      confirmedData: confirmed,
+      barcode: '8801234567893',
+    });
+  });
 });

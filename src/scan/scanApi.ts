@@ -18,6 +18,8 @@ export interface ScanStatusResponse {
   resolvedProductId: string | null;
 }
 
+export type ScanApiClient = ReturnType<typeof createScanApiClient>;
+
 export class ScanApiError extends Error {
   readonly code: string;
   readonly status: number | null;
@@ -150,14 +152,22 @@ export function createScanApiClient(dependencies: Partial<ScanApiClientDependenc
       return jsonRequest<ScanStatusResponse>(`/api/scans/${scanId}`, 'GET');
     },
 
-    confirmExtraction(scanId: string, confirmedData: ExtractedProductLabel) {
+    confirmExtraction(
+      scanId: string,
+      confirmedData: ExtractedProductLabel,
+      barcode?: string | null,
+    ) {
       return jsonRequest<{ status: 'submitted' }>(`/api/scans/${scanId}/confirm`, 'POST', {
         confirmedData,
+        barcode: barcode ?? undefined,
       });
     },
 
     publishScan(scanId: string) {
-      return jsonRequest<{ productId: string; status: 'published' }>(
+      return jsonRequest<
+        | { productId: string; status: 'published' }
+        | { status: 'needs_review'; code: string }
+      >(
         `/api/scans/${scanId}/publish`,
         'POST',
       );
