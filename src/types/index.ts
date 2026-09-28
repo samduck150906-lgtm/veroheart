@@ -80,10 +80,14 @@ export interface FeedingLogInput {
 
 export interface Ingredient {
   id: string;
+  canonicalIngredientId?: string;
   nameKo: string;
   nameEn: string;
   purpose: string;
   riskLevel: 'safe' | 'caution' | 'danger';
+  sourceFamily?: string;
+  processingForm?: 'raw' | 'fresh' | 'dried' | 'meal' | 'oil' | 'fat' | 'hydrolyzed' | 'extract' | 'fermented' | 'unknown';
+  rawLabelText?: string;
 }
 
 /** 보장성분 기반 영양 밸런스 (도넛=구성비 %, 레이더=균형 점수). 전부 선택. */

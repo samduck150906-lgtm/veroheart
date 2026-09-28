@@ -2,6 +2,12 @@ import type { Ingredient } from '../types';
 import { INGREDIENT_DICTIONARY } from './ingredientDictionary';
 import type { DictionaryIngredient } from './types';
 import { normalizeIngredientName } from './normalize';
+import {
+  resolveReviewedAllergenRelationships,
+  type AllergenRelationshipFinding,
+  type PetAllergenSelection,
+  type ReviewedAllergenRelationship,
+} from './allergenRelationships';
 
 /**
  * 정규화 결과 캐시.
@@ -346,4 +352,30 @@ export function allergyIngredientNames(ingredients: Ingredient[], allergy: strin
   return ingredients
     .filter((ingredient) => classifyAllergyRelationship(ingredient, allergy).kind === 'hard')
     .map((ingredient) => ingredient.nameKo);
+}
+
+/**
+ * Canonical 파이프라인용 알레르기 비교.
+ *
+ * 이름 유사도는 사용하지 않는다. canonical ID와 source family/form이 모두 저장된
+ * 원료와 활성·검토 완료 관계만 전달한다. 기존 문자열 휴리스틱은 레거시 화면 호환용이며
+ * 신규 스캔 분석의 확정 알레르기 판정에는 이 함수를 사용해야 한다.
+ */
+export function reviewedAllergyRelationshipMatches(
+  ingredients: Ingredient[],
+  allergies: PetAllergenSelection[],
+  relationships: ReviewedAllergenRelationship[],
+  species: 'dog' | 'cat',
+): AllergenRelationshipFinding[] {
+  const canonicals = ingredients.flatMap((ingredient) => {
+    if (!ingredient.canonicalIngredientId || !ingredient.sourceFamily || !ingredient.processingForm) return [];
+    return [{
+      canonicalIngredientId: ingredient.canonicalIngredientId,
+      canonicalName: ingredient.nameKo,
+      rawLabelText: ingredient.rawLabelText ?? ingredient.nameKo,
+      sourceFamily: ingredient.sourceFamily,
+      processingForm: ingredient.processingForm,
+    }];
+  });
+  return resolveReviewedAllergenRelationships(canonicals, allergies, relationships, species);
 }
