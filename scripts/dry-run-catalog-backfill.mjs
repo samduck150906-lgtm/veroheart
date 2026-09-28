@@ -1,8 +1,7 @@
 import { createHash } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
-import { fileURLToPath } from 'node:url';
 
 import { buildCatalogBackfillCandidate } from '../src/lib/catalogBackfill.ts';
 
@@ -40,21 +39,13 @@ async function loadFixture(fixturePath) {
   return products;
 }
 
-async function loadProductsFromSupabase() {
-  const baseUrl = process.env.VITE_SUPABASE_URL ?? process.env.SUPABASE_URL;
-  const anonKey = process.env.VITE_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY;
-  if (!baseUrl || !anonKey) {
-    throw new Error('fixture가 없으면 VITE_SUPABASE_URL과 VITE_SUPABASE_ANON_KEY가 필요합니다.');
-  }
-
+async function queryProducts(baseUrl, anonKey, select) {
   const products = [];
   const pageSize = 1000;
   for (let offset = 0; ; offset += pageSize) {
     const url = new URL('/rest/v1/products', baseUrl);
-    url.searchParams.set(
-      'select',
-      'id,name,brand_name,manufacturer_name,target_pet_type,main_category,variant_name,net_weight_text',
-    );
+    url.searchParams.set('select', select);
+    url.searchParams.set('is_visible', 'eq.true');
     url.searchParams.set('order', 'id.asc');
     url.searchParams.set('offset', String(offset));
     url.searchParams.set('limit', String(pageSize));
@@ -63,7 +54,11 @@ async function loadProductsFromSupabase() {
       method: 'GET',
       headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
     });
-    if (!response.ok) throw new Error(`제품 조회 실패: HTTP ${response.status}`);
+    if (!response.ok) {
+      const error = new Error(`제품 조회 실패: HTTP ${response.status}`);
+      error.status = response.status;
+      throw error;
+    }
 
     const page = await response.json();
     if (!Array.isArray(page)) throw new Error('제품 조회 응답이 배열이 아닙니다.');
@@ -71,6 +66,37 @@ async function loadProductsFromSupabase() {
     if (page.length < pageSize) break;
   }
   return products;
+}
+
+async function loadProductsFromSupabase() {
+  const baseUrl = process.env.VITE_SUPABASE_URL ?? process.env.SUPABASE_URL;
+  const anonKey = process.env.VITE_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY;
+  if (!baseUrl || !anonKey) {
+    throw new Error('fixture가 없으면 VITE_SUPABASE_URL과 VITE_SUPABASE_ANON_KEY가 필요합니다.');
+  }
+
+  const legacyColumns = 'id,name,brand_name,manufacturer_name,target_pet_type,main_category';
+  const cleanColumns = [
+    legacyColumns,
+    'display_name',
+    'variant_name',
+    'net_weight_text',
+    'canonical_product_key',
+    'slug',
+    'last_observed_at',
+  ].join(',');
+  try {
+    return {
+      products: await queryProducts(baseUrl, anonKey, cleanColumns),
+      schemaReady: true,
+    };
+  } catch (error) {
+    if (error?.status !== 400) throw error;
+    return {
+      products: await queryProducts(baseUrl, anonKey, legacyColumns),
+      schemaReady: false,
+    };
+  }
 }
 
 function validateIdPreservation(products, candidates) {
@@ -89,35 +115,80 @@ function validateIdPreservation(products, candidates) {
   };
 }
 
-function findCollisions(candidates) {
+function findCollisions(candidates, valueFor) {
   const grouped = new Map();
   for (const candidate of candidates) {
-    if (!candidate.canonicalProductKey) continue;
-    const group = grouped.get(candidate.canonicalProductKey) ?? [];
+    const value = valueFor(candidate);
+    if (!value) continue;
+    const group = grouped.get(value) ?? [];
     group.push(candidate.productId);
-    grouped.set(candidate.canonicalProductKey, group);
+    grouped.set(value, group);
   }
   return [...grouped.entries()].filter(([, ids]) => ids.length > 1);
 }
 
+async function writeArtifact(outputPath, artifact) {
+  const absolutePath = path.resolve(process.cwd(), outputPath);
+  await mkdir(path.dirname(absolutePath), { recursive: true });
+  await writeFile(absolutePath, `${JSON.stringify(artifact, null, 2)}\n`, 'utf8');
+  return absolutePath;
+}
+
 async function main() {
   const fixturePath = argumentValue('--fixture');
-  const products = fixturePath ? await loadFixture(fixturePath) : await loadProductsFromSupabase();
-  const candidates = products.map(buildCatalogBackfillCandidate);
-  const changed = candidates.filter(
-    (candidate) =>
-      candidate.displayName !== candidate.rawAlias ||
-      candidate.reasons.some((reason) => reason.includes('브랜드')),
-  );
+  const outputPath = argumentValue('--json');
+  const loaded = fixturePath
+    ? { products: await loadFixture(fixturePath), schemaReady: true }
+    : await loadProductsFromSupabase();
+  const { products, schemaReady } = loaded;
+  const candidates = products.map((product) => ({
+    ...buildCatalogBackfillCandidate(product),
+    sourceName: String(product.name ?? ''),
+    sourceBrandName: String(product.brand_name ?? ''),
+    sourceLastObservedAt: product.last_observed_at ?? null,
+    existingDisplayName: product.display_name ?? null,
+    existingCanonicalProductKey: product.canonical_product_key ?? null,
+    existingSlug: product.slug ?? null,
+  }));
+  const changed = candidates.filter((candidate) => candidate.displayName !== candidate.rawAlias);
+  const brandCandidates = candidates.filter((candidate) => candidate.brandName !== candidate.sourceBrandName);
   const reviewRequired = candidates.filter((candidate) => candidate.needsReview);
-  const collisions = findCollisions(candidates);
+  const emptyResults = candidates.filter((candidate) => !candidate.displayName || !candidate.slug);
+  const canonicalCollisions = findCollisions(candidates, (candidate) => candidate.canonicalProductKey);
+  const slugCollisions = findCollisions(candidates, (candidate) => candidate.slug);
   const preservation = validateIdPreservation(products, candidates);
+  const generatedAt = new Date().toISOString();
+  const artifact = {
+    artifactVersion: 1,
+    generatedAt,
+    source: fixturePath ? 'fixture' : 'production-read-only',
+    schemaReady,
+    summary: {
+      products: products.length,
+      changedNames: changed.length,
+      brandCandidates: brandCandidates.length,
+      reviewRequired: reviewRequired.length,
+      emptyResults: emptyResults.length,
+      slugCollisionGroups: slugCollisions.length,
+      canonicalKeyCollisionGroups: canonicalCollisions.length,
+      idsPreserved: preservation.valid,
+    },
+    collisions: {
+      slug: slugCollisions.map(([value, ids]) => ({ value, ids })),
+      canonicalProductKey: canonicalCollisions.map(([value, ids]) => ({ value, ids })),
+    },
+    candidates,
+  };
 
   console.log('카탈로그 정리 드라이런 (쓰기 없음)');
   console.log(`전체 제품: ${products.length}`);
-  console.log(`정리 후보: ${changed.length}`);
+  console.log(`제품명 변경 후보: ${changed.length}`);
+  console.log(`브랜드 변경 후보: ${brandCandidates.length}`);
   console.log(`사람 확인 필요: ${reviewRequired.length}`);
-  console.log(`정규 제품키 충돌 그룹: ${collisions.length}`);
+  console.log(`빈 결과: ${emptyResults.length}`);
+  console.log(`슬러그 충돌 그룹: ${slugCollisions.length}`);
+  console.log(`정규 제품키 충돌 그룹: ${canonicalCollisions.length}`);
+  console.log(`신규 스키마 조회: ${schemaReady ? '가능' : '아직 미배포'}`);
   console.log(`ID 보존: ${preservation.valid ? '정상' : '실패'}`);
 
   if (changed.length > 0) {
@@ -129,11 +200,16 @@ async function main() {
     }
   }
 
-  if (collisions.length > 0) {
+  if (canonicalCollisions.length > 0) {
     console.log('\n정규 제품키 충돌');
-    for (const [key, ids] of collisions) {
+    for (const [key, ids] of canonicalCollisions) {
       console.log(`- ${collisionFingerprint(key)}: ${ids.map(redactId).join(', ')}`);
     }
+  }
+
+  if (outputPath) {
+    const absolutePath = await writeArtifact(outputPath, artifact);
+    console.log(`\nJSON 아티팩트: ${path.relative(process.cwd(), absolutePath)}`);
   }
 
   if (!preservation.valid) {
