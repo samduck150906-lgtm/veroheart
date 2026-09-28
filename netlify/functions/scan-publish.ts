@@ -1,6 +1,12 @@
 import type { Config, Context } from '@netlify/functions';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import {
+  matchCanonicalIngredients,
+  type MatchableCanonicalIngredient,
+} from '../../src/analysis/canonicalIngredientMatcher';
+import { parseIngredientLabelItems } from '../../src/analysis/labelIngredientParser';
+import { normalizeIngredientName } from '../../src/analysis/normalize';
 import { slugifyProductName } from '../../src/lib/catalogBackfill';
 import { buildCanonicalProductKey } from '../../src/lib/productIdentity';
 import {
@@ -48,10 +54,19 @@ export interface PublishTransactionInput {
   };
 }
 
+export type PublicationResult =
+  | { status: 'published'; productId: string }
+  | { status: 'needs_review' };
+
 export interface CommunityPublicationRepository {
   loadOwned(submissionId: string, userId: string): Promise<PublicationSubmission | null>;
   findDuplicateCandidates(barcode: string | null, canonicalKey: string): Promise<DuplicateCandidate[]>;
-  publish(input: PublishTransactionInput): Promise<{ status: string; productId: string }>;
+  publish(input: PublishTransactionInput): Promise<PublicationResult>;
+  ingestAnalysis(input: {
+    submissionId: string;
+    productId: string;
+    ingredients: string[];
+  }): Promise<void>;
   markNeedsReview(submissionId: string, reason: string): Promise<void>;
   confirm(input: {
     submissionId: string;
@@ -59,6 +74,26 @@ export interface CommunityPublicationRepository {
     confirmed: ExtractedProductLabel;
     confirmedBarcode: string | null;
   }): Promise<{ status: 'submitted' }>;
+}
+
+export type CanonicalScanIngredientItem = ReturnType<typeof prepareCanonicalScanIngredients>[number];
+
+export function prepareCanonicalScanIngredients(
+  ingredients: string[],
+  canonicals: MatchableCanonicalIngredient[],
+) {
+  const parsed = parseIngredientLabelItems(ingredients.join('\n'));
+  return matchCanonicalIngredients(parsed, canonicals).map((item) => ({
+    order: item.order,
+    rawText: item.rawText,
+    normalizedText: normalizeIngredientName(item.baseText),
+    amountText: item.amountText,
+    percentage: item.percentage,
+    canonicalIngredientId: item.canonicalIngredientId,
+    candidateCanonicalIds: item.candidateCanonicalIds,
+    matchStatus: item.matchStatus,
+    parserMetadata: item.parserMetadata,
+  }));
 }
 
 export interface ScanPublishDependencies {
@@ -146,7 +181,60 @@ export function createCommunityPublicationRepository(
         p_product: input.product,
       });
       if (error || !data || typeof data !== 'object') throw new Error('publication_failed');
-      return data as { status: string; productId: string };
+      const result = data as Record<string, unknown>;
+      if (result.status === 'published' && typeof result.productId === 'string') {
+        return { status: 'published', productId: result.productId };
+      }
+      if (result.status === 'needs_review') return { status: 'needs_review' };
+      throw new Error('publication_failed');
+    },
+
+    async ingestAnalysis(input) {
+      if (input.ingredients.length === 0) return;
+
+      const { data: canonicalRows, error: canonicalError } = await client
+        .from('canonical_ingredients')
+        .select('id,canonical_name_ko,normalized_key,canonical_ingredient_aliases(alias_text)')
+        .eq('status', 'active');
+      if (canonicalError) throw new Error('canonical_read_failed');
+      const canonicals: MatchableCanonicalIngredient[] = (canonicalRows ?? []).map((row) => ({
+        id: row.id,
+        canonicalName: row.canonical_name_ko,
+        normalizedKey: row.normalized_key,
+        aliases: (row.canonical_ingredient_aliases ?? []).map((alias) => alias.alias_text),
+      }));
+      const items = prepareCanonicalScanIngredients(input.ingredients, canonicals);
+
+      const { error: ingestionError } = await client.rpc('ingest_product_ingredient_label', {
+        p_request_id: input.submissionId,
+        p_product_id: input.productId,
+        p_source_type: 'package_image',
+        p_source_reference: `community_scan:${input.submissionId}`,
+        p_raw_label_text: input.ingredients.join('\n'),
+        p_label_language: 'ko',
+        p_items: items,
+      });
+      if (ingestionError) throw new Error('ingredient_ingestion_failed');
+
+      const { data: engine, error: engineError } = await client
+        .from('analysis_engine_versions')
+        .select('id')
+        .eq('version', 'ingredient-match-v1')
+        .eq('status', 'active')
+        .maybeSingle();
+      if (engineError || !engine?.id) throw new Error('active_engine_required');
+
+      const normalizedTerms = [...new Set(items.map((item) => item.normalizedText).filter(Boolean))];
+      const canonicalIngredientIds = [...new Set(items
+        .map((item) => item.canonicalIngredientId)
+        .filter((id): id is string => Boolean(id)))];
+      const { error: enqueueError } = await client.rpc('enqueue_ingredient_reanalysis', {
+        p_normalized_terms: normalizedTerms,
+        p_canonical_ingredient_ids: canonicalIngredientIds,
+        p_engine_version_id: engine.id,
+        p_reason: `community_scan:${input.submissionId}`,
+      });
+      if (enqueueError) throw new Error('reanalysis_enqueue_failed');
     },
 
     async markNeedsReview(submissionId, reason) {
@@ -203,6 +291,13 @@ export function createScanPublishHandler(injected?: ScanPublishDependencies): Ha
       const submission = await deps.repository.loadOwned(submissionId, userId);
       if (!submission) return jsonResponse(404, { code: 'scan_not_found' });
       if (submission.status === 'published' && submission.resolvedProductId) {
+        if (submission.confirmed.ingredients.length > 0) {
+          await deps.repository.ingestAnalysis({
+            submissionId,
+            productId: submission.resolvedProductId,
+            ingredients: submission.confirmed.ingredients,
+          });
+        }
         return jsonResponse(200, { status: 'published', productId: submission.resolvedProductId });
       }
       if (submission.status !== 'submitted') {
@@ -268,6 +363,16 @@ export function createScanPublishHandler(injected?: ScanPublishDependencies): Ha
           label: submission.confirmed,
         },
       });
+      if (result.status === 'needs_review') {
+        return jsonResponse(202, result);
+      }
+      if (submission.confirmed.ingredients.length > 0) {
+        await deps.repository.ingestAnalysis({
+          submissionId,
+          productId: result.productId,
+          ingredients: submission.confirmed.ingredients,
+        });
+      }
       return jsonResponse(200, result);
     } catch {
       return jsonResponse(503, { code: 'scan_unavailable' });

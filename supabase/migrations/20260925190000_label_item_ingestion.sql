@@ -56,6 +56,8 @@ BEGIN
     RETURN v_label_set_id;
   END IF;
 
+  PERFORM pg_advisory_xact_lock(hashtextextended(p_product_id::TEXT, 0));
+
   UPDATE public.product_ingredient_label_sets
   SET is_current = FALSE, updated_at = NOW()
   WHERE product_id = p_product_id AND is_current = TRUE;
@@ -114,6 +116,13 @@ BEGIN
         updated_at = NOW();
     END IF;
   END LOOP;
+
+  UPDATE public.products
+  SET analysis_status = CASE
+    WHEN jsonb_array_length(p_items) > 0 THEN 'partial'
+    ELSE 'unavailable'
+  END
+  WHERE id = p_product_id;
 
   RETURN v_label_set_id;
 END;

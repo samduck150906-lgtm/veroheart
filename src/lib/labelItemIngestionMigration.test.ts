@@ -18,11 +18,18 @@ describe('label item ingestion migration', () => {
   });
 
   it('replaces only the current label set and preserves ordered items', () => {
+    expect(migration).toContain('pg_advisory_xact_lock(hashtextextended(p_product_id::text, 0))');
     expect(migration).toMatch(/update public\.product_ingredient_label_sets[\s\S]*set is_current = false/);
     expect(migration).toContain('display_order');
     expect(migration).toContain('raw_ingredient_text');
     expect(migration).toContain('parser_metadata');
     expect(migration).not.toMatch(/delete from public\.product_ingredient_label/);
+  });
+
+  it('marks a changed product partial before background analysis can complete', () => {
+    expect(migration).toMatch(
+      /update public\.products[\s\S]*set analysis_status = case[\s\S]*jsonb_array_length\(p_items\) > 0[\s\S]*'partial'/,
+    );
   });
 
   it('queues unmatched and ambiguous terms and bounds input size', () => {

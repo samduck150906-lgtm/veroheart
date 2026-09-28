@@ -55,3 +55,17 @@ test('rejects duplicate sources, retailer risk evidence, source-less active rows
   assert.throws(() => buildCanonicalSeed({ registry, observedRows: [], legacyRows: [{ name_ko: '무근거', status: 'active' }] }), /active_without_evidence/);
   assert.throws(() => buildCanonicalSeed({ registry, observedRows: [], legacyRows: [{ name_ko: '원료', claimSummary: 'x'.repeat(401) }] }), /claim_summary_too_long/);
 });
+
+test('upgrades a merged duplicate to active when any evidenced source row is active', () => {
+  const result = buildCanonicalSeed({
+    registry,
+    observedRows: [],
+    legacyRows: [
+      { id: 'draft', name_ko: '닭 고기', status: 'draft' },
+      { id: 'active', name_ko: '닭고기', status: 'active', evidenceSourceIds: ['official-1'] },
+    ],
+  });
+
+  assert.equal(result.seed.ingredients[0].status, 'active');
+  assert.deepEqual(result.seed.ingredients[0].evidenceSourceIds, ['official-1']);
+});

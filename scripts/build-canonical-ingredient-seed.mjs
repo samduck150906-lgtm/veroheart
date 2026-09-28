@@ -79,6 +79,7 @@ export function buildCanonicalSeed({ legacyRows, observedRows, registry, generat
       ...existing,
       aliases,
       evidenceSourceIds: uniqueSorted([...existing.evidenceSourceIds, ...evidenceSourceIds]),
+      requestedStatus: existing.requestedStatus === 'active' || row.status === 'active' ? 'active' : 'draft',
       legacyIds: uniqueSorted([...existing.legacyIds, row.id]),
     } : {
       canonicalNameKo,

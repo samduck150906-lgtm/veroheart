@@ -322,6 +322,10 @@ export async function getProductDetail(productId: string): Promise<Product | nul
           ingredient_id,
           ingredients (id, name_ko, name_en, risk_level, description)
         ),
+        product_ingredient_label_sets (
+          id, is_current,
+          product_ingredient_label_items (display_order, raw_ingredient_text, match_status)
+        ),
         nutritional_profiles (crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus)
       `)
       .eq('id', productId);
@@ -355,6 +359,10 @@ export async function getProductByBarcode(barcode: string): Promise<Product | nu
           product_ingredients (
             ingredient_id,
             ingredients (id, name_ko, name_en, risk_level, description)
+          ),
+          product_ingredient_label_sets (
+            id, is_current,
+            product_ingredient_label_items (display_order, raw_ingredient_text, match_status)
           ),
           nutritional_profiles (crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus)
         `)

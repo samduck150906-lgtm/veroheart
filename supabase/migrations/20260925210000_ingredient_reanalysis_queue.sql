@@ -1,5 +1,21 @@
 BEGIN;
 
+INSERT INTO public.analysis_engine_versions (
+  version, status, description, ruleset_checksum, released_at
+) VALUES (
+  'ingredient-match-v1',
+  'active',
+  'Exact canonical and reviewed-alias ingredient readiness analysis',
+  'ingredient-match-v1',
+  NOW()
+)
+ON CONFLICT (version) DO UPDATE SET
+  status = 'active',
+  description = EXCLUDED.description,
+  ruleset_checksum = EXCLUDED.ruleset_checksum,
+  released_at = COALESCE(public.analysis_engine_versions.released_at, EXCLUDED.released_at),
+  updated_at = NOW();
+
 CREATE TABLE IF NOT EXISTS public.ingredient_reanalysis_queue (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   product_id UUID NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
@@ -73,7 +89,27 @@ BEGIN
       label_items.normalized_ingredient_text = ANY(COALESCE(p_normalized_terms, '{}'::TEXT[]))
       OR label_items.canonical_ingredient_id = ANY(COALESCE(p_canonical_ingredient_ids, '{}'::UUID[]))
     )
-  ON CONFLICT (product_id, engine_version_id) DO NOTHING;
+  ON CONFLICT (product_id, engine_version_id) DO UPDATE SET
+    reason = EXCLUDED.reason,
+    status = 'pending',
+    attempt_count = 0,
+    lease_expires_at = NULL,
+    error_code = NULL,
+    completed_at = NULL,
+    updated_at = NOW()
+  WHERE public.ingredient_reanalysis_queue.status = 'failed'
+    OR EXCLUDED.reason LIKE 'ingredient_review:%'
+    OR EXCLUDED.reason LIKE 'rule_change:%'
+    OR NOT EXISTS (
+      SELECT 1
+      FROM public.product_ingredient_analysis_results AS analysis_result
+      JOIN public.product_ingredient_label_sets AS current_label
+        ON current_label.product_id = EXCLUDED.product_id
+       AND current_label.is_current = TRUE
+      WHERE analysis_result.product_id = EXCLUDED.product_id
+        AND analysis_result.engine_version_id = EXCLUDED.engine_version_id
+        AND analysis_result.label_set_id = current_label.id
+    );
   GET DIAGNOSTICS v_count = ROW_COUNT;
 
   UPDATE public.products
@@ -160,7 +196,7 @@ BEGIN
   WHERE id = p_review_queue_id;
 
   SELECT public.enqueue_ingredient_reanalysis(
-    ARRAY[v_normalized], ARRAY[p_canonical_ingredient_id],
+    ARRAY[v_normalized], ARRAY[]::UUID[],
     p_engine_version_id, 'ingredient_review:' || p_review_queue_id::TEXT
   ) INTO v_enqueued;
 
@@ -247,6 +283,26 @@ BEGIN
   FOR UPDATE;
   IF v_product_id IS NULL THEN
     RAISE EXCEPTION 'queue_job_not_claimed' USING ERRCODE = 'P0002';
+  END IF;
+
+  IF p_label_set_id IS NULL THEN
+    IF EXISTS (
+      SELECT 1
+      FROM public.product_ingredient_label_sets
+      WHERE product_id = v_product_id AND is_current = TRUE
+    ) THEN
+      RAISE EXCEPTION 'stale_label_set' USING ERRCODE = '40001';
+    END IF;
+  ELSE
+    IF NOT EXISTS (
+      SELECT 1
+      FROM public.product_ingredient_label_sets
+      WHERE id = p_label_set_id
+        AND product_id = v_product_id
+        AND is_current = TRUE
+    ) THEN
+      RAISE EXCEPTION 'stale_label_set' USING ERRCODE = '40001';
+    END IF;
   END IF;
 
   INSERT INTO public.product_ingredient_analysis_results (

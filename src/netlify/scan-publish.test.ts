@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createScanConfirmHandler } from '../../netlify/functions/scan-confirm';
 import {
   createScanPublishHandler,
+  prepareCanonicalScanIngredients,
   type CommunityPublicationRepository,
   type PublicationSubmission,
   type ScanPublishDependencies,
@@ -49,6 +50,7 @@ class FakeRepository implements CommunityPublicationRepository {
   publish = vi.fn().mockResolvedValue({ status: 'published', productId });
   markNeedsReview = vi.fn().mockResolvedValue(undefined);
   confirm = vi.fn().mockResolvedValue({ status: 'submitted' });
+  ingestAnalysis = vi.fn().mockResolvedValue(undefined);
 
   async loadOwned() {
     return this.submission;
@@ -135,6 +137,20 @@ describe('community scan publication', () => {
         isVisible: true,
       }),
     }));
+    expect(repository.ingestAnalysis).not.toHaveBeenCalled();
+  });
+
+  it('preserves confirmed raw terms and queues canonical analysis after publication', async () => {
+    const response = await createScanPublishHandler(dependencies(repository))(
+      request(`/api/scans/${scanId}/publish`),
+    );
+
+    expect(response.status).toBe(200);
+    expect(repository.ingestAnalysis).toHaveBeenCalledWith({
+      submissionId: scanId,
+      productId,
+      ingredients: ['연어', '쌀'],
+    });
   });
 
   it('sends unresolved barcode conflicts to needs_review', async () => {
@@ -152,6 +168,18 @@ describe('community scan publication', () => {
     expect(repository.publish).not.toHaveBeenCalled();
   });
 
+  it('preserves a transactional duplicate-race review result without starting analysis', async () => {
+    repository.publish.mockResolvedValueOnce({ status: 'needs_review' });
+
+    const response = await createScanPublishHandler(dependencies(repository))(
+      request(`/api/scans/${scanId}/publish`),
+    );
+
+    expect(response.status).toBe(202);
+    await expect(response.json()).resolves.toEqual({ status: 'needs_review' });
+    expect(repository.ingestAnalysis).not.toHaveBeenCalled();
+  });
+
   it('returns the same product for repeated publication', async () => {
     if (repository.submission) {
       repository.submission.status = 'published';
@@ -164,6 +192,22 @@ describe('community scan publication', () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ status: 'published', productId });
     expect(repository.publish).not.toHaveBeenCalled();
+    expect(repository.ingestAnalysis).toHaveBeenCalledWith({
+      submissionId: scanId,
+      productId,
+      ingredients: ['연어', '쌀'],
+    });
+  });
+
+  it('matches only exact reviewed canonicals and keeps unknown scan terms public', () => {
+    expect(prepareCanonicalScanIngredients(
+      ['닭고기 20%', '닭고기분말', '새 복합원료'],
+      [{ id: 'chicken', canonicalName: '닭고기', aliases: ['치킨'] }],
+    )).toEqual([
+      expect.objectContaining({ order: 1, rawText: '닭고기 20%', matchStatus: 'matched', canonicalIngredientId: 'chicken' }),
+      expect.objectContaining({ order: 2, rawText: '닭고기분말', matchStatus: 'unmatched', canonicalIngredientId: null }),
+      expect.objectContaining({ order: 3, rawText: '새 복합원료', matchStatus: 'unmatched', canonicalIngredientId: null }),
+    ]);
   });
 
   it('confirmation trims editable fields while preserving OCR separately', async () => {

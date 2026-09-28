@@ -104,6 +104,20 @@ describe('제품 조회 컬럼', () => {
     }
   });
 
+  it('상세와 바코드 조회는 현재 라벨의 원문·순서·매칭 상태를 함께 받는다', () => {
+    for (const name of ['getProductDetail', 'getProductByBarcode']) {
+      const start = SOURCE.indexOf(`export async function ${name}`);
+      expect(start, `${name} 함수를 찾지 못했다`).toBeGreaterThanOrEqual(0);
+      const next = SOURCE.indexOf('\nexport async function ', start + 1);
+      const body = SOURCE.slice(start, next === -1 ? SOURCE.length : next);
+      expect(body).toContain('product_ingredient_label_sets');
+      expect(body).toContain('product_ingredient_label_items');
+      for (const column of ['is_current', 'display_order', 'raw_ingredient_text', 'match_status']) {
+        expect(body, `${name}에서 ${column}이 빠졌다`).toContain(column);
+      }
+    }
+  });
+
   it('모든 사용자 제품 진입 경로가 노출 제품 조회 래퍼를 사용한다', () => {
     const names = [
       'getProducts',
