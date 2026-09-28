@@ -89,6 +89,29 @@ describe('allergy display state', () => {
     });
   });
 
+  it('does not call a partially matched label allergy-free', () => {
+    const state = buildAllergyDisplayState(
+      { allergyHits: [], allergyCautions: [] },
+      '보리',
+      {
+        hasIngredientData: true,
+        hasAllergyProfile: true,
+        analysisStatus: 'partial',
+        unknownIngredientTerms: ['복합 원료 A'],
+      },
+    );
+    expect(state).toMatchObject({
+      level: 'unknown',
+      shortText: '부분 분석',
+      unknownReason: 'partial_ingredients',
+      notice: {
+        title: '확인되지 않은 원료가 있어 부분 분석만 제공해요',
+        description: '아직 확인되지 않은 원료: 복합 원료 A',
+      },
+    });
+    expect(JSON.stringify(state)).not.toMatch(/안전|문제없음/);
+  });
+
   it('keeps a detected hit stronger than a contradictory missing-data flag', () => {
     expect(
       buildAllergyDisplayState(

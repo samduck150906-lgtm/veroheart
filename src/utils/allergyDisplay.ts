@@ -1,7 +1,11 @@
 import type { AllergyRelationshipMatch } from '../analysis/allergyFamilyMatcher';
 
 export type AllergyDisplayLevel = 'hard' | 'caution' | 'none' | 'unknown';
-export type AllergyDisplayUnknownReason = 'missing_ingredients' | 'missing_profile';
+export type AllergyDisplayUnknownReason =
+  | 'missing_ingredients'
+  | 'missing_profile'
+  | 'partial_ingredients'
+  | 'conflicting_ingredients';
 
 export interface AllergyDisplayNotice {
   badge: string;
@@ -28,6 +32,8 @@ export interface AllergyDisplayOptions {
   hasIngredientData?: boolean;
   /** False means there is no saved allergy selection to compare against. */
   hasAllergyProfile?: boolean;
+  analysisStatus?: 'unavailable' | 'partial' | 'ready' | 'blocked';
+  unknownIngredientTerms?: string[];
 }
 
 function cautionShortText(matches: AllergyRelationshipMatch[]): string {
@@ -59,7 +65,7 @@ export function buildAllergyDisplayState(
     };
   }
 
-  if (options.hasIngredientData === false) {
+  if (options.hasIngredientData === false || options.analysisStatus === 'unavailable') {
     return {
       level: 'unknown',
       shortText: '원료 정보 부족',
@@ -84,6 +90,37 @@ export function buildAllergyDisplayState(
         title: '알레르기 프로필을 채워주세요',
         description: '피해야 할 원료를 등록하면 이 제품의 전성분과 바로 비교해 드려요.',
         actionLabel: '알레르기 등록하기',
+      },
+    };
+  }
+
+  if (options.analysisStatus === 'partial') {
+    const examples = (options.unknownIngredientTerms ?? []).slice(0, 3);
+    return {
+      level: 'unknown',
+      shortText: '부분 분석',
+      summaryText: '확인되지 않은 원료가 있어 알레르기 부분 분석만 제공됨',
+      unknownReason: 'partial_ingredients',
+      notice: {
+        badge: '부분 분석',
+        title: '확인되지 않은 원료가 있어 부분 분석만 제공해요',
+        description: examples.length > 0
+          ? `아직 확인되지 않은 원료: ${examples.join(', ')}`
+          : '확인된 원료의 주의 항목은 표시했지만, 제품 전체가 안전하다고 판단할 수는 없어요.',
+      },
+    };
+  }
+
+  if (options.analysisStatus === 'blocked') {
+    return {
+      level: 'unknown',
+      shortText: '확인 필요',
+      summaryText: '원료 정보가 서로 달라 알레르기 분석을 완료하지 못함',
+      unknownReason: 'conflicting_ingredients',
+      notice: {
+        badge: '정보 확인 중',
+        title: '원료 정보가 서로 달라 확인이 필요해요',
+        description: '서로 다른 표기를 검토한 뒤 분석 결과를 다시 제공할게요.',
       },
     };
   }

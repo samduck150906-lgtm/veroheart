@@ -116,6 +116,10 @@ export interface Product {
   slug?: string;
   catalogSource?: ProductCatalogSource;
   analysisStatus?: ProductAnalysisStatus;
+  /** 현재 라벨 세트에서 canonical 원료로 확정되지 않은 원문. */
+  unknownIngredientTerms?: string[];
+  ingredientLabelSetId?: string;
+  analysisEngineVersion?: string;
   category: string;
   mainCategory?: string;
   subCategory?: string;

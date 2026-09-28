@@ -26,6 +26,7 @@ import type {
   ScoreBreakdown,
   Species,
 } from './types';
+import { getAnalysisReadiness } from './analysisReadiness';
 import { findIngredientByName } from './ingredientDictionary';
 import { ALL_RULES } from './rules';
 import { normalizeIngredientName } from './normalize';
@@ -69,6 +70,7 @@ export function matchIngredients(names: string[]): MatchedIngredient[] {
       percentBasis: null,
       ingredient,
       confidence: ingredient ? 0.9 : 0.2,
+      matchStatus: ingredient ? 'matched' : 'unmatched',
     };
   });
 }
@@ -498,6 +500,9 @@ export function analyzeProduct(
   const finalScore = Math.round(combineScore(breakdown, product.productType));
   const grade = scoreToGrade(finalScore);
   const unknowns = matched.filter((m) => !m.ingredient).map((m) => m.originalName);
+  const analysisReadiness = getAnalysisReadiness(matched.map((item) => ({
+    matchStatus: item.matchStatus ?? (item.ingredient ? 'matched' : 'unmatched'),
+  })));
 
   // ── 섹션 구성 ──
   const goodItems = positives.map((f) => ({
@@ -519,6 +524,12 @@ export function analyzeProduct(
   let summary: string;
   if (hasDanger) {
     summary = '위험할 수 있는 성분이 발견됐어요. 급여 전 반드시 확인이 필요합니다.';
+  } else if (analysisReadiness.status === 'partial') {
+    summary = '확인되지 않은 원료가 있어 부분 분석만 제공해요.';
+  } else if (analysisReadiness.status === 'blocked') {
+    summary = '원료 정보가 서로 달라 확인이 필요해요.';
+  } else if (analysisReadiness.status === 'unavailable') {
+    summary = '등록된 원료 정보가 없어 분석을 제공할 수 없어요.';
   } else if (grade === 'A+' || grade === 'A') {
     summary = '전반적으로 안심하고 급여할 수 있는 구성이에요.';
   } else if (grade === '주의') {
@@ -533,6 +544,9 @@ export function analyzeProduct(
     grade,
     breakdown,
     summary,
+    analysisReadiness,
+    labelSetId: product.labelSetId ?? null,
+    analysisEngineVersion: product.analysisEngineVersion ?? 'legacy-rules-v1',
     matchedIngredients: matched,
     positives,
     warnings,
