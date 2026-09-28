@@ -61,6 +61,32 @@ describe('제품명·브랜드 정리 제안', () => {
     }
   });
 
+  it('인라인 중량·수량은 보존하고 순수 광고 토큰만 제거한 뒤 확인 필요로 둔다', () => {
+    const result = suggestProductNameCleanup({
+      name: '쿠팡브랜드 연어 전연령 피부 사료 3kg 참치맛 2팩 무료배송 로켓배송',
+      brandName: '쿠팡검색',
+    });
+    expect(result.name).toBe('쿠팡브랜드 연어 전연령 피부 사료 3kg 참치맛 2팩');
+    expect(result.name).toContain('3kg');
+    expect(result.name).toContain('2팩');
+    expect(result.name).not.toContain('무료배송');
+    expect(result.name).not.toContain('로켓배송');
+    expect(result.needsReview).toBe(true);
+    expect(result.nameNeedsReview).toBe(true);
+  });
+
+  it('곱수 표기의 중량·포장 구성도 원문 그대로 보존하고 확인 필요로 둔다', () => {
+    for (const original of [
+      '광동 견옥츄 덴탈껌 12g x 15개입',
+      '광동 견옥츄 덴탈껌 12g × 15개',
+    ]) {
+      const result = suggestProductNameCleanup({ name: original, brandName: '광동' });
+      expect(result.name).toBe(original);
+      expect(result.needsReview).toBe(true);
+      expect(result.nameNeedsReview).toBe(true);
+    }
+  });
+
   it('공백 없는 구분자 뒤 명백한 홍보 문구도 보수적으로 제거한다', () => {
     expect(suggestProductNameCleanup({
       name: '오리젠 오리지널 캣|무료배송 쿠폰',

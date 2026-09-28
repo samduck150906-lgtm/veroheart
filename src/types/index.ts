@@ -80,10 +80,14 @@ export interface FeedingLogInput {
 
 export interface Ingredient {
   id: string;
+  canonicalIngredientId?: string;
   nameKo: string;
   nameEn: string;
   purpose: string;
   riskLevel: 'safe' | 'caution' | 'danger';
+  sourceFamily?: string;
+  processingForm?: 'raw' | 'fresh' | 'dried' | 'meal' | 'oil' | 'fat' | 'hydrolyzed' | 'extract' | 'fermented' | 'unknown';
+  rawLabelText?: string;
 }
 
 /** 보장성분 기반 영양 밸런스 (도넛=구성비 %, 레이더=균형 점수). 전부 선택. */
@@ -100,11 +104,26 @@ export interface NutritionData {
   mineralScore?: number;
 }
 
+export type ProductVerificationStatus = 'pending' | 'reviewed' | 'verified';
+export type ProductAnalysisStatus = 'unavailable' | 'partial' | 'ready' | 'blocked';
+export type ProductCatalogSource = 'legacy' | 'community_scan' | 'external' | 'admin';
+
 export interface Product {
   id: string;
   brand: string;
   manufacturerName?: string;
+  /** 판매처 원문을 보존하는 기존 이름. 공개 표시는 displayName을 우선한다. */
   name: string;
+  displayName?: string;
+  variantName?: string;
+  netWeightText?: string;
+  slug?: string;
+  catalogSource?: ProductCatalogSource;
+  analysisStatus?: ProductAnalysisStatus;
+  /** 현재 라벨 세트에서 canonical 원료로 확정되지 않은 원문. */
+  unknownIngredientTerms?: string[];
+  ingredientLabelSetId?: string;
+  analysisEngineVersion?: string;
   category: string;
   mainCategory?: string;
   subCategory?: string;
@@ -117,7 +136,7 @@ export interface Product {
   ingredients: Ingredient[];
   reviewsCount: number;
   averageRating: number;
-  verificationStatus?: 'pending' | 'verified' | 'needs_review';
+  verificationStatus?: ProductVerificationStatus;
   verifiedAt?: string | null;
   /** 보장성분 영양 밸런스 — 있을 때만 영양 섹션 노출 */
   nutrition?: NutritionData;

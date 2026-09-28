@@ -193,6 +193,84 @@ serve(async (req) => {
     const action = typeof body.action === 'string' ? body.action : '';
 
     switch (action) {
+      case 'listCanonicalReview': {
+        const [queue, labelItems, labelSets, canonicals, aliases, evidence, sources, engineVersions] = await Promise.all([
+          selectAll(db, 'canonical_ingredient_review_queue', 'id,submitted_text,normalized_text,status,candidate_ingredient_ids,occurrence_count,first_seen_at,last_seen_at'),
+          selectAll(db, 'product_ingredient_label_items', 'label_set_id,raw_ingredient_text,normalized_ingredient_text'),
+          selectAll(db, 'product_ingredient_label_sets', 'id,product_id,is_current'),
+          selectAll(db, 'canonical_ingredients', 'id,canonical_name_ko,canonical_name_en,status'),
+          selectAll(db, 'canonical_ingredient_aliases', 'canonical_ingredient_id,normalized_alias'),
+          selectAll(db, 'canonical_ingredient_evidence', 'canonical_ingredient_id,source_id,claim_summary,reviewed_at'),
+          selectAll(db, 'ingredient_evidence_sources', 'id,title,organization,url'),
+          selectAll(db, 'analysis_engine_versions', 'id,version,status'),
+        ]);
+
+        const currentSetProduct = new Map(
+          labelSets
+            .filter((row) => row.is_current === true)
+            .map((row) => [String(row.id), String(row.product_id)]),
+        );
+        const sourceById = new Map(sources.map((row) => [String(row.id), row]));
+        const evidenceByCanonical = new Map<string, Record<string, unknown>[]>();
+        for (const row of evidence) {
+          if (!row.reviewed_at) continue;
+          const id = String(row.canonical_ingredient_id);
+          const list = evidenceByCanonical.get(id) ?? [];
+          const source = sourceById.get(String(row.source_id));
+          if (source) list.push({
+            sourceId: row.source_id,
+            title: source.title,
+            organization: source.organization ?? null,
+            url: source.url ?? null,
+            claimSummary: row.claim_summary,
+          });
+          evidenceByCanonical.set(id, list);
+        }
+        const aliasOwner = new Map(aliases.map((row) => [
+          String(row.normalized_alias), String(row.canonical_ingredient_id),
+        ]));
+        const activeEngine = engineVersions.find((row) => row.status === 'active') ?? null;
+
+        const rows = queue
+          .filter((row) => row.status === 'pending' || row.status === 'in_review')
+          .map((row) => {
+            const normalized = String(row.normalized_text ?? '');
+            const matchingItems = labelItems.filter((item) =>
+              String(item.normalized_ingredient_text ?? '') === normalized
+              && currentSetProduct.has(String(item.label_set_id)),
+            );
+            return {
+              id: row.id,
+              submittedText: row.submitted_text,
+              normalizedText: normalized,
+              occurrenceCount: Number(row.occurrence_count ?? matchingItems.length),
+              affectedProductCount: new Set(matchingItems.map((item) => currentSetProduct.get(String(item.label_set_id)))).size,
+              rawExamples: [...new Set(matchingItems.map((item) => String(item.raw_ingredient_text)))].slice(0, 3),
+              candidateIngredientIds: row.candidate_ingredient_ids ?? [],
+              aliasOwnerCanonicalId: aliasOwner.get(normalized) ?? null,
+              firstSeenAt: row.first_seen_at,
+              lastSeenAt: row.last_seen_at,
+            };
+          })
+          .sort((a, b) => b.occurrenceCount - a.occurrenceCount);
+
+        return json({
+          ok: true,
+          rows,
+          canonicalIngredients: canonicals
+            .filter((row) => row.status === 'active' || row.status === 'draft')
+            .map((row) => ({
+              id: row.id,
+              canonicalNameKo: row.canonical_name_ko,
+              canonicalNameEn: row.canonical_name_en ?? null,
+              status: row.status,
+              evidence: evidenceByCanonical.get(String(row.id)) ?? [],
+            }))
+            .sort((a, b) => String(a.canonicalNameKo).localeCompare(String(b.canonicalNameKo), 'ko')),
+          activeEngine: activeEngine ? { id: activeEngine.id, version: activeEngine.version } : null,
+        }, 200, cors);
+      }
+
       /** 검수 화면이 판단에 쓸 재료 — 성분 전체 + 성분별 사용 제품 수. */
       case 'listRiskReview': {
         const [ingredients, links] = await Promise.all([
@@ -325,6 +403,40 @@ serve(async (req) => {
           changes,
         });
         return json({ ok: true, updated, created, skipped }, 200, cors);
+      }
+
+      /**
+       * Canonical 미매칭 표기를 근거가 검토된 원료에 연결한다.
+       * 별칭 반영·현재 라벨 갱신·영향 제품 재분석 enqueue는 DB 함수 한 트랜잭션에서
+       * 처리해 중간 상태가 공개되지 않게 한다.
+       */
+      case 'resolveCanonicalTerm': {
+        const reviewQueueId = requireUuid(body.reviewQueueId, '검수 항목 ID');
+        const canonicalIngredientId = requireUuid(body.canonicalIngredientId, '표준 원료 ID');
+        const evidenceSourceId = requireUuid(body.evidenceSourceId, '근거 출처 ID');
+        const engineVersionId = requireUuid(body.engineVersionId, '분석 엔진 버전 ID');
+        const aliasText = requireText(body.aliasText, '원료 표기', 300);
+        const resolutionNote = requireText(body.resolutionNote, '검수 메모', 1000);
+
+        const { data: enqueued, error } = await db.rpc('resolve_canonical_ingredient_review', {
+          p_review_queue_id: reviewQueueId,
+          p_canonical_ingredient_id: canonicalIngredientId,
+          p_alias_text: aliasText,
+          p_evidence_source_id: evidenceSourceId,
+          p_resolution_note: resolutionNote,
+          p_actor: actor,
+          p_engine_version_id: engineVersionId,
+        });
+        if (error) {
+          if (error.message?.includes('alias_collision')) {
+            throw new ValidationError('이미 다른 표준 원료가 사용하는 별칭입니다.');
+          }
+          if (error.message?.includes('reviewed_evidence_required')) {
+            throw new ValidationError('검토 완료된 근거를 먼저 연결해 주세요.');
+          }
+          throw error;
+        }
+        return json({ ok: true, enqueuedProducts: Number(enqueued ?? 0) }, 200, cors);
       }
 
       default:

@@ -60,7 +60,6 @@ export const ALLOWED_ACTIONS = new Set([
   'getSettings',
   'saveSettings',
   'dashboardMetrics',
-  'listEnrichmentQueue',
   'saveProductSource',
   'updateEnrichmentStatus',
   'listMembers',

@@ -17,6 +17,12 @@ const SOURCE = readFileSync(join(process.cwd(), 'src/lib/supabase.ts'), 'utf8');
 const REQUIRED_PRODUCT_COLUMNS = [
   'id',
   'name',
+  'display_name',
+  'variant_name',
+  'net_weight_text',
+  'slug',
+  'catalog_source',
+  'analysis_status',
   'brand_name',
   'manufacturer_name',
   'product_type',
@@ -95,6 +101,20 @@ describe('제품 조회 컬럼', () => {
       expect(columns.split(',').map((c) => c.trim()).sort()).toEqual(
         ['calcium', 'crude_ash', 'crude_fat', 'crude_fiber', 'crude_protein', 'moisture', 'phosphorus'],
       );
+    }
+  });
+
+  it('상세와 바코드 조회는 현재 라벨의 원문·순서·매칭 상태를 함께 받는다', () => {
+    for (const name of ['getProductDetail', 'getProductByBarcode']) {
+      const start = SOURCE.indexOf(`export async function ${name}`);
+      expect(start, `${name} 함수를 찾지 못했다`).toBeGreaterThanOrEqual(0);
+      const next = SOURCE.indexOf('\nexport async function ', start + 1);
+      const body = SOURCE.slice(start, next === -1 ? SOURCE.length : next);
+      expect(body).toContain('product_ingredient_label_sets');
+      expect(body).toContain('product_ingredient_label_items');
+      for (const column of ['is_current', 'display_order', 'raw_ingredient_text', 'match_status']) {
+        expect(body, `${name}에서 ${column}이 빠졌다`).toContain(column);
+      }
     }
   });
 

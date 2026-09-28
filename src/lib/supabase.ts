@@ -112,8 +112,10 @@ function isMissingProductVisibilityColumn(error: VisibilityQueryError | null): b
   return Boolean(
     error &&
     (error.code === '42703' || error.code === 'PGRST204') &&
-    // 노출 필터와 상단 고정 정렬은 같은 마이그레이션 계열이라 폴백 조건을 공유한다.
-    /is_visible|is_pinned|pinned_order/.test(error.message),
+    // 노출 필터·상단 고정·원재료 유무 정렬은 같은 마이그레이션 계열이라
+    // 폴백 조건을 공유한다. 프런트가 마이그레이션보다 먼저 배포돼도 한 번만
+    // 옛 조회로 되돌아가 목록이 비지 않는다.
+    /is_visible|is_pinned|pinned_order|has_ingredients/.test(error.message),
   );
 }
 
@@ -273,16 +275,23 @@ export async function getProductsPage(page = 1, pageSize = MOBILE_PRODUCT_PAGE_S
   const from = (safePage - 1) * safePageSize;
   const { data, error } = await queryVisibleProducts((withVisibilityFilter) => {
     let builder = supabase.from('products').select(`
-      id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
+      id, name, display_name, variant_name, net_weight_text, slug, catalog_source, analysis_status,
+      brand_name, manufacturer_name, product_type, main_category, sub_category,
       target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
       verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating
     `);
     // 운영자가 고정한 제품이 항상 먼저 나온다(관리자 → 제품 관리 → 상단 고정).
+    //
+    // 그다음이 has_ingredients 다. 제품명만 수집하고 원재료를 못 채운 묶음이 들어오면
+    // 최신순만으로는 첫 화면이 통째로 "원료 정보 부족"이 된다 — 실제로 한 번 그랬다.
+    // 감추지 않고 뒤로 보내, 분석할 수 있는 제품이 이 50개 안에 들어오게 한다.
+    // (개수가 아니라 있다/없다로 가른다. 정렬 근거는 products.ingredient_count 캐시.)
     if (withVisibilityFilter) {
       builder = builder
         .eq('is_visible', true)
         .order('is_pinned', { ascending: false })
-        .order('pinned_order', { ascending: true });
+        .order('pinned_order', { ascending: true })
+        .order('has_ingredients', { ascending: false });
       if (shouldHideUnverifiedProducts()) builder = builder.eq('verification_status', 'verified');
     }
     return builder.order('created_at', { ascending: false }).range(from, from + safePageSize - 1);
@@ -305,12 +314,17 @@ export async function getProductDetail(productId: string): Promise<Product | nul
     let builder = supabase
       .from('products')
       .select(`
-        id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
+        id, name, display_name, variant_name, net_weight_text, slug, catalog_source, analysis_status,
+        brand_name, manufacturer_name, product_type, main_category, sub_category,
         target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
         verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
         product_ingredients (
           ingredient_id,
           ingredients (id, name_ko, name_en, risk_level, description)
+        ),
+        product_ingredient_label_sets (
+          id, is_current,
+          product_ingredient_label_items (display_order, raw_ingredient_text, match_status)
         ),
         nutritional_profiles (crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus)
       `)
@@ -338,12 +352,17 @@ export async function getProductByBarcode(barcode: string): Promise<Product | nu
       let builder = supabase
         .from('products')
         .select(`
-          id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
+          id, name, display_name, variant_name, net_weight_text, slug, catalog_source, analysis_status,
+          brand_name, manufacturer_name, product_type, main_category, sub_category,
           target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
           verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
           product_ingredients (
             ingredient_id,
             ingredients (id, name_ko, name_en, risk_level, description)
+          ),
+          product_ingredient_label_sets (
+            id, is_current,
+            product_ingredient_label_items (display_order, raw_ingredient_text, match_status)
           ),
           nutritional_profiles (crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus)
         `)
@@ -462,37 +481,32 @@ export async function searchProducts(
 ): Promise<Product[]> {
   if (!isSupabaseConfigured) return [];
   const normalizedQuery = query.trim();
-  const searchTerms = normalizedQuery.split(/\s+/).filter(Boolean).slice(0, 8);
-  const ingredientIdsByTerm = await Promise.all(
-    searchTerms.map((term) => findProductIdsByIngredientName(term)),
+  const hasFilters = Boolean(
+    (category && category !== '전체') ||
+    excludeIngredients.length > 0 ||
+    filters.subCategory ||
+    filters.targetLifeStage ||
+    filters.formulation ||
+    filters.healthConcerns?.length ||
+    filters.dietPreset ||
+    filters.targetPetType ||
+    filters.brand,
   );
+  if (!normalizedQuery && !hasFilters) return [];
 
-  const { data, error } = await queryVisibleProducts((withVisibilityFilter) => {
+  const buildProductQuery = (withVisibilityFilter: boolean, productIds: string[] | null) => {
     let builder = supabase.from('products').select(`
-      id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
+      id, name, display_name, variant_name, net_weight_text, slug, catalog_source, analysis_status,
+      brand_name, manufacturer_name, product_type, main_category, sub_category,
       target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
       verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
       product_ingredients (
         ingredient_id,
-        ingredients (id, name_ko, risk_level)
+        ingredients (id, name_ko, name_en, risk_level)
       )
     `);
 
-    // 공백으로 나눈 모든 단어가 제품명·브랜드·바코드·원료 중 하나에는 맞아야 한다.
-    // 예: "오리젠 퍼피"처럼 브랜드와 제품명에 단어가 나뉜 검색도 찾는다.
-    for (const [index, term] of searchTerms.entries()) {
-      const pattern = toOrIlikePattern(term);
-      const ingredientProductIds = ingredientIdsByTerm[index];
-      const clauses = [
-        `name.ilike.${pattern}`,
-        `brand_name.ilike.${pattern}`,
-        `barcode.ilike.${pattern}`,
-      ];
-      if (ingredientProductIds.length > 0) {
-        clauses.push(`id.in.(${ingredientProductIds.join(',')})`);
-      }
-      builder = builder.or(clauses.join(','));
-    }
+    if (productIds) builder = builder.in('id', productIds);
 
     if (category && category !== '전체') {
       builder = builder.eq('main_category', category);
@@ -537,20 +551,79 @@ export async function searchProducts(
     }
 
     if (withVisibilityFilter) {
-      builder = builder
-        .eq('is_visible', true)
-        .order('is_pinned', { ascending: false })
-        .order('pinned_order', { ascending: true });
+      builder = builder.eq('is_visible', true);
       if (shouldHideUnverifiedProducts()) builder = builder.eq('verification_status', 'verified');
     }
     return builder;
+  };
+
+  const { data: rankedData, error: rpcError } = await supabase.rpc('search_catalog_products', {
+    p_query: normalizedQuery,
+    p_category: category && category !== '전체' ? category : null,
+    p_pet_type: filters.targetPetType || null,
+    p_limit: 100,
+    p_offset: 0,
   });
-  if (error) {
-    console.error('searchProducts error:', error);
+
+  type RankedCatalogRow = { product_id: string; rank: number | string | null };
+  const rankedRows = (rankedData ?? []) as RankedCatalogRow[];
+  const missingRpc = Boolean(
+    rpcError &&
+    (rpcError.code === 'PGRST202' ||
+      rpcError.code === '42883' ||
+      /search_catalog_products.*(?:not found|schema cache|does not exist)/i.test(rpcError.message)),
+  );
+
+  let rows: SupabaseProductRow[];
+  let rankById: Map<string, number> | null = null;
+
+  if (rpcError && !missingRpc) {
+    console.error('searchProducts RPC error:', rpcError.message);
     return [];
   }
 
-  let filtered: SupabaseProductRow[] = asProductRows(data);
+  if (missingRpc) {
+    // 프런트가 마이그레이션보다 먼저 배포된 짧은 구간만 위한 폴백이다. 사용자 입력을
+    // PostgREST `.or()` 문자열로 조립하지 않고, 최대 100개 공개 행을 받아 리터럴로 비교한다.
+    const { data, error } = await queryVisibleProducts((withVisibilityFilter) =>
+      buildProductQuery(withVisibilityFilter, null).limit(100),
+    );
+    if (error) {
+      console.error('searchProducts legacy fallback error:', error.message);
+      return [];
+    }
+    const searchTerms = normalizedQuery.toLowerCase().split(/\s+/).filter(Boolean).slice(0, 8);
+    rows = asProductRows(data).filter((product) => {
+      if (searchTerms.length === 0) return true;
+      const ingredientNames = product.product_ingredients?.flatMap((link) => [
+        link.ingredients?.name_ko ?? '',
+        link.ingredients?.name_en ?? '',
+      ]) ?? [];
+      const searchable = [
+        product.display_name ?? '',
+        product.name,
+        product.brand_name,
+        product.barcode ?? '',
+        ...ingredientNames,
+      ].join(' ').toLowerCase();
+      return searchTerms.every((term) => searchable.includes(term));
+    });
+  } else {
+    const rankedIds = rankedRows.map((row) => row.product_id).filter(Boolean);
+    if (rankedIds.length === 0) return [];
+    rankById = new Map(rankedIds.map((id, index) => [id, index]));
+
+    const { data, error } = await queryVisibleProducts((withVisibilityFilter) =>
+      buildProductQuery(withVisibilityFilter, rankedIds),
+    );
+    if (error) {
+      console.error('searchProducts hydration error:', error.message);
+      return [];
+    }
+    rows = asProductRows(data);
+  }
+
+  let filtered = rows;
   if (excludeIngredients.length > 0) {
     filtered = filtered.filter((p) => {
       const hasExcluded = p.product_ingredients?.some((pi) =>
@@ -559,6 +632,13 @@ export async function searchProducts(
       );
       return !hasExcluded;
     });
+  }
+
+  if (rankById) {
+    filtered.sort(
+      (a, b) => (rankById?.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
+        (rankById?.get(b.id) ?? Number.MAX_SAFE_INTEGER),
+    );
   }
 
   return filtered.map(mapProductFromSupabaseRow);
@@ -657,7 +737,8 @@ export async function getRecentViews(userId: string) {
         product_id,
         viewed_at,
         products (
-          id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
+          id, name, display_name, variant_name, net_weight_text, slug, catalog_source, analysis_status,
+          brand_name, manufacturer_name, product_type, main_category, sub_category,
           target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
           verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating
         )
@@ -694,7 +775,8 @@ export async function getProductsByBrand(brandName: string): Promise<Product[]> 
     let builder = supabase
       .from('products')
       .select(`
-        id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
+        id, name, display_name, variant_name, net_weight_text, slug, catalog_source, analysis_status,
+        brand_name, manufacturer_name, product_type, main_category, sub_category,
         target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
         verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
         product_ingredients (
@@ -769,7 +851,8 @@ export async function searchDiaryProducts(
     let builder = supabase
       .from('products')
       .select(`
-        id, name, brand_name, manufacturer_name, product_type, main_category, sub_category,
+        id, name, display_name, variant_name, net_weight_text, slug, catalog_source, analysis_status,
+        brand_name, manufacturer_name, product_type, main_category, sub_category,
         target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
         verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
         product_ingredients (
@@ -1033,8 +1116,16 @@ export interface ProductRequestInput {
   note?: string;
 }
 
+/**
+ * 요청 결과.
+ *
+ * 성공 분기에도 `reason`/`message` 자리를 비워 둔다. 이 프로젝트의 tsconfig 는
+ * strict(=strictNullChecks) 를 끄고 있어, `if (result.ok)` 같은 참·거짓 검사로는
+ * 판별 유니온이 좁혀지지 않는다. 자리를 비워 두지 않으면 실패 분기의 필드를 읽는
+ * 호출부가 빌드에서 막힌다(TS2339).
+ */
 export type ProductRequestResult =
-  | { ok: true }
+  | { ok: true; reason?: undefined; message?: undefined }
   | { ok: false; reason: 'unauthenticated' | 'duplicate' | 'error'; message: string };
 
 /**

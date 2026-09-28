@@ -272,6 +272,8 @@ export interface EnrichmentQueueRow {
     main_category: string | null;
     image_url: string | null;
     barcode: string | null;
+    /** 노출 중인지. 정리로 내려둔 제품을 목록에서 구분해 보여 준다. */
+    is_visible?: boolean;
     verification_status: string | null;
   };
   source_count: number;
@@ -282,9 +284,13 @@ export async function fetchEnrichmentQueue(input: {
   pageSize: number;
   status?: string;
   missingField?: string;
+  /** 'visible'(기본) · 'hidden' · 'all' */
+  visibility?: string;
 }): Promise<Paged<EnrichmentQueueRow>> {
-  const response = await adminWrite<{ rows: EnrichmentQueueRow[]; total: number }>(
-    'listEnrichmentQueue',
+  // admin-write 가 아니라 전용 읽기 함수를 쓴다. 관리자 쓰기가 전부 지나가는
+  // 함수에 조회 조건을 걸어 두면, 필터 하나 고치자고 그 함수를 다시 배포해야 한다.
+  const response = await callAdminFunction<{ rows: EnrichmentQueueRow[]; total: number }>(
+    'admin-enrichment-read',
     input,
   );
   return { rows: response.rows ?? [], total: response.total ?? 0 };
@@ -343,6 +349,52 @@ export async function fetchIngredients(): Promise<AdminIngredient[]> {
 }
 
 /** 원재료 편집기용 성분 검색 (한글/영문). */
+/** 라벨 붙여넣기 대조에 쓰는 성분 사전 한 벌. */
+export interface IngredientDictionaryEntry {
+  id: string;
+  nameKo: string;
+  nameEn: string | null;
+  aliases: string[];
+  riskLevel: RiskLevel;
+}
+
+/**
+ * 성분 사전 전체를 한 번에 읽는다.
+ *
+ * 라벨 원문에는 원재료가 보통 10~30개 들어 있다. 이름마다 검색을 보내면 화면을
+ * 한 번 쓸 때마다 요청이 그만큼 나간다. 사전은 500여 행에 이름·별칭뿐이라
+ * 한 번 받아 두고 메모리에서 대조하는 편이 싸다.
+ *
+ * 별칭 컬럼이 아직 없는 환경(마이그레이션 미적용)에서는 이름만으로 대조한다.
+ */
+export async function fetchIngredientDictionary(): Promise<IngredientDictionaryEntry[]> {
+  const run = (columns: string) => supabase
+    .from('ingredients')
+    .select(columns)
+    .order('name_ko', { ascending: true })
+    .limit(2000);
+
+  let rows: Record<string, unknown>[];
+  const withAliases = await run('id, name_ko, name_en, risk_level, aliases');
+  if (withAliases.error && isMissingIngredientNutritionSchema(withAliases.error)) {
+    const fallback = await run('id, name_ko, name_en, risk_level');
+    if (fallback.error) throw new Error(fallback.error.message);
+    rows = (fallback.data ?? []) as unknown as Record<string, unknown>[];
+  } else if (withAliases.error) {
+    throw new Error(withAliases.error.message);
+  } else {
+    rows = (withAliases.data ?? []) as unknown as Record<string, unknown>[];
+  }
+
+  return rows.map((row) => ({
+    id: String(row.id),
+    nameKo: String(row.name_ko ?? ''),
+    nameEn: (row.name_en as string | null) ?? null,
+    aliases: Array.isArray(row.aliases) ? (row.aliases as string[]) : [],
+    riskLevel: ((row.risk_level as RiskLevel) ?? 'safe'),
+  }));
+}
+
 export async function searchIngredients(query: string, limit = 20): Promise<AdminIngredient[]> {
   const q = query.trim();
   const run = (columns: string) => {
@@ -548,7 +600,9 @@ export async function saveProduct(payload: SaveProductPayload): Promise<SaveProd
   // 이제 공개 정책이 "앱에 실제로 보이는 제품"으로 좁혀져 있어, 비노출로 저장한
   // 제품은 공개 경로에서 안 보이는 것이 정상이다. 그래서 저장 확인은 관리자
   // 경로로 하고, 공개 노출 여부는 따로 확인해 필요할 때만 경고한다.
-  const confirmed = await fetchProductForEdit(id) as SavedProductConfirmation | null;
+  // admin-products-read 는 화면마다 컬럼이 달라 타입 없는 행으로 돌려준다.
+  // 저장 확인에 필요한 필드만 보므로 여기서 한 번 좁혀 쓴다.
+  const confirmed = await fetchProductForEdit(id) as unknown as SavedProductConfirmation | null;
 
   const expectedName = String(payload.product.name ?? '').trim();
   const expectedBrand = String(payload.product.brand_name ?? '').trim();
@@ -1194,6 +1248,70 @@ export async function applyRiskDecisions(
   return { updated: res.updated ?? 0, created: res.created ?? 0, skipped: res.skipped ?? [] };
 }
 
+// ── Canonical 원재료 근거 검수 ──────────────────────────────────────────────
+
+export interface CanonicalEvidenceLink {
+  sourceId: string;
+  title: string;
+  organization: string | null;
+  url: string | null;
+  claimSummary: string;
+}
+
+export interface CanonicalIngredientReviewCandidate {
+  id: string;
+  canonicalNameKo: string;
+  canonicalNameEn: string | null;
+  status: 'draft' | 'active' | 'retired';
+  evidence: CanonicalEvidenceLink[];
+}
+
+export interface CanonicalIngredientReviewRow {
+  id: string;
+  submittedText: string;
+  normalizedText: string;
+  occurrenceCount: number;
+  affectedProductCount: number;
+  rawExamples: string[];
+  candidateIngredientIds: string[];
+  aliasOwnerCanonicalId: string | null;
+  firstSeenAt: string;
+  lastSeenAt: string;
+}
+
+export interface CanonicalIngredientReviewData {
+  rows: CanonicalIngredientReviewRow[];
+  canonicalIngredients: CanonicalIngredientReviewCandidate[];
+  activeEngine: { id: string; version: string } | null;
+}
+
+export async function fetchCanonicalIngredientReview(): Promise<CanonicalIngredientReviewData> {
+  const response = await callAdminFunction<Partial<CanonicalIngredientReviewData>>(
+    'admin-ingredient-review',
+    { action: 'listCanonicalReview' },
+  );
+  return {
+    rows: response.rows ?? [],
+    canonicalIngredients: response.canonicalIngredients ?? [],
+    activeEngine: response.activeEngine ?? null,
+  };
+}
+
+export async function resolveCanonicalIngredientReview(input: {
+  reviewQueueId: string;
+  canonicalIngredientId: string;
+  aliasText: string;
+  evidenceSourceId: string;
+  resolutionNote: string;
+  engineVersionId: string;
+}): Promise<{ enqueuedProducts: number }> {
+  const response = await callAdminFunction<{ enqueuedProducts?: number }>(
+    'admin-ingredient-review',
+    { action: 'resolveCanonicalTerm', ...input },
+  );
+  return { enqueuedProducts: response.enqueuedProducts ?? 0 };
+}
+
 // ── 바코드·보장성분 일괄 입력 ───────────────────────────────────────────────
 
 /** 라벨의 보장성분 5종 + 선택 항목 2종. 화면 열 순서와 같다. */
@@ -1365,6 +1483,62 @@ export async function reviewProductRequest(
     status,
     note: note?.trim() || null,
   });
+}
+
+// ── 커뮤니티 스캔 검토 대기열 ─────────────────────────────────────────────
+
+export interface AdminScanSubmission {
+  id: string;
+  status: string;
+  scannedBarcode: string | null;
+  errorCode: string | null;
+  createdAt: string;
+  updatedAt: string;
+  resolvedProductId: string | null;
+  productName: string | null;
+  brandName: string | null;
+}
+
+export interface AdminScanEvidence {
+  front: string[];
+  ingredient: string[];
+  nutrition: string[];
+}
+
+export async function fetchAdminScanSubmissions(params: {
+  page: number;
+  pageSize: number;
+  status: string;
+  errorCode: string;
+  dateFrom: string;
+  dateTo: string;
+}): Promise<Paged<AdminScanSubmission>> {
+  const response = await callAdminFunction<{ rows?: AdminScanSubmission[]; total?: number }>(
+    'admin-operations',
+    { action: 'listScanSubmissions', ...params },
+  );
+  return { rows: response.rows ?? [], total: response.total ?? 0 };
+}
+
+export async function fetchAdminScanEvidence(id: string): Promise<AdminScanEvidence> {
+  const response = await callAdminFunction<{ evidence?: AdminScanEvidence }>(
+    'admin-operations',
+    { action: 'getScanEvidence', id },
+  );
+  return response.evidence ?? { front: [], ingredient: [], nutrition: [] };
+}
+
+export async function reviewAdminScanSubmission(input: {
+  id: string;
+  decision: 'merge' | 'reject' | 'retry';
+  targetProductId?: string;
+  reason: string;
+}): Promise<{ status: string }> {
+  const response = await callAdminFunction<{ status?: string }>(
+    'admin-operations',
+    { action: 'reviewScanSubmission', ...input },
+  );
+  return { status: response.status ?? 'unknown' };
 }
 
 // ── 제품 일괄 변경 ──────────────────────────────────────────────────────────

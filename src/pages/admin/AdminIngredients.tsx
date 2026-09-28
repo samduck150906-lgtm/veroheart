@@ -1,17 +1,21 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, Search, Edit2, Trash2, X, Database, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, X, Database, AlertTriangle, ExternalLink } from 'lucide-react';
 import { notify } from '../../store/useNotification';
 import standardFeedData from '../../data/standard_feed_data.json';
 import AdminUnmatched from './AdminUnmatched';
 import AdminRiskReview from './AdminRiskReview';
 import {
   deleteIngredient,
+  fetchCanonicalIngredientReview,
   fetchIngredients,
   getIngredientUsage,
   saveIngredient,
+  resolveCanonicalIngredientReview,
   type AdminIngredient,
   type AdminIngredientInput,
+  type CanonicalIngredientReviewCandidate,
+  type CanonicalIngredientReviewRow,
   type RiskLevel,
 } from '../../lib/adminApi';
 
@@ -146,14 +150,178 @@ const EMPTY_FORM: FormState = {
   nutrition_source: '',
 };
 
-type IngredientTab = 'dictionary' | 'unmatched' | 'risk';
+type IngredientTab = 'dictionary' | 'canonical' | 'unmatched' | 'risk';
+
+const CanonicalEvidenceReview: React.FC = () => {
+  const [rows, setRows] = useState<CanonicalIngredientReviewRow[]>([]);
+  const [candidates, setCandidates] = useState<CanonicalIngredientReviewCandidate[]>([]);
+  const [engine, setEngine] = useState<{ id: string; version: string } | null>(null);
+  const [selected, setSelected] = useState<CanonicalIngredientReviewRow | null>(null);
+  const [canonicalId, setCanonicalId] = useState('');
+  const [evidenceSourceId, setEvidenceSourceId] = useState('');
+  const [note, setNote] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [resultText, setResultText] = useState('');
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await fetchCanonicalIngredientReview();
+      setRows(data.rows.slice().sort((a, b) => b.occurrenceCount - a.occurrenceCount));
+      setCandidates(data.canonicalIngredients);
+      setEngine(data.activeEngine);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : String(loadError));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const chosen = candidates.find((candidate) => candidate.id === canonicalId) ?? null;
+  const collision = selected?.aliasOwnerCanonicalId
+    && selected.aliasOwnerCanonicalId !== canonicalId
+    ? candidates.find((candidate) => candidate.id === selected.aliasOwnerCanonicalId) ?? true
+    : null;
+  const canResolve = Boolean(
+    selected && chosen && evidenceSourceId && note.trim() && engine && !collision,
+  );
+
+  const open = (row: CanonicalIngredientReviewRow) => {
+    const firstCandidate = row.candidateIngredientIds.find((id) =>
+      candidates.some((candidate) => candidate.id === id)) ?? '';
+    setSelected(row);
+    setCanonicalId(firstCandidate);
+    const initial = candidates.find((candidate) => candidate.id === firstCandidate);
+    setEvidenceSourceId(initial?.evidence[0]?.sourceId ?? '');
+    setNote('');
+    setError('');
+  };
+
+  const submit = async () => {
+    if (!selected || !chosen || !engine || !canResolve || saving) return;
+    setSaving(true);
+    setError('');
+    try {
+      const result = await resolveCanonicalIngredientReview({
+        reviewQueueId: selected.id,
+        canonicalIngredientId: chosen.id,
+        aliasText: selected.submittedText,
+        evidenceSourceId,
+        resolutionNote: note.trim(),
+        engineVersionId: engine.id,
+      });
+      setResultText(`검수 완료 · ${result.enqueuedProducts.toLocaleString()}개 제품 재분석 대기`);
+      setSelected(null);
+      await load();
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : String(saveError));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div>
+      <div className="admin-toolbar">
+        <div className="admin-title-wrap">
+          <h2>근거 원재료 검수</h2>
+          <p>미확인 표기를 검토된 표준 원료와 연결하고 영향 제품만 재분석합니다.</p>
+        </div>
+      </div>
+      {resultText && <div role="status" className="admin-card" style={{ marginBottom: 14 }}>{resultText}</div>}
+      {!engine && !loading && (
+        <div role="alert" className="admin-card" style={{ marginBottom: 14, color: '#B45309' }}>
+          활성 분석 엔진 버전이 없어 검수를 반영할 수 없습니다.
+        </div>
+      )}
+      <div className="admin-table-wrap">
+        <table className="admin-table">
+          <thead><tr><th>원료 표기</th><th>발생</th><th>영향 제품</th><th>원문 예시</th><th style={{ textAlign: 'right' }}>검수</th></tr></thead>
+          <tbody>
+            {loading ? <tr><td colSpan={5}><div className="admin-empty">불러오는 중…</div></td></tr>
+              : error && !selected ? <tr><td colSpan={5}><div className="admin-empty">{error}</div></td></tr>
+                : rows.length === 0 ? <tr><td colSpan={5}><div className="admin-empty">검토 대기 원료가 없습니다.</div></td></tr>
+                  : rows.map((row) => (
+                    <tr key={row.id}>
+                      <td><div className="admin-item-main">{row.submittedText}</div><div className="admin-item-sub">{row.normalizedText}</div></td>
+                      <td><strong>{row.occurrenceCount.toLocaleString()}회</strong></td>
+                      <td>{row.affectedProductCount.toLocaleString()}개</td>
+                      <td>{row.rawExamples.length ? row.rawExamples.join(' · ') : row.submittedText}</td>
+                      <td style={{ textAlign: 'right' }}><button type="button" className="admin-btn-soft" onClick={() => open(row)}>근거 연결</button></td>
+                    </tr>
+                  ))}
+          </tbody>
+        </table>
+      </div>
+
+      {selected && (
+        <div className="admin-modal-backdrop" onClick={() => !saving && setSelected(null)}>
+          <div className="admin-modal" role="dialog" aria-modal="true" aria-label="근거 원재료 연결" onClick={(event) => event.stopPropagation()}>
+            <h3>&quot;{selected.submittedText}&quot; 검수</h3>
+            <p className="admin-modal-desc">발생 {selected.occurrenceCount.toLocaleString()}회 · 영향 제품 {selected.affectedProductCount.toLocaleString()}개</p>
+            <div className="admin-form-group">
+              <label htmlFor="canonical-review-candidate">표준 원료</label>
+              <select
+                id="canonical-review-candidate"
+                value={canonicalId}
+                onChange={(event) => {
+                  const id = event.target.value;
+                  setCanonicalId(id);
+                  setEvidenceSourceId(candidates.find((candidate) => candidate.id === id)?.evidence[0]?.sourceId ?? '');
+                }}
+              >
+                <option value="">선택해 주세요</option>
+                {candidates.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.canonicalNameKo}</option>)}
+              </select>
+            </div>
+            {collision && (
+              <div role="alert" className="admin-form-error">
+                이 별칭은 이미 {collision === true ? '다른 표준 원료' : collision.canonicalNameKo}에 연결되어 있습니다.
+              </div>
+            )}
+            {chosen && chosen.evidence.length === 0 && (
+              <div role="alert" className="admin-form-error">검토 완료된 근거가 없어 활성화할 수 없습니다.</div>
+            )}
+            {chosen && chosen.evidence.length > 0 && (
+              <div className="admin-form-group">
+                <label htmlFor="canonical-review-evidence">판정 근거</label>
+                <select id="canonical-review-evidence" value={evidenceSourceId} onChange={(event) => setEvidenceSourceId(event.target.value)}>
+                  {chosen.evidence.map((evidence) => <option key={evidence.sourceId} value={evidence.sourceId}>{evidence.title}</option>)}
+                </select>
+                {chosen.evidence.map((evidence) => evidence.url ? (
+                  <a key={evidence.sourceId} href={evidence.url} target="_blank" rel="noopener noreferrer" className="admin-item-sub">
+                    {evidence.organization || evidence.title} <ExternalLink size={12} />
+                  </a>
+                ) : null)}
+              </div>
+            )}
+            <div className="admin-form-group">
+              <label htmlFor="canonical-review-note">검수 메모*</label>
+              <textarea id="canonical-review-note" value={note} onChange={(event) => setNote(event.target.value)} rows={3} placeholder="표기를 이 원료로 연결한 이유를 남겨 주세요." />
+            </div>
+            {error && <div role="alert" className="admin-form-error">{error}</div>}
+            <div className="admin-modal-footer">
+              <button type="button" className="admin-btn-soft" onClick={() => setSelected(null)} disabled={saving}>취소</button>
+              <button type="button" className="admin-btn-primary" onClick={submit} disabled={!canResolve || saving}>검수 반영</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const AdminIngredients: React.FC = () => {
   const [urlParams, setUrlParams] = useSearchParams();
   // 미매칭 성분은 별도 사이드바 메뉴였으나, 같은 성분 사전을 두 곳에서 관리하게 돼
   // 여기 탭으로 합쳤다. 기존 링크(?tab=unmatched)도 그대로 열린다.
   const rawTab = urlParams.get('tab');
-  const tab: IngredientTab = rawTab === 'unmatched' || rawTab === 'risk' ? rawTab : 'dictionary';
+  const tab: IngredientTab = rawTab === 'unmatched' || rawTab === 'risk' || rawTab === 'canonical' ? rawTab : 'dictionary';
   const selectTab = (next: IngredientTab) => {
     setUrlParams(next === 'dictionary' ? {} : { tab: next }, { replace: true });
   };
@@ -414,6 +582,7 @@ const AdminIngredients: React.FC = () => {
 
   const tabs: { key: IngredientTab; label: string }[] = [
     { key: 'dictionary', label: '성분 사전' },
+    { key: 'canonical', label: '근거 원재료 검수' },
     { key: 'risk', label: '위험도 검수' },
     { key: 'unmatched', label: '미매칭 성분 검수' },
   ];
@@ -439,6 +608,15 @@ const AdminIngredients: React.FC = () => {
       <div>
         {tabNav}
         <AdminUnmatched />
+      </div>
+    );
+  }
+
+  if (tab === 'canonical') {
+    return (
+      <div>
+        {tabNav}
+        <CanonicalEvidenceReview />
       </div>
     );
   }

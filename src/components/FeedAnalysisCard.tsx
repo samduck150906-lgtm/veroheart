@@ -42,6 +42,7 @@ export default function FeedAnalysisCard({ product, profile }: { product: Produc
   const a = analyzeFeed(product, profile);
   const tone = GRADE_TONE[a.grade];
   const iq = a.ingredientQuality;
+  const analysisReady = a.analysisReadiness.status === 'ready';
 
   return (
     <section
@@ -61,12 +62,12 @@ export default function FeedAnalysisCard({ product, profile }: { product: Produc
       {/* 품질 점수 */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '4px 2px 18px' }}>
         <div style={{ flexShrink: 0, textAlign: 'center' }}>
-          <div style={{ fontSize: 40, fontWeight: 900, lineHeight: 1, color: tone.fg, fontVariantNumeric: 'tabular-nums' }}>{a.score}</div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--pdp-ink-faint)', marginTop: 2 }}>/ 100</div>
+          <div style={{ fontSize: 40, fontWeight: 900, lineHeight: 1, color: analysisReady ? tone.fg : '#D97706', fontVariantNumeric: 'tabular-nums' }}>{analysisReady ? a.score : '—'}</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--pdp-ink-faint)', marginTop: 2 }}>{analysisReady ? '/ 100' : '검토 중'}</div>
         </div>
         <div style={{ minWidth: 0 }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 999, background: tone.bg, color: tone.fg, fontSize: 14, fontWeight: 900, marginBottom: 6 }}>
-            {a.grade}등급 · {tone.label}
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 999, background: analysisReady ? tone.bg : '#FEF3C7', color: analysisReady ? tone.fg : '#B45309', fontSize: 14, fontWeight: 900, marginBottom: 6 }}>
+            {analysisReady ? `${a.grade}등급 · ${tone.label}` : '부분 분석'}
           </span>
           <p style={{ margin: 0, fontSize: 13.5, fontWeight: 600, color: 'var(--pdp-ink-muted)', lineHeight: 1.5 }}>{a.summary}</p>
         </div>
@@ -149,9 +150,9 @@ export default function FeedAnalysisCard({ product, profile }: { product: Produc
           <>
             <ChecklistRow ok={iq.firstIsAnimalProtein} label="제1원료가 동물성 단백질" value={iq.firstIsAnimalProtein ? (iq.firstIngredient ?? '예') : '아니오'} />
             <ChecklistRow ok={iq.animalProteins.length > 0} label="동물성 단백질 원료" value={`${iq.animalProteins.length}종`} />
-            <ChecklistRow ok={iq.artificial.length === 0} label="합성 첨가물(색소·보존료 등)" value={iq.artificial.length === 0 ? '없음' : `${iq.artificial.length}개`} />
-            <ChecklistRow ok={iq.byProducts.length === 0} label="부산물 원료" value={iq.byProducts.length === 0 ? '없음' : '포함'} />
-            <ChecklistRow ok={iq.fillers.length < 2} label="곡물·충전제 계열" value={iq.fillers.length === 0 ? '없음' : `${iq.fillers.length}개`} />
+            <ChecklistRow neutral={!analysisReady && iq.artificial.length === 0} ok={iq.artificial.length === 0} label="합성 첨가물(색소·보존료 등)" value={iq.artificial.length === 0 ? (analysisReady ? '없음' : '확인 범위에서 0개') : `${iq.artificial.length}개`} />
+            <ChecklistRow neutral={!analysisReady && iq.byProducts.length === 0} ok={iq.byProducts.length === 0} label="부산물 원료" value={iq.byProducts.length === 0 ? (analysisReady ? '없음' : '확인 범위에서 0개') : '포함'} />
+            <ChecklistRow neutral={!analysisReady && iq.fillers.length === 0} ok={iq.fillers.length < 2} label="곡물·충전제 계열" value={iq.fillers.length === 0 ? (analysisReady ? '없음' : '확인 범위에서 0개') : `${iq.fillers.length}개`} />
             <ChecklistRow neutral ok={iq.functional.length > 0} label="기능성 원료(유산균·오메가 등)" value={iq.functional.length > 0 ? `${iq.functional.length}종` : '미확인'} />
             <ChecklistRow neutral ok label="안전 / 주의 / 위험 성분" value={`${iq.safeCount} / ${iq.cautionCount} / ${iq.dangerCount}`} />
           </>

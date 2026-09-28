@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeProductDisplayName, truncateName } from './productDisplay';
+import { getProductDisplayParts, normalizeProductDisplayName, truncateName } from './productDisplay';
 
 describe('normalizeProductDisplayName', () => {
   it('쿠팡 원문의 배송·수량·홍보 문구를 제거하되 제품 구분 정보는 보존한다', () => {
@@ -44,5 +44,31 @@ describe('normalizeProductDisplayName', () => {
     expect(truncateName('짧은 이름', 20)).toBe('짧은 이름');
     expect(truncateName('a'.repeat(80), 10)).toHaveLength(10);
     expect(truncateName('a'.repeat(80), 10).endsWith('…')).toBe(true);
+  });
+});
+
+describe('getProductDisplayParts', () => {
+  it('정제 이름을 우선하고 변형·중량만 한 줄 메타로 합친다', () => {
+    expect(getProductDisplayParts({
+      brand: '오리젠',
+      name: '쿠팡 원문',
+      displayName: '오리지널 독',
+      variantName: '닭고기 · 성견',
+      netWeightText: '2kg',
+      catalogSource: 'community_scan',
+    })).toEqual({
+      brand: '오리젠',
+      name: '오리지널 독',
+      meta: '닭고기 · 성견 · 2kg',
+    });
+  });
+
+  it('수집 출처 브랜드와 빈 메타는 공개 표시에서 숨긴다', () => {
+    expect(getProductDisplayParts({
+      brand: '쿠팡검색',
+      name: '실제 제품명',
+      variantName: ' ',
+      netWeightText: '',
+    })).toEqual({ brand: '', name: '실제 제품명', meta: '' });
   });
 });

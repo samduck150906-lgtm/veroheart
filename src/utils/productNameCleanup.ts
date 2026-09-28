@@ -1,4 +1,4 @@
-import { isSourceLabelBrand } from './productDisplay';
+import { isSourceLabelBrand } from './productDisplay.ts';
 
 const PROMO_TOKENS = new Set([
   '무료배송', '로켓배송', '로켓와우', '오늘출발', '당일발송', '당일출고', '내일도착', '새벽배송',
@@ -160,8 +160,8 @@ export function suggestProductNameCleanup(input: {
     value = original;
   }
 
-  if (original.split(',').slice(1).some((part) => skuTokens(part).length > 0)) {
-    risks.push('중량·수량·포장 구성이 포함되어 SKU 확인 필요');
+  if (originalSku.length > 0) {
+    risks.push(`중량·수량·포장 구성(${originalSku.join(', ')})이 포함되어 SKU 확인 필요`);
   }
 
   const remainingTokens = value.split(/\s+/).filter(Boolean).length;

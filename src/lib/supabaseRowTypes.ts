@@ -14,6 +14,12 @@ export type SupabaseProductRow = {
   brand_name: string;
   manufacturer_name?: string | null;
   name: string;
+  display_name?: string | null;
+  variant_name?: string | null;
+  net_weight_text?: string | null;
+  slug?: string | null;
+  catalog_source?: string | null;
+  analysis_status?: string | null;
   product_type: string;
   main_category?: string | null;
   sub_category?: string | null;
@@ -30,8 +36,19 @@ export type SupabaseProductRow = {
   avg_rating?: number | null;
   kcal_per_100g?: number | string | null;
   product_ingredients?: SupabaseProductIngredientRow[] | null;
+  product_ingredient_label_sets?: SupabaseProductIngredientLabelSetRow[] | null;
   /** 1:1 관계 — PostgREST가 배열 또는 단일 객체로 반환할 수 있어 둘 다 허용 */
   nutritional_profiles?: SupabaseNutritionalProfileRow | SupabaseNutritionalProfileRow[] | null;
+};
+
+export type SupabaseProductIngredientLabelSetRow = {
+  id: string;
+  is_current: boolean;
+  product_ingredient_label_items?: Array<{
+    display_order: number;
+    raw_ingredient_text: string;
+    match_status: 'unreviewed' | 'matched' | 'ambiguous' | 'unmatched' | 'ignored';
+  }> | null;
 };
 
 export type SupabaseNutritionalProfileRow = {
@@ -202,6 +219,15 @@ export function mapFeedingLogFromRow(row: SupabaseFeedingLogRow): PetFeedingLog 
 export function mapProductFromSupabaseRow(p: SupabaseProductRow): Product {
   const ingredients: Ingredient[] =
     p.product_ingredients?.map((pi) => mapIngredientFromJoin(pi)) ?? [];
+  const currentLabelSet = p.product_ingredient_label_sets?.find((labelSet) => labelSet.is_current);
+  const unknownIngredientTerms = currentLabelSet
+    ? [...new Set((currentLabelSet.product_ingredient_label_items ?? [])
+        .slice()
+        .sort((a, b) => a.display_order - b.display_order)
+        .filter((item) => ['unreviewed', 'ambiguous', 'unmatched'].includes(item.match_status))
+        .map((item) => item.raw_ingredient_text.trim())
+        .filter(Boolean))]
+    : undefined;
   const np = Array.isArray(p.nutritional_profiles) ? p.nutritional_profiles[0] : p.nutritional_profiles;
   const guaranteedAnalysis = np
     ? {
@@ -219,14 +245,38 @@ export function mapProductFromSupabaseRow(p: SupabaseProductRow): Product {
     targetPet === 'dog' || targetPet === 'cat' || targetPet === 'all' ? targetPet : undefined;
   const verificationStatus = p.verification_status;
   const vs: Product['verificationStatus'] =
-    verificationStatus === 'verified' || verificationStatus === 'needs_review' || verificationStatus === 'pending'
+    verificationStatus === 'verified' || verificationStatus === 'reviewed' || verificationStatus === 'pending'
       ? verificationStatus
       : 'pending';
+  const catalogSource = p.catalog_source;
+  const mappedCatalogSource: Product['catalogSource'] =
+    catalogSource === 'legacy' ||
+    catalogSource === 'community_scan' ||
+    catalogSource === 'external' ||
+    catalogSource === 'admin'
+      ? catalogSource
+      : undefined;
+  const analysisStatus = p.analysis_status;
+  const mappedAnalysisStatus: Product['analysisStatus'] =
+    analysisStatus === 'unavailable' ||
+    analysisStatus === 'partial' ||
+    analysisStatus === 'ready' ||
+    analysisStatus === 'blocked'
+      ? analysisStatus
+      : undefined;
   return {
     id: p.id,
     brand: p.brand_name,
     manufacturerName: p.manufacturer_name || undefined,
     name: p.name,
+    displayName: p.display_name ?? undefined,
+    variantName: p.variant_name ?? undefined,
+    netWeightText: p.net_weight_text ?? undefined,
+    slug: p.slug ?? undefined,
+    catalogSource: mappedCatalogSource,
+    analysisStatus: mappedAnalysisStatus,
+    unknownIngredientTerms,
+    ingredientLabelSetId: currentLabelSet?.id,
     category: p.product_type,
     mainCategory: p.main_category ?? undefined,
     subCategory: p.sub_category ?? undefined,

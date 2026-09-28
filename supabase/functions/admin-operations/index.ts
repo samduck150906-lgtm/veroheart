@@ -153,6 +153,137 @@ serve(async (req) => {
     const action = typeof body.action === 'string' ? body.action : '';
 
     switch (action) {
+      /** 검토 대기/실패 스캔. 사용자 식별자와 비공개 저장 경로는 반환하지 않는다. */
+      case 'listScanSubmissions': {
+        const status = optionalText(body.status, '상태', 30) ?? 'needs_review';
+        const allowedStatuses = new Set(['all', 'needs_review', 'failed', 'submitted', 'published', 'rejected', 'cancelled']);
+        if (!allowedStatuses.has(status)) throw new ValidationError('상태 값이 올바르지 않습니다.');
+        const errorCode = optionalText(body.errorCode, '오류 코드', 80);
+        const dateFrom = optionalText(body.dateFrom, '시작일', 10);
+        const dateTo = optionalText(body.dateTo, '종료일', 10);
+        if (dateFrom && !/^\d{4}-\d{2}-\d{2}$/.test(dateFrom)) throw new ValidationError('시작일 형식이 올바르지 않습니다.');
+        if (dateTo && !/^\d{4}-\d{2}-\d{2}$/.test(dateTo)) throw new ValidationError('종료일 형식이 올바르지 않습니다.');
+        const pageRaw = Number(body.page);
+        const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1;
+        const sizeRaw = Number(body.pageSize);
+        const pageSize = Number.isFinite(sizeRaw) && sizeRaw > 0 ? Math.min(Math.floor(sizeRaw), 100) : 20;
+        const from = (page - 1) * pageSize;
+
+        let query = db.from('product_scan_submissions')
+          .select('id,status,scanned_barcode,processing_error_code,created_at,updated_at,resolved_product_id,confirmed_data', { count: 'exact' })
+          .order('updated_at', { ascending: false })
+          .range(from, from + pageSize - 1);
+        if (status !== 'all') query = query.eq('status', status);
+        if (errorCode) query = query.eq('processing_error_code', errorCode);
+        if (dateFrom) query = query.gte('created_at', `${dateFrom}T00:00:00.000Z`);
+        if (dateTo) query = query.lt('created_at', `${dateTo}T23:59:59.999Z`);
+        const { data, count, error } = await query;
+        if (error) throw error;
+        return json({
+          ok: true,
+          total: count ?? 0,
+          rows: (data ?? []).map((row: Record<string, unknown>) => {
+            const wrapper = row.confirmed_data && typeof row.confirmed_data === 'object'
+              ? row.confirmed_data as Record<string, unknown>
+              : {};
+            const label = wrapper.label && typeof wrapper.label === 'object'
+              ? wrapper.label as Record<string, unknown>
+              : wrapper;
+            return {
+              id: row.id,
+              status: row.status,
+              scannedBarcode: row.scanned_barcode ?? null,
+              errorCode: row.processing_error_code ?? null,
+              createdAt: row.created_at,
+              updatedAt: row.updated_at,
+              resolvedProductId: row.resolved_product_id ?? null,
+              productName: typeof label.name === 'string' ? label.name : null,
+              brandName: typeof label.brand === 'string' ? label.brand : null,
+            };
+          }),
+        }, 200, cors);
+      }
+
+      /** 사진은 행을 명시적으로 연 뒤에만 5분짜리 서명 URL로 반환한다. */
+      case 'getScanEvidence': {
+        const id = requireUuid(body.id, '스캔 ID');
+        const { data: row, error } = await db.from('product_scan_submissions')
+          .select('front_image_paths,ingredient_image_paths,nutrition_image_paths')
+          .eq('id', id).maybeSingle();
+        if (error) throw error;
+        if (!row) throw new ValidationError('스캔을 찾을 수 없습니다.');
+        const evidence: Record<string, string[]> = { front: [], ingredient: [], nutrition: [] };
+        for (const [category, column] of [
+          ['front', 'front_image_paths'],
+          ['ingredient', 'ingredient_image_paths'],
+          ['nutrition', 'nutrition_image_paths'],
+        ] as const) {
+          for (const path of (row[column] ?? []) as string[]) {
+            const { data: signed, error: signError } = await db.storage
+              .from('product-scan-evidence').createSignedUrl(path, 300);
+            if (signError || !signed?.signedUrl) throw signError ?? new Error('evidence_sign_failed');
+            evidence[category].push(signed.signedUrl);
+          }
+        }
+        return json({ ok: true, evidence }, 200, cors);
+      }
+
+      /** 명시적 사유와 전후 상태를 남기는 병합/반려/재시도 처리. */
+      case 'reviewScanSubmission': {
+        const id = requireUuid(body.id, '스캔 ID');
+        const decision = optionalText(body.decision, '처리', 20) ?? '';
+        if (!['merge', 'reject', 'retry'].includes(decision)) throw new ValidationError('처리 값이 올바르지 않습니다.');
+        const reason = optionalText(body.reason, '처리 사유', 1000);
+        if (!reason) throw new ValidationError('처리 사유가 필요합니다.');
+        const { data: before, error: readError } = await db.from('product_scan_submissions')
+          .select('id,status,resolved_product_id,confirmed_data,extracted_data')
+          .eq('id', id).maybeSingle();
+        if (readError) throw readError;
+        if (!before) throw new ValidationError('스캔을 찾을 수 없습니다.');
+
+        let nextStatus: string;
+        let targetProductId: string | null = null;
+        if (decision === 'merge') {
+          targetProductId = requireUuid(body.targetProductId, '대상 제품 ID');
+          const { data: product, error: productError } = await db.from('products')
+            .select('id').eq('id', targetProductId).maybeSingle();
+          if (productError) throw productError;
+          if (!product) throw new ValidationError('대상 제품을 찾을 수 없습니다.');
+          const { error: observationError } = await db.from('product_observations')
+            .update({ product_id: targetProductId }).eq('scan_submission_id', id);
+          if (observationError) throw observationError;
+          nextStatus = 'published';
+        } else if (decision === 'reject') {
+          nextStatus = 'rejected';
+        } else {
+          if (!['failed', 'needs_review'].includes(String(before.status))) {
+            throw new ValidationError('실패 또는 검토 필요 상태만 재시도할 수 있습니다.');
+          }
+          nextStatus = 'uploaded';
+        }
+
+        const patch: Record<string, unknown> = {
+          status: nextStatus,
+          processing_error_code: null,
+        };
+        if (decision === 'merge') {
+          patch.resolved_product_id = targetProductId;
+          patch.published_at = new Date().toISOString();
+        }
+        const { data: updated, error: updateError } = await db.from('product_scan_submissions')
+          .update(patch).eq('id', id).eq('status', before.status).select('id,status,resolved_product_id').maybeSingle();
+        if (updateError) throw updateError;
+        if (!updated) throw new ValidationError('상태가 바뀌었습니다. 목록을 새로고침해 주세요.');
+        await audit(db, actor, `reviewScanSubmission:${decision}`, 'product_scan_submissions', id, {
+          submissionId: id,
+          productId: targetProductId,
+          beforeStatus: before.status,
+          afterStatus: nextStatus,
+          reason,
+        });
+        return json({ ok: true, status: nextStatus }, 200, cors);
+      }
+
       /** 사용자가 등록을 요청한 제품 목록. 같은 제품 요청이 몇 건인지 함께 센다. */
       case 'listProductRequests': {
         const status = optionalText(body.status, '상태', 20) ?? 'pending';

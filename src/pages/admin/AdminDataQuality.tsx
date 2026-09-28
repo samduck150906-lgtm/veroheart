@@ -29,6 +29,19 @@ const MISSING_OPTIONS = [
   { value: 'barcode', label: '바코드' },
   { value: 'image', label: '이미지' },
 ];
+/**
+ * 노출 여부 필터.
+ *
+ * 보완 큐에는 노출을 내린 제품도 남아 있다 — 정보를 채우면 다시 켜야 하니 지우지
+ * 않는다. 다만 먼저 채워야 할 것은 지금 사용자에게 보이는 제품이라 기본값을
+ * '노출 중'으로 둔다. 숨긴 제품까지 섞이면 정작 급한 제품이 묻힌다.
+ */
+const VISIBILITY_OPTIONS = [
+  { value: 'visible', label: '노출 중인 제품' },
+  { value: 'hidden', label: '숨긴 제품' },
+  { value: 'all', label: '노출·숨김 전체' },
+];
+
 const FIELD_OPTIONS = ['ingredients', 'nutrition', 'calories', 'barcode', 'image', 'manufacturer'];
 
 function sourceCount(row: EnrichmentQueueRow): number {
@@ -49,6 +62,7 @@ export default function AdminDataQuality() {
   const [page, setPage] = useState(() => Math.max(1, Number(params.get('page')) || 1));
   const [status, setStatus] = useState(params.get('status') ?? 'all');
   const [missingField, setMissingField] = useState(params.get('missing') ?? 'all');
+  const [visibility, setVisibility] = useState(params.get('visibility') ?? 'visible');
   const [selected, setSelected] = useState<EnrichmentQueueRow | null>(null);
   const [saving, setSaving] = useState(false);
   const [sourceUrl, setSourceUrl] = useState('');
@@ -69,6 +83,7 @@ export default function AdminDataQuality() {
         pageSize: PAGE_SIZE,
         status,
         missingField,
+        visibility,
       });
       setRows(result.rows);
       setTotal(result.total);
@@ -77,7 +92,7 @@ export default function AdminDataQuality() {
     } finally {
       setLoading(false);
     }
-  }, [missingField, page, status]);
+  }, [missingField, page, status, visibility]);
 
   useEffect(() => {
     // 제품명 정리 탭에서는 보완 큐를 조회하지 않는다.
@@ -89,8 +104,9 @@ export default function AdminDataQuality() {
     if (page > 1) next.set('page', String(page));
     if (status !== 'all') next.set('status', status);
     if (missingField !== 'all') next.set('missing', missingField);
+    if (visibility !== 'visible') next.set('visibility', visibility);
     setParams(next, { replace: true });
-  }, [missingField, page, setParams, status, tab]);
+  }, [missingField, page, setParams, status, tab, visibility]);
 
   const displayedRange = useMemo(() => {
     if (total === 0) return '0건';
@@ -210,6 +226,9 @@ export default function AdminDataQuality() {
           <select value={missingField} onChange={(event) => { setMissingField(event.target.value); setPage(1); }}>
             {MISSING_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
           </select>
+          <select value={visibility} onChange={(event) => { setVisibility(event.target.value); setPage(1); }}>
+            {VISIBILITY_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+          </select>
           <button type="button" className="admin-btn-soft" onClick={load}>새로고침</button>
         </div>
       </div>
@@ -223,7 +242,11 @@ export default function AdminDataQuality() {
                 <tr><td colSpan={6} className="admin-empty">조건에 맞는 보완 대상이 없습니다.</td></tr>
               ) : rows.map((row) => (
                 <tr key={row.product_id}>
-                  <td><strong>{row.products.name}</strong><div className="admin-item-sub">{row.products.brand_name}</div></td>
+                  <td>
+                    <strong>{row.products.name}</strong>
+                    {row.products.is_visible === false && <span className="admin-tag" style={{ marginLeft: 6 }}>숨김</span>}
+                    <div className="admin-item-sub">{row.products.brand_name}</div>
+                  </td>
                   <td>{row.products.target_pet_type ?? '-'} · {row.products.main_category ?? '미분류'}</td>
                   <td>{row.missing_fields.map((field) => <span className="admin-tag red" key={field} style={{ marginRight: 4 }}>{field}</span>)}</td>
                   <td>{STATUS_OPTIONS.find((item) => item.value === row.status)?.label ?? row.status}</td>

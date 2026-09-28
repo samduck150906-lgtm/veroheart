@@ -4,17 +4,19 @@ import { X } from 'lucide-react';
 import { useStore, MAX_COMPARISON } from '../store/useStore';
 import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import { buildAllergyDisplayState, type AllergyDisplayLevel } from '../utils/allergyDisplay';
-import { normalizeProductDisplayName } from '../utils/productDisplay';
+import { getProductDisplayParts, type ProductDisplayParts } from '../utils/productDisplay';
 import { resolveComparisonVerdict, type ComparisonCandidate } from '../utils/comparisonVerdict';
 import { VR } from '../lib/veroroDesign';
 import type { Product } from '../types';
 import type { UserPetProfile } from '../types';
+import ProductVerificationBadge from '../components/ProductVerificationBadge';
 
 /** 비교표 열 수 = 스토어가 담기를 허용하는 상한. 두 값이 갈라지면 담긴 제품이 사라진다. */
 const MAX_COLUMNS = MAX_COMPARISON;
 
 interface Column {
   product: Product;
+  display: ProductDisplayParts;
   grade: string;
   score: number;
   kcal: string;
@@ -39,6 +41,7 @@ function buildColumn(product: Product, profile: UserPetProfile): Column {
 
   return {
     product,
+    display: getProductDisplayParts(product),
     grade,
     score,
     kcal: kcalValue ? `${Math.round(kcalValue)}kcal` : '—',
@@ -104,7 +107,7 @@ export default function Comparison() {
   const gridTemplate = `74px repeat(${columns.length}, 1fr)`;
   const candidates: ComparisonCandidate[] = columns.map((c) => ({
     id: c.product.id,
-    name: normalizeProductDisplayName(c.product),
+    name: c.display.name,
     score: c.score,
     allergyLevel: c.allergyLevel,
     dangerCount: c.dangerCount,
@@ -133,14 +136,25 @@ export default function Comparison() {
         <div style={{ background: 'var(--vr-soft)', padding: '11px 10px', fontWeight: 800, color: VR.sub, fontSize: '11px' }}>제품</div>
         {columns.map((c) => (
           <div key={c.product.id} style={{ background: 'var(--vr-soft)', padding: '11px 10px', borderLeft: '1px solid var(--vr-card-line)', position: 'relative' }}>
-            <div style={{ fontSize: '11px', color: VR.sub, fontWeight: 700 }}>{c.product.brand}</div>
+            {c.display.brand && (
+              <div style={{ fontSize: '11px', color: VR.sub, fontWeight: 700 }}>{c.display.brand}</div>
+            )}
             <div style={{ fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.3, marginTop: '2px', paddingRight: '16px' }}>
-              {normalizeProductDisplayName(c.product)}
+              {c.display.name}
+            </div>
+            {c.display.meta && (
+              <div style={{ marginTop: '4px', color: VR.muted, fontSize: '10.5px', lineHeight: 1.3 }}>{c.display.meta}</div>
+            )}
+            <div style={{ marginTop: '6px' }}>
+              <ProductVerificationBadge
+                catalogSource={c.product.catalogSource}
+                verificationStatus={c.product.verificationStatus}
+              />
             </div>
             <button
               type="button"
               onClick={() => removeFromComparison(c.product.id)}
-              aria-label={`${c.product.name} 비교함에서 빼기`}
+              aria-label={`${c.display.name} 비교함에서 빼기`}
               style={{
                 position: 'absolute', top: '6px', right: '6px', border: 'none', background: 'none',
                 cursor: 'pointer', color: VR.sub, padding: '2px', lineHeight: 0,

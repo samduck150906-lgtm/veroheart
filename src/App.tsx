@@ -19,6 +19,7 @@ const Detail = lazy(() => import('./pages/Detail'));
 const Comparison = lazy(() => import('./pages/Comparison'));
 const AnalysisResult = lazy(() => import('./pages/AnalysisResult'));
 const Scan = lazy(() => import('./pages/Scan'));
+const NewProductScan = lazy(() => import('./pages/NewProductScan'));
 const Brand = lazy(() => import('./pages/Brand'));
 const Login = lazy(() => import('./pages/Login'));
 const ViralEvent = lazy(() => import('./pages/ViralEvent'));
@@ -36,6 +37,7 @@ const AdminCategories = lazy(() => import('./pages/admin/AdminCategories'));
 const AdminTrash = lazy(() => import('./pages/admin/AdminTrash'));
 const AdminPriceApprovals = lazy(() => import('./pages/admin/AdminPriceApprovals'));
 const AdminProductRequests = lazy(() => import('./pages/admin/AdminProductRequests'));
+const AdminScanSubmissions = lazy(() => import('./pages/admin/AdminScanSubmissions'));
 const AdminMembers = lazy(() => import('./pages/admin/AdminMembers'));
 const AdminDiary = lazy(() => import('./pages/admin/AdminDiary'));
 const AdminWaitlist = lazy(() => import('./pages/admin/AdminWaitlist'));
@@ -147,6 +149,7 @@ function Application() {
           <Route path="cart" element={<Navigate to="/" replace />} />
           <Route path="analysis" element={<AnalysisResult />} />
           <Route path="product/:id" element={<Detail />} />
+          <Route path="product/:id/:slug" element={<Detail />} />
           <Route path="terms" element={<Terms />} />
           <Route path="privacy" element={<Privacy />} />
           <Route path="refund" element={<Refund />} />
@@ -158,6 +161,7 @@ function Application() {
 
         {/* Immersive full-screen scanner (앱 헤더/네비 없이 카메라 전체화면) */}
         <Route path="/scan" element={<Scan />} />
+        <Route path="/scan/new" element={<NewProductScan />} />
 
         {/* Admin CMS Routes — Protected */}
         <Route path="/admin" element={<AdminAuthGuard><AdminLayout /></AdminAuthGuard>}>
@@ -179,6 +183,7 @@ function Application() {
           <Route path="trash" element={<AdminTrash />} />
           <Route path="price-approvals" element={<AdminPriceApprovals />} />
           <Route path="product-requests" element={<AdminProductRequests />} />
+          <Route path="scan-submissions" element={<AdminScanSubmissions />} />
           <Route path="*" element={<AdminNotFound />} />
         </Route>
       </Routes>

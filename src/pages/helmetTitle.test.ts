@@ -51,4 +51,14 @@ describe('Helmet <title>', () => {
 
     expect(bad, `Helmet <title> 자식이 둘 이상이다:\n${bad.join('\n')}`).toEqual([]);
   });
+
+  it('제품 상세는 기존 URL과 slug URL을 모두 지원하고 canonical 메타를 만든다', () => {
+    const app = readFileSync(join(process.cwd(), 'src/App.tsx'), 'utf8');
+    const detail = readFileSync(join(process.cwd(), 'src/pages/Detail.tsx'), 'utf8');
+    expect(app).toContain('path="product/:id"');
+    expect(app).toContain('path="product/:id/:slug"');
+    expect(detail).toContain('buildProductMetadata');
+    expect(detail).toContain('<link rel="canonical"');
+    expect(detail).toContain('application/ld+json');
+  });
 });

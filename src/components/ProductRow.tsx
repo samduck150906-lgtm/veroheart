@@ -3,9 +3,10 @@ import ProductThumb from './ProductThumb';
 import { useStore, MAX_COMPARISON } from '../store/useStore';
 import { notify } from '../store/useNotification';
 import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
-import { normalizeProductDisplayName, resolveBrandLabel } from '../utils/productDisplay';
+import { getProductDisplayParts } from '../utils/productDisplay';
 import { fitShortLabel, gradePalette, VR } from '../lib/veroroDesign';
 import type { Product } from '../types';
+import ProductVerificationBadge from './ProductVerificationBadge';
 
 interface ProductRowProps {
   product: Product;
@@ -24,8 +25,7 @@ export default function ProductRow({ product }: ProductRowProps) {
   const isFav = favorites.includes(product.id);
   const inCompare = comparisonList.includes(product.id);
   const petName = profile.name || '우리 아이';
-  // 수집 출처 라벨('쿠팡검색' 등)은 브랜드가 아니므로 줄 자체를 숨긴다.
-  const brandLabel = resolveBrandLabel(product);
+  const display = getProductDisplayParts(product);
 
   const open = () => navigate(`/product/${product.id}`);
 
@@ -34,10 +34,10 @@ export default function ProductRow({ product }: ProductRowProps) {
       <button
         type="button"
         onClick={open}
-        aria-label={`${product.name} 상세 보기`}
+        aria-label={`${display.name} 상세 보기`}
         style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer', flex: 'none' }}
       >
-        <ProductThumb src={product.imageUrl} alt={product.name} monoSource={brandLabel || product.name} size={74} radius={13} fontSize={19} />
+        <ProductThumb src={product.imageUrl} alt={display.name} monoSource={display.brand || display.name} size={74} radius={13} fontSize={19} />
       </button>
 
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -47,8 +47,8 @@ export default function ProductRow({ product }: ProductRowProps) {
           style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', padding: 0, cursor: 'pointer' }}
         >
           <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            {brandLabel && (
-              <span style={{ fontSize: '11.5px', color: VR.sub, fontWeight: 700 }}>{brandLabel}</span>
+            {display.brand && (
+              <span style={{ fontSize: '11.5px', color: VR.sub, fontWeight: 700 }}>{display.brand}</span>
             )}
             <span
               style={{
@@ -60,10 +60,22 @@ export default function ProductRow({ product }: ProductRowProps) {
             </span>
           </span>
           <span style={{
-            display: 'block', fontSize: '14px', fontWeight: 700, letterSpacing: '-0.02em',
+            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+            fontSize: '14px', fontWeight: 700, letterSpacing: '-0.02em',
             lineHeight: 1.35, marginTop: '2px', color: 'var(--vr-ink)',
           }}>
-            {normalizeProductDisplayName(product)}
+            {display.name}
+          </span>
+          {display.meta && (
+            <span style={{ display: 'block', marginTop: '3px', fontSize: '11px', color: VR.muted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {display.meta}
+            </span>
+          )}
+          <span style={{ display: 'block', marginTop: '6px' }}>
+            <ProductVerificationBadge
+              catalogSource={product.catalogSource}
+              verificationStatus={product.verificationStatus}
+            />
           </span>
           {product.reviewsCount > 0 && (
             <span style={{ display: 'block', fontSize: '12.5px', fontWeight: 800, marginTop: '4px', color: 'var(--vr-ink)' }}>

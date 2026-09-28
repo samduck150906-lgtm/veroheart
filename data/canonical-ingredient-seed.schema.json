@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Canonical ingredient seed",
+  "type": "object",
+  "required": ["version", "generatedAt", "ingredients", "checksum"],
+  "properties": {
+    "version": { "const": 1 },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "checksum": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "ingredients": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["canonicalNameKo", "normalizedKey", "dimensions", "aliases", "evidenceSourceIds", "status", "observedTerms"],
+        "properties": {
+          "canonicalNameKo": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "normalizedKey": { "type": "string", "minLength": 1 },
+          "dimensions": {
+            "type": "object",
+            "required": ["sourceFamily", "sourceSpecies", "sourcePart", "processingForm", "identityKey"]
+          },
+          "aliases": { "type": "array", "items": { "type": "string" } },
+          "evidenceSourceIds": { "type": "array", "items": { "type": "string" } },
+          "status": { "enum": ["active", "draft", "needs_review"] },
+          "legacyId": { "type": ["string", "null"] },
+          "observedTerms": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

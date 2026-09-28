@@ -144,6 +144,14 @@ describe('미매칭 원료는 unknowns로 수집', () => {
     expect(r.unknowns).toContain('정체불명원료abc');
     expect(r.breakdown.transparency).toBeLessThan(90);
   });
+
+  it('알려진 위험이 없더라도 미매칭 원료가 하나면 완전 안전 결론을 내리지 않는다', () => {
+    const r = analyzeProduct(dogFood(), undefined, ['닭고기', '현미', '미확인복합원료xyz']);
+    expect(r.analysisReadiness).toMatchObject({ status: 'partial', unknownCount: 1 });
+    expect(r.summary).toContain('부분 분석');
+    expect(r.summary).not.toMatch(/안심|안전|문제없음/);
+    expect(r.analysisEngineVersion).toBeTruthy();
+  });
 });
 
 describe('보증성분 기반 영양 적합도', () => {

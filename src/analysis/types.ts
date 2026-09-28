@@ -90,6 +90,8 @@ export interface MatchedIngredient {
   ingredient: DictionaryIngredient | null;
   /** 매칭 신뢰도 0~1 */
   confidence: number;
+  /** 라벨 수집 파이프라인의 확정 매칭 상태. 구형 입력은 ingredient 유무로 파생한다. */
+  matchStatus?: 'unreviewed' | 'matched' | 'ambiguous' | 'unmatched' | 'ignored';
 }
 
 /** 개인화 입력 — 반려동물 프로필 */
@@ -131,6 +133,8 @@ export interface ProductForAnalysis {
   healthConcerns?: string[];
   /** 이미 토큰화된 성분 배열(라벨 파서 출력). rawIngredients와 둘 중 하나는 필요. */
   matchedIngredients?: MatchedIngredient[];
+  labelSetId?: string;
+  analysisEngineVersion?: string;
   guaranteedAnalysis?: GuaranteedAnalysis;
 }
 
@@ -201,6 +205,9 @@ export interface RuleEngineResult {
   grade: Grade;
   breakdown: ScoreBreakdown;
   summary: string;
+  analysisReadiness: import('./analysisReadiness').AnalysisReadiness;
+  labelSetId: string | null;
+  analysisEngineVersion: string;
   matchedIngredients: MatchedIngredient[];
   positives: Finding[];
   warnings: Finding[];

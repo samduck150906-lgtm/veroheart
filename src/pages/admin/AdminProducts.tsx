@@ -5,6 +5,7 @@ import { Plus, Search, Edit2, Trash2, X, Upload, ChevronLeft, ChevronRight, Aler
 import { notify } from '../../store/useNotification';
 import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
 import ProductIngredientsEditor from './ProductIngredientsEditor';
+import ProductLabelPasteBox from './ProductLabelPasteBox';
 import {
   fetchProductForEdit,  type BulkProductPatch,
   bulkUpdateProducts,
@@ -1055,6 +1056,45 @@ const AdminProducts: React.FC = () => {
                 value={healthConcernText}
                 onChange={setHealthConcernText}
               />
+
+              {/* 라벨 원문 한 번으로 원재료 연결과 보증성분을 함께 채운다.
+                  성분을 하나씩 검색해 붙이는 것이 제품당 10~30회라 실제 병목이었다. */}
+              <div className="admin-form-span-2">
+                <ProductLabelPasteBox
+                  linkedIngredientIds={ingredientLinks.map((link) => link.ingredientId)}
+                  disabled={isSaving || ingredientsLoading}
+                  onRequestCreateIngredient={(name) => {
+                    setQuickIngredientName(name);
+                    setQuickIngredientRisk('safe');
+                    setQuickIngredientCategory('기타');
+                  }}
+                  onApply={({ ingredients, nutrition: parsedNutrition }) => {
+                    if (ingredients.length > 0) {
+                      // 라벨 표기 순서를 그대로 뒤에 잇는다. sort_order 는 저장할 때
+                      // 목록 순서로 다시 매겨지므로 여기서는 순서만 지키면 된다.
+                      setIngredientLinks((links) => [
+                        ...links,
+                        ...ingredients.map((entry, index) => ({
+                          ingredientId: entry.id,
+                          nameKo: entry.nameKo,
+                          nameEn: entry.nameEn,
+                          riskLevel: entry.riskLevel,
+                          sortOrder: links.length + index,
+                        })),
+                      ]);
+                    }
+                    const found = Object.entries(parsedNutrition) as [keyof NutritionForm, number][];
+                    if (found.length > 0) {
+                      setNutrition((prev) => {
+                        const next = { ...prev };
+                        for (const [key, value] of found) next[key] = String(value);
+                        return next;
+                      });
+                    }
+                    notify.success(`라벨에서 성분 ${ingredients.length}개, 보증성분 ${found.length}칸을 채웠어요. 저장 전에 확인해 주세요.`);
+                  }}
+                />
+              </div>
 
               {/* 원재료 구성 — 분석 엔진의 핵심 입력 */}
               <div className="admin-form-span-2">

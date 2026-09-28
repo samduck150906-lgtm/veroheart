@@ -55,14 +55,16 @@ import {
 import { gradeMetaFromScore } from '../components/pdp/gradeMeta';
 import { REVIEW_QUICK_TAGS } from '../constants/reviewTags';
 import ProductThumb from '../components/ProductThumb';
+import ProductVerificationBadge from '../components/ProductVerificationBadge';
 import { HealthConcernEvidence } from '../components/HealthConcernEvidence';
 import { buildHealthConcernPresentation } from '../health/concernPresentation';
-import { normalizeProductDisplayName, resolveBrandLabel } from '../utils/productDisplay';
+import { getProductDisplayParts } from '../utils/productDisplay';
 import { gradePalette, gradeVerdict } from '../lib/veroroDesign';
 import {
   describeProductCompleteness,
   type ProductDataCompleteness,
 } from '../utils/productDataCompleteness';
+import { buildProductMetadata } from '../lib/productMetadata';
 
 interface Ingredient { nameKo: string; nameEn?: string; purpose?: string; riskLevel?: string; isAllergy?: boolean; }
 
@@ -200,7 +202,8 @@ export default function Detail() {
   const handleShare = async () => {
     if (!product) return;
     const url = typeof window !== 'undefined' ? window.location.href : '';
-    const title = [resolveBrandLabel(product), normalizeProductDisplayName(product)].filter(Boolean).join(' ');
+    const display = getProductDisplayParts(product);
+    const title = [display.brand, display.name].filter(Boolean).join(' ');
     try {
       if (typeof navigator !== 'undefined' && navigator.share) {
         await navigator.share({ title: 'VeRoRo', text: `${title} · 베로로 성분 분석`, url });
@@ -234,7 +237,12 @@ export default function Detail() {
   const personalized = isRealPetProfile(profile);
   const isComparing = comparisonList.includes(product?.id || '');
   const isFav = favorites.includes(product?.id || '');
-  const brandLabel = resolveBrandLabel(product);
+  const productDisplay = getProductDisplayParts(product);
+  const brandLabel = productDisplay.brand;
+  const metadata = buildProductMetadata(
+    product,
+    typeof window !== 'undefined' ? window.location.origin : 'https://veroro-app.netlify.app',
+  );
   const completeness = describeProductCompleteness(product);
   const completenessPalette = getCompletenessPalette(completeness.level);
 
@@ -243,9 +251,13 @@ export default function Detail() {
   // 거친 값을 쓴다. 게스트에게는 개인화 감점 없는 객관 점수를 보여준다.
   const { breakdown, score: safetyScore, grade: displayGrade } = resolveProductDisplayVerdict(product, profile);
   const hasIngredientData = (product.ingredients?.length ?? 0) > 0;
+  const analysisStatus = product.analysisStatus ?? (hasIngredientData ? 'ready' : 'unavailable');
+  const analysisReady = analysisStatus === 'ready';
   const allergyDisplay = buildAllergyDisplayState(breakdown, profile.name || '우리 아이', {
     hasIngredientData,
     hasAllergyProfile: personalized && profile.allergies.length > 0,
+    analysisStatus,
+    unknownIngredientTerms: product.unknownIngredientTerms,
   });
   const concernPresentation = personalized
     ? buildHealthConcernPresentation(breakdown.healthConcernPolicy)
@@ -262,12 +274,16 @@ export default function Detail() {
           ? '강아지용'
           : '미표기';
   const glanceTiles: GlanceTileData[] = [
-    !hasIngredientData
-      ? { icon: <AlertTriangle size={18} />, label: '안전도', value: '원료 정보 부족', tone: 'caution' }
-      : breakdown.dangerCount > 0
+    breakdown.dangerCount > 0
       ? { icon: <AlertTriangle size={18} />, label: '안전도', value: `위험 ${breakdown.dangerCount}개`, tone: 'danger' }
       : breakdown.cautionCount > 0
         ? { icon: <AlertTriangle size={18} />, label: '안전도', value: `주의 ${breakdown.cautionCount}개`, tone: 'caution' }
+        : analysisStatus === 'partial'
+          ? { icon: <AlertTriangle size={18} />, label: '안전도', value: '부분 분석', tone: 'caution' }
+          : analysisStatus === 'blocked'
+            ? { icon: <AlertTriangle size={18} />, label: '안전도', value: '정보 확인 필요', tone: 'caution' }
+            : analysisStatus === 'unavailable'
+              ? { icon: <AlertTriangle size={18} />, label: '안전도', value: '원료 정보 부족', tone: 'caution' }
         : { icon: <ShieldCheck size={18} />, label: '안전도', value: '등록 정보상 미확인', tone: 'excellent' },
     allergyDisplay.level === 'hard'
       ? { icon: <Ban size={18} />, label: '알레르기', value: `${breakdown.allergyHits.length}개 주의`, tone: 'danger' }
@@ -305,17 +321,23 @@ export default function Detail() {
   const verdictLines = [
     {
       icon: <ShieldCheck size={16} />,
-      text: hasIngredientData
+      text: analysisReady
         ? `안전성: ${breakdown.dangerCount === 0 ? '현재 등록 원료에서 위험 성분 미확인' : `위험 성분 ${breakdown.dangerCount}개`}${breakdown.cautionCount ? `, 주의 ${breakdown.cautionCount}개` : ''} — ${gradeLabel} 등급입니다.`
-        : '안전성: 원료 정보가 부족해 위험 성분 포함 여부를 판정할 수 없어요.',
+        : analysisStatus === 'partial'
+          ? '안전성: 확인되지 않은 원료가 있어 부분 분석만 제공해요.'
+          : analysisStatus === 'blocked'
+            ? '안전성: 원료 정보가 서로 달라 확인이 필요해요.'
+            : '안전성: 등록된 원료 정보가 없어 위험 성분 포함 여부를 판정할 수 없어요.',
     },
     {
       icon: <Flame size={16} />,
-      text: `성분 구성: 안전 성분 ${safeCount}개, ${allergyDisplay.summaryText}.`,
+      text: `성분 구성: 등록 원료 ${safeCount}개 확인, ${allergyDisplay.summaryText}.`,
     },
     {
       icon: <Check size={16} />,
-      text: `결론: ${profile.name}의 현재 궁합 점수는 ${safetyScore}점이에요. ${safetyScore >= 75 ? '아래 근거와 정보 부족 항목을 함께 확인해 주세요.' : safetyScore >= 60 ? '급여 시 소량부터 확인하세요.' : '대체 상품을 함께 검토하세요.'}`,
+      text: analysisReady
+        ? `결론: ${profile.name}의 현재 궁합 점수는 ${safetyScore}점이에요. ${safetyScore >= 75 ? '아래 근거와 정보 부족 항목을 함께 확인해 주세요.' : safetyScore >= 60 ? '급여 시 소량부터 확인하세요.' : '대체 상품을 함께 검토하세요.'}`
+        : '결론: 원료 검토가 끝난 뒤 전체 궁합 판정을 제공할게요.',
     },
   ];
 
@@ -331,8 +353,9 @@ export default function Detail() {
     const c = cands.find(x => !altUsed.has(x.p.id));
     if (!c) return;
     altUsed.add(c.p.id);
+    const display = getProductDisplayParts(c.p);
     altCards.push({
-      id: c.p.id, brand: resolveBrandLabel(c.p), name: c.p.name, imageUrl: c.p.imageUrl,
+      id: c.p.id, brand: display.brand, name: display.name, imageUrl: c.p.imageUrl,
       score: c.score, deltaScore: Math.max(0, Math.round(c.score - currentScore)),
       tag, tagTone,
     });
@@ -373,14 +396,22 @@ export default function Detail() {
     if (allergyDisplay.level === 'caution') {
       return { headline: '알레르기 관련 원료를 확인해 주세요', headlineColor: '#F59E0B' };
     }
-    if (allergyDisplay.level === 'unknown') {
-      return { headline: '원료 정보가 부족해 알레르기를 확인할 수 없어요', headlineColor: '#F59E0B' };
-    }
     if (cautionIngs.length > 0) {
       return { headline: `확인해야 할 성분이 ${cautionIngs.length}개 있어요`, headlineColor: '#F59E0B' };
     }
+    if (allergyDisplay.level === 'unknown') {
+      return {
+        headline: allergyDisplay.notice?.title ?? '알레르기 분석을 준비하고 있어요',
+        headlineColor: 'var(--pdp-ink)',
+      };
+    }
     return { headline: '현재 등록된 원료에서 주의 항목을 확인하지 못했어요', headlineColor: 'var(--text-dark)' };
   })();
+  const headlineNotice = allergyDisplay.level === 'unknown' && allergyIngs.length === 0 && dangerIngs.length === 0
+    ? allergyDisplay.notice
+    : undefined;
+  const hasKnownIngredientWarning = cautionIngs.length > 0 || allergyDisplay.level === 'caution';
+  const isProfileNotice = allergyDisplay.unknownReason === 'missing_profile';
 
   // ── 리뷰 요약(별점 분포·태그) — 실제 reviews 데이터에서 파생 ──
   const reviewRatings = reviews.map(r => r.rating);
@@ -402,12 +433,14 @@ export default function Detail() {
   return (
     <div className="animate-fade-in detail-page-root" style={{ paddingBottom: '96px' }}>
       <Helmet>
-        <title>{`${normalizeProductDisplayName(product)} - 베로로`}</title>
-        <meta name="description" content={`${brandLabel ? `${brandLabel}의 ` : ''}${normalizeProductDisplayName(product)} 전성분 분석 결과`} />
+        <title>{metadata.title}</title>
+        <meta name="description" content={metadata.description} />
+        <link rel="canonical" href={metadata.canonicalUrl} />
+        <script type="application/ld+json">{JSON.stringify(metadata.jsonLd)}</script>
       </Helmet>
 
       <OfflineBanner online={online} />
-      <StickyScoreBar score={safetyScore} name={product.name} visible={showStickyScore} progress={scrollProgress} />
+      <StickyScoreBar score={safetyScore} name={productDisplay.name} visible={showStickyScore} progress={scrollProgress} />
 
       {conclusion && (
         <section
@@ -483,8 +516,8 @@ export default function Detail() {
       <div className="vr-bleed" style={{ position: 'relative', height: '250px', background: 'var(--vr-soft)', marginBottom: '18px', overflow: 'hidden' }}>
         <ProductThumb
           src={product.imageUrl}
-          alt={product.name}
-          monoSource={brandLabel || product.name}
+          alt={productDisplay.name}
+          monoSource={brandLabel || productDisplay.name}
           height={250}
           radius={0}
           fontSize={56}
@@ -521,14 +554,18 @@ export default function Detail() {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           background: gradePalette(displayGrade).fg,
         }}>
-          <span style={{ fontSize: '28px', fontWeight: 800, color: '#fff', letterSpacing: '-0.04em' }}>{displayGrade}</span>
+          {analysisReady
+            ? <span style={{ fontSize: '28px', fontWeight: 800, color: '#fff', letterSpacing: '-0.04em' }}>{displayGrade}</span>
+            : <AlertTriangle size={26} color="#fff" aria-hidden />}
         </span>
         <span style={{ flex: 1 }}>
           <span style={{ display: 'block', fontSize: '16.5px', fontWeight: 800, color: 'var(--vr-on-inverse)', letterSpacing: '-0.03em' }}>
-            종합 {safetyScore}점 · {gradeVerdict(displayGrade)}
+            {analysisReady ? `종합 ${safetyScore}점 · ${gradeVerdict(displayGrade)}` : allergyDisplay.notice?.title ?? '원료 분석 확인이 필요해요'}
           </span>
           <span style={{ display: 'block', fontSize: '12.5px', color: 'var(--vr-on-inverse-sub)', marginTop: '3px' }}>
-            성분 {product.ingredients?.length ?? 0}개 분석 · {profile.name} 기준 리포트 보기
+            {analysisReady
+              ? `성분 ${product.ingredients?.length ?? 0}개 분석 · ${profile.name} 기준 리포트 보기`
+              : `확인된 원료 ${product.ingredients?.length ?? 0}개 · 검토 상태 보기`}
           </span>
         </span>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFD90A" strokeWidth="2.6" strokeLinecap="round" aria-hidden>
@@ -546,9 +583,18 @@ export default function Detail() {
         {brandLabel && (
           <div style={{ marginBottom: '8px', fontSize: '13px', color: 'var(--text-light)', fontWeight: 700 }}>{brandLabel}</div>
         )}
-        <h1 style={{ fontSize: '26px', lineHeight: 1.3, marginBottom: '14px', fontWeight: 900 }}>{product.name}</h1>
+        <h1 style={{ fontSize: '26px', lineHeight: 1.3, marginBottom: productDisplay.meta ? '6px' : '12px', fontWeight: 900 }}>{productDisplay.name}</h1>
+        {productDisplay.meta && (
+          <div style={{ marginBottom: '12px', color: 'var(--text-muted)', fontSize: '13px', fontWeight: 650 }}>
+            {productDisplay.meta}
+          </div>
+        )}
       
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '18px' }}>
+          <ProductVerificationBadge
+            catalogSource={product.catalogSource}
+            verificationStatus={product.verificationStatus}
+          />
           <div
             style={{
               display: 'inline-flex',
@@ -622,9 +668,90 @@ export default function Detail() {
 
       {/* Toss-style Ingredient Analysis */}
       <section style={{ marginBottom: '40px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: 900, color: headlineColor, lineHeight: 1.4, marginBottom: '24px', letterSpacing: '-0.02em' }}>
-          {headline}
-        </h2>
+        {headlineNotice ? (
+          <div
+            role="status"
+            aria-label={headlineNotice.title}
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '14px',
+              padding: '19px',
+              marginBottom: '24px',
+              borderRadius: '22px',
+              background: isProfileNotice ? 'var(--pdp-surface-soft)' : 'var(--pdp-caution-bg)',
+              border: isProfileNotice ? '1px solid var(--pdp-line)' : '1px solid var(--pdp-caution-line)',
+              boxShadow: 'var(--pdp-e1)',
+            }}
+          >
+            <div
+              aria-hidden
+              style={{
+                width: '42px',
+                height: '42px',
+                flex: '0 0 42px',
+                display: 'grid',
+                placeItems: 'center',
+                borderRadius: '14px',
+                color: isProfileNotice ? 'var(--pdp-ink)' : 'var(--pdp-caution-fg)',
+                background: isProfileNotice ? 'var(--pdp-surface)' : 'rgba(255,255,255,.55)',
+                border: isProfileNotice ? '1px solid var(--pdp-line)' : '1px solid var(--pdp-caution-line)',
+              }}
+            >
+              {isProfileNotice ? <Dog size={21} strokeWidth={2.3} /> : <AlertTriangle size={21} strokeWidth={2.3} />}
+            </div>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  minHeight: '24px',
+                  padding: '3px 9px',
+                  marginBottom: '8px',
+                  borderRadius: '999px',
+                  fontSize: '11px',
+                  fontWeight: 900,
+                  letterSpacing: '-0.01em',
+                  color: isProfileNotice ? 'var(--pdp-ink-muted)' : 'var(--pdp-caution-fg)',
+                  background: isProfileNotice ? 'var(--pdp-surface)' : 'rgba(255,255,255,.55)',
+                }}
+              >
+                {headlineNotice.badge}
+              </span>
+              <h2 style={{ margin: 0, fontSize: '21px', fontWeight: 900, color: 'var(--pdp-ink)', lineHeight: 1.35, letterSpacing: '-0.025em' }}>
+                {headlineNotice.title}
+              </h2>
+              <p style={{ margin: '7px 0 0', fontSize: '14px', fontWeight: 600, color: 'var(--pdp-ink-muted)', lineHeight: 1.55 }}>
+                {headlineNotice.description}
+              </p>
+              {headlineNotice.actionLabel ? (
+                <button
+                  type="button"
+                  onClick={() => navigate('/profile?tab=pets')}
+                  style={{
+                    minHeight: '42px',
+                    marginTop: '14px',
+                    padding: '0 16px',
+                    border: 'none',
+                    borderRadius: '13px',
+                    background: 'var(--pdp-ink)',
+                    color: 'var(--pdp-surface)',
+                    fontSize: '13px',
+                    fontWeight: 900,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {headlineNotice.actionLabel}
+                </button>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+        {!headlineNotice || hasKnownIngredientWarning ? (
+          <h2 style={{ fontSize: '26px', fontWeight: 900, color: headlineColor, lineHeight: 1.4, marginBottom: '24px', letterSpacing: '-0.02em' }}>
+            {headline}
+          </h2>
+        ) : null}
         
         {/* 사료성분 분석 (규칙 기반 · 보장성분 + 원재료 실제 데이터) */}
         <FeedAnalysisCard product={product} profile={profile} />
@@ -832,7 +959,7 @@ export default function Detail() {
         userId={userId}
         presetProduct={{
           id: product.id,
-          name: product.name,
+          name: productDisplay.name,
           brand: brandLabel,
           imageUrl: product.imageUrl,
           productType: productTypeToFeedingType(product.category),

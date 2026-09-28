@@ -8,6 +8,15 @@ interface NameSource {
   /** 정제된 공식 제품명이 이미 있으면 최우선 사용 */
   displayName?: string | null;
   brand?: string | null;
+  variantName?: string | null;
+  netWeightText?: string | null;
+  catalogSource?: string | null;
+}
+
+export interface ProductDisplayParts {
+  brand: string;
+  name: string;
+  meta: string;
 }
 
 /** 통째로 제거할 광고/배송/판매 홍보 토큰 (공백 분리 기준, 소문자 비교) */
@@ -92,6 +101,20 @@ export function resolveBrandLabel(product: NameSource): string {
 export function isSourceLabelBrand(brand: string | null | undefined): boolean {
   const value = (brand ?? '').trim().toLowerCase();
   return value.length > 0 && SOURCE_LABEL_BRANDS.has(value);
+}
+
+/** 카드·목록·상세에서 공통으로 쓰는 공개 제품 식별 정보. */
+export function getProductDisplayParts(product: NameSource): ProductDisplayParts {
+  const meta = [...new Set([product.variantName, product.netWeightText]
+    .map((value) => (value ?? '').trim())
+    .filter(Boolean))]
+    .join(' · ');
+
+  return {
+    brand: resolveBrandLabel(product),
+    name: normalizeProductDisplayName(product),
+    meta,
+  };
 }
 
 /** 카드 등에서 너무 긴 제목을 안전하게 자를 때 (CSS clamp 보조용, 말줄임 포함) */

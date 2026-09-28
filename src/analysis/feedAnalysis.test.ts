@@ -205,4 +205,16 @@ describe('analyzeFeed — 연어/어류 감지 및 데이터 부족 구분 (P0 �
     expect(a.ingredientQuality.total).toBe(0);
     expect(a.cautions.join(' ')).toContain('원재료 정보가 없어');
   });
+
+  it('부분 분석 제품은 완전 안전 문구를 만들지 않는다', () => {
+    const a = analyzeFeed(product({
+      analysisStatus: 'partial',
+      unknownIngredientTerms: ['미확인 복합원료'],
+      ingredients: [ing('닭고기')],
+    }), dogProfile);
+    expect(a.analysisReadiness.status).toBe('partial');
+    expect(a.summary).toContain('부분 분석');
+    expect(a.positives.join(' ')).not.toContain('위험·주의·합성첨가물 성분이 확인되지 않았어요');
+    expect(`${a.summary} ${a.positives.join(' ')}`).not.toMatch(/안전|문제없음/);
+  });
 });
