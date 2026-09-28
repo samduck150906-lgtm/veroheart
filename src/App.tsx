@@ -147,6 +147,7 @@ function Application() {
           <Route path="cart" element={<Navigate to="/" replace />} />
           <Route path="analysis" element={<AnalysisResult />} />
           <Route path="product/:id" element={<Detail />} />
+          <Route path="product/:id/:slug" element={<Detail />} />
           <Route path="terms" element={<Terms />} />
           <Route path="privacy" element={<Privacy />} />
           <Route path="refund" element={<Refund />} />

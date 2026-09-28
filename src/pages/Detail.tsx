@@ -64,6 +64,7 @@ import {
   describeProductCompleteness,
   type ProductDataCompleteness,
 } from '../utils/productDataCompleteness';
+import { buildProductMetadata } from '../lib/productMetadata';
 
 interface Ingredient { nameKo: string; nameEn?: string; purpose?: string; riskLevel?: string; isAllergy?: boolean; }
 
@@ -238,6 +239,10 @@ export default function Detail() {
   const isFav = favorites.includes(product?.id || '');
   const productDisplay = getProductDisplayParts(product);
   const brandLabel = productDisplay.brand;
+  const metadata = buildProductMetadata(
+    product,
+    typeof window !== 'undefined' ? window.location.origin : 'https://veroro-app.netlify.app',
+  );
   const completeness = describeProductCompleteness(product);
   const completenessPalette = getCompletenessPalette(completeness.level);
 
@@ -413,8 +418,10 @@ export default function Detail() {
   return (
     <div className="animate-fade-in detail-page-root" style={{ paddingBottom: '96px' }}>
       <Helmet>
-        <title>{`${productDisplay.name} - 베로로`}</title>
-        <meta name="description" content={`${brandLabel ? `${brandLabel}의 ` : ''}${productDisplay.name} 전성분 분석 결과`} />
+        <title>{metadata.title}</title>
+        <meta name="description" content={metadata.description} />
+        <link rel="canonical" href={metadata.canonicalUrl} />
+        <script type="application/ld+json">{JSON.stringify(metadata.jsonLd)}</script>
       </Helmet>
 
       <OfflineBanner online={online} />

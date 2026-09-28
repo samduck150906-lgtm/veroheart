@@ -69,6 +69,8 @@ describe('사용자 화면 내부 용어 노출', () => {
     for (const file of files) {
       for (const text of visibleStrings(readFileSync(file, 'utf8'))) {
         for (const term of FORBIDDEN) {
+          // 표준 SEO 메타 속성 rel="canonical"은 화면에 보이는 문구가 아니다.
+          if (term === 'canonical' && text === 'canonical') continue;
           if (text.includes(term)) hits.push(`${file}: ${text.trim().slice(0, 110)}`);
         }
       }
