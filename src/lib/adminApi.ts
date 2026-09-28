@@ -1391,6 +1391,62 @@ export async function reviewProductRequest(
   });
 }
 
+// ── 커뮤니티 스캔 검토 대기열 ─────────────────────────────────────────────
+
+export interface AdminScanSubmission {
+  id: string;
+  status: string;
+  scannedBarcode: string | null;
+  errorCode: string | null;
+  createdAt: string;
+  updatedAt: string;
+  resolvedProductId: string | null;
+  productName: string | null;
+  brandName: string | null;
+}
+
+export interface AdminScanEvidence {
+  front: string[];
+  ingredient: string[];
+  nutrition: string[];
+}
+
+export async function fetchAdminScanSubmissions(params: {
+  page: number;
+  pageSize: number;
+  status: string;
+  errorCode: string;
+  dateFrom: string;
+  dateTo: string;
+}): Promise<Paged<AdminScanSubmission>> {
+  const response = await callAdminFunction<{ rows?: AdminScanSubmission[]; total?: number }>(
+    'admin-operations',
+    { action: 'listScanSubmissions', ...params },
+  );
+  return { rows: response.rows ?? [], total: response.total ?? 0 };
+}
+
+export async function fetchAdminScanEvidence(id: string): Promise<AdminScanEvidence> {
+  const response = await callAdminFunction<{ evidence?: AdminScanEvidence }>(
+    'admin-operations',
+    { action: 'getScanEvidence', id },
+  );
+  return response.evidence ?? { front: [], ingredient: [], nutrition: [] };
+}
+
+export async function reviewAdminScanSubmission(input: {
+  id: string;
+  decision: 'merge' | 'reject' | 'retry';
+  targetProductId?: string;
+  reason: string;
+}): Promise<{ status: string }> {
+  const response = await callAdminFunction<{ status?: string }>(
+    'admin-operations',
+    { action: 'reviewScanSubmission', ...input },
+  );
+  return { status: response.status ?? 'unknown' };
+}
+
 // ── 제품 일괄 변경 ──────────────────────────────────────────────────────────
 
 /** 한 요청에 담을 수 있는 제품 수 — Edge Function 의 상한과 같다. */

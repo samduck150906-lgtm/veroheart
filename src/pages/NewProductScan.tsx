@@ -185,7 +185,12 @@ export default function NewProductScan({ api, prepareImage = prepareLabelImage }
     scanPromiseRef.current = Promise.resolve(saved.id);
     client.getScanStatus(saved.id)
       .then((status) => {
-        if (!applyStatus(status) && ['processing', 'uploaded', 'submitted'].includes(status.status)) {
+        const terminal = applyStatus(status);
+        if (!terminal && status.status === 'uploaded') {
+          void client.submitImages(saved.id, saved.paths)
+            .then(() => poll(saved.id))
+            .catch(() => setErrorCode('network_error'));
+        } else if (!terminal && ['processing', 'submitted'].includes(status.status)) {
           void poll(saved.id).catch(() => setErrorCode('network_error'));
         }
       })
