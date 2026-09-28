@@ -11,6 +11,8 @@
  * 판단하는 근거라, 비슷해 보인다고 추측해 채우면 안 된다.
  */
 
+import { parseIngredientLabelItems } from '../analysis/labelIngredientParser';
+
 export const PARSED_NUTRITION_KEYS = [
   'crude_protein',
   'crude_fat',
@@ -54,32 +56,15 @@ const NUTRITION_PATTERNS: Record<ParsedNutritionKey, string> = {
   phosphorus: `${bounded('인')}|phosphorus|${bounded('P')}`,
 };
 
-/** 이름 사이에 쓰이는 구분자. 줄바꿈도 한 항목의 끝으로 본다. */
-const SEPARATORS = /[,、·;/\n]+/;
-
 /** 사람이 읽는 이름으로 보기 어려운 길이. 이보다 길면 설명 문장으로 본다. */
 const MAX_INGREDIENT_LENGTH = 30;
-
-function cleanIngredientName(raw: string): string {
-  return raw
-    // 괄호 안은 함량·부연 설명이라 이름에서 뺀다. '닭고기(생)' → '닭고기'
-    .replace(/[([{［（【][^)\]}］）】]*[)\]}］）】]?/g, ' ')
-    .replace(/\d+(?:\.\d+)?\s*%/g, ' ')
-    // 목록 앞의 번호·불릿
-    .replace(/^[\s\-–—•*]+/, '')
-    .replace(/^\d+[.)]\s*/, '')
-    // 끝에 붙는 '등', '외'
-    .replace(/\s*(등|외)\s*$/, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
 
 function splitIngredientSection(section: string): string[] {
   const seen = new Set<string>();
   const names: string[] = [];
 
-  for (const piece of section.split(SEPARATORS)) {
-    const name = cleanIngredientName(piece);
+  for (const item of parseIngredientLabelItems(section)) {
+    const name = item.baseText;
     if (!name) continue;
     if (name.length > MAX_INGREDIENT_LENGTH) continue;
     // 숫자·기호만 남은 조각

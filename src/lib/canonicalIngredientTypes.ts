@@ -60,11 +60,6 @@ export type AnalysisEngineVersionRow = {
   version: string;
   status: EngineVersionStatus;
   description: string | null;
-  source_family: string | null;
-  source_species: string | null;
-  source_part: string | null;
-  processing_form: IngredientProcessingForm | null;
-  identity_key: string | null;
   ruleset_checksum: string | null;
   released_at: IsoTimestamp | null;
   created_at: IsoTimestamp;
@@ -78,6 +73,11 @@ export type CanonicalIngredientRow = {
   normalized_key: string;
   category: string | null;
   description: string | null;
+  source_family: string | null;
+  source_species: string | null;
+  source_part: string | null;
+  processing_form: IngredientProcessingForm | null;
+  identity_key: string | null;
   status: RecordStatus;
   legacy_ingredient_id: Uuid | null;
   created_at: IsoTimestamp;
