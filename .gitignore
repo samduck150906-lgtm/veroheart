@@ -15,6 +15,7 @@ dist
 dist-ssr
 *.local
 .netlify/
+supabase/.temp/
 deno.lock
 .artifacts/
 

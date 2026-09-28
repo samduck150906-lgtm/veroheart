@@ -89,6 +89,16 @@ describe('제품명 정리 제안', () => {
     expect(result.brandName).toBe('쿠팡브랜드');
   });
 
+  it('곱수 표기의 판매 수량을 제거할 때 끝에 x를 남기지 않는다', () => {
+    const result = suggestProductNameCleanup({
+      name: '광동 견옥츄 덴탈껌 12g x 15개입',
+      brandName: '광동',
+    });
+
+    expect(result.name).toBe('광동 견옥츄 덴탈껌 12g');
+    expect(result.needsReview).toBe(false);
+  });
+
   it('바꿀 것이 없으면 변경 없음으로 둔다', () => {
     const result = suggestProductNameCleanup({
       name: '오리젠 오리지널 캣',

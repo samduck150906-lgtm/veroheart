@@ -31,6 +31,10 @@ const PURE_OPTION_RE =
 const SELLER_COUNT_TOKEN_RE =
   /^\d+(?:\.\d+)?\s*(?:개|개입|매|팩|포|입|세트|박스|캔|봉|p|ea)$/i;
 
+/** `x15개입` / `×15개` 같이 곱수로 표시한 판매 묶음 수량. */
+const MULTIPACK_COUNT_TOKEN_RE =
+  /^(?:x|×)\s*\d+(?:\.\d+)?\s*(?:개|개입|매|팩|포|입|세트|박스|캔|봉|p|ea)$/i;
+
 /**
  * 쿠팡 제목 끝에 붙는 옵션 문자열을 자른다.
  *
@@ -71,7 +75,9 @@ function stripMarketingTail(value: string): string {
 function stripToken(token: string): boolean {
   const value = token.trim().toLowerCase();
   if (!value) return true;
-  return PROMO_TOKENS.has(value) || SELLER_COUNT_TOKEN_RE.test(value);
+  return PROMO_TOKENS.has(value)
+    || SELLER_COUNT_TOKEN_RE.test(value)
+    || MULTIPACK_COUNT_TOKEN_RE.test(value);
 }
 
 export interface NameCleanupSuggestion {
@@ -155,8 +161,14 @@ export function suggestProductNameCleanup(input: {
     value = withoutBrackets;
   }
 
-  const tokens = value.split(/\s+/).filter((token) => token && !stripToken(token));
-  const joined = tokens.join(' ');
+  const rawTokens = value.split(/\s+/).filter(Boolean);
+  const hasDetachedMultipackCount = rawTokens.some(
+    (token, index) => /^(?:x|×)$/i.test(token)
+      && SELLER_COUNT_TOKEN_RE.test(rawTokens[index + 1] ?? ''),
+  );
+  const tokens = rawTokens.filter((token) => !stripToken(token));
+  let joined = tokens.join(' ');
+  if (hasDetachedMultipackCount) joined = joined.replace(/\s+(?:x|×)$/i, '');
   if (joined !== value.replace(/\s+/g, ' ').trim()) {
     reasons.push('배송·할인 문구 제거');
   }
