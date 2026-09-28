@@ -1,0 +1,31 @@
+{
+  "products": [
+    {
+      "id": "fixture-product-1",
+      "name": "쿠팡브랜드 연어 전연령 피부 사료 3kg 참치맛 2팩 무료배송 로켓배송",
+      "brand_name": "쿠팡검색",
+      "manufacturer_name": "쿠팡브랜드 제조원",
+      "target_pet_type": "dog"
+    },
+    {
+      "id": "fixture-product-2",
+      "name": "쿠팡브랜드 연어 전연령 피부 사료 3kg 참치맛 3팩",
+      "brand_name": "쿠팡상품",
+      "manufacturer_name": "쿠팡브랜드 제조원",
+      "target_pet_type": "dog"
+    },
+    {
+      "id": "fixture-product-3",
+      "name": "오리젠 오리지널 캣 5.4kg",
+      "brand_name": "오리젠",
+      "manufacturer_name": "Champion Petfoods",
+      "target_pet_type": "cat"
+    },
+    {
+      "id": "fixture-product-4",
+      "name": "12개 무료배송",
+      "brand_name": "쿠팡상품",
+      "target_pet_type": "dog"
+    }
+  ]
+}

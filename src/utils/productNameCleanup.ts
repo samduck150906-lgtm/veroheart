@@ -9,7 +9,7 @@
  *
  * 그래서 여기서는 없는 제품명을 만들어내지 않는다. 판매처가 붙인 꼬리만 자른다.
  */
-import { isSourceLabelBrand } from './productDisplay';
+import { isSourceLabelBrand } from './productDisplay.ts';
 
 /** 통째로 제거할 광고/배송 토큰 (공백 분리, 소문자 비교). */
 const PROMO_TOKENS = new Set([
@@ -26,6 +26,10 @@ const PROMO_BRACKET_RE =
 /** 순수 판매 단위 — 이 값이 나오면 그 뒤는 전부 쿠팡 옵션 문자열로 본다. */
 const PURE_OPTION_RE =
   /^(?:\d+(?:\.\d+)?\s*(?:개|개입|매|팩|포|입|세트|박스|캔|봉|p|ea)|\d+(?:\.\d+)?\s*(?:g|kg|mg|ml|l|리터)|무료배송|단품|본품)$/i;
+
+/** 공백으로 붙은 판매 묶음 수량. 중량(3kg)은 제품 식별값이므로 제외한다. */
+const SELLER_COUNT_TOKEN_RE =
+  /^\d+(?:\.\d+)?\s*(?:개|개입|매|팩|포|입|세트|박스|캔|봉|p|ea)$/i;
 
 /**
  * 쿠팡 제목 끝에 붙는 옵션 문자열을 자른다.
@@ -67,7 +71,7 @@ function stripMarketingTail(value: string): string {
 function stripToken(token: string): boolean {
   const value = token.trim().toLowerCase();
   if (!value) return true;
-  return PROMO_TOKENS.has(value);
+  return PROMO_TOKENS.has(value) || SELLER_COUNT_TOKEN_RE.test(value);
 }
 
 export interface NameCleanupSuggestion {

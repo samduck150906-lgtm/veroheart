@@ -71,6 +71,24 @@ describe('제품명 정리 제안', () => {
     expect(result.name).toContain('전연령');
   });
 
+  it('공백으로 붙은 판매 묶음 수량은 제거하고 제품 식별 정보는 모두 남긴다', () => {
+    const result = suggestProductNameCleanup({
+      name: '쿠팡브랜드 연어 전연령 피부 사료 3kg 참치맛 2팩 무료배송 로켓배송',
+      brandName: '쿠팡검색',
+    });
+
+    expect(result.name).toBe('쿠팡브랜드 연어 전연령 피부 사료 3kg 참치맛');
+    expect(result.name).toContain('연어');
+    expect(result.name).toContain('전연령');
+    expect(result.name).toContain('피부');
+    expect(result.name).toContain('3kg');
+    expect(result.name).toContain('참치맛');
+    expect(result.name).not.toContain('2팩');
+    expect(result.name).not.toContain('무료배송');
+    expect(result.name).not.toContain('로켓배송');
+    expect(result.brandName).toBe('쿠팡브랜드');
+  });
+
   it('바꿀 것이 없으면 변경 없음으로 둔다', () => {
     const result = suggestProductNameCleanup({
       name: '오리젠 오리지널 캣',
