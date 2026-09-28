@@ -12,6 +12,10 @@ import { describe, expect, it } from 'vitest';
  * 실제 네트워크 호출 없이, 검색 쿼리가 원료 경로를 포함하도록 조립되는지를 본다.
  */
 const SOURCE = readFileSync(join(process.cwd(), 'src/lib/supabase.ts'), 'utf8');
+const MIGRATION = readFileSync(
+  join(process.cwd(), 'supabase/migrations/20260925110000_ranked_catalog_search.sql'),
+  'utf8',
+);
 
 function functionBody(name: string): string {
   const start = SOURCE.indexOf(`export async function ${name}(`);
@@ -21,28 +25,26 @@ function functionBody(name: string): string {
 }
 
 describe('원료 기반 제품 검색', () => {
-  it('원료명으로 제품 id 를 찾는 함수가 있다', () => {
-    const body = functionBody('findProductIdsByIngredientName');
-    // 국문·영문 원료명을 모두 본다.
-    expect(body).toContain('name_ko.ilike');
-    expect(body).toContain('name_en.ilike');
-    expect(body).toContain("from('product_ingredients')");
+  it('RPC가 국문·영문 원료명을 제품 검색 문서에 합친다', () => {
+    expect(MIGRATION).toContain('FROM public.product_ingredients AS link');
+    expect(MIGRATION).toContain('JOIN public.ingredients AS ingredient');
+    expect(MIGRATION).toContain("ingredient.name_ko");
+    expect(MIGRATION).toContain("ingredient.name_en");
   });
 
-  it('searchProducts 가 제품명·브랜드명에 더해 원료 경로를 or 조건에 넣는다', () => {
+  it('searchProducts가 원료 검색을 포함한 랭킹 RPC를 호출한다', () => {
     const body = functionBody('searchProducts');
-    expect(body).toContain('findProductIdsByIngredientName');
-    expect(body).toContain('name.ilike');
-    expect(body).toContain('brand_name.ilike');
-    expect(body).toContain('id.in.');
+    expect(body).toContain("rpc('search_catalog_products'");
+    expect(body).not.toContain('findProductIdsByIngredientName');
+    expect(body).not.toContain('builder.or(');
   });
 
-  it('원료 경로를 별도 조회로 돌리지 않고 같은 필터에 태운다', () => {
-    // 필터(카테고리·종 등)가 두 경로에 따로 적용되면 결과가 갈라진다.
-    const body = functionBody('searchProducts');
-    const orIndex = body.indexOf('builder.or(');
-    const categoryIndex = body.indexOf("eq('main_category'");
-    expect(orIndex).toBeGreaterThan(-1);
-    expect(categoryIndex).toBeGreaterThan(orIndex);
+  it('원료 경로도 제품 노출·카테고리·종 조건과 같은 RPC 안에서 평가한다', () => {
+    expect(MIGRATION).toMatch(/p\.is_visible\s*=\s*true/i);
+    expect(MIGRATION).toContain('p.main_category = q.category');
+    expect(MIGRATION).toContain("p.target_pet_type IN (q.pet_type, 'all')");
+    expect(MIGRATION.indexOf('FROM public.product_ingredients AS link')).toBeLessThan(
+      MIGRATION.indexOf('p.is_visible = TRUE'),
+    );
   });
 });

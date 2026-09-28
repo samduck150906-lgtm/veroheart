@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 const source = read('src/lib/supabase.ts');
 const migration = read('supabase/migrations/20260922060000_rank_products_with_ingredients_first.sql');
+const searchMigration = read('supabase/migrations/20260925110000_ranked_catalog_search.sql');
 
 const bodyOf = (from: string, to: string) => {
   const start = source.indexOf(from);
@@ -28,8 +29,9 @@ describe('원재료 없는 제품을 목록 뒤로', () => {
   });
 
   it('검색 결과도 같은 규칙을 쓴다', () => {
-    const keys = orderKeys(bodyOf('export async function searchProducts', '// Ingredients'));
-    expect(keys.slice(0, 3)).toEqual(['is_pinned', 'pinned_order', 'has_ingredients']);
+    expect(searchMigration).toMatch(
+      /order by\s+score desc,\s+is_pinned desc nulls last,\s+pinned_order asc nulls last,\s+has_ingredients desc,\s+product_id asc/i,
+    );
   });
 
   it('컬럼이 없던 시절 조회로 되돌아가는 폴백이 새 컬럼도 알아본다', () => {

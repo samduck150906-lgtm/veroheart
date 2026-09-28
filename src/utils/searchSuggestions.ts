@@ -24,6 +24,7 @@ export interface Suggestion {
 
 export interface SuggestProduct {
   name: string;
+  displayName?: string;
   brand?: string;
 }
 
@@ -82,6 +83,8 @@ export function buildSearchSuggestions(
     }
   };
 
+  const publicName = (product: SuggestProduct) => product.displayName?.trim() || product.name;
+
   // ── 브랜드 (일치 브랜드, 제품 수 많은 순) ──
   const brandCount = new Map<string, number>();
   for (const p of products) {
@@ -103,10 +106,10 @@ export function buildSearchSuggestions(
 
   // ── 제품명 ──
   products
-    .filter((p) => norm(p.name).includes(q))
-    .sort((a, b) => rankScore(norm(a.name), q) - rankScore(norm(b.name), q))
+    .filter((p) => norm(publicName(p)).includes(q))
+    .sort((a, b) => rankScore(norm(publicName(a)), q) - rankScore(norm(publicName(b)), q))
     .slice(0, 4)
-    .forEach((p) => push({ kind: 'product', label: p.name, brand: p.brand }));
+    .forEach((p) => push({ kind: 'product', label: publicName(p), brand: p.brand }));
 
   // ── 성분명 ──
   ingredients

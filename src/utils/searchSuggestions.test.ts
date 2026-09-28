@@ -50,6 +50,17 @@ describe('buildSearchSuggestions', () => {
     const s = buildSearchSuggestions('bha', products, ingredients);
     expect(s.some((x) => x.kind === 'ingredient' && x.label === 'BHA')).toBe(true);
   });
+
+  it('쿠팡 원문 대신 정제된 공개 제품명을 제안한다', () => {
+    const s = buildSearchSuggestions(
+      '오리지널',
+      [{ name: '쿠팡 무료배송 오리젠 오리지널 독 2개', displayName: '오리지널 독', brand: '오리젠' }],
+      [],
+    );
+
+    expect(s.find((item) => item.kind === 'product')?.label).toBe('오리지널 독');
+    expect(s.some((item) => item.label.includes('쿠팡'))).toBe(false);
+  });
 });
 
 describe('deriveBrandOptions', () => {
