@@ -55,9 +55,10 @@ import {
 import { gradeMetaFromScore } from '../components/pdp/gradeMeta';
 import { REVIEW_QUICK_TAGS } from '../constants/reviewTags';
 import ProductThumb from '../components/ProductThumb';
+import ProductVerificationBadge from '../components/ProductVerificationBadge';
 import { HealthConcernEvidence } from '../components/HealthConcernEvidence';
 import { buildHealthConcernPresentation } from '../health/concernPresentation';
-import { normalizeProductDisplayName, resolveBrandLabel } from '../utils/productDisplay';
+import { getProductDisplayParts } from '../utils/productDisplay';
 import { gradePalette, gradeVerdict } from '../lib/veroroDesign';
 import {
   describeProductCompleteness,
@@ -200,7 +201,8 @@ export default function Detail() {
   const handleShare = async () => {
     if (!product) return;
     const url = typeof window !== 'undefined' ? window.location.href : '';
-    const title = [resolveBrandLabel(product), normalizeProductDisplayName(product)].filter(Boolean).join(' ');
+    const display = getProductDisplayParts(product);
+    const title = [display.brand, display.name].filter(Boolean).join(' ');
     try {
       if (typeof navigator !== 'undefined' && navigator.share) {
         await navigator.share({ title: 'VeRoRo', text: `${title} · 베로로 성분 분석`, url });
@@ -234,7 +236,8 @@ export default function Detail() {
   const personalized = isRealPetProfile(profile);
   const isComparing = comparisonList.includes(product?.id || '');
   const isFav = favorites.includes(product?.id || '');
-  const brandLabel = resolveBrandLabel(product);
+  const productDisplay = getProductDisplayParts(product);
+  const brandLabel = productDisplay.brand;
   const completeness = describeProductCompleteness(product);
   const completenessPalette = getCompletenessPalette(completeness.level);
 
@@ -331,8 +334,9 @@ export default function Detail() {
     const c = cands.find(x => !altUsed.has(x.p.id));
     if (!c) return;
     altUsed.add(c.p.id);
+    const display = getProductDisplayParts(c.p);
     altCards.push({
-      id: c.p.id, brand: resolveBrandLabel(c.p), name: c.p.name, imageUrl: c.p.imageUrl,
+      id: c.p.id, brand: display.brand, name: display.name, imageUrl: c.p.imageUrl,
       score: c.score, deltaScore: Math.max(0, Math.round(c.score - currentScore)),
       tag, tagTone,
     });
@@ -409,12 +413,12 @@ export default function Detail() {
   return (
     <div className="animate-fade-in detail-page-root" style={{ paddingBottom: '96px' }}>
       <Helmet>
-        <title>{`${normalizeProductDisplayName(product)} - 베로로`}</title>
-        <meta name="description" content={`${brandLabel ? `${brandLabel}의 ` : ''}${normalizeProductDisplayName(product)} 전성분 분석 결과`} />
+        <title>{`${productDisplay.name} - 베로로`}</title>
+        <meta name="description" content={`${brandLabel ? `${brandLabel}의 ` : ''}${productDisplay.name} 전성분 분석 결과`} />
       </Helmet>
 
       <OfflineBanner online={online} />
-      <StickyScoreBar score={safetyScore} name={product.name} visible={showStickyScore} progress={scrollProgress} />
+      <StickyScoreBar score={safetyScore} name={productDisplay.name} visible={showStickyScore} progress={scrollProgress} />
 
       {conclusion && (
         <section
@@ -490,8 +494,8 @@ export default function Detail() {
       <div className="vr-bleed" style={{ position: 'relative', height: '250px', background: 'var(--vr-soft)', marginBottom: '18px', overflow: 'hidden' }}>
         <ProductThumb
           src={product.imageUrl}
-          alt={product.name}
-          monoSource={brandLabel || product.name}
+          alt={productDisplay.name}
+          monoSource={brandLabel || productDisplay.name}
           height={250}
           radius={0}
           fontSize={56}
@@ -553,9 +557,18 @@ export default function Detail() {
         {brandLabel && (
           <div style={{ marginBottom: '8px', fontSize: '13px', color: 'var(--text-light)', fontWeight: 700 }}>{brandLabel}</div>
         )}
-        <h1 style={{ fontSize: '26px', lineHeight: 1.3, marginBottom: '14px', fontWeight: 900 }}>{product.name}</h1>
+        <h1 style={{ fontSize: '26px', lineHeight: 1.3, marginBottom: productDisplay.meta ? '6px' : '12px', fontWeight: 900 }}>{productDisplay.name}</h1>
+        {productDisplay.meta && (
+          <div style={{ marginBottom: '12px', color: 'var(--text-muted)', fontSize: '13px', fontWeight: 650 }}>
+            {productDisplay.meta}
+          </div>
+        )}
       
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '18px' }}>
+          <ProductVerificationBadge
+            catalogSource={product.catalogSource}
+            verificationStatus={product.verificationStatus}
+          />
           <div
             style={{
               display: 'inline-flex',
@@ -919,7 +932,7 @@ export default function Detail() {
         userId={userId}
         presetProduct={{
           id: product.id,
-          name: product.name,
+          name: productDisplay.name,
           brand: brandLabel,
           imageUrl: product.imageUrl,
           productType: productTypeToFeedingType(product.category),
