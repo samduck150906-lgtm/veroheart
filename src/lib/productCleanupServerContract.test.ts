@@ -7,7 +7,7 @@ function source(relativeUrl: string): string {
 }
 
 const edge = source('../../supabase/functions/admin-write/index.ts');
-const migration = source('../../supabase/migrations/20260921090000_atomic_product_cleanup.sql');
+const migration = source('../../supabase/migrations/20260929230000_atomic_product_cleanup.sql');
 
 describe('제품 정리 서버 저장 계약', () => {
   it('관리자 인증 뒤 허용 action만 실행하고 cleanup은 검증된 RPC만 호출한다', () => {
