@@ -14,7 +14,7 @@ import { describe, expect, it } from 'vitest';
 
 const MIGRATION_PATH = resolve(
   process.cwd(),
-  'supabase/migrations/20260825120000_enforce_signup_enabled.sql',
+  'supabase/migrations/20260825064411_enforce_signup_enabled.sql',
 );
 
 const sql = readFileSync(MIGRATION_PATH, 'utf8');

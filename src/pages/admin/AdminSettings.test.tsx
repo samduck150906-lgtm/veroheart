@@ -109,6 +109,6 @@ describe('AdminSettings', () => {
     render(<AdminSettings />);
 
     expect(await screen.findByText('설정을 불러오지 못했습니다.')).toBeTruthy();
-    expect(screen.getByText(/20260728140000_admin_console_operations\.sql/)).toBeTruthy();
+    expect(screen.getByText(/20260728142725_admin_console_operations\.sql/)).toBeTruthy();
   });
 });
