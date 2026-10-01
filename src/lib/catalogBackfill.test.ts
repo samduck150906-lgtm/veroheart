@@ -1,24 +1,24 @@
 import { describe, expect, it } from 'vitest';
 import { buildCatalogBackfillCandidate, slugifyProductName } from './catalogBackfill';
+import catalogBackfillFixture from './fixtures/catalog-backfill.json';
 
 describe('catalog cleanup backfill candidates', () => {
   it('keeps the raw source title as an alias and proposes clean public identity fields', () => {
-    const rawName = '쿠팡브랜드 연어 전연령 피부 사료 3kg 참치맛 2팩 무료배송 로켓배송';
+    const fixtureProduct = catalogBackfillFixture.products[0];
+    if (!fixtureProduct) throw new Error('catalog backfill fixture is missing');
+    const rawName = fixtureProduct.name;
     const result = buildCatalogBackfillCandidate({
-      id: 'product-1',
-      name: rawName,
-      brand_name: '쿠팡검색',
-      manufacturer_name: '쿠팡브랜드 제조원',
-      pet_type: 'dog',
+      ...fixtureProduct,
+      pet_type: fixtureProduct.target_pet_type,
     });
 
     expect(result).toMatchObject({
-      productId: 'product-1',
+      productId: 'fixture-product-1',
       rawAlias: rawName,
-      displayName: '쿠팡브랜드 연어 전연령 피부 사료 3kg 참치맛',
+      displayName: '쿠팡브랜드 연어 전연령 피부 사료 3kg 참치맛 2팩',
       brandName: '쿠팡브랜드',
-      slug: '쿠팡브랜드-연어-전연령-피부-사료-3kg-참치맛',
-      needsReview: false,
+      slug: '쿠팡브랜드-연어-전연령-피부-사료-3kg-참치맛-2팩',
+      needsReview: true,
     });
     expect(result.canonicalProductKey).toContain('쿠팡브랜드제조원|쿠팡브랜드');
     expect(result.reasons.length).toBeGreaterThan(0);

@@ -239,8 +239,10 @@ export const MAX_PRODUCT_CLEANUP_ITEMS = 100;
 
 export interface ProductCleanupItem {
   id: string;
-  name: string;
-  brand_name: string;
+  expected_name: string;
+  expected_brand_name: string;
+  name: string | null;
+  brand_name: string | null;
 }
 
 /**
@@ -259,13 +261,26 @@ export function normalizeProductCleanupItems(raw: unknown): ProductCleanupItem[]
   const seen = new Set<string>();
   return raw.map((item) => {
     const row = (item ?? {}) as Record<string, unknown>;
+    const allowed = new Set([
+      'id', 'expectedName', 'expected_name', 'expectedBrandName', 'expected_brand_name',
+      'name', 'brandName', 'brand_name',
+    ]);
+    const rejected = Object.keys(row).filter((key) => !allowed.has(key));
+    if (rejected.length > 0) {
+      throw new ValidationError(`제품 정리에 허용되지 않은 필드입니다: ${rejected.join(', ')}`);
+    }
     const id = requireUuid(row.id, '제품 ID');
     if (seen.has(id)) throw new ValidationError('같은 제품이 목록에 중복으로 들어 있습니다.');
     seen.add(id);
+    const hasName = Object.hasOwn(row, 'name');
+    const hasBrand = Object.hasOwn(row, 'brandName') || Object.hasOwn(row, 'brand_name');
+    if (!hasName && !hasBrand) throw new ValidationError('변경할 제품명 또는 브랜드가 필요합니다.');
     return {
       id,
-      name: requireText(row.name, '제품명'),
-      brand_name: requireText(row.brandName ?? row.brand_name, '브랜드'),
+      expected_name: requireText(row.expectedName ?? row.expected_name, '기존 제품명'),
+      expected_brand_name: requireText(row.expectedBrandName ?? row.expected_brand_name, '기존 브랜드'),
+      name: hasName ? requireText(row.name, '제품명') : null,
+      brand_name: hasBrand ? requireText(row.brandName ?? row.brand_name, '브랜드') : null,
     };
   });
 }
