@@ -808,7 +808,7 @@ const FEEDING_LOG_SELECT = `
   )
 ` as const;
 
-/** 다이어리 사진 스토리지 버킷 — 20260728120000_feeding_log_photo_storage.sql 로 생성 */
+/** 다이어리 사진 스토리지 버킷 — 20260728104426_feeding_log_photo_storage.sql 로 생성 */
 export const FEEDING_LOG_PHOTO_BUCKET = 'feeding-log-photos';
 
 /**

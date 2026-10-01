@@ -152,7 +152,7 @@ Supabase products + product_ingredients + ingredients(중앙 risk_level)
   - **포도 vs 포도씨유**: 알러지='포도'면 `'포도씨유'.includes('포도')` = **true → 오탐** (`score.ts`·`productConclusion.ts` 부분문자열 경로). 규칙 엔진은 grape/포도씨유가 별도라 상대적으로 안전.
   - **우유 vs 유산균**: `'유산균'.includes('우유')` = false → 이 조합은 오탐 안 남.
 - **띄어쓰기/괄호/영문/대소문자/쉼표**: 규칙 엔진(normalize)만 정상 처리. `score.ts`·엣지·DB는 `trim().toLowerCase()` 수준이라 괄호·내부 공백·쉼표 변형에 취약.
-- **미인식 성분 기록**: 테이블 `unmatched_ingredients` + RPC `log_unmatched_ingredient` 존재(`supabase/migrations/20260611150000_unmatched_ingredients_queue.sql`). 단 호출은 **스캐너 경로(`src/components/Analyzer.tsx:296`)에서만** 발생하고, 카탈로그 분석 경로에서는 기록되지 않음.
+- **미인식 성분 기록**: 테이블 `unmatched_ingredients` + RPC `log_unmatched_ingredient` 존재(`supabase/migrations/20260611142147_unmatched_ingredients_queue.sql`). 단 호출은 **스캐너 경로(`src/components/Analyzer.tsx:296`)에서만** 발생하고, 카탈로그 분석 경로에서는 기록되지 않음.
 
 ---
 

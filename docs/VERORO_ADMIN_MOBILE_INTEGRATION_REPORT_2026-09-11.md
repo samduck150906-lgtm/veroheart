@@ -116,10 +116,10 @@ variant 식별 필요: 2
 
 ## 10. DB Migration
 
-- `20260911110000_sync_product_review_aggregates.sql`: 리뷰 trigger/backfill.
-- `20260911111000_sync_product_risk_factors.sql`: 위험성분 파생 캐시 trigger/backfill.
-- `20260911112000_tighten_public_profiles_and_definers.sql`: RLS/뷰/함수 보안.
-- `20260911113000_product_enrichment_workflow.sql`: 출처 및 보완 큐, 누락 백필, 자동 갱신 trigger.
+- `20260914144655_sync_product_review_aggregates.sql`: 리뷰 trigger/backfill.
+- `20260914144713_sync_product_risk_factors.sql`: 위험성분 파생 캐시 trigger/backfill.
+- `20260914144755_tighten_public_profiles_and_definers.sql`: RLS/뷰/함수 보안.
+- `20260914144745_product_enrichment_workflow.sql`: 출처 및 보완 큐, 누락 백필, 자동 갱신 trigger.
 
 ## 11. Edge Functions
 

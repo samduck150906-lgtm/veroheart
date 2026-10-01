@@ -1,6 +1,6 @@
 // 기존 base64(data URL) 다이어리 사진을 Supabase Storage로 이전하는 백필 스크립트.
 //
-// 선행 조건: 20260728120000_feeding_log_photo_storage.sql 마이그레이션 적용.
+// 선행 조건: 20260728104426_feeding_log_photo_storage.sql 마이그레이션 적용.
 // 실행: SUPABASE_URL·SUPABASE_SERVICE_ROLE_KEY 를 .env 또는 환경변수로 준 뒤
 //   node scripts/backfill-feeding-log-photos.mjs           # 실제 이전
 //   node scripts/backfill-feeding-log-photos.mjs --dry-run # 대상 개수만 확인
