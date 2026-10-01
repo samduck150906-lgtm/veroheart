@@ -1,8 +1,10 @@
 # Supabase migration ledger reconciliation
 
-This repository snapshot reconciles the checked-in migration filenames with the
-61 versions already recorded in the production migration ledger. It does not
-apply, repair, or revert any production migration.
+This repository snapshot contains the reconciled historical production ledger
+baseline: 61 versions restored from the existing ledger plus the canonical
+foundation recorded by the approved ledger-only repair, for 62 versions total.
+The baseline is a required subset, so future forward-only migrations remain
+valid. This repository change does not execute any migration SQL.
 
 ## Local-to-ledger mapping
 
@@ -51,6 +53,10 @@ statement order. The 18 files already common to both sides are unchanged. The
 known historical `20250403120000` Petty/VeRoRo content difference is explicitly
 out of scope for this filename reconciliation.
 
+Regression validation requires all 62 reconciled historical versions to remain
+present with valid, unique timestamps. It deliberately permits additional
+forward-only migration files after the baseline.
+
 ## Deliberately retained or deferred work
 
 `20260630090000_non_destructive_ingredient_schema.sql` remains an active local
@@ -83,5 +89,5 @@ preceding ledger migrations do not create, so its foreign-key inserts fail. The
 ledger SQL is preserved verbatim here. Empty-database replay should be solved by
 a separate baseline or snapshot project, not by mutating production history.
 
-This reconciliation is separate from PR #110. In particular,
-`20260929230000_atomic_product_cleanup.sql` is intentionally absent.
+This reconciliation is separate from PR #110. The historical baseline checks do
+not prohibit PR #110 or any other future forward-only migration.

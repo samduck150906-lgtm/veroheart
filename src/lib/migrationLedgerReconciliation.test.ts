@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 const migrationsDir = join(process.cwd(), 'supabase/migrations');
 const migrationFiles = readdirSync(migrationsDir).filter((file) => file.endsWith('.sql')).sort();
 
-const productionLedgerFiles = `
+const reconciledHistoricalLedgerFiles = `
 20250403120000_veroro_schema.sql
 20260408090000_personalized_allergy_scoring.sql
 20260409093000_add_product_verification_and_affiliate_fields.sql
@@ -20,6 +20,7 @@ const productionLedgerFiles = `
 20260621040102_add_monetization.sql
 20260621040653_create_community_comments.sql
 20260621041820_community_post_likes_and_view.sql
+20260630090000_non_destructive_ingredient_schema.sql
 20260702134231_add_barcode_to_products.sql
 20260702152508_public_read_user_profiles.sql
 20260723131349_pet_feeding_logs.sql
@@ -117,16 +118,16 @@ describe('Supabase migration ledger reconciliation', () => {
     expect(new Set(versions).size).toBe(versions.length);
   });
 
-  it('contains every production ledger migration and the retained canonical foundation', () => {
-    expect(productionLedgerFiles).toHaveLength(61);
-    expect(productionLedgerFiles.every((file) => migrationFiles.includes(file))).toBe(true);
-    expect(migrationFiles).toHaveLength(62);
-    expect(migrationFiles).toContain('20260630090000_non_destructive_ingredient_schema.sql');
+  it('contains every reconciled historical ledger migration while allowing forward migrations', () => {
+    expect(reconciledHistoricalLedgerFiles).toHaveLength(62);
+    expect(
+      reconciledHistoricalLedgerFiles.every((file) => migrationFiles.includes(file)),
+    ).toBe(true);
+    expect(migrationFiles.length).toBeGreaterThanOrEqual(reconciledHistoricalLedgerFiles.length);
   });
 
-  it('does not reintroduce retired timestamps or the separate cleanup migration', () => {
+  it('does not reintroduce retired local timestamps', () => {
     expect(retiredLocalFiles.some((file) => migrationFiles.includes(file))).toBe(false);
-    expect(migrationFiles).not.toContain('20260929230000_atomic_product_cleanup.sql');
   });
 
   it('keeps the standard-feed dataset outside automatic migration paths', () => {
