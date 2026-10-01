@@ -155,7 +155,7 @@ const AdminSettings: React.FC = () => {
           <strong>설정을 불러오지 못했습니다.</strong>
           <p className="admin-item-sub" style={{ marginTop: 6 }}>{error}</p>
           <p className="admin-item-sub" style={{ marginTop: 6 }}>
-            app_settings 테이블이 아직 없다면 20260728140000_admin_console_operations.sql 마이그레이션을 적용해 주세요.
+            app_settings 테이블이 아직 없다면 20260728142725_admin_console_operations.sql 마이그레이션을 적용해 주세요.
           </p>
           <button type="button" className="admin-btn-soft" style={{ marginTop: 10 }} onClick={load}>
             다시 시도

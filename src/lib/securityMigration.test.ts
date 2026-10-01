@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const sql = readFileSync(
-  resolve(process.cwd(), 'supabase', 'migrations', '20260911112000_tighten_public_profiles_and_definers.sql'),
+  resolve(process.cwd(), 'supabase', 'migrations', '20260914144755_tighten_public_profiles_and_definers.sql'),
   'utf8',
 ).toLowerCase();
 

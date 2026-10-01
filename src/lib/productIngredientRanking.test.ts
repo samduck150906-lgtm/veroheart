@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 const source = read('src/lib/supabase.ts');
-const migration = read('supabase/migrations/20260922060000_rank_products_with_ingredients_first.sql');
+const migration = read('supabase/migrations/20260922053808_rank_products_with_ingredients_first.sql');
 const searchMigration = read('supabase/migrations/20260925110000_ranked_catalog_search.sql');
 
 const bodyOf = (from: string, to: string) => {
