@@ -16,6 +16,7 @@ import {
   PRODUCT_IMAGE_MAX_BYTES,
   SETTING_KEYS,
   deleteIngredient,
+  applyProductCleanup,
   fetchDiaryPage,
   fetchMemberDetail,
   fetchSettings,
@@ -199,6 +200,27 @@ describe('adminApi: 쓰기 경로', () => {
       id: '11111111-1111-4111-8111-111111111111',
       isVisible: false,
     });
+  });
+
+  it('제품 정리는 기존값과 선택된 필드만 관리자 프록시에 전달하고 항목별 결과를 반환한다', async () => {
+    h.adminWrite.mockResolvedValue({
+      batchId: 'batch-1',
+      requested: 1,
+      applied: 0,
+      conflicts: 1,
+      failed: 0,
+      results: [{ id: '11111111-1111-4111-8111-111111111111', status: 'conflict' }],
+    });
+    const items = [{
+      id: '11111111-1111-4111-8111-111111111111',
+      expectedName: '기존 이름',
+      expectedBrandName: '기존 브랜드',
+      name: '새 이름',
+    }];
+    await expect(applyProductCleanup(items)).resolves.toMatchObject({
+      batchId: 'batch-1', conflicts: 1, results: [{ status: 'conflict' }],
+    });
+    expect(h.adminWrite).toHaveBeenCalledWith('applyProductCleanup', { items });
   });
 
   it('개인 데이터 운영 조회는 admin-write를 거친다', async () => {
