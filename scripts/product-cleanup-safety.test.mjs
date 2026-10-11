@@ -208,6 +208,32 @@ describe('local admin-write authentication/router + real cleanup PL/pgSQL', () =
     assert.deepEqual(await snapshot(), beforeState);
   });
 
+  it('rejects a replay after an intervening edit without changing products or audits', async () => {
+    await request([item]);
+    await db.query('UPDATE public.products SET name = $1 WHERE id = $2',
+      ['Intervening fixture edit', productId]);
+    const beforeReplay = await snapshot();
+    const replay = await request([item]);
+    assert.equal(replay.status, 200);
+    assert.equal(replay.body.results[0].status, 'conflict');
+    assert.equal(replay.body.applied, 0);
+    assert.deepEqual(await snapshot(), beforeReplay);
+  });
+
+  it('can apply again after the original expected state is restored: no permanent request deduplication', async () => {
+    const first = await request([item]);
+    await db.query('UPDATE public.products SET name = $1 WHERE id = $2', [oldName, productId]);
+    const replay = await request([item]);
+    assert.equal(replay.status, 200);
+    assert.equal(replay.body.results[0].status, 'applied');
+    assert.equal(replay.body.applied, 1);
+    assert.notEqual(replay.body.batchId, first.body.batchId);
+    const state = await snapshot();
+    assert.equal(state.products.find((p) => p.id === productId).name, targetName);
+    assert.equal(state.audits.length, 2);
+    assert.notEqual(state.audits[0].detail.batchId, state.audits[1].detail.batchId);
+  });
+
   it('blocks normalized duplicate targets without product or audit changes', async () => {
     const beforeState = await snapshot();
     const response = await request([{ ...item, name: 'other PRODUCT 200g' }]);
