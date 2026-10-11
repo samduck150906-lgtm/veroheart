@@ -223,6 +223,33 @@ describe('adminApi: 쓰기 경로', () => {
     expect(h.adminWrite).toHaveBeenCalledWith('applyProductCleanup', { items });
   });
 
+  it('성공 요청 재전송에 batch ID를 주입하지 않고 already_applied와 새 응답 ID를 보존한다', async () => {
+    const items = [{
+      id: '11111111-1111-4111-8111-111111111111',
+      expectedName: '기존  이름',
+      expectedBrandName: '테스트 브랜드',
+      name: '기존 이름',
+    }];
+    h.adminWrite
+      .mockResolvedValueOnce({
+        batchId: 'first-response-id', requested: 1, applied: 1, conflicts: 0, failed: 0,
+        results: [{ id: items[0].id, status: 'applied' }],
+      })
+      .mockResolvedValueOnce({
+        batchId: 'replay-response-id', requested: 1, applied: 0, conflicts: 0, failed: 0,
+        results: [{ id: items[0].id, status: 'already_applied' }],
+      });
+
+    await expect(applyProductCleanup(items)).resolves.toMatchObject({ applied: 1 });
+    await expect(applyProductCleanup(items)).resolves.toMatchObject({
+      batchId: 'replay-response-id', applied: 0, conflicts: 0, failed: 0,
+      results: [{ status: 'already_applied' }],
+    });
+    expect(h.adminWrite).toHaveBeenCalledTimes(2);
+    expect(h.adminWrite).toHaveBeenNthCalledWith(1, 'applyProductCleanup', { items });
+    expect(h.adminWrite).toHaveBeenNthCalledWith(2, 'applyProductCleanup', { items });
+  });
+
   it('개인 데이터 운영 조회는 admin-write를 거친다', async () => {
     h.adminWrite
       .mockResolvedValueOnce({ id: 'member-1', nickname: '베로로', pets: [] })
