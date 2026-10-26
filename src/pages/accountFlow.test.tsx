@@ -10,9 +10,11 @@ vi.mock('../store/useStore', () => ({ useStore: Object.assign(() => state, { get
 vi.mock('../lib/supabase', () => ({ manageAccount: (...args) => manage(...args), supabase: { auth: { getUser: (...args) => getUser(...args), updateUser: (...args) => updateUser(...args) } } }));
 import AccountDelete from './AccountDelete';
 import PasswordRecovery from './PasswordRecovery';
+import { rememberSelectedPet } from '../lib/petPreferences';
 
-afterEach(() => { cleanup(); vi.clearAllMocks(); });
+afterEach(() => { cleanup(); vi.clearAllMocks(); localStorage.clear(); });
 it('shows deletion failure, retains identity, and permits an explicit retry', async () => {
+  rememberSelectedPet('owner', 'pet-2');
   manage.mockRejectedValueOnce(new Error('정리 실패')).mockResolvedValueOnce(undefined);
   render(<MemoryRouter><AccountDelete /></MemoryRouter>);
   const button = screen.getByRole('button', { name: '계정 영구 삭제' });
@@ -21,9 +23,11 @@ it('shows deletion failure, retains identity, and permits an explicit retry', as
   fireEvent.click(button);
   expect((await screen.findByRole('alert')).textContent).toContain('정리 실패');
   expect(state.logout).not.toHaveBeenCalled();
+  expect(localStorage.getItem('veroro.activePet.v1.owner')).toBe('pet-2');
   fireEvent.click(button);
   await waitFor(() => expect(state.logout).toHaveBeenCalledOnce());
   expect(screen.getByRole('status').textContent).toContain('완료');
+  expect(localStorage.getItem('veroro.activePet.v1.owner')).toBeNull();
 });
 it('expired recovery sessions cannot submit a replacement password', async () => {
   getUser.mockResolvedValue({ data: { user: null }, error: null });

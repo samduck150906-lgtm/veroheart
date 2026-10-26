@@ -234,9 +234,11 @@ export async function getUserProfile(userId: string) {
 }
 
 export async function getUserPets(userId: string) {
-  const { data, error } = await supabase.from('pets').select('*').eq('user_id', userId);
+  const { data, error } = await supabase.from('pets').select('*').eq('user_id', userId)
+    .order('created_at', { ascending: true }).order('id', { ascending: true });
   if (error) {
     notify.error('반려동물 정보를 불러오는데 실패했습니다.');
+    throw error; // A failed request is not an empty account; keep its saved selection.
   }
   return (data as SupabasePet[]) || [];
 }

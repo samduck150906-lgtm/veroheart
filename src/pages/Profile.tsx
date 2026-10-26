@@ -350,7 +350,7 @@ function ProfileContent() {
             <div>
               <TossSectionTitle
                 title="내 반려동물"
-                subtitle="기록·분석 기준이 되는 아이를 선택하세요"
+                subtitle="등록순 · 먼저 등록한 아이부터 표시해요. 기록·분석 기준이 되는 아이를 선택하세요."
                 right={
                   <button type="button" onClick={startAddPet} className="ui-text-button" style={{ padding: 0 }}>
                     <Plus size={14} /> 추가

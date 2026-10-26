@@ -19,6 +19,7 @@ import {
   signOut as supabaseSignOut
 } from '../lib/supabase';
 import { notify } from './useNotification';
+import { rememberSelectedPet, restoreSelectedPet, sortPetsByRegistration } from '../lib/petPreferences';
 import {
   mapProductFromSupabaseRow,
   mapPetProfileFromRow,
@@ -129,9 +130,11 @@ export const useStore = create<StoreState>((set, get) => ({
         getUserPets(userId), getFavorites(userId), getRecentViews(userId),
       ]);
       if (capturedEpoch !== sessionEpoch || get().userId !== userId) return;
-      const mapped = pets.map(mapPetProfileFromRow);
-      set({ pets: mapped, activePetId: mapped[0]?.id ?? null,
-        profile: mapped[0] ?? DEFAULT_USER_PET_PROFILE, favorites,
+      const mapped = sortPetsByRegistration(pets.map(mapPetProfileFromRow));
+      const active = restoreSelectedPet(userId, mapped, get().activePetId);
+      rememberSelectedPet(userId, active?.id ?? null);
+      set({ pets: mapped, activePetId: active?.id ?? null,
+        profile: active ?? DEFAULT_USER_PET_PROFILE, favorites,
         recentViews: recent.map(mapProductFromSupabaseRow).filter(Boolean) as Product[] });
     };
     // Subscribe before getSession, including guest startup. The callback is synchronous:
@@ -201,9 +204,10 @@ export const useStore = create<StoreState>((set, get) => ({
     const epoch = sessionEpoch;
     const rows = await getUserPets(userId);
     if (epoch !== sessionEpoch || get().userId !== userId) return;
-    const mapped = rows.map(mapPetProfileFromRow);
+    const mapped = sortPetsByRegistration(rows.map(mapPetProfileFromRow));
     const { activePetId } = get();
-    const nextActive = mapped.find((p) => p.id === activePetId) ?? mapped[0] ?? null;
+    const nextActive = restoreSelectedPet(userId, mapped, activePetId);
+    rememberSelectedPet(userId, nextActive?.id ?? null);
     set({
       pets: mapped,
       activePetId: nextActive?.id ?? null,
@@ -212,9 +216,12 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   selectPet: (petId) => {
-    const { pets } = get();
+    const { pets, userId } = get();
     const target = pets.find((p) => p.id === petId);
-    if (target) set({ activePetId: target.id, profile: target });
+    if (target) {
+      if (userId) rememberSelectedPet(userId, target.id);
+      set({ activePetId: target.id, profile: target });
+    }
   },
 
   savePet: async (data) => {
@@ -247,8 +254,9 @@ export const useStore = create<StoreState>((set, get) => ({
     const nextPets = exists
       ? pets.map((p) => (p.id === savedProfile.id ? savedProfile : p))
       : [...pets, savedProfile];
+    rememberSelectedPet(userId, savedProfile.id);
     set({
-      pets: nextPets,
+      pets: sortPetsByRegistration(nextPets),
       activePetId: savedProfile.id,
       profile: savedProfile,
     });
@@ -256,17 +264,20 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   removePet: async (petId) => {
-    const { userId, pets, activePetId } = get();
+    const { userId } = get();
     if (!userId) return;
     const epoch = sessionEpoch;
     const ok = await deleteUserPet(petId, userId);
     if (!ok || epoch !== sessionEpoch || get().userId !== userId) return;
+    const { pets, activePetId } = get();
     const nextPets = pets.filter((p) => p.id !== petId);
-    const nextActiveId = activePetId === petId ? (nextPets[0]?.id ?? null) : activePetId;
+    const nextActive = restoreSelectedPet(userId, nextPets, activePetId);
+    const nextActiveId = nextActive?.id ?? null;
+    rememberSelectedPet(userId, nextActiveId);
     set({
       pets: nextPets,
       activePetId: nextActiveId,
-      profile: nextPets.find((p) => p.id === nextActiveId) ?? DEFAULT_USER_PET_PROFILE,
+      profile: nextActive ?? DEFAULT_USER_PET_PROFILE,
     });
   },
 

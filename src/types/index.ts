@@ -2,6 +2,8 @@ import type { GuaranteedAnalysis } from '../analysis/types';
 
 export interface UserPetProfile {
   id: string;
+  /** Original registration timestamp; edits do not change list order. */
+  createdAt?: string;
   name: string;
   species: 'Dog' | 'Cat';
   age: number;

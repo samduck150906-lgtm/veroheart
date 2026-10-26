@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { manageAccount } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import { PRIVACY_CONTACT } from '../constants/privacyInfo';
+import { rememberSelectedPet } from '../lib/petPreferences';
 
 export default function AccountDelete() {
   const { userId, logout } = useStore();
@@ -15,6 +16,7 @@ export default function AccountDelete() {
     setBusy(true); setMessage('');
     try {
       await manageAccount('delete-account');
+      rememberSelectedPet(userId, null);
       setDeleted(true);
       await logout().catch(() => undefined);
     } catch (error) {

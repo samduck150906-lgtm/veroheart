@@ -412,6 +412,7 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
       {/* 반려동물 선택 카드 */}
       <div>
+        {pets.length > 1 && <p style={{ margin: '0 0 8px', fontSize: 12, color: 'var(--text-muted)' }}>등록순 · 먼저 등록한 아이부터 표시해요</p>}
         <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
           {pets.map((p) => {
             const active = selectedPetId === p.id;

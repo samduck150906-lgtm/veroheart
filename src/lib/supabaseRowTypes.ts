@@ -134,6 +134,7 @@ export function mapPetProfileFromRow(p: SupabasePet): UserPetProfile {
   const weight = toNum(p.weight ?? undefined);
   return {
     id: p.id,
+    createdAt: p.created_at,
     name: p.name,
     species: p.pet_type === 'cat' ? 'Cat' : 'Dog',
     age: ageFromAgeGroup(p.age_group),
