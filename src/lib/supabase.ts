@@ -203,10 +203,8 @@ export async function getCurrentUser() {
 }
 
 export async function getUserProfile(userId: string) {
-  const { data, error } = await supabase.from('users').select('*').eq('id', userId).single();
-  if (error && error.code !== 'PGRST116') {
-    notify.error('프로필 정보를 불러오는데 실패했습니다.');
-  }
+  const { data, error } = await supabase.from('users').select('id,nickname').eq('id', userId).maybeSingle();
+  if (error) throw error;
   return data;
 }
 

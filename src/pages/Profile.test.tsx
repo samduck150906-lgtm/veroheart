@@ -12,12 +12,13 @@ const h = vi.hoisted(() => ({
     toggleFavorite: vi.fn(),
     selectPet: vi.fn(), savePet: vi.fn(), removePet: vi.fn(), logout: vi.fn(),
   },
-  currentUser: vi.fn(), resetPassword: vi.fn(), manageAccount: vi.fn(), savedProducts: vi.fn(),
+  currentUser: vi.fn(), userProfile: vi.fn(), resetPassword: vi.fn(), manageAccount: vi.fn(), savedProducts: vi.fn(),
 }));
 vi.mock('../store/useStore', () => ({ useStore: Object.assign(() => h.state, { getState: () => h.state }) }));
 vi.mock('../lib/supabase', async (importOriginal) => ({
   ...await importOriginal<typeof import('../lib/supabase')>(),
   getCurrentUser: h.currentUser,
+  getUserProfile: h.userProfile,
   getVisibleProductsByIds: h.savedProducts,
   manageAccount: h.manageAccount,
   supabase: { auth: { resetPasswordForEmail: h.resetPassword } },
@@ -51,6 +52,7 @@ beforeEach(() => {
   h.state.catalogRevision = 0;
   h.savedProducts.mockReset().mockResolvedValue([]);
   h.currentUser.mockResolvedValue({ id: 'owner', email: 'owner@example.com', app_metadata: { provider: 'email', providers: ['email'] } });
+  h.userProfile.mockReset().mockImplementation(async (id: string) => ({ id, nickname: '가입닉네임' }));
   h.resetPassword.mockResolvedValue({ data: {}, error: null });
   h.state.logout.mockResolvedValue(undefined);
   h.manageAccount.mockResolvedValue(undefined);
@@ -120,13 +122,57 @@ afterEach(cleanup);
 
 describe('Profile navigation and account settings', () => {
   it('opens real account details from the account row instead of leaving it inert', async () => {
+    h.currentUser.mockResolvedValueOnce({ id: 'owner', email: 'owner@example.com', phone: '+821012345678', user_metadata: { nickname: '이전닉네임' }, app_metadata: { provider: 'email', providers: ['email'] } });
     mount();
     fireEvent.click(screen.getByRole('link', { name: /로그인한 계정을 관리해요/ }));
     expect(await screen.findByText('owner@example.com')).toBeTruthy();
+    expect(screen.getByText('가입닉네임')).toBeTruthy();
+    expect(screen.queryByText('이전닉네임')).toBeNull();
+    expect(screen.getByText('+821012345678')).toBeTruthy();
     expect(screen.getByText('이메일')).toBeTruthy();
     expect(screen.getByRole('link', { name: '계정 및 데이터 삭제' }).getAttribute('href')).toBe('/account/delete');
     expect(h.resetPassword).not.toHaveBeenCalled();
     expect(screen.queryByRole('button', { name: '식이 다이어리' })).toBeNull();
+  });
+
+  it('shows an explicit unset phone state instead of inventing contact information', async () => {
+    mount('/profile?tab=account');
+    await screen.findByText('owner@example.com');
+    expect(screen.getByText('등록된 휴대폰 번호가 없어요')).toBeTruthy();
+    expect(screen.getByText('가입닉네임')).toBeTruthy();
+  });
+
+  it('uses a supplied name and phone metadata for older accounts without a public nickname', async () => {
+    h.userProfile.mockResolvedValueOnce(null);
+    h.currentUser.mockResolvedValueOnce({ id: 'owner', email: 'owner@example.com', phone: ' ', user_metadata: { nickname: ' ', name: { invalid: true }, full_name: '가입이름', phone_number: '010-1234-5678' }, app_metadata: { provider: 'kakao', providers: ['kakao'] } });
+    mount('/profile?tab=account');
+    expect(await screen.findByText('가입이름')).toBeTruthy();
+    expect(screen.getByText('010-1234-5678')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: '비밀번호 재설정 메일 받기' })).toBeNull();
+  });
+
+  it('distinguishes a failed profile lookup from unset fields and supports retry', async () => {
+    h.userProfile.mockRejectedValueOnce(new Error('offline'));
+    mount('/profile?tab=account');
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.queryByText('등록된 휴대폰 번호가 없어요')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '계정 정보 다시 불러오기' }));
+    expect(await screen.findByText('가입닉네임')).toBeTruthy();
+  });
+
+  it('ignores an old nickname response when the signed-in account changes', async () => {
+    let finishProfile!: (value: { id: string; nickname: string }) => void;
+    h.userProfile.mockImplementationOnce(() => new Promise(resolve => { finishProfile = resolve; }));
+    const view = render(<MemoryRouter initialEntries={['/profile?tab=account']}><Profile /></MemoryRouter>);
+    await waitFor(() => expect(h.userProfile).toHaveBeenCalledWith('owner'));
+    h.state.userId = 'next-owner';
+    h.currentUser.mockResolvedValueOnce({ id: 'next-owner', email: 'next@example.com', user_metadata: { nickname: '다음계정' }, app_metadata: { provider: 'email', providers: ['email'] } });
+    h.userProfile.mockResolvedValueOnce({ id: 'next-owner', nickname: '다음계정' });
+    view.rerender(<MemoryRouter initialEntries={['/profile?tab=account']}><Profile /></MemoryRouter>);
+    expect(await screen.findByText('다음계정')).toBeTruthy();
+    await act(async () => finishProfile({ id: 'owner', nickname: '이전계정' }));
+    expect(screen.queryByText('이전계정')).toBeNull();
+    expect(screen.queryByText('owner@example.com')).toBeNull();
   });
 
   it('redirects legacy diary links to the diary page without the account settings footer', async () => {

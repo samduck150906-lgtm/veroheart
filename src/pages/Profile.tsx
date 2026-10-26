@@ -504,7 +504,7 @@ function ProfileContent() {
         <SavedProducts key={JSON.stringify([userId, favorites, catalogRevision])} userId={userId} favorites={favorites} />
       )}
 
-      {activeTab === 'account' && <AccountSettings />}
+      {activeTab === 'account' && <AccountSettings key={userId} />}
 
       {/* 반려동물 삭제 확인 */}
       {deleteTarget && (
