@@ -30,10 +30,10 @@ describe('ProductCard catalog identity', () => {
 
     expect(screen.getByText('오리지널 독')).toBeTruthy();
     expect(screen.getByText('닭고기 · 성견 · 2kg')).toBeTruthy();
-    expect(screen.getByText('사용자 스캔 · 검증 전')).toBeTruthy();
+    expect(screen.queryByText(/검증 전/)).toBeNull();
     expect(screen.queryByText('쿠팡검색')).toBeNull();
     expect(screen.queryByText(product.name)).toBeNull();
-    expect(screen.getByText('분석 정보 부족')).toBeTruthy();
+    expect(screen.getByText('원료 등록 필요')).toBeTruthy();
     expect(screen.queryByText(/^\d+점$/)).toBeNull();
   });
 });

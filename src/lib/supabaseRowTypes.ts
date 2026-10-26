@@ -311,6 +311,7 @@ export function mapProductFromSupabaseRow(p: SupabaseProductRow): Product {
     catalogSourceNote: p.catalog_source_note ?? undefined,
     requiresVeterinaryGuidance: p.requires_veterinary_guidance ?? false,
     analysisStatus: mappedAnalysisStatus,
+    ingredientDataLoaded: p.product_ingredients !== undefined || p.product_ingredient_label_sets !== undefined,
     unknownIngredientTerms,
     ingredientLabelSetId: currentLabelSet?.id,
     firstIngredientResolved: currentLabelSet ? Boolean(resolvedLabelIngredients[0]) : undefined,

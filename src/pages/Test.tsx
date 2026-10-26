@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { VIRAL_TEST_CAMPAIGN, KAKAO_SHARE_MESSAGES } from '../copy/marketing';
 import { isKakaoShareConfigured, kakaoShareTextWithLink } from '../lib/kakaoShare';
 import { notify } from '../store/useNotification';
-import { usePublicSettings } from '../lib/publicSettings';
 import { publicUrl } from '../lib/publicUrls';
 
 type AxisKey = 'S' | 'A' | 'V' | 'F';
@@ -59,7 +58,6 @@ function computeResultType(scores: Scores, answers: number[]): string {
 }
 
 export default function Test() {
-  const { viralEventVisible } = usePublicSettings();
   const navigate = useNavigate();
   const [kakaoSharing, setKakaoSharing] = useState(false);
   const [step, setStep] = useState(0);
@@ -110,7 +108,7 @@ export default function Test() {
 
   const handleKakaoShare = async () => {
     if (!isKakaoShareConfigured()) {
-      notify.warning('카카오 공유를 쓰려면 .env에 VITE_KAKAO_JAVASCRIPT_KEY를 설정해 주세요. 지금은 복사 버튼을 이용해 주세요.');
+      notify.warning('카카오톡 공유를 준비하고 있어요. 지금은 복사 버튼을 이용해 주세요.');
       return;
     }
     setKakaoSharing(true);
@@ -122,7 +120,7 @@ export default function Test() {
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       if (msg === 'KAKAO_KEY_MISSING') {
-        notify.warning('카카오 JavaScript 키가 없습니다. 배포 환경 변수를 확인해 주세요.');
+        notify.warning('카카오톡 공유를 사용할 수 없어요. 복사 버튼을 이용해 주세요.');
       } else {
         notify.error('카카오톡 공유를 열지 못했어요. 잠시 후 다시 시도하거나 복사를 이용해 주세요.');
       }
@@ -132,17 +130,7 @@ export default function Test() {
   };
 
 
-  // 관리자 콘솔(시스템 설정)에서 이벤트 노출을 끌 수 있다.
-  if (!viralEventVisible) {
-    return (
-      <div style={{ padding: '80px 24px', textAlign: 'center' }}>
-        <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '10px' }}>이벤트가 종료되었어요</h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
-          다음 이벤트로 곧 다시 찾아올게요.
-        </p>
-      </div>
-    );
-  }
+  // The personality quiz is a permanent activity, independent of reward campaigns.
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '120px' }}>
       <section style={{ marginBottom: '14px' }}>
@@ -156,7 +144,7 @@ export default function Test() {
       </section>
 
       <section style={{ marginBottom: '16px', padding: '18px', borderRadius: '18px', background: '#fff', border: '1px solid #F3F4F6' }}>
-        <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, color: '#9CA3AF', letterSpacing: '0.05em' }}>VIRAL TEST</p>
+        <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, color: '#9CA3AF', letterSpacing: '0.05em' }}>성향 테스트</p>
         <h1 style={{ margin: '6px 0 8px', fontSize: '22px', lineHeight: 1.35 }}>{VIRAL_TEST_CAMPAIGN.title}</h1>
         <p style={{ margin: 0, color: '#6B7280', fontSize: '13px', fontWeight: 600 }}>{VIRAL_TEST_CAMPAIGN.subtitle}</p>
       </section>
@@ -267,7 +255,7 @@ export default function Test() {
             </button>
             {!isKakaoShareConfigured() && (
               <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9CA3AF', lineHeight: 1.45 }}>
-                카카오 원클릭 공유는 VITE_KAKAO_JAVASCRIPT_KEY 설정 후 사용할 수 있어요.
+                지금은 결과 복사 버튼으로 친구에게 공유할 수 있어요.
               </p>
             )}
           </div>

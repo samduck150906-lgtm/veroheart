@@ -85,7 +85,7 @@ describe('PDP redesign parts', () => {
 
   it('StickyCtaBar: 가격·구매 대신 "우리 아이가 먹었어요"(섭취 기록) CTA를 노출한다', () => {
     const html = renderToStaticMarkup(
-      <StickyCtaBar isFav={false} isComparing={false} onFav={() => {}} onCompare={() => {}} onLog={() => {}} />
+      <StickyCtaBar isFav={false} onFav={() => {}} onLog={() => {}} />
     );
     expect(html).toContain('우리 아이가 먹었어요');
     // 가격·구매·장바구니·외부 링크 흔적이 남지 않아야 함

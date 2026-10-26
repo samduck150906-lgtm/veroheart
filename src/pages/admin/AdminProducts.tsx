@@ -249,6 +249,7 @@ const AdminProducts: React.FC = () => {
   const openCreateModal = () => {
     setCurrentProduct({
       target_pet_type: 'dog',
+      main_category: mainCategoryNames.includes('사료') ? '사료' : mainCategoryNames[0],
       target_life_stage: [],
       product_health_concerns: [],
       min_price: 0,
@@ -332,6 +333,10 @@ const AdminProducts: React.FC = () => {
       setFormError('제품명과 브랜드는 필수입니다.');
       return;
     }
+    if (!currentProduct.main_category?.trim()) {
+      setFormError('대분류를 선택해 주세요.');
+      return;
+    }
     const sellerLink = (currentProduct.coupang_link || '').trim();
     if (!sellerLink) {
       setFormError('판매처 링크는 필수입니다. 가격 확인의 근거가 됩니다.');
@@ -381,7 +386,7 @@ const AdminProducts: React.FC = () => {
 
     // 보장성분: 입력값이 하나라도 있을 때만 함께 전송(숫자로 변환)
     const hasNutrition = NUTRITION_FIELDS.some(({ key }) => nutrition[key].trim() !== '');
-    const num = (s: string) => Number(s);
+    const num = (s: string) => s.trim() === '' ? null : Number(s);
     const nutritionPayload = hasNutrition
       ? {
           crude_protein: num(nutrition.crude_protein),
@@ -988,7 +993,7 @@ const AdminProducts: React.FC = () => {
                 label="메인 카테고리"
                 value={currentProduct.main_category}
                 options={mainCategoryNames}
-                onChange={(value) => setCurrentProduct({ ...currentProduct, main_category: value })}
+                onChange={(value) => setCurrentProduct({ ...currentProduct, main_category: value, sub_category: '' })}
               />
               <SelectField
                 id="pf-verification"

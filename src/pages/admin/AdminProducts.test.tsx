@@ -213,12 +213,25 @@ describe('AdminProducts', () => {
     expect(payload.product).toMatchObject({
       name: '새 사료',
       brand_name: '베로로',
+      main_category: '사료',
       is_visible: true,
       coupang_link: 'https://www.coupang.com/vp/products/7654321?itemId=1',
       // 링크에서 뽑은 상품번호가 판매가 확인의 열쇠다.
       coupang_product_id: '7654321',
     });
     expect(Array.isArray(payload.ingredients)).toBe(true);
+  });
+
+  it('keeps unreported nutrition blank when one nutrient is supplied', async () => {
+    renderProducts();
+    fireEvent.click(await screen.findByText('신규 제품 등록'));
+    fireEvent.change(screen.getByLabelText('제품명*'), { target: { value: '새 사료' } });
+    fireEvent.change(screen.getByLabelText('브랜드*'), { target: { value: '베로로' } });
+    fireEvent.change(screen.getByLabelText('판매처 링크 *'), { target: { value: 'https://example.com/product' } });
+    fireEvent.change(screen.getByLabelText('조단백질 (%)'), { target: { value: '22' } });
+    fireEvent.click(screen.getByText('저장하기'));
+    await waitFor(() => expect(h.saveProduct).toHaveBeenCalledTimes(1));
+    expect(h.saveProduct.mock.calls[0][0].nutrition).toMatchObject({ crude_protein: 22, moisture: null, crude_fat: null, calcium: null });
   });
 
   it('판매처 링크가 없으면 저장하지 않는다', async () => {

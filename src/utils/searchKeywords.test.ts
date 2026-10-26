@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { countKeywordMatches, productMatchesKeyword, visibleSymptomKeywords } from './searchKeywords';
+import { countKeywordMatches, productMatchesKeyword, visibleSymptomKeywords, recommendedSearchKeywords } from './searchKeywords';
 import type { Product } from '../types';
 
 function product(over: Partial<Product> = {}): Product {
@@ -46,8 +46,17 @@ describe('추천 키워드', () => {
     expect(countKeywordMatches(products, '치석')).toBe(0);
   });
 
-  it('제품이 아직 안 실렸으면 칩을 그대로 둔다', () => {
-    // 로딩 중에 칩이 사라졌다 나타나면 더 어색하다.
-    expect(visibleSymptomKeywords([], ['관절', '치석'])).toEqual(['관절', '치석']);
+  it('does not advertise unsupported health keywords before any catalog is loaded', () => {
+    expect(visibleSymptomKeywords([], ['관절', '치석'])).toEqual([]);
+  });
+
+  it('fills sparse health suggestions with real searchable brands and product names', () => {
+    const catalog = [product({ name: '제품 원문', displayName: '연어 레시피', brand: '브랜드 A' }), product({ id: 'p2', name: '시니어 레시피', brand: '브랜드 B' })];
+    expect(recommendedSearchKeywords(catalog)).toEqual(['브랜드 A', '브랜드 B', '연어 레시피', '시니어 레시피']);
+    expect(recommendedSearchKeywords([])).toEqual([]);
+  });
+
+  it('matches the displayed product name used by search', () => {
+    expect(productMatchesKeyword(product({ name: '수집 제품 1', displayName: '관절 케어' }), '관절')).toBe(true);
   });
 });

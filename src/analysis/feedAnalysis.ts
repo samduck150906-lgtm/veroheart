@@ -297,17 +297,20 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
   if (hasNutritionData && aafco.evaluated && !aafco.passed) cautions.push(...aafco.details);
   if (caP.note) cautions.push(caP.note);
   if (macros && macros.carb >= 55) cautions.push(`추정 탄수화물이 ${Math.round(macros.carb)}%로 다소 높아요`);
-  if (iq.total === 0) cautions.push('등록된 원재료 정보가 없어 원료 품질은 평가하지 못했어요');
-  else if (analysisReadiness.status !== 'ready') cautions.push(analysisReadinessCopy(analysisReadiness.status));
+  const readinessMessage = analysisReadiness.status === 'unavailable' && iq.total > 0
+    ? '전성분은 등록되어 있지만 원료별 분석 정보가 아직 준비되지 않았어요'
+    : analysisReadinessCopy(analysisReadiness.status);
+  if (iq.total === 0 && !product.unknownIngredientTerms?.length) cautions.push('전성분이 아직 등록되지 않아 원료 품질은 평가하지 못했어요');
+  else if (analysisReadiness.status !== 'ready') cautions.push(readinessMessage);
 
   // ── 요약(한 줄) ──
   const summary = (() => {
     // 데이터 부족을 "미포함"으로 단정하지 않는다. 원재료·보장성분이 모두 없으면
     // grade 기반 부정 문장("주의가 필요한 성분…") 대신 정보 부족을 명시한다.
-    if (iq.total === 0 && !hasNutritionData) return '원재료·영양 정보가 부족해 아직 정확히 평가하기 어려워요.';
+    if (iq.total === 0 && !hasNutritionData && !product.unknownIngredientTerms?.length) return '원재료·영양 정보가 부족해 아직 정확히 평가하기 어려워요.';
     if (allergyHits.length > 0) return `${profile.name}가 피해야 할 성분이 있어 급여 전 확인이 필요해요.`;
     if (allergyCautions.length > 0) return `${profile.name}의 알레르기와 관련된 원료가 있어 급여 전 확인이 필요해요.`;
-    if (analysisReadiness.status !== 'ready') return `${analysisReadinessCopy(analysisReadiness.status)}.`;
+    if (analysisReadiness.status !== 'ready') return `${readinessMessage}.`;
     if (grade === 'A+' || grade === 'A') return iq.firstIsAnimalProtein ? '동물성 단백질 중심의 균형 잡힌 우수한 사료예요.' : '전반적으로 품질이 우수한 사료예요.';
     if (grade === 'B') return '무난하게 급여할 수 있는 사료예요.';
     if (grade === 'C') return '나쁘지 않지만 확인할 점이 몇 가지 있어요.';

@@ -17,7 +17,7 @@ const product: SupabaseProductRow = { id: 'p', name: 'Food A', brand_name: 'Bran
 
 function respond(row: SupabaseProductRow) {
   api.rpc.mockResolvedValue({ data: [{ product_id: row.id, rank: 100 }], error: null });
-  api.from.mockImplementation(() => {
+  api.from.mockImplementation((table: string) => {
     let columns = '';
     const data = () => ({ ...row,
       product_ingredient_label_sets: columns.includes('product_ingredient_label_sets') ? row.product_ingredient_label_sets : undefined,
@@ -26,7 +26,7 @@ function respond(row: SupabaseProductRow) {
     const chain: Record<string, unknown> = {
       select: (selected: string) => { columns = selected; return chain; },
       single: () => Promise.resolve({ data: data(), error: null }),
-      then: (resolve: (value: unknown) => void) => Promise.resolve({ data: [data()], error: null }).then(resolve),
+      then: (resolve: (value: unknown) => void) => Promise.resolve({ data: table === 'recent_views' ? [{ product_id: row.id, viewed_at: '2026-10-26', products: data() }] : [data()], error: null }).then(resolve),
     };
     for (const name of ['eq', 'in', 'order', 'limit', 'range', 'overlaps']) chain[name] = () => chain;
     return chain;
@@ -42,6 +42,13 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe('current ingredient evidence across product entry points', () => {
+  it('hydrates recently viewed products with current label and nutrition evidence', async () => {
+    respond({ ...product, nutritional_profiles: [{ crude_protein: 30, crude_fat: 15, moisture: 10 }] });
+    const { getRecentViews } = await import('./supabase');
+    const [recent] = await getRecentViews('user');
+    expect(recent.product_ingredient_label_sets).toEqual([current]);
+    expect(recent.nutritional_profiles).toEqual([{ crude_protein: 30, crude_fat: 15, moisture: 10 }]);
+  });
   it('loads the same reported nutrition for scored catalog candidates and product detail', async () => {
     respond({ ...product, nutritional_profiles: [{ crude_protein: 30, crude_fat: 15, crude_fiber: 3, crude_ash: 8, moisture: 10, calcium: 1, phosphorus: 0.8 }] });
     const { searchProductsPage, getProductDetail } = await import('./supabase');

@@ -23,8 +23,8 @@ const BOOLEAN_SETTINGS: { key: SettingKey; title: string; description: string }[
   },
   {
     key: 'viral_event_visible',
-    title: '바이럴 이벤트 노출',
-    description: '성향 테스트·공유 이벤트 진입 노출 여부입니다.',
+    title: '공유 리워드 이벤트 노출',
+    description: '리워드가 있는 공유 이벤트의 노출 여부입니다. 성향 테스트는 이 설정과 관계없이 이용할 수 있습니다.',
   },
   {
     key: 'hide_unverified_products',

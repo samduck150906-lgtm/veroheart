@@ -246,11 +246,13 @@ export default function AnalysisResult() {
   const allergyDisplay = useMemo(
     () => breakdown
       ? buildAllergyDisplayState(breakdown, profile.name || '우리 아이', {
-          hasIngredientData: ingredients.length > 0,
+          hasIngredientData: ingredients.length + (product?.unknownIngredientTerms?.length ?? 0) > 0,
           hasAllergyProfile: hasPetProfile && profile.allergies.length > 0,
+          analysisStatus: display?.analysisReadiness.status,
+          unknownIngredientTerms: product?.unknownIngredientTerms,
         })
       : null,
-    [breakdown, profile.name, profile.allergies.length, ingredients.length, hasPetProfile],
+    [breakdown, profile.name, profile.allergies.length, ingredients.length, hasPetProfile, display, product],
   );
 
   // ── Phase 2 별칭 관찰(기본 OFF) ──
@@ -459,7 +461,7 @@ export default function AnalysisResult() {
           {diseaseResults.length > 0 && <DiseaseFitCard results={diseaseResults} petName={profile.name} />}
           <HealthConcernEvidence presentation={concernPresentation} />
           {canShowScore && <InfoBlock title="좋은 점" color={RISK.safe.color} items={positives} empty="특별히 강조할 좋은 점을 찾지 못했어요." />}
-          <InfoBlock title="주의 사항" color={RISK.caution.color} items={cautions} empty={canShowScore ? '현재 등록된 정보에서 별도 주의 항목은 확인되지 않았어요.' : '전체 원료 정보가 없어 주의 항목을 모두 확인할 수 없어요.'} />
+          <InfoBlock title="주의 사항" color={RISK.caution.color} items={cautions} empty={canShowScore ? '현재 등록된 정보에서 별도 주의 항목은 확인되지 않았어요.' : '아직 확인하지 못한 원료가 있어 주의 항목을 모두 안내할 수 없어요.'} />
           {canShowScore && <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <TargetCard title="등록 대상" tone="good" items={recommendTargets} />
             <TargetCard title="확인 필요" tone="bad" items={notRecommendTargets} />
@@ -675,7 +677,7 @@ export function DiseaseFitCard({ results, petName }: { results: ActiveDiseaseRes
         <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-dark)' }}>{name} 건강 고민 맞춤 분석</span>
       </div>
       <div style={{ fontSize: 11.5, color: 'var(--text-light)', fontWeight: 600, lineHeight: 1.5, marginBottom: 14 }}>
-        등록한 건강 고민에 대해 영양 가이드라인(NRC 기준) 규칙을 점검했어요. 참고용이며 수의 진단을 대체하지 않아요.
+        NRC 영양 가이드라인을 참고해 등록한 건강 고민별 주의할 점을 확인했어요. 참고용이며 수의 진단을 대체하지 않아요.
       </div>
       <div style={{ display: 'grid', gap: 12 }}>
         {results.map((r) => <DiseaseRow key={r.disease.id} r={r} />)}

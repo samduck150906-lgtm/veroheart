@@ -5,6 +5,7 @@ import { useStore } from '../store/useStore';
 import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import { getProductDisplayParts } from '../utils/productDisplay';
 import ProductVerificationBadge from './ProductVerificationBadge';
+import { describeIngredientAvailability } from '../utils/productDataCompleteness';
 
 type ProductCardProps = {
   product: Product;
@@ -183,7 +184,7 @@ export default function ProductCard({
                     fontSize: '12px',
                   }}
                 >
-                  {canShowScore ? `${score}점` : '분석 정보 부족'}
+                  {canShowScore ? `${score}점` : describeIngredientAvailability(product).label}
                 </div>
               </div>
             </div>
@@ -283,7 +284,7 @@ export default function ProductCard({
                   fontSize: compact ? '12px' : '14px',
                 }}
               >
-                {canShowScore ? `${score}점` : '분석 정보 부족'}
+                {canShowScore ? `${score}점` : describeIngredientAvailability(product).label}
               </div>
             </div>
           </div>

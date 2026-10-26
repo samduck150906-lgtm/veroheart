@@ -41,7 +41,7 @@ export default function ViralEvent() {
 
   const handleKakaoShare = async () => {
     if (!isKakaoShareConfigured()) {
-      notify.warning('카카오 공유를 쓰려면 .env에 VITE_KAKAO_JAVASCRIPT_KEY를 설정해 주세요.');
+      notify.warning('카카오톡 공유를 사용할 수 없어요. 복사 버튼을 이용해 주세요.');
       return;
     }
     setKakaoSharing(true);
@@ -58,10 +58,11 @@ export default function ViralEvent() {
   if (!viralEventVisible) {
     return (
       <div style={{ padding: '80px 24px', textAlign: 'center' }}>
-        <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '10px' }}>이벤트가 종료되었어요</h2>
+        <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '10px' }}>진행 중인 공유 이벤트가 없어요</h2>
         <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
-          다음 이벤트로 곧 다시 찾아올게요.
+          우리 아이 성향 테스트는 언제든 참여할 수 있어요.
         </p>
+        <button type="button" className="btn btn-primary" onClick={() => navigate(SHARE_PATH)}>성향 테스트 시작하기</button>
       </div>
     );
   }

@@ -23,11 +23,10 @@ export default function Brand() {
     startTransition(() => setIsLoading(true));
     void Promise.all([getProductsByBrand(decoded), getBrands()]).then(([prods, brands]) => {
       if (cancelled) return;
-      const result = prods.length > 0 ? prods : products.filter((p) => p.brand === decoded);
-      setBrandProducts(result);
+      setBrandProducts(prods);
       setOtherBrands(brands.filter((b) => b !== decoded).slice(0, 10));
       setIsLoading(false);
-    });
+    }).catch(() => { if (!cancelled) { setBrandProducts([]); setIsLoading(false); } });
     return () => {
       cancelled = true;
     };

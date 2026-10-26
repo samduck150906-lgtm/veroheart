@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import ProductThumb from './ProductThumb';
-import { useStore, MAX_COMPARISON } from '../store/useStore';
-import { notify } from '../store/useNotification';
+import { useStore } from '../store/useStore';
+import { describeIngredientAvailability } from '../utils/productDataCompleteness';
 import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import { getProductDisplayParts } from '../utils/productDisplay';
 import { fitShortLabel, gradePalette, VR } from '../lib/veroroDesign';
@@ -14,16 +14,15 @@ interface ProductRowProps {
 
 /**
  * 검색 결과 카드 — 디자인 핸드오프 Search 스크린의 가로형 카드.
- * 썸네일 / 브랜드+등급 / 제품명 / 비교·찜 액션 / 적합도 한 줄.
+ * 썸네일 / 브랜드+등급 / 제품명 / 찜 액션 / 적합도 한 줄.
  */
 export default function ProductRow({ product }: ProductRowProps) {
   const navigate = useNavigate();
-  const { profile, favorites, toggleFavorite, comparisonList, addToComparison, removeFromComparison } = useStore();
+  const { profile, favorites, toggleFavorite } = useStore();
 
   const { score, grade, canShowScore } = resolveProductDisplayVerdict(product, profile);
   const palette = canShowScore ? gradePalette(grade) : { fg: 'var(--text-muted)', bg: 'var(--vr-soft)' };
   const isFav = favorites.includes(product.id);
-  const inCompare = comparisonList.includes(product.id);
   const petName = profile.name || '우리 아이';
   const display = getProductDisplayParts(product);
 
@@ -56,7 +55,7 @@ export default function ProductRow({ product }: ProductRowProps) {
                 color: palette.fg, background: palette.bg,
               }}
             >
-              {canShowScore ? `${grade} ${score}` : '분석 정보 부족'}
+              {canShowScore ? `${grade} ${score}` : describeIngredientAvailability(product).label}
             </span>
           </span>
           <span style={{
@@ -86,26 +85,6 @@ export default function ProductRow({ product }: ProductRowProps) {
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginTop: '8px' }}>
-          <button
-            type="button"
-            onClick={() => {
-              if (inCompare) {
-                removeFromComparison(product.id);
-                return;
-              }
-              if (!addToComparison(product.id)) {
-                notify.warning(`비교는 최대 ${MAX_COMPARISON}개까지 담을 수 있어요.`);
-              }
-            }}
-            style={{
-              padding: '5px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: 800, cursor: 'pointer',
-              border: `1.5px solid ${inCompare ? 'var(--vr-inverse)' : 'var(--vr-line)'}`,
-              background: inCompare ? 'var(--vr-inverse)' : 'var(--surface)',
-              color: inCompare ? 'var(--vr-on-inverse)' : 'var(--vr-body-2)',
-            }}
-          >
-            {inCompare ? '비교 담김' : '비교'}
-          </button>
           <button
             type="button"
             onClick={() => toggleFavorite(product.id)}

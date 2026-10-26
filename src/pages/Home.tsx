@@ -9,6 +9,7 @@ import { gradePalette, VR } from '../lib/veroroDesign';
 import { useProductCategories } from '../lib/productCategories';
 import { HOME_RECOMMENDATION_MIN_SCORE } from '../lib/homeRecommendations';
 import { useHomeRecommendations } from '../hooks/useHomeRecommendations';
+import { describeIngredientAvailability } from '../utils/productDataCompleteness';
 import type { PetSafetyScan } from '../utils/petSafety';
 import type { Product } from '../types';
 
@@ -18,7 +19,7 @@ import type { Product } from '../types';
 // DB 가 작아 보이는 역효과만 있었다.
 
 export default function Home() {
-  const { profile, recentViews, isLoggedIn } = useStore();
+  const { profile, recentViews, isLoggedIn, catalogRevision } = useStore();
   const navigate = useNavigate();
   const categories = useProductCategories();
 
@@ -39,7 +40,7 @@ export default function Home() {
 
   const petLabel = isLoggedIn && profile.name ? profile.name : '우리 아이';
 
-  const recommendations = useHomeRecommendations(profile, isLoggedIn);
+  const recommendations = useHomeRecommendations(profile, isLoggedIn, catalogRevision);
 
   /** 최근 본 제품에서 걸린 성분들 — 위험/주의 두 단계로 나눠 보여준다 */
   const alertRows = useMemo(() => {
@@ -219,7 +220,7 @@ export default function Home() {
                       className="vr-grade-pill"
                       style={{ position: 'absolute', left: '8px', top: '8px', color: palette.fg, background: palette.bg }}
                     >
-                      {canShowScore ? grade : '정보 부족'}
+                      {canShowScore ? grade : describeIngredientAvailability(p).label}
                     </span>
                   </span>
                   <span style={{ display: 'block', fontSize: '11.5px', color: VR.sub, fontWeight: 700, marginTop: '8px' }}>{resolveBrandLabel(p)}</span>
@@ -314,7 +315,7 @@ export default function Home() {
         }}
       >
         <span style={{ flex: 1 }}>
-          <span style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, color: '#FFD90A', letterSpacing: '0.04em' }}>EVENT</span>
+          <span style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, color: '#FFD90A', letterSpacing: '0.04em' }}>성향 테스트</span>
           <span style={{ display: 'block', fontSize: '17px', fontWeight: 800, color: 'var(--vr-on-inverse)', letterSpacing: '-0.03em', marginTop: '3px' }}>
             우리 아이 성향 테스트 8문항
           </span>

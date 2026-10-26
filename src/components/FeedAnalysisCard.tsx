@@ -5,6 +5,7 @@
 import { Check, X, AlertTriangle, ShieldCheck, FlaskConical, Flame } from 'lucide-react';
 import type { Product, UserPetProfile } from '../types';
 import { analyzeFeed, type FeedGrade } from '../analysis/feedAnalysis';
+import { describeIngredientAvailability } from '../utils/productDataCompleteness';
 
 const GRADE_TONE: Record<FeedGrade, { fg: string; bg: string; label: string }> = {
   'A+': { fg: '#15803D', bg: '#DCFCE7', label: '매우 우수' },
@@ -55,7 +56,7 @@ export default function FeedAnalysisCard({ product, profile }: { product: Produc
           <FlaskConical size={19} color="#7C3AED" /> 사료성분 분석
         </div>
         <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--pdp-ink-muted)', background: 'var(--pdp-surface-soft)', borderRadius: 999, padding: '4px 10px', whiteSpace: 'nowrap' }}>
-          규칙 기반 · AI 미사용
+          원료·영양 분석
         </span>
       </div>
 
@@ -108,7 +109,7 @@ export default function FeedAnalysisCard({ product, profile }: { product: Produc
         </div>
       ) : (
         <div style={{ background: 'var(--pdp-surface-soft)', borderRadius: 16, padding: '14px 16px', marginBottom: 14, fontSize: 12.5, fontWeight: 600, color: 'var(--pdp-ink-muted)', lineHeight: 1.5 }}>
-          라벨 보장성분(조단백·조지방 등)이 등록돼 있지 않아 <b>원재료 기반</b>으로만 분석했어요.
+          {a.hasNutritionData ? '영양 수치가 일부만 등록되어 있어 영양 균형을 계산하지 않았어요.' : '라벨의 영양 수치(조단백·조지방 등)가 아직 등록되지 않았어요.'}
         </div>
       )}
 
@@ -142,8 +143,7 @@ export default function FeedAnalysisCard({ product, profile }: { product: Produc
           >
             <span style={{ flexShrink: 0, fontSize: 13, fontWeight: 900, marginTop: 1 }}>·</span>
             <span>
-              원재료 정보가 아직 등록되지 않아 <b>동물성 단백질·첨가물·기능성 원료</b>는 확인하기 어려워요.
-              (정보가 없다는 뜻이지, 없다는 판정이 아니에요)
+              {describeIngredientAvailability(product).detail}
             </span>
           </div>
         ) : (

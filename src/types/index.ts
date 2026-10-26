@@ -125,6 +125,8 @@ export interface Product {
   catalogSourceNote?: string;
   requiresVeterinaryGuidance?: boolean;
   analysisStatus?: ProductAnalysisStatus;
+  /** False for lightweight rows whose ingredient joins have not been loaded. */
+  ingredientDataLoaded?: boolean;
   /** 현재 라벨 세트에서 canonical 원료로 확정되지 않은 원문. */
   unknownIngredientTerms?: string[];
   ingredientLabelSetId?: string;

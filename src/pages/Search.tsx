@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import {
   X,
   Trash2,
@@ -25,7 +25,7 @@ import { rankProductsForProfile } from '../utils/score';
 import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import FilterChip from '../components/ui/FilterChip';
 import { buildSearchSuggestions, deriveBrandOptions, ingredientsUsedBy, type Suggestion } from '../utils/searchSuggestions';
-import { productsForPetFilter, visibleSymptomKeywords } from '../utils/searchKeywords';
+import { productsForPetFilter, recommendedSearchKeywords } from '../utils/searchKeywords';
 import { isHealthFilterAvailable } from '../utils/healthFilterAvailability';
 import { VR } from '../lib/veroroDesign';
 import { useProductCategories } from '../lib/productCategories';
@@ -98,8 +98,7 @@ const HEALTH_CONCERN_OPTIONS = [
  */
 
 export default function Search() {
-  const { profile, products, comparisonList } = useStore();
-  const navigate = useNavigate();
+  const { profile, products, catalogRevision } = useStore();
   const activeCategories = useProductCategories();
   const categoryChips = useMemo(
     () => ['전체', ...activeCategories.map((item) => item.name)],
@@ -124,12 +123,12 @@ export default function Search() {
   // URL 의 ?q= 가 바뀌면(키워드 재클릭·뒤로/앞으로 이동) 검색어를 동기화한다.
   const qParam = searchParams.get('q') ?? '';
   useEffect(() => {
-    if (qParam) setQuery(qParam);
+    setQuery(qParam);
   }, [qParam]);
   const [recentSearches, setRecentSearches] = useState<string[]>(() => loadRecentSearches());
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [isShowingBroadMatches, setIsShowingBroadMatches] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [nextOffset, setNextOffset] = useState<number | null>(null);
   const [loadError, setLoadError] = useState('');
@@ -179,8 +178,11 @@ export default function Search() {
   // 눌렀을 때 "검색 결과가 없어요"가 된다. 아래 shownKeywords 가 이미 같은
   // 이유로 productsForPetFilter 를 쓰고 있다 — 제안도 같은 기준을 따른다.
   const suggestibleProducts = useMemo(
-    () => productsForPetFilter(products, filters.targetPetType),
-    [products, filters.targetPetType],
+    () => productsForPetFilter(
+      [...new Map([...products, ...searchResults].map(product => [product.id, product])).values()],
+      filters.targetPetType,
+    ),
+    [products, searchResults, filters.targetPetType],
   );
   const suggestibleIngredients = useMemo(
     () => ingredientsUsedBy(suggestibleProducts, allIngredients),
@@ -261,7 +263,7 @@ export default function Search() {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [query, category, filters, excludedIngredients]);
+  }, [query, category, filters, excludedIngredients, catalogRevision]);
 
   const loadMore = async () => {
     if (nextOffset === null || isLoading || isLoadingMore) return;
@@ -408,7 +410,7 @@ export default function Search() {
   // 눌렀을 때 결과가 0건인 키워드는 보여주지 않는다.
   // 검색이 종 필터까지 함께 걸기 때문에 같은 조건에서 세어야 어긋나지 않는다.
   const shownKeywords = useMemo(
-    () => visibleSymptomKeywords(suggestibleProducts),
+    () => recommendedSearchKeywords(suggestibleProducts),
     [suggestibleProducts],
   );
 
@@ -618,32 +620,6 @@ export default function Search() {
         <button type="button" className="btn btn-outline" onClick={loadMore} disabled={isLoadingMore}
           style={{ width: '100%', marginTop: 16 }}>
           {isLoadingMore ? '불러오는 중…' : '제품 더 불러오기'}
-        </button>
-      )}
-
-      {/* 비교함 바 — 2개 이상 담겼을 때만 (프로토타입 showCompareBar) */}
-      {comparisonList.length > 1 && (
-        <button
-          type="button"
-          onClick={() => navigate('/comparison')}
-          className="vr-anim-up"
-          style={{
-            position: 'sticky', bottom: '10px', zIndex: 5, width: '100%', marginTop: '14px',
-            padding: '13px 16px', borderRadius: '14px', border: 'none', cursor: 'pointer',
-            background: 'var(--vr-inverse)', color: 'var(--vr-on-inverse)',
-            display: 'flex', alignItems: 'center', gap: '10px',
-          }}
-        >
-          <span style={{
-            width: '24px', height: '24px', borderRadius: '8px', background: '#FFD90A', color: '#15150F',
-            fontSize: '12.5px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            {comparisonList.length}
-          </span>
-          <span style={{ fontSize: '14px', fontWeight: 800, letterSpacing: '-0.02em' }}>비교함 보기</span>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FFD90A" strokeWidth="2.6" strokeLinecap="round" style={{ marginLeft: 'auto' }} aria-hidden>
-            <path d="M9 6l6 6-6 6" />
-          </svg>
         </button>
       )}
 

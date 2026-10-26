@@ -16,6 +16,7 @@ import {
   addRecentView,
   getRecentViews,
   getProductDetail,
+  getVisibleProductsByIds,
   signOut as supabaseSignOut
 } from '../lib/supabase';
 import { notify } from './useNotification';
@@ -52,6 +53,8 @@ const BOOT_TIMEOUT_MS = 8000;
  * 마지막으로 시작한 요청의 응답만 반영한다.
  */
 let productDetailRequestId = 0;
+let productsRequestId = 0;
+let recentViewsRevision = 0;
 
 /**
  * 세션 초기화 순번.
@@ -91,12 +94,16 @@ interface StoreState {
   /** 반려동물 삭제 */
   removePet: (petId: string) => Promise<void>;
   products: Product[];
+  catalogRevision: number;
   selectedProduct: Product | null;
   isLoadingProducts: boolean;
+  isLoadingCatalog: boolean;
+  isLoadingDetail: boolean;
   isInitializing: boolean;
   initApp: () => Promise<void>;
-  fetchProducts: () => Promise<void>;
-  fetchProductDetail: (productId: string) => Promise<void>;
+  fetchProducts: (background?: boolean) => Promise<void>;
+  fetchProductDetail: (productId: string, background?: boolean) => Promise<void>;
+  refreshCatalog: () => Promise<void>;
   favorites: string[];
   toggleFavorite: (productId: string) => void;
   recentViews: Product[];
@@ -115,9 +122,12 @@ export const useStore = create<StoreState>((set, get) => ({
   pets: [],
   activePetId: null,
   products: [],
+  catalogRevision: 0,
   selectedProduct: null,
   recentViews: [],
   isLoadingProducts: false,
+  isLoadingCatalog: false,
+  isLoadingDetail: false,
   isInitializing: true,
 
   signOut: async () => { await get().logout(); },
@@ -156,8 +166,7 @@ export const useStore = create<StoreState>((set, get) => ({
         const scheduleProductRefresh = () => {
           if (adminDataSyncTimer) clearTimeout(adminDataSyncTimer);
           adminDataSyncTimer = setTimeout(() => {
-            void get().fetchProducts();
-            if (get().selectedProduct?.id) void get().fetchProductDetail(get().selectedProduct!.id);
+            void get().refreshCatalog();
           }, 250);
         };
         adminDataSyncChannel = supabase.channel('admin-data-sync')
@@ -281,33 +290,65 @@ export const useStore = create<StoreState>((set, get) => ({
     });
   },
 
-  fetchProducts: async () => {
-    set({ isLoadingProducts: true });
+  fetchProducts: async (background = false) => {
+    const requestId = ++productsRequestId;
+    if (!background) set({ isLoadingProducts: true, isLoadingCatalog: true });
     try {
       const data = await getProducts();
-      set({ products: data, isLoadingProducts: false });
+      if (requestId !== productsRequestId) return;
+      set((state) => ({ products: data, catalogRevision: state.catalogRevision + 1, isLoadingCatalog: false, isLoadingProducts: state.isLoadingDetail }));
     } catch (err) {
       console.error(err);
-      set({ products: [], isLoadingProducts: false });
+      if (requestId !== productsRequestId) return;
+      set((state) => ({ products: [], catalogRevision: state.catalogRevision + 1, isLoadingCatalog: false, isLoadingProducts: state.isLoadingDetail }));
     }
   },
 
-  fetchProductDetail: async (id) => {
+  fetchProductDetail: async (id, background = false) => {
     productDetailRequestId += 1;
     const requestId = productDetailRequestId;
     const isStale = () => requestId !== productDetailRequestId;
 
-    set({ isLoadingProducts: true, selectedProduct: null });
+    if (!background) set({ isLoadingProducts: true, isLoadingDetail: true, selectedProduct: null });
     try {
       const data = await getProductDetail(id);
       if (isStale()) return;
-      set({ selectedProduct: data ?? null, isLoadingProducts: false });
+      if (!data) { ++productsRequestId; ++recentViewsRevision; }
+      set((state) => ({ selectedProduct: data ?? null, isLoadingDetail: false, isLoadingProducts: data ? state.isLoadingCatalog : false,
+        ...(!data ? { isLoadingCatalog: false, catalogRevision: state.catalogRevision + 1 } : {}),
+        ...(!data ? { products: state.products.filter((p) => p.id !== id), recentViews: state.recentViews.filter((p) => p.id !== id) } : {}),
+      }));
     } catch (err) {
       console.error(err);
       if (isStale()) return;
-      notify.error('상품 정보를 가져오지 못했습니다.');
-      set({ selectedProduct: null, isLoadingProducts: false });
+      ++productsRequestId;
+      ++recentViewsRevision;
+      if (!background) notify.error('상품 정보를 가져오지 못했습니다.');
+      set((state) => ({ selectedProduct: null, isLoadingDetail: false, isLoadingCatalog: false, isLoadingProducts: false,
+        catalogRevision: state.catalogRevision + 1,
+        products: state.products.filter((p) => p.id !== id), recentViews: state.recentViews.filter((p) => p.id !== id),
+      }));
     }
+  },
+
+  refreshCatalog: async () => {
+    const { selectedProduct, recentViews, userId } = get();
+    const epoch = sessionEpoch;
+    const revision = ++recentViewsRevision;
+    const refreshRecent = async () => {
+      if (!recentViews.length) return;
+      try {
+        const visible = await getVisibleProductsByIds(recentViews.map((p) => p.id));
+        if (epoch === sessionEpoch && userId === get().userId && revision === recentViewsRevision) set({ recentViews: visible });
+      } catch {
+        if (epoch === sessionEpoch && userId === get().userId && revision === recentViewsRevision) set({ recentViews: [] });
+      }
+    };
+    await Promise.all([
+      get().fetchProducts(true),
+      selectedProduct ? get().fetchProductDetail(selectedProduct.id, true) : Promise.resolve(),
+      refreshRecent(),
+    ]);
   },
 
   favorites: [],
@@ -344,9 +385,11 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   trackRecentView: async (productId) => {
-    const { userId, products, recentViews } = get();
-    const product = products.find(p => p.id === productId);
+    const { userId, selectedProduct, recentViews } = get();
+    const product = selectedProduct?.id === productId ? selectedProduct : null;
+    if (!product) return;
     if (product) {
+      ++recentViewsRevision;
       const filtered = recentViews.filter(p => p.id !== productId);
       set({ recentViews: [product, ...filtered].slice(0, 10) });
     }

@@ -374,7 +374,7 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
       {loadingDay ? (
         <DayLogSkeleton />
       ) : dayLogs.length === 0 ? (
-        <DayEmpty onAdd={openCreate} />
+        <DayEmpty />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {daySections.map((section) => (
@@ -557,7 +557,7 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
           {loadingMonth ? (
             <DayLogSkeleton />
           ) : monthLogs.length === 0 ? (
-            <DayEmpty onAdd={openCreate} />
+            <DayEmpty />
           ) : (
             <>
               <MonthlyInsightsCard logs={monthLogs} onRelog={openRelog} onOpenProduct={openHistory} />
@@ -1383,7 +1383,7 @@ function MonthList({
   );
 }
 
-function DayEmpty({ onAdd }: { onAdd: () => void }) {
+function DayEmpty() {
   return (
     <div
       style={{
@@ -1396,29 +1396,9 @@ function DayEmpty({ onAdd }: { onAdd: () => void }) {
     >
       <div style={{ fontSize: '30px', marginBottom: '10px' }} aria-hidden>🍽️</div>
       <p style={{ margin: '0 0 4px', fontSize: '15px', fontWeight: 800, color: 'var(--text-dark)' }}>아직 기록된 식사가 없어요.</p>
-      <p style={{ margin: '0 0 16px', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-        오늘 먹은 사료, 간식, 영양제를 기록해보세요.
+      <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+        기록 추가를 눌러 먹은 사료, 간식, 영양제를 기록해보세요.
       </p>
-      <button
-        type="button"
-        onClick={onAdd}
-        style={{
-          minHeight: '44px',
-          padding: '10px 20px',
-          borderRadius: '12px',
-          border: 'none',
-          background: 'var(--primary)',
-          color: 'var(--text-dark)',
-          fontWeight: 800,
-          fontSize: '14px',
-          cursor: 'pointer',
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '6px',
-        }}
-      >
-        <Plus size={16} /> 섭취 기록 추가
-      </button>
     </div>
   );
 }

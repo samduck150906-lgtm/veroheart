@@ -24,9 +24,12 @@ describe('catalog pagination',()=>{
     expect(result.products.map(p=>p.id)).toEqual(['p101']);expect(result.nextOffset).toBeNull();
     expect(mocks.rpc).toHaveBeenCalledWith('search_catalog_products',expect.objectContaining({p_offset:100}));
   });
-  it('keeps a next page when secondary filters remove every item in a full raw page',async()=>{
+  it('continues past an empty filtered page to return an actual match',async()=>{
     const {searchProductsPage}=await import('./supabase');
-    mocks.rpc.mockResolvedValue({data:Array.from({length:100},(_,i)=>({product_id:`p${i}`,rank:1})),error:null});rows([]);
-    expect(await searchProductsPage('사료',undefined,[],{brand:'브랜드'},0)).toEqual({products:[],nextOffset:100});
+    mocks.rpc.mockResolvedValueOnce({data:Array.from({length:100},(_,i)=>({product_id:`p${i}`,rank:1})),error:null})
+      .mockImplementationOnce(async()=>{rows(['p101']);return {data:[{product_id:'p101',rank:1}],error:null};});rows([]);
+    const result=await searchProductsPage('사료',undefined,[],{brand:'브랜드'},0);
+    expect(result.products.map(p=>p.id)).toEqual(['p101']);
+    expect(result.nextOffset).toBeNull();
   });
 });

@@ -21,11 +21,11 @@ export function resolveRouteChrome(pathname: string, search: string): RouteChrom
 
   if (pathname === '/') return { header: 'logo', sub: '', nav: true };
   if (pathname.startsWith('/search')) return { header: 'logo', sub: '탐색', nav: true };
-  if (pathname.startsWith('/comparison')) return { header: 'logo', sub: '비교함', nav: true };
+  if (pathname === '/diary') return { header: 'logo', sub: '다이어리', nav: true };
   if (pathname.startsWith('/profile')) {
     return diaryTab
       ? { header: 'logo', sub: '다이어리', nav: true }
-      : { header: 'logo', sub: '마이 펫', nav: true };
+      : { header: 'logo', sub: '마이페이지', nav: true };
   }
   if (pathname.startsWith('/product/')) return { header: 'back', title: '', nav: false };
   if (pathname.startsWith('/analysis')) return { header: 'back', title: '분석 리포트', nav: false };

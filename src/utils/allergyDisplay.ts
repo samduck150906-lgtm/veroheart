@@ -65,7 +65,12 @@ export function buildAllergyDisplayState(
     };
   }
 
-  if (options.hasIngredientData === false || options.analysisStatus === 'unavailable') {
+  if (options.hasIngredientData === true && options.analysisStatus === 'unavailable') {
+    return { level: 'unknown', shortText: '원료 상세 확인 필요', summaryText: '전성분은 등록되었지만 원료별 분석이 준비되지 않아 알레르기 일치 여부를 모두 확인하지 못함',
+      unknownReason: 'partial_ingredients', notice: { badge: '원료 상세 확인 필요', title: '전성분은 등록되어 있어요', description: '원료별 특성을 모두 확인하지 못해 알레르기 일치 여부를 단정하지 않았어요. 아래 원료 목록을 확인해 주세요.' } };
+  }
+  if ((options.hasIngredientData === false || options.analysisStatus === 'unavailable') &&
+      !options.unknownIngredientTerms?.length && options.analysisStatus !== 'partial' && options.analysisStatus !== 'blocked') {
     return {
       level: 'unknown',
       shortText: '원료 정보 부족',
@@ -94,7 +99,7 @@ export function buildAllergyDisplayState(
     };
   }
 
-  if (options.analysisStatus === 'partial') {
+  if (options.analysisStatus === 'partial' || (options.unknownIngredientTerms?.length ?? 0) > 0 && options.analysisStatus !== 'blocked') {
     const examples = (options.unknownIngredientTerms ?? []).slice(0, 3);
     return {
       level: 'unknown',

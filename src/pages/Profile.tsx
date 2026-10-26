@@ -1,12 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from '../store/useStore';
-import { manageAccount } from '../lib/supabase';
-import { notify } from '../store/useNotification';
+import { getVisibleProductsByIds } from '../lib/supabase';
 import {
   User,
   ChevronRight,
-  LogOut,
-  LogIn,
   Heart,
   PawPrint,
   Plus,
@@ -14,13 +11,13 @@ import {
   Trash2,
   Check,
 } from 'lucide-react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import AllergyIngredientPicker from '../components/AllergyIngredientPicker';
 import { petAgeDisplay } from '../utils/allergyPicker';
 import { TossCard, TossButton, TossChip, TossInput, TossSectionTitle } from '../components/TossUI';
 import ProductCard from '../components/ProductCard';
-import FeedingDiary from '../components/diary/FeedingDiary';
-import type { UserPetProfile } from '../types';
+import AccountSettings from '../components/AccountSettings';
+import type { Product, UserPetProfile } from '../types';
 import { HEALTH_CONCERN_OPTIONS } from '../health/concerns';
 
 const PROFILE_STEP_META = [
@@ -39,13 +36,12 @@ const PROFILE_STEP_META = [
 // 여기서 문자열을 따로 늘리면 분석이 다루지 못하는 항목이 조용히 섞인다.
 const concernOptions = HEALTH_CONCERN_OPTIONS;
 
-// '계정 설정' 은 독립 탭이었지만 로그아웃과 중복 링크뿐이라, 페이지 하단 계정 섹션으로 합쳤다.
-type MyPageTab = 'pets' | 'diary' | 'favorites';
+type MyPageTab = 'pets' | 'favorites' | 'account';
 
 const TAB_META: { key: MyPageTab; label: string }[] = [
   { key: 'pets', label: '내 반려동물' },
-  { key: 'diary', label: '식이 다이어리' },
   { key: 'favorites', label: '저장한 제품' },
+  { key: 'account', label: '계정·설정' },
 ];
 
 
@@ -71,9 +67,8 @@ function ProfileContent() {
     savePet,
     removePet,
     selectPet,
-    logout,
     favorites,
-    products,
+    catalogRevision,
   } = useStore();
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -97,8 +92,6 @@ function ProfileContent() {
   const [profileStep, setProfileStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<UserPetProfile | null>(null);
-
-  const favoriteProducts = useMemo(() => products.filter((p) => favorites.includes(p.id)), [products, favorites]);
 
   // 반려동물이 하나도 없으면 편집 폼을 바로 노출(첫 등록 유도)
   useEffect(() => {
@@ -156,11 +149,6 @@ function ProfileContent() {
     } else {
       setFormData({ ...formData, [field]: [...list, value] });
     }
-  };
-
-  const handleLogout = async () => {
-    try { await logout(); navigate('/'); }
-    catch { notify.error('로그아웃을 완료하지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.'); }
   };
 
   const stepCount = PROFILE_STEP_META.length;
@@ -317,18 +305,11 @@ function ProfileContent() {
 
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '40px' }}>
-      {/* 로그인/로그아웃 버튼 */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
-        {isLoggedIn ? (
-          <TossButton variant="outline" onClick={handleLogout} style={{ width: 'auto', height: '38px', padding: '0 14px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <LogOut size={15} /> 로그아웃
-          </TossButton>
-        ) : (
-          <Link to="/login" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--primary-dark)', borderRadius: '10px', padding: '8px 14px', fontSize: '13px', fontWeight: 700, color: '#fff', textDecoration: 'none' }}>
-            <LogIn size={15} /> 로그인 / 회원가입
-          </Link>
-        )}
-      </div>
+      {activeTab !== 'account' && <Link to="/profile?tab=account" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 18, marginBottom: 20, borderRadius: 18, background: 'var(--surface-alt)', color: 'var(--text-dark)', textDecoration: 'none' }}>
+        <User size={24} aria-hidden />
+        <div style={{ flex: 1 }}><strong style={{ fontSize: 16 }}>계정·설정</strong><p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>로그인한 계정을 관리해요</p></div>
+        <ChevronRight size={18} aria-hidden />
+      </Link>}
 
       {/* 마이페이지 메뉴 탭 */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', padding: '0 2px', overflowX: 'auto' }}>
@@ -518,68 +499,12 @@ function ProfileContent() {
         </div>
       )}
 
-      {/* ── 식이 다이어리 ── */}
-      {activeTab === 'diary' && <FeedingDiary onRegisterPet={() => setTab('pets')} />}
-
       {/* ── 저장한 제품 ── */}
       {activeTab === 'favorites' && (
-        <div>
-          {favoriteProducts.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              {favoriteProducts.map((p) => (
-                <ProductCard key={p.id} product={p} />
-              ))}
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '100px 20px', backgroundColor: 'var(--surface-alt)', borderRadius: '24px' }}>
-              <Heart color="var(--line)" size={40} style={{ margin: '0 auto 16px' }} />
-              <p style={{ color: 'var(--text-muted)', fontSize: '15px' }}>저장한 제품이 없습니다.</p>
-              <Link to="/search" style={{ color: 'var(--primary)', fontWeight: 700, marginTop: '12px', display: 'inline-block', textDecoration: 'none' }}>
-                제품 탐색하기
-              </Link>
-            </div>
-          )}
-        </div>
+        <SavedProducts key={JSON.stringify([userId, favorites, catalogRevision])} userId={userId} favorites={favorites} />
       )}
 
-      {/* ── 계정 설정 ── */}
-      {/* 계정 — 독립 탭 대신 마이페이지 하단에 둔다. 탭이 하나 줄고,
-          어느 탭에서든 로그아웃·약관에 바로 닿는다. */}
-      {isLoggedIn && (
-        <div style={{ marginTop: '28px' }}>
-          <TossCard style={{ padding: '20px' }}>
-            <TossSectionTitle title="계정" subtitle="로그인한 계정을 관리해요" style={{ marginBottom: '16px' }} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <Link
-                to="/terms"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 4px', fontSize: '14px', fontWeight: 700, color: 'var(--text-dark)', textDecoration: 'none' }}
-              >
-                이용약관 <ChevronRight size={17} color="var(--text-muted)" />
-              </Link>
-              <Link
-                to="/privacy"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 4px', fontSize: '14px', fontWeight: 700, color: 'var(--text-dark)', textDecoration: 'none' }}
-              >
-                개인정보 처리방침 <ChevronRight size={17} color="var(--text-muted)" />
-              </Link>
-              <Link
-                to="/refund"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 4px', fontSize: '14px', fontWeight: 700, color: 'var(--text-dark)', textDecoration: 'none' }}
-              >
-                환불 정책 <ChevronRight size={17} color="var(--text-muted)" />
-              </Link>
-              <Link to="/account/delete" style={{ padding: '13px 4px', color: 'var(--danger-strong)', fontSize: 14 }}>계정 및 데이터 삭제</Link>
-              <button className="vr-btn vr-btn--outline" onClick={() => void manageAccount('cleanup-photos').then(() => notify.success('사진 정리를 완료했어요.')).catch(() => notify.error('사진 정리를 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.'))}>삭제 대기 사진 정리 다시 시도</button>
-              <button
-                onClick={handleLogout}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '14px', fontWeight: 700, cursor: 'pointer', padding: '14px 4px', textAlign: 'left' }}
-              >
-                <LogOut size={16} /> 로그아웃
-              </button>
-            </div>
-          </TossCard>
-        </div>
-      )}
+      {activeTab === 'account' && <AccountSettings />}
 
       {/* 반려동물 삭제 확인 */}
       {deleteTarget && (
@@ -609,6 +534,40 @@ function ProfileContent() {
   );
 }
 
+function SavedProducts({ userId, favorites }: { userId: string; favorites: string[] }) {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(favorites.length > 0);
+  const [failed, setFailed] = useState(false);
+  const [retry, setRetry] = useState(0);
+
+  useEffect(() => {
+    if (!favorites.length) return;
+    let cancelled = false;
+    getVisibleProductsByIds(favorites).then((rows) => {
+      if (!cancelled && useStore.getState().userId === userId) setProducts(rows);
+    }).catch(() => {
+      if (!cancelled && useStore.getState().userId === userId) setFailed(true);
+    }).finally(() => {
+      if (!cancelled && useStore.getState().userId === userId) setLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [userId, favorites, retry]);
+
+  if (loading) return <p role="status" style={{ padding: '32px 0', color: 'var(--text-muted)' }}>저장한 제품을 불러오는 중이에요.</p>;
+  if (failed) return <div style={{ padding: '32px 0' }}>
+    <p role="alert">저장한 제품을 불러오지 못했어요. 연결을 확인하고 다시 시도해 주세요.</p>
+    <TossButton variant="outline" onClick={() => { setLoading(true); setFailed(false); setRetry((value) => value + 1); }}>저장한 제품 다시 불러오기</TossButton>
+  </div>;
+  if (products.length) return <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+    {products.map((product) => <ProductCard key={product.id} product={product} />)}
+  </div>;
+  return <div style={{ textAlign: 'center', padding: '80px 20px', backgroundColor: 'var(--surface-alt)', borderRadius: 24 }}>
+    <Heart color="var(--line)" size={40} style={{ margin: '0 auto 16px' }} />
+    <p style={{ color: 'var(--text-muted)', fontSize: 15 }}>{favorites.length ? '저장한 제품 중 현재 볼 수 있는 제품이 없어요.' : '저장한 제품이 없습니다.'}</p>
+    <Link to="/search" style={{ color: 'var(--primary)', fontWeight: 700, marginTop: 12, display: 'inline-block', textDecoration: 'none' }}>제품 탐색하기</Link>
+  </div>;
+}
+
 const petIconBtn: React.CSSProperties = {
   width: '38px',
   height: '38px',
@@ -623,8 +582,10 @@ const petIconBtn: React.CSSProperties = {
   flexShrink: 0,
 };
 
-// Remount local edit/diary state when authentication identity changes.
+// Remount local edit/account state when authentication identity changes.
 export default function Profile() {
   const { userId } = useStore();
+  const [searchParams] = useSearchParams();
+  if (searchParams.get('tab') === 'diary') return <Navigate to="/diary" replace />;
   return <ProfileContent key={userId ?? 'guest'} />;
 }

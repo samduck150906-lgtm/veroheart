@@ -36,12 +36,15 @@ const CATEGORIES_TTL_MS = 60 * 1000;
 let cached: ProductCategory[] | null = null;
 let cachedAt = 0;
 let inFlight: Promise<ProductCategory[]> | null = null;
+let revision = 0;
+const CATEGORIES_CHANGED = 'veroheart:categories-changed';
 
-/** 테스트 전용 — 캐시를 비운다. */
-export function __resetProductCategoriesCache(): void {
-  cached = null;
+/** Invalidate immediately after category writes in the administrator console. */
+export function invalidateProductCategoriesCache(): void {
   cachedAt = 0;
   inFlight = null;
+  revision += 1;
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(CATEGORIES_CHANGED));
 }
 
 function isCacheFresh(): boolean {
@@ -49,33 +52,35 @@ function isCacheFresh(): boolean {
 }
 
 export async function loadProductCategories(): Promise<ProductCategory[]> {
+  if (!isSupabaseConfigured) return DEFAULT_PRODUCT_CATEGORIES;
   if (isCacheFresh()) return cached as ProductCategory[];
   if (inFlight) return inFlight;
 
+  const requestedRevision = revision;
   inFlight = (async () => {
-    if (!isSupabaseConfigured) return DEFAULT_PRODUCT_CATEGORIES;
     try {
       const { data, error } = await supabase
         .from('product_categories')
         .select('name, hint, sort_order')
         .eq('is_active', true)
+        .is('parent_id', null)
         .order('sort_order', { ascending: true })
         .order('name', { ascending: true });
-      // 테이블이 아직 없거나(마이그레이션 전) 전부 꺼져 있으면 기본값을 쓴다.
-      if (error || !data || data.length === 0) return DEFAULT_PRODUCT_CATEGORIES;
+      // Empty is an intentional administrator setting, not a missing schema.
+      if (requestedRevision !== revision) return loadProductCategories();
+      if (error || !data) return cached ?? DEFAULT_PRODUCT_CATEGORIES;
 
       const categories = (data as { name: string; hint: string | null }[])
         .map((row) => ({ name: String(row.name ?? '').trim(), hint: row.hint ?? null }))
         .filter((row) => row.name.length > 0);
-      if (categories.length === 0) return DEFAULT_PRODUCT_CATEGORIES;
 
       cached = categories;
       cachedAt = Date.now();
       return categories;
     } catch {
-      return DEFAULT_PRODUCT_CATEGORIES;
+      return cached ?? DEFAULT_PRODUCT_CATEGORIES;
     } finally {
-      inFlight = null;
+      if (requestedRevision === revision) inFlight = null;
     }
   })();
 
@@ -90,11 +95,23 @@ export function useProductCategories(): ProductCategory[] {
 
   useEffect(() => {
     let cancelled = false;
-    loadProductCategories().then((next) => {
-      if (!cancelled) setCategories(next);
-    });
+    const refresh = () => {
+      if (document.visibilityState === 'hidden') return;
+      void loadProductCategories().then((next) => {
+        if (!cancelled) setCategories(next);
+      });
+    };
+    refresh();
+    window.addEventListener('focus', refresh);
+    window.addEventListener(CATEGORIES_CHANGED, refresh);
+    document.addEventListener('visibilitychange', refresh);
+    const interval = window.setInterval(refresh, CATEGORIES_TTL_MS);
     return () => {
       cancelled = true;
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener(CATEGORIES_CHANGED, refresh);
+      document.removeEventListener('visibilitychange', refresh);
+      window.clearInterval(interval);
     };
   }, []);
 

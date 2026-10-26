@@ -21,7 +21,7 @@ import {
   Share2,
 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
-import { useStore, MAX_COMPARISON } from '../store/useStore';
+import { useStore } from '../store/useStore';
 import FeedingLogForm from '../components/diary/FeedingLogForm';
 import { productTypeToFeedingType } from '../components/diary/feedingConstants';
 import { generateAnalysisReport } from '../utils/analysis';
@@ -62,6 +62,7 @@ import { getProductDisplayParts } from '../utils/productDisplay';
 import { gradePalette, gradeVerdict } from '../lib/veroroDesign';
 import {
   describeProductCompleteness,
+  describeIngredientAvailability,
   type ProductDataCompleteness,
 } from '../utils/productDataCompleteness';
 import { buildProductMetadata } from '../lib/productMetadata';
@@ -89,9 +90,6 @@ export default function Detail() {
     selectedProduct: product,
     isLoadingProducts,
     fetchProductDetail,
-    comparisonList,
-    addToComparison,
-    removeFromComparison,
     products,
     userId,
     pets,
@@ -126,9 +124,9 @@ export default function Detail() {
 
   useEffect(() => {
     if (id) {
-      fetchProductDetail(id);
-      trackRecentView(id);
-
+      void fetchProductDetail(id).then(() => {
+        if (useStore.getState().selectedProduct?.id === id) trackRecentView(id);
+      });
     }
   }, [id, fetchProductDetail, trackRecentView]);
 
@@ -225,7 +223,6 @@ export default function Detail() {
 
   const report = product ? generateAnalysisReport(product, profile) : null;
   const personalized = isRealPetProfile(profile);
-  const isComparing = comparisonList.includes(product?.id || '');
   const isFav = favorites.includes(product?.id || '');
   const productDisplay = getProductDisplayParts(product);
   const brandLabel = productDisplay.brand;
@@ -240,7 +237,7 @@ export default function Detail() {
   // 표시 점수는 카드·분석결과와 동일한 하드캡(위험≤69, 알레르기≤9, 종 불일치=0)을
   // 거친 값을 쓴다. 게스트에게는 개인화 감점 없는 객관 점수를 보여준다.
   const { breakdown, score: safetyScore, grade: displayGrade, analysisReadiness, canShowScore: analysisReady } = resolveProductDisplayVerdict(product, profile);
-  const hasIngredientData = (product.ingredients?.length ?? 0) > 0;
+  const hasIngredientData = (product.ingredients?.length ?? 0) + (product.unknownIngredientTerms?.length ?? 0) > 0;
   const analysisStatus = analysisReadiness.status;
   const allergyDisplay = buildAllergyDisplayState(breakdown, profile.name || '우리 아이', {
     hasIngredientData,
@@ -272,7 +269,7 @@ export default function Detail() {
           : analysisStatus === 'blocked'
             ? { icon: <AlertTriangle size={18} />, label: '안전도', value: '정보 확인 필요', tone: 'caution' }
             : analysisStatus === 'unavailable'
-              ? { icon: <AlertTriangle size={18} />, label: '안전도', value: '원료 정보 부족', tone: 'caution' }
+              ? { icon: <AlertTriangle size={18} />, label: '안전도', value: describeIngredientAvailability(product).label, tone: 'caution' }
         : { icon: <ShieldCheck size={18} />, label: '안전도', value: '등록 정보상 미확인', tone: 'excellent' },
     allergyDisplay.level === 'hard'
       ? { icon: <Ban size={18} />, label: '알레르기', value: `${breakdown.allergyHits.length}개 주의`, tone: 'danger' }
@@ -305,7 +302,6 @@ export default function Detail() {
   const scrollProgress = Math.min(100, (scrollY / scrollMax) * 100);
 
   // 종합 의견 3줄 (breakdown 기반, 신규 데이터 불필요)
-  const safeCount = product.ingredients?.filter(i => i.riskLevel === 'safe').length ?? 0;
   const gradeLabel = gradeMetaFromScore(safetyScore).label;
   const verdictLines = [
     {
@@ -316,11 +312,11 @@ export default function Detail() {
           ? '안전성: 확인되지 않은 원료가 있어 부분 분석만 제공해요.'
           : analysisStatus === 'blocked'
             ? '안전성: 원료 정보가 서로 달라 확인이 필요해요.'
-            : '안전성: 등록된 원료 정보가 없어 위험 성분 포함 여부를 판정할 수 없어요.',
+            : `안전성: ${describeIngredientAvailability(product).detail}`,
     },
     {
       icon: <Flame size={16} />,
-      text: `성분 구성: 등록 원료 ${safeCount}개 확인, ${allergyDisplay.summaryText}.`,
+      text: `성분 구성: 등록 원료 ${(product.ingredients?.length ?? 0) + (product.unknownIngredientTerms?.length ?? 0)}개, ${allergyDisplay.summaryText}.`,
     },
     {
       icon: <Check size={16} />,
@@ -748,10 +744,16 @@ export default function Detail() {
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '16px' }}>
           <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-dark)' }}>전성분 상세</h3>
-          <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 500 }}>총 {product.ingredients?.length}개</div>
+          <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 500 }}>총 {(product.ingredients?.length ?? 0) + (product.unknownIngredientTerms?.length ?? 0)}개</div>
         </div>
 
         <div>
+          {(product.unknownIngredientTerms ?? []).map((term, index) => (
+            <div key={`raw-${index}`} style={{ padding: 14, marginBottom: 8, borderRadius: 12, background: 'var(--surface-alt)' }}>
+              <strong>{term}</strong>
+              <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>제품에 표시된 원료예요. 아직 특성을 확인하지 못해 점수 계산에서 제외했어요.</p>
+            </div>
+          ))}
           {(product.ingredients ?? [])
             .map(ing => {
               const isAllergy = isAllergyIngredient(ing, profile.allergies);
@@ -897,17 +899,7 @@ export default function Detail() {
 
       <StickyCtaBar
         isFav={isFav}
-        isComparing={isComparing}
         onFav={() => toggleFavorite(product.id)}
-        onCompare={() => {
-          if (isComparing) {
-            removeFromComparison(product.id);
-            return;
-          }
-          if (!addToComparison(product.id)) {
-            notify.warning(`비교는 최대 ${MAX_COMPARISON}개까지 담을 수 있어요.`);
-          }
-        }}
         onLog={openFeedingLog}
       />
 

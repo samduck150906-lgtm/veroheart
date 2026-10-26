@@ -4,6 +4,8 @@ import { notify } from '../store/useNotification';
 import type { FeedingLogInput, PetFeedingLog, Product, SupabasePet } from '../types';
 import { AdminSessionExpiredError, notifyAdminSessionExpired, readAdminToken } from './adminSession';
 import { toExactIlikePattern, toOrIlikePattern } from './postgrestPattern';
+import { equivalentBarcodes } from '../utils/barcode';
+import { BarcodeLookupError } from './barcodeLookupError';
 import {
   mapFeedingLogFromRow,
   mapProductFromSupabaseRow,
@@ -108,26 +110,6 @@ function asProductRow(data: unknown): SupabaseProductRow {
 
 type VisibilityQueryError = { code?: string; message: string };
 type VisibilityQueryResult<T> = { data: T | null; error: VisibilityQueryError | null };
-let productVisibilityColumnAvailable: boolean | null = null;
-
-function isMissingProductVisibilityColumn(error: VisibilityQueryError | null): boolean {
-  return Boolean(
-    error &&
-    (error.code === '42703' || error.code === 'PGRST204') &&
-    // 노출 필터·상단 고정·원재료 유무 정렬은 같은 마이그레이션 계열이라
-    // 폴백 조건을 공유한다. 프런트가 마이그레이션보다 먼저 배포돼도 한 번만
-    // 옛 조회로 되돌아가 목록이 비지 않는다.
-    /is_visible|is_pinned|pinned_order|has_ingredients/.test(error.message),
-  );
-}
-
-/**
- * 사용자 제품 조회에 is_visible=true를 적용한다.
- *
- * Git 연동 프런트가 DB 마이그레이션보다 먼저 배포될 수 있으므로, 컬럼이 아직
- * 없는 짧은 배포 구간에는 한 번만 기존 조회로 폴백한다. 마이그레이션 적용 후
- * 새로고침하면 모든 사용자 제품 경로가 노출 제품만 반환한다.
- */
 /**
  * 관리자가 "검수 대기 제품 숨기기"를 켰는지.
  *
@@ -151,14 +133,9 @@ function shouldHideUnverifiedProducts(): boolean {
 async function queryVisibleProducts<T>(
   run: (withVisibilityFilter: boolean) => PromiseLike<VisibilityQueryResult<T>>,
 ): Promise<VisibilityQueryResult<T>> {
-  const shouldFilter = productVisibilityColumnAvailable !== false;
-  const result = await run(shouldFilter);
-  if (shouldFilter && isMissingProductVisibilityColumn(result.error)) {
-    productVisibilityColumnAvailable = false;
-    return run(false);
-  }
-  if (!result.error && shouldFilter) productVisibilityColumnAvailable = true;
-  return result;
+  // Visibility is an access boundary. Missing schema/sort columns must never
+  // disable it, including for subsequent queries in this browser session.
+  return run(true);
 }
 
 /**
@@ -304,7 +281,7 @@ export async function getProductsPage(page = 1, pageSize = MOBILE_PRODUCT_PAGE_S
   
   if (error) {
     console.error('getProducts error:', error.message);
-    return [];
+    throw new Error('제품 목록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.');
   }
   return asProductRows(data).map(mapProductFromSupabaseRow);
 }
@@ -352,49 +329,87 @@ export async function getProductDetail(productId: string): Promise<Product | nul
   return mapProductFromSupabaseRow(asProductRow(data));
 }
 
+/** Revalidate saved/recent IDs against the public catalog with full scoring evidence. */
+export async function getVisibleProductsByIds(ids: string[]): Promise<Product[]> {
+  const uniqueIds = [...new Set(ids.filter(Boolean))];
+  if (uniqueIds.length === 0) return [];
+  if (!isSupabaseConfigured) throw new Error('제품을 조회할 수 없어요. 연결을 확인해 주세요.');
+  const rows: SupabaseProductRow[] = [];
+  for (let offset = 0; offset < uniqueIds.length; offset += 100) {
+    const { data, error } = await queryVisibleProducts((withVisibilityFilter) => {
+      let builder = supabase.from('products').select(`
+        id, name, display_name, variant_name, net_weight_text, slug, catalog_source, analysis_status, catalog_source_url, catalog_source_note, requires_veterinary_guidance,
+        brand_name, manufacturer_name, product_type, main_category, sub_category,
+        target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
+        verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
+        product_ingredients (
+          ingredient_id, sort_order,
+          ingredients (id, name_ko, name_en, risk_level, description)
+        ),
+        product_ingredient_label_sets (
+          id, is_current,
+          product_ingredient_label_items (
+            display_order, raw_ingredient_text, match_status,
+            ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description),
+            canonical_ingredients (id, canonical_name_ko, canonical_name_en, status,
+              ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description))
+          )
+        ),
+        nutritional_profiles (crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus)
+      `).in('id', uniqueIds.slice(offset, offset + 100));
+      if (withVisibilityFilter) builder = builder.eq('is_visible', true);
+      return builder;
+    });
+    if (error) throw new Error('제품을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.');
+    rows.push(...asProductRows(data));
+  }
+  const products = new Map(rows.map(row => [row.id, mapProductFromSupabaseRow(row)]));
+  return uniqueIds.flatMap(id => products.has(id) ? [products.get(id)!] : []);
+}
+
 /**
- * 바코드로 상품 1건 조회. DB에 `products.barcode` 컬럼이 있어야 매칭된다.
- * 컬럼이 없거나 조회 오류 시(신규 도입 전 단계) 조용히 null을 반환해
- * 호출부(스캐너)가 검색 폴백으로 이어가도록 한다.
+ * Resolve equivalent GTIN forms while keeping errors distinct from no match.
  */
 export async function getProductByBarcode(barcode: string): Promise<Product | null> {
-  if (!isSupabaseConfigured || !barcode) return null;
-  try {
-    const { data, error } = await queryVisibleProducts((withVisibilityFilter) => {
-      let builder = supabase
-        .from('products')
-        .select(`
-          id, name, display_name, variant_name, net_weight_text, slug, catalog_source, analysis_status, catalog_source_url, catalog_source_note, requires_veterinary_guidance,
-          brand_name, manufacturer_name, product_type, main_category, sub_category,
-          target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
-          verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
-          product_ingredients (
-            ingredient_id, sort_order,
-            ingredients (id, name_ko, name_en, risk_level, description)
-          ),
-          product_ingredient_label_sets (
-            id, is_current,
-            product_ingredient_label_items (
-              display_order, raw_ingredient_text, match_status,
-              ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description),
-              canonical_ingredients (
-                id, canonical_name_ko, canonical_name_en, status,
-                ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description)
-              )
+  const candidates = equivalentBarcodes(barcode);
+  if (candidates.length === 0) return null;
+  if (!isSupabaseConfigured) throw new BarcodeLookupError('unavailable');
+  const { data, error } = await queryVisibleProducts((withVisibilityFilter) => {
+    let builder = supabase
+      .from('products')
+      .select(`
+        id, name, display_name, variant_name, net_weight_text, slug, catalog_source, analysis_status, catalog_source_url, catalog_source_note, requires_veterinary_guidance,
+        brand_name, manufacturer_name, product_type, main_category, sub_category,
+        target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
+        verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
+        product_ingredients (
+          ingredient_id, sort_order,
+          ingredients (id, name_ko, name_en, risk_level, description)
+        ),
+        product_ingredient_label_sets (
+          id, is_current,
+          product_ingredient_label_items (
+            display_order, raw_ingredient_text, match_status,
+            ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description),
+            canonical_ingredients (
+              id, canonical_name_ko, canonical_name_en, status,
+              ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description)
             )
-          ),
-          nutritional_profiles (crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus)
-        `)
-        .eq('barcode', barcode);
-      if (withVisibilityFilter) builder = builder.eq('is_visible', true);
-      return builder.limit(1).maybeSingle();
-    });
+          )
+        ),
+        nutritional_profiles (crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus)
+      `)
+      .in('barcode', candidates);
+    if (withVisibilityFilter) builder = builder.eq('is_visible', true);
+    return builder.limit(2);
+  }).catch(() => {
+    throw new BarcodeLookupError('unavailable');
+  });
 
-    if (error || !data) return null;
-    return mapProductFromSupabaseRow(asProductRow(data));
-  } catch {
-    return null;
-  }
+  if (error) throw new BarcodeLookupError('unavailable');
+  if (!data?.length) return null;
+  if (data.length > 1) throw new BarcodeLookupError('ambiguous');
+  return mapProductFromSupabaseRow(asProductRow(data[0]));
 }
 
 /** 다이어트·체중 관련 태그( DB product_health_concerns 값과 맞추면 매칭됨 ) */
@@ -691,6 +706,12 @@ export async function searchProductsPage(
     );
   }
 
+  // Secondary filters and the missing-RPC fallback run after raw pagination.
+  // Keep looking until there is a visible match or the catalog is exhausted.
+  if (filtered.length === 0 && nextOffset !== null) {
+    return searchProductsPage(query, category, excludeIngredients, filters, nextOffset);
+  }
+
   return { products: filtered.map(({ product }) => product), nextOffset };
 }
 
@@ -791,7 +812,21 @@ export async function getRecentViews(userId: string) {
           id, name, display_name, variant_name, net_weight_text, slug, catalog_source, analysis_status, catalog_source_url, catalog_source_note, requires_veterinary_guidance,
           brand_name, manufacturer_name, product_type, main_category, sub_category,
           target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
-          verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating
+          verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
+          product_ingredients (
+            ingredient_id, sort_order,
+            ingredients (id, name_ko, name_en, risk_level, description)
+          ),
+          product_ingredient_label_sets (
+            id, is_current,
+            product_ingredient_label_items (
+              display_order, raw_ingredient_text, match_status,
+              ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description),
+              canonical_ingredients (id, canonical_name_ko, canonical_name_en, status,
+                ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description))
+            )
+          ),
+          nutritional_profiles (crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus)
         )
       `)
       .eq('user_id', userId);

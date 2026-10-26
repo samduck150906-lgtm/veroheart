@@ -558,7 +558,7 @@ export async function fetchProductIngredients(productId: string): Promise<Produc
 
 export interface SaveProductPayload {
   product: Record<string, unknown>;
-  nutrition: Record<string, number> | null;
+  nutrition: Record<string, number | null> | null;
   /** 지정하면 제품 저장과 같은 관리자 요청에서 원재료 연결을 교체한다. */
   ingredients?: { ingredient_id: string; sort_order: number }[];
 }
@@ -1145,6 +1145,7 @@ export async function fetchPublicCategories(): Promise<PublicCategory[]> {
     .from('product_categories')
     .select('name, hint, sort_order')
     .eq('is_active', true)
+    .is('parent_id', null)
     .order('sort_order', { ascending: true })
     .order('name', { ascending: true });
   if (error) throw new Error(error.message);

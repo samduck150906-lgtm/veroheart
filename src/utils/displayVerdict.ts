@@ -48,7 +48,7 @@ export function resolveProductDisplayVerdict(product: Product, profile: UserPetP
 
   return {
     analysisReadiness,
-    canShowScore: analysisReadiness.status === 'ready',
+    canShowScore: product.ingredientDataLoaded !== false && analysisReadiness.status === 'ready',
     breakdown,
     verdict,
     score: verdict.score,

@@ -1,7 +1,6 @@
 import NativeAuthListener from './components/NativeAuthListener';
-import { lazy, Suspense, useEffect, useState } from 'react';
-import { pickSplashTagline } from './copy/marketing';
-import Wordmark from './components/Wordmark';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import StartupSplash from './components/StartupSplash';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useStore } from './store/useStore';
 import Layout from './components/Layout';
@@ -17,7 +16,7 @@ import { isAdminExperience, isBlockedAdminRoute, toggleAdminDesktopMode } from '
 const Search = lazy(() => import('./pages/Search'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Detail = lazy(() => import('./pages/Detail'));
-const Comparison = lazy(() => import('./pages/Comparison'));
+const Diary = lazy(() => import('./pages/Diary'));
 const AnalysisResult = lazy(() => import('./pages/AnalysisResult'));
 const Scan = lazy(() => import('./pages/Scan'));
 const NewProductScan = lazy(() => import('./pages/NewProductScan'));
@@ -70,10 +69,10 @@ const PasswordRecovery = lazy(() => import('./pages/PasswordRecovery'));
 
 function Application() {
   const { initApp, isInitializing, isLoggedIn } = useStore();
-  const [splashLine] = useState(() => pickSplashTagline());
   const adminMode = typeof window !== 'undefined'
     && isAdminExperience(window.location.hostname, window.location.pathname);
   const [showEntrySplash, setShowEntrySplash] = useState(() => !adminMode);
+  const completeEntrySplash = useCallback(() => setShowEntrySplash(false), []);
   const [entryGateOpen, setEntryGateOpen] = useState(() => (adminMode ? false : !readEntryGateDone()));
 
   useEffect(() => {
@@ -95,8 +94,15 @@ function Application() {
 
   useEffect(() => {
     if (adminMode) return;
-    const timer = window.setTimeout(() => setShowEntrySplash(false), 1200);
-    return () => window.clearTimeout(timer);
+    const refresh = () => { if (document.visibilityState === 'visible') void useStore.getState().refreshCatalog(); };
+    const timer = window.setInterval(refresh, 60_000);
+    document.addEventListener('visibilitychange', refresh);
+    window.addEventListener('focus', refresh);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', refresh);
+      window.removeEventListener('focus', refresh);
+    };
   }, [adminMode]);
 
   useEffect(() => {
@@ -109,31 +115,7 @@ function Application() {
   const showSplash = !adminMode && (isInitializing || showEntrySplash);
 
   if (showSplash) {
-    // 스플래시 — 잉크 배경 위 워드마크, 하단에 노란 점 3개가 순차 펄스 (프로토타입 Splash)
-    return (
-      <div style={{
-        position: 'absolute', inset: 0, zIndex: 80, background: '#15150F',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '18px',
-      }}>
-        <div className="vr-anim-up">
-          <Wordmark height={44} />
-        </div>
-        <div className="vr-anim-fade" style={{ fontSize: '14.5px', fontWeight: 700, color: '#A5A596', letterSpacing: '-0.01em', textAlign: 'center', padding: '0 24px' }}>
-          {splashLine}
-        </div>
-        <div style={{ position: 'absolute', bottom: '44px', display: 'flex', gap: '5px' }}>
-          {[0, 0.15, 0.3].map((delay) => (
-            <div
-              key={delay}
-              style={{
-                width: '6px', height: '6px', borderRadius: '50%', background: '#FFD90A',
-                animation: `vPulse 1s ${delay}s infinite`,
-              }}
-            />
-          ))}
-        </div>
-      </div>
-    );
+    return <StartupSplash onMinimumComplete={completeEntrySplash} />;
   }
 
   return (
@@ -155,7 +137,8 @@ function Application() {
           <Route path="event/viral" element={<ViralEvent />} />
           <Route path="event/personality-quiz" element={<Test />} />
           <Route path="profile" element={<Profile />} />
-          <Route path="comparison" element={<Comparison />} />
+          <Route path="comparison" element={<Navigate to="/search" replace />} />
+          <Route path="diary" element={<Diary />} />
           {/* 구 /cart(장바구니·결제) 경로 제거 — 홈으로 리다이렉트 */}
           <Route path="cart" element={<Navigate to="/" replace />} />
           <Route path="analysis" element={<AnalysisResult />} />

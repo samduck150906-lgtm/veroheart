@@ -1,5 +1,7 @@
+import type { ScannedBarcode } from './scanBarcode';
+
 export interface BarcodeDetectorLike {
-  detect(source: HTMLVideoElement): Promise<{ rawValue: string }[]>;
+  detect(source: HTMLVideoElement): Promise<ScannedBarcode[]>;
 }
 interface BarcodeDetectorCtor {
   new (options: { formats: string[] }): BarcodeDetectorLike;
@@ -11,9 +13,25 @@ export async function createBarcodeDetector(): Promise<BarcodeDetectorLike> {
   if (NativeDetector) {
     try {
       const supported = await NativeDetector.getSupportedFormats?.();
-      if (!supported || supported.includes('ean_13')) {
-        const formats = ['ean_13', 'ean_8', 'code_128', 'upc_a', 'upc_e'].filter((value) => !supported || supported.includes(value));
-        return new NativeDetector({ formats });
+      const formats = ['ean_13', 'ean_8', 'code_128', 'upc_a', 'upc_e'];
+      if (!supported || formats.every((value) => supported.includes(value))) {
+        const native = new NativeDetector({ formats });
+        let fallback: BarcodeDetectorLike | null = null;
+        return {
+          async detect(source) {
+            if (source.readyState < 2 || !source.videoWidth || !source.videoHeight) return [];
+            if (fallback) return fallback.detect(source);
+            try {
+              return await native.detect(source);
+            } catch {
+              // Some Android/WebView implementations expose BarcodeDetector but
+              // fail only when detect() starts. Recover without a frozen preview.
+              const { createFallbackDecoder } = await import('./barcodeDecoder');
+              fallback = createFallbackDecoder();
+              return fallback.detect(source);
+            }
+          },
+        };
       }
     } catch { /* Use the same local decoder on devices with incomplete native support. */ }
   }

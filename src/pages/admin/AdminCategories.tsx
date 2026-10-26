@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ArrowDown, ArrowUp, Edit2, Eye, EyeOff, Plus, RefreshCw, Save, Trash2, X } from 'lucide-react';
 import { notify } from '../../store/useNotification';
+import { invalidateProductCategoriesCache } from '../../lib/productCategories';
 import {
   deleteCategory,
   fetchCategories,
@@ -97,6 +98,7 @@ const AdminCategories: React.FC = () => {
         isActive: form.isActive,
         parentId: form.parentId || null,
       });
+      invalidateProductCategoriesCache();
       notify.success(
         result.movedProducts > 0
           ? `카테고리를 저장하고 제품 ${result.movedProducts.toLocaleString()}개의 분류도 함께 옮겼습니다.`
@@ -135,6 +137,7 @@ const AdminCategories: React.FC = () => {
     setSavingOrder(true);
     try {
       await reorderCategories(reordered.map((row) => row.id));
+      invalidateProductCategoriesCache();
     } catch (err) {
       setRows(previous);
       notify.error(`순서 변경 실패: ${err instanceof Error ? err.message : String(err)}`);
@@ -154,6 +157,7 @@ const AdminCategories: React.FC = () => {
         isActive: !category.isActive,
         parentId: category.parentId,
       });
+      invalidateProductCategoriesCache();
       setRows((current) => current.map((row) => (
         row.id === category.id ? { ...row, isActive: !row.isActive } : row
       )));
@@ -174,6 +178,7 @@ const AdminCategories: React.FC = () => {
     setIsDeleting(true);
     try {
       await deleteCategory(deleteTarget.id);
+      invalidateProductCategoriesCache();
       notify.success('카테고리를 삭제했습니다.');
       setDeleteTarget(null);
       await load();
@@ -224,7 +229,7 @@ const AdminCategories: React.FC = () => {
         <p className="admin-item-sub" style={{ lineHeight: 1.7 }}>
           여기의 <strong>노출 중</strong> 카테고리가 사용자 앱 <strong>홈 화면의 카테고리 카드</strong>와{' '}
           <strong>검색 화면 상단 칩</strong>에 이 순서 그대로 나타납니다. 위/아래 버튼으로 순서를 바꾸면
-          앱에도 즉시 반영됩니다.
+          앱을 다시 열거나 최대 1분 안에 반영됩니다.
           <br />
           카테고리 이름은 제품의 <code>대분류</code>·<code>소분류</code> 값과 글자 그대로 대조합니다.
           이름을 바꾸면 그 분류로 등록된 제품도 함께 옮겨져 필터가 끊기지 않습니다.

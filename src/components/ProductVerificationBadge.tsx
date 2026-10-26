@@ -1,4 +1,4 @@
-import { CheckCircle2, Clock3, ScanLine, ShieldQuestion } from 'lucide-react';
+import { CheckCircle2, Clock3 } from 'lucide-react';
 import type { ProductCatalogSource, ProductVerificationStatus } from '../types';
 
 interface ProductVerificationBadgeProps {
@@ -6,7 +6,7 @@ interface ProductVerificationBadgeProps {
   verificationStatus?: ProductVerificationStatus;
 }
 
-function badgeState({ catalogSource, verificationStatus }: ProductVerificationBadgeProps) {
+function badgeState({ verificationStatus }: ProductVerificationBadgeProps) {
   if (verificationStatus === 'verified') {
     return {
       label: '정보 확인 완료',
@@ -14,15 +14,6 @@ function badgeState({ catalogSource, verificationStatus }: ProductVerificationBa
       background: 'var(--safe-bg)',
       borderColor: 'var(--safe-line)',
       Icon: CheckCircle2,
-    };
-  }
-  if (catalogSource === 'community_scan' && verificationStatus !== 'reviewed') {
-    return {
-      label: '사용자 스캔 · 검증 전',
-      color: '#B45309',
-      background: '#FFFBEB',
-      borderColor: '#FDE68A',
-      Icon: ScanLine,
     };
   }
   if (verificationStatus === 'reviewed') {
@@ -34,17 +25,13 @@ function badgeState({ catalogSource, verificationStatus }: ProductVerificationBa
       Icon: Clock3,
     };
   }
-  return {
-    label: '정보 검증 전',
-    color: 'var(--vr-body-2)',
-    background: 'var(--vr-soft)',
-    borderColor: 'var(--vr-line)',
-    Icon: ShieldQuestion,
-  };
+  return null;
 }
 
 export default function ProductVerificationBadge(props: ProductVerificationBadgeProps) {
-  const { label, color, background, borderColor, Icon } = badgeState(props);
+  const state = badgeState(props);
+  if (!state) return null;
+  const { label, color, background, borderColor, Icon } = state;
   return (
     <span
       aria-label={`제품 정보 상태: ${label}`}
