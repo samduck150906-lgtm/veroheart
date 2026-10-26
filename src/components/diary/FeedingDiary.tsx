@@ -288,13 +288,13 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
   /** "다시 기록" — 기존 기록을 복제해 새 기록으로 (오늘 날짜) */
   const openRelog = (log: PetFeedingLog) => {
     setEditingLog(null);
-    setSelectedDate(toDateKey(new Date()));
     setPresetLog(log);
     setFormOpen(true);
   };
   const openHistory = (ref: ProductRef) => setHistoryRef(ref);
 
   const handleSaved = (saved: PetFeedingLog) => {
+    setHistoryRef(null);
     // 저장된 기록의 날짜(및 반려동물)로 이동해 즉시 확인.
     // 달력·주간 상태를 모두 저장된 날짜에 맞추고 무조건 새로고침한다 —
     // 조건부 새로고침은 주간 뷰에서 달이 걸친 날짜에 저장했을 때(뷰 상태가
@@ -582,7 +582,7 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
         initialPetId={selectedPetId}
         editingLog={editingLog}
         presetLog={presetLog}
-        initialDate={selectedDate}
+        initialDate={presetLog ? todayKey : selectedDate}
         userId={userId}
         onSaved={handleSaved}
       />
@@ -603,9 +603,10 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
       <ProductHistorySheet
         petId={selectedPetId}
         productRef={historyRef}
+        suspended={formOpen}
         onClose={() => setHistoryRef(null)}
         onViewAnalysis={(pid) => navigate(`/product/${pid}`)}
-        onRelog={(log) => { setHistoryRef(null); openRelog(log); }}
+        onRelog={openRelog}
       />
 
       {/* 메모 검색 */}
@@ -1154,12 +1155,14 @@ function WeekSummary({ logs, loading }: { logs: PetFeedingLog[]; loading: boolea
 function ProductHistorySheet({
   petId,
   productRef,
+  suspended,
   onClose,
   onViewAnalysis,
   onRelog,
 }: {
   petId: string | null;
   productRef: ProductRef | null;
+  suspended: boolean;
   onClose: () => void;
   onViewAnalysis: (productId: string) => void;
   onRelog: (log: PetFeedingLog) => void;
@@ -1187,7 +1190,7 @@ function ProductHistorySheet({
   const avgPref = prefs.length ? prefs.reduce((a, b) => a + b, 0) / prefs.length : null;
 
   return (
-    <BottomSheet isOpen={Boolean(productRef)} onClose={onClose} title={productRef?.label ?? '급여 이력'} footer={null}>
+    <BottomSheet isOpen={Boolean(productRef)} suspended={suspended} onClose={onClose} title={productRef?.label ?? '급여 이력'} footer={null}>
       {loading ? (
         <DayLogSkeleton />
       ) : logs.length === 0 ? (
