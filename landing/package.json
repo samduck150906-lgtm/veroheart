@@ -2,6 +2,11 @@
   "name": "veroro-landing",
   "private": true,
   "version": "1.0.0",
+  "packageManager": "npm@11.13.0",
+  "engines": {
+    "node": ">=24.0.0 <25",
+    "npm": ">=11.13.0 <12"
+  },
   "scripts": {
     "dev": "next dev -p 3010",
     "build": "next build",
