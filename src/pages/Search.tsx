@@ -28,7 +28,7 @@ import { buildSearchSuggestions, deriveBrandOptions, ingredientsUsedBy, type Sug
 import { productsForPetFilter, recommendedSearchKeywords } from '../utils/searchKeywords';
 import { isHealthFilterAvailable } from '../utils/healthFilterAvailability';
 import { VR } from '../lib/veroroDesign';
-import { useProductCategories } from '../lib/productCategories';
+import { resolveSearchCategory, useProductCategories } from '../lib/productCategories';
 
 interface StandardFeedItem {
   id: number;
@@ -39,13 +39,6 @@ interface StandardFeedItem {
   fat: number;
   ash: number;
   fiber: number;
-}
-
-function resolveCategoryFromSearchParams(category: string | null): string {
-  if (!category) return '전체';
-  // 구 링크 호환: 과거 칩이 쓰던 세분류는 main_category에 없다 — '사료'로 정규화
-  if (category === '건식사료' || category === '습식사료') return '사료';
-  return category;
 }
 
 const RECENT_KEY = 'vh_recent_searches';
@@ -85,8 +78,7 @@ const HEALTH_CONCERN_OPTIONS = [
 ];
 
 // 카테고리 칩 목록·순서는 관리자 콘솔(카테고리 관리)이 단일 원본이다.
-// 값은 DB products.main_category 와 글자 그대로 대조된다.
-// 건식/습식 구분은 필터 시트의 '제형'이 담당한다.
+// 상위·하위 값은 각각 products.main_category·sub_category와 대조한다.
 
 /**
  * 검색은 종 필터를 미리 걸지 않는다.
@@ -105,7 +97,10 @@ export default function Search() {
     [activeCategories],
   );
   const [searchParams, setSearchParams] = useSearchParams();
-  const category = resolveCategoryFromSearchParams(searchParams.get('category'));
+  const { category, subCategory } = resolveSearchCategory(
+    activeCategories, searchParams.get('category'), searchParams.get('subCategory'),
+  );
+  const subCategories = activeCategories.find(item => item.name === category)?.subCategories ?? [];
 
   const setCategory = (name: string) => {
     setSearchParams(
@@ -113,10 +108,21 @@ export default function Search() {
         const next = new URLSearchParams(prev);
         if (name === '전체') next.delete('category');
         else next.set('category', name);
+        next.delete('subCategory');
         return next;
       },
       { replace: false }
     );
+  };
+
+  const setSubCategory = (name: string) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('category', category);
+      if (name) next.set('subCategory', name);
+      else next.delete('subCategory');
+      return next;
+    });
   };
 
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '');
@@ -140,7 +146,6 @@ export default function Search() {
     targetPetType: '' as '' | 'dog' | 'cat' | 'all',
     targetLifeStage: '',
     formulation: '',
-    subCategory: '',
     brand: '',
     healthConcerns: [] as string[],
     dietPreset: false,
@@ -224,7 +229,7 @@ export default function Search() {
           targetPetType: pet === '' ? undefined : pet,
           targetLifeStage: filters.targetLifeStage || undefined,
           formulation: filters.formulation || undefined,
-          subCategory: filters.subCategory || undefined,
+          subCategory: subCategory || undefined,
           brand: filters.brand || undefined,
           healthConcerns: filters.healthConcerns,
           dietPreset: filters.dietPreset,
@@ -263,7 +268,7 @@ export default function Search() {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [query, category, filters, excludedIngredients, catalogRevision]);
+  }, [query, category, subCategory, filters, excludedIngredients, catalogRevision]);
 
   const loadMore = async () => {
     if (nextOffset === null || isLoading || isLoadingMore) return;
@@ -277,7 +282,7 @@ export default function Search() {
           targetPetType: filters.targetPetType || undefined,
           targetLifeStage: filters.targetLifeStage || undefined,
           formulation: filters.formulation || undefined,
-          subCategory: filters.subCategory || undefined,
+          subCategory: subCategory || undefined,
           brand: filters.brand || undefined,
           healthConcerns: filters.healthConcerns,
           dietPreset: filters.dietPreset,
@@ -333,7 +338,6 @@ export default function Search() {
       targetPetType: '',
       targetLifeStage: '',
       formulation: '',
-      subCategory: '',
       brand: '',
       healthConcerns: [],
       dietPreset: false,
@@ -401,7 +405,6 @@ export default function Search() {
     (filters.targetPetType ? 1 : 0) +
     (filters.targetLifeStage ? 1 : 0) +
     (filters.formulation ? 1 : 0) +
-    (filters.subCategory ? 1 : 0) +
     (filters.brand ? 1 : 0) +
     filters.healthConcerns.length +
     (filters.dietPreset ? 1 : 0) +
@@ -507,7 +510,8 @@ export default function Search() {
             key={name}
             type="button"
             className={category === name ? 'vr-chip vr-chip--on' : 'vr-chip'}
-            onClick={() => { setCategory(name); setFilters(f => ({ ...f, subCategory: '' })); }}
+            aria-pressed={category === name}
+            onClick={() => setCategory(name)}
           >
             {name}
           </button>
@@ -521,6 +525,18 @@ export default function Search() {
           <Database size={13} /> 성분사전
         </button>
       </div>
+
+      {subCategories.length > 0 && (
+        <div role="group" aria-label={`${category} 세부 분류`} style={{ marginBottom: 18 }}>
+          <div className="search-block-label">{category} 세부 분류</div>
+          <div className="search-chip-row">
+            <FilterChip label={`${category} 전체`} selected={!subCategory} onClick={() => setSubCategory('')} />
+            {subCategories.map(name => (
+              <FilterChip key={name} label={name} selected={subCategory === name} onClick={() => setSubCategory(name)} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 검색어 없을 때: 최근 검색 + 추천 키워드 */}
       {showDiscovery && (
@@ -627,8 +643,16 @@ export default function Search() {
         <StateView
           variant="empty"
           title="검색 결과가 없습니다"
-          description="검색어를 바꾸거나 필터 범위를 넓혀 주세요. 찾는 제품이 없다면 등록을 요청해 주세요."
-          action={{ label: '필터 조정', onClick: () => setIsFilterOpen(true) }}
+          description={activeFilterCount > 0
+            ? '선택한 상세 필터에 맞는 제품이 없습니다. 필터를 해제하고 다시 확인해 주세요.'
+            : category !== '전체' && !query.trim()
+              ? '이 분류에서 현재 볼 수 있는 제품이 없습니다. 다른 분류를 선택해 주세요.'
+              : '검색어를 바꾸거나 필터 범위를 넓혀 주세요. 찾는 제품이 없다면 등록을 요청해 주세요.'}
+          action={activeFilterCount > 0
+            ? { label: '상세 필터 해제', onClick: resetFilters }
+            : category !== '전체'
+              ? { label: '전체 제품 보기', onClick: () => setCategory('전체') }
+              : { label: '필터 조정', onClick: () => setIsFilterOpen(true) }}
           secondaryAction={{
             label: '＋ 제품 등록 요청하기',
             // mailto: 는 메일 앱이 없는 기기에서 아무 일도 일어나지 않았고, 열려도

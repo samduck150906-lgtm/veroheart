@@ -4,6 +4,7 @@ const api = vi.hoisted(() => ({ from: vi.fn(), rpc: vi.fn() }));
 vi.mock('@supabase/supabase-js', () => ({ createClient: () => api }));
 const row = (id: string, verification_status: string | null, is_visible = true) => ({
   id, name: id, brand_name: 'Brand', product_type: 'food', verification_status, is_visible,
+  main_category: '사료', sub_category: 'dry',
   barcode: id === 'pending' ? '036000291452' : null,
 });
 const catalog = [row('pending', 'pending'), row('reviewed', 'reviewed'), row('verified', 'verified'),
@@ -35,6 +36,17 @@ beforeEach(() => {
 afterEach(() => { vi.unstubAllEnvs(); vi.restoreAllMocks(); });
 
 describe.each([false, true])('public review boundary with verified-only setting %s', strict => {
+  it.each([false, true])('combines parent/child category with visibility and review restrictions (fallback: %s)', async fallback => {
+    respond([...catalog, { ...row('other-child', 'verified'), sub_category: 'wet' },
+      { ...row('other-parent', 'verified'), main_category: '간식' }]);
+    if (fallback) api.rpc.mockResolvedValue({ data: null, error: { code: 'PGRST202', message: 'missing RPC' } });
+    const db = await import('./supabase');
+    db.setHideUnverifiedProducts(strict);
+    const result = await db.searchProductsPage('', '사료', [], { subCategory: 'dry' });
+    expect(result.products.map(product => product.id)).toEqual(strict ? ['verified'] : ['reviewed', 'verified']);
+    expect(api.rpc).toHaveBeenCalledWith('search_catalog_products', expect.objectContaining({ p_category: '사료' }));
+  });
+
   it('filters initial, ranked/fallback search, brand, diary, saved and recent products', async () => {
     const db = await import('./supabase');
     db.setHideUnverifiedProducts(strict);
