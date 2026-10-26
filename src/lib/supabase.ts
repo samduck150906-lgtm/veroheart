@@ -793,49 +793,54 @@ export async function removeFavorite(userId: string, productId: string): Promise
 // ─── Recent Views ────────────────────────────────────────────────────────────
 
 export async function addRecentView(userId: string, productId: string) {
-  await supabase.from('recent_views').upsert(
+  const { error } = await supabase.from('recent_views').upsert(
     { user_id: userId, product_id: productId, viewed_at: new Date().toISOString() },
     { onConflict: 'user_id,product_id' }
   );
+  if (error) throw new Error('최근 본 상품을 저장하지 못했습니다.');
 }
 
-export async function getRecentViews(userId: string) {
-  const { data, error } = await queryVisibleProducts((withVisibilityFilter) => {
-    let builder = supabase
-      .from('recent_views')
-      .select(`
-        product_id,
-        viewed_at,
-        products (
-          id, name, display_name, variant_name, net_weight_text, slug, catalog_source, analysis_status, catalog_source_url, catalog_source_note, requires_veterinary_guidance,
-          brand_name, manufacturer_name, product_type, main_category, sub_category,
-          target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
-          verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
-          product_ingredients (
-            ingredient_id, sort_order,
-            ingredients (id, name_ko, name_en, risk_level, description)
-          ),
-          product_ingredient_label_sets (
-            id, is_current,
-            product_ingredient_label_items (
-              display_order, raw_ingredient_text, match_status,
-              ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description),
-              canonical_ingredients (id, canonical_name_ko, canonical_name_en, status,
-                ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description))
-            )
-          ),
-          nutritional_profiles (crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus)
-        )
-      `)
-      .eq('user_id', userId);
-    if (withVisibilityFilter) builder = builder.eq('products.is_visible', true).in('products.verification_status', publicProductReviewStatuses());
-    return builder.order('viewed_at', { ascending: false }).limit(10);
-  });
-  if (error) return [];
-  const rows = (data ?? []) as unknown as SupabaseRecentViewRow[];
-  return rows
-    .map((r) => r.products)
-    .filter((p): p is SupabaseProductRow => Boolean(p));
+export async function getRecentViews(userId: string, all = false) {
+  const products: SupabaseProductRow[] = [];
+  const pageSize = 100;
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await queryVisibleProducts((withVisibilityFilter) => {
+      let builder = supabase
+        .from('recent_views')
+        .select(`
+          product_id,
+          viewed_at,
+          products!inner (
+            id, name, display_name, variant_name, net_weight_text, slug, catalog_source, analysis_status, catalog_source_url, catalog_source_note, requires_veterinary_guidance,
+            brand_name, manufacturer_name, product_type, main_category, sub_category,
+            target_pet_type, target_life_stage, formulation, product_health_concerns, has_risk_factors,
+            verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
+            product_ingredients (
+              ingredient_id, sort_order,
+              ingredients (id, name_ko, name_en, risk_level, description)
+            ),
+            product_ingredient_label_sets (
+              id, is_current,
+              product_ingredient_label_items (
+                display_order, raw_ingredient_text, match_status,
+                ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description),
+                canonical_ingredients (id, canonical_name_ko, canonical_name_en, status,
+                  ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description))
+              )
+            ),
+            nutritional_profiles (crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus)
+          )
+        `)
+        .eq('user_id', userId);
+      if (withVisibilityFilter) builder = builder.eq('products.is_visible', true).in('products.verification_status', publicProductReviewStatuses());
+      const ordered = builder.order('viewed_at', { ascending: false }).order('product_id', { ascending: true });
+      return all ? ordered.range(offset, offset + pageSize - 1) : ordered.limit(10);
+    });
+    if (error) throw new Error('최근 본 상품을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    const rows = (data ?? []) as unknown as SupabaseRecentViewRow[];
+    products.push(...rows.map(r => r.products).filter((p): p is SupabaseProductRow => Boolean(p)));
+    if (!all || rows.length < pageSize) return [...new Map(products.map(product => [product.id, product])).values()];
+  }
 }
 
 // ─── Brands ──────────────────────────────────────────────────────────────────

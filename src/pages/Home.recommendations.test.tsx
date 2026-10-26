@@ -35,6 +35,13 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('home recommendations', () => {
+  it('opens the full recent history instead of the search catalog', async () => {
+    useStore.setState({ recentViews: [food], isLoggedIn: false });
+    show();
+    fireEvent.click(screen.getByRole('button', { name: '더 보기', exact: true }));
+    expect(JSON.parse(screen.getByTestId('destination').textContent!).path).toBe('/recent');
+  });
+
   it('does not recommend any of the initial catalog when all candidates score zero', async () => {
     const wrongSpecies = { ...food, targetPetType: 'cat' as const };
     expect(resolveProductDisplayVerdict(wrongSpecies, dog).score).toBe(0);

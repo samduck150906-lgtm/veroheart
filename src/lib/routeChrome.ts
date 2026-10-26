@@ -20,6 +20,7 @@ export function resolveRouteChrome(pathname: string, search: string): RouteChrom
   const diaryTab = new URLSearchParams(search).get('tab') === 'diary';
 
   if (pathname === '/') return { header: 'logo', sub: '', nav: true };
+  if (pathname === '/recent') return { header: 'back', title: '최근 본 상품', nav: false };
   if (pathname.startsWith('/search')) return { header: 'logo', sub: '탐색', nav: true };
   if (pathname === '/diary') return { header: 'logo', sub: '다이어리', nav: true };
   if (pathname.startsWith('/profile')) {

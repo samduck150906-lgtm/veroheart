@@ -199,7 +199,7 @@ export default function Home() {
             <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 800, letterSpacing: '-0.03em' }}>최근 본 상품</h2>
             <button
               type="button"
-              onClick={() => navigate('/search')}
+              onClick={() => navigate('/recent')}
               style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12.5px', fontWeight: 700, color: VR.sub }}
             >
               더 보기

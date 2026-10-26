@@ -14,6 +14,7 @@ import { isAdminExperience, isBlockedAdminRoute, toggleAdminDesktopMode } from '
 // 첫 진입 화면(Home)만 즉시 로드하고, 나머지 라우트는 코드 스플릿으로 지연 로드한다.
 // 관리자 라우트는 일반 사용자 번들에서 완전히 분리된다.
 const Search = lazy(() => import('./pages/Search'));
+const RecentProducts = lazy(() => import('./pages/RecentProducts'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Detail = lazy(() => import('./pages/Detail'));
 const Diary = lazy(() => import('./pages/Diary'));
@@ -128,6 +129,7 @@ function Application() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="search" element={<Search />} />
+          <Route path="recent" element={<RecentProducts />} />
           {/* 구 /ranking(인기·랭킹) 경로는 제거 — 검색으로 리다이렉트 */}
           <Route path="ranking" element={<Navigate to="/search" replace />} />
           {/* 인증 페이지는 Login으로 일원화 — 구 /auth 링크·북마크는 /login으로 리다이렉트 */}

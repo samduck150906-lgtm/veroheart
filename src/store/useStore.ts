@@ -55,6 +55,9 @@ const BOOT_TIMEOUT_MS = 8000;
 let productDetailRequestId = 0;
 let productsRequestId = 0;
 let recentViewsRevision = 0;
+let recentViewsRequestId = 0;
+let fullRecentHistory: { epoch: number; userId: string | null } | null = null;
+const recentViewWrites = new Map<string, Promise<void>>();
 
 /**
  * 세션 초기화 순번.
@@ -69,6 +72,7 @@ let authSubscription: { unsubscribe: () => void } | null = null;
 const privateReset = {
   profile: DEFAULT_USER_PET_PROFILE, pets: [], activePetId: null,
   favorites: [], recentViews: [], comparisonList: [],
+  isLoadingRecentViews: false, recentViewsError: '', guestRecentViewIds: [],
 };
 
 let adminDataSyncChannel: RealtimeChannel | null = null;
@@ -107,7 +111,12 @@ interface StoreState {
   favorites: string[];
   toggleFavorite: (productId: string) => void;
   recentViews: Product[];
-  trackRecentView: (productId: string) => void;
+  /** Retry source only; never render products from IDs without public revalidation. */
+  guestRecentViewIds: string[];
+  isLoadingRecentViews: boolean;
+  recentViewsError: string;
+  fetchRecentViews: (all?: boolean) => Promise<void>;
+  trackRecentView: (productId: string) => Promise<void>;
   comparisonList: string[];
   /** 담기에 성공하면 true, 이미 담겼거나 상한을 넘겨 거절되면 false. */
   addToComparison: (productId: string) => boolean;
@@ -125,6 +134,9 @@ export const useStore = create<StoreState>((set, get) => ({
   catalogRevision: 0,
   selectedProduct: null,
   recentViews: [],
+  guestRecentViewIds: [],
+  isLoadingRecentViews: false,
+  recentViewsError: '',
   isLoadingProducts: false,
   isLoadingCatalog: false,
   isLoadingDetail: false,
@@ -136,16 +148,16 @@ export const useStore = create<StoreState>((set, get) => ({
     const epoch = ++sessionEpoch;
     const isCurrent = () => epoch === sessionEpoch;
     const loadPrivate = async (userId: string, capturedEpoch: number) => {
-      const [pets, favorites, recent] = await Promise.all([
-        getUserPets(userId), getFavorites(userId), getRecentViews(userId),
+      if (capturedEpoch !== sessionEpoch || get().userId !== userId) return;
+      const [pets, favorites] = await Promise.all([
+        getUserPets(userId), getFavorites(userId), get().fetchRecentViews(false),
       ]);
       if (capturedEpoch !== sessionEpoch || get().userId !== userId) return;
       const mapped = sortPetsByRegistration(pets.map(mapPetProfileFromRow));
       const active = restoreSelectedPet(userId, mapped, get().activePetId);
       rememberSelectedPet(userId, active?.id ?? null);
       set({ pets: mapped, activePetId: active?.id ?? null,
-        profile: active ?? DEFAULT_USER_PET_PROFILE, favorites,
-        recentViews: recent.map(mapProductFromSupabaseRow).filter(Boolean) as Product[] });
+        profile: active ?? DEFAULT_USER_PET_PROFILE, favorites });
     };
     // Subscribe before getSession, including guest startup. The callback is synchronous:
     // calling auth/network methods inside it can deadlock the Supabase auth lock.
@@ -384,6 +396,35 @@ export const useStore = create<StoreState>((set, get) => ({
     }
   },
 
+  fetchRecentViews: async (all = true) => {
+    const { userId, recentViews } = get();
+    const guestIds = [...new Set([...recentViews.map(product => product.id), ...get().guestRecentViewIds])];
+    const epoch = sessionEpoch;
+    // Delayed home initialization must not truncate an already requested full list.
+    const loadAll = all || (fullRecentHistory?.epoch === epoch && fullRecentHistory.userId === userId);
+    if (loadAll) fullRecentHistory = { epoch, userId };
+    const request = ++recentViewsRequestId;
+    const revision = recentViewsRevision;
+    const current = () => epoch === sessionEpoch && userId === get().userId && request === recentViewsRequestId;
+    set({ isLoadingRecentViews: true, recentViewsError: '', ...(!userId ? { guestRecentViewIds: guestIds } : {}) });
+    try {
+      // A fast back navigation must not reload before the detail's view is saved.
+      while (userId && recentViewWrites.has(userId)) await recentViewWrites.get(userId);
+      if (!current()) return;
+      const products = userId
+        ? (await getRecentViews(userId, loadAll)).map(mapProductFromSupabaseRow).filter((p): p is Product => Boolean(p))
+        : await getVisibleProductsByIds(guestIds);
+      if (!current()) return;
+      if (revision !== recentViewsRevision) { await get().fetchRecentViews(loadAll); return; }
+      ++recentViewsRevision;
+      set({ recentViews: products, ...(!userId ? { guestRecentViewIds: products.map(product => product.id) } : {}) });
+    } catch (error) {
+      if (current()) set({ recentViews: [], recentViewsError: error instanceof Error ? error.message : '최근 본 상품을 불러오지 못했습니다.' });
+    } finally {
+      if (current()) set({ isLoadingRecentViews: false });
+    }
+  },
+
   trackRecentView: async (productId) => {
     const { userId, selectedProduct, recentViews } = get();
     const product = selectedProduct?.id === productId ? selectedProduct : null;
@@ -391,9 +432,21 @@ export const useStore = create<StoreState>((set, get) => ({
     if (product) {
       ++recentViewsRevision;
       const filtered = recentViews.filter(p => p.id !== productId);
-      set({ recentViews: [product, ...filtered].slice(0, 10) });
+      set({ recentViews: [product, ...filtered], ...(!userId ? {
+        guestRecentViewIds: [productId, ...get().guestRecentViewIds.filter(id => id !== productId)],
+      } : {}) });
     }
-    if (userId) await addRecentView(userId, productId);
+    if (userId) {
+      const epoch = sessionEpoch;
+      // Preserve visit order even when requests finish out of order.
+      const write = (recentViewWrites.get(userId) ?? Promise.resolve()).catch(() => {}).then(() => {
+        if (epoch === sessionEpoch && userId === get().userId) return addRecentView(userId, productId);
+      });
+      recentViewWrites.set(userId, write);
+      try { await write; }
+      catch { if (epoch === sessionEpoch && userId === get().userId) notify.warning('최근 본 상품을 저장하지 못했습니다.'); }
+      finally { if (recentViewWrites.get(userId) === write) recentViewWrites.delete(userId); }
+    }
   },
   comparisonList: [],
   addToComparison: (id) => {
