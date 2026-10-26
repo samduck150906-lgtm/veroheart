@@ -4,19 +4,9 @@ import { Helmet } from 'react-helmet-async';
 import { useStore } from '../store/useStore';
 import { getProductByBarcode } from '../lib/supabase';
 import { normalizeBarcode } from '../lib/productIdentity';
+import { createBarcodeDetector, type BarcodeDetectorLike } from '../lib/barcodeDetector';
 
 type CamState = 'idle' | 'starting' | 'live' | 'denied' | 'unavailable' | 'no-detector';
-
-/** 실험적 BarcodeDetector API — 표준 TS 타입이 없어 필요한 부분만 선언한다. */
-interface DetectedBarcode {
-  rawValue: string;
-}
-interface BarcodeDetectorLike {
-  detect(source: CanvasImageSource): Promise<DetectedBarcode[]>;
-}
-interface BarcodeDetectorCtor {
-  new (options?: { formats: string[] }): BarcodeDetectorLike;
-}
 
 /** 뷰파인더 안 자리표시자 바코드 패턴 — 프로토타입 barBars */
 const BAR_PATTERN = Array.from({ length: 16 }, (_, i) => ({
@@ -32,6 +22,9 @@ export default function Scan() {
   const rafRef = useRef<number | null>(null);
   const detectorRef = useRef<BarcodeDetectorLike | null>(null);
   const handledRef = useRef(false);
+  const mountedRef = useRef(false);
+  const cameraGeneration = useRef(0);
+  const lastFrameAt = useRef(0);
 
   const [camState, setCamState] = useState<CamState>('idle');
   const [torchOn, setTorchOn] = useState(false);
@@ -41,10 +34,13 @@ export default function Scan() {
   const [checkingBarcode, setCheckingBarcode] = useState(false);
 
   const stopCamera = useCallback(() => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    cameraGeneration.current += 1;
+    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
     rafRef.current = null;
+    detectorRef.current = null;
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
   }, []);
 
   const handleBarcode = useCallback(
@@ -69,6 +65,7 @@ export default function Scan() {
       }
       // 2) DB 조회 (products.barcode 컬럼이 있으면 매칭)
       const remote = await getProductByBarcode(normalized);
+      if (!mountedRef.current) return;
       if (remote) {
         navigate(`/product/${remote.id}`);
         return;
@@ -82,22 +79,33 @@ export default function Scan() {
   const scanLoop = useCallback(() => {
     const video = videoRef.current;
     const detector = detectorRef.current;
-    if (!video || !detector || handledRef.current) return;
+    if (!video || !detector || handledRef.current || !mountedRef.current || !streamRef.current) return;
+    const generation = cameraGeneration.current;
+    if (performance.now() - lastFrameAt.current < 150) {
+      rafRef.current = requestAnimationFrame(scanLoop);
+      return;
+    }
+    lastFrameAt.current = performance.now();
+    const continueScanning = () => {
+      if (mountedRef.current && generation === cameraGeneration.current && !handledRef.current) rafRef.current = requestAnimationFrame(scanLoop);
+    };
     detector
       .detect(video)
-      .then((codes: DetectedBarcode[]) => {
-        if (codes && codes.length > 0 && codes[0].rawValue) {
-          handleBarcode(String(codes[0].rawValue));
+      .then((codes) => {
+        if (!mountedRef.current || generation !== cameraGeneration.current) return;
+        const candidate = codes?.find((code) => normalizeBarcode(code.rawValue));
+        if (candidate) {
+          void handleBarcode(candidate.rawValue);
           return;
         }
-        rafRef.current = requestAnimationFrame(scanLoop);
+        continueScanning();
       })
-      .catch(() => {
-        rafRef.current = requestAnimationFrame(scanLoop);
-      });
+      .catch(continueScanning);
   }, [handleBarcode]);
 
   const startCamera = useCallback(async () => {
+    stopCamera();
+    const generation = cameraGeneration.current;
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
       setCamState('unavailable');
       return;
@@ -108,33 +116,29 @@ export default function Scan() {
         video: { facingMode: { ideal: 'environment' } },
         audio: false,
       });
+      if (!mountedRef.current || generation !== cameraGeneration.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        await videoRef.current.play().catch(() => {});
-      }
-      setCamState('live');
-
-      // BarcodeDetector 가 없으면(iOS Safari 등) 아무리 비춰도 인식되지 않는다.
-      // 카메라만 켜 둔 채 "읽고 있어요"처럼 보이면 사용자는 계속 기다리게 되므로,
-      // 카메라를 끄고 직접 검색으로 안내한다.
-      const BD = (window as unknown as { BarcodeDetector?: BarcodeDetectorCtor }).BarcodeDetector;
-      if (!BD) {
-        stopCamera();
-        setCamState('no-detector');
-        return;
+        await videoRef.current.play();
       }
       try {
-        detectorRef.current = new BD({
-          formats: ['ean_13', 'ean_8', 'code_128', 'upc_a', 'upc_e', 'qr_code'],
-        });
+        const detector = await createBarcodeDetector();
+        if (!mountedRef.current || generation !== cameraGeneration.current) return;
+        detectorRef.current = detector;
+        setCamState('live');
         rafRef.current = requestAnimationFrame(scanLoop);
       } catch {
-        detectorRef.current = null;
+        if (!mountedRef.current || generation !== cameraGeneration.current) return;
         stopCamera();
         setCamState('no-detector');
       }
     } catch (err) {
+      if (!mountedRef.current || generation !== cameraGeneration.current) return;
+      stopCamera();
       const name = err instanceof DOMException ? err.name : '';
       if (name === 'NotAllowedError' || name === 'SecurityError') setCamState('denied');
       else setCamState('unavailable');
@@ -142,9 +146,10 @@ export default function Scan() {
   }, [scanLoop, stopCamera]);
 
   useEffect(() => {
+    mountedRef.current = true;
     handledRef.current = false;
-    startCamera();
-    return () => stopCamera();
+    void startCamera();
+    return () => { mountedRef.current = false; stopCamera(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -226,14 +231,12 @@ export default function Scan() {
 
       {/* 뷰파인더 */}
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-        {showLive && (
           <video
             ref={videoRef}
             playsInline
             muted
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', visibility: showLive ? 'visible' : 'hidden' }}
           />
-        )}
         {!showLive && (
           <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(120% 80% at 50% 40%, #2A2A22 0%, #111110 70%)' }} />
         )}
@@ -328,7 +331,7 @@ export default function Scan() {
               {camState === 'denied'
                 ? '설정에서 카메라 접근을 허용하면 바로 스캔할 수 있어.'
                 : camState === 'no-detector'
-                  ? '이 브라우저는 자동 인식을 지원하지 않아요. 바코드 숫자를 입력해 주세요.'
+                  ? '자동 인식을 시작하지 못했어요. 바코드 숫자를 입력해 주세요.'
                   : '이 기기에서는 카메라 스캔을 쓸 수 없어.'}
             </div>
           </>

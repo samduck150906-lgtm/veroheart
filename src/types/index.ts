@@ -119,10 +119,15 @@ export interface Product {
   netWeightText?: string;
   slug?: string;
   catalogSource?: ProductCatalogSource;
+  catalogSourceUrl?: string;
+  catalogSourceNote?: string;
+  requiresVeterinaryGuidance?: boolean;
   analysisStatus?: ProductAnalysisStatus;
   /** 현재 라벨 세트에서 canonical 원료로 확정되지 않은 원문. */
   unknownIngredientTerms?: string[];
   ingredientLabelSetId?: string;
+  /** False when the first current label row has no resolved risk evidence. */
+  firstIngredientResolved?: boolean;
   analysisEngineVersion?: string;
   category: string;
   mainCategory?: string;

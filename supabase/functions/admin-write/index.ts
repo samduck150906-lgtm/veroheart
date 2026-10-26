@@ -1,3 +1,4 @@
+import { deleteAccountData, ownedPhotoPath } from '../_shared/accountStorage.ts';
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 import {
@@ -147,7 +148,7 @@ function base64UrlEncode(bytes: Uint8Array): string {
   return btoa(String.fromCharCode(...bytes)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
 }
 
-function base64UrlDecode(value: string): Uint8Array {
+function base64UrlDecode(value: string): Uint8Array<ArrayBuffer> {
   const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
   const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
   return Uint8Array.from(atob(padded), (character) => character.charCodeAt(0));
@@ -457,6 +458,7 @@ serve(async (req) => {
     switch (action) {
       // ── 인증 확인 ──────────────────────────────────────────────────────
       case 'createAdminSession':
+        if (token.startsWith('v1.')) return json({ error: 'Reauthentication required' }, 401, cors);
         return json({ ok: true, sessionToken: await issueAdminSession(actor, sessionSecret) }, 200, cors);
 
       case 'verifyAdmin':
@@ -1172,8 +1174,7 @@ serve(async (req) => {
           reason,
         });
 
-        const { error } = await db.auth.admin.deleteUser(id);
-        if (error) throw error;
+        await deleteAccountData(db, id);
 
         // Auth 삭제가 프로필을 정리하지 못한 경우(FK 미설정 환경)를 대비한 보정.
         await db.from('users').delete().eq('id', id);
@@ -1624,7 +1625,7 @@ serve(async (req) => {
         let query = db
           .from('pet_feeding_logs')
           .select(
-            `id, feeding_date, feeding_time, meal_period, amount, unit, preference_level, image_url, memo,
+            `id, user_id, feeding_date, feeding_time, meal_period, amount, unit, preference_level, image_url, memo,
              reaction_note, custom_product_name, created_at,
              users (nickname), pets!inner (name, pet_type), products (name, brand_name)`,
             { count: 'exact' },
@@ -1670,10 +1671,13 @@ serve(async (req) => {
           {
             ok: true,
             total: count ?? 0,
-            logs: (data ?? []).map((row: Record<string, unknown>) => {
+            logs: await Promise.all((data ?? []).map(async (row: Record<string, unknown>) => {
               const member = one(row.users);
               const pet = one(row.pets);
               const product = one(row.products);
+              const photoPath = ownedPhotoPath(typeof row.image_url === 'string' ? row.image_url : null, String(row.user_id), url);
+              const signed = photoPath ? await db.storage.from('feeding-log-photos').createSignedUrl(photoPath, 300) : null;
+              const imageUrl = signed?.data?.signedUrl ?? (typeof row.image_url === 'string' && row.image_url.startsWith('data:image/') ? row.image_url : null);
               return {
                 id: row.id,
                 feedingDate: row.feeding_date,
@@ -1686,12 +1690,12 @@ serve(async (req) => {
                 amount: row.amount === null || row.amount === undefined ? null : Number(row.amount),
                 unit: row.unit ?? null,
                 preferenceLevel: row.preference_level ?? null,
-                imageUrl: row.image_url ?? null,
+                imageUrl,
                 memo: row.memo ?? null,
                 reactionNote: row.reaction_note ?? null,
                 createdAt: row.created_at,
               };
-            }),
+            })),
           },
           200,
           cors,

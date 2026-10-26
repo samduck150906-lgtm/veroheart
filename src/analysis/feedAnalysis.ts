@@ -64,8 +64,8 @@ export interface FeedAnalysis {
   /** as-fed 기준 % */
   macros: FeedMacros | null;
   /** 건물기준 매크로(%) — 제품 간 비교용 */
-  macrosDMB: { protein: number; fat: number; fiber: number; carb: number } | null;
-  calories: { per100g: number; perKg: number; distribution: { protein: number; fat: number; carb: number }; measured: boolean } | null;
+  macrosDMB: { protein: number; fat: number; fiber: number | null; carb: number | null } | null;
+  calories: { per100g: number; perKg: number; distribution: { protein: number; fat: number; carb: number } | null; measured: boolean } | null;
   aafco: { evaluated: boolean; passed: boolean; details: string[]; label: string };
   caP: { ratio: number | null; note: string | null };
   ingredientQuality: FeedIngredientQuality;
@@ -142,6 +142,11 @@ function derFactor(profile: UserPetProfile): number {
   return 1.6; // 성체 유지(평균)
 }
 
+function isObservedPercent(value: unknown): boolean {
+  return (typeof value === 'number' || (typeof value === 'string' && value.trim() !== ''))
+    && Number.isFinite(Number(value)) && Number(value) >= 0 && Number(value) <= 100;
+}
+
 export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnalysis {
   const species: 'dog' | 'cat' = profile.species === 'Cat' ? 'cat' : 'dog';
   const productType = detectProductType(product);
@@ -155,12 +160,16 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
   // ── 1) 영양 계산 (보장성분 실측치가 있을 때만) ──
   const ga: GuaranteedAnalysis | undefined = product.guaranteedAnalysis;
   const hasNutritionData = Boolean(
-    ga && ((ga.crudeProtein ?? 0) > 0 || (ga.crudeFat ?? 0) > 0),
+    ga && [ga.crudeProtein, ga.crudeFat].some(isObservedPercent),
   );
 
   let macros: FeedMacros | null = null;
   let macrosDMB: FeedAnalysis['macrosDMB'] = null;
-  let calories: FeedAnalysis['calories'] = null;
+  const labelKcal = Number(product.caloriesPer100g);
+  const measuredKcal = Number.isFinite(labelKcal) && labelKcal > 0;
+  let calories: FeedAnalysis['calories'] = measuredKcal
+    ? { per100g: labelKcal, perKg: labelKcal * 10, distribution: null, measured: true }
+    : null;
   let aafco: FeedAnalysis['aafco'] = { evaluated: false, passed: false, details: [], label: species === 'cat' ? '고양이 성묘 유지' : '강아지 성견 유지' };
   let caP: FeedAnalysis['caP'] = { ratio: null, note: null };
 
@@ -172,27 +181,30 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
     const ash = toPercent(ga.crudeAsh);
     const moisture = toPercent(ga.moisture);
     const carb = Math.max(0, Math.round((100 - protein - fat - fiber - ash - moisture) * 10) / 10);
-    macros = { protein, fat, fiber, ash, moisture, carb };
+    const proximateValues = [ga.crudeProtein, ga.crudeFat, ga.crudeFiber, ga.crudeAsh, ga.moisture];
+    const canEstimateEnergy = proximateValues.every(isObservedPercent)
+      && proximateValues.reduce<number>((sum, value) => sum + Number(value), 0) <= 100;
+    const canEvaluateProteinFat = [ga.crudeProtein, ga.crudeFat, ga.moisture].every(isObservedPercent)
+      && moisture < 100 && protein + fat + moisture <= 100;
+    macros = canEstimateEnergy ? { protein, fat, fiber, ash, moisture, carb } : null;
 
-    macrosDMB = {
+    macrosDMB = canEvaluateProteinFat ? {
       protein: Math.round((toDryMatter(protein, moisture) ?? 0) * 10) / 10,
       fat: Math.round((toDryMatter(fat, moisture) ?? 0) * 10) / 10,
-      fiber: Math.round((toDryMatter(fiber, moisture) ?? 0) * 10) / 10,
-      carb: Math.round((toDryMatter(carb, moisture) ?? 0) * 10) / 10,
-    };
+      fiber: isObservedPercent(ga.crudeFiber) ? Math.round((toDryMatter(fiber, moisture) ?? 0) * 10) / 10 : null,
+      carb: canEstimateEnergy ? Math.round((toDryMatter(carb, moisture) ?? 0) * 10) / 10 : null,
+    } : null;
 
     const calc = calculateCalories(ga);
     // 라벨 열량도 문자열로 들어올 수 있다 — 유한한 양수일 때만 실측치로 인정한다.
-    const labelKcal = Number(product.caloriesPer100g);
-    const measuredKcal = Number.isFinite(labelKcal) && labelKcal > 0;
-    calories = {
-      per100g: measuredKcal ? Math.round(labelKcal) : calc.kcalPer100g,
+    calories = measuredKcal || canEstimateEnergy ? {
+      per100g: measuredKcal ? labelKcal : calc.kcalPer100g,
       perKg: measuredKcal ? Math.round(labelKcal * 10) : calc.kcalPerKg,
-      distribution: { protein: calc.distribution.protein, fat: calc.distribution.fat, carb: calc.distribution.carbs },
+      distribution: canEstimateEnergy ? { protein: calc.distribution.protein, fat: calc.distribution.fat, carb: calc.distribution.carbs } : null,
       measured: measuredKcal,
-    };
+    } : null;
 
-    if (productType === 'complete') {
+    if (productType === 'complete' && canEvaluateProteinFat) {
       const res = validateAAFCO(ga, species);
       aafco = { evaluated: true, passed: res.passed, details: res.details, label: aafco.label };
     }
@@ -221,8 +233,8 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
 
   const iq: FeedIngredientQuality = {
     total: ingredients.length,
-    firstIngredient: ingredients[0]?.nameKo ?? null,
-    firstIsAnimalProtein: ingredients.length > 0 && isAnimal(names[0]),
+    firstIngredient: product.firstIngredientResolved === false ? null : ingredients[0]?.nameKo ?? null,
+    firstIsAnimalProtein: product.firstIngredientResolved !== false && ingredients.length > 0 && isAnimal(names[0]),
     animalProteins,
     fillers: Array.from(new Set(fillers)),
     byProducts: Array.from(new Set(byProducts)),
@@ -246,7 +258,7 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
   score -= Math.min(20, iq.dangerCount * 8);
   score -= Math.min(12, iq.cautionCount * 3);
 
-  if (hasNutritionData && macros && macrosDMB) {
+  if (hasNutritionData && macrosDMB) {
     if (aafco.evaluated) score += aafco.passed ? 10 : -12;
     const pMin = species === 'cat' ? 26 : 18;
     const pHigh = species === 'cat' ? 40 : 28;
@@ -254,8 +266,8 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
     if (macrosDMB.protein >= pHigh) score += 6;
     else if (macrosDMB.protein >= pMid) score += 3;
     else if (macrosDMB.protein < pMin && !aafco.evaluated) score -= 6;
-    if (macros.carb >= 55) score -= 6;
-    else if (macros.carb >= 45) score -= 3;
+    if (macros && macros.carb >= 55) score -= 6;
+    else if (macros && macros.carb >= 45) score -= 3;
     if (caP.note) score -= 5;
   }
 
@@ -307,10 +319,10 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
   // 몸무게는 프로필 입력값이라 문자열·0·비정상 값이 들어올 수 있다. 유한한 양수일
   // 때만 계산하고, 결과가 유한하지 않으면 급여량을 내보내지 않는다(화면 NaN 방지).
   const weightKg = Number(profile.weightKg);
-  if (Number.isFinite(weightKg) && weightKg > 0 && productType === 'complete') {
-    const kcalFallback = 380;
-    const measured = Boolean(calories?.per100g && Number.isFinite(calories.per100g) && calories.per100g > 0);
-    const kcalPer100g = measured ? (calories as { per100g: number }).per100g : kcalFallback;
+  if (Number.isFinite(weightKg) && weightKg > 0 && productType === 'complete' && !product.requiresVeterinaryGuidance
+      && calories && Number.isFinite(calories.per100g) && calories.per100g > 0) {
+    const measured = calories.measured;
+    const kcalPer100g = calories.per100g;
     const rer = 70 * Math.pow(weightKg, 0.75);
     const der = rer * derFactor(profile);
     const grams = Math.round((der / kcalPer100g) * 100);

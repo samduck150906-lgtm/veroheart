@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, X, Check, FlaskConical, Camera, Trash2, PawPrint } from 'lucide-react';
 import BottomSheet from '../BottomSheet';
-import { searchDiaryProducts, createFeedingLog, updateFeedingLog, uploadFeedingLogPhoto } from '../../lib/supabase';
+import { searchDiaryProducts, createFeedingLog, updateFeedingLog, uploadFeedingLogPhoto, removeUnattachedFeedingPhoto } from '../../lib/supabase';
 import { notify } from '../../store/useNotification';
 import type {
   FeedingLogInput,
@@ -258,14 +258,15 @@ export default function FeedingLogForm({
     const parsedAmount = amountMatch ? Number.parseFloat(amountMatch[0]) : NaN;
 
     setIsSaving(true);
+    let uploadedPath: string | null = null;
     try {
-      // 사진: 새로 고른 파일은 Storage에 올리고 URL만 저장한다. base64를 DB에
-      // 넣으면 목록 조회 payload가 수 MB로 커진다. 업로드 실패(버킷 미적용 등)
-      // 시에만 기존 방식(data URL)으로 폴백.
+      // Store only private object paths; upload failure leaves the form editable.
       let savedImageUrl: string | null = imageUrl || null;
       if (photoFile) {
         const uploaded = await uploadFeedingLogPhoto(userId, photoFile);
-        if (uploaded) savedImageUrl = uploaded;
+        if (!uploaded) { notify.error('사진 업로드에 실패했습니다. 다시 시도해 주세요.'); return; }
+        uploadedPath = uploaded;
+        savedImageUrl = uploaded;
       }
 
       const input: FeedingLogInput = {
@@ -289,11 +290,13 @@ export default function FeedingLogForm({
         ? await updateFeedingLog(editingLog.id, userId, input)
         : await createFeedingLog(userId, input);
       if (saved) {
+        uploadedPath = null;
         notify.success(isEditing ? '기록을 수정했어요.' : '섭취 기록을 저장했어요.');
         onSaved(saved);
         onClose();
       }
     } finally {
+      if (uploadedPath) await removeUnattachedFeedingPhoto(userId, uploadedPath);
       setIsSaving(false);
     }
   };

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { publicUrl } from '../lib/publicUrls';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -53,7 +54,6 @@ import {
   type RadarAxis,
 } from '../components/pdp/PdpParts';
 import { gradeMetaFromScore } from '../components/pdp/gradeMeta';
-import { REVIEW_QUICK_TAGS } from '../constants/reviewTags';
 import ProductThumb from '../components/ProductThumb';
 import ProductVerificationBadge from '../components/ProductVerificationBadge';
 import { HealthConcernEvidence } from '../components/HealthConcernEvidence';
@@ -105,16 +105,12 @@ export default function Detail() {
 
   type ReviewRow = {
     id: string;
-    user_id: string;
+    is_mine: boolean;
     rating: number;
-    content: string;
     created_at: string;
-    users?: { nickname?: string | null };
   };
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
   const [reviewRating, setReviewRating] = useState(5);
-  const [reviewContent, setReviewContent] = useState('');
-  const [reviewTags, setReviewTags] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedIngredient, setSelectedIngredient] = useState<(Ingredient & { description?: string }) | null>(null);
   const [scrollY, setScrollY] = useState(0);
@@ -132,9 +128,16 @@ export default function Detail() {
     if (id) {
       fetchProductDetail(id);
       trackRecentView(id);
-      getReviews(id).then(setReviews);
+
     }
   }, [id, fetchProductDetail, trackRecentView]);
+
+  useEffect(() => {
+    let active = true;
+    setReviews([]);
+    if (id) void getReviews(id).then((rows) => { if (active) setReviews(rows); });
+    return () => { active = false; };
+  }, [id, userId]);
 
   // Sticky Score 노출 + 스크롤 진행률 (spec §21 P0)
   // 스크롤 영역은 window 가 아니라 .app-main 컨테이너다(app shell: one scroll area).
@@ -153,32 +156,19 @@ export default function Detail() {
     scrollAppToTop(false); // 즉시 이동(진입 점프감 방지)
   }, [id]);
 
-  const toggleReviewTag = (tag: string) => {
-    setReviewTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
-  };
-
   const handleSubmitReview = async () => {
     if (!userId) { navigate('/login'); return; }
-    // 별점만 필수다. 태그와 한 줄 글은 '(선택)' 이라고 안내한 대로 진짜 선택이다.
-    // 예전에는 본문이 비면 조용히 return 하고 버튼도 잠겨 있어서, 선택이라고 써 놓고
-    // 실제로는 글을 써야만 등록됐다.
-    const tagLine = reviewTags.length > 0 ? `# ${reviewTags.join(' · ')}` : '';
-    const body = [tagLine, reviewContent.trim()].filter(Boolean).join('\n\n');
     setIsSubmitting(true);
-    const review = await createReview(userId, id!, reviewRating, body);
-    if (review) {
-      setReviewTags([]);
-      setReviews(prev => [{ ...review, users: { nickname: profile?.name || '나' } }, ...prev]);
-      setReviewContent('');
-      setReviewRating(5);
-    }
-    setIsSubmitting(false);
+    try {
+      const review = await createReview(userId, id!, reviewRating);
+      if (review) { setReviews(prev => [review, ...prev]); setReviewRating(5); }
+    } finally { setIsSubmitting(false); }
   };
 
   const handleDeleteReview = async (reviewId: string) => {
     if (!userId) return;
-    await deleteReview(reviewId, userId);
-    setReviews(prev => prev.filter(r => r.id !== reviewId));
+    const deleted = await deleteReview(reviewId, userId);
+    if (deleted) setReviews(prev => prev.filter(r => r.id !== reviewId));
   };
 
   const handleScrollTop = () => {
@@ -201,7 +191,7 @@ export default function Detail() {
 
   const handleShare = async () => {
     if (!product) return;
-    const url = typeof window !== 'undefined' ? window.location.href : '';
+    const url = publicUrl(`/product/${encodeURIComponent(product.id)}`);
     const display = getProductDisplayParts(product);
     const title = [display.brand, display.name].filter(Boolean).join(' ');
     try {
@@ -249,10 +239,9 @@ export default function Detail() {
   // ── PDP 판단 스택 데이터 (점수 게이지 · 요약 · 우리 아이 적합도) ──
   // 표시 점수는 카드·분석결과와 동일한 하드캡(위험≤69, 알레르기≤9, 종 불일치=0)을
   // 거친 값을 쓴다. 게스트에게는 개인화 감점 없는 객관 점수를 보여준다.
-  const { breakdown, score: safetyScore, grade: displayGrade } = resolveProductDisplayVerdict(product, profile);
+  const { breakdown, score: safetyScore, grade: displayGrade, analysisReadiness, canShowScore: analysisReady } = resolveProductDisplayVerdict(product, profile);
   const hasIngredientData = (product.ingredients?.length ?? 0) > 0;
-  const analysisStatus = product.analysisStatus ?? (hasIngredientData ? 'ready' : 'unavailable');
-  const analysisReady = analysisStatus === 'ready';
+  const analysisStatus = analysisReadiness.status;
   const allergyDisplay = buildAllergyDisplayState(breakdown, profile.name || '우리 아이', {
     hasIngredientData,
     hasAllergyProfile: personalized && profile.allergies.length > 0,
@@ -262,7 +251,7 @@ export default function Detail() {
   const concernPresentation = personalized
     ? buildHealthConcernPresentation(breakdown.healthConcernPolicy)
     : null;
-  const conclusion = report
+  const conclusion = report && analysisReady
     ? buildProductConclusion(product, profile, { ...report, score: safetyScore }, { personalized })
     : null;
   const petTypeLabel =
@@ -293,8 +282,8 @@ export default function Detail() {
           ? { icon: <Ban size={18} />, label: '알레르기', value: allergyDisplay.shortText, tone: 'caution' }
           : { icon: <Ban size={18} />, label: '알레르기', value: allergyDisplay.shortText, tone: 'excellent' },
     { icon: <Dog size={18} />, label: '추천 대상', value: petTypeLabel, tone: 'neutral' },
-    { icon: <Calendar size={18} />, label: '생애주기', value: (product.targetLifeStage && product.targetLifeStage[0]) || '전연령', tone: 'neutral' },
-    { icon: <Flame size={18} />, label: '제형', value: product.formulation || '건식', tone: 'neutral' },
+    { icon: <Calendar size={18} />, label: '생애주기', value: (product.targetLifeStage && product.targetLifeStage[0]) || '미표기', tone: 'neutral' },
+    { icon: <Flame size={18} />, label: '제형', value: product.formulation || '미표기', tone: 'neutral' },
     // 브랜드 자리에 수집 출처 라벨('쿠팡검색')만 있는 제품이 많아 그대로 쓰면 제조사로 오해된다.
     { icon: <Globe size={18} />, label: '제조', value: product.manufacturerName || brandLabel || '정보 없음', tone: 'neutral' },
   ];
@@ -346,6 +335,7 @@ export default function Detail() {
   const expectedPet = profile.species === 'Cat' ? 'cat' : 'dog';
   const altPool = products
     .filter(p => p.id !== product.id && p.category === product.category && (!p.targetPetType || p.targetPetType === expectedPet || p.targetPetType === 'all'))
+    .filter(p => analysisReady && !p.requiresVeterinaryGuidance && resolveProductDisplayVerdict(p, profile).canShowScore)
     .map(p => ({ p, score: resolveProductDisplayVerdict(p, profile).score }));
   const altUsed = new Set<string>();
   const altCards: AltCardData[] = [];
@@ -361,7 +351,7 @@ export default function Detail() {
     });
   };
   const riskCount = (p: typeof product) => (p.ingredients ?? []).filter(i => i.riskLevel === 'danger' || i.riskLevel === 'caution').length;
-  pickAlt(altPool.filter(x => x.score > currentScore).sort((a, b) => b.score - a.score), '더 건강해요', 'excellent');
+  pickAlt(altPool.filter(x => x.score > currentScore).sort((a, b) => b.score - a.score), '등록 원료 기준 점수 우위', 'excellent');
   pickAlt(altPool.filter(x => riskCount(x.p) === 0 && x.score >= 60).sort((a, b) => b.score - a.score), '등록 정보상 주의 성분 미확인', 'good');
   pickAlt(altPool.filter(x => x.p.verificationStatus === 'verified' && x.score >= 75).sort((a, b) => b.score - a.score), '정보가 확인된 제품', 'neutral');
 
@@ -415,16 +405,7 @@ export default function Detail() {
 
   // ── 리뷰 요약(별점 분포·태그) — 실제 reviews 데이터에서 파생 ──
   const reviewRatings = reviews.map(r => r.rating);
-  const reviewTagCounts = new Map<string, number>();
-  for (const r of reviews) {
-    const first = r.content.split('\n')[0];
-    if (first.startsWith('#')) {
-      for (const t of first.replace(/^#\s*/, '').split('·').map(s => s.trim()).filter(Boolean)) {
-        reviewTagCounts.set(t, (reviewTagCounts.get(t) ?? 0) + 1);
-      }
-    }
-  }
-  const topReviewTags = [...reviewTagCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([t, c]) => `${t} ${c}`);
+  const topReviewTags: string[] = [];
   const avgRating = reviewRatings.length ? reviewRatings.reduce((s, r) => s + r, 0) / reviewRatings.length : 0;
   const reviewSummary = reviews.length
     ? `후기 ${reviews.length}개 요약 · 평균 ${avgRating.toFixed(1)}점${topReviewTags.length ? ` · 자주 언급: ${topReviewTags.slice(0, 3).map(t => t.replace(/\s\d+$/, '')).join(', ')}` : ''}`
@@ -440,7 +421,7 @@ export default function Detail() {
       </Helmet>
 
       <OfflineBanner online={online} />
-      <StickyScoreBar score={safetyScore} name={productDisplay.name} visible={showStickyScore} progress={scrollProgress} />
+      {analysisReady && <StickyScoreBar score={safetyScore} name={productDisplay.name} visible={showStickyScore} progress={scrollProgress} />}
 
       {conclusion && (
         <section
@@ -552,7 +533,7 @@ export default function Detail() {
         <span style={{
           width: '56px', height: '56px', borderRadius: '16px', flex: 'none',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: gradePalette(displayGrade).fg,
+          background: analysisReady ? gradePalette(displayGrade).fg : 'var(--text-muted)',
         }}>
           {analysisReady
             ? <span style={{ fontSize: '28px', fontWeight: 800, color: '#fff', letterSpacing: '-0.04em' }}>{displayGrade}</span>
@@ -574,7 +555,7 @@ export default function Detail() {
       </button>
 
       <GlanceGrid tiles={glanceTiles} />
-      <FitForPetCard petName={profile.name} percent={safetyScore} chips={fitChips} reasons={breakdown.reasons} />
+      {analysisReady && <FitForPetCard petName={profile.name} percent={safetyScore} chips={fitChips} reasons={breakdown.reasons} />}
       <div style={{ marginBottom: 16 }}>
         <HealthConcernEvidence presentation={concernPresentation} />
       </div>
@@ -633,6 +614,15 @@ export default function Detail() {
         </div>
       </TossCard>
 
+      {product.catalogSourceUrl && (
+        <section className="card" style={{ marginBottom: 24 }}>
+          <h2 style={{ fontSize: 18 }}>제조사 공개 정보</h2>
+          <p>{product.catalogSourceNote || '실제 구매 제품의 포장 표시를 함께 확인해 주세요.'}</p>
+          {product.requiresVeterinaryGuidance && <p><strong>수의사 상담이 필요한 제품이에요. 처방과 급여량은 담당 수의사의 안내를 따라 주세요.</strong></p>}
+          <a href={product.catalogSourceUrl} target="_blank" rel="noopener noreferrer">제조사 원문 확인</a>
+        </section>
+      )}
+
       {/* 일일 급여량 계산기 */}
       <section className="card" style={{ marginBottom: '40px' }}>
         <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-dark)' }}>
@@ -646,14 +636,14 @@ export default function Detail() {
             <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
               {profile.weightKg}kg · {profile.age <= 1 ? '성장기' : profile.age >= 8 ? '노령' : '성체 유지'} 기준 (RER×{profile.age <= 1 ? '2.5' : profile.age >= 8 ? '1.4' : '1.6'})<br/>
               <span style={{ fontSize: '12px', opacity: 0.8 }}>
-                *{feed.feeding?.measured ? `라벨 열량 ${feed.feeding.kcalPer100g}kcal/100g` : `추정 열량 ${feed.feeding?.kcalPer100g ?? 380}kcal/100g`} 기준 · 하루 필요 열량 약 {feed.feeding?.derKcal ?? 0}kcal
+                *{feed.feeding?.measured ? `라벨 열량 ${feed.feeding.kcalPer100g}kcal/100g` : `보장성분으로 추정한 열량 ${feed.feeding?.kcalPer100g}kcal/100g`} 기준 · 하루 필요 열량 약 {feed.feeding?.derKcal}kcal
               </span>
             </p>
           </div>
         ) : (
           <div>
             <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '16px' }}>
-              몸무게를 입력하시면 정확한 권장 급여량을 알려드려요!
+              {profile.weightKg ? '제품 열량 정보가 부족해 급여량을 계산할 수 없어요. 제품 포장의 급여 안내를 확인해 주세요.' : '몸무게와 제품 열량이 있으면 참고용 급여량을 계산할 수 있어요.'}
             </p>
             <button 
               className="btn btn-outline" 
@@ -853,29 +843,8 @@ export default function Detail() {
         <div style={{ background: 'var(--surface-alt)', borderRadius: '20px', padding: '20px', marginBottom: '24px', border: '1px solid var(--surface-alt)' }}>
           {/* 등록 조건을 미리 알려 준다 — '(선택)'과 실제 검증이 어긋나 보이지 않게. */}
           <p style={{ margin: '0 0 12px', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 700 }}>
-            별점만 남겨도 등록돼요. 태그와 한 줄 글은 선택이에요.
+            제품의 별점을 남길 수 있어요. 자유 서술 후기와 닉네임은 공개하지 않아요.
           </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
-            {REVIEW_QUICK_TAGS.map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => toggleReviewTag(tag)}
-                style={{
-                  padding: '8px 14px',
-                  borderRadius: '999px',
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  border: reviewTags.includes(tag) ? 'none' : '1px solid var(--line)',
-                  background: reviewTags.includes(tag) ? 'var(--text-dark)' : 'var(--surface-elevated)',
-                  color: reviewTags.includes(tag) ? 'var(--bg-color)' : 'var(--text-muted)',
-                  cursor: 'pointer',
-                }}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
           <div style={{ display: 'flex', gap: '4px', marginBottom: '12px' }}>
             {[1, 2, 3, 4, 5].map(star => (
               <button key={star} onClick={() => setReviewRating(star)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}>
@@ -883,22 +852,14 @@ export default function Detail() {
               </button>
             ))}
           </div>
-          <textarea
-            value={reviewContent}
-            onChange={e => setReviewContent(e.target.value)}
-            placeholder={userId ? '한 줄 덧붙이기 (선택)' : '로그인 후 작성'}
-            aria-label="리뷰 한 줄 (선택)"
-            disabled={!userId}
-            style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid var(--line)', fontSize: '14px', outline: 'none', resize: 'none', height: '80px', boxSizing: 'border-box', color: 'var(--text-dark)', background: userId ? 'var(--surface-elevated)' : 'var(--surface-alt)' }}
-          />
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
             {userId ? (
               <button onClick={handleSubmitReview} disabled={isSubmitting} style={{ padding: '12px 24px', background: 'var(--text-dark)', color: 'var(--bg-color)', borderRadius: '12px', fontWeight: 700, fontSize: '14px', border: 'none', cursor: 'pointer', opacity: isSubmitting ? 0.5 : 1 }}>
-                {isSubmitting ? '등록 중...' : '리뷰 등록'}
+                {isSubmitting ? '등록 중...' : '별점 등록'}
               </button>
             ) : (
               <Link to="/login" style={{ padding: '12px 24px', background: 'var(--text-dark)', color: 'var(--bg-color)', borderRadius: '12px', fontWeight: 700, fontSize: '14px', textDecoration: 'none' }}>
-                로그인하고 리뷰 쓰기
+                로그인하고 별점 남기기
               </Link>
             )}
           </div>
@@ -908,7 +869,7 @@ export default function Detail() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {reviews.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-muted)', background: 'var(--surface-alt)', borderRadius: '16px' }}>
-              아직 리뷰가 없습니다. 첫 리뷰를 작성해보세요!
+              아직 별점이 없습니다. 첫 별점을 남겨보세요!
             </div>
           ) : reviews.map(review => (
             <div key={review.id} style={{ padding: '16px 20px', background: 'var(--surface-elevated)', border: '1px solid var(--line)', borderRadius: '16px' }}>
@@ -920,16 +881,15 @@ export default function Detail() {
                     ))}
                   </div>
                   <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                    {review.users?.nickname || '익명'} · {new Date(review.created_at).toLocaleDateString()}
+                    {review.is_mine ? '내 별점' : '별점'} · {new Date(review.created_at).toLocaleDateString()}
                   </div>
                 </div>
-                {review.user_id === userId && (
+                {review.is_mine && userId && (
                   <button onClick={() => handleDeleteReview(review.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--line)' }}>
                     <Trash2 size={16} />
                   </button>
                 )}
               </div>
-              <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>{review.content}</p>
             </div>
           ))}
         </div>
@@ -952,6 +912,7 @@ export default function Detail() {
       />
 
       <FeedingLogForm
+        key={userId ?? 'guest'}
         isOpen={logFormOpen}
         onClose={() => setLogFormOpen(false)}
         pets={pets}

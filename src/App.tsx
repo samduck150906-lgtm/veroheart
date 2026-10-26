@@ -1,7 +1,8 @@
+import NativeAuthListener from './components/NativeAuthListener';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { pickSplashTagline } from './copy/marketing';
 import Wordmark from './components/Wordmark';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useStore } from './store/useStore';
 import Layout from './components/Layout';
 import Home from './pages/Home';
@@ -57,6 +58,15 @@ function RouteFallback() {
     </div>
   );
 }
+
+function EntryGateRoute({ children }: { children: React.ReactNode }) {
+  const { pathname } = useLocation();
+  if (['/privacy', '/terms', '/account/delete', '/auth/recovery', '/auth/callback'].includes(pathname)) return null;
+  return children;
+}
+
+const AccountDelete = lazy(() => import('./pages/AccountDelete'));
+const PasswordRecovery = lazy(() => import('./pages/PasswordRecovery'));
 
 function Application() {
   const { initApp, isInitializing, isLoggedIn } = useStore();
@@ -128,6 +138,7 @@ function Application() {
 
   return (
     <BrowserRouter>
+      <NativeAuthListener />
       <Notification />
       <ErrorBoundary>
       <Suspense fallback={<RouteFallback />}>
@@ -152,6 +163,8 @@ function Application() {
           <Route path="product/:id/:slug" element={<Detail />} />
           <Route path="terms" element={<Terms />} />
           <Route path="privacy" element={<Privacy />} />
+          <Route path="account/delete" element={<AccountDelete />} />
+          <Route path="auth/recovery" element={<PasswordRecovery />} />
           <Route path="refund" element={<Refund />} />
           <Route path="*" element={<NotFound />} />
         </Route>
@@ -191,7 +204,7 @@ function Application() {
       </ErrorBoundary>
 
       {!adminMode && entryGateOpen && (
-        <div
+        <EntryGateRoute><div
           style={{
             position: 'fixed',
             inset: 0,
@@ -207,7 +220,7 @@ function Application() {
             }}
             onDismissForLogin={() => setEntryGateOpen(false)}
           />
-        </div>
+        </div></EntryGateRoute>
       )}
     </BrowserRouter>
   );

@@ -41,7 +41,7 @@ export default function Home() {
   const recommended = useMemo(() => {
     const recentIds = new Set(recentViews.map((p) => p.id));
     return products
-      .filter((p) => !recentIds.has(p.id))
+      .filter((p) => !recentIds.has(p.id) && !p.requiresVeterinaryGuidance)
       .map((p) => ({ product: p, verdict: resolveProductDisplayVerdict(p, profile) }))
       .sort((a, b) => b.verdict.score - a.verdict.score)
       .slice(0, 3);
@@ -108,7 +108,7 @@ export default function Home() {
             바코드 스캔하기
           </span>
           <span style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#6B5C00', marginTop: '2px' }}>
-            뒷면 바코드만 찍으면 3초 안에 등급 확인
+            바코드로 등록된 제품의 성분 정보 확인
           </span>
         </span>
       </button>
@@ -210,8 +210,8 @@ export default function Home() {
           </div>
           <div className="vr-rail vr-bleed" style={{ padding: '0 16px 4px', marginBottom: '24px' }}>
             {recentViews.slice(0, 8).map((p) => {
-              const { grade } = gradeOf(p);
-              const palette = gradePalette(grade);
+              const { grade, canShowScore } = gradeOf(p);
+              const palette = canShowScore ? gradePalette(grade) : { fg: 'var(--text-muted)', bg: 'var(--vr-soft)' };
               return (
                 <button
                   key={p.id}
@@ -225,7 +225,7 @@ export default function Home() {
                       className="vr-grade-pill"
                       style={{ position: 'absolute', left: '8px', top: '8px', color: palette.fg, background: palette.bg }}
                     >
-                      {grade}
+                      {canShowScore ? grade : '정보 부족'}
                     </span>
                   </span>
                   <span style={{ display: 'block', fontSize: '11.5px', color: VR.sub, fontWeight: 700, marginTop: '8px' }}>{resolveBrandLabel(p)}</span>
@@ -244,13 +244,14 @@ export default function Home() {
         <section>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '11px' }}>
             <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 800, letterSpacing: '-0.03em' }}>
-              {petLabel}한테 잘 맞는 것들
+              둘러볼 제품
             </h2>
-            <span style={{ fontSize: '11.5px', fontWeight: 700, color: VR.sub }}>프로필 기반</span>
+            <span style={{ fontSize: '11.5px', fontWeight: 700, color: VR.sub }}>성분 정보 확인</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', marginBottom: '24px' }}>
             {recommended.map(({ product, verdict }) => {
               const palette = gradePalette(verdict.grade);
+              const ready = verdict.canShowScore;
               return (
                 <button
                   key={product.id}
@@ -272,7 +273,7 @@ export default function Home() {
                       {normalizeProductDisplayName(product)}
                     </span>
                     <span style={{ display: 'block', fontSize: '11.5px', fontWeight: 700, color: 'var(--safe-strong)', marginTop: '3px' }}>
-                      {petLabel}와 {verdict.score}% 맞아
+                      {ready ? `${petLabel} 기준 참고 점수 ${verdict.score}점` : '상세에서 원료 정보 확인'}
                     </span>
                   </span>
                   <span style={{
@@ -280,7 +281,7 @@ export default function Home() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: '16px', fontWeight: 800, color: palette.fg, background: palette.bg,
                   }}>
-                    {verdict.grade}
+                    {ready ? verdict.grade : '—'}
                   </span>
                 </button>
               );
@@ -288,6 +289,11 @@ export default function Home() {
           </div>
         </section>
       )}
+
+      <button type="button" className="btn btn-outline" onClick={() => navigate('/search')}
+        style={{ width: '100%', marginBottom: 24 }}>
+        전체 제품 찾아보기
+      </button>
 
       {/* 성향 테스트 진입 */}
       <button

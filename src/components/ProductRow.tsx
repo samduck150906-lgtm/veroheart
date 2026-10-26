@@ -20,8 +20,8 @@ export default function ProductRow({ product }: ProductRowProps) {
   const navigate = useNavigate();
   const { profile, favorites, toggleFavorite, comparisonList, addToComparison, removeFromComparison } = useStore();
 
-  const { score, grade } = resolveProductDisplayVerdict(product, profile);
-  const palette = gradePalette(grade);
+  const { score, grade, canShowScore } = resolveProductDisplayVerdict(product, profile);
+  const palette = canShowScore ? gradePalette(grade) : { fg: 'var(--text-muted)', bg: 'var(--vr-soft)' };
   const isFav = favorites.includes(product.id);
   const inCompare = comparisonList.includes(product.id);
   const petName = profile.name || '우리 아이';
@@ -56,7 +56,7 @@ export default function ProductRow({ product }: ProductRowProps) {
                 color: palette.fg, background: palette.bg,
               }}
             >
-              {grade} {score}
+              {canShowScore ? `${grade} ${score}` : '분석 정보 부족'}
             </span>
           </span>
           <span style={{
@@ -118,7 +118,7 @@ export default function ProductRow({ product }: ProductRowProps) {
             {isFav ? '찜 해제' : '찜'}
           </button>
           <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--safe-strong)', marginLeft: 'auto' }}>
-            {fitShortLabel(score, petName)}
+            {canShowScore ? fitShortLabel(score, petName) : '원료 확인 필요'}
           </span>
         </div>
       </div>

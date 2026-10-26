@@ -6,6 +6,7 @@ import { isKakaoShareConfigured, kakaoShareTextWithLink } from '../lib/kakaoShar
 import { notify } from '../store/useNotification';
 import { VR } from '../lib/veroroDesign';
 import { usePublicSettings } from '../lib/publicSettings';
+import { publicUrl } from '../lib/publicUrls';
 
 const SHARE_PATH = '/event/personality-quiz';
 
@@ -21,7 +22,7 @@ export default function ViralEvent() {
   const navigate = useNavigate();
   const [kakaoSharing, setKakaoSharing] = useState(false);
   const [copied, setCopied] = useState(false);
-  const shareUrl = useMemo(() => `${window.location.origin}${SHARE_PATH}`, []);
+  const shareUrl = useMemo(() => publicUrl(SHARE_PATH), []);
   const shareText = useMemo(
     () =>
       `반려동물 성향 테스트 결과 공유 이벤트 참여해봐! ${VIRAL_EVENT_CONFIG.weeklyReward}, ${VIRAL_EVENT_CONFIG.monthlyReward} - ${shareUrl}`,

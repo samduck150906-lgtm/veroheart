@@ -123,7 +123,7 @@ describe('제품 조회 컬럼', () => {
       'getProducts',
       'getProductDetail',
       'getProductByBarcode',
-      'searchProducts',
+      'searchProductsPage',
       'getRecentViews',
       'getBrands',
       'getProductsByBrand',

@@ -61,6 +61,11 @@ let productDetailRequestId = 0;
  * 순번을 올리고, 지난 순번의 결과는 버린다.
  */
 let sessionEpoch = 0;
+let authSubscription: { unsubscribe: () => void } | null = null;
+const privateReset = {
+  profile: DEFAULT_USER_PET_PROFILE, pets: [], activePetId: null,
+  favorites: [], recentViews: [], comparisonList: [],
+};
 
 let adminDataSyncChannel: RealtimeChannel | null = null;
 let adminDataSyncTimer: ReturnType<typeof setTimeout> | null = null;
@@ -114,139 +119,67 @@ export const useStore = create<StoreState>((set, get) => ({
   isLoadingProducts: false,
   isInitializing: true,
 
-  signOut: async () => {
-    await supabaseSignOut();
-    set({
-      userId: null,
-      isLoggedIn: false,
-      favorites: [],
-      recentViews: [],
-      profile: DEFAULT_USER_PET_PROFILE,
-      pets: [],
-      activePetId: null,
-    });
-    get().fetchProducts();
-  },
+  signOut: async () => { await get().logout(); },
 
   initApp: async () => {
-    sessionEpoch += 1;
-    const epoch = sessionEpoch;
-    /** 이 초기화가 아직 최신인지 — 아니면 결과를 반영하지 않는다. */
+    const epoch = ++sessionEpoch;
     const isCurrent = () => epoch === sessionEpoch;
-
-    const bootWatchdog = setTimeout(() => {
-      if (get().isInitializing) {
-        console.warn('[VeRoRo] 초기화 응답이 늦어 먼저 화면을 엽니다.');
-        set({ isInitializing: false });
-      }
-    }, BOOT_TIMEOUT_MS);
-
+    const loadPrivate = async (userId: string, capturedEpoch: number) => {
+      const [pets, favorites, recent] = await Promise.all([
+        getUserPets(userId), getFavorites(userId), getRecentViews(userId),
+      ]);
+      if (capturedEpoch !== sessionEpoch || get().userId !== userId) return;
+      const mapped = pets.map(mapPetProfileFromRow);
+      set({ pets: mapped, activePetId: mapped[0]?.id ?? null,
+        profile: mapped[0] ?? DEFAULT_USER_PET_PROFILE, favorites,
+        recentViews: recent.map(mapProductFromSupabaseRow).filter(Boolean) as Product[] });
+    };
+    // Subscribe before getSession, including guest startup. The callback is synchronous:
+    // calling auth/network methods inside it can deadlock the Supabase auth lock.
+    if (!authSubscription) {
+      const { data } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, nextSession: Session | null) => {
+        const user = nextSession?.user;
+        const id = user && !user.is_anonymous && user.app_metadata?.provider !== 'anonymous' ? user.id : null;
+        if (get().userId === id) return;
+        const nextEpoch = ++sessionEpoch;
+        set({ ...privateReset, userId: id, isLoggedIn: Boolean(id), isInitializing: false });
+        if (id) setTimeout(() => { void loadPrivate(id, nextEpoch).catch((error) => console.error('Private data refresh failed:', error)); }, 0);
+      });
+      authSubscription = data.subscription;
+    }
+    const bootWatchdog = setTimeout(() => { if (isCurrent()) set({ isInitializing: false }); }, BOOT_TIMEOUT_MS);
     try {
-      const scheduleProductRefresh = () => {
-        if (adminDataSyncTimer) clearTimeout(adminDataSyncTimer);
-        adminDataSyncTimer = setTimeout(() => {
-          const { fetchProducts, fetchProductDetail, selectedProduct } = get();
-          fetchProducts();
-          if (selectedProduct?.id) {
-            fetchProductDetail(selectedProduct.id);
-          }
-        }, 250);
-      };
-
-      // 환경변수가 없는 로컬/프리뷰 빌드에서는 Supabase 클라이언트가 안전한
-      // 더미 호스트를 사용한다. 이때 Realtime 구독까지 열면 모든 화면에서
-      // veroro.invalid WebSocket 연결 오류가 반복되므로, 실제 설정이 있을 때만
-      // 변경 구독을 만든다. 일반 데이터 함수들은 이미 같은 조건에서 빈 결과로
-      // 폴백한다.
       if (isSupabaseConfigured && !adminDataSyncChannel) {
-        adminDataSyncChannel = supabase
-          .channel('admin-data-sync')
-          .on(
-            'postgres_changes',
-            { event: '*', schema: 'public', table: 'products' },
-            scheduleProductRefresh
-          )
-          .on(
-            'postgres_changes',
-            { event: '*', schema: 'public', table: 'ingredients' },
-            scheduleProductRefresh
-          )
-          .on(
-            'postgres_changes',
-            { event: '*', schema: 'public', table: 'product_ingredients' },
-            scheduleProductRefresh
-          )
-          .subscribe();
+        const scheduleProductRefresh = () => {
+          if (adminDataSyncTimer) clearTimeout(adminDataSyncTimer);
+          adminDataSyncTimer = setTimeout(() => {
+            void get().fetchProducts();
+            if (get().selectedProduct?.id) void get().fetchProductDetail(get().selectedProduct!.id);
+          }, 250);
+        };
+        adminDataSyncChannel = supabase.channel('admin-data-sync')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, scheduleProductRefresh)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'ingredients' }, scheduleProductRefresh)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'product_ingredients' }, scheduleProductRefresh).subscribe();
       }
-
       const user = await getInitialSessionUser();
       if (!isCurrent()) return;
-      if (!user) {
-        set({
-          isInitializing: false,
-          profile: DEFAULT_USER_PET_PROFILE,
-          userId: null,
-          isLoggedIn: false,
-        });
-        get().fetchProducts();
-        return;
-      }
-
-      const isReal = user.app_metadata?.provider !== 'anonymous' && !user.is_anonymous;
-      const handleAuthStateChange = (_event: AuthChangeEvent, nextSession: Session | null) => {
-        const nextUser = nextSession?.user;
-        const nextIsReal = !!nextUser && nextUser.app_metadata?.provider !== 'anonymous' && !nextUser.is_anonymous;
-        set({
-          userId: nextUser?.id ?? null,
-          isLoggedIn: nextIsReal,
-        });
-      };
-      supabase.auth.onAuthStateChange(handleAuthStateChange);
-      set({ userId: user.id, isLoggedIn: isReal });
-
-      // 아래 조회는 모두 네트워크를 탄다. 사이에 로그아웃이 끼면 그 결과를
-      // 다시 채워 넣지 않도록 매 단계에서 순번을 확인한다.
-      const applyIfCurrent = (patch: Partial<StoreState>) => {
-        if (isCurrent()) set(patch);
-      };
-
-      // Fetch Pet Profiles (모든 반려동물 — 다이어리/선택 지원)
-      const pets = await getUserPets(user.id);
-      if (pets && pets.length > 0) {
-        const mapped = pets.map(mapPetProfileFromRow);
-        applyIfCurrent({
-          pets: mapped,
-          activePetId: mapped[0].id,
-          profile: mapped[0],
-        });
-      }
-
-      // Fetch Favorites
-      const favData = await getFavorites(user.id);
-      applyIfCurrent({ favorites: favData });
-
-      // Fetch Recent Views
-      const recentData = await getRecentViews(user.id);
-      if (recentData.length > 0) {
-        const mapped = recentData.map(mapProductFromSupabaseRow).filter(Boolean) as Product[];
-        applyIfCurrent({ recentViews: mapped });
-      }
-
-      await get().fetchProducts();
-      set({ isInitializing: false });
-    } catch (err) {
-      console.error('initApp err:', err);
-      set({ isInitializing: false });
-      get().fetchProducts();
+      const id = user && !user.is_anonymous && user.app_metadata?.provider !== 'anonymous' ? user.id : null;
+      if (get().userId !== id) set(privateReset);
+      set({ userId: id, isLoggedIn: Boolean(id) });
+      if (id) await loadPrivate(id, epoch);
+    } catch (error) {
+      console.error('initApp err:', error);
     } finally {
       clearTimeout(bootWatchdog);
-      // 어느 경로로 빠져나오든 스플래시는 반드시 닫는다.
-      if (get().isInitializing) set({ isInitializing: false });
+      if (isCurrent()) set({ isInitializing: false });
+      void get().fetchProducts();
     }
   },
 
   updateProfile: async (updates) => {
-    const { profile, savePet } = get();
+    const { profile, savePet, userId } = get();
+    const epoch = sessionEpoch;
     const previous = profile;
     const newProfile = { ...profile, ...updates };
     // 로컬 즉시 반영
@@ -257,7 +190,7 @@ export const useStore = create<StoreState>((set, get) => ({
     // 저장되지 않은 값을 남겨 두면 사용자는 저장된 프로필 기준이라 믿고 분석 결과를
     // 보게 되고, 새로고침하면 그 값이 통째로 사라진다.
     // (savePet 은 성공 시 서버가 돌려준 값으로 profile 을 다시 채운다.)
-    if (!saved && get().userId) {
+    if (!saved && userId && get().userId === userId && epoch === sessionEpoch) {
       set({ profile: previous });
     }
   },
@@ -265,7 +198,9 @@ export const useStore = create<StoreState>((set, get) => ({
   fetchPets: async () => {
     const { userId } = get();
     if (!userId) return;
+    const epoch = sessionEpoch;
     const rows = await getUserPets(userId);
+    if (epoch !== sessionEpoch || get().userId !== userId) return;
     const mapped = rows.map(mapPetProfileFromRow);
     const { activePetId } = get();
     const nextActive = mapped.find((p) => p.id === activePetId) ?? mapped[0] ?? null;
@@ -289,6 +224,7 @@ export const useStore = create<StoreState>((set, get) => ({
       set({ profile: data });
       return null;
     }
+    const epoch = sessionEpoch;
     const isExisting = Boolean(data.id) && data.id !== DEFAULT_USER_PET_PROFILE.id;
     const saved = await saveUserPet({
       id: isExisting ? data.id : undefined,
@@ -302,7 +238,7 @@ export const useStore = create<StoreState>((set, get) => ({
       conditions: data.healthConcerns,
       allergies: data.allergies,
     });
-    if (!saved?.id) return null;
+    if (!saved?.id || epoch !== sessionEpoch || get().userId !== userId) return null;
 
     const savedProfile = mapPetProfileFromRow(saved);
     // pets 목록 갱신(신규 추가 또는 기존 갱신)
@@ -322,8 +258,9 @@ export const useStore = create<StoreState>((set, get) => ({
   removePet: async (petId) => {
     const { userId, pets, activePetId } = get();
     if (!userId) return;
+    const epoch = sessionEpoch;
     const ok = await deleteUserPet(petId, userId);
-    if (!ok) return;
+    if (!ok || epoch !== sessionEpoch || get().userId !== userId) return;
     const nextPets = pets.filter((p) => p.id !== petId);
     const nextActiveId = activePetId === petId ? (nextPets[0]?.id ?? null) : activePetId;
     set({
@@ -365,6 +302,7 @@ export const useStore = create<StoreState>((set, get) => ({
   favorites: [],
   toggleFavorite: async (id) => {
     const { userId, favorites } = get();
+    const epoch = sessionEpoch;
     const isFav = favorites.includes(id);
 
     // 비로그인 상태에서는 저장할 곳이 없다. 낙관적으로 켜 두면 새로고침에서
@@ -381,6 +319,7 @@ export const useStore = create<StoreState>((set, get) => ({
     if (!isFav) notify.success('저장했어요 · 마이페이지 > 저장한 제품');
 
     const ok = isFav ? await removeFavorite(userId, id) : await addFavorite(userId, id);
+    if (epoch !== sessionEpoch || get().userId !== userId) return;
     if (!ok) {
       // 서버 저장이 실패하면 낙관적 변경을 되돌린다 — UI 와 DB 가 갈라지면
       // 새로고침 시점에 찜이 사라져 사용자가 저장된 줄 알고 잃는다.
@@ -415,25 +354,8 @@ export const useStore = create<StoreState>((set, get) => ({
   })),
 
   logout: async () => {
-    // 진행 중인 초기화 결과가 로그아웃 뒤에 도착해 세션을 되살리지 못하게 한다.
-    sessionEpoch += 1;
-    try {
-      await supabaseSignOut();
-      // 개인화 상태를 모두 비운다 — recentViews를 남기면 다음 사용자에게
-      // 이전 사용자의 '최근 본 제품'이 노출된다. isLoggedIn도 auth 리스너에
-      // 의존하지 않고 즉시 내린다.
-      set({
-        userId: null,
-        isLoggedIn: false,
-        profile: DEFAULT_USER_PET_PROFILE,
-        pets: [],
-        activePetId: null,
-        favorites: [],
-        recentViews: [],
-      });
-    } catch (err) {
-      console.error(err);
-    }
-  }
+    ++sessionEpoch;
+    set({ ...privateReset, userId: null, isLoggedIn: false, isInitializing: false });
+    await supabaseSignOut();
+  },
 }));
-

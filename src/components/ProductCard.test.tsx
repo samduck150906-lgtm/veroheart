@@ -33,5 +33,7 @@ describe('ProductCard catalog identity', () => {
     expect(screen.getByText('사용자 스캔 · 검증 전')).toBeTruthy();
     expect(screen.queryByText('쿠팡검색')).toBeNull();
     expect(screen.queryByText(product.name)).toBeNull();
+    expect(screen.getByText('분석 정보 부족')).toBeTruthy();
+    expect(screen.queryByText(/^\d+점$/)).toBeNull();
   });
 });

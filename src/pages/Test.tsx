@@ -4,6 +4,7 @@ import { VIRAL_TEST_CAMPAIGN, KAKAO_SHARE_MESSAGES } from '../copy/marketing';
 import { isKakaoShareConfigured, kakaoShareTextWithLink } from '../lib/kakaoShare';
 import { notify } from '../store/useNotification';
 import { usePublicSettings } from '../lib/publicSettings';
+import { publicUrl } from '../lib/publicUrls';
 
 type AxisKey = 'S' | 'A' | 'V' | 'F';
 type Scores = Record<AxisKey, number>;
@@ -105,7 +106,7 @@ export default function Test() {
     ? `우리 아이 결과는 "${result.detail.type}"! ${result.detail.summary} 추천: ${result.detail.category}`
     : KAKAO_SHARE_MESSAGES[0];
 
-  const testPageUrl = useMemo(() => `${window.location.origin}/event/personality-quiz`, []);
+  const testPageUrl = useMemo(() => publicUrl('/event/personality-quiz'), []);
 
   const handleKakaoShare = async () => {
     if (!isKakaoShareConfigured()) {

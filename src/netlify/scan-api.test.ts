@@ -135,7 +135,7 @@ describe('community scan API', () => {
 
   it.each([
     [{ category: 'other', mimeType: 'image/webp', size: 1000 }],
-    [{ category: 'front', mimeType: 'image/jpeg', size: 1000 }],
+    [{ category: 'front', mimeType: 'image/gif', size: 1000 }],
     [{ category: 'front', mimeType: 'image/webp', size: 6 * 1024 * 1024 }],
   ])('rejects an invalid upload policy request', async (body) => {
     const handler = createScanUploadUrlHandler(dependencies(repository));
@@ -159,6 +159,15 @@ describe('community scan API', () => {
     ));
 
     expect(response.status).toBe(409);
+  });
+
+  it.each([['image/jpeg', 'jpg'], ['image/png', 'png']])('preserves %s canvas fallback in the signed object path', async (mimeType, extension) => {
+    const response = await createScanUploadUrlHandler(dependencies(repository))(authenticatedRequest(
+      `/api/scans/${submissionId}/upload-url`,
+      { method: 'POST', body: JSON.stringify({ category: 'front', mimeType, size: 1000 }) },
+    ));
+    expect(response.status).toBe(200);
+    expect(repository.lastSignedPath).toBe(`${userId}/${submissionId}/front/33333333-3333-4333-8333-333333333333.${extension}`);
   });
 
   it('signs only a path owned by the authenticated user and submission', async () => {

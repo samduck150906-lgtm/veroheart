@@ -16,6 +16,8 @@
  *  4. 배포 환경변수에 `VITE_KAKAO_LOGIN_ENABLED=true` 추가 후 재배포
  */
 import { supabase, isSupabaseConfigured } from './supabase';
+import { Capacitor } from '@capacitor/core';
+import { getAuthRedirectUrl, openAuthBrowser } from './nativeAuth';
 
 /** OAuth 왕복이 끝난 뒤 Supabase 가 돌려보낼 앱 내 경로 (App.tsx 의 /auth/callback 라우트). */
 export const KAKAO_REDIRECT_PATH = '/auth/callback';
@@ -25,7 +27,9 @@ export const KAKAO_REDIRECT_PATH = '/auth/callback';
  * 키가 준비되어 Supabase 에서 제공자를 켠 뒤에만 true 로 바꾼다.
  */
 export function isKakaoLoginEnabled(): boolean {
-  return isSupabaseConfigured && import.meta.env.VITE_KAKAO_LOGIN_ENABLED === 'true';
+  // Native social login remains off until an equivalent privacy-preserving provider
+  // (e.g. Sign in with Apple) is implemented and reviewed for App Store rule 4.8.
+  return !Capacitor.isNativePlatform() && isSupabaseConfigured && import.meta.env.VITE_KAKAO_LOGIN_ENABLED === 'true';
 }
 
 export type KakaoSignInFailureReason =
@@ -91,12 +95,15 @@ export async function signInWithKakao(redirectTo?: string): Promise<KakaoSignInR
     };
   }
 
-  const target = redirectTo ?? `${window.location.origin}${KAKAO_REDIRECT_PATH}`;
-  const { error } = await supabase.auth.signInWithOAuth({
+  const target = redirectTo ?? getAuthRedirectUrl();
+  const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'kakao',
-    options: { redirectTo: target },
+    options: { redirectTo: target, skipBrowserRedirect: true },
   });
 
   if (error) return describeKakaoAuthError(error.message);
+  if (!data.url) return describeKakaoAuthError('인증 주소를 받지 못했어요.');
+  try { await openAuthBrowser(data.url); }
+  catch { return describeKakaoAuthError('인증 화면을 열지 못했어요. 다시 시도해 주세요.'); }
   return null;
 }

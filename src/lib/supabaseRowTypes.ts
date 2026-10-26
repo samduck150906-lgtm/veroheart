@@ -19,6 +19,9 @@ export type SupabaseProductRow = {
   net_weight_text?: string | null;
   slug?: string | null;
   catalog_source?: string | null;
+  catalog_source_url?: string | null;
+  catalog_source_note?: string | null;
+  requires_veterinary_guidance?: boolean | null;
   analysis_status?: string | null;
   product_type: string;
   main_category?: string | null;
@@ -48,6 +51,14 @@ export type SupabaseProductIngredientLabelSetRow = {
     display_order: number;
     raw_ingredient_text: string;
     match_status: 'unreviewed' | 'matched' | 'ambiguous' | 'unmatched' | 'ignored';
+    ingredients?: SupabaseProductIngredientRow['ingredients'];
+    canonical_ingredients?: {
+      id: string;
+      canonical_name_ko: string;
+      canonical_name_en?: string | null;
+      status: string;
+      ingredients?: SupabaseProductIngredientRow['ingredients'];
+    } | null;
   }> | null;
 };
 
@@ -63,6 +74,7 @@ export type SupabaseNutritionalProfileRow = {
 
 export type SupabaseProductIngredientRow = {
   ingredient_id?: string;
+  sort_order?: number | null;
   ingredients?: {
     id: string;
     name_ko?: string | null;
@@ -217,14 +229,34 @@ export function mapFeedingLogFromRow(row: SupabaseFeedingLogRow): PetFeedingLog 
 }
 
 export function mapProductFromSupabaseRow(p: SupabaseProductRow): Product {
-  const ingredients: Ingredient[] =
-    p.product_ingredients?.map((pi) => mapIngredientFromJoin(pi)) ?? [];
   const currentLabelSet = p.product_ingredient_label_sets?.find((labelSet) => labelSet.is_current);
+  const labelItems = currentLabelSet?.product_ingredient_label_items?.slice()
+    .sort((a, b) => a.display_order - b.display_order) ?? [];
+  const resolvedLabelIngredients = labelItems.map((item): Ingredient | null => {
+    if (item.match_status !== 'matched') return null;
+    const canonical = item.canonical_ingredients;
+    if (canonical && canonical.status !== 'active') return null;
+    const evidence = item.ingredients ?? canonical?.ingredients;
+    // A canonical name match is not a risk assessment. Require the reviewed
+    // legacy risk metadata until the canonical rules consumer is available.
+    if (!evidence || !['safe', 'caution', 'warning', 'danger'].includes(evidence.risk_level ?? '')) return null;
+    return {
+      ...mapIngredientFromJoin({ ingredients: evidence }),
+      canonicalIngredientId: canonical?.id,
+      rawLabelText: item.raw_ingredient_text,
+      nameKo: canonical?.canonical_name_ko || evidence.name_ko || item.raw_ingredient_text,
+      nameEn: canonical?.canonical_name_en || evidence.name_en || '',
+    };
+  });
+  const ingredients: Ingredient[] = currentLabelSet
+    ? resolvedLabelIngredients.filter((item): item is Ingredient => item !== null)
+    : (p.product_ingredients ?? []).slice()
+      .sort((a, b) => (a.sort_order ?? Number.MAX_SAFE_INTEGER) - (b.sort_order ?? Number.MAX_SAFE_INTEGER))
+      .filter((item) => Boolean(item.ingredients))
+      .map(mapIngredientFromJoin);
   const unknownIngredientTerms = currentLabelSet
-    ? [...new Set((currentLabelSet.product_ingredient_label_items ?? [])
-        .slice()
-        .sort((a, b) => a.display_order - b.display_order)
-        .filter((item) => ['unreviewed', 'ambiguous', 'unmatched'].includes(item.match_status))
+    ? [...new Set(labelItems
+        .filter((item, index) => item.match_status !== 'ignored' && !resolvedLabelIngredients[index])
         .map((item) => item.raw_ingredient_text.trim())
         .filter(Boolean))]
     : undefined;
@@ -274,9 +306,13 @@ export function mapProductFromSupabaseRow(p: SupabaseProductRow): Product {
     netWeightText: p.net_weight_text ?? undefined,
     slug: p.slug ?? undefined,
     catalogSource: mappedCatalogSource,
+    catalogSourceUrl: p.catalog_source_url?.startsWith('https://') ? p.catalog_source_url : undefined,
+    catalogSourceNote: p.catalog_source_note ?? undefined,
+    requiresVeterinaryGuidance: p.requires_veterinary_guidance ?? false,
     analysisStatus: mappedAnalysisStatus,
     unknownIngredientTerms,
     ingredientLabelSetId: currentLabelSet?.id,
+    firstIngredientResolved: currentLabelSet ? Boolean(resolvedLabelIngredients[0]) : undefined,
     category: p.product_type,
     mainCategory: p.main_category ?? undefined,
     subCategory: p.sub_category ?? undefined,

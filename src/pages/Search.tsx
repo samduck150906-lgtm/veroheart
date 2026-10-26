@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   X,
@@ -17,7 +17,7 @@ import ProductRequestSheet from '../components/ProductRequestSheet';
 import { ProductGridSkeleton } from '../components/Skeleton';
 import type { Product } from '../types';
 import { TossFilterSection } from '../components/TossUI';
-import { searchProducts, getAllIngredients } from '../lib/supabase';
+import { searchProductsPage, getAllIngredients } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import standardFeedData from '../data/standard_feed_data.json';
 import { useStandardFeedDetail, type StandardFeedDetail } from '../lib/standardFeedDetail';
@@ -130,6 +130,10 @@ export default function Search() {
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [isShowingBroadMatches, setIsShowingBroadMatches] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [nextOffset, setNextOffset] = useState<number | null>(null);
+  const [loadError, setLoadError] = useState('');
+  const requestEpoch = useRef(0);
   const [sortBy, setSortBy] = useState<'default' | 'rating'>('default');
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -206,11 +210,15 @@ export default function Search() {
     // 디바운스 타이머만 취소하면 이미 떠난 요청은 못 막는다. 검색어를 빠르게 바꾸면
     // 먼저 보낸 느린 응답이 나중 결과를 덮어써 엉뚱한 목록이 남는다.
     let cancelled = false;
+    const epoch = ++requestEpoch.current;
     const timer = setTimeout(async () => {
       setIsLoading(true);
+      setIsLoadingMore(false);
+      setLoadError('');
+      setNextOffset(null);
       try {
         const pet = filters.targetPetType;
-        let results = await searchProducts(query, category, excludedIngredients, {
+        let page = await searchProductsPage(query, category, excludedIngredients, {
           targetPetType: pet === '' ? undefined : pet,
           targetLifeStage: filters.targetLifeStage || undefined,
           formulation: filters.formulation || undefined,
@@ -219,18 +227,21 @@ export default function Search() {
           healthConcerns: filters.healthConcerns,
           dietPreset: filters.dietPreset,
         });
+        let results = page.products;
         let showingBroadMatches = false;
         // 직접 입력한 검색어가 카테고리·프로필 종·상세 필터에 가려져 0건이면,
         // 같은 운영 DB를 필터 없이 한 번 더 확인해 제품 자체가 누락되지 않게 한다.
-        if (query.trim() && results.length === 0) {
-          const broadMatches = await searchProducts(query.trim());
-          if (broadMatches.length > 0) {
-            results = broadMatches;
+        if (query.trim() && results.length === 0 && page.nextOffset === null) {
+          const broadMatches = await searchProductsPage(query.trim(), undefined, excludedIngredients);
+          if (broadMatches.products.length > 0) {
+            page = broadMatches;
+            results = broadMatches.products;
             showingBroadMatches = true;
           }
         }
-        if (cancelled) return;
+        if (cancelled || epoch !== requestEpoch.current) return;
         setSearchResults(results);
+        setNextOffset(page.nextOffset);
         setIsShowingBroadMatches(showingBroadMatches);
         if (query.trim() && results.length > 0) {
           const t = query.trim();
@@ -241,7 +252,7 @@ export default function Search() {
           });
         }
       } catch (err) {
-        console.error(err);
+        if (!cancelled) { setSearchResults([]); setLoadError(err instanceof Error ? err.message : '제품을 불러오지 못했어요.'); }
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -251,6 +262,33 @@ export default function Search() {
       clearTimeout(timer);
     };
   }, [query, category, filters, excludedIngredients]);
+
+  const loadMore = async () => {
+    if (nextOffset === null || isLoading || isLoadingMore) return;
+    const epoch = requestEpoch.current;
+    setIsLoadingMore(true);
+    setLoadError('');
+    try {
+      const page = await searchProductsPage(query, isShowingBroadMatches ? undefined : category,
+        excludedIngredients,
+        isShowingBroadMatches ? {} : {
+          targetPetType: filters.targetPetType || undefined,
+          targetLifeStage: filters.targetLifeStage || undefined,
+          formulation: filters.formulation || undefined,
+          subCategory: filters.subCategory || undefined,
+          brand: filters.brand || undefined,
+          healthConcerns: filters.healthConcerns,
+          dietPreset: filters.dietPreset,
+        }, nextOffset);
+      if (epoch !== requestEpoch.current) return;
+      setSearchResults(previous => [...new Map([...previous, ...page.products].map(p => [p.id, p])).values()]);
+      setNextOffset(page.nextOffset);
+    } catch (error) {
+      if (epoch === requestEpoch.current) setLoadError(error instanceof Error ? error.message : '제품을 불러오지 못했어요.');
+    } finally {
+      if (epoch === requestEpoch.current) setIsLoadingMore(false);
+    }
+  };
 
   useEffect(() => {
     getAllIngredients().then(setAllIngredients).catch(console.error);
@@ -575,6 +613,14 @@ export default function Search() {
         ))}
       </div>
 
+      {loadError && <p role="alert" style={{ color: 'var(--danger-strong)', marginTop: 12 }}>{loadError}</p>}
+      {nextOffset !== null && !isLoading && (
+        <button type="button" className="btn btn-outline" onClick={loadMore} disabled={isLoadingMore}
+          style={{ width: '100%', marginTop: 16 }}>
+          {isLoadingMore ? '불러오는 중…' : '제품 더 불러오기'}
+        </button>
+      )}
+
       {/* 비교함 바 — 2개 이상 담겼을 때만 (프로토타입 showCompareBar) */}
       {comparisonList.length > 1 && (
         <button
@@ -601,7 +647,7 @@ export default function Search() {
         </button>
       )}
 
-      {displayResults.length === 0 && !isLoading && (
+      {displayResults.length === 0 && !isLoading && nextOffset === null && !loadError && (
         <StateView
           variant="empty"
           title="검색 결과가 없어요"

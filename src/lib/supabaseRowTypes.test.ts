@@ -103,7 +103,7 @@ describe('mapProductFromSupabaseRow', () => {
           is_current: true,
           product_ingredient_label_items: [
             { display_order: 3, raw_ingredient_text: '검토 대기 원료', match_status: 'unreviewed' },
-            { display_order: 0, raw_ingredient_text: '닭고기', match_status: 'matched' },
+            { display_order: 0, raw_ingredient_text: '닭고기', match_status: 'matched', ingredients: { id: 'chicken', name_ko: '닭고기', risk_level: 'safe' } },
             { display_order: 2, raw_ingredient_text: '후보가 여러 개인 원료', match_status: 'ambiguous' },
             { display_order: 1, raw_ingredient_text: '미확인 복합원료', match_status: 'unmatched' },
             { display_order: 4, raw_ingredient_text: '표시 제외 원료', match_status: 'ignored' },

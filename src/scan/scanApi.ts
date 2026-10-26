@@ -36,6 +36,8 @@ interface ScanApiClientDependencies {
   getAccessToken(): Promise<string | null>;
   fetchImpl: typeof fetch;
   timeoutMs?: number;
+  apiBaseUrl?: string;
+  isNative?: boolean;
 }
 
 async function defaultAccessToken(): Promise<string | null> {
@@ -68,6 +70,20 @@ export function createScanApiClient(dependencies: Partial<ScanApiClientDependenc
   const fetchImpl = dependencies.fetchImpl ?? fetch;
   const timeoutMs = dependencies.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
+  function apiUrl(path: string): string {
+    const configured = dependencies.apiBaseUrl ?? import.meta.env.VITE_API_BASE_URL ?? '';
+    if (!configured.trim()) {
+      if (dependencies.isNative ?? Capacitor.isNativePlatform()) throw new ScanApiError('api_base_url_required');
+      return path;
+    }
+    let base: URL;
+    try { base = new URL(configured); } catch { throw new ScanApiError('invalid_api_base_url'); }
+    if (base.protocol !== 'https:' || base.username || base.password || base.search || base.hash || base.pathname !== '/') {
+      throw new ScanApiError('invalid_api_base_url');
+    }
+    return new URL(path, base).href;
+  }
+
   async function authorizedFetch(url: string, init: RequestInit = {}): Promise<Response> {
     const token = await getAccessToken();
     if (!token) throw new ScanApiError('auth_required', 401);
@@ -95,16 +111,19 @@ export function createScanApiClient(dependencies: Partial<ScanApiClientDependenc
     url: string,
     method: 'GET' | 'POST',
     body?: unknown,
+    allowEmptyAccepted = false,
   ): Promise<T> {
     const headers = new Headers();
     if (body !== undefined) headers.set('content-type', 'application/json');
-    const response = await authorizedFetch(url, {
+    const response = await authorizedFetch(apiUrl(url), {
       method,
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
     });
     try {
-      return await response.json() as T;
+      const text = await response.text();
+      if (allowEmptyAccepted && response.status === 202 && !text.trim()) return { status: 'processing' } as T;
+      return JSON.parse(text) as T;
     } catch {
       throw new ScanApiError('invalid_response', response.status);
     }
@@ -145,7 +164,7 @@ export function createScanApiClient(dependencies: Partial<ScanApiClientDependenc
     submitImages(scanId: string, photoPaths: ScanPhotoPaths) {
       return jsonRequest<{ status: string }>(`/api/scans/${scanId}/process`, 'POST', {
         photoPaths,
-      });
+      }, true);
     },
 
     getScanStatus(scanId: string) {
@@ -184,3 +203,4 @@ export const submitImages = defaultClient.submitImages;
 export const getScanStatus = defaultClient.getScanStatus;
 export const confirmExtraction = defaultClient.confirmExtraction;
 export const publishScan = defaultClient.publishScan;
+import { Capacitor } from '@capacitor/core';

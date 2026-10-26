@@ -1,0 +1,61 @@
+name: Release checks
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run test:catalog
+      - run: npm run test:bootstrap
+      - run: npm run test:schemas
+      - run: npm run build
+      - run: npm audit --audit-level=moderate
+      - run: npm ci
+        working-directory: landing
+      - run: npm run lint && npm run typecheck && npm run build
+        working-directory: landing
+      - run: npm audit --audit-level=moderate
+        working-directory: landing
+
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+      - run: npm ci && npm run build && npx cap sync android
+      - run: chmod +x gradlew && ./gradlew assembleDebug assembleRelease
+        working-directory: android
+
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci && npm run build && npx cap sync ios
+      - run: xcodebuild -project ios/App/App.xcodeproj -scheme App -sdk iphonesimulator -configuration Debug CODE_SIGNING_ALLOWED=NO build

@@ -42,7 +42,10 @@ export function readinessFromStoredStatus(
   knownIngredientCount: number,
   unknownIngredientCount = 0,
 ): AnalysisReadiness {
-  const resolved = status ?? (knownIngredientCount > 0 ? 'ready' : 'unavailable');
+  const resolved = status === 'blocked' ? 'blocked'
+    : unknownIngredientCount > 0 ? 'partial'
+    : knownIngredientCount === 0 ? 'unavailable'
+    : status ?? 'ready';
   if (resolved === 'ready') return { status: 'ready', unknownCount: 0, ambiguousCount: 0, reasonCodes: [] };
   if (resolved === 'partial') {
     return {

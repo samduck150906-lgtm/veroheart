@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../store/useStore';
+import { manageAccount } from '../lib/supabase';
+import { notify } from '../store/useNotification';
 import {
   User,
   ChevronRight,
@@ -60,7 +62,7 @@ function newPetDraft(): UserPetProfile {
   };
 }
 
-export default function Profile() {
+function ProfileContent() {
   const {
     userId,
     isLoggedIn,
@@ -157,8 +159,8 @@ export default function Profile() {
   };
 
   const handleLogout = async () => {
-    await logout();
-    navigate('/');
+    try { await logout(); navigate('/'); }
+    catch { notify.error('로그아웃을 완료하지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.'); }
   };
 
   const stepCount = PROFILE_STEP_META.length;
@@ -566,6 +568,8 @@ export default function Profile() {
               >
                 환불 정책 <ChevronRight size={17} color="var(--text-muted)" />
               </Link>
+              <Link to="/account/delete" style={{ padding: '13px 4px', color: 'var(--danger-strong)', fontSize: 14 }}>계정 및 데이터 삭제</Link>
+              <button className="vr-btn vr-btn--outline" onClick={() => void manageAccount('cleanup-photos').then(() => notify.success('사진 정리를 완료했어요.')).catch(() => notify.error('사진 정리를 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.'))}>삭제 대기 사진 정리 다시 시도</button>
               <button
                 onClick={handleLogout}
                 style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '14px', fontWeight: 700, cursor: 'pointer', padding: '14px 4px', textAlign: 'left' }}
@@ -618,3 +622,9 @@ const petIconBtn: React.CSSProperties = {
   justifyContent: 'center',
   flexShrink: 0,
 };
+
+// Remount local edit/diary state when authentication identity changes.
+export default function Profile() {
+  const { userId } = useStore();
+  return <ProfileContent key={userId ?? 'guest'} />;
+}

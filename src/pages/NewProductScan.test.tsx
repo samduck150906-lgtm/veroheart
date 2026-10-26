@@ -1,5 +1,5 @@
 import React from 'react';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 
@@ -108,5 +108,82 @@ describe('NewProductScan', () => {
       fireEvent.change(screen.getByLabelText(label), { target: { files: [file] } });
     }
     expect(await screen.findByRole('button', { name: '다시 분석하기' })).toBeTruthy();
+  });
+
+  it('creates a fresh scan on a second photo selection after the first create request failed', async () => {
+    const client = api();
+    vi.mocked(client.createScan).mockRejectedValueOnce({ code: 'network_error' });
+    renderPage(client);
+    const file = new File(['pixels'], 'label.webp', { type: 'image/webp' });
+    fireEvent.change(screen.getByLabelText('제품 전면 사진'), { target: { files: [file] } });
+    await screen.findByRole('alert');
+    fireEvent.change(screen.getByLabelText('제품 전면 사진'), { target: { files: [file] } });
+    await waitFor(() => expect(client.uploadEvidence).toHaveBeenCalledOnce());
+    expect(client.createScan).toHaveBeenCalledTimes(2);
+  });
+
+  it('never restores legacy or another account scan state', async () => {
+    const saved = { id: 'private-scan', ownerId: 'user-A', barcode: '8801234567893', paths: { front: ['private-A'], ingredient: [], nutrition: [] } };
+    localStorage.setItem('veroro.communityScan.active.v1', JSON.stringify(saved));
+    localStorage.setItem('veroro.communityScan.active.v1.user-A', JSON.stringify(saved));
+    const client = api();
+    renderPage(client);
+    await act(async () => {});
+    expect(client.getScanStatus).not.toHaveBeenCalled();
+    expect(localStorage.getItem('veroro.communityScan.active.v1')).toBeNull();
+  });
+
+  it('clears all stale state after a missing saved scan and can create again', async () => {
+    localStorage.setItem('veroro.communityScan.active.v1.user-1', JSON.stringify({ id: 'deleted-scan', ownerId: 'user-1', barcode: '8801234567893', paths: { front: ['old'], ingredient: [], nutrition: [] } }));
+    const client = api();
+    vi.mocked(client.getScanStatus).mockRejectedValueOnce({ status: 404, code: 'scan_not_found' });
+    renderPage(client);
+    await waitFor(() => expect(localStorage.getItem('veroro.communityScan.active.v1.user-1')).toBeNull());
+    fireEvent.change(screen.getByLabelText('제품 전면 사진'), { target: { files: [new File(['x'], 'label.webp', { type: 'image/webp' })] } });
+    await waitFor(() => expect(client.createScan).toHaveBeenCalledOnce());
+    expect(client.requestUploadUrl).toHaveBeenCalledWith('scan-1', 'front', expect.any(File));
+  });
+
+  it('resumes publication of submitted scans instead of polling submitted forever', async () => {
+    localStorage.setItem('veroro.communityScan.active.v1.user-1', JSON.stringify({ id: 'scan-1', ownerId: 'user-1', barcode: '8801234567893', paths: { front: ['f'], ingredient: ['i'], nutrition: ['n'] } }));
+    const client = api();
+    vi.mocked(client.getScanStatus).mockResolvedValueOnce({ id: 'scan-1', status: 'submitted', errorCode: null, extractedData: extracted, fieldConfidence: {}, resolvedProductId: null });
+    renderPage(client);
+    await waitFor(() => expect(client.publishScan).toHaveBeenCalledOnce());
+    expect(client.getScanStatus).toHaveBeenCalledOnce();
+    expect(client.confirmExtraction).not.toHaveBeenCalled();
+  });
+
+  it('discards an in-flight create result after an account switch', async () => {
+    const client = api();
+    let finish: (value: Awaited<ReturnType<NewProductScanApi['createScan']>>) => void = () => {};
+    vi.mocked(client.createScan).mockReturnValueOnce(new Promise((resolve) => { finish = resolve; }));
+    renderPage(client);
+    fireEvent.change(screen.getByLabelText('제품 전면 사진'), { target: { files: [new File(['x'], 'label.webp', { type: 'image/webp' })] } });
+    await act(async () => { useStore.setState({ userId: 'user-2', isLoggedIn: true }); });
+    await act(async () => { finish({ id: 'user-1-scan', status: 'draft', scannedBarcode: null }); });
+    expect(client.requestUploadUrl).not.toHaveBeenCalled();
+    expect(localStorage.getItem('veroro.communityScan.active.v1.user-2')).toBeNull();
+  });
+
+  it('resumes a draft whose three uploads finished before the page closed', async () => {
+    localStorage.setItem('veroro.communityScan.active.v1.user-1', JSON.stringify({ id: 'scan-1', ownerId: 'user-1', barcode: '8801234567893', paths: { front: ['f'], ingredient: ['i'], nutrition: ['n'] } }));
+    const client = api();
+    vi.mocked(client.getScanStatus).mockResolvedValueOnce({ id: 'scan-1', status: 'draft', errorCode: null, extractedData: {}, fieldConfidence: {}, resolvedProductId: null });
+    renderPage(client);
+    await waitFor(() => expect(client.submitImages).toHaveBeenCalledWith('scan-1', { front: ['f'], ingredient: ['i'], nutrition: ['n'] }));
+    await screen.findByDisplayValue('오리지널 독');
+  });
+
+  it('retries publication after confirmation succeeded without submitting images again', async () => {
+    localStorage.setItem('veroro.communityScan.active.v1.user-1', JSON.stringify({ id: 'scan-1', ownerId: 'user-1', barcode: '8801234567893', paths: { front: ['f'], ingredient: ['i'], nutrition: ['n'] } }));
+    const client = api();
+    vi.mocked(client.getScanStatus).mockResolvedValueOnce({ id: 'scan-1', status: 'submitted', errorCode: null, extractedData: extracted, fieldConfidence: {}, resolvedProductId: null });
+    vi.mocked(client.publishScan).mockRejectedValueOnce({ code: 'network_error' });
+    renderPage(client);
+    fireEvent.click(await screen.findByRole('button', { name: '공개 다시 시도하기' }));
+    await waitFor(() => expect(client.publishScan).toHaveBeenCalledTimes(2));
+    expect(client.submitImages).not.toHaveBeenCalled();
+    expect(client.confirmExtraction).not.toHaveBeenCalled();
   });
 });

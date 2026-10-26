@@ -102,7 +102,7 @@ export default function FeedAnalysisCard({ product, profile }: { product: Produc
           {a.macrosDMB && (
             <p style={{ margin: '12px 0 0', fontSize: 11.5, fontWeight: 600, color: 'var(--pdp-ink-muted)', lineHeight: 1.5 }}>
               건물기준(수분 제외) 조단백질 <b style={{ color: 'var(--pdp-ink)' }}>{a.macrosDMB.protein}%</b> · 조지방 <b style={{ color: 'var(--pdp-ink)' }}>{a.macrosDMB.fat}%</b>
-              {a.calories && <> · 열량 배분 단백 {a.calories.distribution.protein}% / 지방 {a.calories.distribution.fat}% / 탄수 {a.calories.distribution.carb}%</>}
+              {a.calories?.distribution && <> · 열량 배분 단백 {a.calories.distribution.protein}% / 지방 {a.calories.distribution.fat}% / 탄수 {a.calories.distribution.carb}%</>}
             </p>
           )}
         </div>
@@ -148,7 +148,7 @@ export default function FeedAnalysisCard({ product, profile }: { product: Produc
           </div>
         ) : (
           <>
-            <ChecklistRow ok={iq.firstIsAnimalProtein} label="제1원료가 동물성 단백질" value={iq.firstIsAnimalProtein ? (iq.firstIngredient ?? '예') : '아니오'} />
+            <ChecklistRow neutral={!iq.firstIngredient} ok={iq.firstIsAnimalProtein} label="제1원료가 동물성 단백질" value={!iq.firstIngredient ? '확인 필요' : iq.firstIsAnimalProtein ? iq.firstIngredient : '아니오'} />
             <ChecklistRow ok={iq.animalProteins.length > 0} label="동물성 단백질 원료" value={`${iq.animalProteins.length}종`} />
             <ChecklistRow neutral={!analysisReady && iq.artificial.length === 0} ok={iq.artificial.length === 0} label="합성 첨가물(색소·보존료 등)" value={iq.artificial.length === 0 ? (analysisReady ? '없음' : '확인 범위에서 0개') : `${iq.artificial.length}개`} />
             <ChecklistRow neutral={!analysisReady && iq.byProducts.length === 0} ok={iq.byProducts.length === 0} label="부산물 원료" value={iq.byProducts.length === 0 ? (analysisReady ? '없음' : '확인 범위에서 0개') : '포함'} />

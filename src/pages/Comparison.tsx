@@ -15,6 +15,7 @@ import ProductVerificationBadge from '../components/ProductVerificationBadge';
 const MAX_COLUMNS = MAX_COMPARISON;
 
 interface Column {
+  canShowScore: boolean;
   product: Product;
   display: ProductDisplayParts;
   grade: string;
@@ -30,23 +31,26 @@ interface Column {
 }
 
 function buildColumn(product: Product, profile: UserPetProfile): Column {
-  const { score, grade, breakdown } = resolveProductDisplayVerdict(product, profile);
+  const { score, grade, breakdown, canShowScore, analysisReadiness } = resolveProductDisplayVerdict(product, profile);
   const kcalValue = product.caloriesPer100g ?? product.guaranteedAnalysis?.kcalPer100g;
   const proteinValue = product.guaranteedAnalysis?.crudeProtein;
   const goodCount = product.ingredients?.filter((i) => i.riskLevel === 'safe').length ?? 0;
   const warnCount = breakdown.dangerCount + breakdown.cautionCount;
   const allergyDisplay = buildAllergyDisplayState(breakdown, profile.name || '우리 아이', {
     hasIngredientData: (product.ingredients?.length ?? 0) > 0,
+    analysisStatus: analysisReadiness.status,
+    unknownIngredientTerms: product.unknownIngredientTerms,
   });
 
   return {
+    canShowScore,
     product,
     display: getProductDisplayParts(product),
     grade,
     score,
     kcal: kcalValue ? `${Math.round(kcalValue)}kcal` : '—',
     protein: proteinValue ? `${proteinValue}%` : '—',
-    signalText: `주의 ${warnCount} · 좋음 ${goodCount}`,
+    signalText: canShowScore ? `주의 ${warnCount} · 좋음 ${goodCount}` : `확인 범위: 주의 ${warnCount} · 원료 정보 부족`,
     allergyText: allergyDisplay.shortText,
     allergyLevel: allergyDisplay.level,
     dangerCount: breakdown.dangerCount,
@@ -87,7 +91,7 @@ export default function Comparison() {
   }
 
   const rows: { label: string; values: string[]; tone?: (col: Column) => string }[] = [
-    { label: '등급', values: columns.map((c) => `${c.grade} ${c.score}`) },
+    { label: '등급', values: columns.map((c) => c.canShowScore ? `${c.grade} ${c.score}` : '분석 정보 부족') },
     { label: '열량', values: columns.map((c) => c.kcal) },
     { label: '조단백', values: columns.map((c) => c.protein) },
     { label: '평점', values: columns.map((c) => (c.product.reviewsCount > 0 ? `★ ${c.product.averageRating.toFixed(1)}` : '—')) },
@@ -114,7 +118,7 @@ export default function Comparison() {
     cautionCount: c.cautionCount,
     matchedConcerns: c.matchedConcerns,
   }));
-  const verdict = resolveComparisonVerdict(candidates);
+  const verdict = resolveComparisonVerdict(columns.every(c => c.canShowScore) ? candidates : []);
   const allergyNote = (level: AllergyDisplayLevel) =>
     level === 'hard'
       ? `다만 ${petName}의 알레르기 성분이 포함돼 있어 급여 전 확인이 필요해.`

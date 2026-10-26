@@ -1,5 +1,6 @@
 import type { Product, UserPetProfile } from '../types';
 import { DEFAULT_USER_PET_PROFILE } from '../types';
+import { readinessFromStoredStatus, type AnalysisReadiness } from '../analysis/analysisReadiness';
 import {
   getRecommendationBreakdown,
   resolveDisplayVerdict,
@@ -9,6 +10,8 @@ import {
 } from './score';
 
 export interface ProductDisplayVerdict {
+  analysisReadiness: AnalysisReadiness;
+  canShowScore: boolean;
   breakdown: RecommendationBreakdown;
   verdict: DisplayVerdict;
   score: number;
@@ -34,6 +37,7 @@ export function isRealPetProfile(profile: UserPetProfile | null | undefined): bo
  * 점수(baseScore)를 보여준다. 위험 성분 상한(≤69)은 프로필과 무관하게 적용한다.
  */
 export function resolveProductDisplayVerdict(product: Product, profile: UserPetProfile): ProductDisplayVerdict {
+  const analysisReadiness = readinessFromStoredStatus(product.analysisStatus, product.ingredients?.length ?? 0, product.unknownIngredientTerms?.length ?? 0);
   const breakdown = getRecommendationBreakdown(product, profile);
   const personalized = isRealPetProfile(profile);
   const verdict = resolveDisplayVerdict(personalized ? breakdown.total : breakdown.baseScore, {
@@ -43,6 +47,8 @@ export function resolveProductDisplayVerdict(product: Product, profile: UserPetP
   });
 
   return {
+    analysisReadiness,
+    canShowScore: analysisReadiness.status === 'ready',
     breakdown,
     verdict,
     score: verdict.score,
