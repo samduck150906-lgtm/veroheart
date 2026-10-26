@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, cleanup, within } from '@testing-library/react';
 import type { AdminSettingRow } from '../../lib/adminApi';
 
 const h = vi.hoisted(() => ({ fetchSettings: vi.fn(), saveSettings: vi.fn() }));
@@ -20,6 +20,7 @@ const ROWS: AdminSettingRow[] = [
   { key: 'maintenance_mode', value: false, description: null, updatedAt: null, updatedBy: null },
   { key: 'signup_enabled', value: true, description: null, updatedAt: null, updatedBy: null },
   { key: 'viral_event_visible', value: true, description: null, updatedAt: null, updatedBy: null },
+  { key: 'hide_unverified_products', value: true, description: null, updatedAt: null, updatedBy: null },
   {
     key: 'phase2_alias_observation_enabled',
     value: false,
@@ -77,6 +78,19 @@ describe('AdminSettings', () => {
     const card = (await screen.findByText('Phase 2 별칭 관찰 모드')).closest('article');
     expect(card?.textContent).toContain('비활성화됨');
     expect(card?.textContent).toContain('점수·위험도 판정에는 영향이 없습니다');
+  });
+
+  it('검수 완료 전용 노출을 꺼도 검수 대기는 비공개라고 안내하고 해당 설정만 저장한다', async () => {
+    render(<AdminSettings />);
+    const card = (await screen.findByRole('heading', { name: '검수 완료 제품만 노출' })).closest('article')!;
+    fireEvent.click(within(card).getByRole('button', { pressed: true }));
+
+    expect(within(card).getByRole('button', { pressed: false })).toBeTruthy();
+    expect(within(card).getByText(/끄면.*검토됨/)).toBeTruthy();
+    expect(within(card).getByText(/검수 대기.*항상.*비공개/)).toBeTruthy();
+    fireEvent.click(screen.getByText('변경사항 저장'));
+
+    await waitFor(() => expect(h.saveSettings).toHaveBeenCalledWith({ hide_unverified_products: false }));
   });
 
   it('배포 환경에서만 바꿀 수 있는 값은 토글이 아니라 읽기 전용으로 안내한다', async () => {

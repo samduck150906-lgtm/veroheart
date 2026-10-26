@@ -18,7 +18,9 @@ describe('product sitemap function', () => {
     process.env.SUPABASE_URL = 'https://db.example';
     process.env.SUPABASE_ANON_KEY = 'public-test-key';
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify([
-      { id: '11111111-1111-1111-1111-111111111111', slug: '연어-&-오리', last_observed_at: '2026-09-25T00:00:00Z' },
+      { id: '11111111-1111-1111-1111-111111111111', slug: '연어-&-오리', last_observed_at: '2026-09-25T00:00:00Z', verification_status: 'reviewed' },
+      { id: 'pending-product', slug: 'pending', verification_status: 'pending' },
+      { id: 'unknown-product', slug: 'unknown', verification_status: null },
     ]), { status: 200, headers: { 'content-type': 'application/json' } }));
     vi.stubGlobal('fetch', fetchMock);
 
@@ -27,11 +29,14 @@ describe('product sitemap function', () => {
     const calledUrl = new URL(String(fetchMock.mock.calls[0][0]));
 
     expect(calledUrl.pathname).toBe('/rest/v1/products');
-    expect(calledUrl.searchParams.get('select')).toBe('id,slug,last_observed_at');
+    expect(calledUrl.searchParams.get('select')).toBe('id,slug,last_observed_at,verification_status');
     expect(calledUrl.searchParams.get('is_visible')).toBe('eq.true');
+    expect(calledUrl.searchParams.get('verification_status')).toBe('in.(reviewed,verified)');
     expect(xml).toContain('/product/11111111-1111-1111-1111-111111111111/');
     expect(xml).not.toContain('private-product');
-    expect(response.headers.get('cache-control')).toBe('public, max-age=300, stale-while-revalidate=3600');
+    expect(xml).not.toContain('pending-product');
+    expect(xml).not.toContain('unknown-product');
+    expect(response.headers.get('cache-control')).toBe('no-store');
     expect(response.headers.get('content-type')).toContain('application/xml');
     expect(config.path).toBe('/sitemap-products.xml');
   });

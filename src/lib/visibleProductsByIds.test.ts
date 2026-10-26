@@ -8,9 +8,9 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 const rows = [
-  { id: 'a', name: 'A', brand_name: 'Brand', product_type: 'food', is_visible: true },
-  { id: 'hidden', name: 'Hidden', brand_name: 'Brand', product_type: 'food', is_visible: false },
-  { id: 'b', name: 'B', brand_name: 'Brand', product_type: 'food', is_visible: true },
+  { id: 'a', name: 'A', brand_name: 'Brand', product_type: 'food', is_visible: true, verification_status: 'reviewed' },
+  { id: 'hidden', name: 'Hidden', brand_name: 'Brand', product_type: 'food', is_visible: false, verification_status: 'verified' },
+  { id: 'b', name: 'B', brand_name: 'Brand', product_type: 'food', is_visible: true, verification_status: 'verified' },
 ];
 
 function respond(error: object | null = null) {

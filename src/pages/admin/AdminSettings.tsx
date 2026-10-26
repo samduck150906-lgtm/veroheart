@@ -28,11 +28,10 @@ const BOOLEAN_SETTINGS: { key: SettingKey; title: string; description: string }[
   },
   {
     key: 'hide_unverified_products',
-    title: '검수 대기 제품 숨기기',
+    title: '검수 완료 제품만 노출',
     description:
-      '켜면 검수 상태가 "검수 완료"인 제품만 사용자 앱에 노출합니다. ' +
-      '지금은 등록된 제품 대부분이 검수 대기라 켜면 앱 목록이 거의 비게 되니, ' +
-      '검수를 진행한 뒤 켜 주세요.',
+      '노출 설정이 켜진 제품 중, 이 설정을 켜면 "검수 완료" 제품만 공개하고 끄면 "검토됨" 제품도 공개합니다. ' +
+      '검수 대기·검수 상태 미지정 제품은 이 설정과 관계없이 항상 앱 비공개입니다.',
   },
   {
     key: 'phase2_alias_observation_enabled',

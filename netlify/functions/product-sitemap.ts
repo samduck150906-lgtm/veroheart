@@ -4,9 +4,10 @@ interface SitemapProductRow {
   id: string;
   slug?: string | null;
   last_observed_at?: string | null;
+  verification_status?: string | null;
 }
 
-const CACHE_CONTROL = 'public, max-age=300, stale-while-revalidate=3600';
+const CACHE_CONTROL = 'no-store';
 const PAGE_SIZE = 1000;
 
 export function escapeXml(value: string): string {
@@ -27,20 +28,22 @@ async function readPublicProducts(baseUrl: string, anonKey: string): Promise<Sit
   const rows: SitemapProductRow[] = [];
   for (let offset = 0; ; offset += PAGE_SIZE) {
     const url = new URL('/rest/v1/products', baseUrl);
-    url.searchParams.set('select', 'id,slug,last_observed_at');
+    url.searchParams.set('select', 'id,slug,last_observed_at,verification_status');
     url.searchParams.set('is_visible', 'eq.true');
+    url.searchParams.set('verification_status', 'in.(reviewed,verified)');
     url.searchParams.set('order', 'id.asc');
     url.searchParams.set('offset', String(offset));
     url.searchParams.set('limit', String(PAGE_SIZE));
 
     const response = await fetch(url, {
       method: 'GET',
+      cache: 'no-store',
       headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
     });
     if (!response.ok) throw new Error(`public products query failed (${response.status})`);
     const page = await response.json();
     if (!Array.isArray(page)) throw new Error('public products response is not an array');
-    rows.push(...page as SitemapProductRow[]);
+    rows.push(...(page as SitemapProductRow[]).filter(row => row.verification_status === 'reviewed' || row.verification_status === 'verified'));
     if (page.length < PAGE_SIZE) break;
   }
   return rows;
@@ -79,6 +82,7 @@ export default async function productSitemap(request: Request): Promise<Response
       headers: {
         'content-type': 'application/xml; charset=utf-8',
         'cache-control': CACHE_CONTROL,
+        'netlify-cdn-cache-control': CACHE_CONTROL,
       },
     });
   } catch (error) {

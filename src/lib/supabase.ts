@@ -111,12 +111,12 @@ function asProductRow(data: unknown): SupabaseProductRow {
 type VisibilityQueryError = { code?: string; message: string };
 type VisibilityQueryResult<T> = { data: T | null; error: VisibilityQueryError | null };
 /**
- * 관리자가 "검수 대기 제품 숨기기"를 켰는지.
+ * 관리자가 검수 완료 제품만 노출하도록 제한했는지.
  *
  * 제품 조회마다 설정을 새로 읽으면 요청이 배로 늘고, 설정 조회가 실패한 순간
  * 목록이 통째로 비어 버린다. 그래서 publicSettings 로더가 값을 여기에 밀어
  * 넣고(setHideUnverifiedProducts), 조회는 그 값만 본다. 아직 한 번도 읽지
- * 못했다면 "숨기지 않음"이 기본이다.
+ * 못했다면 검토됨·검수 완료를 허용한다. 검수 대기·미정 상태는 항상 제외한다.
  *
  * (publicSettings 가 이 모듈을 import 하므로 반대 방향 import 는 두지 않는다.)
  */
@@ -126,8 +126,8 @@ export function setHideUnverifiedProducts(value: boolean): void {
   hideUnverifiedProducts = value;
 }
 
-function shouldHideUnverifiedProducts(): boolean {
-  return hideUnverifiedProducts;
+function publicProductReviewStatuses(): string[] {
+  return hideUnverifiedProducts ? ['verified'] : ['reviewed', 'verified'];
 }
 
 async function queryVisibleProducts<T>(
@@ -268,11 +268,11 @@ export async function getProductsPage(page = 1, pageSize = MOBILE_PRODUCT_PAGE_S
     // (개수가 아니라 있다/없다로 가른다. 정렬 근거는 products.ingredient_count 캐시.)
     if (withVisibilityFilter) {
       builder = builder
-        .eq('is_visible', true)
+        .eq('is_visible', true).in('verification_status', publicProductReviewStatuses())
         .order('is_pinned', { ascending: false })
         .order('pinned_order', { ascending: true })
         .order('has_ingredients', { ascending: false });
-      if (shouldHideUnverifiedProducts()) builder = builder.eq('verification_status', 'verified');
+
     }
     return builder.order('created_at', { ascending: false }).range(from, from + safePageSize - 1);
   });
@@ -316,7 +316,7 @@ export async function getProductDetail(productId: string): Promise<Product | nul
         nutritional_profiles (crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus)
       `)
       .eq('id', productId);
-    if (withVisibilityFilter) builder = builder.eq('is_visible', true);
+    if (withVisibilityFilter) builder = builder.eq('is_visible', true).in('verification_status', publicProductReviewStatuses());
     return builder.single();
   });
 
@@ -355,7 +355,7 @@ export async function getVisibleProductsByIds(ids: string[]): Promise<Product[]>
         ),
         nutritional_profiles (crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus)
       `).in('id', uniqueIds.slice(offset, offset + 100));
-      if (withVisibilityFilter) builder = builder.eq('is_visible', true);
+      if (withVisibilityFilter) builder = builder.eq('is_visible', true).in('verification_status', publicProductReviewStatuses());
       return builder;
     });
     if (error) throw new Error('제품을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.');
@@ -398,7 +398,7 @@ export async function getProductByBarcode(barcode: string): Promise<Product | nu
         nutritional_profiles (crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus)
       `)
       .in('barcode', candidates);
-    if (withVisibilityFilter) builder = builder.eq('is_visible', true);
+    if (withVisibilityFilter) builder = builder.eq('is_visible', true).in('verification_status', publicProductReviewStatuses());
     return builder.limit(2);
   }).catch(() => {
     throw new BarcodeLookupError('unavailable');
@@ -623,8 +623,8 @@ export async function searchProductsPage(
     }
 
     if (withVisibilityFilter) {
-      builder = builder.eq('is_visible', true);
-      if (shouldHideUnverifiedProducts()) builder = builder.eq('verification_status', 'verified');
+      builder = builder.eq('is_visible', true).in('verification_status', publicProductReviewStatuses());
+
     }
     return builder;
   };
@@ -828,7 +828,7 @@ export async function getRecentViews(userId: string) {
         )
       `)
       .eq('user_id', userId);
-    if (withVisibilityFilter) builder = builder.eq('products.is_visible', true);
+    if (withVisibilityFilter) builder = builder.eq('products.is_visible', true).in('products.verification_status', publicProductReviewStatuses());
     return builder.order('viewed_at', { ascending: false }).limit(10);
   });
   if (error) return [];
@@ -844,7 +844,7 @@ export async function getBrands(): Promise<string[]> {
   if (!isSupabaseConfigured) return [];
   const { data, error } = await queryVisibleProducts((withVisibilityFilter) => {
     let builder = supabase.from('products').select('brand_name');
-    if (withVisibilityFilter) builder = builder.eq('is_visible', true);
+    if (withVisibilityFilter) builder = builder.eq('is_visible', true).in('verification_status', publicProductReviewStatuses());
     return builder.order('brand_name');
   });
   if (error) return [];
@@ -879,7 +879,7 @@ export async function getProductsByBrand(brandName: string): Promise<Product[]> 
         nutritional_profiles (crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus)
       `)
       .eq('brand_name', brandName);
-    if (withVisibilityFilter) builder = builder.eq('is_visible', true);
+    if (withVisibilityFilter) builder = builder.eq('is_visible', true).in('verification_status', publicProductReviewStatuses());
     return builder;
   });
   if (error) return [];
@@ -983,7 +983,7 @@ export async function searchDiaryProducts(
       const pattern = toOrIlikePattern(q);
       builder = builder.or(`name.ilike.${pattern},brand_name.ilike.${pattern}`);
     }
-    if (withVisibilityFilter) builder = builder.eq('is_visible', true);
+    if (withVisibilityFilter) builder = builder.eq('is_visible', true).in('verification_status', publicProductReviewStatuses());
     return builder.limit(30);
   });
   if (error) {

@@ -11,7 +11,7 @@ beforeEach(() => {
 afterEach(() => { vi.unstubAllEnvs(); vi.restoreAllMocks(); });
 
 describe('public product visibility', () => {
-  it.each(['is_visible', 'is_pinned', 'has_ingredients'])('never retries without visibility after missing %s', async (missing) => {
+  it.each(['is_visible', 'verification_status', 'is_pinned', 'has_ingredients'])('never retries without visibility after missing %s', async (missing) => {
     const executed: boolean[] = [];
     api.from.mockImplementation(() => {
       let visibleOnly = false;
@@ -24,13 +24,14 @@ describe('public product visibility', () => {
             : { data: [{ id: 'hidden', name: 'Hidden', brand_name: 'B', product_type: 'food' }], error: null }).then(resolve);
         },
       };
-      for (const method of ['select', 'order', 'range']) chain[method] = () => chain;
+      for (const method of ['select', 'in', 'order', 'range']) chain[method] = () => chain;
       return chain;
     });
     vi.spyOn(console, 'error').mockImplementation(() => {});
     const { getProducts } = await import('./supabase');
     await expect(getProducts()).rejects.toThrow();
     await expect(getProducts()).rejects.toThrow();
+    expect(executed).toHaveLength(2);
     expect(executed.every(Boolean)).toBe(true);
   });
 });

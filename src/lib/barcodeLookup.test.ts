@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const api = vi.hoisted(() => ({ from: vi.fn() }));
 vi.mock('@supabase/supabase-js', () => ({ createClient: () => api }));
-const row = (id: string, barcode: string, is_visible = true) => ({ id, barcode, is_visible, name: id, brand_name: 'Brand', product_type: 'food' });
+const row = (id: string, barcode: string, is_visible = true) => ({ id, barcode, is_visible, verification_status: 'verified', name: id, brand_name: 'Brand', product_type: 'food' });
 
 function respond(rows: ReturnType<typeof row>[], error: object | null = null) {
   api.from.mockImplementation(() => {

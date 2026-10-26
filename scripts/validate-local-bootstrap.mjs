@@ -7,6 +7,7 @@ import { pgcrypto } from '@electric-sql/pglite/contrib/pgcrypto';
 import { pg_trgm } from '@electric-sql/pglite/contrib/pg_trgm';
 import { uuid_ossp } from '@electric-sql/pglite/contrib/uuid_ossp';
 import { LEGACY_LABEL_MIGRATION, prepareLocalSupabase } from './prepare-local-supabase.mjs';
+import { assertProductPublication, assertPublicationMigrationPreservesIntent, PRODUCT_PUBLICATION_MIGRATION } from './test-product-publication.mjs';
 
 const repository = fileURLToPath(new URL('../', import.meta.url));
 const db = new PGlite({ extensions: { pgcrypto, pg_trgm, uuid_ossp } });
@@ -42,7 +43,10 @@ try {
     if (!file.includes('_local_missing_product_guard')) {
       assert.equal(sql, await readFile(path.join(repository, 'supabase/migrations', file), 'utf8'), `${file}: historical bytes changed`);
     }
-    try { await db.exec(sql); }
+    try {
+      if (file === PRODUCT_PUBLICATION_MIGRATION) await assertPublicationMigrationPreservesIntent(db, () => db.exec(sql));
+      else await db.exec(sql);
+    }
     catch (error) { throw new Error(`${file}: ${error.message}`, { cause: error }); }
     if (file === '20260611151004_local_missing_product_guard.sql') {
       await assert.rejects(db.exec("INSERT INTO public.nutritional_profiles(product_id) VALUES ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')"), /Unexpected missing product/);
@@ -93,6 +97,7 @@ try {
   assert.deepEqual(await searchIds('GallusDomesticus'), ['10000000-0000-4000-8000-000000000001']);
   await db.exec('RESET ROLE');
   console.log('PASS: current canonical/raw ingredient search; stale legacy excluded, empty current labels respected, anon RLS works');
+  await assertProductPublication(db);
   await db.exec("INSERT INTO public.products(name,brand_name,is_visible) VALUES ('local guard test fixture','local test',false)");
   await assert.rejects(db.exec(await readFile(path.join(repository, 'supabase/local-bootstrap/before-legacy-labels.sql'), 'utf8')), /empty products table/);
   console.log(JSON.stringify({ passed: true, historicalMigrations: prepared.historicalMigrations, localMigrations: files.length, skippedKnownOrphanRows: orphanCount, fabricatedCatalogRows: 0, historicalFilesUnchanged: true, foreignKeysEnforced: true, storagePrivate: true }, null, 2));

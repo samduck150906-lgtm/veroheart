@@ -20,7 +20,7 @@ export interface PublicSettings {
   viralEventVisible: boolean;
   serviceNotice: ServiceNotice;
   phase2AliasObservationEnabled: boolean;
-  /** 켜면 검수 완료(verified) 제품만 사용자 앱에 노출한다. */
+  /** 켜면 verified만, 끄면 reviewed·verified 허용. pending은 항상 비공개. */
   hideUnverifiedProducts: boolean;
 }
 
@@ -36,7 +36,7 @@ export const DEFAULT_PUBLIC_SETTINGS: PublicSettings = {
   viralEventVisible: false,
   serviceNotice: { enabled: false, message: '' },
   phase2AliasObservationEnabled: false,
-  // 기본은 끔 — 설정을 못 읽었다고 제품 목록이 통째로 비면 안 된다.
+  // 추가 제한의 기본은 끔. 검수 대기 제외는 설정과 무관한 필수 조건이다.
   hideUnverifiedProducts: false,
 };
 

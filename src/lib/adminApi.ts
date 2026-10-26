@@ -519,7 +519,7 @@ export async function fetchProductsPage({
     };
     return {
       ...raw,
-      is_visible: raw.is_visible !== false,
+      is_visible: raw.is_visible === true,
       is_pinned: raw.is_pinned === true,
       pinned_order: Number(raw.pinned_order ?? 0),
       ingredientCount: raw.product_ingredients?.[0]?.count ?? 0,
@@ -538,22 +538,46 @@ interface ProductIngredientJoinRow {
 }
 
 export async function fetchProductIngredients(productId: string): Promise<ProductIngredientLink[]> {
-  const { data, error } = await supabase
-    .from('product_ingredients')
-    .select('ingredient_id, sort_order, ingredients (id, name_ko, name_en, risk_level)')
-    .eq('product_id', productId)
-    .order('sort_order', { ascending: true });
-  if (error) throw new Error(error.message);
+  return (await fetchProductEditBundle(productId)).ingredients;
+}
 
-  return ((data ?? []) as unknown as ProductIngredientJoinRow[])
-    .filter((row) => Boolean(row.ingredients))
-    .map((row, index) => ({
-      ingredientId: row.ingredient_id,
-      nameKo: row.ingredients?.name_ko ?? '',
-      nameEn: row.ingredients?.name_en ?? null,
-      riskLevel: (row.ingredients?.risk_level ?? 'safe') as RiskLevel,
-      sortOrder: row.sort_order ?? index,
-    }));
+export interface ProductEditBundle {
+  product: Record<string, unknown>;
+  nutrition: Record<NutritionKey, number | null> | null;
+  ingredients: ProductIngredientLink[];
+}
+
+/** 비공개 제품도 원재료·영양정보까지 한 번에 읽고, 불완전한 응답은 저장 가능한 빈 값으로 바꾸지 않는다. */
+export async function fetchProductEditBundle(id: string): Promise<ProductEditBundle> {
+  const res = await callAdminFunction<{ product?: Record<string, unknown> | null }>(
+    'admin-products-read',
+    { view: 'edit', id },
+  );
+  if (!res.product || res.product.id !== id) throw new Error('편집할 제품을 찾지 못했습니다.');
+  const { product_ingredients: links, nutritional_profiles: profiles, ...product } = res.product;
+  if (!Array.isArray(links) || profiles === undefined || (Array.isArray(profiles) && profiles.length > 1)) {
+    throw new Error('제품 편집 자료를 모두 불러오지 못했습니다. 다시 열어 주세요.');
+  }
+  const profile = Array.isArray(profiles) ? profiles[0] ?? null : profiles;
+  if (profile !== null && (typeof profile !== 'object' || NUTRITION_KEYS.some((key) => !(key in profile)))) {
+    throw new Error('제품 영양 편집 자료가 불완전합니다. 다시 열어 주세요.');
+  }
+  const ingredients = (links as ProductIngredientJoinRow[])
+    .slice()
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    .map((row, index) => {
+      if (!row.ingredient_id || !row.ingredients) {
+        throw new Error('제품 원재료 편집 자료가 불완전합니다. 다시 열어 주세요.');
+      }
+      return {
+        ingredientId: row.ingredient_id,
+        nameKo: row.ingredients.name_ko,
+        nameEn: row.ingredients.name_en,
+        riskLevel: row.ingredients.risk_level,
+        sortOrder: row.sort_order ?? index,
+      };
+    });
+  return { product, nutrition: profile as ProductEditBundle['nutrition'], ingredients };
 }
 
 export interface SaveProductPayload {
@@ -1364,8 +1388,7 @@ function emptyNutrition(): Record<NutritionKey, number | null> {
 /**
  * 입력 화면이 쓸 제품 목록.
  *
- * products 와 nutritional_profiles 는 공개 SELECT 라 anon 키로 직접 읽는다 —
- * 관리자 화면의 다른 목록과 같은 경로다. service_role 이 필요한 것은 쓰기뿐이다.
+ * 제품과 영양정보는 관리자 인증을 거친 service_role 조회로 함께 읽는다.
  *
  * '영양정보 없음'은 조인 결과를 봐야 알 수 있어 서버 필터로 거를 수 없다.
  * 그래서 바코드 조건만 쿼리에 걸고, 영양 조건은 받아 온 뒤 거른다.
