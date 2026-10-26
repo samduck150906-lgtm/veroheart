@@ -19,7 +19,10 @@ function respond(row: SupabaseProductRow) {
   api.rpc.mockResolvedValue({ data: [{ product_id: row.id, rank: 100 }], error: null });
   api.from.mockImplementation(() => {
     let columns = '';
-    const data = () => ({ ...row, product_ingredient_label_sets: columns.includes('product_ingredient_label_sets') ? row.product_ingredient_label_sets : undefined });
+    const data = () => ({ ...row,
+      product_ingredient_label_sets: columns.includes('product_ingredient_label_sets') ? row.product_ingredient_label_sets : undefined,
+      nutritional_profiles: columns.includes('nutritional_profiles') ? row.nutritional_profiles : undefined,
+    });
     const chain: Record<string, unknown> = {
       select: (selected: string) => { columns = selected; return chain; },
       single: () => Promise.resolve({ data: data(), error: null }),
@@ -39,6 +42,15 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe('current ingredient evidence across product entry points', () => {
+  it('loads the same reported nutrition for scored catalog candidates and product detail', async () => {
+    respond({ ...product, nutritional_profiles: [{ crude_protein: 30, crude_fat: 15, crude_fiber: 3, crude_ash: 8, moisture: 10, calcium: 1, phosphorus: 0.8 }] });
+    const { searchProductsPage, getProductDetail } = await import('./supabase');
+    const [candidate] = (await searchProductsPage('')).products;
+    const detail = await getProductDetail('p');
+    expect(candidate.guaranteedAnalysis?.crudeProtein).toBe(30);
+    expect(candidate.guaranteedAnalysis).toEqual(detail?.guaranteedAnalysis);
+    expect(candidate.ingredients).toEqual(detail?.ingredients);
+  });
   it.each(['닭고기', 'CHICKEN', 'legacy-chicken', 'canonical-chicken'])('excludes current canonical chicken using %s', async (excluded) => {
     const { searchProductsPage } = await import('./supabase');
     expect((await searchProductsPage('', undefined, [excluded])).products).toEqual([]);

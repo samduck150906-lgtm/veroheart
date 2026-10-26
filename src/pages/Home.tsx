@@ -7,6 +7,8 @@ import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import { normalizeProductDisplayName, resolveBrandLabel } from '../utils/productDisplay';
 import { gradePalette, VR } from '../lib/veroroDesign';
 import { useProductCategories } from '../lib/productCategories';
+import { HOME_RECOMMENDATION_MIN_SCORE } from '../lib/homeRecommendations';
+import { useHomeRecommendations } from '../hooks/useHomeRecommendations';
 import type { PetSafetyScan } from '../utils/petSafety';
 import type { Product } from '../types';
 
@@ -16,7 +18,7 @@ import type { Product } from '../types';
 // DB 가 작아 보이는 역효과만 있었다.
 
 export default function Home() {
-  const { profile, products, recentViews, isLoggedIn } = useStore();
+  const { profile, recentViews, isLoggedIn } = useStore();
   const navigate = useNavigate();
   const categories = useProductCategories();
 
@@ -37,15 +39,7 @@ export default function Home() {
 
   const petLabel = isLoggedIn && profile.name ? profile.name : '우리 아이';
 
-  /** 프로필 기준 점수 상위 제품 — '우리 아이한테 잘 맞는 것들' */
-  const recommended = useMemo(() => {
-    const recentIds = new Set(recentViews.map((p) => p.id));
-    return products
-      .filter((p) => !recentIds.has(p.id) && !p.requiresVeterinaryGuidance)
-      .map((p) => ({ product: p, verdict: resolveProductDisplayVerdict(p, profile) }))
-      .sort((a, b) => b.verdict.score - a.verdict.score)
-      .slice(0, 3);
-  }, [products, recentViews, profile]);
+  const recommendations = useHomeRecommendations(profile, isLoggedIn);
 
   /** 최근 본 제품에서 걸린 성분들 — 위험/주의 두 단계로 나눠 보여준다 */
   const alertRows = useMemo(() => {
@@ -240,18 +234,32 @@ export default function Home() {
       )}
 
       {/* 프로필 기반 추천 */}
-      {recommended.length > 0 && (
-        <section>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '11px' }}>
-            <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 800, letterSpacing: '-0.03em' }}>
-              둘러볼 제품
+      {recommendations.enabled && (
+        <section aria-labelledby="home-recommendations-title" aria-busy={recommendations.status === 'loading'} style={{ marginBottom: '24px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 12px', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <h2 id="home-recommendations-title" style={{ margin: 0, fontSize: '18px', fontWeight: 800, letterSpacing: '-0.03em' }}>
+              {petLabel}한테 잘 맞는 제품
             </h2>
-            <span style={{ fontSize: '11.5px', fontWeight: 700, color: VR.sub }}>성분 정보 확인</span>
+            <span style={{ fontSize: '11.5px', fontWeight: 700, color: VR.sub }}>궁합 점수 {HOME_RECOMMENDATION_MIN_SCORE}점 이상</span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', marginBottom: '24px' }}>
-            {recommended.map(({ product, verdict }) => {
+          <p style={{ margin: '0 0 12px', fontSize: '12px', color: VR.sub, lineHeight: 1.5 }}>
+            등록된 원료·프로필을 바탕으로 계산한 참고 점수예요.
+          </p>
+          {recommendations.status === 'loading' && <p role="status" style={{ fontSize: '13px', color: VR.sub }}>프로필에 맞는 제품을 찾고 있어요.</p>}
+          {recommendations.status === 'error' && (
+            <div role="status">
+              <p style={{ fontSize: '13px', color: VR.sub }}>추천 제품을 불러오지 못했어요.</p>
+              <button type="button" className="btn btn-outline" onClick={recommendations.retry}>다시 시도</button>
+            </div>
+          )}
+          {recommendations.status === 'ready' && recommendations.items.length === 0 && (
+            <p role="status" style={{ fontSize: '13px', color: VR.sub, lineHeight: 1.6 }}>
+              현재 등록된 제품 중 궁합 점수 {HOME_RECOMMENDATION_MIN_SCORE}점 이상인 제품이 없어요.
+            </p>
+          )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
+            {recommendations.items.map(({ product, verdict }) => {
               const palette = gradePalette(verdict.grade);
-              const ready = verdict.canShowScore;
               return (
                 <button
                   key={product.id}
@@ -273,7 +281,7 @@ export default function Home() {
                       {normalizeProductDisplayName(product)}
                     </span>
                     <span style={{ display: 'block', fontSize: '11.5px', fontWeight: 700, color: 'var(--safe-strong)', marginTop: '3px' }}>
-                      {ready ? `${petLabel} 기준 참고 점수 ${verdict.score}점` : '상세에서 원료 정보 확인'}
+                      {petLabel} 기준 궁합 점수 {verdict.score}점
                     </span>
                   </span>
                   <span style={{
@@ -281,7 +289,7 @@ export default function Home() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: '16px', fontWeight: 800, color: palette.fg, background: palette.bg,
                   }}>
-                    {ready ? verdict.grade : '—'}
+                    {verdict.grade}
                   </span>
                 </button>
               );

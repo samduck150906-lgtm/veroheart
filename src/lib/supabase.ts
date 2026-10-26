@@ -551,7 +551,7 @@ export async function searchProductsPage(
       verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
       product_ingredients (
         ingredient_id, sort_order,
-        ingredients (id, name_ko, name_en, risk_level)
+        ingredients (id, name_ko, name_en, risk_level, description)
       ),
       product_ingredient_label_sets (
         id, is_current,
@@ -561,7 +561,8 @@ export async function searchProductsPage(
           canonical_ingredients (id, canonical_name_ko, canonical_name_en, status,
             ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description))
         )
-      )
+      ),
+      nutritional_profiles (crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus)
     `);
 
     if (productIds) builder = builder.in('id', productIds);
