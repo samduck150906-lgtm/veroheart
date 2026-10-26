@@ -22,7 +22,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '명확한 동물성 단백질원이에요. 닭 알레르기 이력이 있으면 주의가 필요해요.',
+    explanation: '명확한 동물성 단백질원입니다. 닭 알레르기 이력이 있으면 주의가 필요합니다.',
   },
   {
     id: 'beef',
@@ -35,7 +35,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '대표적인 동물성 단백질원이에요. 소고기 알레르기는 반려견에서 비교적 흔해요.',
+    explanation: '대표적인 동물성 단백질원입니다. 소고기 알레르기는 반려견에서 비교적 흔합니다.',
   },
   {
     id: 'pork',
@@ -48,7 +48,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '동물성 단백질원이에요.',
+    explanation: '동물성 단백질원입니다.',
   },
   {
     id: 'duck',
@@ -61,7 +61,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '비교적 알레르기가 적어 제한급원식(LID)에 자주 쓰이는 단백질원이에요.',
+    explanation: '비교적 알레르기가 적어 제한급원식(LID)에 자주 쓰이는 단백질원입니다.',
   },
   {
     id: 'lamb',
@@ -74,7 +74,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '동물성 단백질원이에요.',
+    explanation: '동물성 단백질원입니다.',
   },
   {
     id: 'turkey',
@@ -87,7 +87,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '동물성 단백질원이에요.',
+    explanation: '동물성 단백질원입니다.',
   },
   {
     id: 'salmon',
@@ -100,7 +100,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein', 'omega3'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '오메가-3가 풍부한 생선 단백질원이에요.',
+    explanation: '오메가-3가 풍부한 생선 단백질원입니다.',
   },
   {
     id: 'tuna',
@@ -113,7 +113,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '생선 단백질원이에요. 고양이 기호성이 좋아요.',
+    explanation: '생선 단백질원입니다. 고양이 기호성이 좋습니다.',
   },
   {
     id: 'whitefish',
@@ -126,7 +126,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '저지방 생선 단백질원이에요.',
+    explanation: '저지방 생선 단백질원입니다.',
   },
   {
     id: 'egg',
@@ -139,7 +139,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '소화율이 높은 단백질원이에요.',
+    explanation: '소화율이 높은 단백질원입니다.',
   },
 
   // ── 2. 가공 단백질 ───────────────────────────────────────────────
@@ -154,7 +154,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '수분을 제거해 단백질 효율을 높인 가공 원료예요.',
+    explanation: '수분을 제거해 단백질 효율을 높인 가공 원료입니다.',
   },
   {
     id: 'fish_meal',
@@ -167,7 +167,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '농축 생선 단백질이에요.',
+    explanation: '농축 생선 단백질입니다.',
   },
   {
     id: 'hydrolyzed_protein',
@@ -179,7 +179,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '알레르기 반응을 줄이기 위해 단백질을 잘게 분해한 원료예요.',
+    explanation: '알레르기 반응을 줄이기 위해 단백질을 잘게 분해한 원료입니다.',
   },
   {
     id: 'animal_byproduct',
@@ -192,7 +192,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein'],
     riskTags: ['controversial'],
     defaultSeverity: 'watch',
-    explanation: '동물 기원이 구체적으로 표시되지 않은 가공 원료예요. 출처가 명확한 표기가 더 좋아요.',
+    explanation: '동물 기원이 구체적으로 표시되지 않은 가공 원료입니다. 출처가 명확한 표기가 더 좋습니다.',
   },
 
   // ── 3. 탄수화물 ──────────────────────────────────────────────────
@@ -206,7 +206,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['carb'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '비교적 알레르기가 적은 탄수화물·에너지원이에요.',
+    explanation: '비교적 알레르기가 적은 탄수화물·에너지원입니다.',
   },
   {
     id: 'brown_rice',
@@ -218,7 +218,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['carb', 'fiber'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '식이섬유가 있는 통곡 탄수화물원이에요.',
+    explanation: '식이섬유가 있는 통곡 탄수화물원입니다.',
   },
   {
     id: 'oat',
@@ -230,7 +230,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['carb', 'fiber'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '식이섬유가 풍부한 곡물이에요.',
+    explanation: '식이섬유가 풍부한 곡물입니다.',
   },
   {
     id: 'barley',
@@ -242,7 +242,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['carb', 'fiber'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '곡물 탄수화물원이에요.',
+    explanation: '곡물 탄수화물원입니다.',
   },
   {
     id: 'wheat',
@@ -254,7 +254,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['carb'],
     riskTags: ['controversial'],
     defaultSeverity: 'watch',
-    explanation: '곡물 알레르기·소화 민감성이 있는 경우 확인이 필요한 원료예요.',
+    explanation: '곡물 알레르기·소화 민감성이 있는 경우 확인이 필요한 원료입니다.',
   },
   {
     id: 'corn',
@@ -266,7 +266,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['carb'],
     riskTags: ['controversial'],
     defaultSeverity: 'watch',
-    explanation: '값이 싼 탄수화물·식물성 단백 증량 원료로 쓰이며, 곡물 민감성은 확인이 필요해요.',
+    explanation: '값이 싼 탄수화물·식물성 단백 증량 원료로 쓰이며, 곡물 민감성은 확인이 필요합니다.',
   },
   {
     id: 'potato',
@@ -278,7 +278,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['carb'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '그레인프리 사료에서 자주 쓰이는 탄수화물원이에요.',
+    explanation: '그레인프리 사료에서 자주 쓰이는 탄수화물원입니다.',
   },
   {
     id: 'sweet_potato',
@@ -290,7 +290,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['carb', 'fiber'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '식이섬유가 있는 탄수화물원이에요.',
+    explanation: '식이섬유가 있는 탄수화물원입니다.',
   },
   {
     id: 'tapioca',
@@ -302,7 +302,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['carb'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '그레인프리 탄수화물원이에요.',
+    explanation: '그레인프리 탄수화물원입니다.',
   },
 
   // ── 4. 콩/두류 ───────────────────────────────────────────────────
@@ -316,7 +316,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein', 'fiber'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '식물성 단백·섬유원이에요.',
+    explanation: '식물성 단백·섬유원입니다.',
   },
   {
     id: 'lentil',
@@ -328,7 +328,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein', 'fiber'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '식물성 단백·섬유원이에요.',
+    explanation: '식물성 단백·섬유원입니다.',
   },
   {
     id: 'chickpea',
@@ -340,7 +340,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein', 'fiber'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '식물성 단백·섬유원이에요.',
+    explanation: '식물성 단백·섬유원입니다.',
   },
   {
     id: 'soybean',
@@ -352,7 +352,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein'],
     riskTags: ['controversial'],
     defaultSeverity: 'watch',
-    explanation: '식물성 단백질원이지만 알레르기 가능성이 있어 확인이 필요해요.',
+    explanation: '식물성 단백질원이지만 알레르기 가능성이 있어 확인이 필요합니다.',
   },
 
   // ── 5. 지방/오일 ─────────────────────────────────────────────────
@@ -367,7 +367,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['fat', 'omega6'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '오메가-6와 에너지를 공급하는 동물성 지방이에요.',
+    explanation: '오메가-6와 에너지를 공급하는 동물성 지방입니다.',
   },
   {
     id: 'salmon_oil',
@@ -379,7 +379,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     allergenTags: ['fish'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: 'DHA·EPA 등 오메가-3가 풍부해 피부·관절에 도움이 될 수 있어요.',
+    explanation: 'DHA·EPA 등 오메가-3가 풍부해 피부·관절에 도움이 될 수 있습니다.',
   },
   {
     id: 'sunflower_oil',
@@ -391,7 +391,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     allergenTags: [],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '오메가-6를 공급하는 식물성 유지예요.',
+    explanation: '오메가-6를 공급하는 식물성 유지입니다.',
   },
   {
     id: 'canola_oil',
@@ -403,7 +403,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     allergenTags: [],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '오메가-3가 함유된 식물성 기름이에요.',
+    explanation: '오메가-3가 함유된 식물성 기름입니다.',
   },
   {
     id: 'coconut_oil',
@@ -415,7 +415,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     allergenTags: [],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '중쇄지방산(MCT)을 공급하는 유지예요.',
+    explanation: '중쇄지방산(MCT)을 공급하는 유지입니다.',
   },
 
   // ── 6. 첨가/보존 ─────────────────────────────────────────────────
@@ -429,7 +429,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     allergenTags: [],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '천연 산화방지(보존) 목적으로 일반적으로 쓰이는 성분이에요.',
+    explanation: '천연 산화방지(보존) 목적으로 일반적으로 쓰이는 성분입니다.',
   },
   {
     id: 'rosemary_extract',
@@ -441,7 +441,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     allergenTags: [],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '천연 산화방지제예요.',
+    explanation: '천연 산화방지제입니다.',
   },
   {
     id: 'glycerin',
@@ -453,7 +453,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     allergenTags: [],
     riskTags: ['controversial'],
     defaultSeverity: 'watch',
-    explanation: '간식의 식감·보습 목적으로 자주 쓰여요. 앞순위에 있으면 기호성 첨가 성격이 강할 수 있어요.',
+    explanation: '간식의 식감·보습 목적으로 자주 쓰입니다. 앞순위에 있으면 기호성 첨가 성격이 강할 수 있습니다.',
   },
   {
     id: 'bha',
@@ -465,7 +465,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     allergenTags: [],
     riskTags: ['controversial'],
     defaultSeverity: 'caution',
-    explanation: '합성 산화방지제예요. 천연 보존제(토코페롤 등)에 비해 논란이 있는 성분이에요.',
+    explanation: '합성 산화방지제입니다. 천연 보존제(토코페롤 등)에 비해 논란이 있는 성분입니다.',
   },
   {
     id: 'bht',
@@ -477,7 +477,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     allergenTags: [],
     riskTags: ['controversial'],
     defaultSeverity: 'caution',
-    explanation: '합성 산화방지제예요. 천연 보존제에 비해 논란이 있는 성분이에요.',
+    explanation: '합성 산화방지제입니다. 천연 보존제에 비해 논란이 있는 성분입니다.',
   },
   {
     id: 'ethoxyquin',
@@ -489,7 +489,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     allergenTags: [],
     riskTags: ['controversial'],
     defaultSeverity: 'caution',
-    explanation: '합성 보존제로, 안전성 논란이 있는 성분이에요.',
+    explanation: '합성 보존제로, 안전성 논란이 있는 성분입니다.',
   },
   {
     id: 'propylene_glycol',
@@ -501,7 +501,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     allergenTags: [],
     riskTags: ['controversial', 'toxic_cat'],
     defaultSeverity: 'caution',
-    explanation: '습윤제예요. 특히 고양이에게는 권장되지 않는 성분이에요.',
+    explanation: '습윤제입니다. 특히 고양이에게는 권장되지 않는 성분입니다.',
   },
 
   // ── 7. 영양첨가 ──────────────────────────────────────────────────
@@ -515,7 +515,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     allergenTags: [],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '특히 고양이에게 필수적인 아미노산이에요. 심장·눈 건강에 중요해요.',
+    explanation: '특히 고양이에게 필수적인 아미노산입니다. 심장·눈 건강에 중요합니다.',
   },
   {
     id: 'l_carnitine',
@@ -527,7 +527,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     allergenTags: [],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '지방 연소·체중·심장 건강 보조 성분이에요.',
+    explanation: '지방 연소·체중·심장 건강 보조 성분입니다.',
   },
   {
     id: 'glucosamine',
@@ -539,7 +539,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     allergenTags: [],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '관절 건강 보조 성분이에요.',
+    explanation: '관절 건강 보조 성분입니다.',
   },
   {
     id: 'chondroitin',
@@ -551,7 +551,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     allergenTags: [],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '관절 건강 보조 성분이에요.',
+    explanation: '관절 건강 보조 성분입니다.',
   },
   {
     id: 'calcium',
@@ -563,7 +563,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     allergenTags: [],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '뼈·치아에 필요한 미네랄이에요.',
+    explanation: '뼈·치아에 필요한 미네랄입니다.',
   },
   {
     id: 'probiotics',
@@ -575,7 +575,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     allergenTags: [],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '장 건강을 돕는 유익균이에요.',
+    explanation: '장 건강을 돕는 유익균입니다.',
   },
 
   // ── 8. 위험 성분 ─────────────────────────────────────────────────
@@ -589,7 +589,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     allergenTags: [],
     riskTags: ['toxic_dog'],
     defaultSeverity: 'danger',
-    explanation: '개에게 매우 위험할 수 있는 감미료예요. 급여하지 않는 것이 안전해요.',
+    explanation: '개에게 매우 위험할 수 있는 감미료입니다. 급여하지 않는 것이 안전합니다.',
   },
   {
     id: 'onion',
@@ -601,7 +601,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     allergenTags: [],
     riskTags: ['toxic_dog', 'toxic_cat'],
     defaultSeverity: 'danger',
-    explanation: '양파(파속 식물)는 반려동물에게 위험할 수 있어요.',
+    explanation: '양파(파속 식물)는 반려동물에게 위험할 수 있습니다.',
   },
   {
     id: 'garlic',
@@ -613,7 +613,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     allergenTags: [],
     riskTags: ['toxic_dog', 'toxic_cat'],
     defaultSeverity: 'danger',
-    explanation: '마늘(파속 식물)은 반려동물에게 위험할 수 있어요. (소량 사용 논란이 있으나 보수적으로 경고)',
+    explanation: '마늘(파속 식물)은 반려동물에게 위험할 수 있습니다. (소량 사용 논란이 있으나 보수적으로 경고)',
   },
   {
     id: 'chive',
@@ -625,7 +625,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     allergenTags: [],
     riskTags: ['toxic_dog', 'toxic_cat'],
     defaultSeverity: 'danger',
-    explanation: '파·부추 등 파속 식물은 반려동물에게 위험할 수 있어요.',
+    explanation: '파·부추 등 파속 식물은 반려동물에게 위험할 수 있습니다.',
   },
   {
     id: 'grape',
@@ -637,7 +637,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     allergenTags: [],
     riskTags: ['toxic_dog'],
     defaultSeverity: 'danger',
-    explanation: '포도·건포도는 일부 개에서 신장 손상 위험이 보고돼 있어요.',
+    explanation: '포도·건포도는 일부 개에서 신장 손상 위험이 보고돼 있습니다.',
   },
   {
     id: 'chocolate',
@@ -649,7 +649,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     allergenTags: [],
     riskTags: ['toxic_dog', 'toxic_cat'],
     defaultSeverity: 'danger',
-    explanation: '초콜릿·코코아는 반려동물에게 위험할 수 있어요.',
+    explanation: '초콜릿·코코아는 반려동물에게 위험할 수 있습니다.',
   },
   {
     id: 'caffeine',
@@ -661,7 +661,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     allergenTags: [],
     riskTags: ['toxic_dog', 'toxic_cat'],
     defaultSeverity: 'danger',
-    explanation: '카페인 계열 성분은 반려동물에게 위험할 수 있어요.',
+    explanation: '카페인 계열 성분은 반려동물에게 위험할 수 있습니다.',
   },
   {
     id: 'macadamia',
@@ -673,7 +673,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     allergenTags: [],
     riskTags: ['toxic_dog'],
     defaultSeverity: 'danger',
-    explanation: '마카다미아는 개에게 위험할 수 있는 견과류예요.',
+    explanation: '마카다미아는 개에게 위험할 수 있는 견과류입니다.',
   },
 
   // ── 추가 동물성 단백질 (생선·신규 단백) ─────────────────────────────
@@ -688,7 +688,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '지방이 적은 흰살생선 단백질원이에요.',
+    explanation: '지방이 적은 흰살생선 단백질원입니다.',
   },
   {
     id: 'pollock',
@@ -701,7 +701,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '담백한 흰살생선 단백질원이에요.',
+    explanation: '담백한 흰살생선 단백질원입니다.',
   },
   {
     id: 'mackerel',
@@ -714,7 +714,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein', 'omega3'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '오메가-3가 풍부한 등푸른생선 단백질원이에요.',
+    explanation: '오메가-3가 풍부한 등푸른생선 단백질원입니다.',
   },
   {
     id: 'herring',
@@ -727,7 +727,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein', 'omega3'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '오메가-3가 풍부한 등푸른생선 단백질원이에요.',
+    explanation: '오메가-3가 풍부한 등푸른생선 단백질원입니다.',
   },
   {
     id: 'sardine',
@@ -740,7 +740,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein', 'omega3'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '오메가-3가 풍부한 작은 등푸른생선 단백질원이에요.',
+    explanation: '오메가-3가 풍부한 작은 등푸른생선 단백질원입니다.',
   },
   {
     id: 'shrimp',
@@ -752,7 +752,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '저지방 단백질원이에요. 갑각류 알레르기 이력이 있으면 주의가 필요해요.',
+    explanation: '저지방 단백질원입니다. 갑각류 알레르기 이력이 있으면 주의가 필요합니다.',
   },
   {
     id: 'rabbit',
@@ -764,7 +764,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '알레르기 빈도가 낮은 신규 단백질원(노벨 프로틴)으로 자주 쓰여요.',
+    explanation: '알레르기 빈도가 낮은 신규 단백질원(노벨 프로틴)으로 자주 쓰입니다.',
   },
   {
     id: 'venison',
@@ -776,7 +776,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '알레르기 빈도가 낮은 신규 단백질원(노벨 프로틴)이에요.',
+    explanation: '알레르기 빈도가 낮은 신규 단백질원(노벨 프로틴)입니다.',
   },
   {
     id: 'quail',
@@ -789,7 +789,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '가금류 신규 단백질원이에요.',
+    explanation: '가금류 신규 단백질원입니다.',
   },
   {
     id: 'chicken_liver',
@@ -802,7 +802,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein', 'mineral'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '비타민·미네랄이 풍부한 내장육이에요. 닭 알레르기 이력이 있으면 주의가 필요해요.',
+    explanation: '비타민·미네랄이 풍부한 내장육입니다. 닭 알레르기 이력이 있으면 주의가 필요합니다.',
   },
 
   // ── 추가 가공 단백(분/밀) ──────────────────────────────────────────
@@ -817,7 +817,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein', 'omega3'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '출처가 명확한 농축 동물성 단백질원이에요.',
+    explanation: '출처가 명확한 농축 동물성 단백질원입니다.',
   },
   {
     id: 'duck_meal',
@@ -830,7 +830,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '출처가 명확한 농축 동물성 단백질원이에요.',
+    explanation: '출처가 명확한 농축 동물성 단백질원입니다.',
   },
   {
     id: 'lamb_meal',
@@ -843,7 +843,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '출처가 명확한 농축 동물성 단백질원이에요.',
+    explanation: '출처가 명확한 농축 동물성 단백질원입니다.',
   },
   {
     id: 'herring_meal',
@@ -856,7 +856,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein', 'omega3'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '오메가-3가 풍부한 농축 생선 단백질원이에요.',
+    explanation: '오메가-3가 풍부한 농축 생선 단백질원입니다.',
   },
 
   // ── 추가 탄수화물/곡물 ────────────────────────────────────────────
@@ -870,7 +870,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['carb', 'fiber'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '혈당 부담이 비교적 낮은 통곡 탄수화물원이에요.',
+    explanation: '혈당 부담이 비교적 낮은 통곡 탄수화물원입니다.',
   },
   {
     id: 'buckwheat',
@@ -882,7 +882,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['carb', 'fiber'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '글루텐이 없는 유사곡물 탄수화물원이에요.',
+    explanation: '글루텐이 없는 유사곡물 탄수화물원입니다.',
   },
   {
     id: 'quinoa',
@@ -894,7 +894,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['carb', 'protein', 'fiber'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '단백질·섬유가 있는 글루텐 프리 유사곡물이에요.',
+    explanation: '단백질·섬유가 있는 글루텐 프리 유사곡물입니다.',
   },
   {
     id: 'millet',
@@ -906,7 +906,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['carb'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '소화가 비교적 잘 되는 통곡 탄수화물원이에요.',
+    explanation: '소화가 비교적 잘 되는 통곡 탄수화물원입니다.',
   },
   {
     id: 'beet_pulp',
@@ -918,7 +918,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['fiber', 'gut'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '장 건강에 도움이 되는 발효성 식이섬유원이에요.',
+    explanation: '장 건강에 도움이 되는 발효성 식이섬유원입니다.',
   },
 
   // ── 추가 채소·과일 ────────────────────────────────────────────────
@@ -932,7 +932,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['fiber', 'antioxidant'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '베타카로틴·식이섬유가 있는 채소예요.',
+    explanation: '베타카로틴·식이섬유가 있는 채소입니다.',
   },
   {
     id: 'pumpkin',
@@ -944,7 +944,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['fiber', 'gut'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '소화·장 건강에 도움이 되는 식이섬유원이에요.',
+    explanation: '소화·장 건강에 도움이 되는 식이섬유원입니다.',
   },
   {
     id: 'spinach',
@@ -956,7 +956,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['fiber', 'antioxidant'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '항산화 성분과 식이섬유가 있는 잎채소예요.',
+    explanation: '항산화 성분과 식이섬유가 있는 잎채소입니다.',
   },
   {
     id: 'apple',
@@ -968,7 +968,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['fiber', 'antioxidant'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '식이섬유·항산화 성분이 있는 과일이에요(씨는 제외).',
+    explanation: '식이섬유·항산화 성분이 있는 과일입니다(씨는 제외).',
   },
   {
     id: 'blueberry',
@@ -980,7 +980,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['antioxidant'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '항산화 성분(안토시아닌)이 풍부한 과일이에요.',
+    explanation: '항산화 성분(안토시아닌)이 풍부한 과일입니다.',
   },
   {
     id: 'cranberry',
@@ -992,7 +992,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['antioxidant'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '비뇨기 건강과 관련해 자주 쓰이는 항산화 과일이에요.',
+    explanation: '비뇨기 건강과 관련해 자주 쓰이는 항산화 과일입니다.',
   },
 
   // ── 추가 오일·기능성 보조 ─────────────────────────────────────────
@@ -1006,7 +1006,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['omega3', 'fat'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '식물성 오메가-3(ALA) 공급원이에요.',
+    explanation: '식물성 오메가-3(ALA) 공급원입니다.',
   },
   {
     id: 'krill_oil',
@@ -1018,7 +1018,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['omega3', 'fat'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '흡수가 좋은 오메가-3(EPA·DHA) 공급원이에요.',
+    explanation: '흡수가 좋은 오메가-3(EPA·DHA) 공급원입니다.',
   },
   {
     id: 'msm',
@@ -1030,7 +1030,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['joint'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '관절 건강 보조에 쓰이는 유기 유황 성분이에요.',
+    explanation: '관절 건강 보조에 쓰이는 유기 유황 성분입니다.',
   },
   {
     id: 'inulin',
@@ -1042,7 +1042,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['fiber', 'gut'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '유익균의 먹이가 되는 프리바이오틱스(수용성 식이섬유)예요.',
+    explanation: '유익균의 먹이가 되는 프리바이오틱스(수용성 식이섬유)입니다.',
   },
   {
     id: 'brewers_yeast',
@@ -1054,7 +1054,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['gut'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: 'B군 비타민과 피부·모질에 도움이 되는 성분이에요.',
+    explanation: 'B군 비타민과 피부·모질에 도움이 되는 성분입니다.',
   },
   {
     id: 'turmeric',
@@ -1066,7 +1066,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['antioxidant'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '항산화·항염 보조로 쓰이는 향신 성분이에요.',
+    explanation: '항산화·항염 보조로 쓰이는 향신 성분입니다.',
   },
   {
     id: 'lecithin',
@@ -1078,7 +1078,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['fat'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '유화제이자 피부·모질에 도움이 되는 지질 성분이에요.',
+    explanation: '유화제이자 피부·모질에 도움이 되는 지질 성분입니다.',
   },
 
   // ── 추가 주의/위험 ────────────────────────────────────────────────
@@ -1092,7 +1092,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['fat'],
     riskTags: ['controversial'],
     defaultSeverity: 'watch',
-    explanation: '아보카도(특히 씨·껍질)의 페르신 성분은 논란이 있어, 과다 급여는 권장되지 않아요.',
+    explanation: '아보카도(특히 씨·껍질)의 페르신 성분은 논란이 있어, 과다 급여는 권장되지 않습니다.',
   },
   {
     id: 'walnut',
@@ -1104,7 +1104,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: [],
     riskTags: ['toxic_dog'],
     defaultSeverity: 'caution',
-    explanation: '호두(특히 곰팡이가 핀 경우)는 개에게 신경 독성 위험이 보고돼 있어요.',
+    explanation: '호두(특히 곰팡이가 핀 경우)는 개에게 신경 독성 위험이 보고돼 있습니다.',
   },
 
   // ── 비타민·미네랄·아미노산 프리믹스 (대부분의 완전사료에 표기) ───────
@@ -1118,7 +1118,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['joint', 'omega3'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '관절 건강 보조에 쓰이는 천연 오메가-3·글리코사미노글리칸 공급원이에요.',
+    explanation: '관절 건강 보조에 쓰이는 천연 오메가-3·글리코사미노글리칸 공급원입니다.',
   },
   {
     id: 'fos',
@@ -1130,7 +1130,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['fiber', 'gut'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '유익균의 먹이가 되는 프리바이오틱스예요.',
+    explanation: '유익균의 먹이가 되는 프리바이오틱스입니다.',
   },
   {
     id: 'mos',
@@ -1142,7 +1142,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['gut'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '장 건강에 도움이 되는 프리바이오틱스예요.',
+    explanation: '장 건강에 도움이 되는 프리바이오틱스입니다.',
   },
   {
     id: 'yucca',
@@ -1154,7 +1154,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['gut'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '배변 냄새 저감에 쓰이는 식물 추출물이에요.',
+    explanation: '배변 냄새 저감에 쓰이는 식물 추출물입니다.',
   },
   {
     id: 'methionine',
@@ -1166,7 +1166,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '필수 아미노산(함황)으로 단백질·모질 형성에 쓰여요.',
+    explanation: '필수 아미노산(함황)으로 단백질·모질 형성에 쓰입니다.',
   },
   {
     id: 'lysine',
@@ -1178,7 +1178,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['protein'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '필수 아미노산으로 성장·근육 유지에 쓰여요.',
+    explanation: '필수 아미노산으로 성장·근육 유지에 쓰입니다.',
   },
   {
     id: 'vitamin_a',
@@ -1190,7 +1190,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: [],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '시각·피부 건강에 필요한 지용성 비타민이에요.',
+    explanation: '시각·피부 건강에 필요한 지용성 비타민입니다.',
   },
   {
     id: 'vitamin_d',
@@ -1202,7 +1202,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: [],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '칼슘 대사·뼈 건강에 필요한 지용성 비타민이에요.',
+    explanation: '칼슘 대사·뼈 건강에 필요한 지용성 비타민입니다.',
   },
   {
     id: 'vitamin_c',
@@ -1214,7 +1214,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['antioxidant'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '항산화 작용을 하는 수용성 비타민이에요.',
+    explanation: '항산화 작용을 하는 수용성 비타민입니다.',
   },
   {
     id: 'vitamin_b',
@@ -1226,7 +1226,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: [],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '에너지 대사에 관여하는 수용성 비타민군이에요.',
+    explanation: '에너지 대사에 관여하는 수용성 비타민군입니다.',
   },
   {
     id: 'biotin',
@@ -1238,7 +1238,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: [],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '피부·모질 건강에 관여하는 비타민이에요.',
+    explanation: '피부·모질 건강에 관여하는 비타민입니다.',
   },
   {
     id: 'folic_acid',
@@ -1250,7 +1250,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: [],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '세포·혈액 생성에 관여하는 비타민이에요.',
+    explanation: '세포·혈액 생성에 관여하는 비타민입니다.',
   },
   {
     id: 'niacin',
@@ -1262,7 +1262,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: [],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '에너지 대사에 관여하는 비타민이에요.',
+    explanation: '에너지 대사에 관여하는 비타민입니다.',
   },
   {
     id: 'pantothenic_acid',
@@ -1274,7 +1274,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: [],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '에너지 대사에 관여하는 비타민이에요.',
+    explanation: '에너지 대사에 관여하는 비타민입니다.',
   },
   {
     id: 'choline',
@@ -1286,7 +1286,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: [],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '간·신경 기능에 관여하는 필수 영양소예요.',
+    explanation: '간·신경 기능에 관여하는 필수 영양소입니다.',
   },
   {
     id: 'zinc',
@@ -1298,7 +1298,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['mineral'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '피부·면역에 필요한 필수 미량 미네랄이에요.',
+    explanation: '피부·면역에 필요한 필수 미량 미네랄입니다.',
   },
   {
     id: 'manganese',
@@ -1310,7 +1310,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['mineral'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '뼈·연골 대사에 관여하는 미량 미네랄이에요.',
+    explanation: '뼈·연골 대사에 관여하는 미량 미네랄입니다.',
   },
   {
     id: 'copper',
@@ -1322,7 +1322,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['mineral'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '철 대사·모질 색소에 관여하는 미량 미네랄이에요.',
+    explanation: '철 대사·모질 색소에 관여하는 미량 미네랄입니다.',
   },
   {
     id: 'iron',
@@ -1334,7 +1334,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['mineral'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '적혈구 생성에 필요한 미량 미네랄이에요.',
+    explanation: '적혈구 생성에 필요한 미량 미네랄입니다.',
   },
   {
     id: 'selenium',
@@ -1346,7 +1346,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['mineral', 'antioxidant'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '항산화 효소에 관여하는 미량 미네랄이에요.',
+    explanation: '항산화 효소에 관여하는 미량 미네랄입니다.',
   },
   {
     id: 'iodine',
@@ -1358,7 +1358,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['mineral'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '갑상선 호르몬 합성에 필요한 미량 미네랄이에요.',
+    explanation: '갑상선 호르몬 합성에 필요한 미량 미네랄입니다.',
   },
   {
     id: 'potassium_chloride',
@@ -1370,7 +1370,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['mineral'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '체액·신경 기능에 관여하는 필수 미네랄이에요.',
+    explanation: '체액·신경 기능에 관여하는 필수 미네랄입니다.',
   },
   {
     id: 'calcium_phosphate',
@@ -1382,7 +1382,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: ['mineral'],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '뼈·치아에 필요한 칼슘·인 공급원이에요.',
+    explanation: '뼈·치아에 필요한 칼슘·인 공급원입니다.',
   },
   {
     id: 'salt',
@@ -1394,7 +1394,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     nutritionTags: [],
     riskTags: [],
     defaultSeverity: 'safe',
-    explanation: '전해질 균형을 위한 최소량의 염분이에요.',
+    explanation: '전해질 균형을 위한 최소량의 염분입니다.',
   },
 ];
 

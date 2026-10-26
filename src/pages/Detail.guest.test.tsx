@@ -33,7 +33,7 @@ describe('product detail guest compatibility', () => {
     act(() => useStore.setState({ isLoggedIn: false, userId: null }));
     expect(screen.queryByRole('region', { name: '로니 적합도' })).toBeNull();
     expect(screen.queryByText(/현재 궁합 점수는/)).toBeNull();
-    expect(screen.getByRole('button', { name: '우리 아이 등록하고 제품 궁합 알아보자!' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '우리 아이를 등록하고 궁합을 확인해 주세요.' })).toBeTruthy();
   });
 
   it('clears personalized allergy warnings in an already-open ingredient sheet on logout', async () => {

@@ -22,7 +22,7 @@ export const DANGER_RULES: AnalysisRule[] = [
     scoreDelta: -100,
     title: '개에게 위험한 감미료',
     messageTemplate:
-      '자일리톨은 개에게 매우 위험할 수 있어요. 섭취 가능성이 있다면 급여하지 않는 것이 안전합니다.',
+      '자일리톨은 개에게 매우 위험할 수 있습니다. 섭취 가능성이 있다면 급여하지 않는 것이 안전합니다.',
     evidenceLevel: 'veterinary',
   },
   {
@@ -33,7 +33,7 @@ export const DANGER_RULES: AnalysisRule[] = [
     severity: 'danger',
     scoreDelta: -100,
     title: '개에게 위험할 수 있는 과일 성분',
-    messageTemplate: '포도·건포도는 일부 개에서 신장 손상 위험이 보고되어 있어요.',
+    messageTemplate: '포도·건포도는 일부 개에서 신장 손상 위험이 보고되어 있습니다.',
     evidenceLevel: 'veterinary',
   },
   {
@@ -45,7 +45,7 @@ export const DANGER_RULES: AnalysisRule[] = [
     scoreDelta: -90,
     title: '반려동물에게 피해야 할 파속 식물',
     messageTemplate:
-      '양파·마늘류는 반려동물에게 위험할 수 있어요. 원료에 포함되어 있다면 급여 전 수의사 상담이 필요합니다.',
+      '양파·마늘류는 반려동물에게 위험할 수 있습니다. 원료에 포함되어 있다면 급여 전 수의사 상담이 필요합니다.',
     evidenceLevel: 'veterinary',
   },
   {
@@ -56,7 +56,7 @@ export const DANGER_RULES: AnalysisRule[] = [
     severity: 'danger',
     scoreDelta: -100,
     title: '카페인·초콜릿 계열 주의',
-    messageTemplate: '초콜릿·카페인 계열 성분은 반려동물에게 위험할 수 있어요.',
+    messageTemplate: '초콜릿·카페인 계열 성분은 반려동물에게 위험할 수 있습니다.',
     evidenceLevel: 'veterinary',
   },
   {
@@ -67,7 +67,7 @@ export const DANGER_RULES: AnalysisRule[] = [
     severity: 'danger',
     scoreDelta: -100,
     title: '개에게 위험한 견과류',
-    messageTemplate: '마카다미아는 개에게 위험할 수 있어요.',
+    messageTemplate: '마카다미아는 개에게 위험할 수 있습니다.',
     evidenceLevel: 'veterinary',
   },
   {
@@ -78,7 +78,7 @@ export const DANGER_RULES: AnalysisRule[] = [
     severity: 'caution',
     scoreDelta: -25,
     title: '고양이에게 권장되지 않는 습윤제',
-    messageTemplate: '프로필렌 글리콜은 특히 고양이에게는 권장되지 않는 성분이에요.',
+    messageTemplate: '프로필렌 글리콜은 특히 고양이에게는 권장되지 않는 성분입니다.',
     evidenceLevel: 'veterinary',
   },
 ];
@@ -94,7 +94,7 @@ export const CAUTION_RULES: AnalysisRule[] = [
     scoreDelta: -20,
     title: '논란이 있는 과일 성분',
     messageTemplate:
-      '아보카도의 페르신 성분은 반려동물 안전성에 논란이 있어요. 포함 시 과다 급여는 권장되지 않아요.',
+      '아보카도의 페르신 성분은 반려동물 안전성에 논란이 있습니다. 포함 시 과다 급여는 권장되지 않습니다.',
     evidenceLevel: 'veterinary',
   },
   {
@@ -106,7 +106,7 @@ export const CAUTION_RULES: AnalysisRule[] = [
     scoreDelta: -25,
     title: '개에게 주의가 필요한 견과류',
     messageTemplate:
-      '호두(특히 곰팡이가 핀 경우)는 개에게 신경 독성 위험이 보고돼 있어요.',
+      '호두(특히 곰팡이가 핀 경우)는 개에게 신경 독성 위험이 보고돼 있습니다.',
     evidenceLevel: 'veterinary',
   },
   {
@@ -118,7 +118,7 @@ export const CAUTION_RULES: AnalysisRule[] = [
     scoreDelta: -10,
     title: '합성 산화방지제',
     messageTemplate:
-      '합성 산화방지제(BHA·BHT·에톡시퀸)가 사용됐어요. 천연 보존제(혼합 토코페롤·로즈마리 추출물 등)에 비해 논란이 있는 성분이에요.',
+      '합성 산화방지제(BHA·BHT·에톡시퀸)가 사용되었습니다. 천연 보존제(혼합 토코페롤·로즈마리 추출물 등)에 비해 논란이 있는 성분입니다.',
     evidenceLevel: 'internal_policy',
   },
   {
@@ -130,7 +130,7 @@ export const CAUTION_RULES: AnalysisRule[] = [
     scoreDelta: -8,
     title: '출처가 불명확한 동물성 원료',
     messageTemplate:
-      '동물 기원이 구체적으로 표시되지 않은 원료가 있어요. 출처가 명확한 표기(예: 닭고기분)가 더 좋아요.',
+      '동물 기원이 구체적으로 표시되지 않은 원료가 있습니다. 출처가 명확한 표기(예: 닭고기분)가 더 좋습니다.',
     evidenceLevel: 'internal_policy',
   },
 ];
@@ -145,7 +145,7 @@ export const GOOD_RULES: AnalysisRule[] = [
     severity: 'good',
     scoreDelta: +10,
     title: '명확한 동물성 단백질',
-    messageTemplate: '첫 번째 원료가 명확한 동물성 단백질이라 주요 단백질원이 비교적 분명해요.',
+    messageTemplate: '첫 번째 원료가 명확한 동물성 단백질이라 주요 단백질원이 비교적 분명합니다.',
     evidenceLevel: 'nutrition_guideline',
   },
   {
@@ -156,7 +156,7 @@ export const GOOD_RULES: AnalysisRule[] = [
     severity: 'good',
     scoreDelta: +3,
     title: '오메가-3 공급원',
-    messageTemplate: '오메가-3(생선 오일·등푸른생선 등)가 포함돼 피부·관절 건강에 도움이 될 수 있어요.',
+    messageTemplate: '오메가-3(생선 오일·등푸른생선 등)가 포함돼 피부·관절 건강에 도움이 될 수 있습니다.',
     evidenceLevel: 'nutrition_guideline',
   },
   {
@@ -167,7 +167,7 @@ export const GOOD_RULES: AnalysisRule[] = [
     severity: 'good',
     scoreDelta: +3,
     title: '관절 보조 성분',
-    messageTemplate: '글루코사민·콘드로이친·MSM·초록입홍합 등 관절 보조 성분이 포함돼 있어요.',
+    messageTemplate: '글루코사민·콘드로이친·MSM·초록입홍합 등 관절 보조 성분이 포함돼 있습니다.',
     evidenceLevel: 'nutrition_guideline',
   },
   {
@@ -178,7 +178,7 @@ export const GOOD_RULES: AnalysisRule[] = [
     severity: 'good',
     scoreDelta: +2,
     title: '천연 산화방지제',
-    messageTemplate: '혼합 토코페롤·로즈마리 추출물 등 천연 보존제를 사용했어요.',
+    messageTemplate: '혼합 토코페롤·로즈마리 추출물 등 천연 보존제를 사용했습니다.',
     evidenceLevel: 'internal_policy',
   },
 ];

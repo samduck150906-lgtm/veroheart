@@ -46,6 +46,6 @@ describe('release nutrition evidence', () => {
     expect(readinessFromStoredStatus('ready', 0).status).toBe('unavailable');
     expect(readinessFromStoredStatus('ready', 1, 2).status).toBe('partial');
     const result = analyzeFeed({ ...base, analysisStatus: 'ready' }, pet);
-    expect(result.positives.some(value => value.includes('확인되지 않았어요'))).toBe(false);
+    expect(result.positives.some(value => value.includes('확인되지 않았습니다'))).toBe(false);
   });
 });

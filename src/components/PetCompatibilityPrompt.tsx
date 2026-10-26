@@ -19,7 +19,7 @@ export default function PetCompatibilityPrompt({ compact = false }: { compact?: 
         wordBreak: 'keep-all',
       }}
     >
-      우리 아이 등록하고 제품 궁합 알아보자!
+      우리 아이를 등록하고 궁합을 확인해 주세요.
     </button>
   );
 }

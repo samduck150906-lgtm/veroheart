@@ -30,7 +30,7 @@ afterEach(() => { cleanup(); vi.useRealTimers(); });
 describe('search defaults and refresh', () => {
   it('loads the public catalog without requiring a query or profile species filter', async () => {
     show();
-    expect(screen.queryByText('검색 결과가 없어요')).toBeNull();
+    expect(screen.queryByText('검색 결과가 없습니다')).toBeNull();
     expect(screen.queryByRole('button', { name: /비교함/ })).toBeNull();
     await finishDebounce();
     expect(api.search).toHaveBeenCalledWith('', '전체', [], expect.objectContaining({ targetPetType: undefined }));
@@ -50,7 +50,7 @@ describe('search defaults and refresh', () => {
     show();
     await finishDebounce();
     expect(screen.getByRole('alert').textContent).toContain('연결을 다시 확인해 주세요.');
-    expect(screen.queryByText('검색 결과가 없어요')).toBeNull();
+    expect(screen.queryByText('검색 결과가 없습니다')).toBeNull();
   });
 
   it('refreshes results after the public catalog revision changes', async () => {

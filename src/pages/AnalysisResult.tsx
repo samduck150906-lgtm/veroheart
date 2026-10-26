@@ -296,7 +296,7 @@ export default function AnalysisResult() {
     if (!canShowScore) return [];
     const base = [
       safeIngredients.length > 5 ? `등록 정보상 일반 성분 ${safeIngredients.length}가지 확인` : null,
-      ingredients.length > 0 && cautionIngredients.length === 0 && dangerIngredients.length === 0 ? '현재 등록된 원료에서 주의·위험 항목은 확인되지 않았어요' : null,
+      ingredients.length > 0 && cautionIngredients.length === 0 && dangerIngredients.length === 0 ? '현재 등록된 원료에서 주의·위험 항목은 확인되지 않았습니다' : null,
       allergyDisplay?.level === 'none' ? allergyDisplay.summaryText : null,
     ].filter(Boolean) as string[];
     const fromReport = (report?.highlights ?? []).filter((h) => h.type === 'positive').map((h) => h.text);
@@ -309,8 +309,8 @@ export default function AnalysisResult() {
       dangerIngredients.length > 0 ? `위험 성분 ${dangerIngredients.length}가지: ${dangerIngredients.map((i) => i.nameKo).slice(0, 2).join(', ')}` : null,
       breakdown && breakdown.allergyHits.length > 0 ? `알레르기 의심: ${breakdown.allergyHits.join(', ')}` : null,
       allergyDisplay?.level === 'caution' || allergyDisplay?.level === 'unknown' ? allergyDisplay.summaryText : null,
-      pipeline?.hasDCMRisk ? `상위 원료의 콩류(${pipeline.dcmLegumes.join(', ')})와 확장성 심근병증(DCM)의 연관성이 논의되고 있어요` : null,
-      pipeline?.hasProteinInflation ? `식물성 단백(${pipeline.inflationDetails.join(', ')})이 단백질 수치를 실제보다 높여 보이게 할 수 있어요` : null,
+      pipeline?.hasDCMRisk ? `상위 원료의 콩류(${pipeline.dcmLegumes.join(', ')})와 확장성 심근병증(DCM)의 연관성이 논의되고 있습니다` : null,
+      pipeline?.hasProteinInflation ? `식물성 단백(${pipeline.inflationDetails.join(', ')})이 단백질 수치를 실제보다 높여 보이게 할 수 있습니다` : null,
     ].filter(Boolean) as string[];
     const fromReport = (report?.highlights ?? []).filter((h) => h.type !== 'positive').map((h) => h.text);
     return Array.from(new Set([...base, ...fromReport]));
@@ -341,24 +341,24 @@ export default function AnalysisResult() {
     else if (product?.targetPetType === 'dog') t.push('강아지 보호자');
     if (product?.targetLifeStage?.length) t.push(`${lifeStage} 반려동물`);
     if (product?.healthConcerns?.length) t.push(`${product.healthConcerns.slice(0, 2).join('·')} 관련 태그 등록`);
-    return t.length ? t : ['등록된 대상 정보가 없어요'];
+    return t.length ? t : ['등록된 대상 정보가 없습니다'];
   }, [product, lifeStage]);
 
   const notRecommendTargets = useMemo(() => {
     const t: string[] = [];
     if (breakdown && breakdown.allergyHits.length > 0) t.push(`${breakdown.allergyHits.join(', ')} 알레르기가 있는 경우`);
     if (dangerIngredients.length > 0) t.push('민감성·기저질환이 있어 위험 성분을 피해야 하는 경우');
-    return t.length ? t : ['현재 등록 정보에서 별도 회피 대상은 확인되지 않았어요'];
+    return t.length ? t : ['현재 등록 정보에서 별도 회피 대상은 확인되지 않았습니다'];
   }, [breakdown, dangerIngredients.length]);
 
 
   if (!product) {
-    if (productId && isLoadingProducts) return <StateView variant="loading" title="제품 정보를 불러오고 있어요" />;
+    if (productId && isLoadingProducts) return <StateView variant="loading" title="제품 정보를 불러오고 있습니다" />;
     return (
       <StateView
         variant="empty"
-        title="분석할 제품이 없어요"
-        description="상품을 선택하면 성분 분석 결과를 볼 수 있어요."
+        title="분석할 제품이 없습니다"
+        description="상품을 선택하면 성분 분석 결과를 볼 수 있습니다."
         action={{ label: '상품 탐색하기', onClick: () => navigate('/search') }}
       />
     );
@@ -379,7 +379,7 @@ export default function AnalysisResult() {
         <section role="status" style={{ background: 'var(--secondary)', padding: 24, borderRadius: 16 }}>
           <h1 style={{ fontSize: 20 }}>{product.name}</h1>
           <p>{readinessText}</p>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>현재 원료 정보로는 종합 점수·등급과 건강 적합성을 판정할 수 없어요.</p>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>현재 원료 정보로는 종합 점수·등급과 건강 적합성을 판정할 수 없습니다.</p>
         </section>
       )}
 
@@ -396,7 +396,7 @@ export default function AnalysisResult() {
         >
           <Sparkles size={18} color="var(--primary-dark)" style={{ flexShrink: 0 }} />
           <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-dark)', lineHeight: 1.5 }}>
-            우리 아이 프로필을 등록하면 알레르기·건강 고민까지 반영한 <b>맞춤 점수</b>를 볼 수 있어요.
+            우리 아이 프로필을 등록하면 알레르기·건강 고민까지 반영한 <b>맞춤 점수</b>를 볼 수 있습니다.
           </span>
         </button>
       )}
@@ -412,13 +412,13 @@ export default function AnalysisResult() {
           <div>
             <div style={{ fontSize: 14, fontWeight: 800, color: breakdown.allergyHits.length > 0 ? 'var(--danger-strong)' : 'var(--caution-strong)', marginBottom: 4 }}>
               {breakdown.allergyHits.length > 0
-                ? `${breakdown.allergyHits.join(', ')}이(가) 들어 있어요`
+                ? `${breakdown.allergyHits.join(', ')}이(가) 들어 있습니다`
                 : `주의가 필요한 성분 ${breakdown.dangerCount}개 포함`}
             </div>
             <div style={{ fontSize: 12.5, fontWeight: 600, color: breakdown.allergyHits.length > 0 ? 'var(--danger-strong)' : 'var(--caution-strong)', opacity: 0.85, lineHeight: 1.5 }}>
               {breakdown.allergyHits.length > 0
-                ? `${profile.name}는 이 성분을 피하는 게 좋아요. 급여 전 수의사와 상담해 주세요.`
-                : '장기 급여 시 주의가 필요해요. 수의사와 상담을 권장해요.'}
+                ? `${profile.name}는 이 성분을 피하는 것이 좋습니다. 급여 전 수의사와 상담해 주세요.`
+                : '장기 급여 시 주의가 필요합니다. 수의사와 상담을 권장합니다.'}
             </div>
           </div>
         </div>
@@ -460,8 +460,8 @@ export default function AnalysisResult() {
           {pipeline && <IngredientEvidenceCard pipeline={pipeline} />}
           {diseaseResults.length > 0 && <DiseaseFitCard results={diseaseResults} petName={profile.name} />}
           <HealthConcernEvidence presentation={concernPresentation} />
-          {canShowScore && <InfoBlock title="좋은 점" color={RISK.safe.color} items={positives} empty="특별히 강조할 좋은 점을 찾지 못했어요." />}
-          <InfoBlock title="주의 사항" color={RISK.caution.color} items={cautions} empty={canShowScore ? '현재 등록된 정보에서 별도 주의 항목은 확인되지 않았어요.' : '아직 확인하지 못한 원료가 있어 주의 항목을 모두 안내할 수 없어요.'} />
+          {canShowScore && <InfoBlock title="좋은 점" color={RISK.safe.color} items={positives} empty="특별히 강조할 좋은 점을 찾지 못했습니다." />}
+          <InfoBlock title="주의 사항" color={RISK.caution.color} items={cautions} empty={canShowScore ? '현재 등록된 정보에서 별도 주의 항목은 확인되지 않았습니다.' : '아직 확인하지 못한 원료가 있어 주의 항목을 모두 안내할 수 없습니다.'} />
           {canShowScore && <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <TargetCard title="등록 대상" tone="good" items={recommendTargets} />
             <TargetCard title="확인 필요" tone="bad" items={notRecommendTargets} />
@@ -476,17 +476,17 @@ export default function AnalysisResult() {
             <h2 style={{ fontSize: 14, fontWeight: 800, margin: '0 0 14px' }}>영양 구성</h2>
             {nutrition ? <>
               <NutritionDonut n={nutrition} />
-              <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>표시된 보장성분 기준이며 탄수화물은 나머지 성분을 뺀 추정치예요.</p>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>표시된 보장성분 기준이며 탄수화물은 나머지 성분을 뺀 추정치입니다.</p>
             </> : reportedNutrients.length > 0 ? <>
               <dl style={{ display: 'grid', gap: 8 }}>{reportedNutrients.map(({ label, value }) => <div key={label} style={{ display: 'flex', justifyContent: 'space-between' }}><dt>{label}</dt><dd>{value}%</dd></div>)}</dl>
-              <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>확인된 라벨 수치만 표시했어요. 전체 영양 구성을 계산하기에는 정보가 부족해요.</p>
-            </> : <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>영양 수치가 등록되지 않았어요.</p>}
+              <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>확인된 라벨 수치만 표시했습니다. 전체 영양 구성을 계산하기에는 정보가 부족합니다.</p>
+            </> : <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>영양 수치가 등록되지 않았습니다.</p>}
           </div>
           {feedAnalysis?.calories && <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--secondary)', borderRadius: 16, padding: 18 }}>
             <div style={{ fontSize: 32, fontWeight: 900 }}>{Math.round(feedAnalysis.calories.per100g * 10) / 10}</div>
             <div>
               <div style={{ fontSize: 14, fontWeight: 800 }}>kcal / 100g</div>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{feedAnalysis.calories.measured ? '라벨에 표시된 열량이에요' : '보장성분으로 계산한 추정 열량이에요'}</div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{feedAnalysis.calories.measured ? '라벨에 표시된 열량입니다' : '보장성분으로 계산한 추정 열량입니다'}</div>
             </div>
           </div>}
           {feedAnalysis?.caP.note && <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: RISK.caution.bg, borderRadius: 16, padding: 14 }}>
@@ -499,10 +499,10 @@ export default function AnalysisResult() {
       {/* Tab: 전성분 */}
       {activeTab === '전성분' && (
         <div style={{ background: 'var(--surface-elevated)', border: '1px solid rgba(28,25,23,0.06)', borderRadius: 16, padding: 16 }}>
-          <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 12 }}>성분을 탭하면 상세 정보를 볼 수 있어요</div>
+          <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 12 }}>성분을 누르면 상세 정보를 볼 수 있습니다</div>
           <div style={{ display: 'grid', gap: 8 }}>
             {ingredients.length === 0 && !product.unknownIngredientTerms?.length && (
-              <div style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '24px 0' }}>등록된 성분 정보가 없어요.</div>
+              <div style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '24px 0' }}>등록된 성분 정보가 없습니다.</div>
             )}
             {(product.unknownIngredientTerms ?? []).map((term, index) => <div key={`unknown-${index}`} style={{ padding: 12, borderRadius: 12, background: 'var(--secondary)' }}>{term} · 원료 확인 필요</div>)}
             {ingredients.map((ing, idx) => {
@@ -526,7 +526,7 @@ export default function AnalysisResult() {
 
       {/* Medical disclaimer */}
       <p style={{ fontSize: 11, color: 'var(--text-light)', lineHeight: 1.5, margin: '20px 4px 0', fontWeight: 600 }}>
-        본 분석은 참고용 정보이며 수의학적 진단을 대체하지 않아요. 건강 이상이 의심되면 반드시 수의사와 상담하세요.
+        본 분석은 참고용 정보이며 수의학적 진단을 대체하지 않습니다. 건강 이상이 의심되면 반드시 수의사와 상담해 주세요.
       </p>
 
       {/* Sticky bottom bar */}
@@ -609,7 +609,7 @@ export function IngredientEvidenceCard({ pipeline }: { pipeline: ScoringPipeline
         <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-dark)' }}>원료 품질 근거</span>
       </div>
       <div style={{ fontSize: 11.5, color: 'var(--text-light)', fontWeight: 600, lineHeight: 1.5, marginBottom: 14 }}>
-        위 궁합 점수와 별개로, 원료 자체의 품질을 성분 사전 기준으로 평가했어요.
+        위 궁합 점수와 별개로, 원료 자체의 품질을 성분 사전 기준으로 평가했습니다.
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: hasStrengths || hasFunctional ? 14 : 0 }}>
@@ -664,7 +664,7 @@ const RULE_STATUS = {
 
 function diseaseTone(r: ActiveDiseaseResult) {
   if (r.failCount > 0) return { color: 'var(--caution-strong)', bg: 'var(--caution-bg)', label: '주의 필요' };
-  if (r.passCount > 0) return { color: 'var(--safe-strong)', bg: 'var(--safe-bg)', label: '잘 맞아요' };
+  if (r.passCount > 0) return { color: 'var(--safe-strong)', bg: 'var(--safe-bg)', label: '잘 맞습니다' };
   return { color: 'var(--text-sub)', bg: 'var(--surface-alt)', label: '정보 부족' };
 }
 
@@ -677,7 +677,7 @@ export function DiseaseFitCard({ results, petName }: { results: ActiveDiseaseRes
         <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-dark)' }}>{name} 건강 고민 맞춤 분석</span>
       </div>
       <div style={{ fontSize: 11.5, color: 'var(--text-light)', fontWeight: 600, lineHeight: 1.5, marginBottom: 14 }}>
-        NRC 영양 가이드라인을 참고해 등록한 건강 고민별 주의할 점을 확인했어요. 참고용이며 수의 진단을 대체하지 않아요.
+        NRC 영양 가이드라인을 참고해 등록한 건강 고민별 주의할 점을 확인했습니다. 참고용이며 수의 진단을 대체하지 않습니다.
       </div>
       <div style={{ display: 'grid', gap: 12 }}>
         {results.map((r) => <DiseaseRow key={r.disease.id} r={r} />)}
@@ -718,13 +718,13 @@ function DiseaseRow({ r }: { r: ActiveDiseaseResult }) {
         </div>
       ) : (
         <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-          정량 기준 대신 아래 권장 성분으로 관리를 안내해요.
+          정량 기준 대신 아래 권장 성분으로 관리를 안내합니다.
         </div>
       )}
 
       {supplementGaps.length > 0 && (
         <div style={{ marginTop: 10 }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', marginBottom: 6 }}>이런 성분이 더 있으면 도움돼요</div>
+          <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', marginBottom: 6 }}>이런 성분이 더 있으면 도움이 됩니다</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {supplementGaps.map((s) => (
               <span key={s} style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text-dark)', background: 'var(--surface-elevated)', border: '1px solid var(--line)', borderRadius: 999, padding: '4px 10px' }}>{s}</span>
@@ -760,7 +760,7 @@ export function IngredientDetail({ ing, allowVerdict = true }: { ing: Ingredient
       {ing.purpose && <SheetBlock title="역할">{ing.purpose}</SheetBlock>}
       {dict && <SheetBlock title="분류">{CATEGORY_LABEL[dict.category]}</SheetBlock>}
       <div style={{ fontSize: 11, color: 'var(--text-light)', fontWeight: 600, lineHeight: 1.5 }}>
-        분류·설명은 베로로 성분 사전(수의·영양 가이드라인 기반) 기준이며 참고용이에요.
+        분류·설명은 베로로 성분 사전(수의·영양 가이드라인 기반) 기준이며 참고용입니다.
       </div>
     </div>
   );

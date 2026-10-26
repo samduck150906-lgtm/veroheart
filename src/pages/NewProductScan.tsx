@@ -106,17 +106,17 @@ function errorMessage(code: string | null): string {
     case 'image_too_small': return '글자가 선명하게 보이도록 더 가까이 촬영해 주세요.';
     case 'image_too_large': return '사진 용량을 줄인 뒤 다시 선택해 주세요.';
     case 'unsupported_image_type': return 'JPG, PNG, WebP 또는 HEIC 사진을 선택해 주세요.';
-    case 'auth_required': return '로그인이 만료됐어요. 다시 로그인해 주세요.';
-    case 'community_scan_disabled': return '지금은 새 제품 등록을 잠시 멈췄어요.';
+    case 'auth_required': return '로그인이 만료되었습니다. 다시 로그인해 주세요.';
+    case 'community_scan_disabled': return '새 제품 등록이 일시 중단되었습니다.';
     case 'duplicate_review':
-    case 'needs_review': return '기존 제품에 대한 제보를 저장했어요. 검토 후 제품 정보에 반영됩니다.';
+    case 'needs_review': return '기존 제품에 대한 제보를 저장했습니다. 검토 후 제품 정보에 반영됩니다.';
     case 'scan_expired':
-    case 'cancelled': return '오래된 등록의 사진 보관 기간이 끝났어요. 새 사진으로 다시 등록해 주세요.';
+    case 'cancelled': return '이전 등록의 사진 보관 기간이 끝났습니다. 새 사진으로 다시 등록해 주세요.';
     case 'api_base_url_required':
-    case 'invalid_api_base_url': return '앱의 제품 등록 서버 설정을 확인해야 해요. 최신 앱으로 업데이트해 주세요.';
+    case 'invalid_api_base_url': return '앱의 제품 등록 서버 설정을 확인해야 합니다. 최신 앱으로 업데이트해 주세요.';
     case 'extraction_failed':
-    case 'invalid_extraction': return '라벨을 읽지 못했어요. 사진을 확인하고 다시 분석해 주세요.';
-    default: return '처리하지 못했어요. 잠시 후 다시 시도해 주세요.';
+    case 'invalid_extraction': return '라벨을 읽지 못했습니다. 사진을 확인하고 다시 분석해 주세요.';
+    default: return '처리하지 못했습니다. 잠시 후 다시 시도해 주세요.';
   }
 }
 
@@ -345,7 +345,7 @@ function NewProductScanSession({ api, prepareImage = prepareLabelImage, ownerId 
         <Helmet><title>새 제품 등록 | 베로로</title></Helmet>
         <div style={{ margin: 'auto 0', textAlign: 'center', background: '#fff', borderRadius: 24, padding: '34px 22px', border: '1px solid #E8E7DF' }}>
           <div aria-hidden="true" style={{ fontSize: 34 }}>🔒</div>
-          <h1 style={{ fontSize: 20, margin: '16px 0 8px' }}>로그인 후 제품 정보를 등록할 수 있어요</h1>
+          <h1 style={{ fontSize: 20, margin: '16px 0 8px' }}>로그인 후 제품 정보를 등록할 수 있습니다</h1>
           <p style={{ color: '#74736A', fontSize: 13.5, lineHeight: 1.6, margin: '0 0 22px' }}>사진은 원재료와 제품 정보를 확인하는 데만 사용됩니다.</p>
           <Link className="vr-btn vr-btn--primary" to="/login" state={{ from: next }} style={{ display: 'block', padding: 15, textDecoration: 'none' }}>로그인하기</Link>
         </div>
@@ -369,17 +369,17 @@ function NewProductScanSession({ api, prepareImage = prepareLabelImage, ownerId 
         <div style={{ display: 'grid', gap: 11 }}>
           <p style={{ margin: '0 0 4px', fontSize: 13, color: '#66655C', lineHeight: 1.55 }}>라벨 전체가 잘리지 않고 글자가 선명하게 보이도록 촬영해 주세요.</p>
           <p style={{ margin: '0 0 8px', fontSize: 12, color: '#66655C', lineHeight: 1.6 }}>선택한 라벨 사진은 정보 추출을 위해 Google Gemini API로 전송됩니다. 사람 얼굴이나 연락처가 담기지 않게 촬영해 주세요. <Link to="/privacy">사진 처리 및 보관 안내</Link></p>
-          <LabelPhotoStep title="제품 전면" inputLabel="제품 전면 사진" guidance="제품명과 브랜드가 보이게" path={paths.front[0] ?? null} busy={busyCategory === 'front'} onSelect={(file) => void selectPhoto('front', file)} />
-          <LabelPhotoStep title="원재료명" inputLabel="원재료명 사진" guidance="원재료 목록 전체가 보이게" path={paths.ingredient[0] ?? null} busy={busyCategory === 'ingredient'} onSelect={(file) => void selectPhoto('ingredient', file)} />
-          <LabelPhotoStep title="영양/등록성분" inputLabel="영양/등록성분 사진" guidance="수치와 단위가 함께 보이게" path={paths.nutrition[0] ?? null} busy={busyCategory === 'nutrition'} onSelect={(file) => void selectPhoto('nutrition', file)} />
+          <LabelPhotoStep title="제품 전면" inputLabel="제품 전면 사진" guidance="제품명과 브랜드가 보이도록 촬영해 주세요." path={paths.front[0] ?? null} busy={busyCategory === 'front'} onSelect={(file) => void selectPhoto('front', file)} />
+          <LabelPhotoStep title="원재료명" inputLabel="원재료명 사진" guidance="원재료 목록 전체가 보이도록 촬영해 주세요." path={paths.ingredient[0] ?? null} busy={busyCategory === 'ingredient'} onSelect={(file) => void selectPhoto('ingredient', file)} />
+          <LabelPhotoStep title="영양/등록성분" inputLabel="영양/등록성분 사진" guidance="수치와 단위가 함께 보이도록 촬영해 주세요." path={paths.nutrition[0] ?? null} busy={busyCategory === 'nutrition'} onSelect={(file) => void selectPhoto('nutrition', file)} />
         </div>
       )}
 
       {step === 'processing' && !errorCode && (
         <section aria-live="polite" style={centerCardStyle}>
           <div className="vero-spin" style={{ width: 34, height: 34, border: '3px solid #ECEADF', borderTopColor: '#15150F', borderRadius: '50%', margin: '0 auto 16px' }} />
-          <h2 style={{ fontSize: 18, margin: 0 }}>라벨 정보를 읽고 있어요</h2>
-          <p style={{ fontSize: 13, color: '#74736A', margin: '8px 0 0' }}>화면을 닫아도 나중에 이어서 확인할 수 있어요.</p>
+          <h2 style={{ fontSize: 18, margin: 0 }}>라벨 정보를 읽고 있습니다</h2>
+          <p style={{ fontSize: 13, color: '#74736A', margin: '8px 0 0' }}>화면을 닫아도 나중에 이어서 확인할 수 있습니다.</p>
         </section>
       )}
 

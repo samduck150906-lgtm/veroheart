@@ -186,7 +186,7 @@ export async function signInWithEmail(email: string, password: string) {
     password,
   });
   if (error) {
-    notify.error('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
+    notify.error('로그인에 실패했습니다. 이메일과 비밀번호를 확인해 주세요.');
     return null;
   }
   return data.user;
@@ -279,7 +279,7 @@ export async function getProductsPage(page = 1, pageSize = MOBILE_PRODUCT_PAGE_S
   
   if (error) {
     console.error('getProducts error:', error.message);
-    throw new Error('제품 목록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.');
+    throw new Error('제품 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
   }
   return asProductRows(data).map(mapProductFromSupabaseRow);
 }
@@ -331,7 +331,7 @@ export async function getProductDetail(productId: string): Promise<Product | nul
 export async function getVisibleProductsByIds(ids: string[]): Promise<Product[]> {
   const uniqueIds = [...new Set(ids.filter(Boolean))];
   if (uniqueIds.length === 0) return [];
-  if (!isSupabaseConfigured) throw new Error('제품을 조회할 수 없어요. 연결을 확인해 주세요.');
+  if (!isSupabaseConfigured) throw new Error('제품을 조회할 수 없습니다. 연결을 확인해 주세요.');
   const rows: SupabaseProductRow[] = [];
   for (let offset = 0; offset < uniqueIds.length; offset += 100) {
     const { data, error } = await queryVisibleProducts((withVisibilityFilter) => {
@@ -358,7 +358,7 @@ export async function getVisibleProductsByIds(ids: string[]): Promise<Product[]>
       if (withVisibilityFilter) builder = builder.eq('is_visible', true).in('verification_status', publicProductReviewStatuses());
       return builder;
     });
-    if (error) throw new Error('제품을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.');
+    if (error) throw new Error('제품을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
     rows.push(...asProductRows(data));
   }
   const products = new Map(rows.map(row => [row.id, mapProductFromSupabaseRow(row)]));
@@ -652,7 +652,7 @@ export async function searchProductsPage(
   let fallbackSearchTerms: string[] | null = null;
 
   if (rpcError && !missingRpc) {
-    throw new Error('제품 검색을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.');
+    throw new Error('검색 결과를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
   }
 
   if (missingRpc) {
@@ -662,7 +662,7 @@ export async function searchProductsPage(
       buildProductQuery(withVisibilityFilter, null).order('id').range(safeOffset, safeOffset + 99),
     );
     if (error) {
-      throw new Error('제품 검색을 불러오지 못했어요.');
+      throw new Error('검색 결과를 불러오지 못했습니다.');
     }
     nextOffset = (data?.length ?? 0) === 100 ? safeOffset + 100 : null;
     fallbackSearchTerms = normalizedQuery.toLowerCase().split(/\s+/).filter(Boolean).slice(0, 8);
@@ -677,7 +677,7 @@ export async function searchProductsPage(
       buildProductQuery(withVisibilityFilter, rankedIds),
     );
     if (error) {
-      throw new Error('제품 정보를 불러오지 못했어요.');
+      throw new Error('제품 정보를 불러오지 못했습니다.');
     }
     rows = asProductRows(data);
   }
@@ -954,7 +954,7 @@ export async function manageAccount(action: 'delete-account' | 'cleanup-photos')
 
 export async function retryPhotoCleanup(): Promise<void> {
   try { await manageAccount('cleanup-photos'); }
-  catch { notify.warning('기록은 저장됐지만 이전 사진 정리가 지연되고 있어요. 계정 화면에서 다시 시도할 수 있어요.'); }
+  catch { notify.warning('기록은 저장했지만 이전 사진 정리가 지연되고 있습니다. 계정 화면에서 다시 시도해 주세요.'); }
 }
 
 /** 다이어리 제품 검색 — 유형(사료/간식/영양제) + 제품명/브랜드명. 기존 products DB 사용 */
@@ -1284,7 +1284,7 @@ export async function createProductRequest(
   if (error) {
     // 23505 = 부분 UNIQUE 인덱스 충돌 → 같은 사람의 같은 제품 대기 요청이 이미 있다.
     if (error.code === '23505') {
-      return { ok: false, reason: 'duplicate', message: '이미 등록을 요청한 제품이에요.' };
+      return { ok: false, reason: 'duplicate', message: '이미 등록을 요청한 제품입니다.' };
     }
     console.error('createProductRequest error:', error.message);
     return { ok: false, reason: 'error', message: '요청을 저장하지 못했습니다.' };

@@ -21,12 +21,12 @@ import type { Product, UserPetProfile } from '../types';
 import { HEALTH_CONCERN_OPTIONS } from '../health/concerns';
 
 const PROFILE_STEP_META = [
-  { title: '이름', prompt: '우리 아이의 이름은 무엇인가요?' },
-  { title: '종', prompt: '강아지인가요, 고양이인가요?' },
-  { title: '나이', prompt: '나이대를 선택해주세요.' },
-  { title: '몸무게·품종', prompt: '몸무게와 품종을 입력해주세요. (선택)' },
-  { title: '알레르기', prompt: '알레르기가 있는 성분이 있나요? (복수 선택)' },
-  { title: '건강 고민', prompt: '신경 쓰이는 건강 고민이 있나요? (복수 선택)' },
+  { title: '이름', prompt: '반려동물 이름을 입력해 주세요.' },
+  { title: '종', prompt: '강아지 또는 고양이를 선택해 주세요.' },
+  { title: '나이', prompt: '나이대를 선택해 주세요.' },
+  { title: '몸무게·품종', prompt: '몸무게와 품종을 입력해 주세요. (선택)' },
+  { title: '알레르기', prompt: '알레르기가 있는 성분을 선택해 주세요. (복수 선택)' },
+  { title: '건강 고민', prompt: '건강 고민을 선택해 주세요. (복수 선택)' },
 ];
 
 // 회피 성분은 고정 목록 대신 성분 DB 검색으로 고른다 (components/AllergyIngredientPicker).
@@ -247,7 +247,7 @@ function ProfileContent() {
             {/* 고른 항목이 전부 맞춤 추천 근거가 되는 것은 아니다. 근거가 없는데
                 있는 것처럼 보이지 않도록 미리 알린다. */}
             <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-              고른 고민은 프로필에 기록되고, 분석에 쓸 수 있는 항목은 제품 원료와 맞춰 볼게요.
+              선택한 건강 고민은 프로필에 기록되며, 분석 가능한 항목은 제품 원료와 대조합니다.
             </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
             {concernOptions.map((opt) => (
@@ -286,18 +286,18 @@ function ProfileContent() {
         <div style={{ width: '80px', height: '80px', borderRadius: '24px', backgroundColor: 'var(--surface-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
           <User size={40} color="var(--line)" />
         </div>
-        <h2 style={{ fontSize: '24px', fontWeight: 900, color: 'var(--text-dark)', marginBottom: '12px' }}>로그인이 필요해요</h2>
+        <h2 style={{ fontSize: '24px', fontWeight: 900, color: 'var(--text-dark)', marginBottom: '12px' }}>로그인이 필요합니다</h2>
         <p style={{ fontSize: '15px', color: 'var(--text-muted)', marginBottom: '32px', textAlign: 'center', lineHeight: 1.5 }}>
           프로필을 설정하고 아이의 건강 맞춤
           <br />
-          사료 분석과 섭취 기록을 시작해보세요!
+          사료 분석과 섭취 기록을 시작해 주세요.
         </p>
         <button
           className="btn btn-primary"
           style={{ width: '100%', maxWidth: '320px', padding: '16px', borderRadius: '20px', fontWeight: 800, fontSize: '16px' }}
           onClick={() => navigate('/login')}
         >
-          로그인 / 회원가입 하기
+          로그인 / 회원가입
         </button>
       </div>
     );
@@ -307,7 +307,7 @@ function ProfileContent() {
     <div className="animate-fade-in" style={{ paddingBottom: '40px' }}>
       {activeTab !== 'account' && <Link to="/profile?tab=account" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 18, marginBottom: 20, borderRadius: 18, background: 'var(--surface-alt)', color: 'var(--text-dark)', textDecoration: 'none' }}>
         <User size={24} aria-hidden />
-        <div style={{ flex: 1 }}><strong style={{ fontSize: 16 }}>계정·설정</strong><p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>로그인한 계정을 관리해요</p></div>
+        <div style={{ flex: 1 }}><strong style={{ fontSize: 16 }}>계정·설정</strong><p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>로그인한 계정을 관리합니다</p></div>
         <ChevronRight size={18} aria-hidden />
       </Link>}
 
@@ -331,7 +331,7 @@ function ProfileContent() {
             <div>
               <TossSectionTitle
                 title="내 반려동물"
-                subtitle="등록순 · 먼저 등록한 아이부터 표시해요. 기록·분석 기준이 되는 아이를 선택하세요."
+                subtitle="등록한 순서로 표시합니다. 기록·분석 기준이 될 반려동물을 선택해 주세요."
                 right={
                   <button type="button" onClick={startAddPet} className="ui-text-button" style={{ padding: 0 }}>
                     <Plus size={14} /> 추가
@@ -515,7 +515,7 @@ function ProfileContent() {
           style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
         >
           <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: '340px', background: 'var(--surface-elevated)', borderRadius: '20px', padding: '24px', textAlign: 'center' }}>
-            <h3 style={{ margin: '0 0 8px', fontSize: '17px', fontWeight: 900, color: 'var(--text-dark)' }}>{deleteTarget.name} 정보를 삭제할까요?</h3>
+            <h3 style={{ margin: '0 0 8px', fontSize: '17px', fontWeight: 900, color: 'var(--text-dark)' }}>{deleteTarget.name} 정보를 삭제하시겠습니까?</h3>
             <p style={{ margin: '0 0 20px', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
               해당 반려동물의 섭취 기록도 함께 삭제되며 복구할 수 없습니다.
             </p>
@@ -553,9 +553,9 @@ function SavedProducts({ userId, favorites }: { userId: string; favorites: strin
     return () => { cancelled = true; };
   }, [userId, favorites, retry]);
 
-  if (loading) return <p role="status" style={{ padding: '32px 0', color: 'var(--text-muted)' }}>저장한 제품을 불러오는 중이에요.</p>;
+  if (loading) return <p role="status" style={{ padding: '32px 0', color: 'var(--text-muted)' }}>저장한 제품을 불러오고 있습니다.</p>;
   if (failed) return <div style={{ padding: '32px 0' }}>
-    <p role="alert">저장한 제품을 불러오지 못했어요. 연결을 확인하고 다시 시도해 주세요.</p>
+    <p role="alert">저장한 제품을 불러오지 못했습니다. 연결을 확인하고 다시 시도해 주세요.</p>
     <TossButton variant="outline" onClick={() => { setLoading(true); setFailed(false); setRetry((value) => value + 1); }}>저장한 제품 다시 불러오기</TossButton>
   </div>;
   if (products.length) return <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -563,7 +563,7 @@ function SavedProducts({ userId, favorites }: { userId: string; favorites: strin
   </div>;
   return <div style={{ textAlign: 'center', padding: '80px 20px', backgroundColor: 'var(--surface-alt)', borderRadius: 24 }}>
     <Heart color="var(--line)" size={40} style={{ margin: '0 auto 16px' }} />
-    <p style={{ color: 'var(--text-muted)', fontSize: 15 }}>{favorites.length ? '저장한 제품 중 현재 볼 수 있는 제품이 없어요.' : '저장한 제품이 없습니다.'}</p>
+    <p style={{ color: 'var(--text-muted)', fontSize: 15 }}>{favorites.length ? '저장한 제품 중 현재 볼 수 있는 제품이 없습니다.' : '저장한 제품이 없습니다.'}</p>
     <Link to="/search" style={{ color: 'var(--primary)', fontWeight: 700, marginTop: 12, display: 'inline-block', textDecoration: 'none' }}>제품 탐색하기</Link>
   </div>;
 }

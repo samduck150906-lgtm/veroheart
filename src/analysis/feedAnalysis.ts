@@ -80,7 +80,7 @@ export interface FeedAnalysis {
 }
 
 const DISCLAIMER =
-  '본 분석은 라벨 보장성분과 원재료명을 규칙으로 계산한 참고 정보예요. 수의학적 진단을 대체하지 않으며, 건강 이상이 의심되면 수의사와 상담하세요.';
+  '본 분석은 라벨 보장성분과 원재료명을 규칙으로 계산한 참고 정보입니다. 수의학적 진단을 대체하지 않으며, 건강 이상이 의심되면 수의사와 상담해 주세요.';
 
 /* ── 원재료명 키워드 사전 (정규화 후 부분일치) ────────────────── */
 const ANIMAL_PROTEIN = [
@@ -281,40 +281,40 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
   const positives: string[] = [];
   const cautions: string[] = [];
 
-  if (iq.firstIsAnimalProtein && iq.firstIngredient) positives.push(`제1원료가 동물성 단백질(${iq.firstIngredient})이에요`);
+  if (iq.firstIsAnimalProtein && iq.firstIngredient) positives.push(`제1원료가 동물성 단백질(${iq.firstIngredient})입니다`);
   if (iq.animalProteins.length >= 2) positives.push(`동물성 단백질 원료 ${iq.animalProteins.length}종 확인`);
   if (iq.functional.length > 0) positives.push(`기능성 원료 포함: ${iq.functional.slice(0, 3).join(', ')}`);
-  if (hasNutritionData && aafco.evaluated && aafco.passed) positives.push('AAFCO 성체 유지 최소 기준(단백·지방)을 충족해요');
-  if (analysisReadiness.status === 'ready' && iq.dangerCount === 0 && iq.cautionCount === 0 && iq.artificial.length === 0) positives.push('위험·주의·합성첨가물 성분이 확인되지 않았어요');
-  if (macrosDMB && macrosDMB.protein >= (species === 'cat' ? 32 : 22)) positives.push(`건물기준 조단백질 ${macrosDMB.protein}%로 단백질이 풍부해요`);
+  if (hasNutritionData && aafco.evaluated && aafco.passed) positives.push('AAFCO 성체 유지 최소 기준(단백·지방)을 충족합니다');
+  if (analysisReadiness.status === 'ready' && iq.dangerCount === 0 && iq.cautionCount === 0 && iq.artificial.length === 0) positives.push('위험·주의·합성첨가물 성분이 확인되지 않았습니다');
+  if (macrosDMB && macrosDMB.protein >= (species === 'cat' ? 32 : 22)) positives.push(`건물기준 조단백질 ${macrosDMB.protein}%로 단백질이 풍부합니다`);
 
-  if (allergyHits.length > 0) cautions.push(`${profile.name}의 회피 성분이 들어 있어요: ${allergyHits.join(', ')}`);
-  else if (allergyCautions.length > 0) cautions.push(`${profile.name}의 알레르기와 관련된 원료가 있어 급여 전 확인이 필요해요`);
+  if (allergyHits.length > 0) cautions.push(`${profile.name}의 회피 성분이 들어 있습니다: ${allergyHits.join(', ')}`);
+  else if (allergyCautions.length > 0) cautions.push(`${profile.name}의 알레르기와 관련된 원료가 있어 급여 전 확인이 필요합니다`);
   if (iq.dangerCount > 0) cautions.push(`위험 등급 성분 ${iq.dangerCount}개 포함`);
   if (iq.artificial.length > 0) cautions.push(`합성 첨가물 의심 원료: ${iq.artificial.slice(0, 3).join(', ')}`);
   if (iq.byProducts.length > 0) cautions.push(`부산물 원료 포함: ${iq.byProducts.slice(0, 2).join(', ')}`);
   if (iq.fillers.length >= 2) cautions.push(`곡물·충전제 계열 원료 다수: ${iq.fillers.slice(0, 3).join(', ')}`);
   if (hasNutritionData && aafco.evaluated && !aafco.passed) cautions.push(...aafco.details);
   if (caP.note) cautions.push(caP.note);
-  if (macros && macros.carb >= 55) cautions.push(`추정 탄수화물이 ${Math.round(macros.carb)}%로 다소 높아요`);
+  if (macros && macros.carb >= 55) cautions.push(`추정 탄수화물이 ${Math.round(macros.carb)}%로 다소 높습니다`);
   const readinessMessage = analysisReadiness.status === 'unavailable' && iq.total > 0
-    ? '전성분은 등록되어 있지만 원료별 분석 정보가 아직 준비되지 않았어요'
+    ? '전성분은 등록되어 있지만 원료별 분석 정보가 아직 준비되지 않았습니다'
     : analysisReadinessCopy(analysisReadiness.status);
-  if (iq.total === 0 && !product.unknownIngredientTerms?.length) cautions.push('전성분이 아직 등록되지 않아 원료 품질은 평가하지 못했어요');
+  if (iq.total === 0 && !product.unknownIngredientTerms?.length) cautions.push('전성분이 아직 등록되지 않아 원료 품질은 평가하지 못했습니다');
   else if (analysisReadiness.status !== 'ready') cautions.push(readinessMessage);
 
   // ── 요약(한 줄) ──
   const summary = (() => {
     // 데이터 부족을 "미포함"으로 단정하지 않는다. 원재료·보장성분이 모두 없으면
     // grade 기반 부정 문장("주의가 필요한 성분…") 대신 정보 부족을 명시한다.
-    if (iq.total === 0 && !hasNutritionData && !product.unknownIngredientTerms?.length) return '원재료·영양 정보가 부족해 아직 정확히 평가하기 어려워요.';
-    if (allergyHits.length > 0) return `${profile.name}가 피해야 할 성분이 있어 급여 전 확인이 필요해요.`;
-    if (allergyCautions.length > 0) return `${profile.name}의 알레르기와 관련된 원료가 있어 급여 전 확인이 필요해요.`;
+    if (iq.total === 0 && !hasNutritionData && !product.unknownIngredientTerms?.length) return '원재료·영양 정보가 부족해 아직 정확히 평가하기 어렵습니다.';
+    if (allergyHits.length > 0) return `${profile.name}가 피해야 할 성분이 있어 급여 전 확인이 필요합니다.`;
+    if (allergyCautions.length > 0) return `${profile.name}의 알레르기와 관련된 원료가 있어 급여 전 확인이 필요합니다.`;
     if (analysisReadiness.status !== 'ready') return `${readinessMessage}.`;
-    if (grade === 'A+' || grade === 'A') return iq.firstIsAnimalProtein ? '동물성 단백질 중심의 균형 잡힌 우수한 사료예요.' : '전반적으로 품질이 우수한 사료예요.';
-    if (grade === 'B') return '무난하게 급여할 수 있는 사료예요.';
-    if (grade === 'C') return '나쁘지 않지만 확인할 점이 몇 가지 있어요.';
-    return '주의가 필요한 성분이 있어 신중히 선택하세요.';
+    if (grade === 'A+' || grade === 'A') return iq.firstIsAnimalProtein ? '동물성 단백질 중심의 균형 잡힌 우수한 사료입니다.' : '전반적으로 품질이 우수한 사료입니다.';
+    if (grade === 'B') return '무난하게 급여할 수 있는 사료입니다.';
+    if (grade === 'C') return '나쁘지 않지만 확인할 점이 몇 가지 있습니다.';
+    return '주의가 필요한 성분이 있어 신중히 선택해 주세요.';
   })();
 
   // ── 5) 1일 권장 급여량 (실제 열량 기반) ──

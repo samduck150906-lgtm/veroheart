@@ -43,7 +43,7 @@ export async function loadHomeRecommendations(
       return recommendations;
     }
     if (!Number.isFinite(page.nextOffset) || page.nextOffset <= offset) {
-      throw new Error('추천 제품 페이지를 불러오지 못했어요.');
+      throw new Error('추천 제품을 불러오지 못했습니다.');
     }
     offset = page.nextOffset;
   }

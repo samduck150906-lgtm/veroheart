@@ -61,7 +61,7 @@ export function describeKakaoAuthError(raw: string): KakaoSignInFailure {
     return {
       ok: false,
       reason: 'provider_disabled',
-      message: '카카오 로그인이 아직 준비 중이에요. 이메일로 로그인해 주세요.',
+      message: '카카오 로그인은 준비 중입니다. 이메일로 로그인해 주세요.',
     };
   }
   if (lower.includes('signup_disabled') || lower.includes('signup disabled')) {
@@ -76,7 +76,7 @@ export function describeKakaoAuthError(raw: string): KakaoSignInFailure {
   return {
     ok: false,
     reason: 'unknown',
-    message: raw || '카카오 로그인에 실패했어요. 잠시 후 다시 시도해 주세요.',
+    message: raw || '카카오 로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.',
   };
 }
 
@@ -91,7 +91,7 @@ export async function signInWithKakao(redirectTo?: string): Promise<KakaoSignInR
     return {
       ok: false,
       reason: 'not_configured',
-      message: '카카오 로그인이 아직 준비 중이에요. 이메일로 로그인해 주세요.',
+      message: '카카오 로그인은 준비 중입니다. 이메일로 로그인해 주세요.',
     };
   }
 
@@ -102,8 +102,8 @@ export async function signInWithKakao(redirectTo?: string): Promise<KakaoSignInR
   });
 
   if (error) return describeKakaoAuthError(error.message);
-  if (!data.url) return describeKakaoAuthError('인증 주소를 받지 못했어요.');
+  if (!data.url) return describeKakaoAuthError('인증 주소를 받지 못했습니다.');
   try { await openAuthBrowser(data.url); }
-  catch { return describeKakaoAuthError('인증 화면을 열지 못했어요. 다시 시도해 주세요.'); }
+  catch { return describeKakaoAuthError('인증 화면을 열지 못했습니다. 다시 시도해 주세요.'); }
   return null;
 }

@@ -176,14 +176,14 @@ export default function Detail() {
     scrollAppToTop(true); // reduced-motion 사용자는 유틸이 즉시 이동으로 처리
   };
 
-  // "우리 아이가 먹었어요" — 로그인/반려동물 확인 후 기록 시트 열기
+  // 섭취 기록 추가 — 로그인/반려동물 확인 후 기록 시트 열기
   const openFeedingLog = () => {
     if (!userId) {
       navigate('/login');
       return;
     }
     if (pets.length === 0) {
-      notify.info('먼저 반려동물을 등록해주세요.');
+      notify.info('먼저 반려동물을 등록해 주세요.');
       navigate('/profile?tab=pets');
       return;
     }
@@ -200,7 +200,7 @@ export default function Detail() {
         await navigator.share({ title: 'VeRoRo', text: `${title} · 베로로 성분 분석`, url });
       } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
         await navigator.clipboard.writeText(url);
-        notify.success('제품 링크를 복사했어요');
+        notify.success('제품 링크를 복사했습니다');
       }
     } catch {
       /* 사용자가 공유 시트를 닫은 경우 등은 조용히 무시 */
@@ -216,8 +216,8 @@ export default function Detail() {
       <OfflineBanner online={online} />
       <EmptyState
         emoji={online ? '🔍' : '📡'}
-        title={online ? '제품을 찾을 수 없어요' : '오프라인 상태예요'}
-        desc={online ? '주소가 변경되었거나 삭제된 제품일 수 있어요.' : '연결이 복구되면 다시 불러올게요.'}
+        title={online ? '제품을 찾을 수 없습니다' : '오프라인 상태입니다'}
+        desc={online ? '주소가 변경되었거나 삭제된 제품일 수 있습니다.' : '연결이 복구되면 다시 불러옵니다.'}
         actionLabel="홈으로 이동"
         onAction={() => navigate('/')}
       />
@@ -312,9 +312,9 @@ export default function Detail() {
       text: analysisReady
         ? `안전성: ${breakdown.dangerCount === 0 ? '현재 등록 원료에서 위험 성분 미확인' : `위험 성분 ${breakdown.dangerCount}개`}${breakdown.cautionCount ? `, 주의 ${breakdown.cautionCount}개` : ''} — ${gradeLabel} 등급입니다.`
         : analysisStatus === 'partial'
-          ? '안전성: 확인되지 않은 원료가 있어 부분 분석만 제공해요.'
+          ? '안전성: 확인되지 않은 원료가 있어 부분 분석만 제공합니다.'
           : analysisStatus === 'blocked'
-            ? '안전성: 원료 정보가 서로 달라 확인이 필요해요.'
+            ? '안전성: 원료 정보가 서로 달라 확인이 필요합니다.'
             : `안전성: ${describeIngredientAvailability(product).detail}`,
     },
     {
@@ -324,10 +324,10 @@ export default function Detail() {
     {
       icon: <Check size={16} />,
       text: !personalized
-        ? '결론: 우리 아이를 등록하면 제품 궁합을 확인할 수 있어요.'
+        ? '결론: 반려동물을 등록하면 제품 궁합을 확인할 수 있습니다.'
         : analysisReady
-        ? `결론: ${profile.name}의 현재 궁합 점수는 ${safetyScore}점이에요. ${safetyScore >= 75 ? '아래 근거와 정보 부족 항목을 함께 확인해 주세요.' : safetyScore >= 60 ? '급여 시 소량부터 확인하세요.' : '대체 상품을 함께 검토하세요.'}`
-        : '결론: 원료 검토가 끝난 뒤 전체 궁합 판정을 제공할게요.',
+        ? `결론: ${profile.name}의 현재 궁합 점수는 ${safetyScore}점입니다. ${safetyScore >= 75 ? '아래 근거와 정보 부족 항목을 함께 확인해 주세요.' : safetyScore >= 60 ? '급여 시 소량부터 확인해 주세요.' : '대체 상품을 함께 검토해 주세요.'}`
+        : '결론: 원료 검토가 끝난 뒤 전체 궁합 판정을 제공합니다.',
     },
   ];
 
@@ -382,21 +382,21 @@ export default function Detail() {
   const { headline, headlineColor } = (() => {
     if (allergyIngs.length > 0 || dangerIngs.length > 0) {
       const count = new Set([...allergyIngs, ...dangerIngs]).size;
-      return { headline: `주의 성분이 ${count}개 발견됐어요`, headlineColor: '#F04452' };
+      return { headline: `주의 성분이 ${count}개 발견되었습니다`, headlineColor: '#F04452' };
     }
     if (allergyDisplay.level === 'caution') {
       return { headline: '알레르기 관련 원료를 확인해 주세요', headlineColor: '#F59E0B' };
     }
     if (cautionIngs.length > 0) {
-      return { headline: `확인해야 할 성분이 ${cautionIngs.length}개 있어요`, headlineColor: '#F59E0B' };
+      return { headline: `확인해야 할 성분이 ${cautionIngs.length}개 있습니다`, headlineColor: '#F59E0B' };
     }
     if (allergyDisplay.level === 'unknown') {
       return {
-        headline: allergyDisplay.notice?.title ?? '알레르기 분석을 준비하고 있어요',
+        headline: allergyDisplay.notice?.title ?? '알레르기 분석을 준비하고 있습니다',
         headlineColor: 'var(--pdp-ink)',
       };
     }
-    return { headline: '현재 등록된 원료에서 주의 항목을 확인하지 못했어요', headlineColor: 'var(--text-dark)' };
+    return { headline: '현재 등록된 원료에서 주의 항목을 확인하지 못했습니다', headlineColor: 'var(--text-dark)' };
   })();
   const headlineNotice = allergyDisplay.level === 'unknown' && allergyIngs.length === 0 && dangerIngs.length === 0
     ? allergyDisplay.notice
@@ -427,7 +427,7 @@ export default function Detail() {
       {isLoggedIn && userId && pets.length > 1 && (
         <section style={{ padding: 16, marginBottom: 16, borderRadius: 20, background: 'var(--surface)', border: '1px solid var(--line)' }}>
           <h2 style={{ margin: '0 0 5px', fontSize: 16, fontWeight: 800 }}>궁합을 확인할 아이</h2>
-          <p style={{ margin: '0 0 12px', fontSize: 12, color: 'var(--text-muted)' }}>등록순 · 아이를 누르면 궁합이 바뀌어요</p>
+          <p style={{ margin: '0 0 12px', fontSize: 12, color: 'var(--text-muted)' }}>등록순 · 반려동물을 선택하면 궁합이 바뀝니다</p>
           <div role="group" aria-label="궁합을 확인할 반려동물" style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {pets.map(pet => {
               const active = activePetId === pet.id;
@@ -575,7 +575,7 @@ export default function Detail() {
         </span>
         <span style={{ flex: 1 }}>
           <span style={{ display: 'block', fontSize: '16.5px', fontWeight: 800, color: 'var(--vr-on-inverse)', letterSpacing: '-0.03em' }}>
-            {analysisReady ? `종합 ${safetyScore}점 · ${gradeVerdict(displayGrade)}` : allergyDisplay.notice?.title ?? '원료 분석 확인이 필요해요'}
+            {analysisReady ? `종합 ${safetyScore}점 · ${gradeVerdict(displayGrade)}` : allergyDisplay.notice?.title ?? '원료 분석 확인이 필요합니다'}
           </span>
           <span style={{ display: 'block', fontSize: '12.5px', color: 'var(--vr-on-inverse-sub)', marginTop: '3px' }}>
             {analysisReady
@@ -653,7 +653,7 @@ export default function Detail() {
         <section className="card" style={{ marginBottom: 24 }}>
           <h2 style={{ fontSize: 18 }}>제조사 공개 정보</h2>
           <p>{product.catalogSourceNote || '실제 구매 제품의 포장 표시를 함께 확인해 주세요.'}</p>
-          {product.requiresVeterinaryGuidance && <p><strong>수의사 상담이 필요한 제품이에요. 처방과 급여량은 담당 수의사의 안내를 따라 주세요.</strong></p>}
+          {product.requiresVeterinaryGuidance && <p><strong>수의사 상담이 필요한 제품입니다. 처방과 급여량은 담당 수의사의 안내를 따라 주세요.</strong></p>}
           <a href={product.catalogSourceUrl} target="_blank" rel="noopener noreferrer">제조사 원문 확인</a>
         </section>
       )}
@@ -678,7 +678,7 @@ export default function Detail() {
         ) : (
           <div>
             <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '16px' }}>
-              {profile.weightKg ? '제품 열량 정보가 부족해 급여량을 계산할 수 없어요. 제품 포장의 급여 안내를 확인해 주세요.' : '몸무게와 제품 열량이 있으면 참고용 급여량을 계산할 수 있어요.'}
+              {profile.weightKg ? '제품 열량 정보가 부족해 급여량을 계산할 수 없습니다. 제품 포장의 급여 안내를 확인해 주세요.' : '몸무게와 제품 열량이 있으면 참고용 급여량을 계산할 수 있습니다.'}
             </p>
             <button 
               className="btn btn-outline" 
@@ -790,7 +790,7 @@ export default function Detail() {
           {(product.unknownIngredientTerms ?? []).map((term, index) => (
             <div key={`raw-${index}`} style={{ padding: 14, marginBottom: 8, borderRadius: 12, background: 'var(--surface-alt)' }}>
               <strong>{term}</strong>
-              <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>제품에 표시된 원료예요. 아직 특성을 확인하지 못해 점수 계산에서 제외했어요.</p>
+              <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>제품에 표시된 원료입니다. 아직 특성을 확인하지 못해 점수 계산에서 제외했습니다.</p>
             </div>
           ))}
           {(product.ingredients ?? [])
@@ -831,7 +831,7 @@ export default function Detail() {
             
             {personalized && isAllergyIngredient(selectedIngredient, profile.allergies) ? (
               <div style={{ backgroundColor: '#FEE2E2', padding: '20px', borderRadius: '16px', color: '#F04452', fontWeight: 700, fontSize: '16px', lineHeight: 1.5 }}>
-                {profile.name}의 알레르기 유발 성분입니다. 절대 급여하지 마세요!
+                {profile.name}의 알레르기 유발 성분입니다. 절대 급여하지 마세요.
               </div>
             ) : selectedIngredient.riskLevel === 'danger' ? (
               <div style={{ backgroundColor: '#FEE2E2', padding: '20px', borderRadius: '16px', color: '#F04452', fontWeight: 700, fontSize: '16px', lineHeight: 1.5 }}>
@@ -875,7 +875,7 @@ export default function Detail() {
           <MessageSquare size={20} /> 후기 <span style={{ color: 'var(--text-muted)', fontWeight: 700 }}>{reviews.length}</span>
         </h2>
         <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '16px', fontWeight: 600 }}>
-          키워드만 골라도 돼요. {profile.name}와 비슷한 아이 집사의 글을 모아보려면 태그를 활용해 보세요.
+          키워드만 선택해도 됩니다. {profile.name}와 비슷한 반려동물의 후기를 모아보려면 태그를 활용해 주세요.
         </p>
 
         <ReviewSummaryCard ratings={reviewRatings} topTags={topReviewTags} summary={reviewSummary} />
@@ -884,7 +884,7 @@ export default function Detail() {
         <div style={{ background: 'var(--surface-alt)', borderRadius: '20px', padding: '20px', marginBottom: '24px', border: '1px solid var(--surface-alt)' }}>
           {/* 등록 조건을 미리 알려 준다 — '(선택)'과 실제 검증이 어긋나 보이지 않게. */}
           <p style={{ margin: '0 0 12px', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 700 }}>
-            제품의 별점을 남길 수 있어요. 자유 서술 후기와 닉네임은 공개하지 않아요.
+            제품의 별점을 남길 수 있습니다. 자유 서술 후기와 닉네임은 공개하지 않습니다.
           </p>
           <div style={{ display: 'flex', gap: '4px', marginBottom: '12px' }}>
             {[1, 2, 3, 4, 5].map(star => (
@@ -910,7 +910,7 @@ export default function Detail() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {reviews.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-muted)', background: 'var(--surface-alt)', borderRadius: '16px' }}>
-              아직 별점이 없습니다. 첫 별점을 남겨보세요!
+              아직 별점이 없습니다. 첫 별점을 남겨 주세요.
             </div>
           ) : reviews.map(review => (
             <div key={review.id} style={{ padding: '16px 20px', background: 'var(--surface-elevated)', border: '1px solid var(--line)', borderRadius: '16px' }}>
@@ -957,7 +957,7 @@ export default function Detail() {
           productType: productTypeToFeedingType(product.category),
         }}
         onSaved={() => {
-          notify.success(`${profile.name}의 섭취 기록에 추가했어요.`);
+          notify.success(`${profile.name}의 섭취 기록에 추가했습니다.`);
         }}
       />
     </div>

@@ -89,7 +89,7 @@ export default function Brand() {
           <div>
             <div className="ui-section-kicker">brand snapshot</div>
             <div style={{ fontSize: '16px', fontWeight: 900, color: 'var(--text-dark)', marginTop: '2px' }}>
-              이 브랜드의 제품군을 비교해보세요
+              이 브랜드의 제품을 비교해 주세요
             </div>
           </div>
         </div>

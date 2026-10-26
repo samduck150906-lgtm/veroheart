@@ -8,12 +8,12 @@ export function describeIngredientAvailability(product: Product): { label: strin
   const known = product.ingredients?.length ?? 0;
   const unknown = product.unknownIngredientTerms?.length ?? 0;
   const { status } = readinessFromStoredStatus(product.analysisStatus, known, unknown);
-  if (status === 'blocked') return { label: '원료 표기 확인 필요', detail: '전성분 표기가 서로 달라 전체 점수를 계산하지 않았어요. 아래 원료 목록을 확인해 주세요.' };
+  if (status === 'blocked') return { label: '원료 표기 확인 필요', detail: '전성분 표기가 서로 달라 전체 점수를 계산하지 않았습니다. 아래 원료 목록을 확인해 주세요.' };
   if (status !== 'ready' && known + unknown > 0) {
-    return { label: '원료 상세 확인 필요', detail: '전성분은 등록되어 있어요. 아직 특성을 확인하지 못한 원료가 있어 전체 점수를 계산하지 않았어요.' };
+    return { label: '원료 상세 확인 필요', detail: '전성분은 등록되어 있습니다. 아직 특성을 확인하지 못한 원료가 있어 전체 점수를 계산하지 않았습니다.' };
   }
-  if (known + unknown === 0) return { label: '원료 등록 필요', detail: '이 제품의 전성분 표기가 아직 등록되지 않았어요.' };
-  return { label: '원료 확인 가능', detail: '등록된 전성분을 바탕으로 분석했어요.' };
+  if (known + unknown === 0) return { label: '원료 등록 필요', detail: '이 제품의 전성분 표기가 아직 등록되지 않았습니다.' };
+  return { label: '원료 확인 가능', detail: '등록된 전성분을 바탕으로 분석했습니다.' };
 }
 
 /**
@@ -58,14 +58,14 @@ export function describeProductCompleteness(product: Product): ProductCompletene
     case 'partial':
       return {
         level: 'partial',
-        label: '일부 정보만 확인할 수 있어요',
-        detail: '원료는 확인했지만 영양성분이 등록되지 않아 급여량·영양 균형은 분석할 수 없어요.',
+        label: '일부 정보만 확인할 수 있습니다',
+        detail: '원료는 확인했지만 영양성분이 등록되지 않아 급여량·영양 균형은 분석할 수 없습니다.',
       };
     default:
       return {
         level: 'minimal',
-        label: '원료 정보가 아직 없어요',
-        detail: '원료가 등록되면 우리 아이 기준으로 분석해 줄게요.',
+        label: '원료 정보가 아직 없습니다',
+        detail: '원료가 등록되면 우리 아이 기준으로 분석해 드립니다.',
       };
   }
 }

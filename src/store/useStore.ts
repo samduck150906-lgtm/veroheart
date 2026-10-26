@@ -360,7 +360,7 @@ export const useStore = create<StoreState>((set, get) => ({
     // 비로그인 상태에서는 저장할 곳이 없다. 낙관적으로 켜 두면 새로고침에서
     // 조용히 사라지므로, 상태를 바꾸지 않고 로그인이 필요하다고 알린다.
     if (!userId) {
-      notify.warning('찜하려면 로그인이 필요해요.');
+      notify.warning('찜하려면 로그인해 주세요.');
       return;
     }
 
@@ -368,7 +368,7 @@ export const useStore = create<StoreState>((set, get) => ({
     set({ favorites: next });
 
     // 어디서 다시 볼 수 있는지 바로 알려 준다. 찜해 놓고 찾지 못한다는 피드백이 있었다.
-    if (!isFav) notify.success('저장했어요 · 마이페이지 > 저장한 제품');
+    if (!isFav) notify.success('저장했습니다 · 마이페이지 > 저장한 제품');
 
     const ok = isFav ? await removeFavorite(userId, id) : await addFavorite(userId, id);
     if (epoch !== sessionEpoch || get().userId !== userId) return;
@@ -380,7 +380,7 @@ export const useStore = create<StoreState>((set, get) => ({
         ? (current.includes(id) ? current : [...current, id])
         : current.filter((fid) => fid !== id);
       set({ favorites: rolledBack });
-      notify.error('찜 상태를 저장하지 못했어요. 잠시 후 다시 시도해 주세요.');
+      notify.error('찜 상태를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.');
     }
   },
 

@@ -42,9 +42,9 @@ export default function AppHeader({ raised }: AppHeaderProps) {
         return;
       }
       await navigator.clipboard.writeText(url);
-      notify.success('공유 링크를 복사했어');
+      notify.success('공유 링크를 복사했습니다');
     } catch {
-      notify.info('공유 링크를 복사하지 못했어');
+      notify.info('공유 링크를 복사하지 못했습니다');
     }
   };
 

@@ -78,7 +78,7 @@ export default function Scan() {
         handledRef.current = false;
         setManualError(error instanceof BarcodeLookupError
           ? error.message
-          : '제품을 확인하지 못했어요. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.');
+          : '제품을 확인하지 못했습니다. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.');
       } finally {
         if (mountedRef.current) setCheckingBarcode(false);
       }
@@ -212,10 +212,10 @@ export default function Scan() {
     camState === 'denied' || camState === 'unavailable' || camState === 'no-detector' || camState === 'idle';
 
   const hint = checkingBarcode
-    ? '바코드로 제품을 확인하고 있어…'
+    ? '바코드로 제품을 확인하고 있습니다…'
     : showFallback
       ? '바코드 숫자를 입력하거나 제품명으로 검색해 주세요'
-      : '바코드를 읽고 있어…';
+      : '바코드를 읽고 있습니다…';
 
   const submitManualBarcode = useCallback(async () => {
     await handleBarcode(manualBarcode);
@@ -225,7 +225,7 @@ export default function Scan() {
     <div style={{ position: 'fixed', inset: 0, background: '#0A0A08', zIndex: 30, overflow: 'hidden', display: 'flex', flexDirection: 'column', maxWidth: '480px', margin: '0 auto' }}>
       <Helmet>
         <title>스캔 | 베로로</title>
-        <meta name="description" content="바코드를 스캔해 제품 성분 분석을 확인하세요." />
+        <meta name="description" content="바코드를 스캔해 제품 성분 분석을 확인해 주세요." />
       </Helmet>
 
       {/* 상단 바 */}
@@ -362,9 +362,9 @@ export default function Scan() {
               {camState === 'denied'
                 ? '설정에서 카메라 권한을 허용한 뒤 다시 시도해 주세요.'
                 : camState === 'no-detector'
-                  ? '자동 인식을 시작하지 못했어요. 바코드 숫자를 입력해 주세요.'
+                  ? '자동 인식을 시작하지 못했습니다. 바코드 숫자를 입력해 주세요.'
                   : window.isSecureContext === false
-                    ? '카메라는 HTTPS 주소에서 사용할 수 있어요. 안전한 주소로 다시 열어 주세요.'
+                    ? '카메라는 HTTPS 주소에서 사용할 수 있습니다. 안전한 주소로 다시 열어 주세요.'
                     : '다른 앱의 카메라를 닫고 다시 시도해 주세요. 인앱 브라우저라면 Safari 또는 Chrome으로 열어 주세요.'}
             </div>}
       </div>

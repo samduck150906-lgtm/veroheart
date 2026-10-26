@@ -40,7 +40,7 @@ export default function AuthCallback() {
         navigate('/', { replace: true });
       } catch (error) {
         if (cancelled) return;
-        notify.error(error instanceof Error ? error.message : '로그인에 실패했습니다. 다시 시도해주세요.');
+        notify.error(error instanceof Error ? error.message : '로그인에 실패했습니다. 다시 시도해 주세요.');
         navigate('/login', { replace: true });
       }
     }

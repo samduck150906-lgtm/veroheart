@@ -78,20 +78,20 @@ export default function AccountSettings() {
         const { error } = await supabase.auth.resetPasswordForEmail(account!.email!, { redirectTo: getAuthRedirectUrl('recovery') });
         if (error) throw error;
         setResetSent(true);
-        setMessage('비밀번호 재설정 메일을 보냈어요. 이 기기에서 메일의 링크를 열어 새 비밀번호를 설정해 주세요.');
+        setMessage('비밀번호 재설정 메일을 보냈습니다. 이 기기에서 링크를 열어 새 비밀번호를 설정해 주세요.');
       } else if (action === 'cleanup') {
         await manageAccount('cleanup-photos');
-        setMessage('삭제 대기 사진 정리를 완료했어요.');
+        setMessage('삭제 대기 사진 정리를 완료했습니다.');
       } else {
         await logout();
         navigate('/');
       }
     } catch {
       setActionError(action === 'reset'
-        ? '메일을 보내지 못했어요. 잠시 후 다시 시도해 주세요.'
+        ? '메일을 보내지 못했습니다. 잠시 후 다시 시도해 주세요.'
         : action === 'cleanup'
-          ? '사진 정리를 완료하지 못했어요. 잠시 후 다시 시도해 주세요.'
-          : '로그아웃을 완료하지 못했어요. 연결을 확인한 뒤 다시 시도해 주세요.');
+          ? '사진 정리를 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.'
+          : '로그아웃하지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.');
     } finally {
       setBusy(null);
     }
@@ -99,18 +99,18 @@ export default function AccountSettings() {
 
   return <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
     <TossCard style={{ padding: 20 }}>
-      <TossSectionTitle title="계정 정보" subtitle="가입 정보와 연락처를 확인해요." />
-      {loading && <p role="status" style={{ color: 'var(--text-muted)' }}>계정 정보를 불러오는 중이에요.</p>}
+      <TossSectionTitle title="계정 정보" subtitle="가입 정보와 연락처를 확인하세요." />
+      {loading && <p role="status" style={{ color: 'var(--text-muted)' }}>계정 정보를 불러오는 중입니다.</p>}
       {loadError && <>
-        <p role="alert">계정 정보를 불러오지 못했어요. 연결을 확인하고 다시 시도해 주세요.</p>
+        <p role="alert">계정 정보를 불러오지 못했습니다. 연결을 확인하고 다시 시도해 주세요.</p>
         <TossButton variant="outline" onClick={() => setRetry((value) => value + 1)}>계정 정보 다시 불러오기</TossButton>
       </>}
       {account && <>
         <dl style={{ margin: '18px 0', display: 'grid', gap: 12, fontSize: 14 }}>
-          <div><dt style={{ color: 'var(--text-muted)', marginBottom: 4 }}>닉네임 / 이름</dt><dd style={{ margin: 0, overflowWrap: 'anywhere', fontWeight: 700 }}>{currentDetails?.nickname || '등록된 닉네임이나 이름이 없어요'}</dd></div>
-          <div><dt style={{ color: 'var(--text-muted)', marginBottom: 4 }}>이메일 주소</dt><dd style={{ margin: 0, overflowWrap: 'anywhere', fontWeight: 700 }}>{account.email || '연결된 이메일이 없어요'}</dd></div>
-          <div><dt style={{ color: 'var(--text-muted)', marginBottom: 4 }}>휴대폰 번호</dt><dd style={{ margin: 0, overflowWrap: 'anywhere', fontWeight: 700 }}>{currentDetails?.phone || '등록된 휴대폰 번호가 없어요'}</dd></div>
-          <div><dt style={{ color: 'var(--text-muted)', marginBottom: 4 }}>로그인 방식</dt><dd style={{ margin: 0, fontWeight: 700 }}>{providers.map((provider) => providerLabels[provider] ?? '연결된 외부 계정').join(' · ') || '확인할 수 없어요'}</dd></div>
+          <div><dt style={{ color: 'var(--text-muted)', marginBottom: 4 }}>닉네임 / 이름</dt><dd style={{ margin: 0, overflowWrap: 'anywhere', fontWeight: 700 }}>{currentDetails?.nickname || '등록된 닉네임이나 이름이 없습니다'}</dd></div>
+          <div><dt style={{ color: 'var(--text-muted)', marginBottom: 4 }}>이메일 주소</dt><dd style={{ margin: 0, overflowWrap: 'anywhere', fontWeight: 700 }}>{account.email || '연결된 이메일이 없습니다'}</dd></div>
+          <div><dt style={{ color: 'var(--text-muted)', marginBottom: 4 }}>휴대폰 번호</dt><dd style={{ margin: 0, overflowWrap: 'anywhere', fontWeight: 700 }}>{currentDetails?.phone || '등록된 휴대폰 번호가 없습니다'}</dd></div>
+          <div><dt style={{ color: 'var(--text-muted)', marginBottom: 4 }}>로그인 방식</dt><dd style={{ margin: 0, fontWeight: 700 }}>{providers.map((provider) => providerLabels[provider] ?? '연결된 외부 계정').join(' · ') || '확인할 수 없습니다'}</dd></div>
         </dl>
         {canResetPassword
           ? <TossButton variant="outline" disabled={busy !== null || resetSent} onClick={() => void runAction('reset')}>{busy === 'reset' ? '메일을 보내는 중…' : '비밀번호 재설정 메일 받기'}</TossButton>
@@ -119,8 +119,8 @@ export default function AccountSettings() {
     </TossCard>
 
     <TossCard style={{ padding: 20 }}>
-      <TossSectionTitle title="데이터 관리" subtitle="사진 정리와 계정 삭제를 관리해요." />
-      <p style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--text-muted)' }}>기록에서 삭제했지만 정리가 끝나지 않은 사진이 있다면 다시 정리할 수 있어요.</p>
+      <TossSectionTitle title="데이터 관리" subtitle="사진 정리와 계정 삭제를 관리합니다." />
+      <p style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--text-muted)' }}>기록에서 삭제한 사진의 정리가 끝나지 않았다면 다시 시도할 수 있습니다.</p>
       <TossButton variant="outline" disabled={busy !== null} onClick={() => void runAction('cleanup')}>{busy === 'cleanup' ? '사진을 정리하는 중…' : '삭제 대기 사진 정리 다시 시도'}</TossButton>
       <Link to="/account/delete" style={{ ...settingsLinkStyle, marginTop: 10, color: 'var(--danger-strong)' }}>계정 및 데이터 삭제 <ChevronRight size={17} /></Link>
     </TossCard>

@@ -26,7 +26,7 @@ function Destination() {
   return <output data-testid="destination">{JSON.stringify({ path: location.pathname + location.search, state: location.state })}</output>;
 }
 const show = () => render(<HelmetProvider><MemoryRouter><Home /><Destination /></MemoryRouter></HelmetProvider>);
-const recommendationSection = () => screen.getByRole('region', { name: '로니한테 잘 맞는 제품' });
+const recommendationSection = () => screen.getByRole('region', { name: '로니에게 잘 맞는 제품' });
 
 beforeEach(() => {
   api.search.mockReset().mockResolvedValue({ products: [food], nextOffset: null });
@@ -41,7 +41,7 @@ describe('home recommendations', () => {
     useStore.setState({ products: [wrongSpecies] });
     api.search.mockResolvedValue({ products: [wrongSpecies], nextOffset: null });
     show();
-    await screen.findByText('현재 등록된 제품 중 궁합 점수 90점 이상인 제품이 없어요.');
+    await screen.findByText('현재 등록된 제품 중 궁합 점수 90점 이상인 제품이 없습니다.');
     expect(screen.queryByRole('button', { name: /테스트 닭고기 사료/ })).toBeNull();
   });
 
@@ -73,7 +73,7 @@ describe('home recommendations', () => {
     show();
     expect(screen.queryByText('궁합 점수 90점 이상')).toBeNull();
     expect(api.search).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: '우리 아이 등록하고 제품 궁합 알아보자!' }));
+    fireEvent.click(screen.getByRole('button', { name: '우리 아이를 등록하고 궁합을 확인해 주세요.' }));
     expect(JSON.parse(screen.getByTestId('destination').textContent!)).toEqual(isLoggedIn
       ? { path: '/profile?tab=pets', state: null }
       : { path: '/login', state: { from: '/profile?tab=pets' } });
@@ -82,11 +82,11 @@ describe('home recommendations', () => {
   it('replaces completed recommendations with registration guidance immediately on logout', async () => {
     show();
     await screen.findByText('로니 기준 궁합 점수 90점');
-    expect(screen.queryByRole('button', { name: '우리 아이 등록하고 제품 궁합 알아보자!' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '우리 아이를 등록하고 궁합을 확인해 주세요.' })).toBeNull();
     act(() => useStore.setState({ isLoggedIn: false }));
     expect(screen.queryByText(/기준 궁합 점수/)).toBeNull();
-    expect(screen.queryByRole('region', { name: '로니한테 잘 맞는 제품' })).toBeNull();
-    expect(screen.getByRole('button', { name: '우리 아이 등록하고 제품 궁합 알아보자!' })).toBeTruthy();
+    expect(screen.queryByRole('region', { name: '로니에게 잘 맞는 제품' })).toBeNull();
+    expect(screen.getByRole('button', { name: '우리 아이를 등록하고 궁합을 확인해 주세요.' })).toBeTruthy();
   });
 
   it('ignores a recommendation response that arrives after logout', async () => {
@@ -96,7 +96,7 @@ describe('home recommendations', () => {
     act(() => useStore.setState({ isLoggedIn: false }));
     await act(async () => resolvePage({ products: [food], nextOffset: null }));
     expect(screen.queryByText(/기준 궁합 점수/)).toBeNull();
-    expect(screen.getByRole('button', { name: '우리 아이 등록하고 제품 궁합 알아보자!' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '우리 아이를 등록하고 궁합을 확인해 주세요.' })).toBeTruthy();
   });
 
   it('hides the previous pet immediately and ignores an earlier response after switching pets', async () => {
@@ -118,14 +118,14 @@ describe('home recommendations', () => {
     await screen.findByText('로니 기준 궁합 점수 90점');
     act(() => useStore.setState({ profile: { ...dog, allergies: ['닭'] } }));
     expect(screen.queryByText('로니 기준 궁합 점수 90점')).toBeNull();
-    await screen.findByText('현재 등록된 제품 중 궁합 점수 90점 이상인 제품이 없어요.');
+    await screen.findByText('현재 등록된 제품 중 궁합 점수 90점 이상인 제품이 없습니다.');
   });
 
   it('distinguishes a fetch error from no qualifying products and supports retry', async () => {
     api.search.mockRejectedValueOnce(new Error('offline'));
     show();
-    await screen.findByText('추천 제품을 불러오지 못했어요.');
-    expect(screen.queryByText(/90점 이상인 제품이 없어요/)).toBeNull();
+    await screen.findByText('추천 제품을 불러오지 못했습니다.');
+    expect(screen.queryByText(/90점 이상인 제품이 없습니다/)).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
     await screen.findByText('로니 기준 궁합 점수 90점');
     await waitFor(() => expect(api.search).toHaveBeenCalledTimes(2));

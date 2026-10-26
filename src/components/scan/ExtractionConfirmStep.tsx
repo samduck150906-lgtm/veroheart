@@ -79,7 +79,7 @@ export default function ExtractionConfirmStep({ initial, busy, onSubmit }: Props
       <ComponentRows title="등록성분" rows={registeredComponents} onChange={setRegisteredComponents} />
       <label style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '14px 4px', fontSize: 13.5, fontWeight: 750, color: '#36352F' }}>
         <input type="checkbox" checked={agreed} onChange={(event) => setAgreed(event.target.checked)} />
-        라벨 내용이 실제 포장과 같아요
+        라벨 내용이 실제 포장과 일치합니다
       </label>
       <button type="button" disabled={!valid || busy} onClick={() => onSubmit({
         name: name.trim(), brand: brand.trim() || null, manufacturer: manufacturer.trim() || null,

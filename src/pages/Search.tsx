@@ -175,7 +175,7 @@ export default function Search() {
   //
   // 결과 조회(searchProducts)는 종 필터를 함께 걸기 때문에, 제안만 전체 목록에서
   // 뽑으면 고양이 보호자에게 강아지 전용 제품·그 제품에만 있는 성분이 뜨고,
-  // 눌렀을 때 "검색 결과가 없어요"가 된다. 아래 shownKeywords 가 이미 같은
+  // 눌렀을 때 "검색 결과가 없습니다"가 된다. 아래 shownKeywords 가 이미 같은
   // 이유로 productsForPetFilter 를 쓰고 있다 — 제안도 같은 기준을 따른다.
   const suggestibleProducts = useMemo(
     () => productsForPetFilter(
@@ -254,7 +254,7 @@ export default function Search() {
           });
         }
       } catch (err) {
-        if (!cancelled) { setSearchResults([]); setLoadError(err instanceof Error ? err.message : '제품을 불러오지 못했어요.'); }
+        if (!cancelled) { setSearchResults([]); setLoadError(err instanceof Error ? err.message : '제품을 불러오지 못했습니다.'); }
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -286,7 +286,7 @@ export default function Search() {
       setSearchResults(previous => [...new Map([...previous, ...page.products].map(p => [p.id, p])).values()]);
       setNextOffset(page.nextOffset);
     } catch (error) {
-      if (epoch === requestEpoch.current) setLoadError(error instanceof Error ? error.message : '제품을 불러오지 못했어요.');
+      if (epoch === requestEpoch.current) setLoadError(error instanceof Error ? error.message : '제품을 불러오지 못했습니다.');
     } finally {
       if (epoch === requestEpoch.current) setIsLoadingMore(false);
     }
@@ -576,7 +576,7 @@ export default function Search() {
             color: 'var(--vr-ink)', fontSize: '13px', lineHeight: 1.5,
           }}
         >
-          <strong>검색어와 일치하는 제품을 찾았어요.</strong>{' '}
+          <strong>검색어와 일치하는 제품을 찾았습니다.</strong>{' '}
           현재 카테고리나 반려동물·상세 필터와 맞지 않아 전체 제품에서 보여드리고 있습니다.
           <button
             type="button"
@@ -626,8 +626,8 @@ export default function Search() {
       {displayResults.length === 0 && !isLoading && nextOffset === null && !loadError && (
         <StateView
           variant="empty"
-          title="검색 결과가 없어요"
-          description="검색어를 바꾸거나 필터를 넓혀 보세요. 찾는 제품이 없다면 등록을 요청해 주세요."
+          title="검색 결과가 없습니다"
+          description="검색어를 바꾸거나 필터 범위를 넓혀 주세요. 찾는 제품이 없다면 등록을 요청해 주세요."
           action={{ label: '필터 조정', onClick: () => setIsFilterOpen(true) }}
           secondaryAction={{
             label: '＋ 제품 등록 요청하기',
@@ -758,7 +758,7 @@ export default function Search() {
           </div>
         </TossFilterSection> : (
           <div role="status" style={{ padding: '12px 14px', borderRadius: 12, background: 'var(--surface-alt)', color: 'var(--text-muted)', fontSize: 12.5, lineHeight: 1.5 }}>
-            건강 고민 정보가 더 채워지면 이 필터를 이용할 수 있어요.
+            건강 고민 정보가 보완되면 이 필터를 이용할 수 있습니다.
           </div>
         )}
 
@@ -825,7 +825,7 @@ export default function Search() {
               <SearchIcon size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               <input
                 type="text"
-                placeholder="어떤 성분이 궁금하신가요? (예: 귀리)"
+                placeholder="성분명 검색 (예: 귀리)"
                 value={standardFeedSearch}
                 onChange={(e) => setStandardFeedSearch(e.target.value)}
                 style={{ width: '100%', padding: '12px 12px 12px 38px', borderRadius: '12px', border: '1px solid var(--line)', outline: 'none', fontSize: '14px', backgroundColor: 'var(--surface-alt)', color: 'var(--text-dark)' }}
@@ -896,7 +896,7 @@ function StandardFeedDetailPanel({
   const groups = found
     ? detail.groups.filter((group) => Object.keys(found.values[group.key] ?? {}).length > 0)
     : [];
-  if (groups.length === 0) return <div style={note}>이 원료는 추가로 분석된 영양성분이 없어요.</div>;
+  if (groups.length === 0) return <div style={note}>이 원료는 추가로 분석된 영양성분이 없습니다.</div>;
 
   const usesDryMatter = groups.some((group) => group.nutrients.some(
     (nutrient) => nutrient.basis === 'dry_matter' && found!.values[group.key]?.[nutrient.key] !== undefined,
@@ -926,7 +926,7 @@ function StandardFeedDetailPanel({
         </div>
       ))}
       <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-        수치는 {detail.basis_label}{usesDryMatter ? ', * 표시는 건물(수분을 뺀 상태) 기준' : ''}이에요.
+        수치는 {detail.basis_label}{usesDryMatter ? ', * 표시는 건물(수분을 뺀 상태) 기준' : ''}입니다.
       </div>
     </div>
   );

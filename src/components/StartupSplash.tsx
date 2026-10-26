@@ -22,7 +22,7 @@ export default function StartupSplash({ onMinimumComplete }: { onMinimumComplete
           : <Wordmark height={44} onLoad={() => setAsset((current) => current === 'pending' ? 'loaded' : current)} onError={() => setAsset('fallback')} />}
         <div style={{ fontSize: '14.5px', fontWeight: 700, color: '#A5A596', letterSpacing: '-0.01em', textAlign: 'center', padding: '0 24px' }}>{SPLASH_TAGLINE}</div>
       </div>
-      <span style={{ position: 'absolute', bottom: 44, color: '#FFD90A', fontSize: 13 }}>앱을 준비하고 있어요</span>
+      <span style={{ position: 'absolute', bottom: 44, color: '#FFD90A', fontSize: 13 }}>앱을 준비하고 있습니다</span>
     </div>
   );
 }

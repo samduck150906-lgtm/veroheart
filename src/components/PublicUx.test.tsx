@@ -20,7 +20,7 @@ afterEach(cleanup);
 describe('public app language and actions', () => {
   it('keeps the personality quiz available when the reward promotion is not enabled', () => {
     render(<MemoryRouter><Test /></MemoryRouter>);
-    expect(screen.getByText('낯선 사람이 집에 오면 첫 반응은?')).toBeTruthy();
+    expect(screen.getByText('낯선 사람이 집에 오면 어떻게 반응하나요?')).toBeTruthy();
     expect(screen.queryByText(/이벤트가 종료/)).toBeNull();
   });
   it.each(['pending', undefined] as const)('does not expose an internal pending verification badge (%s)', (verificationStatus) => {

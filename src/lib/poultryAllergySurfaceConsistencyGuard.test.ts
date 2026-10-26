@@ -54,7 +54,7 @@ describe('poultry allergy surface consistency guard', () => {
 
     expect(feedAnalysis).toContain('allergyCautionMatches(ingredients, profile.allergies)');
     expect(feedAnalysis).toContain('allergyCautions.length > 0');
-    expect(feedAnalysis).toContain('알레르기와 관련된 원료가 있어 급여 전 확인이 필요해요');
+    expect(feedAnalysis).toContain('알레르기와 관련된 원료가 있어 급여 전 확인이 필요합니다');
     expect(feedAnalysis).not.toContain('score -= allergyCaution');
     expect(feedAnalysis).not.toContain('score += allergyCaution');
   });

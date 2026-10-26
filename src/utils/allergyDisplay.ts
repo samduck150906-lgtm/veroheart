@@ -67,7 +67,7 @@ export function buildAllergyDisplayState(
 
   if (options.hasIngredientData === true && options.analysisStatus === 'unavailable') {
     return { level: 'unknown', shortText: '원료 상세 확인 필요', summaryText: '전성분은 등록되었지만 원료별 분석이 준비되지 않아 알레르기 일치 여부를 모두 확인하지 못함',
-      unknownReason: 'partial_ingredients', notice: { badge: '원료 상세 확인 필요', title: '전성분은 등록되어 있어요', description: '원료별 특성을 모두 확인하지 못해 알레르기 일치 여부를 단정하지 않았어요. 아래 원료 목록을 확인해 주세요.' } };
+      unknownReason: 'partial_ingredients', notice: { badge: '원료 상세 확인 필요', title: '전성분은 등록되어 있습니다', description: '원료별 특성을 모두 확인하지 못해 알레르기 일치 여부를 단정하지 않았습니다. 아래 원료 목록을 확인해 주세요.' } };
   }
   if ((options.hasIngredientData === false || options.analysisStatus === 'unavailable') &&
       !options.unknownIngredientTerms?.length && options.analysisStatus !== 'partial' && options.analysisStatus !== 'blocked') {
@@ -78,8 +78,8 @@ export function buildAllergyDisplayState(
       unknownReason: 'missing_ingredients',
       notice: {
         badge: '원료 데이터 준비 중',
-        title: '아직 등록된 원료 정보가 없어요',
-        description: `제품의 전성분 정보가 준비되면 ${petName}의 알레르기와 비교해 알려드릴게요.`,
+        title: '아직 등록된 원료 정보가 없습니다',
+        description: `제품의 전성분 정보가 준비되면 ${petName}의 알레르기와 비교해 알려드립니다.`,
       },
     };
   }
@@ -92,8 +92,8 @@ export function buildAllergyDisplayState(
       unknownReason: 'missing_profile',
       notice: {
         badge: '맞춤 분석 준비',
-        title: '알레르기 프로필을 채워주세요',
-        description: '피해야 할 원료를 등록하면 이 제품의 전성분과 바로 비교해 드려요.',
+        title: '알레르기 프로필을 채워 주세요',
+        description: '피해야 할 원료를 등록하면 이 제품의 전성분과 바로 비교해 드립니다.',
         actionLabel: '알레르기 등록하기',
       },
     };
@@ -108,10 +108,10 @@ export function buildAllergyDisplayState(
       unknownReason: 'partial_ingredients',
       notice: {
         badge: '부분 분석',
-        title: '확인되지 않은 원료가 있어 부분 분석만 제공해요',
+        title: '확인되지 않은 원료가 있어 부분 분석만 제공합니다',
         description: examples.length > 0
           ? `아직 확인되지 않은 원료: ${examples.join(', ')}`
-          : '확인된 원료의 주의 항목은 표시했지만, 제품 전체가 안전하다고 판단할 수는 없어요.',
+          : '확인된 원료의 주의 항목은 표시했지만, 제품 전체가 안전하다고 판단할 수는 없습니다.',
       },
     };
   }
@@ -124,8 +124,8 @@ export function buildAllergyDisplayState(
       unknownReason: 'conflicting_ingredients',
       notice: {
         badge: '정보 확인 중',
-        title: '원료 정보가 서로 달라 확인이 필요해요',
-        description: '서로 다른 표기를 검토한 뒤 분석 결과를 다시 제공할게요.',
+        title: '원료 정보가 서로 달라 확인이 필요합니다',
+        description: '서로 다른 표기를 검토한 뒤 분석 결과를 다시 제공합니다.',
       },
     };
   }

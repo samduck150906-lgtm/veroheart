@@ -37,7 +37,7 @@ describe('analysis result evidence boundary', () => {
     show({...base,caloriesPer100g:123});
     fireEvent.click(screen.getByRole('button',{name:'영양소'}));
     expect(screen.getByText('123')).toBeTruthy();
-    expect(screen.getByText('라벨에 표시된 열량이에요')).toBeTruthy();
+    expect(screen.getByText('라벨에 표시된 열량입니다')).toBeTruthy();
     expect(screen.queryByText('390')).toBeNull();
   });
   it('does not invent missing macros or energy from a partial panel', () => {
@@ -50,13 +50,13 @@ describe('analysis result evidence boundary', () => {
   it('labels calculated calories as an estimate when the complete panel exists', () => {
     show({...base,guaranteedAnalysis:{crudeProtein:30,crudeFat:15,crudeFiber:3,crudeAsh:8,moisture:10}});
     fireEvent.click(screen.getByRole('button',{name:'영양소'}));
-    expect(screen.getByText('보장성분으로 계산한 추정 열량이에요')).toBeTruthy();
-    expect(screen.queryByText('라벨에 표시된 열량이에요')).toBeNull();
+    expect(screen.getByText('보장성분으로 계산한 추정 열량입니다')).toBeTruthy();
+    expect(screen.queryByText('라벨에 표시된 열량입니다')).toBeNull();
   });
   it('does not analyze an arbitrary first catalog product without a selection', () => {
     useStore.setState({products:[base]});
     show(null);
-    expect(screen.getByText('분석할 제품이 없어요')).toBeTruthy();
+    expect(screen.getByText('분석할 제품이 없습니다')).toBeTruthy();
     expect(screen.queryByText(base.name)).toBeNull();
   });
   it('does not substitute a stale selected product for an explicit different ID', () => {

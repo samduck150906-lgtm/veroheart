@@ -230,7 +230,7 @@ export default function FeedingLogForm({
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 900 * 1024) {
-      notify.warning('사진은 900KB 이하로 올려주세요. (더 작은 이미지를 선택해주세요)');
+      notify.warning('900KB 이하의 사진을 선택해 주세요.');
       e.target.value = '';
       return;
     }
@@ -291,7 +291,7 @@ export default function FeedingLogForm({
         : await createFeedingLog(userId, input);
       if (saved) {
         uploadedPath = null;
-        notify.success(isEditing ? '기록을 수정했어요.' : '섭취 기록을 저장했어요.');
+        notify.success(isEditing ? '기록을 수정했습니다.' : '섭취 기록을 저장했습니다.');
         onSaved(saved);
         onClose();
       }
@@ -523,7 +523,7 @@ export default function FeedingLogForm({
                       검색 결과가 없습니다.
                     </p>
                     <p style={{ margin: '0 0 12px', fontSize: '12px', color: 'var(--text-muted)' }}>
-                      제품이 없다면 직접 입력할 수 있어요.
+                      제품이 없다면 직접 입력할 수 있습니다.
                     </p>
                     <button
                       type="button"
@@ -784,11 +784,11 @@ export default function FeedingLogForm({
             type="text"
             value={reaction}
             onChange={(e) => setReaction(e.target.value)}
-            placeholder="먹은 뒤 반응 — 예: 두 번 토했어요, 가려워했어요"
+            placeholder="섭취 후 반응 — 예: 구토 2회, 가려움"
             style={fieldInput}
           />
           <p style={{ margin: '6px 0 0', fontSize: '11px', color: 'var(--text-light)', lineHeight: 1.5 }}>
-            먹은 뒤 나타난 반응을 적어 두면, 나중에 어떤 제품과 겹치는지 찾기 쉬워요.
+            섭취 후 반응을 기록하면 함께 먹은 제품을 확인하기 쉽습니다.
           </p>
         </div>
 
@@ -861,7 +861,7 @@ export default function FeedingLogForm({
 
         {!canSave && (
           <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Check size={13} /> 반려동물과 제품(또는 직접 입력)을 선택하면 저장할 수 있어요.
+            <Check size={13} /> 반려동물과 제품을 선택하면 저장할 수 있습니다. 제품은 직접 입력할 수도 있습니다.
           </p>
         )}
       </div>

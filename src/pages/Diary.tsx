@@ -10,8 +10,8 @@ export default function Diary() {
 
   if (!userId) return <StateView
     icon={<BookOpen size={30} />}
-    title="로그인하고 식이 기록을 시작해 보세요."
-    description="반려동물별로 먹은 음식과 반응을 기록할 수 있어요."
+    title="로그인 후 식이 기록을 시작해 주세요."
+    description="반려동물별로 먹은 음식과 반응을 기록할 수 있습니다."
     action={{ label: '로그인 / 회원가입', onClick: () => navigate('/login', { state: { from: '/diary' } }) }}
     minHeight={360}
   />;

@@ -46,7 +46,7 @@ describe('비교 판정', () => {
       expect(verdict.winner.id).toBe('a');
       expect(verdict.runnerUp.id).toBe('b');
       expect(verdict.reasons.length).toBeGreaterThan(0);
-      expect(verdict.reasons.join(' ')).toContain('2개 적어');
+      expect(verdict.reasons.join(' ')).toContain('2개 적습니다');
     }
   });
 

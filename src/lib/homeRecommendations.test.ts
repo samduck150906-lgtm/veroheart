@@ -87,6 +87,6 @@ describe('qualified home recommendations', () => {
     api.search.mockRejectedValueOnce(new Error('offline'));
     await expect(loadHomeRecommendations(profile)).rejects.toThrow('offline');
     api.search.mockResolvedValueOnce({ products: [], nextOffset: 0 });
-    await expect(loadHomeRecommendations(profile)).rejects.toThrow('추천 제품 페이지');
+    await expect(loadHomeRecommendations(profile)).rejects.toThrow('추천 제품을 불러오지 못했습니다.');
   });
 });

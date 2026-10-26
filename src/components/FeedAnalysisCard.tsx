@@ -109,7 +109,7 @@ export default function FeedAnalysisCard({ product, profile }: { product: Produc
         </div>
       ) : (
         <div style={{ background: 'var(--pdp-surface-soft)', borderRadius: 16, padding: '14px 16px', marginBottom: 14, fontSize: 12.5, fontWeight: 600, color: 'var(--pdp-ink-muted)', lineHeight: 1.5 }}>
-          {a.hasNutritionData ? '영양 수치가 일부만 등록되어 있어 영양 균형을 계산하지 않았어요.' : '라벨의 영양 수치(조단백·조지방 등)가 아직 등록되지 않았어요.'}
+          {a.hasNutritionData ? '영양 수치가 일부만 등록되어 영양 균형을 계산하지 않았습니다.' : '라벨의 영양 수치(조단백·조지방 등)가 등록되지 않았습니다.'}
         </div>
       )}
 

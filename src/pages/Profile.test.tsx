@@ -79,7 +79,7 @@ describe('Profile saved products', () => {
     h.state.products = [savedFood];
     h.savedProducts.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce([savedFood]);
     mount('/profile?tab=favorites');
-    expect((await screen.findByRole('alert')).textContent).toContain('불러오지 못했어요');
+    expect((await screen.findByRole('alert')).textContent).toContain('불러오지 못했습니다');
     expect(screen.queryByText('저장한 닭고기 사료')).toBeNull();
     expect(screen.queryByText('저장한 제품이 없습니다.')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: '저장한 제품 다시 불러오기' }));
@@ -99,7 +99,7 @@ describe('Profile saved products', () => {
     h.savedProducts.mockResolvedValueOnce([]);
     h.state.catalogRevision = 2;
     view.rerender(<MemoryRouter initialEntries={['/profile?tab=favorites']}><Profile /></MemoryRouter>);
-    await screen.findByText('저장한 제품 중 현재 볼 수 있는 제품이 없어요.');
+    await screen.findByText('저장한 제품 중 현재 볼 수 있는 제품이 없습니다.');
     await act(async () => finishOld([savedFood]));
     expect(screen.queryByText('저장한 닭고기 사료')).toBeNull();
   });
@@ -124,7 +124,7 @@ describe('Profile navigation and account settings', () => {
   it('opens real account details from the account row instead of leaving it inert', async () => {
     h.currentUser.mockResolvedValueOnce({ id: 'owner', email: 'owner@example.com', phone: '+821012345678', user_metadata: { nickname: '이전닉네임' }, app_metadata: { provider: 'email', providers: ['email'] } });
     mount();
-    fireEvent.click(screen.getByRole('link', { name: /로그인한 계정을 관리해요/ }));
+    fireEvent.click(screen.getByRole('link', { name: /로그인한 계정을 관리합니다/ }));
     expect(await screen.findByText('owner@example.com')).toBeTruthy();
     expect(screen.getByText('가입닉네임')).toBeTruthy();
     expect(screen.queryByText('이전닉네임')).toBeNull();
@@ -138,7 +138,7 @@ describe('Profile navigation and account settings', () => {
   it('shows an explicit unset phone state instead of inventing contact information', async () => {
     mount('/profile?tab=account');
     await screen.findByText('owner@example.com');
-    expect(screen.getByText('등록된 휴대폰 번호가 없어요')).toBeTruthy();
+    expect(screen.getByText('등록된 휴대폰 번호가 없습니다')).toBeTruthy();
     expect(screen.getByText('가입닉네임')).toBeTruthy();
   });
 
@@ -155,7 +155,7 @@ describe('Profile navigation and account settings', () => {
     h.userProfile.mockRejectedValueOnce(new Error('offline'));
     mount('/profile?tab=account');
     expect(await screen.findByRole('alert')).toBeTruthy();
-    expect(screen.queryByText('등록된 휴대폰 번호가 없어요')).toBeNull();
+    expect(screen.queryByText('등록된 휴대폰 번호가 없습니다')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: '계정 정보 다시 불러오기' }));
     expect(await screen.findByText('가입닉네임')).toBeTruthy();
   });
@@ -178,7 +178,7 @@ describe('Profile navigation and account settings', () => {
   it('redirects legacy diary links to the diary page without the account settings footer', async () => {
     mount('/profile?tab=diary');
     expect(await screen.findByRole('button', { name: '기록 검색' })).toBeTruthy();
-    expect(screen.queryByText('로그인한 계정을 관리해요')).toBeNull();
+    expect(screen.queryByText('로그인한 계정을 관리합니다')).toBeNull();
     expect(screen.queryByRole('link', { name: '계정 및 데이터 삭제' })).toBeNull();
   });
 
@@ -214,7 +214,7 @@ describe('Profile navigation and account settings', () => {
   it('keeps account details hidden after a failed load and lets the user retry', async () => {
     h.currentUser.mockRejectedValueOnce(new Error('offline'));
     mount('/profile?tab=account');
-    expect((await screen.findByRole('alert')).textContent).toContain('불러오지 못했어요');
+    expect((await screen.findByRole('alert')).textContent).toContain('불러오지 못했습니다');
     fireEvent.click(screen.getByRole('button', { name: '계정 정보 다시 불러오기' }));
     expect(await screen.findByText('owner@example.com')).toBeTruthy();
   });
@@ -254,7 +254,7 @@ describe('Profile navigation and account settings', () => {
     await screen.findByText('owner@example.com');
     const button = screen.getByRole('button', { name: '비밀번호 재설정 메일 받기' });
     fireEvent.click(button);
-    expect((await screen.findByRole('alert')).textContent).toContain('메일을 보내지 못했어요');
+    expect((await screen.findByRole('alert')).textContent).toContain('메일을 보내지 못했습니다');
     expect(button.hasAttribute('disabled')).toBe(false);
     expect(screen.queryByRole('status')).toBeNull();
     fireEvent.click(button);

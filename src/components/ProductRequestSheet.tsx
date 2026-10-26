@@ -71,7 +71,7 @@ export default function ProductRequestSheet({
         note,
       });
       if (result.ok === true) {
-        notify.success('등록 요청이 완료됐어요. 확인 후 반영할게요.');
+        notify.success('등록 요청을 접수했습니다. 확인 후 반영하겠습니다.');
         onClose();
         return;
       }
@@ -107,7 +107,7 @@ export default function ProductRequestSheet({
       )}
     >
       <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: 18 }}>
-        찾으시는 제품이 아직 베로로에 없어요. 알려 주시면 확인 후 등록할게요.
+        찾으시는 제품이 아직 없습니다. 등록을 요청하시면 확인 후 반영하겠습니다.
       </p>
 
       <div style={{ marginBottom: 16 }}>

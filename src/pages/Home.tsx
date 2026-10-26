@@ -70,14 +70,14 @@ export default function Home() {
     <div style={{ padding: '6px 0 28px' }}>
       <Helmet>
         <title>베로로 — 사료·간식·영양제 성분 분석</title>
-        <meta name="description" content="반려동물 사료·간식·영양제의 원재료와 성분을 분석하고, 먹은 제품을 기록하세요." />
+        <meta name="description" content="반려동물 사료·간식·영양제의 원재료와 성분을 분석하고, 먹은 제품을 기록해 주세요." />
       </Helmet>
 
       <h1 style={{ margin: '14px 0 4px', fontSize: '29px', fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 1.18 }}>
-        우리 아이한테<br />괜찮을까?
+        우리 아이에게<br />맞는지 확인해 주세요
       </h1>
       <p style={{ margin: '0 0 18px', fontSize: '14px', color: VR.muted, lineHeight: 1.5 }}>
-        성분 하나하나 뜯어서 등급으로 알려줄게.
+        성분을 분석해 등급으로 안내합니다.
       </p>
 
       {/* 1순위 액션 — 바코드 스캔 */}
@@ -187,7 +187,7 @@ export default function Home() {
           </span>
 
           <span style={{ display: 'block', marginTop: '11px', fontSize: '12.5px', fontWeight: 800, color: 'var(--danger-strong)' }}>
-            {petLabel} 프로필 기준으로 다시 스캔했어 →
+            {petLabel} 프로필 기준으로 다시 확인했습니다 →
           </span>
         </button>
       )}
@@ -244,23 +244,23 @@ export default function Home() {
         <section aria-labelledby="home-recommendations-title" aria-busy={recommendations.status === 'loading'} style={{ marginBottom: '24px' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 12px', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '8px' }}>
             <h2 id="home-recommendations-title" style={{ margin: 0, fontSize: '18px', fontWeight: 800, letterSpacing: '-0.03em' }}>
-              {petLabel}한테 잘 맞는 제품
+              {petLabel}에게 잘 맞는 제품
             </h2>
             <span style={{ fontSize: '11.5px', fontWeight: 700, color: VR.sub }}>궁합 점수 {HOME_RECOMMENDATION_MIN_SCORE}점 이상</span>
           </div>
           <p style={{ margin: '0 0 12px', fontSize: '12px', color: VR.sub, lineHeight: 1.5 }}>
-            등록된 원료·프로필을 바탕으로 계산한 참고 점수예요.
+            등록된 원료·프로필을 바탕으로 계산한 참고 점수입니다.
           </p>
-          {recommendations.status === 'loading' && <p role="status" style={{ fontSize: '13px', color: VR.sub }}>프로필에 맞는 제품을 찾고 있어요.</p>}
+          {recommendations.status === 'loading' && <p role="status" style={{ fontSize: '13px', color: VR.sub }}>프로필에 맞는 제품을 찾고 있습니다.</p>}
           {recommendations.status === 'error' && (
             <div role="status">
-              <p style={{ fontSize: '13px', color: VR.sub }}>추천 제품을 불러오지 못했어요.</p>
+              <p style={{ fontSize: '13px', color: VR.sub }}>추천 제품을 불러오지 못했습니다.</p>
               <button type="button" className="btn btn-outline" onClick={recommendations.retry}>다시 시도</button>
             </div>
           )}
           {recommendations.status === 'ready' && recommendations.items.length === 0 && (
             <p role="status" style={{ fontSize: '13px', color: VR.sub, lineHeight: 1.6 }}>
-              현재 등록된 제품 중 궁합 점수 {HOME_RECOMMENDATION_MIN_SCORE}점 이상인 제품이 없어요.
+              현재 등록된 제품 중 궁합 점수 {HOME_RECOMMENDATION_MIN_SCORE}점 이상인 제품이 없습니다.
             </p>
           )}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
@@ -325,7 +325,7 @@ export default function Home() {
             우리 아이 성향 테스트 8문항
           </span>
           <span style={{ display: 'block', fontSize: '12.5px', color: 'var(--vr-on-inverse-sub)', marginTop: '3px' }}>
-            성향 알면 사료 고르기 훨씬 쉬워져
+            성향을 알면 사료 선택이 쉬워집니다
           </span>
         </span>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFD90A" strokeWidth="2.4" strokeLinecap="round" aria-hidden>

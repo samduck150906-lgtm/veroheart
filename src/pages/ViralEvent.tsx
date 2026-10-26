@@ -25,7 +25,7 @@ export default function ViralEvent() {
   const shareUrl = useMemo(() => publicUrl(SHARE_PATH), []);
   const shareText = useMemo(
     () =>
-      `반려동물 성향 테스트 결과 공유 이벤트 참여해봐! ${VIRAL_EVENT_CONFIG.weeklyReward}, ${VIRAL_EVENT_CONFIG.monthlyReward} - ${shareUrl}`,
+      `반려동물 성향 테스트 결과 공유 이벤트에 참여해 주세요. ${VIRAL_EVENT_CONFIG.weeklyReward}, ${VIRAL_EVENT_CONFIG.monthlyReward} - ${shareUrl}`,
     [shareUrl]
   );
 
@@ -35,20 +35,20 @@ export default function ViralEvent() {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1600);
     } catch {
-      window.prompt('아래 문구를 복사해 사용하세요.', shareText);
+      window.prompt('아래 문구를 복사해 사용해 주세요.', shareText);
     }
   };
 
   const handleKakaoShare = async () => {
     if (!isKakaoShareConfigured()) {
-      notify.warning('카카오톡 공유를 사용할 수 없어요. 복사 버튼을 이용해 주세요.');
+      notify.warning('카카오톡 공유를 사용할 수 없습니다. 복사 버튼을 이용해 주세요.');
       return;
     }
     setKakaoSharing(true);
     try {
       await kakaoShareTextWithLink({ text: shareText, linkUrl: shareUrl });
     } catch {
-      notify.error('카카오톡 공유를 열지 못했어요. 복사 후 카톡에 붙여넣기 해 주세요.');
+      notify.error('카카오톡 공유를 열지 못했습니다. 복사 후 카카오톡에 붙여 넣어 주세요.');
     } finally {
       setKakaoSharing(false);
     }
@@ -58,9 +58,9 @@ export default function ViralEvent() {
   if (!viralEventVisible) {
     return (
       <div style={{ padding: '80px 24px', textAlign: 'center' }}>
-        <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '10px' }}>진행 중인 공유 이벤트가 없어요</h2>
+        <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '10px' }}>진행 중인 공유 이벤트가 없습니다</h2>
         <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
-          우리 아이 성향 테스트는 언제든 참여할 수 있어요.
+          우리 아이 성향 테스트는 언제든 참여할 수 있습니다.
         </p>
         <button type="button" className="btn btn-primary" onClick={() => navigate(SHARE_PATH)}>성향 테스트 시작하기</button>
       </div>
@@ -70,7 +70,7 @@ export default function ViralEvent() {
     <div style={{ padding: '0 0 24px' }}>
       <Helmet>
         <title>{`${VIRAL_EVENT_CONFIG.eventTitle} - 베로로`}</title>
-        <meta name="description" content="반려동물 성향 테스트 결과를 공유하고 리워드 이벤트에 참여하세요." />
+        <meta name="description" content="반려동물 성향 테스트 결과를 공유하고 리워드 이벤트에 참여해 주세요." />
       </Helmet>
 
       {/* 노란 히어로 */}
@@ -79,7 +79,7 @@ export default function ViralEvent() {
           친구 초대 이벤트
         </div>
         <h1 style={{ margin: '9px 0 0', fontSize: '31px', fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 1.2, color: '#15150F' }}>
-          친구도 우리 아이<br />사료 확인해봐
+          친구와 함께<br />사료를 확인해 주세요
         </h1>
         <p style={{ margin: '11px 0 0', fontSize: '14px', fontWeight: 600, color: '#5C4F00', lineHeight: 1.55 }}>
           결과를 공유하고 인증하면 {VIRAL_EVENT_CONFIG.weeklyReward}.

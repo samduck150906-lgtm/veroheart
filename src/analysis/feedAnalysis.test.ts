@@ -214,7 +214,7 @@ describe('analyzeFeed — 연어/어류 감지 및 데이터 부족 구분 (P0 �
     }), dogProfile);
     expect(a.analysisReadiness.status).toBe('partial');
     expect(a.summary).toContain('부분 분석');
-    expect(a.positives.join(' ')).not.toContain('위험·주의·합성첨가물 성분이 확인되지 않았어요');
+    expect(a.positives.join(' ')).not.toContain('위험·주의·합성첨가물 성분이 확인되지 않았습니다');
     expect(`${a.summary} ${a.positives.join(' ')}`).not.toMatch(/안전|문제없음/);
   });
 });

@@ -53,13 +53,13 @@ let lastExchange: { code: string; created: number; promise: Promise<{ intent: Au
 
 export async function completeAuthCallback(raw: string): Promise<{ intent: AuthIntent }> {
   const callback = readAuthCallback(raw);
-  if (!callback) throw new Error('올바른 인증 링크가 아니에요. 이메일 또는 로그인을 다시 요청해 주세요.');
-  if (callback.error) throw new Error('인증이 취소되었거나 실패했어요. 다시 시도해 주세요.');
-  if (!callback.code) throw new Error('인증 코드가 없어요. 다시 로그인해 주세요.');
+  if (!callback) throw new Error('올바른 인증 링크가 아닙니다. 이메일 또는 로그인을 다시 요청해 주세요.');
+  if (callback.error) throw new Error('인증이 취소되었거나 실패했습니다. 다시 시도해 주세요.');
+  if (!callback.code) throw new Error('인증 코드가 없습니다. 다시 로그인해 주세요.');
   if (lastExchange?.code === callback.code && Date.now() - lastExchange.created < 30_000) return lastExchange.promise;
   const promise = (async () => {
     const { data, error } = await supabase.auth.exchangeCodeForSession(callback.code!);
-    if (error || !data.session) throw new Error('인증 링크가 만료되었거나 요청한 기기와 달라요. 이 기기에서 다시 요청해 주세요.');
+    if (error || !data.session) throw new Error('인증 링크가 만료되었거나 요청한 기기와 다릅니다. 이 기기에서 다시 요청해 주세요.');
     return { intent: ('redirectType' in data && data.redirectType === 'recovery') || callback.intent === 'recovery' ? 'recovery' as const : 'signin' as const };
   })();
   lastExchange = { code: callback.code, created: Date.now(), promise };
@@ -68,7 +68,7 @@ export async function completeAuthCallback(raw: string): Promise<{ intent: AuthI
 
 export async function openAuthBrowser(raw: string): Promise<void> {
   const url = new URL(raw);
-  if (url.protocol !== 'https:' || url.username || url.password) throw new Error('안전한 인증 주소가 아니에요.');
+  if (url.protocol !== 'https:' || url.username || url.password) throw new Error('안전한 인증 주소가 아닙니다.');
   if (Capacitor.isNativePlatform()) await Browser.open({ url: url.href });
   else window.location.assign(url.href);
 }

@@ -94,21 +94,21 @@ export default function Test() {
   const handleCopy = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      alert('공유 문구를 복사했어요.');
+      alert('공유 문구를 복사했습니다.');
     } catch {
-      alert('복사에 실패했어요. 다시 시도해 주세요.');
+      alert('복사에 실패했습니다. 다시 시도해 주세요.');
     }
   };
 
   const shareText = result
-    ? `우리 아이 결과는 "${result.detail.type}"! ${result.detail.summary} 추천: ${result.detail.category}`
+    ? `우리 아이 결과는 "${result.detail.type}"입니다. ${result.detail.summary} 추천: ${result.detail.category}`
     : KAKAO_SHARE_MESSAGES[0];
 
   const testPageUrl = useMemo(() => publicUrl('/event/personality-quiz'), []);
 
   const handleKakaoShare = async () => {
     if (!isKakaoShareConfigured()) {
-      notify.warning('카카오톡 공유를 준비하고 있어요. 지금은 복사 버튼을 이용해 주세요.');
+      notify.warning('카카오톡 공유를 준비하고 있습니다. 지금은 복사 버튼을 이용해 주세요.');
       return;
     }
     setKakaoSharing(true);
@@ -120,9 +120,9 @@ export default function Test() {
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       if (msg === 'KAKAO_KEY_MISSING') {
-        notify.warning('카카오톡 공유를 사용할 수 없어요. 복사 버튼을 이용해 주세요.');
+        notify.warning('카카오톡 공유를 사용할 수 없습니다. 복사 버튼을 이용해 주세요.');
       } else {
-        notify.error('카카오톡 공유를 열지 못했어요. 잠시 후 다시 시도하거나 복사를 이용해 주세요.');
+        notify.error('카카오톡 공유를 열지 못했습니다. 잠시 후 다시 시도하거나 복사를 이용해 주세요.');
       }
     } finally {
       setKakaoSharing(false);
@@ -255,7 +255,7 @@ export default function Test() {
             </button>
             {!isKakaoShareConfigured() && (
               <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9CA3AF', lineHeight: 1.45 }}>
-                지금은 결과 복사 버튼으로 친구에게 공유할 수 있어요.
+                지금은 결과 복사 버튼으로 친구에게 공유할 수 있습니다.
               </p>
             )}
           </div>

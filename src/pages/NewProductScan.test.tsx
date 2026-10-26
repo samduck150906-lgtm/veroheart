@@ -62,7 +62,7 @@ describe('NewProductScan', () => {
   it('asks the visitor to log in before contributing', () => {
     useStore.setState({ isLoggedIn: false, userId: null });
     renderPage(api());
-    expect(screen.getByText('로그인 후 제품 정보를 등록할 수 있어요')).toBeTruthy();
+    expect(screen.getByText('로그인 후 제품 정보를 등록할 수 있습니다')).toBeTruthy();
     expect(screen.getByRole('link', { name: '로그인하기' }).getAttribute('href')).toContain('/login');
   });
 
@@ -84,7 +84,7 @@ describe('NewProductScan', () => {
 
     expect(await screen.findByDisplayValue('오리지널 독')).toBeTruthy();
     fireEvent.change(screen.getByLabelText('제품명'), { target: { value: '오리지널 독 수정' } });
-    fireEvent.click(screen.getByLabelText('라벨 내용이 실제 포장과 같아요'));
+    fireEvent.click(screen.getByLabelText('라벨 내용이 실제 포장과 일치합니다'));
     fireEvent.click(screen.getByRole('button', { name: '확인하고 공개하기' }));
 
     await waitFor(() => expect(client.confirmExtraction).toHaveBeenCalledWith(

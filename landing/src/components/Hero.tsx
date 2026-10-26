@@ -21,14 +21,14 @@ export function Hero() {
             <h1 className="mt-5 text-balance text-[2.5rem] font-extrabold leading-[1.08] tracking-tightest text-ink-950 sm:text-6xl lg:text-[3.6rem]">
               우리 아이 먹거리,
               <br />
-              <span className="text-accent">성분부터 확인해요.</span>
+              <span className="text-accent">성분부터 확인해 주세요.</span>
             </h1>
           </Reveal>
 
           <Reveal delayMs={140}>
             <p className="mt-7 max-w-lg text-pretty text-lg leading-relaxed text-ink-700">
               제품명이나 성분을 검색하고, 성분표를 촬영하면 원재료와 영양정보를
-              우리 아이 기준으로 알기 쉽게 정리해 드려요.
+              우리 아이 기준으로 알기 쉽게 정리합니다.
             </p>
           </Reveal>
 
@@ -54,8 +54,8 @@ export function Hero() {
 
           <Reveal delayMs={260}>
             <p className="mt-6 text-sm leading-relaxed text-ink-500">
-              정식 출시 전에 가장 먼저 소식을 전해 드릴게요. 광고성 메시지를
-              무분별하게 보내지 않아요.
+              정식 출시 전에 가장 먼저 소식을 전해 드립니다. 광고성 메시지를
+              무분별하게 보내지 않습니다.
             </p>
           </Reveal>
 
@@ -83,7 +83,7 @@ export function Hero() {
                 </div>
                 <div className="rounded-xl border border-ink-950/10 bg-paper p-3.5">
                   <p className="text-[10px] font-semibold uppercase tracking-wide text-ink-500">
-                    코코(고양이)에게 대체로 잘 맞아요
+                    코코(고양이)에게 대체로 잘 맞습니다
                   </p>
                   <p className="mt-1 text-sm font-bold text-ink-950">
                     연어, 현미, 완두단백…
@@ -98,7 +98,7 @@ export function Hero() {
                   </div>
                 </div>
                 <p className="px-1 text-[10px] leading-relaxed text-ink-500">
-                  예시 화면입니다. 실제 분석 결과는 제품마다 다를 수 있어요.
+                  예시 화면입니다. 실제 분석 결과는 제품마다 다를 수 있습니다.
                 </p>
               </div>
             </PhoneMockup>

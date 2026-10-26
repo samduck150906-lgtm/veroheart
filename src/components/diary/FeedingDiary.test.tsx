@@ -45,13 +45,13 @@ describe('FeedingDiary', () => {
 
   it('shows the "register a pet first" empty state when there are no pets', () => {
     render();
-    expect(screen.getByText(/반려동물을 먼저 등록/)).toBeTruthy();
+    expect(screen.getByText('식이 기록을 시작하려면 반려동물을 등록해 주세요.')).toBeTruthy();
   });
 
   it('renders the pet selector, calendar and search when a pet exists', async () => {
     h.state = { pets: [choco], activePetId: 'p1', userId: 'u1' };
     render();
-    await screen.findByText('아직 기록된 식사가 없어요.');
+    await screen.findByText('아직 식사 기록이 없습니다.');
     expect(screen.getByRole('button', { name: /초코/ })).toBeTruthy();
     expect(screen.getByText(/말티즈/)).toBeTruthy();
     expect(screen.getByRole('button', { name: '주간 보기' })).toBeTruthy();
@@ -62,7 +62,7 @@ describe('FeedingDiary', () => {
     h.state = { pets: [choco], activePetId: 'p1', userId: 'u1' };
     render();
     fireEvent.click(screen.getByRole('button', { name: mode }));
-    await screen.findByText('아직 기록된 식사가 없어요.');
+    await screen.findByText('아직 식사 기록이 없습니다.');
     const addActions = screen.getAllByRole('button', { name: /기록 추가/ });
     expect(addActions).toHaveLength(1);
     fireEvent.click(addActions[0]);

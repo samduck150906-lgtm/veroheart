@@ -67,8 +67,8 @@ export function readinessFromStoredStatus(
 }
 
 export function analysisReadinessCopy(status: AnalysisReadinessStatus): string {
-  if (status === 'partial') return '확인되지 않은 원료가 있어 부분 분석만 제공해요';
-  if (status === 'blocked') return '원료 정보가 서로 달라 확인이 필요해요';
-  if (status === 'unavailable') return '등록된 원료 정보가 없어요';
-  return '원료 분석이 완료됐어요';
+  if (status === 'partial') return '확인되지 않은 원료가 있어 부분 분석만 제공합니다';
+  if (status === 'blocked') return '원료 정보가 서로 달라 확인이 필요합니다';
+  if (status === 'unavailable') return '등록된 원료 정보가 없습니다';
+  return '원료 분석이 완료되었습니다';
 }
