@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { useStore } from '../store/useStore';
-import { DEFAULT_USER_PET_PROFILE } from '../types';
+import { DEFAULT_USER_PET_PROFILE, type Ingredient } from '../types';
 import PetCompatibilityPrompt from '../components/PetCompatibilityPrompt';
 import FeedingLogForm from '../components/diary/FeedingLogForm';
 import { productTypeToFeedingType } from '../components/diary/feedingConstants';
@@ -69,8 +69,6 @@ import {
 } from '../utils/productDataCompleteness';
 import { buildProductMetadata } from '../lib/productMetadata';
 
-interface Ingredient { nameKo: string; nameEn?: string; purpose?: string; riskLevel?: string; isAllergy?: boolean; }
-
 /**
  * 정보 충실도 배지의 색.
  *
@@ -97,6 +95,7 @@ export default function Detail() {
     userId,
     pets,
     activePetId,
+    selectPet,
     trackRecentView,
     favorites,
     toggleFavorite,
@@ -425,6 +424,39 @@ export default function Detail() {
       <OfflineBanner online={online} />
       {analysisReady && <StickyScoreBar score={safetyScore} name={productDisplay.name} visible={showStickyScore} progress={scrollProgress} />}
 
+      {isLoggedIn && userId && pets.length > 1 && (
+        <section style={{ padding: 16, marginBottom: 16, borderRadius: 20, background: 'var(--surface)', border: '1px solid var(--line)' }}>
+          <h2 style={{ margin: '0 0 5px', fontSize: 16, fontWeight: 800 }}>궁합을 확인할 아이</h2>
+          <p style={{ margin: '0 0 12px', fontSize: 12, color: 'var(--text-muted)' }}>등록순 · 아이를 누르면 궁합이 바뀌어요</p>
+          <div role="group" aria-label="궁합을 확인할 반려동물" style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {pets.map(pet => {
+              const active = activePetId === pet.id;
+              const PetIcon = pet.species === 'Cat' ? Cat : Dog;
+              return (
+                <button
+                  key={pet.id}
+                  type="button"
+                  aria-label={`${pet.name} 선택`}
+                  aria-pressed={active}
+                  onClick={() => selectPet(pet.id)}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 7, minHeight: 44, maxWidth: '100%',
+                    padding: '9px 13px', borderRadius: 14, cursor: 'pointer', textAlign: 'left',
+                    border: active ? '2px solid var(--vr-ink)' : '2px solid var(--line)',
+                    background: active ? 'var(--primary)' : 'var(--surface)', color: active ? '#15150F' : 'var(--text-dark)',
+                    fontSize: 14, fontWeight: active ? 800 : 600,
+                  }}
+                >
+                  <PetIcon size={18} style={{ flexShrink: 0 }} aria-hidden />
+                  <span style={{ overflowWrap: 'anywhere', minWidth: 0 }}>{pet.name}</span>
+                  {active && <Check size={16} style={{ flexShrink: 0 }} aria-hidden />}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {conclusion && (
         <section
           aria-label="맞춤 결론"
@@ -557,7 +589,7 @@ export default function Detail() {
       </button>
 
       <GlanceGrid tiles={glanceTiles} />
-      {analysisReady && personalized && <FitForPetCard petName={profile.name} percent={safetyScore} chips={fitChips} reasons={breakdown.reasons} />}
+      {analysisReady && personalized && <FitForPetCard key={profile.id} petName={profile.name} percent={safetyScore} chips={fitChips} reasons={breakdown.reasons} />}
       {!personalized && <div style={{ marginBottom: 16 }}><PetCompatibilityPrompt /></div>}
       <div style={{ marginBottom: 16 }}>
         <HealthConcernEvidence presentation={concernPresentation} />
@@ -773,7 +805,7 @@ export default function Detail() {
               <IngredientCard
                 key={ing.id}
                 ing={{ ...ing, isAllergy }}
-                onOpen={() => setSelectedIngredient({ ...ing, isAllergy })}
+                onOpen={() => setSelectedIngredient(ing)}
               />
             ))}
         </div>
@@ -797,7 +829,7 @@ export default function Detail() {
               {selectedIngredient.nameEn} · {selectedIngredient.purpose}
             </div>
             
-            {personalized && selectedIngredient.isAllergy ? (
+            {personalized && isAllergyIngredient(selectedIngredient, profile.allergies) ? (
               <div style={{ backgroundColor: '#FEE2E2', padding: '20px', borderRadius: '16px', color: '#F04452', fontWeight: 700, fontSize: '16px', lineHeight: 1.5 }}>
                 {profile.name}의 알레르기 유발 성분입니다. 절대 급여하지 마세요!
               </div>
