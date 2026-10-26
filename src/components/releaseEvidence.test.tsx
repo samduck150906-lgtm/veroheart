@@ -32,7 +32,7 @@ describe('public surfaces preserve unresolved evidence', () => {
     prepare();
     render(<MemoryRouter><ProductRow product={unknown} /></MemoryRouter>);
     expect(screen.getByText('원료 상세 확인 필요')).toBeTruthy();
-    expect(screen.getByText('원료 확인 필요')).toBeTruthy();
+    expect(screen.getByRole('button', { name: '우리 아이 등록하고 제품 궁합 알아보자!' })).toBeTruthy();
     expect(screen.queryByText(/^[A-F] \d+$/)).toBeNull();
   });
   it('comparison does not call two unanalysed products similarly suitable', () => {

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { useStore } from '../store/useStore';
 import { DEFAULT_USER_PET_PROFILE, type Product, type UserPetProfile } from '../types';
@@ -21,7 +21,11 @@ const food: Product = {
   imageUrl: '', reviewsCount: 0, averageRating: 0, analysisStatus: 'ready',
   ingredients: [{ id: 'chicken', nameKo: '닭고기', nameEn: 'chicken', purpose: '', riskLevel: 'safe' }],
 };
-const show = () => render(<HelmetProvider><MemoryRouter><Home /></MemoryRouter></HelmetProvider>);
+function Destination() {
+  const location = useLocation();
+  return <output data-testid="destination">{JSON.stringify({ path: location.pathname + location.search, state: location.state })}</output>;
+}
+const show = () => render(<HelmetProvider><MemoryRouter><Home /><Destination /></MemoryRouter></HelmetProvider>);
 const recommendationSection = () => screen.getByRole('region', { name: '로니한테 잘 맞는 제품' });
 
 beforeEach(() => {
@@ -69,6 +73,30 @@ describe('home recommendations', () => {
     show();
     expect(screen.queryByText('궁합 점수 90점 이상')).toBeNull();
     expect(api.search).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: '우리 아이 등록하고 제품 궁합 알아보자!' }));
+    expect(JSON.parse(screen.getByTestId('destination').textContent!)).toEqual(isLoggedIn
+      ? { path: '/profile?tab=pets', state: null }
+      : { path: '/login', state: { from: '/profile?tab=pets' } });
+  });
+
+  it('replaces completed recommendations with registration guidance immediately on logout', async () => {
+    show();
+    await screen.findByText('로니 기준 궁합 점수 90점');
+    expect(screen.queryByRole('button', { name: '우리 아이 등록하고 제품 궁합 알아보자!' })).toBeNull();
+    act(() => useStore.setState({ isLoggedIn: false }));
+    expect(screen.queryByText(/기준 궁합 점수/)).toBeNull();
+    expect(screen.queryByRole('region', { name: '로니한테 잘 맞는 제품' })).toBeNull();
+    expect(screen.getByRole('button', { name: '우리 아이 등록하고 제품 궁합 알아보자!' })).toBeTruthy();
+  });
+
+  it('ignores a recommendation response that arrives after logout', async () => {
+    let resolvePage!: (page: { products: Product[]; nextOffset: null }) => void;
+    api.search.mockReturnValueOnce(new Promise((resolve) => { resolvePage = resolve; }));
+    show();
+    act(() => useStore.setState({ isLoggedIn: false }));
+    await act(async () => resolvePage({ products: [food], nextOffset: null }));
+    expect(screen.queryByText(/기준 궁합 점수/)).toBeNull();
+    expect(screen.getByRole('button', { name: '우리 아이 등록하고 제품 궁합 알아보자!' })).toBeTruthy();
   });
 
   it('hides the previous pet immediately and ignores an earlier response after switching pets', async () => {

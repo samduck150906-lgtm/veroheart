@@ -3,7 +3,8 @@ import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import ProductThumb from '../components/ProductThumb';
-import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
+import { isRealPetProfile, resolveProductDisplayVerdict } from '../utils/displayVerdict';
+import PetCompatibilityPrompt from '../components/PetCompatibilityPrompt';
 import { normalizeProductDisplayName, resolveBrandLabel } from '../utils/productDisplay';
 import { gradePalette, VR } from '../lib/veroroDesign';
 import { useProductCategories } from '../lib/productCategories';
@@ -11,7 +12,7 @@ import { HOME_RECOMMENDATION_MIN_SCORE } from '../lib/homeRecommendations';
 import { useHomeRecommendations } from '../hooks/useHomeRecommendations';
 import { describeIngredientAvailability } from '../utils/productDataCompleteness';
 import type { PetSafetyScan } from '../utils/petSafety';
-import type { Product } from '../types';
+import { DEFAULT_USER_PET_PROFILE, type Product } from '../types';
 
 // 카테고리 목록·순서는 관리자 콘솔(카테고리 관리)이 단일 원본이다.
 // name 은 DB products.main_category 값과 글자 그대로 대조된다.
@@ -22,10 +23,11 @@ export default function Home() {
   const { profile, recentViews, isLoggedIn, catalogRevision } = useStore();
   const navigate = useNavigate();
   const categories = useProductCategories();
+  const hasPetProfile = isLoggedIn && isRealPetProfile(profile);
 
   const [safetyScan, setSafetyScan] = useState<PetSafetyScan | null>(null);
   useEffect(() => {
-    if (recentViews.length === 0) {
+    if (!hasPetProfile || recentViews.length === 0) {
       setSafetyScan(null);
       return;
     }
@@ -36,7 +38,7 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-  }, [recentViews, profile]);
+  }, [recentViews, profile, hasPetProfile]);
 
   const petLabel = isLoggedIn && profile.name ? profile.name : '우리 아이';
 
@@ -44,7 +46,7 @@ export default function Home() {
 
   /** 최근 본 제품에서 걸린 성분들 — 위험/주의 두 단계로 나눠 보여준다 */
   const alertRows = useMemo(() => {
-    if (!safetyScan) return [];
+    if (!hasPetProfile || !safetyScan) return [];
     const dangerSet = new Set(safetyScan.dangerNames);
     return safetyScan.flagged
       .flatMap((f) =>
@@ -56,13 +58,13 @@ export default function Home() {
         }))
       )
       .slice(0, 3);
-  }, [safetyScan]);
+  }, [safetyScan, hasPetProfile]);
 
   const openProduct = (id: string) => navigate(`/product/${id}`);
   const goCategory = (category: string) =>
     navigate({ pathname: '/search', search: `?category=${encodeURIComponent(category)}` });
 
-  const gradeOf = (product: Product) => resolveProductDisplayVerdict(product, profile);
+  const gradeOf = (product: Product) => resolveProductDisplayVerdict(product, hasPetProfile ? profile : DEFAULT_USER_PET_PROFILE);
 
   return (
     <div style={{ padding: '6px 0 28px' }}>
@@ -235,6 +237,9 @@ export default function Home() {
       )}
 
       {/* 프로필 기반 추천 */}
+      {!recommendations.enabled && (
+        <div style={{ marginBottom: '24px' }}><PetCompatibilityPrompt /></div>
+      )}
       {recommendations.enabled && (
         <section aria-labelledby="home-recommendations-title" aria-busy={recommendations.status === 'loading'} style={{ marginBottom: '24px' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 12px', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '8px' }}>

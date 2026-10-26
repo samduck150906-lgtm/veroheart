@@ -2,11 +2,12 @@ import { useNavigate } from 'react-router-dom';
 import ProductThumb from './ProductThumb';
 import { useStore } from '../store/useStore';
 import { describeIngredientAvailability } from '../utils/productDataCompleteness';
-import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
+import { isRealPetProfile, resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import { getProductDisplayParts } from '../utils/productDisplay';
 import { fitShortLabel, gradePalette, VR } from '../lib/veroroDesign';
-import type { Product } from '../types';
+import { DEFAULT_USER_PET_PROFILE, type Product } from '../types';
 import ProductVerificationBadge from './ProductVerificationBadge';
+import PetCompatibilityPrompt from './PetCompatibilityPrompt';
 
 interface ProductRowProps {
   product: Product;
@@ -18,9 +19,10 @@ interface ProductRowProps {
  */
 export default function ProductRow({ product }: ProductRowProps) {
   const navigate = useNavigate();
-  const { profile, favorites, toggleFavorite } = useStore();
+  const { profile, favorites, toggleFavorite, isLoggedIn } = useStore();
+  const hasPetProfile = isLoggedIn && isRealPetProfile(profile);
 
-  const { score, grade, canShowScore } = resolveProductDisplayVerdict(product, profile);
+  const { score, grade, canShowScore } = resolveProductDisplayVerdict(product, hasPetProfile ? profile : DEFAULT_USER_PET_PROFILE);
   const palette = canShowScore ? gradePalette(grade) : { fg: 'var(--text-muted)', bg: 'var(--vr-soft)' };
   const isFav = favorites.includes(product.id);
   const petName = profile.name || '우리 아이';
@@ -55,7 +57,7 @@ export default function ProductRow({ product }: ProductRowProps) {
                 color: palette.fg, background: palette.bg,
               }}
             >
-              {canShowScore ? `${grade} ${score}` : describeIngredientAvailability(product).label}
+              {canShowScore ? `${hasPetProfile ? '' : '원료 '}${grade} ${score}` : describeIngredientAvailability(product).label}
             </span>
           </span>
           <span style={{
@@ -96,10 +98,11 @@ export default function ProductRow({ product }: ProductRowProps) {
           >
             {isFav ? '찜 해제' : '찜'}
           </button>
-          <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--safe-strong)', marginLeft: 'auto' }}>
+          {hasPetProfile && <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--safe-strong)', marginLeft: 'auto' }}>
             {canShowScore ? fitShortLabel(score, petName) : '원료 확인 필요'}
-          </span>
+          </span>}
         </div>
+        {!hasPetProfile && <div style={{ marginTop: 8 }}><PetCompatibilityPrompt compact /></div>}
       </div>
     </div>
   );

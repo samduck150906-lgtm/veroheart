@@ -22,6 +22,8 @@ import {
 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { useStore } from '../store/useStore';
+import { DEFAULT_USER_PET_PROFILE } from '../types';
+import PetCompatibilityPrompt from '../components/PetCompatibilityPrompt';
 import FeedingLogForm from '../components/diary/FeedingLogForm';
 import { productTypeToFeedingType } from '../components/diary/feedingConstants';
 import { generateAnalysisReport } from '../utils/analysis';
@@ -86,7 +88,8 @@ export default function Detail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const {
-    profile,
+    profile: storedProfile,
+    isLoggedIn,
     selectedProduct: product,
     isLoadingProducts,
     fetchProductDetail,
@@ -98,6 +101,7 @@ export default function Detail() {
     favorites,
     toggleFavorite,
   } = useStore();
+  const profile = isLoggedIn ? storedProfile : DEFAULT_USER_PET_PROFILE;
 
   const [logFormOpen, setLogFormOpen] = useState(false);
 
@@ -222,7 +226,7 @@ export default function Detail() {
   );
 
   const report = product ? generateAnalysisReport(product, profile) : null;
-  const personalized = isRealPetProfile(profile);
+  const personalized = isLoggedIn && isRealPetProfile(profile);
   const isFav = favorites.includes(product?.id || '');
   const productDisplay = getProductDisplayParts(product);
   const brandLabel = productDisplay.brand;
@@ -248,7 +252,7 @@ export default function Detail() {
   const concernPresentation = personalized
     ? buildHealthConcernPresentation(breakdown.healthConcernPolicy)
     : null;
-  const conclusion = report && analysisReady
+  const conclusion = report && analysisReady && personalized
     ? buildProductConclusion(product, profile, { ...report, score: safetyScore }, { personalized })
     : null;
   const petTypeLabel =
@@ -320,7 +324,9 @@ export default function Detail() {
     },
     {
       icon: <Check size={16} />,
-      text: analysisReady
+      text: !personalized
+        ? '결론: 우리 아이를 등록하면 제품 궁합을 확인할 수 있어요.'
+        : analysisReady
         ? `결론: ${profile.name}의 현재 궁합 점수는 ${safetyScore}점이에요. ${safetyScore >= 75 ? '아래 근거와 정보 부족 항목을 함께 확인해 주세요.' : safetyScore >= 60 ? '급여 시 소량부터 확인하세요.' : '대체 상품을 함께 검토하세요.'}`
         : '결론: 원료 검토가 끝난 뒤 전체 궁합 판정을 제공할게요.',
     },
@@ -541,7 +547,7 @@ export default function Detail() {
           </span>
           <span style={{ display: 'block', fontSize: '12.5px', color: 'var(--vr-on-inverse-sub)', marginTop: '3px' }}>
             {analysisReady
-              ? `성분 ${product.ingredients?.length ?? 0}개 분석 · ${profile.name} 기준 리포트 보기`
+              ? `성분 ${product.ingredients?.length ?? 0}개 분석 · ${personalized ? `${profile.name} 기준` : '원료 정보'} 리포트 보기`
               : `확인된 원료 ${product.ingredients?.length ?? 0}개 · 검토 상태 보기`}
           </span>
         </span>
@@ -551,7 +557,8 @@ export default function Detail() {
       </button>
 
       <GlanceGrid tiles={glanceTiles} />
-      {analysisReady && <FitForPetCard petName={profile.name} percent={safetyScore} chips={fitChips} reasons={breakdown.reasons} />}
+      {analysisReady && personalized && <FitForPetCard petName={profile.name} percent={safetyScore} chips={fitChips} reasons={breakdown.reasons} />}
+      {!personalized && <div style={{ marginBottom: 16 }}><PetCompatibilityPrompt /></div>}
       <div style={{ marginBottom: 16 }}>
         <HealthConcernEvidence presentation={concernPresentation} />
       </div>
@@ -790,7 +797,7 @@ export default function Detail() {
               {selectedIngredient.nameEn} · {selectedIngredient.purpose}
             </div>
             
-            {selectedIngredient.isAllergy ? (
+            {personalized && selectedIngredient.isAllergy ? (
               <div style={{ backgroundColor: '#FEE2E2', padding: '20px', borderRadius: '16px', color: '#F04452', fontWeight: 700, fontSize: '16px', lineHeight: 1.5 }}>
                 {profile.name}의 알레르기 유발 성분입니다. 절대 급여하지 마세요!
               </div>
