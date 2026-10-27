@@ -1,24 +1,29 @@
 import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor, cleanup, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, cleanup, act, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import type { AdminProductRow, ProductListParams } from '../../lib/adminApi';
 
 const h = vi.hoisted(() => ({
   setProductPinned: vi.fn(),
   fetchProductsPage: vi.fn(),
+  fetchProductForEdit: vi.fn(),
+  fetchProductEditBundle: vi.fn(),
   fetchProductIngredients: vi.fn(),
   saveProduct: vi.fn(),
   setProductVisibility: vi.fn(),
   deleteProduct: vi.fn(),
   uploadProductImage: vi.fn(),
   searchIngredients: vi.fn(),
+  notifySuccess: vi.fn(),
 }));
 
 vi.mock('../../lib/adminApi', () => ({
   fetchCategories: () => Promise.resolve([]),
   setProductPinned: h.setProductPinned,
   fetchProductsPage: h.fetchProductsPage,
+  fetchProductForEdit: h.fetchProductForEdit,
+  fetchProductEditBundle: h.fetchProductEditBundle,
   fetchProductIngredients: h.fetchProductIngredients,
   saveProduct: h.saveProduct,
   setProductVisibility: h.setProductVisibility,
@@ -37,7 +42,7 @@ vi.mock('../../lib/supabase', () => ({
 }));
 
 vi.mock('../../store/useNotification', () => ({
-  notify: { success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() },
+  notify: { success: h.notifySuccess, error: vi.fn(), info: vi.fn(), warning: vi.fn() },
 }));
 
 import AdminProducts from './AdminProducts';
@@ -54,6 +59,9 @@ function makeRow(index: number): AdminProductRow {
     image_url: null,
     min_price: 10000,
     is_visible: true,
+    verification_status: 'verified',
+    is_pinned: false,
+    pinned_order: 0,
     created_at: '2026-07-20T00:00:00Z',
   };
 }
@@ -80,6 +88,9 @@ describe('AdminProducts', () => {
       total: 45,
     });
     h.fetchProductIngredients.mockReset().mockResolvedValue([]);
+    h.fetchProductForEdit.mockReset().mockResolvedValue(null);
+    h.fetchProductEditBundle.mockReset().mockResolvedValue({ product: makeRow(1), nutrition: null, ingredients: [] });
+    h.notifySuccess.mockReset();
     h.saveProduct.mockReset().mockResolvedValue({
       id: 'p1',
       product: {
@@ -176,7 +187,7 @@ describe('AdminProducts', () => {
     renderProducts();
     await screen.findByText('테스트 사료 1');
 
-    fireEvent.change(screen.getByLabelText('앱 노출'), { target: { value: 'hidden' } });
+    fireEvent.change(screen.getByLabelText('노출 설정'), { target: { value: 'hidden' } });
 
     await waitFor(() => {
       const last = h.fetchProductsPage.mock.calls.at(-1)?.[0] as ProductListParams;
@@ -189,12 +200,134 @@ describe('AdminProducts', () => {
     renderProducts();
     await screen.findByText('테스트 사료 1');
 
-    fireEvent.click(screen.getByLabelText('테스트 사료 1 앱 비노출로 변경'));
+    fireEvent.click(screen.getByLabelText('테스트 사료 1 노출 설정 끄기'));
 
     await waitFor(() => {
       expect(h.setProductVisibility).toHaveBeenCalledWith(makeRow(1).id, false);
     });
-    expect(screen.getByLabelText('테스트 사료 1 앱 노출로 변경')).toBeTruthy();
+    expect(screen.getByLabelText('테스트 사료 1 노출 설정 켜기')).toBeTruthy();
+  });
+
+  it.each(['pending', null] as const)('노출 설정이 켜져 있어도 %s 제품은 앱 비공개로 표시한다', async (status) => {
+    h.fetchProductsPage.mockResolvedValue({
+      rows: [{ ...makeRow(1), verification_status: status }],
+      total: 1,
+    });
+    renderProducts();
+    const row = (await screen.findByText('테스트 사료 1')).closest('tr')!;
+
+    expect(within(row).getByRole('button', { name: '테스트 사료 1 노출 설정 끄기', pressed: true })).toBeTruthy();
+    expect(within(row).getByText(/앱 비공개.*검수 대기/)).toBeTruthy();
+    expect(h.setProductVisibility).not.toHaveBeenCalled();
+  });
+
+  it('검수 대기 제품의 노출 설정을 켜도 공개되었다고 안내하지 않는다', async () => {
+    h.fetchProductsPage.mockResolvedValue({
+      rows: [{ ...makeRow(1), verification_status: 'pending', is_visible: false }],
+      total: 1,
+    });
+    renderProducts();
+    fireEvent.click(await screen.findByRole('button', { name: '테스트 사료 1 노출 설정 켜기' }));
+
+    await waitFor(() => expect(h.setProductVisibility).toHaveBeenCalledWith(makeRow(1).id, true));
+    const row = screen.getByText('테스트 사료 1').closest('tr')!;
+    expect(within(row).getByRole('button', { name: '테스트 사료 1 노출 설정 끄기', pressed: true })).toBeTruthy();
+    expect(within(row).getByText(/앱 비공개.*검수 대기/)).toBeTruthy();
+    expect(h.notifySuccess).toHaveBeenCalledWith(expect.stringMatching(/검수 대기.*앱 비공개/));
+    expect(h.saveProduct).not.toHaveBeenCalled();
+  });
+
+  it('검수 대기 제품을 편집해도 노출 의도와 검수 상태를 그대로 저장한다', async () => {
+    const pendingProduct = {
+      ...makeRow(1),
+      verification_status: 'pending',
+      coupang_link: 'https://example.com/product',
+    };
+    h.fetchProductsPage.mockResolvedValue({ rows: [pendingProduct], total: 1 });
+    h.fetchProductForEdit.mockResolvedValue(pendingProduct);
+    h.fetchProductEditBundle.mockResolvedValue({ product: pendingProduct, nutrition: null, ingredients: [] });
+    h.saveProduct.mockResolvedValue({ id: pendingProduct.id, product: pendingProduct });
+    renderProducts();
+    fireEvent.click(await screen.findByRole('button', { name: '테스트 사료 1 수정' }));
+
+    const dialog = await screen.findByRole('dialog', { name: '제품 정보 수정' });
+    expect(within(dialog).getByRole('checkbox', { name: '사용자 앱 노출 설정', checked: true })).toBeTruthy();
+    expect(within(dialog).getByLabelText('검수 상태')).toHaveProperty('value', 'pending');
+    expect(within(dialog).getByText(/앱 비공개.*검수 대기/)).toBeTruthy();
+    fireEvent.change(within(dialog).getByLabelText('제품명*'), { target: { value: '검수 중인 사료' } });
+    fireEvent.click(within(dialog).getByText('저장하기'));
+
+    await waitFor(() => expect(h.saveProduct).toHaveBeenCalledTimes(1));
+    expect(h.saveProduct.mock.calls[0][0].product).toMatchObject({
+      name: '검수 중인 사료',
+      verification_status: 'pending',
+      is_visible: true,
+    });
+    expect(h.notifySuccess).toHaveBeenCalledWith(expect.stringMatching(/저장.*앱 비공개.*검수 대기/));
+  });
+
+  it.each([
+    { verification_status: 'pending', is_visible: true },
+    { verification_status: 'verified', is_visible: false },
+  ])('비공개 제품을 편집할 때 기존 원재료와 나머지 영양정보를 보존한다 (%j)', async (visibility) => {
+    const product = { ...makeRow(1), ...visibility, coupang_link: 'https://example.com/product' };
+    const nutrition = { crude_protein: 30, crude_fat: 12, crude_fiber: 3, crude_ash: 7, moisture: 10, calcium: 1.2, phosphorus: 0.8 };
+    h.fetchProductEditBundle.mockResolvedValue({
+      product,
+      nutrition,
+      ingredients: [{ ingredientId: 'ingredient-1', nameKo: '연어', nameEn: 'Salmon', riskLevel: 'safe', sortOrder: 0 }],
+    });
+    renderProducts();
+    fireEvent.click(await screen.findByRole('button', { name: '테스트 사료 1 수정' }));
+    const dialog = await screen.findByRole('dialog', { name: '제품 정보 수정' });
+    await waitFor(() => expect(within(dialog).getByLabelText('조단백질 (%)')).toHaveProperty('value', '30'));
+    expect(within(dialog).getByText('연어')).toBeTruthy();
+    fireEvent.change(within(dialog).getByLabelText('조단백질 (%)'), { target: { value: '31' } });
+    fireEvent.click(within(dialog).getByText('저장하기'));
+
+    await waitFor(() => expect(h.saveProduct).toHaveBeenCalledTimes(1));
+    expect(h.saveProduct.mock.calls[0][0]).toMatchObject({
+      product: visibility,
+      nutrition: { ...nutrition, crude_protein: 31 },
+      ingredients: [{ ingredient_id: 'ingredient-1', sort_order: 0 }],
+    });
+  });
+
+  it('편집 자료를 모두 읽기 전에는 저장을 막는다', async () => {
+    h.fetchProductEditBundle.mockReturnValue(new Promise(() => {}));
+    renderProducts();
+    fireEvent.click(await screen.findByRole('button', { name: '테스트 사료 1 수정' }));
+    const dialog = await screen.findByRole('dialog', { name: '제품 정보 수정' });
+    const save = within(dialog).getByRole('button', { name: '저장하기' });
+    expect(save).toHaveProperty('disabled', true);
+    fireEvent.click(save);
+    expect(h.saveProduct).not.toHaveBeenCalled();
+  });
+
+  it('편집 자료 조회에 실패하면 빈 데이터로 저장할 수 없다', async () => {
+    h.fetchProductEditBundle.mockRejectedValue(new Error('원재료 조회 실패'));
+    renderProducts();
+    fireEvent.click(await screen.findByRole('button', { name: '테스트 사료 1 수정' }));
+    const dialog = await screen.findByRole('dialog', { name: '제품 정보 수정' });
+    expect((await within(dialog).findByRole('alert')).textContent).toMatch(/원재료 조회 실패/);
+    const save = within(dialog).getByRole('button', { name: '저장하기' });
+    expect(save).toHaveProperty('disabled', true);
+    fireEvent.click(save);
+    expect(h.saveProduct).not.toHaveBeenCalled();
+  });
+
+  it('닫은 편집 화면의 늦은 응답은 새 등록 양식을 덮어쓰지 않는다', async () => {
+    let resolveLoad!: (value: unknown) => void;
+    h.fetchProductEditBundle.mockReturnValue(new Promise((resolve) => { resolveLoad = resolve; }));
+    renderProducts();
+    fireEvent.click(await screen.findByRole('button', { name: '테스트 사료 1 수정' }));
+    fireEvent.click(screen.getByRole('button', { name: '모달 닫기' }));
+    fireEvent.click(screen.getByRole('button', { name: '신규 제품 등록' }));
+    await act(async () => resolveLoad({ product: makeRow(1), nutrition: null, ingredients: [] }));
+
+    const dialog = screen.getByRole('dialog', { name: '신규 제품 등록' });
+    expect(within(dialog).getByLabelText('제품명*')).toHaveProperty('value', '');
+    expect(within(dialog).getByRole('button', { name: '저장하기' })).toHaveProperty('disabled', false);
   });
 
   it('제품 저장 시 원재료 연결을 같은 요청으로 함께 보낸다', async () => {
@@ -213,12 +346,25 @@ describe('AdminProducts', () => {
     expect(payload.product).toMatchObject({
       name: '새 사료',
       brand_name: '베로로',
+      main_category: '사료',
       is_visible: true,
       coupang_link: 'https://www.coupang.com/vp/products/7654321?itemId=1',
       // 링크에서 뽑은 상품번호가 판매가 확인의 열쇠다.
       coupang_product_id: '7654321',
     });
     expect(Array.isArray(payload.ingredients)).toBe(true);
+  });
+
+  it('keeps unreported nutrition blank when one nutrient is supplied', async () => {
+    renderProducts();
+    fireEvent.click(await screen.findByText('신규 제품 등록'));
+    fireEvent.change(screen.getByLabelText('제품명*'), { target: { value: '새 사료' } });
+    fireEvent.change(screen.getByLabelText('브랜드*'), { target: { value: '베로로' } });
+    fireEvent.change(screen.getByLabelText('판매처 링크 *'), { target: { value: 'https://example.com/product' } });
+    fireEvent.change(screen.getByLabelText('조단백질 (%)'), { target: { value: '22' } });
+    fireEvent.click(screen.getByText('저장하기'));
+    await waitFor(() => expect(h.saveProduct).toHaveBeenCalledTimes(1));
+    expect(h.saveProduct.mock.calls[0][0].nutrition).toMatchObject({ crude_protein: 22, moisture: null, crude_fat: null, calcium: null });
   });
 
   it('판매처 링크가 없으면 저장하지 않는다', async () => {

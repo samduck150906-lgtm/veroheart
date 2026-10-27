@@ -86,8 +86,51 @@ The authoritative ledger migration
 `20260611151005_supplement_image_label_ingredients.sql` has a known legacy replay
 dependency: on a completely empty database it references product rows that the
 preceding ledger migrations do not create, so its foreign-key inserts fail. The
-ledger SQL is preserved verbatim here. Empty-database replay should be solved by
-a separate baseline or snapshot project, not by mutating production history.
+ledger SQL is preserved verbatim here. The supported empty local bootstrap now
+uses a separate generated project, described below, rather than mutating
+production history.
 
 This reconciliation is separate from PR #110. The historical baseline checks do
 not prohibit PR #110 or any other future forward-only migration.
+
+## Empty local database bootstrap (2026-10-26)
+
+Run `npm run db:prepare-local` to create a new, unlinked project under
+`.artifacts/local-supabase`. The command only writes local files and refuses to
+overwrite an existing directory. For another location use
+`npm run db:prepare-local -- --output <new-directory>`.
+
+The generated project preserves every historical migration byte for byte and
+records SHA-256 checksums. It adds two **local-only** migrations immediately
+before and after `20260611151005`. Their temporary triggers skip only orphan
+ingredient/nutrition inserts for the four known absent historical product IDs;
+an unknown ID fails, and a nonempty product table fails. The next migration
+reports the skipped count and removes the guard schema/triggers. Foreign keys
+stay enabled. No product rows, barcodes, labels or nutrition are fabricated.
+The resulting local catalog starts empty; import separately reviewed,
+attributable product evidence to populate it.
+
+On a machine with the Supabase CLI and its existing container runtime, use the
+generated project explicitly:
+
+```sh
+supabase start --workdir .artifacts/local-supabase
+supabase db reset --local --workdir .artifacts/local-supabase
+```
+
+These commands use the local ports from `supabase/config.toml`; ensure those
+ports are available. The generator does not start, stop, install or reconfigure
+Docker. It copies function source files but no `.env`, linked-project metadata
+or secrets. Never link or push this generated local ledger. Existing hosted
+projects continue to use the unchanged historical ledger and new forward
+migrations in the repository's normal `supabase/migrations` directory.
+
+`npm run test:bootstrap` prepares a fresh isolated project and executes all SQL
+with PGlite's PostgreSQL engine plus minimal Supabase-owned auth/storage table
+fixtures. The verified 2026-10-26 run applied 67 repository migrations plus two
+local guards, skipped 47 known orphan rows, retained zero product rows, enforced
+foreign keys after cleanup, denied authenticated direct scan writes, and kept
+the diary-photo bucket private. The test also rejects overwriting an existing
+project and applying the local guard to a populated product table. This is SQL
+replay validation; Supabase's Docker services, Auth HTTP flow, Storage API and
+CLI lifecycle still require a full local integration run on a configured host.

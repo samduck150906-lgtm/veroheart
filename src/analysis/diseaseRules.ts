@@ -247,7 +247,7 @@ export const DISEASE_CATEGORIES: DiseaseCategory[] = [
       },
     ],
     supplementCandidates: ['크롬', '베르베린', '알파리포산'],
-    clinicalNote: '인슐린 투여 중인 경우 식이 변경 전 반드시 수의사 상담 필요.',
+    clinicalNote: '인슐린 투여 중인 경우 식이 변경 전 반드시 수의사 상담이 필요합니다.',
   },
 
   // ── 8. 간 ────────────────────────────────────────────────────────────
@@ -320,7 +320,7 @@ export const DISEASE_CATEGORIES: DiseaseCategory[] = [
     hasQuantitativeRules: false,
     quantitativeRules: [],
     supplementCandidates: ['철분', '비타민B12', '엽산', '비타민C'],
-    clinicalNote: '빈혈 증상(잇몸 창백, 무기력)은 즉시 수의사 진료 필요.',
+    clinicalNote: '빈혈 증상(잇몸 창백, 무기력)은 즉시 수의사 진료가 필요합니다.',
   },
 
   // ── 13. 종양·암 (정량 규칙 없음, 진료 우선) ──────────────────────

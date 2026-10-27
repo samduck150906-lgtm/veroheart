@@ -15,6 +15,7 @@ import ProductVerificationBadge from '../components/ProductVerificationBadge';
 const MAX_COLUMNS = MAX_COMPARISON;
 
 interface Column {
+  canShowScore: boolean;
   product: Product;
   display: ProductDisplayParts;
   grade: string;
@@ -30,23 +31,26 @@ interface Column {
 }
 
 function buildColumn(product: Product, profile: UserPetProfile): Column {
-  const { score, grade, breakdown } = resolveProductDisplayVerdict(product, profile);
+  const { score, grade, breakdown, canShowScore, analysisReadiness } = resolveProductDisplayVerdict(product, profile);
   const kcalValue = product.caloriesPer100g ?? product.guaranteedAnalysis?.kcalPer100g;
   const proteinValue = product.guaranteedAnalysis?.crudeProtein;
   const goodCount = product.ingredients?.filter((i) => i.riskLevel === 'safe').length ?? 0;
   const warnCount = breakdown.dangerCount + breakdown.cautionCount;
   const allergyDisplay = buildAllergyDisplayState(breakdown, profile.name || '우리 아이', {
     hasIngredientData: (product.ingredients?.length ?? 0) > 0,
+    analysisStatus: analysisReadiness.status,
+    unknownIngredientTerms: product.unknownIngredientTerms,
   });
 
   return {
+    canShowScore,
     product,
     display: getProductDisplayParts(product),
     grade,
     score,
     kcal: kcalValue ? `${Math.round(kcalValue)}kcal` : '—',
     protein: proteinValue ? `${proteinValue}%` : '—',
-    signalText: `주의 ${warnCount} · 좋음 ${goodCount}`,
+    signalText: canShowScore ? `주의 ${warnCount} · 좋음 ${goodCount}` : `확인 범위: 주의 ${warnCount} · 원료 정보 부족`,
     allergyText: allergyDisplay.shortText,
     allergyLevel: allergyDisplay.level,
     dangerCount: breakdown.dangerCount,
@@ -73,10 +77,10 @@ export default function Comparison() {
     return (
       <div style={{ padding: '14px 0 40px' }}>
         <h1 style={{ margin: '0 0 4px', fontSize: '24px', fontWeight: 800, letterSpacing: '-0.04em' }}>비교함</h1>
-        <p style={{ margin: '0 0 24px', fontSize: '13px', color: VR.muted }}>최대 {MAX_COLUMNS}개까지 나란히 볼 수 있어.</p>
+        <p style={{ margin: '0 0 24px', fontSize: '13px', color: VR.muted }}>최대 {MAX_COLUMNS}개까지 나란히 볼 수 있습니다.</p>
         <div className="vr-card" style={{ padding: '40px 20px', textAlign: 'center' }}>
           <p style={{ margin: '0 0 18px', fontSize: '14px', color: VR.muted, lineHeight: 1.6 }}>
-            아직 담은 제품이 없어.<br />탐색에서 &lsquo;비교&rsquo;를 눌러 담아봐.
+            아직 담은 제품이 없습니다.<br />탐색에서 &lsquo;비교&rsquo;를 눌러 담아 주세요.
           </p>
           <button type="button" className="vr-btn vr-btn--primary" style={{ width: 'auto', padding: '13px 22px' }} onClick={() => navigate('/search')}>
             비교할 제품 탐색하기
@@ -87,7 +91,7 @@ export default function Comparison() {
   }
 
   const rows: { label: string; values: string[]; tone?: (col: Column) => string }[] = [
-    { label: '등급', values: columns.map((c) => `${c.grade} ${c.score}`) },
+    { label: '등급', values: columns.map((c) => c.canShowScore ? `${c.grade} ${c.score}` : '분석 정보 부족') },
     { label: '열량', values: columns.map((c) => c.kcal) },
     { label: '조단백', values: columns.map((c) => c.protein) },
     { label: '평점', values: columns.map((c) => (c.product.reviewsCount > 0 ? `★ ${c.product.averageRating.toFixed(1)}` : '—')) },
@@ -114,20 +118,20 @@ export default function Comparison() {
     cautionCount: c.cautionCount,
     matchedConcerns: c.matchedConcerns,
   }));
-  const verdict = resolveComparisonVerdict(candidates);
+  const verdict = resolveComparisonVerdict(columns.every(c => c.canShowScore) ? candidates : []);
   const allergyNote = (level: AllergyDisplayLevel) =>
     level === 'hard'
-      ? `다만 ${petName}의 알레르기 성분이 포함돼 있어 급여 전 확인이 필요해.`
+      ? `다만 ${petName}의 알레르기 성분이 포함돼 있어 급여 전 확인이 필요합니다.`
       : level === 'caution'
-        ? `${petName}의 알레르기와 관련된 원료가 있어 급여 전 확인이 필요해.`
+        ? `${petName}의 알레르기와 관련된 원료가 있어 급여 전 확인이 필요합니다.`
         : level === 'unknown'
-          ? '원료 정보가 부족해 알레르기 포함 여부는 판정할 수 없어.'
+          ? '원료 정보가 부족해 알레르기 포함 여부는 판정할 수 없습니다.'
           : '';
 
   return (
     <div className="vr-anim-fade" style={{ padding: '14px 0 24px' }}>
       <h1 style={{ margin: '0 0 4px', fontSize: '24px', fontWeight: 800, letterSpacing: '-0.04em' }}>비교함</h1>
-      <p style={{ margin: '0 0 16px', fontSize: '13px', color: VR.muted }}>최대 {MAX_COLUMNS}개까지 나란히 볼 수 있어.</p>
+      <p style={{ margin: '0 0 16px', fontSize: '13px', color: VR.muted }}>최대 {MAX_COLUMNS}개까지 나란히 볼 수 있습니다.</p>
 
       <div
         className="vr-card"
@@ -195,7 +199,7 @@ export default function Comparison() {
           {verdict.kind === 'winner' ? (
             <>
               <div style={{ fontSize: '14.5px', fontWeight: 800, letterSpacing: '-0.02em' }}>
-                {petName}에게는 &lsquo;{verdict.winner.name}&rsquo;가 조금 더 잘 맞아
+                {petName}에게는 &lsquo;{verdict.winner.name}&rsquo;가 조금 더 잘 맞습니다
               </div>
               <ul style={{ margin: '9px 0 0', padding: '0 0 0 17px', fontSize: '12.5px', lineHeight: 1.6, color: 'var(--vr-body)' }}>
                 {verdict.reasons.map((reason) => (
@@ -211,11 +215,11 @@ export default function Comparison() {
           ) : (
             <>
               <div style={{ fontSize: '14.5px', fontWeight: 800, letterSpacing: '-0.02em' }}>
-                {verdict.leaders.length > 2 ? '담은 제품 모두' : '두 제품 모두'} 비슷하게 잘 맞아
+                {verdict.leaders.length > 2 ? '담은 제품 모두' : '두 제품 모두'} 비슷하게 잘 맞습니다
               </div>
               <p style={{ margin: '7px 0 0', fontSize: '12.5px', lineHeight: 1.55, color: 'var(--vr-body)' }}>
-                {petName} 기준으로 우열을 가릴 만한 차이가 없어. 급여량이나 가격처럼
-                표에 없는 조건으로 골라도 괜찮아.
+                {petName} 기준으로 우열을 가릴 만한 차이가 없습니다. 급여량이나 가격처럼
+                표에 없는 조건으로 선택해도 괜찮습니다.
               </p>
             </>
           )}

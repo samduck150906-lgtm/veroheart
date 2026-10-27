@@ -52,7 +52,7 @@ describe('ranked catalog search migration', () => {
 });
 
 describe('searchProducts RPC client contract', () => {
-  const body = functionBody('searchProducts');
+  const body = functionBody('searchProductsPage');
 
   it('passes hostile and mixed queries only as RPC parameters', () => {
     for (const query of ['%', '_', ',', '"', '8801234567890', '오리젠 퍼피', '귀리', '오리잰']) {

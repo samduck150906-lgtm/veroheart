@@ -83,7 +83,7 @@ export default function DesktopBanner() {
             fontWeight: 500,
           }}
         >
-          베로로는 모바일에 최적화된 앱이에요. 휴대폰 브라우저에서 URL을 열거나 홈 화면에 추가해 보세요.
+          베로로는 모바일에 최적화되어 있습니다. 휴대폰에서 접속하거나 홈 화면에 추가해 주세요.
         </p>
       </div>
       <button

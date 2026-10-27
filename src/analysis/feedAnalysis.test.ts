@@ -193,7 +193,7 @@ describe('analyzeFeed — 연어/어류 감지 및 데이터 부족 구분 (P0 �
     expect(a.summary).toContain('정보가 부족');
     expect(a.summary).not.toContain('주의가 필요한 성분이 있어');
     // 원료 미평가 사유가 주의 목록에 남아 있어야 한다.
-    expect(a.cautions.join(' ')).toContain('원재료 정보가 없어');
+    expect(a.cautions.join(' ')).toContain('전성분이 아직 등록되지 않아');
   });
 
   it('보장성분만 있고 원재료가 없으면, 영양은 평가하되 원료 정보 부족을 표시한다', () => {
@@ -203,7 +203,7 @@ describe('analyzeFeed — 연어/어류 감지 및 데이터 부족 구분 (P0 �
     );
     expect(a.hasNutritionData).toBe(true);
     expect(a.ingredientQuality.total).toBe(0);
-    expect(a.cautions.join(' ')).toContain('원재료 정보가 없어');
+    expect(a.cautions.join(' ')).toContain('전성분이 아직 등록되지 않아');
   });
 
   it('부분 분석 제품은 완전 안전 문구를 만들지 않는다', () => {
@@ -214,7 +214,7 @@ describe('analyzeFeed — 연어/어류 감지 및 데이터 부족 구분 (P0 �
     }), dogProfile);
     expect(a.analysisReadiness.status).toBe('partial');
     expect(a.summary).toContain('부분 분석');
-    expect(a.positives.join(' ')).not.toContain('위험·주의·합성첨가물 성분이 확인되지 않았어요');
+    expect(a.positives.join(' ')).not.toContain('위험·주의·합성첨가물 성분이 확인되지 않았습니다');
     expect(`${a.summary} ${a.positives.join(' ')}`).not.toMatch(/안전|문제없음/);
   });
 });

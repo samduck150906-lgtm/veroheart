@@ -33,10 +33,10 @@ function MaintenanceScreen() {
     >
       <span style={{ fontSize: '40px' }} aria-hidden="true">🛠️</span>
       <h1 style={{ margin: 0, fontSize: '19px', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-dark)' }}>
-        지금은 서비스 점검 중이에요
+        서비스 점검 중입니다
       </h1>
       <p style={{ margin: 0, fontSize: '14px', lineHeight: 1.6, color: 'var(--text-muted)' }}>
-        점검이 끝나면 바로 다시 열어 드릴게요.
+        점검 후 서비스를 다시 이용할 수 있습니다.
         <br />
         잠시 후 새로고침해 주세요.
       </p>

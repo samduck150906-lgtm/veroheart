@@ -29,7 +29,7 @@ export function HealthConcernEvidence({
       <div>
         <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-dark)' }}>건강 고민 근거</div>
         <div style={{ marginTop: 3, fontSize: 12.5, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-          선택한 고민별로 현재 등록된 근거와 정보 부족을 구분해 보여드려요.
+          건강 고민별로 등록된 근거와 부족한 정보를 구분해 표시합니다.
         </div>
       </div>
       {presentation.items.map((item, index) => {

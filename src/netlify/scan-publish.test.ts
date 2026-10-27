@@ -42,6 +42,8 @@ function validSubmission(): PublicationSubmission {
       nutrition: ['nutrition.webp'],
     },
     confirmed: validLabel(),
+    evidenceVerified: true,
+    publishedNewProduct: true,
   };
 }
 
@@ -176,7 +178,7 @@ describe('community scan publication', () => {
     );
 
     expect(response.status).toBe(202);
-    await expect(response.json()).resolves.toEqual({ status: 'needs_review' });
+    await expect(response.json()).resolves.toEqual({ status: 'needs_review', code: 'duplicate_review' });
     expect(repository.ingestAnalysis).not.toHaveBeenCalled();
   });
 

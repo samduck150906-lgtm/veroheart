@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   X,
   Trash2,
@@ -17,7 +17,7 @@ import ProductRequestSheet from '../components/ProductRequestSheet';
 import { ProductGridSkeleton } from '../components/Skeleton';
 import type { Product } from '../types';
 import { TossFilterSection } from '../components/TossUI';
-import { searchProducts, getAllIngredients } from '../lib/supabase';
+import { searchProductsPage, getAllIngredients } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import standardFeedData from '../data/standard_feed_data.json';
 import { useStandardFeedDetail, type StandardFeedDetail } from '../lib/standardFeedDetail';
@@ -25,10 +25,10 @@ import { rankProductsForProfile } from '../utils/score';
 import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import FilterChip from '../components/ui/FilterChip';
 import { buildSearchSuggestions, deriveBrandOptions, ingredientsUsedBy, type Suggestion } from '../utils/searchSuggestions';
-import { productsForPetFilter, visibleSymptomKeywords } from '../utils/searchKeywords';
+import { productsForPetFilter, recommendedSearchKeywords } from '../utils/searchKeywords';
 import { isHealthFilterAvailable } from '../utils/healthFilterAvailability';
 import { VR } from '../lib/veroroDesign';
-import { useProductCategories } from '../lib/productCategories';
+import { resolveSearchCategory, useProductCategories } from '../lib/productCategories';
 
 interface StandardFeedItem {
   id: number;
@@ -39,13 +39,6 @@ interface StandardFeedItem {
   fat: number;
   ash: number;
   fiber: number;
-}
-
-function resolveCategoryFromSearchParams(category: string | null): string {
-  if (!category) return '전체';
-  // 구 링크 호환: 과거 칩이 쓰던 세분류는 main_category에 없다 — '사료'로 정규화
-  if (category === '건식사료' || category === '습식사료') return '사료';
-  return category;
 }
 
 const RECENT_KEY = 'vh_recent_searches';
@@ -85,8 +78,7 @@ const HEALTH_CONCERN_OPTIONS = [
 ];
 
 // 카테고리 칩 목록·순서는 관리자 콘솔(카테고리 관리)이 단일 원본이다.
-// 값은 DB products.main_category 와 글자 그대로 대조된다.
-// 건식/습식 구분은 필터 시트의 '제형'이 담당한다.
+// 상위·하위 값은 각각 products.main_category·sub_category와 대조한다.
 
 /**
  * 검색은 종 필터를 미리 걸지 않는다.
@@ -98,15 +90,17 @@ const HEALTH_CONCERN_OPTIONS = [
  */
 
 export default function Search() {
-  const { profile, products, comparisonList } = useStore();
-  const navigate = useNavigate();
+  const { profile, products, catalogRevision } = useStore();
   const activeCategories = useProductCategories();
   const categoryChips = useMemo(
     () => ['전체', ...activeCategories.map((item) => item.name)],
     [activeCategories],
   );
   const [searchParams, setSearchParams] = useSearchParams();
-  const category = resolveCategoryFromSearchParams(searchParams.get('category'));
+  const { category, subCategory } = resolveSearchCategory(
+    activeCategories, searchParams.get('category'), searchParams.get('subCategory'),
+  );
+  const subCategories = activeCategories.find(item => item.name === category)?.subCategories ?? [];
 
   const setCategory = (name: string) => {
     setSearchParams(
@@ -114,22 +108,37 @@ export default function Search() {
         const next = new URLSearchParams(prev);
         if (name === '전체') next.delete('category');
         else next.set('category', name);
+        next.delete('subCategory');
         return next;
       },
       { replace: false }
     );
   };
 
+  const setSubCategory = (name: string) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('category', category);
+      if (name) next.set('subCategory', name);
+      else next.delete('subCategory');
+      return next;
+    });
+  };
+
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '');
   // URL 의 ?q= 가 바뀌면(키워드 재클릭·뒤로/앞으로 이동) 검색어를 동기화한다.
   const qParam = searchParams.get('q') ?? '';
   useEffect(() => {
-    if (qParam) setQuery(qParam);
+    setQuery(qParam);
   }, [qParam]);
   const [recentSearches, setRecentSearches] = useState<string[]>(() => loadRecentSearches());
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [isShowingBroadMatches, setIsShowingBroadMatches] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [nextOffset, setNextOffset] = useState<number | null>(null);
+  const [loadError, setLoadError] = useState('');
+  const requestEpoch = useRef(0);
   const [sortBy, setSortBy] = useState<'default' | 'rating'>('default');
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -137,7 +146,6 @@ export default function Search() {
     targetPetType: '' as '' | 'dog' | 'cat' | 'all',
     targetLifeStage: '',
     formulation: '',
-    subCategory: '',
     brand: '',
     healthConcerns: [] as string[],
     dietPreset: false,
@@ -172,11 +180,14 @@ export default function Search() {
   //
   // 결과 조회(searchProducts)는 종 필터를 함께 걸기 때문에, 제안만 전체 목록에서
   // 뽑으면 고양이 보호자에게 강아지 전용 제품·그 제품에만 있는 성분이 뜨고,
-  // 눌렀을 때 "검색 결과가 없어요"가 된다. 아래 shownKeywords 가 이미 같은
+  // 눌렀을 때 "검색 결과가 없습니다"가 된다. 아래 shownKeywords 가 이미 같은
   // 이유로 productsForPetFilter 를 쓰고 있다 — 제안도 같은 기준을 따른다.
   const suggestibleProducts = useMemo(
-    () => productsForPetFilter(products, filters.targetPetType),
-    [products, filters.targetPetType],
+    () => productsForPetFilter(
+      [...new Map([...products, ...searchResults].map(product => [product.id, product])).values()],
+      filters.targetPetType,
+    ),
+    [products, searchResults, filters.targetPetType],
   );
   const suggestibleIngredients = useMemo(
     () => ingredientsUsedBy(suggestibleProducts, allIngredients),
@@ -206,31 +217,38 @@ export default function Search() {
     // 디바운스 타이머만 취소하면 이미 떠난 요청은 못 막는다. 검색어를 빠르게 바꾸면
     // 먼저 보낸 느린 응답이 나중 결과를 덮어써 엉뚱한 목록이 남는다.
     let cancelled = false;
+    const epoch = ++requestEpoch.current;
     const timer = setTimeout(async () => {
       setIsLoading(true);
+      setIsLoadingMore(false);
+      setLoadError('');
+      setNextOffset(null);
       try {
         const pet = filters.targetPetType;
-        let results = await searchProducts(query, category, excludedIngredients, {
+        let page = await searchProductsPage(query, category, excludedIngredients, {
           targetPetType: pet === '' ? undefined : pet,
           targetLifeStage: filters.targetLifeStage || undefined,
           formulation: filters.formulation || undefined,
-          subCategory: filters.subCategory || undefined,
+          subCategory: subCategory || undefined,
           brand: filters.brand || undefined,
           healthConcerns: filters.healthConcerns,
           dietPreset: filters.dietPreset,
         });
+        let results = page.products;
         let showingBroadMatches = false;
         // 직접 입력한 검색어가 카테고리·프로필 종·상세 필터에 가려져 0건이면,
         // 같은 운영 DB를 필터 없이 한 번 더 확인해 제품 자체가 누락되지 않게 한다.
-        if (query.trim() && results.length === 0) {
-          const broadMatches = await searchProducts(query.trim());
-          if (broadMatches.length > 0) {
-            results = broadMatches;
+        if (query.trim() && results.length === 0 && page.nextOffset === null) {
+          const broadMatches = await searchProductsPage(query.trim(), undefined, excludedIngredients);
+          if (broadMatches.products.length > 0) {
+            page = broadMatches;
+            results = broadMatches.products;
             showingBroadMatches = true;
           }
         }
-        if (cancelled) return;
+        if (cancelled || epoch !== requestEpoch.current) return;
         setSearchResults(results);
+        setNextOffset(page.nextOffset);
         setIsShowingBroadMatches(showingBroadMatches);
         if (query.trim() && results.length > 0) {
           const t = query.trim();
@@ -241,7 +259,7 @@ export default function Search() {
           });
         }
       } catch (err) {
-        console.error(err);
+        if (!cancelled) { setSearchResults([]); setLoadError(err instanceof Error ? err.message : '제품을 불러오지 못했습니다.'); }
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -250,7 +268,34 @@ export default function Search() {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [query, category, filters, excludedIngredients]);
+  }, [query, category, subCategory, filters, excludedIngredients, catalogRevision]);
+
+  const loadMore = async () => {
+    if (nextOffset === null || isLoading || isLoadingMore) return;
+    const epoch = requestEpoch.current;
+    setIsLoadingMore(true);
+    setLoadError('');
+    try {
+      const page = await searchProductsPage(query, isShowingBroadMatches ? undefined : category,
+        excludedIngredients,
+        isShowingBroadMatches ? {} : {
+          targetPetType: filters.targetPetType || undefined,
+          targetLifeStage: filters.targetLifeStage || undefined,
+          formulation: filters.formulation || undefined,
+          subCategory: subCategory || undefined,
+          brand: filters.brand || undefined,
+          healthConcerns: filters.healthConcerns,
+          dietPreset: filters.dietPreset,
+        }, nextOffset);
+      if (epoch !== requestEpoch.current) return;
+      setSearchResults(previous => [...new Map([...previous, ...page.products].map(p => [p.id, p])).values()]);
+      setNextOffset(page.nextOffset);
+    } catch (error) {
+      if (epoch === requestEpoch.current) setLoadError(error instanceof Error ? error.message : '제품을 불러오지 못했습니다.');
+    } finally {
+      if (epoch === requestEpoch.current) setIsLoadingMore(false);
+    }
+  };
 
   useEffect(() => {
     getAllIngredients().then(setAllIngredients).catch(console.error);
@@ -293,7 +338,6 @@ export default function Search() {
       targetPetType: '',
       targetLifeStage: '',
       formulation: '',
-      subCategory: '',
       brand: '',
       healthConcerns: [],
       dietPreset: false,
@@ -361,7 +405,6 @@ export default function Search() {
     (filters.targetPetType ? 1 : 0) +
     (filters.targetLifeStage ? 1 : 0) +
     (filters.formulation ? 1 : 0) +
-    (filters.subCategory ? 1 : 0) +
     (filters.brand ? 1 : 0) +
     filters.healthConcerns.length +
     (filters.dietPreset ? 1 : 0) +
@@ -370,7 +413,7 @@ export default function Search() {
   // 눌렀을 때 결과가 0건인 키워드는 보여주지 않는다.
   // 검색이 종 필터까지 함께 걸기 때문에 같은 조건에서 세어야 어긋나지 않는다.
   const shownKeywords = useMemo(
-    () => visibleSymptomKeywords(suggestibleProducts),
+    () => recommendedSearchKeywords(suggestibleProducts),
     [suggestibleProducts],
   );
 
@@ -467,7 +510,8 @@ export default function Search() {
             key={name}
             type="button"
             className={category === name ? 'vr-chip vr-chip--on' : 'vr-chip'}
-            onClick={() => { setCategory(name); setFilters(f => ({ ...f, subCategory: '' })); }}
+            aria-pressed={category === name}
+            onClick={() => setCategory(name)}
           >
             {name}
           </button>
@@ -481,6 +525,18 @@ export default function Search() {
           <Database size={13} /> 성분사전
         </button>
       </div>
+
+      {subCategories.length > 0 && (
+        <div role="group" aria-label={`${category} 세부 분류`} style={{ marginBottom: 18 }}>
+          <div className="search-block-label">{category} 세부 분류</div>
+          <div className="search-chip-row">
+            <FilterChip label={`${category} 전체`} selected={!subCategory} onClick={() => setSubCategory('')} />
+            {subCategories.map(name => (
+              <FilterChip key={name} label={name} selected={subCategory === name} onClick={() => setSubCategory(name)} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 검색어 없을 때: 최근 검색 + 추천 키워드 */}
       {showDiscovery && (
@@ -536,7 +592,7 @@ export default function Search() {
             color: 'var(--vr-ink)', fontSize: '13px', lineHeight: 1.5,
           }}
         >
-          <strong>검색어와 일치하는 제품을 찾았어요.</strong>{' '}
+          <strong>검색어와 일치하는 제품을 찾았습니다.</strong>{' '}
           현재 카테고리나 반려동물·상세 필터와 맞지 않아 전체 제품에서 보여드리고 있습니다.
           <button
             type="button"
@@ -575,38 +631,28 @@ export default function Search() {
         ))}
       </div>
 
-      {/* 비교함 바 — 2개 이상 담겼을 때만 (프로토타입 showCompareBar) */}
-      {comparisonList.length > 1 && (
-        <button
-          type="button"
-          onClick={() => navigate('/comparison')}
-          className="vr-anim-up"
-          style={{
-            position: 'sticky', bottom: '10px', zIndex: 5, width: '100%', marginTop: '14px',
-            padding: '13px 16px', borderRadius: '14px', border: 'none', cursor: 'pointer',
-            background: 'var(--vr-inverse)', color: 'var(--vr-on-inverse)',
-            display: 'flex', alignItems: 'center', gap: '10px',
-          }}
-        >
-          <span style={{
-            width: '24px', height: '24px', borderRadius: '8px', background: '#FFD90A', color: '#15150F',
-            fontSize: '12.5px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            {comparisonList.length}
-          </span>
-          <span style={{ fontSize: '14px', fontWeight: 800, letterSpacing: '-0.02em' }}>비교함 보기</span>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FFD90A" strokeWidth="2.6" strokeLinecap="round" style={{ marginLeft: 'auto' }} aria-hidden>
-            <path d="M9 6l6 6-6 6" />
-          </svg>
+      {loadError && <p role="alert" style={{ color: 'var(--danger-strong)', marginTop: 12 }}>{loadError}</p>}
+      {nextOffset !== null && !isLoading && (
+        <button type="button" className="btn btn-outline" onClick={loadMore} disabled={isLoadingMore}
+          style={{ width: '100%', marginTop: 16 }}>
+          {isLoadingMore ? '불러오는 중…' : '제품 더 불러오기'}
         </button>
       )}
 
-      {displayResults.length === 0 && !isLoading && (
+      {displayResults.length === 0 && !isLoading && nextOffset === null && !loadError && (
         <StateView
           variant="empty"
-          title="검색 결과가 없어요"
-          description="검색어를 바꾸거나 필터를 넓혀 보세요. 찾는 제품이 없다면 등록을 요청해 주세요."
-          action={{ label: '필터 조정', onClick: () => setIsFilterOpen(true) }}
+          title="검색 결과가 없습니다"
+          description={activeFilterCount > 0
+            ? '선택한 상세 필터에 맞는 제품이 없습니다. 필터를 해제하고 다시 확인해 주세요.'
+            : category !== '전체' && !query.trim()
+              ? '이 분류에서 현재 볼 수 있는 제품이 없습니다. 다른 분류를 선택해 주세요.'
+              : '검색어를 바꾸거나 필터 범위를 넓혀 주세요. 찾는 제품이 없다면 등록을 요청해 주세요.'}
+          action={activeFilterCount > 0
+            ? { label: '상세 필터 해제', onClick: resetFilters }
+            : category !== '전체'
+              ? { label: '전체 제품 보기', onClick: () => setCategory('전체') }
+              : { label: '필터 조정', onClick: () => setIsFilterOpen(true) }}
           secondaryAction={{
             label: '＋ 제품 등록 요청하기',
             // mailto: 는 메일 앱이 없는 기기에서 아무 일도 일어나지 않았고, 열려도
@@ -736,7 +782,7 @@ export default function Search() {
           </div>
         </TossFilterSection> : (
           <div role="status" style={{ padding: '12px 14px', borderRadius: 12, background: 'var(--surface-alt)', color: 'var(--text-muted)', fontSize: 12.5, lineHeight: 1.5 }}>
-            건강 고민 정보가 더 채워지면 이 필터를 이용할 수 있어요.
+            건강 고민 정보가 보완되면 이 필터를 이용할 수 있습니다.
           </div>
         )}
 
@@ -803,7 +849,7 @@ export default function Search() {
               <SearchIcon size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               <input
                 type="text"
-                placeholder="어떤 성분이 궁금하신가요? (예: 귀리)"
+                placeholder="성분명 검색 (예: 귀리)"
                 value={standardFeedSearch}
                 onChange={(e) => setStandardFeedSearch(e.target.value)}
                 style={{ width: '100%', padding: '12px 12px 12px 38px', borderRadius: '12px', border: '1px solid var(--line)', outline: 'none', fontSize: '14px', backgroundColor: 'var(--surface-alt)', color: 'var(--text-dark)' }}
@@ -874,7 +920,7 @@ function StandardFeedDetailPanel({
   const groups = found
     ? detail.groups.filter((group) => Object.keys(found.values[group.key] ?? {}).length > 0)
     : [];
-  if (groups.length === 0) return <div style={note}>이 원료는 추가로 분석된 영양성분이 없어요.</div>;
+  if (groups.length === 0) return <div style={note}>이 원료는 추가로 분석된 영양성분이 없습니다.</div>;
 
   const usesDryMatter = groups.some((group) => group.nutrients.some(
     (nutrient) => nutrient.basis === 'dry_matter' && found!.values[group.key]?.[nutrient.key] !== undefined,
@@ -904,7 +950,7 @@ function StandardFeedDetailPanel({
         </div>
       ))}
       <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-        수치는 {detail.basis_label}{usesDryMatter ? ', * 표시는 건물(수분을 뺀 상태) 기준' : ''}이에요.
+        수치는 {detail.basis_label}{usesDryMatter ? ', * 표시는 건물(수분을 뺀 상태) 기준' : ''}입니다.
       </div>
     </div>
   );

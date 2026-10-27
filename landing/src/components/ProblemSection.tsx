@@ -5,19 +5,19 @@ import { AlertIcon, ChatHeartIcon, SearchIcon, LeafIcon } from "@/components/ico
 const PAIN_POINTS = [
   {
     icon: LeafIcon,
-    text: "연어가 들어갔다는데, 왜 동물성 단백질 함량은 낮게 나오지?",
+    text: "연어가 들어갔다는데, 왜 동물성 단백질 함량은 낮게 나오나요?",
   },
   {
     icon: AlertIcon,
-    text: "알레르기가 있는데, 원재료를 하나씩 찾아보기가 너무 어려워요.",
+    text: "알레르기가 있는데, 원재료를 하나씩 찾아보기 어렵습니다.",
   },
   {
     icon: SearchIcon,
-    text: "제품은 많고 설명은 긴데, 뭘 기준으로 골라야 할지 모르겠어요.",
+    text: "제품은 많고 설명은 긴데, 무엇을 기준으로 골라야 할지 모르겠습니다.",
   },
   {
     icon: ChatHeartIcon,
-    text: "성분이 좋다는 말보다, 왜 좋은지를 알고 싶어요.",
+    text: "성분이 좋다는 말보다, 왜 좋은지 알고 싶습니다.",
   },
 ];
 

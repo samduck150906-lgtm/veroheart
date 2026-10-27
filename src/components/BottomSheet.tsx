@@ -14,6 +14,8 @@ interface BottomSheetProps {
   headerRight?: React.ReactNode;
   /** 시트 최대 높이 — 긴 콘텐츠는 내부에서 스크롤된다. 기본 88vh */
   maxHeight?: string;
+  /** Temporarily hide a parent sheet while preserving its contents and scroll position. */
+  suspended?: boolean;
 }
 
 export default function BottomSheet({
@@ -24,6 +26,7 @@ export default function BottomSheet({
   footer,
   headerRight,
   maxHeight = '88vh',
+  suspended = false,
 }: BottomSheetProps) {
   const [isRendered, setIsRendered] = useState(false);
 
@@ -43,13 +46,13 @@ export default function BottomSheet({
 
   // Esc 로 닫기(접근성)
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || suspended) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [isOpen, onClose]);
+  }, [isOpen, suspended, onClose]);
 
   if (!isRendered && !isOpen) return null;
 
@@ -60,7 +63,7 @@ export default function BottomSheet({
       {/* Backdrop */}
       <div
         onClick={onClose}
-        style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 9998, opacity: isOpen ? 1 : 0, transition: 'opacity 0.3s ease' }}
+        style={{ display: suspended ? 'none' : undefined, position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 9998, opacity: isOpen ? 1 : 0, transition: 'opacity 0.3s ease' }}
       />
 
       {/* Sheet */}
@@ -72,7 +75,7 @@ export default function BottomSheet({
           position: 'fixed', bottom: 0, left: '50%',
           transform: `translateX(-50%) translateY(${isOpen ? '0' : '100%'})`,
           width: '100%', maxWidth: '480px', maxHeight,
-          display: 'flex', flexDirection: 'column',
+          display: suspended ? 'none' : 'flex', flexDirection: 'column',
           backgroundColor: 'var(--surface-elevated, #fff)', borderTopLeftRadius: '28px', borderTopRightRadius: '28px',
           zIndex: 9999, transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
           padding: '12px 24px 0', boxShadow: '0 -10px 40px rgba(0,0,0,0.12)',

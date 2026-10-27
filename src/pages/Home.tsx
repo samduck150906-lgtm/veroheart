@@ -3,12 +3,16 @@ import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import ProductThumb from '../components/ProductThumb';
-import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
+import { isRealPetProfile, resolveProductDisplayVerdict } from '../utils/displayVerdict';
+import PetCompatibilityPrompt from '../components/PetCompatibilityPrompt';
 import { normalizeProductDisplayName, resolveBrandLabel } from '../utils/productDisplay';
 import { gradePalette, VR } from '../lib/veroroDesign';
 import { useProductCategories } from '../lib/productCategories';
+import { HOME_RECOMMENDATION_MIN_SCORE } from '../lib/homeRecommendations';
+import { useHomeRecommendations } from '../hooks/useHomeRecommendations';
+import { describeIngredientAvailability } from '../utils/productDataCompleteness';
 import type { PetSafetyScan } from '../utils/petSafety';
-import type { Product } from '../types';
+import { DEFAULT_USER_PET_PROFILE, type Product } from '../types';
 
 // 카테고리 목록·순서는 관리자 콘솔(카테고리 관리)이 단일 원본이다.
 // name 은 DB products.main_category 값과 글자 그대로 대조된다.
@@ -16,13 +20,14 @@ import type { Product } from '../types';
 // DB 가 작아 보이는 역효과만 있었다.
 
 export default function Home() {
-  const { profile, products, recentViews, isLoggedIn } = useStore();
+  const { profile, recentViews, isLoggedIn, catalogRevision } = useStore();
   const navigate = useNavigate();
   const categories = useProductCategories();
+  const hasPetProfile = isLoggedIn && isRealPetProfile(profile);
 
   const [safetyScan, setSafetyScan] = useState<PetSafetyScan | null>(null);
   useEffect(() => {
-    if (recentViews.length === 0) {
+    if (!hasPetProfile || recentViews.length === 0) {
       setSafetyScan(null);
       return;
     }
@@ -33,23 +38,15 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-  }, [recentViews, profile]);
+  }, [recentViews, profile, hasPetProfile]);
 
   const petLabel = isLoggedIn && profile.name ? profile.name : '우리 아이';
 
-  /** 프로필 기준 점수 상위 제품 — '우리 아이한테 잘 맞는 것들' */
-  const recommended = useMemo(() => {
-    const recentIds = new Set(recentViews.map((p) => p.id));
-    return products
-      .filter((p) => !recentIds.has(p.id))
-      .map((p) => ({ product: p, verdict: resolveProductDisplayVerdict(p, profile) }))
-      .sort((a, b) => b.verdict.score - a.verdict.score)
-      .slice(0, 3);
-  }, [products, recentViews, profile]);
+  const recommendations = useHomeRecommendations(profile, isLoggedIn, catalogRevision);
 
   /** 최근 본 제품에서 걸린 성분들 — 위험/주의 두 단계로 나눠 보여준다 */
   const alertRows = useMemo(() => {
-    if (!safetyScan) return [];
+    if (!hasPetProfile || !safetyScan) return [];
     const dangerSet = new Set(safetyScan.dangerNames);
     return safetyScan.flagged
       .flatMap((f) =>
@@ -61,26 +58,26 @@ export default function Home() {
         }))
       )
       .slice(0, 3);
-  }, [safetyScan]);
+  }, [safetyScan, hasPetProfile]);
 
   const openProduct = (id: string) => navigate(`/product/${id}`);
   const goCategory = (category: string) =>
     navigate({ pathname: '/search', search: `?category=${encodeURIComponent(category)}` });
 
-  const gradeOf = (product: Product) => resolveProductDisplayVerdict(product, profile);
+  const gradeOf = (product: Product) => resolveProductDisplayVerdict(product, hasPetProfile ? profile : DEFAULT_USER_PET_PROFILE);
 
   return (
     <div style={{ padding: '6px 0 28px' }}>
       <Helmet>
         <title>베로로 — 사료·간식·영양제 성분 분석</title>
-        <meta name="description" content="반려동물 사료·간식·영양제의 원재료와 성분을 분석하고, 먹은 제품을 기록하세요." />
+        <meta name="description" content="반려동물 사료·간식·영양제의 원재료와 성분을 분석하고, 먹은 제품을 기록해 주세요." />
       </Helmet>
 
       <h1 style={{ margin: '14px 0 4px', fontSize: '29px', fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 1.18 }}>
-        우리 아이한테<br />괜찮을까?
+        우리 아이에게<br />맞는지 확인해 주세요
       </h1>
       <p style={{ margin: '0 0 18px', fontSize: '14px', color: VR.muted, lineHeight: 1.5 }}>
-        성분 하나하나 뜯어서 등급으로 알려줄게.
+        성분을 분석해 등급으로 안내합니다.
       </p>
 
       {/* 1순위 액션 — 바코드 스캔 */}
@@ -108,7 +105,7 @@ export default function Home() {
             바코드 스캔하기
           </span>
           <span style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#6B5C00', marginTop: '2px' }}>
-            뒷면 바코드만 찍으면 3초 안에 등급 확인
+            바코드로 등록된 제품의 성분 정보 확인
           </span>
         </span>
       </button>
@@ -190,7 +187,7 @@ export default function Home() {
           </span>
 
           <span style={{ display: 'block', marginTop: '11px', fontSize: '12.5px', fontWeight: 800, color: 'var(--danger-strong)' }}>
-            {petLabel} 프로필 기준으로 다시 스캔했어 →
+            {petLabel} 프로필 기준으로 다시 확인했습니다 →
           </span>
         </button>
       )}
@@ -202,7 +199,7 @@ export default function Home() {
             <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 800, letterSpacing: '-0.03em' }}>최근 본 상품</h2>
             <button
               type="button"
-              onClick={() => navigate('/search')}
+              onClick={() => navigate('/recent')}
               style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12.5px', fontWeight: 700, color: VR.sub }}
             >
               더 보기
@@ -210,8 +207,8 @@ export default function Home() {
           </div>
           <div className="vr-rail vr-bleed" style={{ padding: '0 16px 4px', marginBottom: '24px' }}>
             {recentViews.slice(0, 8).map((p) => {
-              const { grade } = gradeOf(p);
-              const palette = gradePalette(grade);
+              const { grade, canShowScore } = gradeOf(p);
+              const palette = canShowScore ? gradePalette(grade) : { fg: 'var(--text-muted)', bg: 'var(--vr-soft)' };
               return (
                 <button
                   key={p.id}
@@ -225,7 +222,7 @@ export default function Home() {
                       className="vr-grade-pill"
                       style={{ position: 'absolute', left: '8px', top: '8px', color: palette.fg, background: palette.bg }}
                     >
-                      {grade}
+                      {canShowScore ? grade : describeIngredientAvailability(p).label}
                     </span>
                   </span>
                   <span style={{ display: 'block', fontSize: '11.5px', color: VR.sub, fontWeight: 700, marginTop: '8px' }}>{resolveBrandLabel(p)}</span>
@@ -240,16 +237,34 @@ export default function Home() {
       )}
 
       {/* 프로필 기반 추천 */}
-      {recommended.length > 0 && (
-        <section>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '11px' }}>
-            <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 800, letterSpacing: '-0.03em' }}>
-              {petLabel}한테 잘 맞는 것들
+      {!recommendations.enabled && (
+        <div style={{ marginBottom: '24px' }}><PetCompatibilityPrompt /></div>
+      )}
+      {recommendations.enabled && (
+        <section aria-labelledby="home-recommendations-title" aria-busy={recommendations.status === 'loading'} style={{ marginBottom: '24px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 12px', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <h2 id="home-recommendations-title" style={{ margin: 0, fontSize: '18px', fontWeight: 800, letterSpacing: '-0.03em' }}>
+              {petLabel}에게 잘 맞는 제품
             </h2>
-            <span style={{ fontSize: '11.5px', fontWeight: 700, color: VR.sub }}>프로필 기반</span>
+            <span style={{ fontSize: '11.5px', fontWeight: 700, color: VR.sub }}>궁합 점수 {HOME_RECOMMENDATION_MIN_SCORE}점 이상</span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', marginBottom: '24px' }}>
-            {recommended.map(({ product, verdict }) => {
+          <p style={{ margin: '0 0 12px', fontSize: '12px', color: VR.sub, lineHeight: 1.5 }}>
+            등록된 원료·프로필을 바탕으로 계산한 참고 점수입니다.
+          </p>
+          {recommendations.status === 'loading' && <p role="status" style={{ fontSize: '13px', color: VR.sub }}>프로필에 맞는 제품을 찾고 있습니다.</p>}
+          {recommendations.status === 'error' && (
+            <div role="status">
+              <p style={{ fontSize: '13px', color: VR.sub }}>추천 제품을 불러오지 못했습니다.</p>
+              <button type="button" className="btn btn-outline" onClick={recommendations.retry}>다시 시도</button>
+            </div>
+          )}
+          {recommendations.status === 'ready' && recommendations.items.length === 0 && (
+            <p role="status" style={{ fontSize: '13px', color: VR.sub, lineHeight: 1.6 }}>
+              현재 등록된 제품 중 궁합 점수 {HOME_RECOMMENDATION_MIN_SCORE}점 이상인 제품이 없습니다.
+            </p>
+          )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
+            {recommendations.items.map(({ product, verdict }) => {
               const palette = gradePalette(verdict.grade);
               return (
                 <button
@@ -272,7 +287,7 @@ export default function Home() {
                       {normalizeProductDisplayName(product)}
                     </span>
                     <span style={{ display: 'block', fontSize: '11.5px', fontWeight: 700, color: 'var(--safe-strong)', marginTop: '3px' }}>
-                      {petLabel}와 {verdict.score}% 맞아
+                      {petLabel} 기준 궁합 점수 {verdict.score}점
                     </span>
                   </span>
                   <span style={{
@@ -289,6 +304,11 @@ export default function Home() {
         </section>
       )}
 
+      <button type="button" className="btn btn-outline" onClick={() => navigate('/search')}
+        style={{ width: '100%', marginBottom: 24 }}>
+        전체 제품 찾아보기
+      </button>
+
       {/* 성향 테스트 진입 */}
       <button
         type="button"
@@ -300,12 +320,12 @@ export default function Home() {
         }}
       >
         <span style={{ flex: 1 }}>
-          <span style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, color: '#FFD90A', letterSpacing: '0.04em' }}>EVENT</span>
+          <span style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, color: '#FFD90A', letterSpacing: '0.04em' }}>성향 테스트</span>
           <span style={{ display: 'block', fontSize: '17px', fontWeight: 800, color: 'var(--vr-on-inverse)', letterSpacing: '-0.03em', marginTop: '3px' }}>
             우리 아이 성향 테스트 8문항
           </span>
           <span style={{ display: 'block', fontSize: '12.5px', color: 'var(--vr-on-inverse-sub)', marginTop: '3px' }}>
-            성향 알면 사료 고르기 훨씬 쉬워져
+            성향을 알면 사료 선택이 쉬워집니다
           </span>
         </span>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFD90A" strokeWidth="2.4" strokeLinecap="round" aria-hidden>

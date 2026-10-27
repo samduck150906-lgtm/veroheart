@@ -5,13 +5,10 @@ import { gradeVerdict } from '../lib/veroroDesign';
 import { AlertCircle, Check, Sparkles } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
-import {
-  getRecommendationBreakdown,
-  resolveDisplayVerdict,
-  calculateCompatibilityScore,
-  type CompatibilityGrade,
-} from '../utils/score';
-import { calculateCalories, checkCalciumPhosphorusRatio, toPercent } from '../analysis/nutrition';
+import type { CompatibilityGrade } from '../utils/score';
+import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
+import { analyzeFeed } from '../analysis/feedAnalysis';
+import { analysisReadinessCopy } from '../analysis/analysisReadiness';
 import { runScoringPipeline, type ScoringPipelineResult } from '../analysis/scoringPipeline';
 import { evaluateDiseases, type ActiveDiseaseResult } from '../analysis/breedDiseaseEngine';
 import { concernsToDiseaseIds } from '../analysis/adapter';
@@ -25,7 +22,7 @@ import StateView from '../components/StateView';
 import { HealthConcernEvidence } from '../components/HealthConcernEvidence';
 import { buildHealthConcernPresentation } from '../health/concernPresentation';
 import { buildAllergyDisplayState } from '../utils/allergyDisplay';
-import type { Ingredient, Product } from '../types';
+import { DEFAULT_USER_PET_PROFILE, type Ingredient, type Product } from '../types';
 
 /* ── 등급·위험도 시각 토큰 (신호등) ───────────────────────── */
 const RISK = {
@@ -147,7 +144,7 @@ function TrafficLightSummary({ safe, caution, danger }: { safe: number; caution:
   );
 }
 
-/* ── 영양 도넛 (라벨 데이터 부재 시 형태 기반 추정) ─────────── */
+/* ── 영양 도넛 (완전한 라벨 수치와 차감 계산만 표시) ─────────── */
 function NutritionDonut({ n }: { n: { protein: number; fat: number; carbs: number; others: number } }) {
   const segs = [
     { label: '단백질', value: n.protein, color: '#15B36B' },
@@ -195,20 +192,31 @@ type Tab = (typeof TABS)[number];
 export default function AnalysisResult() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile, products, selectedProduct, isLoggedIn } = useStore();
+  const { profile, products, selectedProduct, isLoggedIn, fetchProductDetail, isLoadingProducts } = useStore();
 
   const [activeTab, setActiveTab] = useState<Tab>('종합');
   const [selectedIng, setSelectedIng] = useState<Ingredient | null>(null);
 
-  const productId: string | undefined = location.state?.productId || selectedProduct?.id;
+  const queryId = new URLSearchParams(location.search).get('productId');
+  const stateId = typeof location.state?.productId === 'string' ? location.state.productId : undefined;
+  const [initialSelectionId] = useState(() => selectedProduct?.id);
+  const productId = queryId || stateId || initialSelectionId;
   const product = useMemo<Product | undefined>(() => {
-    if (productId) {
-      // 상세 조회로 채워진 selectedProduct가 보장성분(GA)까지 갖고 있으므로 우선한다
-      if (selectedProduct?.id === productId) return selectedProduct;
-      return products.find((p) => p.id === productId) || selectedProduct || undefined;
-    }
-    return selectedProduct || products[0];
+    if (!productId) return undefined;
+    if (selectedProduct?.id === productId) return selectedProduct;
+    return products.find((item) => item.id === productId);
   }, [productId, products, selectedProduct]);
+
+  useEffect(() => {
+    if (!productId || queryId === productId) return;
+    const params = new URLSearchParams(location.search);
+    params.set('productId', productId);
+    navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
+  }, [location.pathname, location.search, navigate, productId, queryId]);
+
+  useEffect(() => {
+    if (productId && useStore.getState().selectedProduct?.id !== productId) void fetchProductDetail(productId);
+  }, [fetchProductDetail, productId]);
 
   const hasPetProfile = Boolean(
     isLoggedIn && profile?.id && profile.id !== 'local-profile' && profile.name && profile.name !== '우리 아이',
@@ -219,47 +227,32 @@ export default function AnalysisResult() {
   const cautionIngredients = ingredients.filter((i) => i.riskLevel === 'caution');
   const dangerIngredients = ingredients.filter((i) => i.riskLevel === 'danger');
 
-  const rawScore = useMemo(() => {
-    if (!product) return 75;
-    if (hasPetProfile) return calculateCompatibilityScore(product, profile);
-    // 프로필이 없으면 개인화 감점(종 불일치·알레르기) 없는 객관 점수를 보여준다.
-    // 기본 프로필(종=Dog)로 개인화하면 고양이 제품이 게스트에게 전부 0점이 된다.
-    return getRecommendationBreakdown(product, profile).baseScore;
-  }, [product, profile, hasPetProfile]);
-
-  const breakdown = useMemo(
-    () => (product && hasPetProfile ? getRecommendationBreakdown(product, profile) : null),
+  const display = useMemo(
+    () => product ? resolveProductDisplayVerdict(product, hasPetProfile ? profile : DEFAULT_USER_PET_PROFILE) : null,
     [product, profile, hasPetProfile],
   );
-
-  // 알레르기·위험 성분이 있으면 표시 점수/등급을 하드캡해 히어로가 경고 배너와
-  // 모순되지 않게 한다. 랭킹용 원점수(rawScore)는 그대로 두고 표시값만 조정한다.
-  const verdict = useMemo(
-    () => resolveDisplayVerdict(rawScore, {
-      speciesMismatch: breakdown?.speciesMismatch ?? false,
-      allergyHits: breakdown?.allergyHits.length ?? 0,
-      dangerCount: dangerIngredients.length,
-    }),
-    [rawScore, breakdown, dangerIngredients.length],
-  );
-  const score = verdict.score;
-  const grade = verdict.grade;
+  const canShowScore = display?.canShowScore === true;
+  const breakdown = display && hasPetProfile ? display.breakdown : null;
+  const readinessText = analysisReadinessCopy(display?.analysisReadiness.status ?? 'unavailable');
+  const feedAnalysis = useMemo(() => product ? analyzeFeed(product, profile) : null, [product, profile]);
   const report = useMemo(
-    () => (product ? generateAnalysisReport(product, profile) : null),
-    [product, profile],
+    () => product && canShowScore && hasPetProfile ? generateAnalysisReport(product, profile) : null,
+    [product, profile, canShowScore, hasPetProfile],
   );
   const concernPresentation = useMemo(
-    () => (breakdown ? buildHealthConcernPresentation(breakdown.healthConcernPolicy) : null),
-    [breakdown],
+    () => breakdown && canShowScore ? buildHealthConcernPresentation(breakdown.healthConcernPolicy) : null,
+    [breakdown, canShowScore],
   );
   const allergyDisplay = useMemo(
     () => breakdown
       ? buildAllergyDisplayState(breakdown, profile.name || '우리 아이', {
-          hasIngredientData: ingredients.length > 0,
+          hasIngredientData: ingredients.length + (product?.unknownIngredientTerms?.length ?? 0) > 0,
           hasAllergyProfile: hasPetProfile && profile.allergies.length > 0,
+          analysisStatus: display?.analysisReadiness.status,
+          unknownIngredientTerms: product?.unknownIngredientTerms,
         })
       : null,
-    [breakdown, profile.name, profile.allergies.length, ingredients.length, hasPetProfile],
+    [breakdown, profile.name, profile.allergies.length, ingredients.length, hasPetProfile, display, product],
   );
 
   // ── Phase 2 별칭 관찰(기본 OFF) ──
@@ -285,29 +278,30 @@ export default function AnalysisResult() {
 
   // ── 잠들어 있던 성분 품질·기능성·안전 엔진을 결과 화면에 연결 ──
   const pipeline = useMemo<ScoringPipelineResult | null>(
-    () => (product && (product.ingredients?.length ?? 0) > 0 ? runScoringPipeline(product) : null),
-    [product],
+    () => product && canShowScore ? runScoringPipeline(product) : null,
+    [product, canShowScore],
   );
 
   // ── 우리 아이 건강 고민 → 질환별 NRC 정량 규칙 평가 ──
   const diseaseResults = useMemo<ActiveDiseaseResult[]>(() => {
-    if (!product) return [];
+    if (!product || !canShowScore || !hasPetProfile || !feedAnalysis?.macros) return [];
     const ids = concernsToDiseaseIds(profile.healthConcerns);
     return ids.length ? evaluateDiseases(ids, product) : [];
-  }, [product, profile.healthConcerns]);
+  }, [product, profile.healthConcerns, canShowScore, hasPetProfile, feedAnalysis?.macros]);
 
   const capped = Boolean(breakdown && (breakdown.allergyHits.length > 0 || breakdown.dangerCount > 0));
 
   // ── 좋은 점 / 주의 사항 (엔진 하이라이트 + 파생값, 중복 제거) ──
   const positives = useMemo(() => {
+    if (!canShowScore) return [];
     const base = [
       safeIngredients.length > 5 ? `등록 정보상 일반 성분 ${safeIngredients.length}가지 확인` : null,
-      ingredients.length > 0 && cautionIngredients.length === 0 && dangerIngredients.length === 0 ? '현재 등록된 원료에서 주의·위험 항목은 확인되지 않았어요' : null,
+      ingredients.length > 0 && cautionIngredients.length === 0 && dangerIngredients.length === 0 ? '현재 등록된 원료에서 주의·위험 항목은 확인되지 않았습니다' : null,
       allergyDisplay?.level === 'none' ? allergyDisplay.summaryText : null,
     ].filter(Boolean) as string[];
     const fromReport = (report?.highlights ?? []).filter((h) => h.type === 'positive').map((h) => h.text);
     return Array.from(new Set([...base, ...fromReport]));
-  }, [safeIngredients.length, cautionIngredients.length, dangerIngredients.length, ingredients.length, allergyDisplay, report]);
+  }, [safeIngredients.length, cautionIngredients.length, dangerIngredients.length, ingredients.length, allergyDisplay, report, canShowScore]);
 
   const cautions = useMemo(() => {
     const base = [
@@ -315,54 +309,31 @@ export default function AnalysisResult() {
       dangerIngredients.length > 0 ? `위험 성분 ${dangerIngredients.length}가지: ${dangerIngredients.map((i) => i.nameKo).slice(0, 2).join(', ')}` : null,
       breakdown && breakdown.allergyHits.length > 0 ? `알레르기 의심: ${breakdown.allergyHits.join(', ')}` : null,
       allergyDisplay?.level === 'caution' || allergyDisplay?.level === 'unknown' ? allergyDisplay.summaryText : null,
-      pipeline?.hasDCMRisk ? `상위 원료의 콩류(${pipeline.dcmLegumes.join(', ')})와 확장성 심근병증(DCM)의 연관성이 논의되고 있어요` : null,
-      pipeline?.hasProteinInflation ? `식물성 단백(${pipeline.inflationDetails.join(', ')})이 단백질 수치를 실제보다 높여 보이게 할 수 있어요` : null,
+      pipeline?.hasDCMRisk ? `상위 원료의 콩류(${pipeline.dcmLegumes.join(', ')})와 확장성 심근병증(DCM)의 연관성이 논의되고 있습니다` : null,
+      pipeline?.hasProteinInflation ? `식물성 단백(${pipeline.inflationDetails.join(', ')})이 단백질 수치를 실제보다 높여 보이게 할 수 있습니다` : null,
     ].filter(Boolean) as string[];
     const fromReport = (report?.highlights ?? []).filter((h) => h.type !== 'positive').map((h) => h.text);
     return Array.from(new Set([...base, ...fromReport]));
   }, [cautionIngredients, dangerIngredients, breakdown, allergyDisplay, report, pipeline]);
 
-  // ── 영양 구성: 보장성분(실측)이 있으면 사용, 없으면 형태 기반 추정 ──
-  const nutrition = useMemo(() => {
+  const nutrition = feedAnalysis?.macros ? {
+    protein: feedAnalysis.macros.protein,
+    fat: feedAnalysis.macros.fat,
+    carbs: feedAnalysis.macros.carb,
+    others: Math.round((feedAnalysis.macros.fiber + feedAnalysis.macros.ash + feedAnalysis.macros.moisture) * 10) / 10,
+  } : null;
+  const reportedNutrients = useMemo(() => {
     const ga = product?.guaranteedAnalysis;
-    // 보장성분은 문자열·null 이 섞여 들어오므로 계산 전에 숫자로 정리한다.
-    // (그대로 빼면 NaN 이 되어 영양소 탭에 "NaN%" 가 그대로 찍힌다.)
-    if (ga && (toPercent(ga.crudeProtein) > 0 || toPercent(ga.crudeFat) > 0)) {
-      const protein = toPercent(ga.crudeProtein);
-      const fat = toPercent(ga.crudeFat);
-      const fiber = toPercent(ga.crudeFiber);
-      const ash = toPercent(ga.crudeAsh);
-      const moisture = toPercent(ga.moisture);
-      const carbs = Math.max(0, 100 - protein - fat - fiber - ash - moisture);
-      const others = Math.max(0, 100 - protein - fat - carbs);
-      const labelKcal = Number(product?.caloriesPer100g);
-      const kcal = Number.isFinite(labelKcal) && labelKcal > 0
-        ? labelKcal
-        : calculateCalories(ga).kcalPer100g;
-      return {
-        protein: Math.round(protein),
-        fat: Math.round(fat),
-        carbs: Math.round(carbs),
-        others: Math.round(others),
-        kcal: Math.round(kcal),
-        measured: true,
-        capNote: checkCalciumPhosphorusRatio(ga),
-      };
-    }
-    const name = product?.name ?? '';
-    const cat = product?.category ?? '';
-    const form = product?.formulation ?? '';
-    const isWet = form.includes('습식') || cat.includes('습식') || /캔|수프/.test(name);
-    const isSnack = cat.includes('간식') || /져키|껌|츄/.test(name);
-    const base = isWet
-      ? { protein: 10, fat: 5, carbs: 5, others: 80, kcal: 95 }
-      : isSnack
-        ? { protein: 15, fat: 5, carbs: 54, others: 26, kcal: 320 }
-        : { protein: 30, fat: 16, carbs: 31, others: 23, kcal: 390 };
-    return { ...base, measured: false, capNote: null as string | null };
+    if (!ga) return [];
+    const fields = [['crudeProtein', '조단백질'], ['crudeFat', '조지방'], ['crudeFiber', '조섬유'], ['crudeAsh', '조회분'], ['moisture', '수분'], ['calcium', '칼슘'], ['phosphorus', '인']] as const;
+    return fields.flatMap(([key, label]) => {
+      const raw = ga[key];
+      const value = Number(raw);
+      return raw !== null && raw !== undefined && String(raw).trim() !== '' && Number.isFinite(value) && value >= 0 && value <= 100 ? [{ label, value }] : [];
+    });
   }, [product]);
 
-  const lifeStage = product?.targetLifeStage?.length ? product.targetLifeStage.join(', ') : '전 연령';
+  const lifeStage = product?.targetLifeStage?.length ? product.targetLifeStage.join(', ') : '등록된 연령 정보 없음';
 
   const recommendTargets = useMemo(() => {
     const t: string[] = [];
@@ -370,23 +341,24 @@ export default function AnalysisResult() {
     else if (product?.targetPetType === 'dog') t.push('강아지 보호자');
     if (product?.targetLifeStage?.length) t.push(`${lifeStage} 반려동물`);
     if (product?.healthConcerns?.length) t.push(`${product.healthConcerns.slice(0, 2).join('·')} 관련 태그 등록`);
-    return t.length ? t : ['등록된 대상 정보가 없어요'];
+    return t.length ? t : ['등록된 대상 정보가 없습니다'];
   }, [product, lifeStage]);
 
   const notRecommendTargets = useMemo(() => {
     const t: string[] = [];
     if (breakdown && breakdown.allergyHits.length > 0) t.push(`${breakdown.allergyHits.join(', ')} 알레르기가 있는 경우`);
     if (dangerIngredients.length > 0) t.push('민감성·기저질환이 있어 위험 성분을 피해야 하는 경우');
-    return t.length ? t : ['현재 등록 정보에서 별도 회피 대상은 확인되지 않았어요'];
+    return t.length ? t : ['현재 등록 정보에서 별도 회피 대상은 확인되지 않았습니다'];
   }, [breakdown, dangerIngredients.length]);
 
 
   if (!product) {
+    if (productId && isLoadingProducts) return <StateView variant="loading" title="제품 정보를 불러오고 있습니다" />;
     return (
       <StateView
         variant="empty"
-        title="분석할 제품이 없어요"
-        description="상품을 선택하면 성분 분석 결과를 볼 수 있어요."
+        title="분석할 제품이 없습니다"
+        description="상품을 선택하면 성분 분석 결과를 볼 수 있습니다."
         action={{ label: '상품 탐색하기', onClick: () => navigate('/search') }}
       />
     );
@@ -396,24 +368,27 @@ export default function AnalysisResult() {
     <div style={{ padding: '0 0 120px' }}>
       <Helmet>
         <title>{`${product.name} 성분 분석 결과 | 베로로`}</title>
-        <meta name="description" content={`${product.name} 성분 분석 결과 — ${grade}등급`} />
+        <meta name="description" content={canShowScore && display ? `${product.name} 성분 분석 결과 — ${display.grade}등급` : `${product.name} — ${readinessText}`} />
       </Helmet>
 
       <style>{`@keyframes veroFadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }`}</style>
 
-      <ReportHero
-        score={score}
-        grade={grade}
-        productName={product.name}
-        headline={report?.summary || gradeVerdict(grade)}
-      />
+      {canShowScore && display ? (
+        <ReportHero score={display.score} grade={display.grade} productName={product.name} headline={report?.summary || gradeVerdict(display.grade)} />
+      ) : (
+        <section role="status" style={{ background: 'var(--secondary)', padding: 24, borderRadius: 16 }}>
+          <h1 style={{ fontSize: 20 }}>{product.name}</h1>
+          <p>{readinessText}</p>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>현재 원료 정보로는 종합 점수·등급과 건강 적합성을 판정할 수 없습니다.</p>
+        </section>
+      )}
 
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '16px 0 12px' }}>
         <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--vr-sub)' }}>{product.brand}</span>
         <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--vr-faint)' }}>{lifeStage}</span>
       </div>
 
-      {!hasPetProfile && (
+      {!hasPetProfile && canShowScore && (
         <button
           type="button"
           onClick={() => navigate('/profile')}
@@ -421,7 +396,7 @@ export default function AnalysisResult() {
         >
           <Sparkles size={18} color="var(--primary-dark)" style={{ flexShrink: 0 }} />
           <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-dark)', lineHeight: 1.5 }}>
-            우리 아이 프로필을 등록하면 알레르기·건강 고민까지 반영한 <b>맞춤 점수</b>를 볼 수 있어요.
+            우리 아이 프로필을 등록하면 알레르기·건강 고민까지 반영한 <b>맞춤 점수</b>를 볼 수 있습니다.
           </span>
         </button>
       )}
@@ -437,22 +412,22 @@ export default function AnalysisResult() {
           <div>
             <div style={{ fontSize: 14, fontWeight: 800, color: breakdown.allergyHits.length > 0 ? 'var(--danger-strong)' : 'var(--caution-strong)', marginBottom: 4 }}>
               {breakdown.allergyHits.length > 0
-                ? `${breakdown.allergyHits.join(', ')}이(가) 들어 있어요`
+                ? `${breakdown.allergyHits.join(', ')}이(가) 들어 있습니다`
                 : `주의가 필요한 성분 ${breakdown.dangerCount}개 포함`}
             </div>
             <div style={{ fontSize: 12.5, fontWeight: 600, color: breakdown.allergyHits.length > 0 ? 'var(--danger-strong)' : 'var(--caution-strong)', opacity: 0.85, lineHeight: 1.5 }}>
               {breakdown.allergyHits.length > 0
-                ? `${profile.name}는 이 성분을 피하는 게 좋아요. 급여 전 수의사와 상담해 주세요.`
-                : '장기 급여 시 주의가 필요해요. 수의사와 상담을 권장해요.'}
+                ? `${profile.name}는 이 성분을 피하는 것이 좋습니다. 급여 전 수의사와 상담해 주세요.`
+                : '장기 급여 시 주의가 필요합니다. 수의사와 상담을 권장합니다.'}
             </div>
           </div>
         </div>
       )}
 
       {/* Traffic-light summary */}
-      <div style={{ margin: '12px 0 4px' }}>
+      {canShowScore && <div style={{ margin: '12px 0 4px' }}>
         <TrafficLightSummary safe={safeIngredients.length} caution={cautionIngredients.length} danger={dangerIngredients.length} />
-      </div>
+      </div>}
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 4, background: 'var(--secondary)', borderRadius: 14, padding: 4, margin: '16px 0' }}>
@@ -485,66 +460,60 @@ export default function AnalysisResult() {
           {pipeline && <IngredientEvidenceCard pipeline={pipeline} />}
           {diseaseResults.length > 0 && <DiseaseFitCard results={diseaseResults} petName={profile.name} />}
           <HealthConcernEvidence presentation={concernPresentation} />
-          <InfoBlock title="좋은 점" color={RISK.safe.color} items={positives} empty="특별히 강조할 좋은 점을 찾지 못했어요." />
-          <InfoBlock title="주의 사항" color={RISK.caution.color} items={cautions} empty="현재 등록된 정보에서 별도 주의 항목은 확인되지 않았어요." />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          {canShowScore && <InfoBlock title="좋은 점" color={RISK.safe.color} items={positives} empty="특별히 강조할 좋은 점을 찾지 못했습니다." />}
+          <InfoBlock title="주의 사항" color={RISK.caution.color} items={cautions} empty={canShowScore ? '현재 등록된 정보에서 별도 주의 항목은 확인되지 않았습니다.' : '아직 확인하지 못한 원료가 있어 주의 항목을 모두 안내할 수 없습니다.'} />
+          {canShowScore && <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <TargetCard title="등록 대상" tone="good" items={recommendTargets} />
             <TargetCard title="확인 필요" tone="bad" items={notRecommendTargets} />
-          </div>
+          </div>}
         </div>
       )}
 
-      {/* Tab: 영양소 */}
+      {/* Tab: 영양소 — 실제 라벨 수치와 충분한 수치가 있을 때의 계산만 표시 */}
       {activeTab === '영양소' && (
         <div style={{ display: 'grid', gap: 16 }}>
           <div style={{ background: 'var(--surface-elevated)', border: '1px solid rgba(28,25,23,0.06)', borderRadius: 16, padding: 18 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-dark)' }}>영양 구성</span>
-              <span style={{
-                fontSize: 11, fontWeight: 800, borderRadius: 999, padding: '4px 10px',
-                background: nutrition.measured ? RISK.safe.bg : 'var(--secondary)',
-                color: nutrition.measured ? RISK.safe.color : 'var(--text-muted)',
-              }}>
-                {nutrition.measured ? '보장성분 실측' : '형태 기반 추정'}
-              </span>
-            </div>
-            <NutritionDonut n={nutrition} />
+            <h2 style={{ fontSize: 14, fontWeight: 800, margin: '0 0 14px' }}>영양 구성</h2>
+            {nutrition ? <>
+              <NutritionDonut n={nutrition} />
+              <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>표시된 보장성분 기준이며 탄수화물은 나머지 성분을 뺀 추정치입니다.</p>
+            </> : reportedNutrients.length > 0 ? <>
+              <dl style={{ display: 'grid', gap: 8 }}>{reportedNutrients.map(({ label, value }) => <div key={label} style={{ display: 'flex', justifyContent: 'space-between' }}><dt>{label}</dt><dd>{value}%</dd></div>)}</dl>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>확인된 라벨 수치만 표시했습니다. 전체 영양 구성을 계산하기에는 정보가 부족합니다.</p>
+            </> : <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>영양 수치가 등록되지 않았습니다.</p>}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--secondary)', borderRadius: 16, padding: 18 }}>
-            <div style={{ fontSize: 32, fontWeight: 900, color: 'var(--text-dark)', letterSpacing: '-0.03em' }}>{nutrition.kcal}</div>
+          {feedAnalysis?.calories && <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--secondary)', borderRadius: 16, padding: 18 }}>
+            <div style={{ fontSize: 32, fontWeight: 900 }}>{Math.round(feedAnalysis.calories.per100g * 10) / 10}</div>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-dark)' }}>kcal / 100g</div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginTop: 2 }}>
-                {nutrition.measured ? '라벨 보장성분 기준 열량이에요' : '제품 형태 기준 추정 열량이에요'}
-              </div>
+              <div style={{ fontSize: 14, fontWeight: 800 }}>kcal / 100g</div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{feedAnalysis.calories.measured ? '라벨에 표시된 열량입니다' : '보장성분으로 계산한 추정 열량입니다'}</div>
             </div>
-          </div>
-          {nutrition.capNote && (
-            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: RISK.caution.bg, borderRadius: 16, padding: 14 }}>
-              <AlertCircle size={18} color={RISK.caution.color} style={{ flexShrink: 0, marginTop: 1 }} />
-              <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--caution-strong)', lineHeight: 1.5 }}>{nutrition.capNote}</span>
-            </div>
-          )}
+          </div>}
+          {feedAnalysis?.caP.note && <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: RISK.caution.bg, borderRadius: 16, padding: 14 }}>
+            <AlertCircle size={18} color={RISK.caution.color} style={{ flexShrink: 0, marginTop: 1 }} />
+            <span style={{ fontSize: 12.5, color: 'var(--caution-strong)', lineHeight: 1.5 }}>{feedAnalysis.caP.note}</span>
+          </div>}
         </div>
       )}
 
       {/* Tab: 전성분 */}
       {activeTab === '전성분' && (
         <div style={{ background: 'var(--surface-elevated)', border: '1px solid rgba(28,25,23,0.06)', borderRadius: 16, padding: 16 }}>
-          <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 12 }}>성분을 탭하면 상세 정보를 볼 수 있어요</div>
+          <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 12 }}>성분을 누르면 상세 정보를 볼 수 있습니다</div>
           <div style={{ display: 'grid', gap: 8 }}>
-            {ingredients.length === 0 && (
-              <div style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '24px 0' }}>등록된 성분 정보가 없어요.</div>
+            {ingredients.length === 0 && !product.unknownIngredientTerms?.length && (
+              <div style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '24px 0' }}>등록된 성분 정보가 없습니다.</div>
             )}
+            {(product.unknownIngredientTerms ?? []).map((term, index) => <div key={`unknown-${index}`} style={{ padding: 12, borderRadius: 12, background: 'var(--secondary)' }}>{term} · 원료 확인 필요</div>)}
             {ingredients.map((ing, idx) => {
-              const r = RISK[ing.riskLevel] ?? RISK.safe;
+              const r = !canShowScore && ing.riskLevel === 'safe' ? { color: 'var(--text-muted)', bg: 'var(--secondary)', label: '확인된 원료' } : RISK[ing.riskLevel];
               return (
                 <button
                   key={ing.id || idx}
                   onClick={() => setSelectedIng(ing)}
                   style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', background: 'var(--secondary)', border: 'none', borderRadius: 12, padding: '12px 14px', cursor: 'pointer' }}
                 >
-                  <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-light)', width: 18, flexShrink: 0 }}>{idx + 1}</span>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-light)', width: 18, flexShrink: 0 }}>{canShowScore ? idx + 1 : '·'}</span>
                   <span style={{ width: 10, height: 10, borderRadius: 999, background: r.color, flexShrink: 0 }} />
                   <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-dark)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ing.nameKo}</span>
                   <span style={{ fontSize: 11, fontWeight: 700, color: r.color, background: r.bg, borderRadius: 999, padding: '3px 9px', flexShrink: 0 }}>{r.label}</span>
@@ -557,7 +526,7 @@ export default function AnalysisResult() {
 
       {/* Medical disclaimer */}
       <p style={{ fontSize: 11, color: 'var(--text-light)', lineHeight: 1.5, margin: '20px 4px 0', fontWeight: 600 }}>
-        본 분석은 참고용 정보이며 수의학적 진단을 대체하지 않아요. 건강 이상이 의심되면 반드시 수의사와 상담하세요.
+        본 분석은 참고용 정보이며 수의학적 진단을 대체하지 않습니다. 건강 이상이 의심되면 반드시 수의사와 상담해 주세요.
       </p>
 
       {/* Sticky bottom bar */}
@@ -583,7 +552,7 @@ export default function AnalysisResult() {
 
       {/* Ingredient detail sheet — 성분 사전 근거·설명·분류 */}
       <BottomSheet isOpen={Boolean(selectedIng)} onClose={() => setSelectedIng(null)} title={selectedIng?.nameKo ?? '성분 정보'}>
-        {selectedIng && <IngredientDetail ing={selectedIng} />}
+        {selectedIng && <IngredientDetail ing={selectedIng} allowVerdict={canShowScore} />}
       </BottomSheet>
     </div>
   );
@@ -640,7 +609,7 @@ export function IngredientEvidenceCard({ pipeline }: { pipeline: ScoringPipeline
         <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-dark)' }}>원료 품질 근거</span>
       </div>
       <div style={{ fontSize: 11.5, color: 'var(--text-light)', fontWeight: 600, lineHeight: 1.5, marginBottom: 14 }}>
-        위 궁합 점수와 별개로, 원료 자체의 품질을 성분 사전 기준으로 평가했어요.
+        위 궁합 점수와 별개로, 원료 자체의 품질을 성분 사전 기준으로 평가했습니다.
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: hasStrengths || hasFunctional ? 14 : 0 }}>
@@ -695,7 +664,7 @@ const RULE_STATUS = {
 
 function diseaseTone(r: ActiveDiseaseResult) {
   if (r.failCount > 0) return { color: 'var(--caution-strong)', bg: 'var(--caution-bg)', label: '주의 필요' };
-  if (r.passCount > 0) return { color: 'var(--safe-strong)', bg: 'var(--safe-bg)', label: '잘 맞아요' };
+  if (r.passCount > 0) return { color: 'var(--safe-strong)', bg: 'var(--safe-bg)', label: '잘 맞습니다' };
   return { color: 'var(--text-sub)', bg: 'var(--surface-alt)', label: '정보 부족' };
 }
 
@@ -708,7 +677,7 @@ export function DiseaseFitCard({ results, petName }: { results: ActiveDiseaseRes
         <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-dark)' }}>{name} 건강 고민 맞춤 분석</span>
       </div>
       <div style={{ fontSize: 11.5, color: 'var(--text-light)', fontWeight: 600, lineHeight: 1.5, marginBottom: 14 }}>
-        등록한 건강 고민에 대해 영양 가이드라인(NRC 기준) 규칙을 점검했어요. 참고용이며 수의 진단을 대체하지 않아요.
+        NRC 영양 가이드라인을 참고해 등록한 건강 고민별 주의할 점을 확인했습니다. 참고용이며 수의 진단을 대체하지 않습니다.
       </div>
       <div style={{ display: 'grid', gap: 12 }}>
         {results.map((r) => <DiseaseRow key={r.disease.id} r={r} />)}
@@ -749,13 +718,13 @@ function DiseaseRow({ r }: { r: ActiveDiseaseResult }) {
         </div>
       ) : (
         <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-          정량 기준 대신 아래 권장 성분으로 관리를 안내해요.
+          정량 기준 대신 아래 권장 성분으로 관리를 안내합니다.
         </div>
       )}
 
       {supplementGaps.length > 0 && (
         <div style={{ marginTop: 10 }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', marginBottom: 6 }}>이런 성분이 더 있으면 도움돼요</div>
+          <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', marginBottom: 6 }}>이런 성분이 더 있으면 도움이 됩니다</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {supplementGaps.map((s) => (
               <span key={s} style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text-dark)', background: 'var(--surface-elevated)', border: '1px solid var(--line)', borderRadius: 999, padding: '4px 10px' }}>{s}</span>
@@ -775,7 +744,7 @@ function DiseaseRow({ r }: { r: ActiveDiseaseResult }) {
 }
 
 /* ── 성분 상세 — 사전 설명·분류·품질등급·출처 근거 ─────────────────── */
-export function IngredientDetail({ ing }: { ing: Ingredient }) {
+export function IngredientDetail({ ing, allowVerdict = true }: { ing: Ingredient; allowVerdict?: boolean }) {
   const dict = findIngredientByName(ing.nameKo);
   const quality = classifyIngredientQuality(ing.nameKo, dict);
   const r = RISK[ing.riskLevel] ?? RISK.safe;
@@ -783,15 +752,15 @@ export function IngredientDetail({ ing }: { ing: Ingredient }) {
   return (
     <div style={{ display: 'grid', gap: 14 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 12, fontWeight: 800, color: r.color, background: r.bg, borderRadius: 999, padding: '5px 12px' }}>{r.label} 성분</span>
-        <span style={{ fontSize: 12, fontWeight: 800, color: quality.color, background: 'var(--secondary)', borderRadius: 999, padding: '5px 12px' }}>{quality.label}</span>
+        {allowVerdict && <span style={{ fontSize: 12, fontWeight: 800, color: r.color, background: r.bg, borderRadius: 999, padding: '5px 12px' }}>{r.label} 성분</span>}
+        {allowVerdict && <span style={{ fontSize: 12, fontWeight: 800, color: quality.color, background: 'var(--secondary)', borderRadius: 999, padding: '5px 12px' }}>{quality.label}</span>}
         {ing.nameEn && <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>{ing.nameEn}</span>}
       </div>
       <SheetBlock title="설명">{desc}</SheetBlock>
       {ing.purpose && <SheetBlock title="역할">{ing.purpose}</SheetBlock>}
       {dict && <SheetBlock title="분류">{CATEGORY_LABEL[dict.category]}</SheetBlock>}
       <div style={{ fontSize: 11, color: 'var(--text-light)', fontWeight: 600, lineHeight: 1.5 }}>
-        분류·설명은 베로로 성분 사전(수의·영양 가이드라인 기반) 기준이며 참고용이에요.
+        분류·설명은 베로로 성분 사전(수의·영양 가이드라인 기반) 기준이며 참고용입니다.
       </div>
     </div>
   );

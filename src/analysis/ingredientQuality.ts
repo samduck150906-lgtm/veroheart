@@ -117,7 +117,7 @@ export function classifyIngredientQuality(name: string, dictEntry: DictionaryIng
     return {
       grade: '경고', typeLabel, tierLabel: '경고',
       label: `${typeLabel}·경고`, color: QUALITY_GRADE_COLOR['경고'],
-      description: dictEntry?.explanation ?? '출처나 품질이 불분명한 부산물이에요.',
+      description: dictEntry?.explanation ?? '출처나 품질이 불분명한 부산물입니다.',
     };
   }
 
@@ -125,7 +125,7 @@ export function classifyIngredientQuality(name: string, dictEntry: DictionaryIng
     return {
       grade: '주의', typeLabel: '미확인 원료', tierLabel: '주의',
       label: '미확인 원료·주의', color: QUALITY_GRADE_COLOR['주의'],
-      description: '성분 정보를 확인하기 어려운 원료예요.',
+      description: '성분 정보를 확인하기 어려운 원료입니다.',
     };
   }
 
@@ -135,7 +135,7 @@ export function classifyIngredientQuality(name: string, dictEntry: DictionaryIng
     return {
       grade: '경고', typeLabel: '비명시 가공단백', tierLabel: '경고',
       label: '비명시 가공단백·경고', color: QUALITY_GRADE_COLOR['경고'],
-      description: '동물 출처가 명확하지 않은 가공 단백질이에요.',
+      description: '동물 출처가 명확하지 않은 가공 단백질입니다.',
     };
   }
 
@@ -143,7 +143,7 @@ export function classifyIngredientQuality(name: string, dictEntry: DictionaryIng
     return {
       grade: '주의', typeLabel: '가공 식물단백', tierLabel: '주의',
       label: '가공 식물단백·주의', color: QUALITY_GRADE_COLOR['주의'],
-      description: '조단백 수치를 높이는 데 쓰일 수 있는 가공 식물성 단백질이에요.',
+      description: '조단백 수치를 높이는 데 쓰일 수 있는 가공 식물성 단백질입니다.',
     };
   }
 
@@ -163,7 +163,7 @@ export function classifyIngredientQuality(name: string, dictEntry: DictionaryIng
       tierLabel: '최상위',
       label: isOrgan ? '장기육·최상위' : '신선육·최상위',
       color: QUALITY_GRADE_COLOR['최고'],
-      description: isOrgan ? '출처가 명확한 신선 장기육이에요.' : '출처가 명확한 신선 동물성 단백질이에요.',
+      description: isOrgan ? '출처가 명확한 신선 장기육입니다.' : '출처가 명확한 신선 동물성 단백질입니다.',
     };
   }
 
@@ -171,7 +171,7 @@ export function classifyIngredientQuality(name: string, dictEntry: DictionaryIng
     return {
       grade: '양호', typeLabel: '건식 단백', tierLabel: '상위',
       label: '건식 단백·상위', color: QUALITY_GRADE_COLOR['양호'],
-      description: '수분을 제거해 단백질을 농축한 명시 원료예요.',
+      description: '수분을 제거해 단백질을 농축한 명시 원료입니다.',
     };
   }
 
@@ -179,7 +179,7 @@ export function classifyIngredientQuality(name: string, dictEntry: DictionaryIng
     return {
       grade: '양호', typeLabel: '동물성 지방', tierLabel: '상위',
       label: '동물성 지방·상위', color: QUALITY_GRADE_COLOR['양호'],
-      description: '에너지 및 지방산을 공급하는 동물성 지방이에요.',
+      description: '에너지 및 지방산을 공급하는 동물성 지방입니다.',
     };
   }
 
@@ -189,7 +189,7 @@ export function classifyIngredientQuality(name: string, dictEntry: DictionaryIng
     return {
       grade: '양호', typeLabel, tierLabel: '상위',
       label: `${typeLabel}·상위`, color: QUALITY_GRADE_COLOR['양호'],
-      description: hasFunctional ? '특정 건강 기능을 보조하는 영양 성분이에요.' : '필수 영양소를 보충하는 성분이에요.',
+      description: hasFunctional ? '특정 건강 기능을 보조하는 영양 성분입니다.' : '필수 영양소를 보충하는 성분입니다.',
     };
   }
 
@@ -201,7 +201,7 @@ export function classifyIngredientQuality(name: string, dictEntry: DictionaryIng
       tierLabel: '상위',
       label: isOmega3 ? '오메가3 오일·상위' : '기능성 오일·상위',
       color: QUALITY_GRADE_COLOR['양호'],
-      description: '지방산을 공급하는 오일이에요.',
+      description: '지방산을 공급하는 오일입니다.',
     };
   }
 
@@ -209,7 +209,7 @@ export function classifyIngredientQuality(name: string, dictEntry: DictionaryIng
     return {
       grade: '주의', typeLabel: '두류 단백', tierLabel: '중립',
       label: '두류 단백·중립', color: QUALITY_GRADE_COLOR['주의'],
-      description: '식물성 단백·섬유원이에요. 상위에 다수 포함 시 DCM 연관성이 연구되었어요.',
+      description: '식물성 단백·섬유원입니다. 상위에 다수 포함 시 DCM 연관성이 연구되었습니다.',
     };
   }
 
@@ -217,7 +217,7 @@ export function classifyIngredientQuality(name: string, dictEntry: DictionaryIng
     return {
       grade: '주의', typeLabel: '탄수화물', tierLabel: '중립',
       label: '탄수화물·중립', color: QUALITY_GRADE_COLOR['주의'],
-      description: '에너지원으로 사용되는 탄수화물이에요.',
+      description: '에너지원으로 사용되는 탄수화물입니다.',
     };
   }
 
@@ -226,7 +226,7 @@ export function classifyIngredientQuality(name: string, dictEntry: DictionaryIng
       return {
         grade: '양호', typeLabel: '천연 보존제', tierLabel: '중립',
         label: '천연 보존제·중립', color: QUALITY_GRADE_COLOR['양호'],
-        description: '천연 산화방지제로 제품 신선도를 유지해요.',
+        description: '천연 산화방지제로 제품 신선도를 유지합니다.',
       };
     }
     return {

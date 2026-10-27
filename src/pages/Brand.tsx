@@ -23,11 +23,10 @@ export default function Brand() {
     startTransition(() => setIsLoading(true));
     void Promise.all([getProductsByBrand(decoded), getBrands()]).then(([prods, brands]) => {
       if (cancelled) return;
-      const result = prods.length > 0 ? prods : products.filter((p) => p.brand === decoded);
-      setBrandProducts(result);
+      setBrandProducts(prods);
       setOtherBrands(brands.filter((b) => b !== decoded).slice(0, 10));
       setIsLoading(false);
-    });
+    }).catch(() => { if (!cancelled) { setBrandProducts([]); setIsLoading(false); } });
     return () => {
       cancelled = true;
     };
@@ -90,7 +89,7 @@ export default function Brand() {
           <div>
             <div className="ui-section-kicker">brand snapshot</div>
             <div style={{ fontSize: '16px', fontWeight: 900, color: 'var(--text-dark)', marginTop: '2px' }}>
-              이 브랜드의 제품군을 비교해보세요
+              이 브랜드의 제품을 비교해 주세요
             </div>
           </div>
         </div>

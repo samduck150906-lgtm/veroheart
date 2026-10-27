@@ -13,6 +13,7 @@ export default defineConfig([
   //  - supabase/functions/ : Deno 엣지 함수
   //  - android/, ios/      : 네이티브 빌드 산출물
   globalIgnores([
+    '.artifacts',
     'dist',
     'landing',
     'react-native-theme',

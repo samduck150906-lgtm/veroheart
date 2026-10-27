@@ -23,8 +23,8 @@ export function TrustSection() {
           <SectionHeading
             kicker="분석 방식"
             id="trust-heading"
-            title="그럴듯한 답보다, 확인 가능한 근거를 보여드려요."
-            description="베로로는 공개된 제품 정보와 기준을 바탕으로 원재료와 영양정보를 분석합니다. 확인되지 않은 정보는 임의로 채우지 않고 '정보 부족'으로 구분해 표시해요."
+            title="그럴듯한 답보다, 확인 가능한 근거를 보여드립니다."
+            description="베로로는 공개된 제품 정보와 기준을 바탕으로 원재료와 영양정보를 분석합니다. 확인되지 않은 정보는 임의로 채우지 않고 '정보 부족'으로 구분해 표시합니다."
           />
         </Reveal>
 
@@ -42,11 +42,11 @@ export function TrustSection() {
 
           <Reveal delayMs={80}>
             <div className="rounded-2xl bg-paper p-6 sm:p-8">
-              <h3 className="text-sm font-bold text-ink-950">이렇게 판단해요</h3>
+              <h3 className="text-sm font-bold text-ink-950">이렇게 판단합니다</h3>
               <p className="mt-2 text-sm leading-relaxed text-ink-700">
                 베로로의 판정과 점수는 AI가 즉흥적으로 만든 답이 아니라, 성분
                 사전과 반려동물 프로필을 기준으로 한 규칙 기반 로직에서
-                도출돼요. 같은 조건이면 항상 같은 결과가 나옵니다.
+                도출됩니다. 같은 조건이면 항상 같은 결과가 나옵니다.
               </p>
               <div className="mt-5 border-t border-ink-950/10 pt-5">
                 <p className="text-xs font-semibold text-ink-500">중요한 고지</p>

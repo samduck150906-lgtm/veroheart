@@ -241,7 +241,7 @@ const THRESHOLDS: Partial<Record<HealthConcernId, Threshold[]>> = {
       classification: 'internal_heuristic',
       judgmentEnabled: false,
       evidenceStrength: 'low',
-      limitations: '조섬유는 총식이섬유가 아니므로 소화기 적합성의 보조 비교로만 사용한다.',
+      limitations: '조섬유는 총식이섬유가 아니므로 소화기 적합성의 보조 비교로만 사용합니다.',
       compute: (product) => dmb(product, 'crudeFiber'),
     },
   ],
@@ -268,7 +268,7 @@ const THRESHOLDS: Partial<Record<HealthConcernId, Threshold[]>> = {
       classification: 'internal_heuristic',
       judgmentEnabled: false,
       evidenceStrength: 'low',
-      limitations: '체중 관리는 BCS, 급여량, 열량, 활동량이 함께 필요하며 지방 수치 하나로 감량 처방을 만들 수 없다.',
+      limitations: '체중 관리는 BCS, 급여량, 열량, 활동량이 함께 필요하며 지방 수치 하나로 감량 처방을 만들 수 없습니다.',
       compute: (product) => dmb(product, 'crudeFat'),
     },
     {
@@ -293,7 +293,7 @@ const THRESHOLDS: Partial<Record<HealthConcernId, Threshold[]>> = {
       classification: 'internal_heuristic',
       judgmentEnabled: false,
       evidenceStrength: 'low',
-      limitations: '근육량과 개체 상태 평가 없이 체중 감량 효과를 단정하지 않는다.',
+      limitations: '근육량과 개체 상태 평가 없이 체중 감량 효과를 단정하지 않습니다.',
       compute: (product) => dmb(product, 'crudeProtein'),
     },
   ],
@@ -319,7 +319,7 @@ const THRESHOLDS: Partial<Record<HealthConcernId, Threshold[]>> = {
       classification: 'clinical',
       judgmentEnabled: false,
       evidenceStrength: 'medium',
-      limitations: '일반 신장·비뇨기 관심사는 진단이 아니며, CKD 식이는 수의사 판단과 처방식 검토가 필요하다.',
+      limitations: '일반 신장·비뇨기 관심사는 진단이 아니며, CKD 식이는 수의사 판단과 처방식 검토가 필요합니다.',
       compute: (product) => percentToMgPer1000Kcal(product, 'phosphorus'),
     },
   ],
@@ -346,7 +346,7 @@ const THRESHOLDS: Partial<Record<HealthConcernId, Threshold[]>> = {
       classification: 'normative',
       judgmentEnabled: false,
       evidenceStrength: 'medium',
-      limitations: '입력 taurine 필드의 단위와 분석 provenance가 없어 비교를 비활성화했다. 완전사료 최소 권장량이며 심장질환 치료 근거가 아니다.',
+      limitations: '입력 taurine 필드의 단위와 분석 provenance가 없어 비교를 비활성화했습니다. 완전사료 최소 권장량이며 심장질환 치료 근거가 아닙니다.',
       compute: taurineWithUnverifiedInputUnit,
     },
     {
@@ -371,7 +371,7 @@ const THRESHOLDS: Partial<Record<HealthConcernId, Threshold[]>> = {
       classification: 'normative',
       judgmentEnabled: false,
       evidenceStrength: 'medium',
-      limitations: '입력 taurine 필드의 단위와 분석 provenance가 없어 비교를 비활성화했다. 완전사료 최소 권장량이며 심장질환 치료 근거가 아니다.',
+      limitations: '입력 taurine 필드의 단위와 분석 provenance가 없어 비교를 비활성화했습니다. 완전사료 최소 권장량이며 심장질환 치료 근거가 아닙니다.',
       compute: taurineWithUnverifiedInputUnit,
     },
   ],
@@ -503,26 +503,26 @@ function applicabilityReason(
   selectedDomain: HealthConcernEvidenceDomain,
 ): { kind: NonNullable<QuantitativeConcernCheck['applicability']>; message: string } | null {
   if (!domainMatches(selectedDomain, threshold.concernDomain)) {
-    return { kind: 'concern_domain', message: '선택한 건강 고민 영역과 다른 정량 기준이라 적용되지 않아요.' };
+    return { kind: 'concern_domain', message: '선택한 건강 고민 영역과 다른 정량 기준이라 적용되지 않습니다.' };
   }
   const species: Species = profile.species === 'Cat' ? 'cat' : 'dog';
   if (!healthRuleAppliesToSpecies(threshold.species, species)) {
     return {
       kind: 'species',
-      message: `이 기준은 ${threshold.species === 'cat' ? '고양이' : '강아지'}용이라 현재 프로필에는 적용되지 않아요.`,
+      message: `이 기준은 ${threshold.species === 'cat' ? '고양이' : '강아지'}용이라 현재 프로필에는 적용되지 않습니다.`,
     };
   }
   if (product.targetPetType && product.targetPetType !== 'all' && product.targetPetType !== species) {
-    return { kind: 'product_species', message: '제품 대상 동물과 프로필 종이 달라 이 기준을 적용할 수 없어요.' };
+    return { kind: 'product_species', message: '제품 대상 동물과 프로필 종이 달라 이 기준을 적용할 수 없습니다.' };
   }
   if (threshold.lifeStage !== 'all' && threshold.lifeStage !== profileLifeStage(profile)) {
-    return { kind: 'life_stage', message: '현재 생애주기에는 이 기준이 적용되지 않아요.' };
+    return { kind: 'life_stage', message: '현재 생애주기에는 이 기준이 적용되지 않습니다.' };
   }
   if (productCategory(product) !== threshold.productCategory) {
-    return { kind: 'product_type', message: '완전사료용 영양 기준을 이 제품 유형에 적용할 수 없어요.' };
+    return { kind: 'product_type', message: '완전사료용 영양 기준을 이 제품 유형에 적용할 수 없습니다.' };
   }
   if (threshold.productForm !== 'any' && productForm(product) !== threshold.productForm) {
-    return { kind: 'product_form', message: '제품 형태 정보가 이 기준과 맞지 않아 적용할 수 없어요.' };
+    return { kind: 'product_form', message: '제품 형태 정보가 이 기준과 맞지 않아 적용할 수 없습니다.' };
   }
   return null;
 }
@@ -560,7 +560,7 @@ function evaluateThreshold(
       judgment: threshold.judgmentEnabled ? 'active' : 'informational',
       inputEvidence: computed.inputEvidence,
       evidence,
-      message: `${threshold.nutrient} 수치가 공개되어 있지 않아 비교할 수 없어요.`,
+      message: `${threshold.nutrient} 수치가 공개되어 있지 않아 비교할 수 없습니다.`,
     };
   }
 
@@ -582,8 +582,8 @@ function evaluateThreshold(
     inputEvidence: computed.inputEvidence,
     evidence,
     message: pass
-      ? '공개된 라벨 수치가 내부 비교 기준 범위에 있어요.'
-      : '공개된 수치가 비교 기준을 벗어나 있어 급여 전 확인이 필요해요.',
+      ? '공개된 라벨 수치가 내부 비교 기준 범위에 있습니다.'
+      : '공개된 수치가 비교 기준을 벗어나 있어 급여 전 확인이 필요합니다.',
   };
 }
 
@@ -612,27 +612,27 @@ function deriveStatus(
   );
 
   if (checks.length > 0 && checks.every((check) => check.status === 'not_applicable') && blockingApplicability.length > 0) {
-    facts.push('현재 프로필이나 제품 유형에는 이 정량 기준이 적용되지 않아요.');
+    facts.push('현재 프로필이나 제품 유형에는 이 정량 기준이 적용되지 않습니다.');
     return { status: 'not_applicable', evidenceLevel: 'not_applicable', facts, confidence: 'insufficient' };
   }
 
   if (failed.length > 0) {
-    facts.push('공개된 수치가 비교 기준을 벗어나 있어 급여 전 확인이 필요해요.');
+    facts.push('공개된 수치가 비교 기준을 벗어나 있어 급여 전 확인이 필요합니다.');
     return { status: 'not_supported', evidenceLevel: 'contradictory', facts, confidence: 'sufficient' };
   }
 
   if (passed.length > 0 && unknown.length === 0 && !(concernId === 'renal_urinary' && selectedDomain === 'general')) {
-    facts.push('공개된 라벨 수치가 내부 비교 기준 범위에 있어요.');
+    facts.push('공개된 라벨 수치가 내부 비교 기준 범위에 있습니다.');
     return { status: 'supported', evidenceLevel: 'validated_quantitative', facts, confidence: 'sufficient' };
   }
 
   if (passed.length > 0 && unknown.length > 0) {
-    facts.push('일부 수치는 비교할 수 있지만 필요한 정보가 모두 공개되지는 않았어요.');
+    facts.push('일부 수치는 비교할 수 있지만 필요한 정보가 모두 공개되지는 않았습니다.');
     return { status: 'possible', evidenceLevel: 'partial_quantitative', facts, confidence: 'partial' };
   }
 
   if (passed.length > 0) {
-    facts.push('신장 관련 수치는 비교되었지만 비뇨기 전체 적합성을 확인하는 근거는 아니에요.');
+    facts.push('신장 관련 수치는 비교되었지만 비뇨기 전체 적합성을 확인하는 근거는 아닙니다.');
     return { status: 'possible', evidenceLevel: 'partial_quantitative', facts, confidence: 'partial' };
   }
 
@@ -641,8 +641,8 @@ function deriveStatus(
   if ((concernId === 'renal_urinary' || concernId === 'heart') && (hasTag || hasIngredient)) {
     facts.push(
       hasIngredient
-        ? '관련 성분이 표시되어 있지만 함량은 확인되지 않아요.'
-        : '제품에 관련 건강태그가 등록되어 있으나 이를 뒷받침할 상세 수치는 부족해요.',
+        ? '관련 성분이 표시되어 있지만 함량은 확인되지 않습니다.'
+        : '제품에 관련 건강태그가 등록되어 있으나 이를 뒷받침할 상세 수치는 부족합니다.',
     );
     return {
       status: hasIngredient ? 'possible' : 'tag_only',
@@ -653,19 +653,19 @@ function deriveStatus(
   }
 
   if (hasTag && hasIngredient) {
-    facts.push('관련 성분이 표시되어 있지만 함량은 확인되지 않아요.');
+    facts.push('관련 성분이 표시되어 있지만 함량은 확인되지 않습니다.');
     return { status: 'possible', evidenceLevel: 'tag_and_ingredient_quantity_unknown', facts, confidence: 'partial' };
   }
   if (hasTag) {
-    facts.push('제품에 관련 건강태그가 등록되어 있으나 이를 뒷받침할 상세 수치는 부족해요.');
+    facts.push('제품에 관련 건강태그가 등록되어 있으나 이를 뒷받침할 상세 수치는 부족합니다.');
     return { status: 'tag_only', evidenceLevel: 'tag_only', facts, confidence: 'partial' };
   }
   if (hasIngredient) {
-    facts.push('관련 성분이 표시되어 있지만 함량은 확인되지 않아요.');
+    facts.push('관련 성분이 표시되어 있지만 함량은 확인되지 않습니다.');
     return { status: 'possible', evidenceLevel: 'ingredient_only_quantity_unknown', facts, confidence: 'partial' };
   }
 
-  facts.push('현재 공개된 정보만으로 적합 여부를 판단할 수 없어요.');
+  facts.push('현재 공개된 정보만으로 적합 여부를 판단할 수 없습니다.');
   return { status: 'unknown', evidenceLevel: 'missing', facts, confidence: 'insufficient' };
 }
 

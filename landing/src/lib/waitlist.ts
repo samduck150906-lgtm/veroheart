@@ -35,7 +35,7 @@ export async function submitWaitlist(
     return {
       ok: false,
       error:
-        "신청 폼이 아직 연결되지 않았어요. 잠시 후 다시 시도하거나 고객센터로 문의해 주세요.",
+        "신청 폼이 아직 연결되지 않았습니다. 잠시 후 다시 시도하거나 고객센터로 문의해 주세요.",
     };
   }
 
@@ -60,7 +60,7 @@ export async function submitWaitlist(
         ok: false,
         error:
           (body && typeof body.error === "string" && body.error) ||
-          "신청 처리 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.",
+          "신청 처리 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.",
       };
     }
 

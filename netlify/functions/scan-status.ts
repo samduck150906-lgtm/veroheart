@@ -1,6 +1,6 @@
 import type { Config, Context } from '@netlify/functions';
 
-import { jsonResponse } from './_shared/http';
+import { withScanCors, jsonResponse } from './_shared/http';
 import {
   createDefaultScanDependencies,
   type ScanEndpointContext,
@@ -17,7 +17,7 @@ function submissionIdFrom(request: Request): string | null {
 }
 
 export function createScanStatusHandler(injected?: ScanEndpointDependencies): Handler {
-  return async (request) => {
+  return withScanCors(async (request) => {
     if (request.method !== 'GET') return jsonResponse(405, { code: 'method_not_allowed' });
     try {
       const deps = injected ?? createDefaultScanDependencies();
@@ -39,7 +39,7 @@ export function createScanStatusHandler(injected?: ScanEndpointDependencies): Ha
     } catch {
       return jsonResponse(503, { code: 'scan_unavailable' });
     }
-  };
+  });
 }
 
 export default async function scanStatus(request: Request, context: Context): Promise<Response> {
