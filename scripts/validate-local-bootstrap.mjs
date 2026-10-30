@@ -13,22 +13,7 @@ const repository = fileURLToPath(new URL('../', import.meta.url));
 const db = new PGlite({ extensions: { pgcrypto, pg_trgm, uuid_ossp } });
 // PGlite executes the actual PostgreSQL SQL/constraints/RLS. These are minimal
 // Supabase-owned fixtures, not a replacement for Auth/Storage/CLI integration.
-await db.exec(`
-CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role BYPASSRLS;
-CREATE ROLE supabase_auth_admin;
-CREATE SCHEMA auth; CREATE SCHEMA storage; CREATE SCHEMA extensions;
-CREATE TABLE auth.users(id UUID PRIMARY KEY, email TEXT, raw_user_meta_data JSONB DEFAULT '{}', raw_app_meta_data JSONB DEFAULT '{}', created_at TIMESTAMPTZ DEFAULT now(), is_anonymous BOOLEAN DEFAULT false);
-CREATE FUNCTION auth.uid() RETURNS UUID LANGUAGE SQL AS $$ SELECT NULLIF(current_setting('request.jwt.claim.sub', true), '')::UUID $$;
-CREATE FUNCTION auth.role() RETURNS TEXT LANGUAGE SQL AS $$ SELECT NULLIF(current_setting('request.jwt.claim.role', true), '')::TEXT $$;
-CREATE TABLE storage.buckets(id TEXT PRIMARY KEY, name TEXT, public BOOLEAN, file_size_limit BIGINT, allowed_mime_types TEXT[]);
-CREATE TABLE storage.objects(id UUID PRIMARY KEY DEFAULT gen_random_uuid(), bucket_id TEXT, name TEXT, metadata JSONB, owner UUID, owner_id TEXT, UNIQUE(bucket_id,name));
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
-CREATE FUNCTION storage.foldername(name TEXT) RETURNS TEXT[] LANGUAGE SQL IMMUTABLE AS $$ SELECT (string_to_array(name, '/'))[1:array_length(string_to_array(name, '/'), 1)-1] $$;
-GRANT USAGE ON SCHEMA public, auth, storage TO anon, authenticated, service_role;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO anon, authenticated, service_role;
-GRANT ALL ON ALL TABLES IN SCHEMA public, auth, storage TO service_role;
-`);
+await db.exec(await readFile(new URL('./fixtures/supabase-owned-schema.sql', import.meta.url), 'utf8'));
 
 await mkdir(path.join(repository, '.artifacts'), { recursive: true });
 const temporary = await mkdtemp(path.join(repository, '.artifacts/bootstrap-test-'));
@@ -98,6 +83,19 @@ try {
   await db.exec('RESET ROLE');
   console.log('PASS: current canonical/raw ingredient search; stale legacy excluded, empty current labels respected, anon RLS works');
   await assertProductPublication(db);
+  if (process.argv.includes('--purchase-links')) {
+    const { assertPurchaseLinkFullSchema } = await import('./purchase-link-full-schema.mjs');
+    const asRole = async (method, sql, role = 'postgres') => {
+      assert.ok(['postgres', 'service_role', 'anon', 'authenticated'].includes(role));
+      if (role !== 'postgres') await db.exec(`SET ROLE ${role}`);
+      try { return await db[method](sql); }
+      finally { await db.exec('RESET ROLE'); }
+    };
+    await assertPurchaseLinkFullSchema({
+      exec: (sql, role) => asRole('exec', sql, role),
+      query: (sql, role) => asRole('query', sql, role),
+    });
+  }
   await db.exec("INSERT INTO public.products(name,brand_name,is_visible) VALUES ('local guard test fixture','local test',false)");
   await assert.rejects(db.exec(await readFile(path.join(repository, 'supabase/local-bootstrap/before-legacy-labels.sql'), 'utf8')), /empty products table/);
   console.log(JSON.stringify({ passed: true, historicalMigrations: prepared.historicalMigrations, localMigrations: files.length, skippedKnownOrphanRows: orphanCount, fabricatedCatalogRows: 0, historicalFilesUnchanged: true, foreignKeysEnforced: true, storagePrivate: true }, null, 2));

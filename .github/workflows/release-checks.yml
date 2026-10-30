@@ -42,6 +42,17 @@ jobs:
           PGUSER: postgres
           PGPASSWORD: synthetic-ci-only
           PGDATABASE: purchase_link_contract_test
+      - name: Purchase-link complete repository schema (isolated PostgreSQL only)
+        run: |
+          createdb --maintenance-db=postgres purchase_link_full_schema_test
+          createdb --maintenance-db=postgres purchase_link_raw_replay_test
+          npm run test:purchase-links:schema
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: synthetic-ci-only
+          PGDATABASE: purchase_link_full_schema_test
       - name: Related Vitest regression
         run: npx --no-install vitest run src/lib/adminWriteValidation.test.ts src/lib/productCleanupServerContract.test.ts src/lib/migrationLedgerReconciliation.test.ts
       - run: npm test -- --run

@@ -105,9 +105,10 @@ describe('purchase-link real auth/router + draft PostgreSQL contract',()=>{
       CREATE OR REPLACE FUNCTION private.hide_unverified_products_enabled() RETURNS boolean LANGUAGE sql AS 'SELECT false';`);
     await db.query('INSERT INTO public.products(id,name,brand_name,is_visible,verification_status,coupang_link,unrelated) VALUES ($1,$2,$3,true,$4,$5,$6)',
       [product,'Fixture salmon 12g x 15','Fixture brand','reviewed','https://link.coupang.com/a/legacy','{"sentinel":true}']);
+    const captured=(await db.query('SELECT public.purchase_product_identity($1) AS identity',[product])).rows[0].identity;
     await db.query(`INSERT INTO public.product_observations(id,product_id,source_url,raw_name,raw_brand,extracted_data)
       VALUES($1,$2,'https://brand.example/fixture','Fixture salmon 12g x 15','Fixture brand',$3),
-        ($4,$2,$5,null,null,$6)`,[target,product,JSON.stringify({purchase_identity_v1:identity}),seller,payload().resolved_url,
+        ($4,$2,$5,null,null,$6)`,[target,product,JSON.stringify({purchase_identity_v1:identity,purchase_product_identity_v1:captured}),seller,payload().resolved_url,
       JSON.stringify({purchase_identity_v1:identity,link_kind:'product',seller_product_id:'100',seller_item_id:'200',seller_offer_id:'300',availability:'in_stock'})]);
     calls=0;
   });
@@ -273,6 +274,20 @@ describe('purchase-link real auth/router + draft PostgreSQL contract',()=>{
       await db.exec(`UPDATE public.products SET ${column}=NULL`);
       assert.equal((await publicRows()).length,1);
     }
+  });
+  it('requires newly captured target evidence instead of reapproving old evidence after product identity changes',async()=>{
+    const input=payload();await request(input);
+    await db.exec("UPDATE public.products SET net_weight_text='24g'");
+    const before=await snapshot();
+    assert.deepEqual(await publicRows(),[]);
+    assert.equal((await request({...input,expected_revision:1})).status,400);
+    assert.deepEqual(await snapshot(),before);
+    await db.query(`INSERT INTO public.product_observations(id,product_id,source_url,raw_name,raw_brand,extracted_data)
+      SELECT $1,product_id,source_url,raw_name,raw_brand,
+        jsonb_set(extracted_data,'{purchase_product_identity_v1}',public.purchase_product_identity(product_id))
+      FROM public.product_observations WHERE id=$2`,[other,target]);
+    assert.equal((await request({...input,expected_revision:1,target_observation_id:other})).body.result.status,'applied');
+    assert.equal((await publicRows()).length,1);
   });
   it('blocks stale identity, product/evidence mutation, visibility and verification gates',async()=>{
     await request(payload());

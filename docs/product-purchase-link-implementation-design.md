@@ -272,6 +272,8 @@ source_product_id 한 개를 옵션 증거로 대신 사용하지 않는다. 가
 - 첫 단위의 `purchase_identity_v1`은 brand/line/flavor/unit_size/pack_count/composition/option/edition
   8개 문자열을 엄격히 대조한다. 의미적 단위 변환은 구현하지 않으며 표기가 다르면 보수적으로 보류한다.
   unknown·필드 누락·다른 맛/포장·다른 제품의 근거는 거부한다. target raw_name/raw_brand와 현재 제품도 비교한다.
+  target의 `purchase_product_identity_v1` 제품 식별 스냅샷도 현재값과 일치해야 한다. 과거 근거를 최신 revision만으로
+  다시 승인하는 것은 금지하며, 근거 갱신/운영 조건은 [재확인 검토](product-purchase-link-reconfirmation.md)를 따른다.
 - 쿠팡 검증에는 product/item/offer 3개 ID와 seller 관찰의 일치가 필요하다. ID 미제공은 가짜 ID를 만들지 않고
   unverified로 보존한다. 일반 검색·unknown·기존 coupang_link는 자동 verified로 승격하지 않는다.
 - verified 목적지는 쿠팡의 `/vp/products/{productId}`와 단일 `itemId`/`vendorItemId`가 관찰 ID들과
@@ -316,7 +318,10 @@ source_product_id 한 개를 옵션 증거로 대신 사용하지 않는다. 가
 - 최신 main의 `.github/workflows/release-checks.yml` web job을 확장하고 중복 workflow를 추가하지 않는다.
   기존 Node24/npm11.13/npm ci, lint/전체 Vitest/build/기타 release 검사를 보존하고 신규 계약·동시성·관련 Vitest 및
   명시적 타입 검사를 추가했다. contents:read만 허용하며 신규 테스트는 production secret/DB/배포를 사용하지 않는다.
-- 전체 운영 스키마 replay, 운영 인증·실제 판매처 SKU 대응은 검증하지 않는다.
+- 후속 전체 저장소 스키마 검증은 기존 bootstrap과 격리 PostgreSQL에 추가했다.
+  [전체 스키마 검증·24시간 재확인 운영 검토](product-purchase-link-reconfirmation.md)에 기준 HEAD의 결함 재현과 수정,
+  historical replay 한계, 삭제/휴지통 호환성 및 활성화 전 결정을 구분한다.
+  실제 운영 스키마·Supabase Auth/Storage HTTP·실제 판매처 SKU 대응은 검증하지 않는다.
 
 ### 배포 의존성과 보류 조건
 

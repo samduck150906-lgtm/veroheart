@@ -54,7 +54,8 @@ before(async()=>{
     VALUES(${quote(product)},'Fixture salmon 12g x 15','Fixture brand',true,'verified','{"sentinel":true}');
     INSERT INTO public.product_observations(id,product_id,source_url,raw_name,raw_brand,extracted_data)
     VALUES(${quote(target)},${quote(product)},'https://brand.example/fixture','Fixture salmon 12g x 15','Fixture brand',
-      ${json({purchase_identity_v1:identity})}),
+      jsonb_build_object('purchase_identity_v1',${json(identity)},
+        'purchase_product_identity_v1',public.purchase_product_identity(${quote(product)}))),
       (${quote(seller)},${quote(product)},${quote(destination)},null,null,
       ${json({purchase_identity_v1:identity,link_kind:'product',seller_product_id:'100',seller_item_id:'200',seller_offer_id:'300'})});`);
 });

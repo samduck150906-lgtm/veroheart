@@ -49,14 +49,21 @@ RETURNS boolean LANGUAGE sql IMMUTABLE SET search_path = '' AS $$
     ) END;
 $$;
 
-CREATE FUNCTION public.purchase_link_fingerprint(p_product uuid, p_target uuid, p_seller uuid)
-RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
-  SELECT md5(jsonb_build_object(
-    'product', jsonb_build_object('name',p.name,'brand',p.brand_name,
+CREATE FUNCTION public.purchase_product_identity(p_product uuid)
+RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
+  SELECT jsonb_build_object('name',p.name,'brand',p.brand_name,
       'variant',p.variant_name,'weight',p.net_weight_text,'barcode',p.barcode,
       'display_name',to_jsonb(p)->'display_name','canonical_key',to_jsonb(p)->'canonical_product_key',
       'pet_type',to_jsonb(p)->'target_pet_type','life_stage',to_jsonb(p)->'target_life_stage',
-      'formulation',to_jsonb(p)->'formulation'),
+      'formulation',to_jsonb(p)->'formulation')
+  FROM public.products p WHERE p.id=p_product;
+$$;
+REVOKE ALL ON FUNCTION public.purchase_product_identity(uuid) FROM PUBLIC, anon, authenticated, service_role;
+
+CREATE FUNCTION public.purchase_link_fingerprint(p_product uuid, p_target uuid, p_seller uuid)
+RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
+  SELECT md5(jsonb_build_object(
+    'product',public.purchase_product_identity(p.id),
     'target',to_jsonb(t),
     'seller',(to_jsonb(s)-'retrieved_at'-'extracted_data') ||
       jsonb_build_object('extracted_data',s.extracted_data-'availability'))::text)
@@ -143,6 +150,7 @@ BEGIN
       OR v_target IS NULL OR v_seller IS NULL OR v_target = v_seller
       OR v_t.is_current IS DISTINCT FROM true OR v_s.is_current IS DISTINCT FROM true
       OR NOT public.purchase_identity_complete(v_t.extracted_data->'purchase_identity_v1')
+      OR v_t.extracted_data->'purchase_product_identity_v1' IS DISTINCT FROM public.purchase_product_identity(v_product)
       OR v_t.extracted_data->'purchase_identity_v1' IS DISTINCT FROM v_s.extracted_data->'purchase_identity_v1'
       OR v_s.extracted_data->>'link_kind' IS DISTINCT FROM 'product'
       OR v_s.source_url IS DISTINCT FROM p_input->>'resolved_url'
@@ -248,6 +256,7 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
     AND (NOT private.hide_unverified_products_enabled() OR p.verification_status='verified')
     AND l.link_kind='product' AND l.verification_status='verified' AND l.verification_valid_until>now()
     AND t.is_current AND s.is_current
+    AND t.extracted_data->'purchase_product_identity_v1'=public.purchase_product_identity(p.id)
     AND s.retrieved_at<=now() AND s.retrieved_at>=now()-interval '24 hours'
     AND l.identity_fingerprint=public.purchase_link_fingerprint(l.product_id,t.id,s.id);
 $$;
