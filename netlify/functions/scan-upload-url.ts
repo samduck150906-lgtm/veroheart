@@ -1,7 +1,7 @@
 import type { Config, Context } from '@netlify/functions';
 
 import { digestRateLimitKey } from './_shared/auth';
-import { jsonResponse, readJsonObject } from './_shared/http';
+import { withScanCors, jsonResponse, readJsonObject } from './_shared/http';
 import {
   createDefaultScanDependencies,
   type ScanEndpointContext,
@@ -21,7 +21,7 @@ function submissionIdFrom(request: Request): string | null {
 }
 
 export function createScanUploadUrlHandler(injected?: ScanEndpointDependencies): Handler {
-  return async (request, context) => {
+  return withScanCors(async (request, context) => {
     if (request.method !== 'POST') return jsonResponse(405, { code: 'method_not_allowed' });
     try {
       const deps = injected ?? createDefaultScanDependencies();
@@ -41,7 +41,7 @@ export function createScanUploadUrlHandler(injected?: ScanEndpointDependencies):
         !submissionId ||
         typeof category !== 'string' ||
         !CATEGORIES.has(category) ||
-        mimeType !== 'image/webp' ||
+        !['image/webp', 'image/jpeg', 'image/png'].includes(String(mimeType)) ||
         typeof size !== 'number' ||
         !Number.isInteger(size) ||
         size <= 0 ||
@@ -72,13 +72,14 @@ export function createScanUploadUrlHandler(injected?: ScanEndpointDependencies):
       );
       if (!ipAllowed) return jsonResponse(429, { code: 'ip_rate_limited' });
 
-      const path = `${userId}/${submissionId}/${category}/${deps.randomUUID()}.webp`;
+      const extension = mimeType === 'image/jpeg' ? 'jpg' : mimeType === 'image/png' ? 'png' : 'webp';
+      const path = `${userId}/${submissionId}/${category}/${deps.randomUUID()}.${extension}`;
       const signed = await deps.repository.createSignedUploadUrl(path);
       return jsonResponse(200, signed);
     } catch {
       return jsonResponse(503, { code: 'scan_unavailable' });
     }
-  };
+  });
 }
 
 export default async function scanUploadUrl(request: Request, context: Context): Promise<Response> {

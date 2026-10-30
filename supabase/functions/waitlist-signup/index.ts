@@ -86,7 +86,7 @@ serve(async (req) => {
       });
     }
     return new Response(
-      JSON.stringify({ error: '신청 처리 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.' }),
+      JSON.stringify({ error: '신청 처리 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   }

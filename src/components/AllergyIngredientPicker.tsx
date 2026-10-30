@@ -157,8 +157,8 @@ export default function AllergyIngredientPicker({ selected, onChange }: AllergyI
         ) : (
           <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
             {loadFailed
-              ? '성분 목록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.'
-              : `'${trimmed}' 와 맞는 성분을 찾지 못했어요. 다른 이름으로 검색해 보세요.`}
+              ? '성분 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'
+              : `'${trimmed}'와 일치하는 성분이 없습니다. 다른 이름으로 검색해 주세요.`}
           </p>
         )
       )}

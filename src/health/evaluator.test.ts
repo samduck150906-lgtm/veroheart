@@ -94,7 +94,7 @@ describe('evaluateHealthConcerns', () => {
     expect(result.status).toBe('possible');
     expect(result.evidenceLevel).toBe('ingredient_only_quantity_unknown');
     expect(result.quantitativeChecks).toEqual([]);
-    expect(result.userFacingFacts).toContain('관련 성분이 표시되어 있지만 함량은 확인되지 않아요.');
+    expect(result.userFacingFacts).toContain('관련 성분이 표시되어 있지만 함량은 확인되지 않습니다.');
     expect(result.scoringContribution).toBe(5);
   });
 
@@ -172,7 +172,7 @@ describe('evaluateHealthConcerns', () => {
     });
     expect(result.concernId).toBe<HealthConcernId>('immune');
     expect(result.status).toBe('possible');
-    expect(result.userFacingFacts[0]).toBe('관련 성분이 표시되어 있지만 함량은 확인되지 않아요.');
+    expect(result.userFacingFacts[0]).toBe('관련 성분이 표시되어 있지만 함량은 확인되지 않습니다.');
   });
 
   it('keeps all data missing as unknown and insufficient', () => {
@@ -180,6 +180,6 @@ describe('evaluateHealthConcerns', () => {
     expect(result.status).toBe('unknown');
     expect(result.evidenceLevel).toBe('missing');
     expect(result.confidence).toBe('insufficient');
-    expect(result.userFacingFacts).toContain('현재 공개된 정보만으로 적합 여부를 판단할 수 없어요.');
+    expect(result.userFacingFacts).toContain('현재 공개된 정보만으로 적합 여부를 판단할 수 없습니다.');
   });
 });

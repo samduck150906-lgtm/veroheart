@@ -77,7 +77,7 @@ describe('AnalysisResult — 질환별 맞춤 분석 카드', () => {
     expect(html).toContain('신장 건강');
     expect(html).toContain('관절 건강');
     expect(html).toContain('인(P)'); // 정량 규칙명
-    expect(html).toContain('이런 성분이 더 있으면 도움돼요'); // 보조 성분 추천
+    expect(html).toContain('이런 성분이 더 있으면 도움이 됩니다'); // 보조 성분 추천
     expect(html).toContain('수의사'); // 신장 임상 노트
   });
 });

@@ -139,7 +139,7 @@ function analyzeTransparency(matched: MatchedIngredient[]): {
   const unknownCount = matched.filter((m) => !m.ingredient).length;
   if (unknownCount > 0) {
     score -= Math.min(20, unknownCount * 5);
-    notes.push(`일부 원료명(${unknownCount}개)이 표준 성분 사전과 매칭되지 않았어요.`);
+    notes.push(`일부 원료명(${unknownCount}개)이 표준 성분 사전과 매칭되지 않았습니다.`);
   }
 
   const vague = matched.filter(
@@ -147,13 +147,13 @@ function analyzeTransparency(matched: MatchedIngredient[]): {
   );
   if (vague.length) {
     score -= 15;
-    notes.push('동물성 원료의 출처가 구체적이지 않은 표현이 있어요.');
+    notes.push('동물성 원료의 출처가 구체적이지 않은 표현이 있습니다.');
   }
 
   const first = matched[0];
   if (first?.ingredient?.category === 'animal_protein') {
     score += 10;
-    notes.push('첫 번째 원료가 명확한 동물성 단백질이에요.');
+    notes.push('첫 번째 원료가 명확한 동물성 단백질입니다.');
   }
 
   return { score: clamp(score), notes };
@@ -229,7 +229,7 @@ function analyzeNutrition(
       ruleId: 'AAFCO_PASS',
       level: 'good',
       title: 'AAFCO 영양 기준 충족',
-      message: '성체 유지 최소 기준(건물 기준 조단백질·조지방)을 충족하는 구성이에요.',
+      message: '성체 유지 최소 기준(건물 기준 조단백질·조지방)을 충족하는 구성입니다.',
       ingredients: [],
       scoreDelta: 12,
       evidenceLevel: 'nutrition_guideline',
@@ -240,7 +240,7 @@ function analyzeNutrition(
       ruleId: 'AAFCO_FAIL',
       level: 'caution',
       title: 'AAFCO 영양 기준 미달',
-      message: details.join(' ') || '성체 유지 최소 영양 기준에 못 미치는 항목이 있어요.',
+      message: details.join(' ') || '성체 유지 최소 영양 기준에 못 미치는 항목이 있습니다.',
       ingredients: [],
       scoreDelta: -15,
       evidenceLevel: 'nutrition_guideline',
@@ -272,7 +272,7 @@ function analyzeNutrition(
       ruleId: 'HIGH_PROTEIN',
       level: 'good',
       title: '고단백 구성',
-      message: `건물 기준 조단백질이 약 ${proteinDMB.toFixed(0)}%로, 단백질 함량이 넉넉한 편이에요.`,
+      message: `건물 기준 조단백질이 약 ${proteinDMB.toFixed(0)}%로, 단백질 함량이 넉넉한 편입니다.`,
       ingredients: [],
       scoreDelta: 6,
       evidenceLevel: 'nutrition_guideline',
@@ -311,7 +311,7 @@ function analyzeAdvancedQuality(matched: MatchedIngredient[]): {
       ruleId: 'DCM_LEGUME_RISK',
       level: dcm.riskLevel === 'danger' ? 'caution' : 'watch',
       title: '콩과 식물 다량 함유 (DCM 참고)',
-      message: `상위 원료에 ${dcm.legumesInTop5.join(', ')} 등 콩과 식물이 ${dcm.legumesInTop5.length}종 포함돼 있어요. 그레인프리 사료의 콩과 식물 과다는 확장성 심근병증(DCM)과의 연관 가능성이 보고된 바 있어 참고가 필요해요.`,
+      message: `상위 원료에 ${dcm.legumesInTop5.join(', ')} 등 콩과 식물이 ${dcm.legumesInTop5.length}종 포함돼 있습니다. 그레인프리 사료의 콩과 식물 과다는 확장성 심근병증(DCM)과의 연관 가능성이 보고된 바 있어 참고가 필요합니다.`,
       ingredients: dcm.legumesInTop5,
       scoreDelta: d,
       evidenceLevel: 'veterinary',
@@ -326,7 +326,7 @@ function analyzeAdvancedQuality(matched: MatchedIngredient[]): {
       ruleId: 'PROTEIN_INFLATION',
       level: 'watch',
       title: '식물성 단백 보강 의심',
-      message: `${inflation.processedPlantProteins.join(', ')} 같은 가공 식물성 단백이 포함돼 있어요. 동물성 단백 비중이 실제보다 높아 보이게 만드는 '단백질 보강'일 수 있어, 동물성 원료 순위를 함께 확인해 보세요.`,
+      message: `${inflation.processedPlantProteins.join(', ')} 같은 가공 식물성 단백이 포함돼 있습니다. 동물성 단백 비중이 실제보다 높아 보이게 만드는 '단백질 보강'일 수 있어, 동물성 원료 순위를 함께 확인해 주세요.`,
       ingredients: inflation.processedPlantProteins,
       scoreDelta: d,
       evidenceLevel: 'nutrition_guideline',
@@ -405,7 +405,7 @@ export function analyzeProduct(
           ruleId: `PERSONAL_ALLERGY_${m.ingredient.id}`,
           level: 'caution',
           title: `${m.ingredient.canonicalKo} 알레르기 주의`,
-          message: `등록된 알레르기 정보(${overlap.join(', ')})와 겹치는 성분이에요. ${m.ingredient.canonicalKo}에 반응한 적이 있다면 피하는 것이 좋아요.`,
+          message: `등록된 알레르기 정보(${overlap.join(', ')})와 겹치는 성분입니다. ${m.ingredient.canonicalKo}에 반응한 적이 있다면 피하는 것이 좋습니다.`,
           ingredients: [m.ingredient.canonicalKo],
           scoreDelta: -30,
           evidenceLevel: 'internal_policy',
@@ -431,7 +431,7 @@ export function analyzeProduct(
         ruleId: 'HEALTH_CONCERN_MATCH',
         level: 'good',
         title: '건강 고민 맞춤 제품',
-        message: `${matchedConcerns.join(', ')} 관련 기능성 성분이 포함된 제품이에요.`,
+        message: `${matchedConcerns.join(', ')} 관련 기능성 성분이 포함된 제품입니다.`,
         ingredients: [],
         scoreDelta: bonus,
         evidenceLevel: 'internal_policy',
@@ -450,8 +450,8 @@ export function analyzeProduct(
         level: 'good',
         title: '연령 적합 제품',
         message: isAllStages
-          ? '모든 연령에 적합한 제품이에요.'
-          : `${PET_LIFE_STAGE_LABEL[pet.lifeStage]} 전용으로 설계된 제품이에요.`,
+          ? '모든 연령에 적합한 제품입니다.'
+          : `${PET_LIFE_STAGE_LABEL[pet.lifeStage]} 전용으로 설계된 제품입니다.`,
         ingredients: [],
         scoreDelta: 8,
         evidenceLevel: 'nutrition_guideline',
@@ -462,7 +462,7 @@ export function analyzeProduct(
         ruleId: 'LIFE_STAGE_MISMATCH',
         level: 'watch',
         title: '연령 부적합 가능성',
-        message: `이 제품은 ${PET_LIFE_STAGE_LABEL[product.lifeStage]} 전용이에요. 우리 아이의 연령과 다를 수 있어요.`,
+        message: `이 제품은 ${PET_LIFE_STAGE_LABEL[product.lifeStage]} 전용입니다. 우리 아이의 연령과 다를 수 있습니다.`,
         ingredients: [],
         scoreDelta: -5,
         evidenceLevel: 'nutrition_guideline',
@@ -477,7 +477,7 @@ export function analyzeProduct(
       ruleId: 'SPECIES_MISMATCH',
       level: 'caution',
       title: '다른 종 전용 제품',
-      message: `이 제품은 ${product.species === 'cat' ? '고양이' : '강아지'} 전용이에요. 다른 종에게 급여하면 영양 불균형이 생길 수 있어요.`,
+      message: `이 제품은 ${product.species === 'cat' ? '고양이' : '강아지'} 전용입니다. 다른 종에게 급여하면 영양 불균형이 생길 수 있습니다.`,
       ingredients: [],
       scoreDelta: -15,
       evidenceLevel: 'veterinary',
@@ -523,19 +523,19 @@ export function analyzeProduct(
   const hasDanger = warnings.some((w) => w.level === 'danger');
   let summary: string;
   if (hasDanger) {
-    summary = '위험할 수 있는 성분이 발견됐어요. 급여 전 반드시 확인이 필요합니다.';
+    summary = '위험할 수 있는 성분이 발견되었습니다. 급여 전 반드시 확인이 필요합니다.';
   } else if (analysisReadiness.status === 'partial') {
-    summary = '확인되지 않은 원료가 있어 부분 분석만 제공해요.';
+    summary = '확인되지 않은 원료가 있어 부분 분석만 제공합니다.';
   } else if (analysisReadiness.status === 'blocked') {
-    summary = '원료 정보가 서로 달라 확인이 필요해요.';
+    summary = '원료 정보가 서로 달라 확인이 필요합니다.';
   } else if (analysisReadiness.status === 'unavailable') {
-    summary = '등록된 원료 정보가 없어 분석을 제공할 수 없어요.';
+    summary = '등록된 원료 정보가 없어 분석을 제공할 수 없습니다.';
   } else if (grade === 'A+' || grade === 'A') {
-    summary = '전반적으로 안심하고 급여할 수 있는 구성이에요.';
+    summary = '전반적으로 안심하고 급여할 수 있는 구성입니다.';
   } else if (grade === '주의') {
-    summary = '급여 전 전문가 상담이 권장되는 제품이에요.';
+    summary = '급여 전 전문가 상담이 권장되는 제품입니다.';
   } else {
-    summary = '무난하지만 일부 주의 성분이 있어요. 우리 아이 상태에 맞는지 확인해보세요.';
+    summary = '무난하지만 일부 주의 성분이 있습니다. 우리 아이 상태에 맞는지 확인해 주세요.';
   }
 
   return {

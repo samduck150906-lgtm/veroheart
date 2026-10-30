@@ -44,7 +44,7 @@ export function buildProductConclusion(
       return {
         tone: 'alert',
         headline: `${mineKo}용 제품이 아닙니다`,
-        subline: `이 제품은 ${productKo}용으로 등록되어 있어 ${profile.name}에게 급여하면 안 돼요.`,
+        subline: `이 제품은 ${productKo}용으로 등록되어 있어 ${profile.name}에게 급여하면 안 됩니다.`,
       };
     }
 
@@ -55,8 +55,8 @@ export function buildProductConclusion(
       const more = hits.length > 1 ? ` 외 ${hits.length - 1}종` : '';
       return {
         tone: 'alert',
-        headline: `${profile.name}에게 급여를 권하지 않아요`,
-        subline: `${first}${more} 알레르기·회피 성분이 포함되어 있어요.`,
+        headline: `${profile.name}에게 급여를 권하지 않습니다`,
+        subline: `${first}${more} 알레르기·회피 성분이 포함되어 있습니다.`,
       };
     }
 
@@ -68,7 +68,7 @@ export function buildProductConclusion(
         return {
           tone: 'caution',
           headline: '알레르기 원료 포함 가능성을 확인해 주세요',
-          subline: `가금류 원료가 포괄적으로 표기되어 있어 ${profile.name}의 등록 알레르기 원료가 포함됐는지 성분 출처를 확인하는 편이 안전해요.`,
+          subline: `가금류 원료가 포괄적으로 표기되어 있어 ${profile.name}의 등록 알레르기 원료가 포함됐는지 성분 출처를 확인하는 편이 안전합니다.`,
         };
       }
 
@@ -78,7 +78,7 @@ export function buildProductConclusion(
         return {
           tone: 'caution',
           headline: '관련 가금류 성분을 주의해 주세요',
-          subline: `${profile.name}의 선택 알레르기와 직접 일치하는 원료는 확인되지 않았지만 같은 가금류 계열인 ${ingredients.join(', ')} 성분이 있어요. 교차반응 가능성을 고려해 성분표와 급여 반응을 확인해 주세요.`,
+          subline: `${profile.name}의 선택 알레르기와 직접 일치하는 원료는 확인되지 않았지만 같은 가금류 계열인 ${ingredients.join(', ')} 성분이 있습니다. 교차반응 가능성을 고려해 성분표와 급여 반응을 확인해 주세요.`,
         };
       }
 
@@ -86,15 +86,15 @@ export function buildProductConclusion(
         return {
           tone: 'caution',
           headline: '가수분해 알레르기 원료를 확인해 주세요',
-          subline: '가수분해 정도에 따라 반응 가능성이 달라질 수 있어, 원료 정보와 수의사 안내를 함께 확인하는 편이 좋아요.',
+          subline: '가수분해 정도에 따라 반응 가능성이 달라질 수 있어, 원료 정보와 수의사 안내를 함께 확인하는 편이 좋습니다.',
         };
       }
 
       if (cautions.some((match) => match.kind === 'processing_caution')) {
         return {
           tone: 'caution',
-          headline: '관련 가금류 지방 성분이 있어요',
-          subline: '고기 단백질과 동일한 확정 알레르기로 보지는 않지만, 정제도와 잔류 단백질을 알 수 없어 주의가 필요해요.',
+          headline: '관련 가금류 지방 성분이 있습니다',
+          subline: '고기 단백질과 동일한 확정 알레르기로 보지는 않지만, 정제도와 잔류 단백질을 알 수 없어 주의가 필요합니다.',
         };
       }
     }
@@ -110,8 +110,8 @@ export function buildProductConclusion(
   if (!hasIngredients && !hasNutrition) {
     return {
       tone: 'caution',
-      headline: '아직 정확히 판정하기 어려워요',
-      subline: `원재료·영양 정보가 부족해 ${profile.name} 적합도를 정확히 계산하기 어려워요.`,
+      headline: '아직 정확히 판정하기 어렵습니다',
+      subline: `원재료·영양 정보가 부족해 ${profile.name} 적합도를 정확히 계산하기 어렵습니다.`,
     };
   }
 
@@ -120,27 +120,27 @@ export function buildProductConclusion(
   if (score >= 85) {
     return {
       tone: 'match',
-      headline: `${profile.name}의 현재 궁합 점수는 ${score}점이에요`,
+      headline: `${profile.name}의 현재 궁합 점수는 ${score}점입니다`,
       subline: report?.summary,
     };
   }
   if (score >= 70) {
     return {
       tone: 'match',
-      headline: `${profile.name}의 현재 궁합 점수는 ${score}점이에요`,
+      headline: `${profile.name}의 현재 궁합 점수는 ${score}점입니다`,
       subline: report?.summary,
     };
   }
   if (score >= 55) {
     return {
       tone: 'caution',
-      headline: `${profile.name}의 현재 궁합 점수는 ${score}점이에요`,
+      headline: `${profile.name}의 현재 궁합 점수는 ${score}점입니다`,
       subline: '성분표와 건강 고민 항목을 함께 확인해 주세요.',
     };
   }
   return {
     tone: 'caution',
-    headline: `신중히 보시는 편이 좋아요 (${score}%)`,
+    headline: `신중히 보시는 편이 좋습니다 (${score}%)`,
     subline: report?.summary,
   };
 }

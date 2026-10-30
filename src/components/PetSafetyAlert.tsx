@@ -34,7 +34,7 @@ export default function PetSafetyAlert({
           </span>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: '14px', fontWeight: 800, color: tone.text }}>
-              {name}가 주의할 성분이 있어요
+              {name}의 주의 성분이 포함되어 있습니다
             </div>
             <div style={{ fontSize: '12.5px', fontWeight: 600, color: tone.text, opacity: 0.9, marginTop: '3px', lineHeight: 1.5 }}>
               최근 본 제품 {scan.flaggedCount}개에서 <b>{shown}{more}</b> 발견

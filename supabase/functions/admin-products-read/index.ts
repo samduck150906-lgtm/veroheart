@@ -37,6 +37,9 @@ const VIEWS: Record<string, string> = {
     + 'nutritional_profiles(crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus)',
   categories: 'main_category',
   full: '*',
+  edit:
+    '*, nutritional_profiles(crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus), '
+    + 'product_ingredients(ingredient_id, sort_order, ingredients(id, name_ko, name_en, risk_level))',
 };
 
 /** 한 번에 내려주는 최대 행 수. names/facts 처럼 전체를 도는 view 의 상한. */
@@ -192,8 +195,9 @@ serve(async (req) => {
     const columns = VIEWS[view];
     const filters = (body.filters ?? {}) as Filters;
 
-    // 단건 조회 — 편집 화면이 쓴다.
-    if (view === 'full') {
+    // 편집 자료도 같은 service_role 조회에 포함한다. 공개 RLS로 읽은 빈 관계를
+    // 실제 빈 원재료/영양정보로 오인한 채 저장하면 기존 자료가 삭제될 수 있다.
+    if (view === 'full' || view === 'edit') {
       const id = typeof body.id === 'string' ? body.id.trim() : '';
       if (!UUID_RE.test(id)) throw new ValidationError('제품 ID 형식이 올바르지 않습니다.');
       const { data, error } = await db.from('products').select(columns).eq('id', id).maybeSingle();

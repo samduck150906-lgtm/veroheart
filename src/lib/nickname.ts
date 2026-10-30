@@ -16,13 +16,13 @@ export function validateNickname(value: string): string | null {
   const nickname = value.trim();
   if (!nickname) return '닉네임을 입력해 주세요.';
   if (nickname.length < NICKNAME_MIN_LENGTH) {
-    return `닉네임은 ${NICKNAME_MIN_LENGTH}자 이상이어야 해요.`;
+    return `닉네임은 ${NICKNAME_MIN_LENGTH}자 이상 입력해 주세요.`;
   }
   if (nickname.length > NICKNAME_MAX_LENGTH) {
-    return `닉네임은 ${NICKNAME_MAX_LENGTH}자까지 쓸 수 있어요.`;
+    return `닉네임은 ${NICKNAME_MAX_LENGTH}자까지 입력할 수 있습니다.`;
   }
   // 공백과 제어문자만 막는다. 한글·영문·숫자·이모지는 그대로 허용한다.
-  if (/\s/.test(nickname)) return '닉네임에는 공백을 넣을 수 없어요.';
+  if (/\s/.test(nickname)) return '닉네임에는 공백을 넣을 수 없습니다.';
   return null;
 }
 

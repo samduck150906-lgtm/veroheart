@@ -7,6 +7,8 @@
 초안 SQL·서버 계약·합성 테스트를 구분해 기록한다. 운영 데이터, 링크 제거/NULL 적용, 배포는
 변경하지 않는다. 관리자 UI·공개 구매 CTA·가격 연계는 후속 작업이다.
 코드 확인 기준은 `origin/main`의 `76979cc76c84ee50bca28e4193517ee08e188e30`이다.
+후속 구현 검토에서 최신 main `62ce98350add75752e5a8da53901f47a36d7b50c`을 통합했다.
+아래 기존 구조 설명은 최초 조사 기록이며, 신규 공개 RPC는 최신 main의 reviewed/verified 공개 정책을 따른다.
 현재 운영 배포 소스·외부 예약 작업은 이번에 재검증하지 않았다. 아래 테이블/필드/엔드포인트 중
 ‘제안’이라고 표시한 것은 현재 존재하거나 실행 가능한 API가 아니다.
 
@@ -275,7 +277,7 @@ source_product_id 한 개를 옵션 증거로 대신 사용하지 않는다. 가
 - verified 목적지는 쿠팡의 `/vp/products/{productId}`와 단일 `itemId`/`vendorItemId`가 관찰 ID들과
   일치하는 직접 상품 URL만 받는다. 일반 검색·단축 URL은 원본으로 보존할 수 있으나 검증된 목적지가 아니다.
   URL 구조 일치는 필요조건일 뿐 포장·옵션 동일성의 증거를 대신하지 않는다. 공백/제어문자 URL은 거부한다.
-- 공개 함수는 제품 노출/미검수 숨김 정책, 동일성 시한·관찰 current·fingerprint를 검사한다.
+- 공개 함수는 제품 노출과 reviewed/verified 상태, 미검수 숨김 정책, 동일성 시한·관찰 current·fingerprint를 검사한다.
   반환값은 연결/제품 ID, 판매처, 목적 URL, action, 동일성 확인 시각/시한, 유효 재고 상태뿐이다.
   원본 URL·관찰 내용·확인자·actor·감사·내부 fingerprint는 노출하지 않는다. 가격 필드는 아예 제공하지 않는다.
 - 감사 실패는 연결 저장도 롤백한다. expected revision 충돌과 동일 요청 재전송을 구분하며 기존 제품 행은 갱신하지 않는다.
@@ -294,8 +296,8 @@ source_product_id 한 개를 옵션 증거로 대신 사용하지 않는다. 가
 ### 로컬 검증 기록 (2026-10-31)
 
 - `npm run test:purchase-links`: 대응하는 Node 테스트 명령으로 22개 통과(기존17개 포함). 현재 로컬에서는
-  lockfile과 무결성을 대조한 PGlite 0.5.8 임시 모듈을 `PGLITE_TEST_MODULE`로 지정해 실행했다.
-  새 의존성은 개발 테스트 전용이며 기존 의존성을 업그레이드하지 않았다.
+  기존에 무결성을 대조한 PGlite 0.5.8 임시 모듈로 호환 검증했다. 최신 main이 이미 채택한
+  PGlite 0.5.11을 CI에서 재사용하며 이 PR은 의존성/lockfile을 변경하지 않는다.
 - `tsc -b --pretty false` 및 새 서버 모듈의 strict `tsc --noEmit`: 통과.
 - 새 서버 검증 모듈 ESLint와 Node 테스트의 명시적 Node/ESLint recommended 검사: 통과.
 - `git diff --check` 및 신규 파일의 공백 검사: 통과.
@@ -307,9 +309,9 @@ source_product_id 한 개를 옵션 증거로 대신 사용하지 않는다. 가
   두 번째 연결의 실제 Lock 대기를 확인한 후 첫 연결을 커밋한다. 서로 다른 verified 연결 생성과 같은
   revision 수정 경합에서 승자1/충돌1 및 감사 건수를 검사한다. DB/제품 자료는 모두 합성이다.
   로컬에는 psql/Docker가 없어 이 테스트를 실행하지 않았으며 Linux CI에서 실행한다.
-- `.github/workflows/pr-validation.yml`은 미병합 cleanup-safety PR의 기존 workflow 경로/구조를 재사용한다.
-  main에는 아직 workflow가 없으므로 이 브랜치에서 추가한다. Node22/npm ci, 신규 계약·동시성·관련 Vitest,
-  전체 Vitest, 타입 검사, production build를 실행한다. contents:read만 허용하며 production secret/DB/배포를 사용하지 않는다.
+- 최신 main의 `.github/workflows/release-checks.yml` web job을 확장하고 중복 workflow를 추가하지 않는다.
+  기존 Node24/npm11.13/npm ci, lint/전체 Vitest/build/기타 release 검사를 보존하고 신규 계약·동시성·관련 Vitest 및
+  명시적 타입 검사를 추가했다. contents:read만 허용하며 신규 테스트는 production secret/DB/배포를 사용하지 않는다.
 - 전체 운영 스키마 replay, 운영 인증·실제 판매처 SKU 대응은 검증하지 않는다.
 
 ### 배포 의존성과 보류 조건

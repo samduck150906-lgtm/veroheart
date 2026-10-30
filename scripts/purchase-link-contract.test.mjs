@@ -47,17 +47,19 @@ async function loadRouter() {
   }, { context });
   const modules = new Map();
   async function source(name) {
-    if (!modules.has(name)) modules.set(name,(async()=>new SourceTextModule(ts.transpileModule(
-      await readFile(new URL(`supabase/functions/admin-write/${name}`,root),'utf8'),
+    const file=new URL(name,new URL('supabase/functions/admin-write/',root));
+    assert.ok(file.href.startsWith(new URL('supabase/functions/',root).href));
+    if (!modules.has(file.href)) modules.set(file.href,(async()=>new SourceTextModule(ts.transpileModule(
+      await readFile(file,'utf8'),
       {compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText,
-    {context,identifier:name}))());
-    return modules.get(name);
+    {context,identifier:file.href}))());
+    return modules.get(file.href);
   }
   const router=await source('index.ts');
-  await router.link(async (specifier) => {
+  await router.link(async (specifier, importer) => {
     if (specifier.startsWith('https://deno.land/')) return http;
     if (specifier.startsWith('https://esm.sh/')) return sdk;
-    return source(specifier.replace('./',''));
+    return source(new URL(specifier,importer.identifier));
   });
   await router.evaluate();
   normalize=(await source('purchaseLinks.ts')).namespace.normalizePurchaseLinkRequest;
@@ -102,7 +104,7 @@ describe('purchase-link real auth/router + draft PostgreSQL contract',()=>{
       TRUNCATE public.products,public.product_observations,public.product_purchase_links,public.admin_audit_log CASCADE;
       CREATE OR REPLACE FUNCTION private.hide_unverified_products_enabled() RETURNS boolean LANGUAGE sql AS 'SELECT false';`);
     await db.query('INSERT INTO public.products(id,name,brand_name,is_visible,verification_status,coupang_link,unrelated) VALUES ($1,$2,$3,true,$4,$5,$6)',
-      [product,'Fixture salmon 12g x 15','Fixture brand','pending','https://link.coupang.com/a/legacy','{"sentinel":true}']);
+      [product,'Fixture salmon 12g x 15','Fixture brand','reviewed','https://link.coupang.com/a/legacy','{"sentinel":true}']);
     await db.query(`INSERT INTO public.product_observations(id,product_id,source_url,raw_name,raw_brand,extracted_data)
       VALUES($1,$2,'https://brand.example/fixture','Fixture salmon 12g x 15','Fixture brand',$3),
         ($4,$2,$5,null,null,$6)`,[target,product,JSON.stringify({purchase_identity_v1:identity}),seller,payload().resolved_url,
@@ -278,6 +280,9 @@ describe('purchase-link real auth/router + draft PostgreSQL contract',()=>{
     await db.exec("UPDATE public.product_purchase_links SET verification_valid_until=now()+interval '1 hour'");
     await db.exec("UPDATE public.products SET name='Changed option'");assert.deepEqual(await publicRows(),[]);
     await db.exec("UPDATE public.products SET name='Fixture salmon 12g x 15', is_visible=false");assert.deepEqual(await publicRows(),[]);
+    await db.exec("UPDATE public.products SET is_visible=true,verification_status='pending'");assert.deepEqual(await publicRows(),[]);
+    await db.exec("UPDATE public.products SET verification_status='pending_review'");assert.deepEqual(await publicRows(),[]);
+    await db.exec("UPDATE public.products SET verification_status='reviewed'");assert.equal((await publicRows()).length,1);
     await db.exec("UPDATE public.products SET is_visible=true; CREATE OR REPLACE FUNCTION private.hide_unverified_products_enabled() RETURNS boolean LANGUAGE sql AS 'SELECT true'");
     assert.deepEqual(await publicRows(),[]);
     await db.exec("UPDATE public.products SET verification_status='verified'");assert.equal((await publicRows()).length,1);

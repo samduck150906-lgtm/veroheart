@@ -171,6 +171,17 @@ export function normalizeProductPayload(raw: Record<string, unknown>): Record<st
   product.name = requireText(product.name, '제품명');
   product.brand_name = requireText(product.brand_name, '브랜드');
 
+  if (product.main_category !== undefined) {
+    const mainCategory = requireText(product.main_category, '대분류', 40).replace(/\s+/g, ' ');
+    product.main_category = mainCategory;
+    const typeByCategory: Record<string, string> = { '사료': 'food', '간식': 'snack', '영양제': 'supplement' };
+    if (typeByCategory[mainCategory]) product.product_type = typeByCategory[mainCategory];
+  }
+  if (product.sub_category !== undefined) product.sub_category = optionalText(product.sub_category, '소분류', 40)?.replace(/\s+/g, ' ') ?? null;
+  if (product.product_type !== undefined && !['food', 'snack', 'supplement', 'custom'].includes(String(product.product_type))) {
+    throw new ValidationError('제품 유형 값이 올바르지 않습니다.');
+  }
+
   for (const key of ['min_price', 'kcal_per_100g', 'packaging_weight_g', 'sponsor_order', 'pinned_order']) {
     if (product[key] === undefined || product[key] === null || product[key] === '') continue;
     const value = Number(product[key]);

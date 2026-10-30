@@ -68,10 +68,10 @@ export function gradePalette(grade: string): GradePalette {
 /** 등급별 한 줄 판정 문구 — 프로토타입 verdicts 맵 */
 export const GRADE_VERDICT: Record<GradeLetter, string> = {
   A: '믹스 없이 바로 급여 가능',
-  B: '대체로 괜찮아',
+  B: '대체로 괜찮습니다',
   C: '몇 가지 확인 필요',
-  D: '주의해서 봐',
-  F: '권하지 않아',
+  D: '주의해서 확인해 주세요',
+  F: '권하지 않습니다',
 };
 
 export function gradeVerdict(grade: string): string {
@@ -100,6 +100,6 @@ export function monogram(source: string): string {
 /** 프로필 적합도 한 줄 요약 — 프로토타입 fitShort */
 export function fitShortLabel(score: number, petName: string): string {
   if (score >= 90) return `${petName}에게 딱`;
-  if (score >= 70) return '무난해';
+  if (score >= 70) return '무난합니다';
   return '주의 성분 있음';
 }

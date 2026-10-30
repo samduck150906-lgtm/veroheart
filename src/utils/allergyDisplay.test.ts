@@ -62,8 +62,8 @@ describe('allergy display state', () => {
       unknownReason: 'missing_profile',
       notice: {
         badge: '맞춤 분석 준비',
-        title: '알레르기 프로필을 채워주세요',
-        description: '피해야 할 원료를 등록하면 이 제품의 전성분과 바로 비교해 드려요.',
+        title: '알레르기 프로필을 채워 주세요',
+        description: '피해야 할 원료를 등록하면 이 제품의 전성분과 바로 비교해 드립니다.',
         actionLabel: '알레르기 등록하기',
       },
     });
@@ -83,8 +83,8 @@ describe('allergy display state', () => {
       unknownReason: 'missing_ingredients',
       notice: {
         badge: '원료 데이터 준비 중',
-        title: '아직 등록된 원료 정보가 없어요',
-        description: '제품의 전성분 정보가 준비되면 보리의 알레르기와 비교해 알려드릴게요.',
+        title: '아직 등록된 원료 정보가 없습니다',
+        description: '제품의 전성분 정보가 준비되면 보리의 알레르기와 비교해 알려드립니다.',
       },
     });
   });
@@ -105,7 +105,7 @@ describe('allergy display state', () => {
       shortText: '부분 분석',
       unknownReason: 'partial_ingredients',
       notice: {
-        title: '확인되지 않은 원료가 있어 부분 분석만 제공해요',
+        title: '확인되지 않은 원료가 있어 부분 분석만 제공합니다',
         description: '아직 확인되지 않은 원료: 복합 원료 A',
       },
     });

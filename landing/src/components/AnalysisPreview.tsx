@@ -14,8 +14,8 @@ export function AnalysisPreview() {
           <SectionHeading
             kicker="분석 결과 미리 보기"
             id="analysis-preview-heading"
-            title="결론부터, 근거까지 함께 보여드려요"
-            description="점수를 여러 개 나열하지 않고, 우리 아이 기준의 최종 결론 하나를 먼저 보여드려요."
+            title="결론과 근거를 함께 보여드립니다"
+            description="점수를 여러 개 나열하지 않고, 우리 아이 기준의 최종 결론 하나를 먼저 보여드립니다."
           />
         </Reveal>
 
@@ -30,23 +30,23 @@ export function AnalysisPreview() {
               <div className="mt-5 flex items-center gap-3">
                 <ShieldCheckIcon className="h-6 w-6 shrink-0 text-safe-deep" />
                 <h3 className="text-xl font-extrabold leading-snug tracking-tightest text-ink-950">
-                  코코에게 대체로 잘 맞아요
+                  코코에게 대체로 잘 맞습니다
                 </h3>
               </div>
 
               <ul className="mt-6 space-y-3.5 text-sm leading-relaxed text-ink-900">
                 <li className="flex gap-2.5">
                   <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-safe-deep" />
-                  연어가 첫 번째 원료로 확인됐어요.
+                  연어가 첫 번째 원료로 확인되었습니다.
                 </li>
                 <li className="flex gap-2.5">
                   <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-safe-deep" />
-                  등록된 알레르기(닭고기)와 겹치는 원료는 발견되지 않았어요.
+                  등록된 알레르기(닭고기)와 겹치는 원료는 발견되지 않았습니다.
                 </li>
                 <li className="flex gap-2.5">
                   <InfoIcon className="mt-0.5 h-4 w-4 shrink-0 text-caution-deep" />
                   오메가 지방산 함량은 라벨에 공개되어 있지 않아 &lsquo;정보
-                  부족&rsquo;으로 표시했어요.
+                  부족&rsquo;으로 표시했습니다.
                 </li>
               </ul>
 

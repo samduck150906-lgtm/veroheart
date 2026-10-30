@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, RefreshCw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { getAuthRedirectUrl } from '../lib/nativeAuth';
+import { PRIVACY_VERSION } from '../constants/privacyInfo';
 import { useStore } from '../store/useStore';
 import { notify } from '../store/useNotification';
 import { LogoChip } from '../components/Wordmark';
@@ -59,6 +61,8 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const { initApp } = useStore();
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   // 관리자 콘솔(시스템 설정)에서 신규 가입을 잠글 수 있다.
   const { signupEnabled } = usePublicSettings();
@@ -105,6 +109,10 @@ export default function Login() {
     return from;
   }, [location.state]);
 
+  useEffect(() => () => {
+    if (resendIntervalRef.current != null) window.clearInterval(resendIntervalRef.current);
+  }, []);
+
   const startResendCooldown = useCallback(() => {
     if (resendIntervalRef.current != null) {
       window.clearInterval(resendIntervalRef.current);
@@ -143,26 +151,39 @@ export default function Login() {
         type: 'signup',
         email: addr,
         options: {
-          emailRedirectTo: `${window.location.origin}/login`,
+          emailRedirectTo: getAuthRedirectUrl(),
         },
       });
       if (error) throw error;
-      notify.success('인증 메일을 다시 보냈어요. 스팸함도 확인해 주세요.');
+      notify.success('인증 메일을 다시 보냈습니다. 스팸함도 확인해 주세요.');
       startResendCooldown();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.toLowerCase().includes('rate limit') || msg.includes('429')) {
-        notify.warning('요청이 너무 잦아요. 잠시 후 다시 시도해 주세요.');
+        notify.warning('요청이 너무 잦습니다. 잠시 후 다시 시도해 주세요.');
       } else {
-        notify.error(msg || '메일 재전송에 실패했어요.');
+        notify.error(msg || '메일 재전송에 실패했습니다.');
       }
     } finally {
       setResendLoading(false);
     }
   };
 
+  const requestPasswordReset = async () => {
+    if (!isValidEmail(email) || resetLoading || resendCooldown > 0) return;
+    setResetLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: getAuthRedirectUrl('recovery') });
+      if (error) throw error;
+      notify.success('가입된 이메일이면 재설정 메일을 받을 수 있습니다. 같은 기기에서 링크를 열어 주세요.');
+      startResendCooldown();
+    } catch { notify.error('재설정 메일을 보내지 못했습니다. 잠시 후 다시 시도해 주세요.'); }
+    finally { setResetLoading(false); }
+  };
+
   const handleKakao = async () => {
     if (kakaoLoading) return;
+    if (!privacyAccepted) { notify.warning('개인정보 처리 안내와 약관을 확인해 주세요.'); return; }
     if (mode === 'signup' && !signupEnabled) {
       notify.error('현재 신규 회원 가입이 일시 중단되었습니다.');
       return;
@@ -170,13 +191,13 @@ export default function Login() {
     setKakaoLoading(true);
     try {
       // 성공하면 카카오 인증 페이지로 이동하므로 이 아래는 실행되지 않는다.
-      const failure = await signInWithKakao(`${window.location.origin}/auth/callback`);
+      const failure = await signInWithKakao(getAuthRedirectUrl());
       if (failure) {
         notify.error(failure.message);
         setKakaoLoading(false);
       }
     } catch (err: unknown) {
-      notify.error(err instanceof Error ? err.message : '카카오 로그인에 실패했어요.');
+      notify.error(err instanceof Error ? err.message : '카카오 로그인에 실패했습니다.');
       setKakaoLoading(false);
     }
   };
@@ -184,7 +205,7 @@ export default function Login() {
   const handleSubmit = async () => {
     const addr = email.trim();
     if (!addr || !password) {
-      notify.error('이메일과 비밀번호를 입력해주세요.');
+      notify.error('이메일과 비밀번호를 입력해 주세요.');
       return;
     }
     if (!isValidEmail(addr)) {
@@ -195,6 +216,7 @@ export default function Login() {
       notify.error('현재 신규 회원 가입이 일시 중단되었습니다.');
       return;
     }
+    if (mode === 'signup' && !privacyAccepted) { notify.warning('개인정보 처리 안내와 약관을 확인해 주세요.'); return; }
     if (mode === 'signup' && !passwordPolicyOk(password)) {
       notify.error('비밀번호 정책을 모두 충족해 주세요.');
       return;
@@ -206,7 +228,7 @@ export default function Login() {
         return;
       }
       if (nicknameStatus === 'taken') {
-        notify.error('이미 사용 중인 닉네임이에요. 다른 닉네임을 골라 주세요.');
+        notify.error('이미 사용 중인 닉네임입니다. 다른 닉네임을 골라 주세요.');
         return;
       }
     }
@@ -216,7 +238,7 @@ export default function Login() {
       if (mode === 'login') {
         const { error } = await supabase.auth.signInWithPassword({ email: addr, password });
         if (error) throw error;
-        notify.success('로그인되었습니다!');
+        notify.success('로그인되었습니다.');
         await initApp();
         navigate(redirectTo, { replace: true });
       } else {
@@ -224,21 +246,21 @@ export default function Login() {
           email: addr,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/login`,
+            emailRedirectTo: getAuthRedirectUrl(),
             // handle_new_user 트리거가 이 값을 그대로 public.users.nickname 으로 옮긴다.
             // 관리자 회원 관리에 보이는 이름도 같은 값이다.
-            data: { nickname: nickname.trim() },
+            data: { nickname: nickname.trim(), privacy_policy_version: PRIVACY_VERSION, privacy_acknowledged: true },
           },
         });
         if (error) throw error;
 
         if (data.session) {
-          notify.success('회원가입이 완료되었습니다!');
+          notify.success('회원가입이 완료되었습니다.');
           setPendingVerification(false);
           await initApp();
           navigate(redirectTo, { replace: true });
         } else {
-          notify.success('가입 확인 메일을 보냈어요. 메일의 링크를 눌러 인증을 마쳐 주세요.');
+          notify.success('가입 확인 메일을 보냈습니다. 메일의 링크를 눌러 인증을 마쳐 주세요.');
           setPendingVerification(true);
         }
       }
@@ -254,7 +276,7 @@ export default function Login() {
         // 아직 열려 있어도 서버에서 걸리므로, 원문 대신 같은 안내를 보여준다.
         notify.error('현재 신규 회원 가입이 일시 중단되었습니다.');
       } else if (lower.includes('users_nickname_unique') || (lower.includes('duplicate key') && lower.includes('nickname'))) {
-        notify.error('이미 사용 중인 닉네임이에요. 다른 닉네임을 골라 주세요.');
+        notify.error('이미 사용 중인 닉네임입니다. 다른 닉네임을 골라 주세요.');
         setNicknameStatus('taken');
       } else if (lower.includes('email not confirmed')) {
         notify.error('이메일 인증이 아직 완료되지 않았습니다. 메일함을 확인하거나 아래에서 재전송해 주세요.');
@@ -272,6 +294,7 @@ export default function Login() {
   const canSubmit = mode === 'login'
     ? Boolean(email.trim()) && password.length > 0
     : emailOk
+      && privacyAccepted
       && passwordPolicyOk(password)
       && !validateNickname(nickname)
       && nicknameStatus !== 'taken'
@@ -287,7 +310,7 @@ export default function Login() {
         {mode === 'login' ? '이메일로 로그인' : '이메일로 시작하기'}
       </h1>
       <p style={{ margin: '0 0 24px', fontSize: '13.5px', color: VR.muted, lineHeight: 1.55 }}>
-        펫 프로필을 저장하면 맞춤 등급을 볼 수 있어.
+        반려동물 프로필을 저장하면 맞춤 등급을 볼 수 있습니다.
       </p>
 
       {/* 로그인 / 회원가입 전환 */}
@@ -347,10 +370,10 @@ export default function Login() {
                 ?? (nicknameStatus === 'checking'
                   ? '중복 확인 중…'
                   : nicknameStatus === 'taken'
-                    ? '이미 사용 중인 닉네임이에요.'
+                    ? '이미 사용 중인 닉네임입니다.'
                     : nicknameStatus === 'available'
-                      ? '사용할 수 있는 닉네임이에요.'
-                      : '앱과 관리자 화면에 이 이름으로 표시돼.')}
+                      ? '사용할 수 있는 닉네임입니다.'
+                      : '앱과 관리자 화면에 이 이름으로 표시됩니다.')}
             </p>
           </div>
         )}
@@ -414,6 +437,12 @@ export default function Login() {
         </div>
       )}
 
+      {mode === 'login' && <button type="button" className="vr-btn vr-btn--outline" style={{ marginTop: 14 }} disabled={!emailOk || resetLoading || resendCooldown > 0} onClick={() => void requestPasswordReset()}>{resetLoading ? '메일 전송 중…' : resendCooldown > 0 ? `${resendCooldown}초 후 메일 다시 요청` : '비밀번호 재설정 메일 받기'}</button>}
+      <label style={{ display: 'block', marginTop: 18, fontSize: 13, lineHeight: 1.7 }}>
+        <input type="checkbox" checked={privacyAccepted} onChange={(e) => setPrivacyAccepted(e.target.checked)} />
+        회원가입 또는 카카오로 계속하기 전에 <a href="/terms" target="_blank" rel="noreferrer">이용약관</a>과 <a href="/privacy" target="_blank" rel="noreferrer">개인정보 처리방침</a>을 확인하고 동의합니다.
+      </label>
+
       <button
         type="button"
         className="vr-btn vr-btn--primary"
@@ -434,9 +463,9 @@ export default function Login() {
       <button
         type="button"
         onClick={() => void handleKakao()}
-        disabled={!kakaoReady || kakaoLoading}
+        disabled={!kakaoReady || kakaoLoading || !privacyAccepted}
         aria-label={kakaoReady ? '카카오로 계속하기' : '카카오 로그인 준비 중'}
-        title={kakaoReady ? undefined : '카카오 로그인은 준비 중이에요.'}
+        title={kakaoReady ? undefined : '카카오 로그인은 준비 중입니다.'}
         style={{
           width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '9px',
           padding: '15px', borderRadius: '12px', border: 'none',
@@ -455,21 +484,21 @@ export default function Login() {
       </button>
       {!kakaoReady && (
         <p style={{ margin: '8px 0 0', fontSize: '11.5px', color: VR.faint, lineHeight: 1.55, textAlign: 'center' }}>
-          카카오 로그인은 키 발급·심사가 끝나면 열려. 지금은 이메일로 가입해줘.
+          카카오 로그인은 준비 중입니다. 이메일로 가입해 주세요.
         </p>
       )}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '22px 0' }}>
         <span style={{ flex: 1, height: '1px', background: 'var(--vr-card-line)' }} />
-        <span style={{ fontSize: '11.5px', color: VR.faint, fontWeight: 700 }}>도움이 필요해?</span>
+        <span style={{ fontSize: '11.5px', color: VR.faint, fontWeight: 700 }}>도움말</span>
         <span style={{ flex: 1, height: '1px', background: 'var(--vr-card-line)' }} />
       </div>
 
       {/* 이메일 인증 재전송 */}
       <div className="vr-card" style={{ padding: '14px' }}>
-        <div style={{ fontSize: '12.5px', fontWeight: 800, marginBottom: '6px' }}>인증 메일이 안 왔어?</div>
+        <div style={{ fontSize: '12.5px', fontWeight: 800, marginBottom: '6px' }}>인증 메일을 받지 못한 경우</div>
         <p style={{ margin: '0 0 10px', fontSize: '12px', color: VR.muted, lineHeight: 1.55 }}>
-          가입 직후나 로그인이 안 될 때 다시 보낼 수 있어. 스팸함도 꼭 확인해줘.
+          가입 직후나 로그인할 수 없을 때 다시 보낼 수 있습니다. 스팸함도 확인해 주세요.
         </p>
         <button
           type="button"
@@ -485,21 +514,9 @@ export default function Login() {
 
       {pendingVerification && (
         <p style={{ margin: '12px 0 0', fontSize: '11.5px', color: 'var(--caution-strong)', lineHeight: 1.55, fontWeight: 700 }}>
-          인증이 끝나면 로그인 탭에서 같은 이메일로 로그인해줘.
+          인증 후 로그인 탭에서 같은 이메일로 로그인해 주세요.
         </p>
       )}
-
-      <p style={{ margin: '20px 0 0', fontSize: '11.5px', color: VR.faint, lineHeight: 1.6, textAlign: 'center' }}>
-        가입하면{' '}
-        <button
-          type="button"
-          onClick={() => navigate('/terms')}
-          style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', color: 'inherit', textDecoration: 'underline', cursor: 'pointer' }}
-        >
-          이용약관
-        </button>
-        과 개인정보 처리방침에 동의하는 걸로 볼게.
-      </p>
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>

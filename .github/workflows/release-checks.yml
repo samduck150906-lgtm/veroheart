@@ -1,0 +1,97 @@
+name: Release checks
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: synthetic-ci-only
+          POSTGRES_DB: purchase_link_contract_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d purchase_link_contract_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm install --global npm@11.13.0
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test:purchase-links
+      - name: Purchase-link two-connection PostgreSQL contract
+        run: npm run test:purchase-links:concurrency
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: synthetic-ci-only
+          PGDATABASE: purchase_link_contract_test
+      - name: Related Vitest regression
+        run: npx --no-install vitest run src/lib/adminWriteValidation.test.ts src/lib/productCleanupServerContract.test.ts src/lib/migrationLedgerReconciliation.test.ts
+      - run: npm test -- --run
+      - name: App, Netlify functions and purchase-link validation types
+        run: |
+          npm run typecheck
+          npx --no-install tsc --noEmit --strict --target ES2022 --module ESNext --moduleResolution bundler --allowImportingTsExtensions --skipLibCheck supabase/functions/admin-write/purchaseLinks.ts
+      - run: npx --no-install eslint --no-ignore supabase/functions/admin-write/purchaseLinks.ts
+      - run: npm run test:catalog
+      - run: npm run test:bootstrap
+      - run: npm run test:schemas
+      - run: npm run build
+      - run: git diff --exit-code && git diff --check
+      - run: npm audit --audit-level=moderate
+      - run: npm ci
+        working-directory: landing
+      - run: npm run lint && npm run typecheck && npm run build
+        working-directory: landing
+      - run: npm audit --audit-level=moderate
+        working-directory: landing
+
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm install --global npm@11.13.0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
+      - run: npm ci && npm run build && npx cap sync android
+      - run: chmod +x gradlew && ./gradlew assembleDebug assembleRelease
+        working-directory: android
+
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm install --global npm@11.13.0
+      - run: npm ci && npm run build && npx cap sync ios
+      - run: xcodebuild -project ios/App/App.xcodeproj -scheme App -sdk iphonesimulator -configuration Debug CODE_SIGNING_ALLOWED=NO build

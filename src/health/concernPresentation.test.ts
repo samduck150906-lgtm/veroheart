@@ -34,13 +34,13 @@ describe('health-concern presentation', () => {
 
   it.each([
     ['missing', result(), 'insufficient_neutral', '중립적으로 반영'],
-    ['not applicable', result({ status: 'not_applicable', evidenceLevel: 'not_applicable' }), 'insufficient_neutral', '적합하거나 부적합하다는 뜻은 아니에요'],
+    ['not applicable', result({ status: 'not_applicable', evidenceLevel: 'not_applicable' }), 'insufficient_neutral', '적합하거나 부적합하다는 뜻은 아닙니다'],
     ['tag only', result({ status: 'tag_only', evidenceLevel: 'tag_only', confidence: 'partial', matchedProductTags: ['관절'] }), 'limited_evidence', '건강 태그'],
     ['ingredient only', result({ status: 'possible', evidenceLevel: 'ingredient_only_quantity_unknown', confidence: 'partial', matchedIngredientEvidence: ['글루코사민'] }), 'limited_evidence', '글루코사민'],
     ['combined', result({ status: 'possible', evidenceLevel: 'tag_and_ingredient_quantity_unknown', confidence: 'partial', matchedProductTags: ['관절'], matchedIngredientEvidence: ['글루코사민'] }), 'limited_evidence', '함량 근거'],
     ['partial quantitative', result({ status: 'possible', evidenceLevel: 'partial_quantitative', confidence: 'partial', quantitativeChecks: [check('pass'), check('unknown')] }), 'limited_evidence', '일부 비교 가능한 수치'],
-    ['supported', result({ status: 'supported', evidenceLevel: 'validated_quantitative', confidence: 'sufficient', quantitativeChecks: [check('pass')] }), 'supported_evidence', '치료·예방이나 효과를 보장하지는 않아요'],
-    ['contradiction', result({ status: 'not_supported', evidenceLevel: 'contradictory', confidence: 'sufficient', quantitativeChecks: [check('fail')] }), 'contradiction_caution', '점수를 반영하지 않았어요'],
+    ['supported', result({ status: 'supported', evidenceLevel: 'validated_quantitative', confidence: 'sufficient', quantitativeChecks: [check('pass')] }), 'supported_evidence', '치료·예방이나 효과를 보장하지는 않습니다'],
+    ['contradiction', result({ status: 'not_supported', evidenceLevel: 'contradictory', confidence: 'sufficient', quantitativeChecks: [check('fail')] }), 'contradiction_caution', '점수를 반영하지 않았습니다'],
   ] as const)('presents %s without overclaiming', (_name, evaluation, state, phrase) => {
     const item = buildHealthConcernPresentation(runtime([evaluation])).items[0];
     expect(item.state).toBe(state);

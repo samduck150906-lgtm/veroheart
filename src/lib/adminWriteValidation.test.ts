@@ -79,6 +79,15 @@ describe('admin-write: 성분 payload 검증', () => {
 });
 
 describe('admin-write: 제품 payload 검증', () => {
+  it.each([['사료', 'food'], ['간식', 'snack'], ['영양제', 'supplement']])('saves %s with its matching product type', (category, type) => {
+    expect(normalizeProductPayload({ name: '제품', brand_name: '브랜드', main_category: ` ${category} `, product_type: 'food' }))
+      .toMatchObject({ main_category: category, product_type: type });
+  });
+
+  it('rejects an explicitly empty category instead of saving an unfindable product', () => {
+    expect(() => normalizeProductPayload({ name: '제품', brand_name: '브랜드', main_category: ' ' })).toThrow(ValidationError);
+  });
+
   it('제품명·브랜드는 필수다', () => {
     expect(() => normalizeProductPayload({ name: '', brand_name: '베로로' })).toThrow(ValidationError);
     expect(() => normalizeProductPayload({ name: '사료', brand_name: '  ' })).toThrow(ValidationError);

@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from '../store/useStore';
+import { getVisibleProductsByIds } from '../lib/supabase';
 import {
   User,
   ChevronRight,
-  LogOut,
-  LogIn,
   Heart,
   PawPrint,
   Plus,
@@ -12,22 +11,22 @@ import {
   Trash2,
   Check,
 } from 'lucide-react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import AllergyIngredientPicker from '../components/AllergyIngredientPicker';
 import { petAgeDisplay } from '../utils/allergyPicker';
 import { TossCard, TossButton, TossChip, TossInput, TossSectionTitle } from '../components/TossUI';
 import ProductCard from '../components/ProductCard';
-import FeedingDiary from '../components/diary/FeedingDiary';
-import type { UserPetProfile } from '../types';
+import AccountSettings from '../components/AccountSettings';
+import type { Product, UserPetProfile } from '../types';
 import { HEALTH_CONCERN_OPTIONS } from '../health/concerns';
 
 const PROFILE_STEP_META = [
-  { title: '이름', prompt: '우리 아이의 이름은 무엇인가요?' },
-  { title: '종', prompt: '강아지인가요, 고양이인가요?' },
-  { title: '나이', prompt: '나이대를 선택해주세요.' },
-  { title: '몸무게·품종', prompt: '몸무게와 품종을 입력해주세요. (선택)' },
-  { title: '알레르기', prompt: '알레르기가 있는 성분이 있나요? (복수 선택)' },
-  { title: '건강 고민', prompt: '신경 쓰이는 건강 고민이 있나요? (복수 선택)' },
+  { title: '이름', prompt: '반려동물 이름을 입력해 주세요.' },
+  { title: '종', prompt: '강아지 또는 고양이를 선택해 주세요.' },
+  { title: '나이', prompt: '나이대를 선택해 주세요.' },
+  { title: '몸무게·품종', prompt: '몸무게와 품종을 입력해 주세요. (선택)' },
+  { title: '알레르기', prompt: '알레르기가 있는 성분을 선택해 주세요. (복수 선택)' },
+  { title: '건강 고민', prompt: '건강 고민을 선택해 주세요. (복수 선택)' },
 ];
 
 // 회피 성분은 고정 목록 대신 성분 DB 검색으로 고른다 (components/AllergyIngredientPicker).
@@ -37,13 +36,12 @@ const PROFILE_STEP_META = [
 // 여기서 문자열을 따로 늘리면 분석이 다루지 못하는 항목이 조용히 섞인다.
 const concernOptions = HEALTH_CONCERN_OPTIONS;
 
-// '계정 설정' 은 독립 탭이었지만 로그아웃과 중복 링크뿐이라, 페이지 하단 계정 섹션으로 합쳤다.
-type MyPageTab = 'pets' | 'diary' | 'favorites';
+type MyPageTab = 'pets' | 'favorites' | 'account';
 
 const TAB_META: { key: MyPageTab; label: string }[] = [
   { key: 'pets', label: '내 반려동물' },
-  { key: 'diary', label: '식이 다이어리' },
   { key: 'favorites', label: '저장한 제품' },
+  { key: 'account', label: '계정·설정' },
 ];
 
 
@@ -60,7 +58,7 @@ function newPetDraft(): UserPetProfile {
   };
 }
 
-export default function Profile() {
+function ProfileContent() {
   const {
     userId,
     isLoggedIn,
@@ -69,9 +67,8 @@ export default function Profile() {
     savePet,
     removePet,
     selectPet,
-    logout,
     favorites,
-    products,
+    catalogRevision,
   } = useStore();
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -95,8 +92,6 @@ export default function Profile() {
   const [profileStep, setProfileStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<UserPetProfile | null>(null);
-
-  const favoriteProducts = useMemo(() => products.filter((p) => favorites.includes(p.id)), [products, favorites]);
 
   // 반려동물이 하나도 없으면 편집 폼을 바로 노출(첫 등록 유도)
   useEffect(() => {
@@ -154,11 +149,6 @@ export default function Profile() {
     } else {
       setFormData({ ...formData, [field]: [...list, value] });
     }
-  };
-
-  const handleLogout = async () => {
-    await logout();
-    navigate('/');
   };
 
   const stepCount = PROFILE_STEP_META.length;
@@ -257,7 +247,7 @@ export default function Profile() {
             {/* 고른 항목이 전부 맞춤 추천 근거가 되는 것은 아니다. 근거가 없는데
                 있는 것처럼 보이지 않도록 미리 알린다. */}
             <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-              고른 고민은 프로필에 기록되고, 분석에 쓸 수 있는 항목은 제품 원료와 맞춰 볼게요.
+              선택한 건강 고민은 프로필에 기록되며, 분석 가능한 항목은 제품 원료와 대조합니다.
             </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
             {concernOptions.map((opt) => (
@@ -296,18 +286,18 @@ export default function Profile() {
         <div style={{ width: '80px', height: '80px', borderRadius: '24px', backgroundColor: 'var(--surface-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
           <User size={40} color="var(--line)" />
         </div>
-        <h2 style={{ fontSize: '24px', fontWeight: 900, color: 'var(--text-dark)', marginBottom: '12px' }}>로그인이 필요해요</h2>
+        <h2 style={{ fontSize: '24px', fontWeight: 900, color: 'var(--text-dark)', marginBottom: '12px' }}>로그인이 필요합니다</h2>
         <p style={{ fontSize: '15px', color: 'var(--text-muted)', marginBottom: '32px', textAlign: 'center', lineHeight: 1.5 }}>
           프로필을 설정하고 아이의 건강 맞춤
           <br />
-          사료 분석과 섭취 기록을 시작해보세요!
+          사료 분석과 섭취 기록을 시작해 주세요.
         </p>
         <button
           className="btn btn-primary"
           style={{ width: '100%', maxWidth: '320px', padding: '16px', borderRadius: '20px', fontWeight: 800, fontSize: '16px' }}
           onClick={() => navigate('/login')}
         >
-          로그인 / 회원가입 하기
+          로그인 / 회원가입
         </button>
       </div>
     );
@@ -315,18 +305,11 @@ export default function Profile() {
 
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '40px' }}>
-      {/* 로그인/로그아웃 버튼 */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
-        {isLoggedIn ? (
-          <TossButton variant="outline" onClick={handleLogout} style={{ width: 'auto', height: '38px', padding: '0 14px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <LogOut size={15} /> 로그아웃
-          </TossButton>
-        ) : (
-          <Link to="/login" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--primary-dark)', borderRadius: '10px', padding: '8px 14px', fontSize: '13px', fontWeight: 700, color: '#fff', textDecoration: 'none' }}>
-            <LogIn size={15} /> 로그인 / 회원가입
-          </Link>
-        )}
-      </div>
+      {activeTab !== 'account' && <Link to="/profile?tab=account" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 18, marginBottom: 20, borderRadius: 18, background: 'var(--surface-alt)', color: 'var(--text-dark)', textDecoration: 'none' }}>
+        <User size={24} aria-hidden />
+        <div style={{ flex: 1 }}><strong style={{ fontSize: 16 }}>계정·설정</strong><p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>로그인한 계정을 관리합니다</p></div>
+        <ChevronRight size={18} aria-hidden />
+      </Link>}
 
       {/* 마이페이지 메뉴 탭 */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', padding: '0 2px', overflowX: 'auto' }}>
@@ -348,7 +331,7 @@ export default function Profile() {
             <div>
               <TossSectionTitle
                 title="내 반려동물"
-                subtitle="기록·분석 기준이 되는 아이를 선택하세요"
+                subtitle="등록한 순서로 표시합니다. 기록·분석 기준이 될 반려동물을 선택해 주세요."
                 right={
                   <button type="button" onClick={startAddPet} className="ui-text-button" style={{ padding: 0 }}>
                     <Plus size={14} /> 추가
@@ -516,66 +499,12 @@ export default function Profile() {
         </div>
       )}
 
-      {/* ── 식이 다이어리 ── */}
-      {activeTab === 'diary' && <FeedingDiary onRegisterPet={() => setTab('pets')} />}
-
       {/* ── 저장한 제품 ── */}
       {activeTab === 'favorites' && (
-        <div>
-          {favoriteProducts.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              {favoriteProducts.map((p) => (
-                <ProductCard key={p.id} product={p} />
-              ))}
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '100px 20px', backgroundColor: 'var(--surface-alt)', borderRadius: '24px' }}>
-              <Heart color="var(--line)" size={40} style={{ margin: '0 auto 16px' }} />
-              <p style={{ color: 'var(--text-muted)', fontSize: '15px' }}>저장한 제품이 없습니다.</p>
-              <Link to="/search" style={{ color: 'var(--primary)', fontWeight: 700, marginTop: '12px', display: 'inline-block', textDecoration: 'none' }}>
-                제품 탐색하기
-              </Link>
-            </div>
-          )}
-        </div>
+        <SavedProducts key={JSON.stringify([userId, favorites, catalogRevision])} userId={userId} favorites={favorites} />
       )}
 
-      {/* ── 계정 설정 ── */}
-      {/* 계정 — 독립 탭 대신 마이페이지 하단에 둔다. 탭이 하나 줄고,
-          어느 탭에서든 로그아웃·약관에 바로 닿는다. */}
-      {isLoggedIn && (
-        <div style={{ marginTop: '28px' }}>
-          <TossCard style={{ padding: '20px' }}>
-            <TossSectionTitle title="계정" subtitle="로그인한 계정을 관리해요" style={{ marginBottom: '16px' }} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <Link
-                to="/terms"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 4px', fontSize: '14px', fontWeight: 700, color: 'var(--text-dark)', textDecoration: 'none' }}
-              >
-                이용약관 <ChevronRight size={17} color="var(--text-muted)" />
-              </Link>
-              <Link
-                to="/privacy"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 4px', fontSize: '14px', fontWeight: 700, color: 'var(--text-dark)', textDecoration: 'none' }}
-              >
-                개인정보 처리방침 <ChevronRight size={17} color="var(--text-muted)" />
-              </Link>
-              <Link
-                to="/refund"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 4px', fontSize: '14px', fontWeight: 700, color: 'var(--text-dark)', textDecoration: 'none' }}
-              >
-                환불 정책 <ChevronRight size={17} color="var(--text-muted)" />
-              </Link>
-              <button
-                onClick={handleLogout}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '14px', fontWeight: 700, cursor: 'pointer', padding: '14px 4px', textAlign: 'left' }}
-              >
-                <LogOut size={16} /> 로그아웃
-              </button>
-            </div>
-          </TossCard>
-        </div>
-      )}
+      {activeTab === 'account' && <AccountSettings key={userId} />}
 
       {/* 반려동물 삭제 확인 */}
       {deleteTarget && (
@@ -586,7 +515,7 @@ export default function Profile() {
           style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
         >
           <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: '340px', background: 'var(--surface-elevated)', borderRadius: '20px', padding: '24px', textAlign: 'center' }}>
-            <h3 style={{ margin: '0 0 8px', fontSize: '17px', fontWeight: 900, color: 'var(--text-dark)' }}>{deleteTarget.name} 정보를 삭제할까요?</h3>
+            <h3 style={{ margin: '0 0 8px', fontSize: '17px', fontWeight: 900, color: 'var(--text-dark)' }}>{deleteTarget.name} 정보를 삭제하시겠습니까?</h3>
             <p style={{ margin: '0 0 20px', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
               해당 반려동물의 섭취 기록도 함께 삭제되며 복구할 수 없습니다.
             </p>
@@ -605,6 +534,40 @@ export default function Profile() {
   );
 }
 
+function SavedProducts({ userId, favorites }: { userId: string; favorites: string[] }) {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(favorites.length > 0);
+  const [failed, setFailed] = useState(false);
+  const [retry, setRetry] = useState(0);
+
+  useEffect(() => {
+    if (!favorites.length) return;
+    let cancelled = false;
+    getVisibleProductsByIds(favorites).then((rows) => {
+      if (!cancelled && useStore.getState().userId === userId) setProducts(rows);
+    }).catch(() => {
+      if (!cancelled && useStore.getState().userId === userId) setFailed(true);
+    }).finally(() => {
+      if (!cancelled && useStore.getState().userId === userId) setLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [userId, favorites, retry]);
+
+  if (loading) return <p role="status" style={{ padding: '32px 0', color: 'var(--text-muted)' }}>저장한 제품을 불러오고 있습니다.</p>;
+  if (failed) return <div style={{ padding: '32px 0' }}>
+    <p role="alert">저장한 제품을 불러오지 못했습니다. 연결을 확인하고 다시 시도해 주세요.</p>
+    <TossButton variant="outline" onClick={() => { setLoading(true); setFailed(false); setRetry((value) => value + 1); }}>저장한 제품 다시 불러오기</TossButton>
+  </div>;
+  if (products.length) return <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+    {products.map((product) => <ProductCard key={product.id} product={product} />)}
+  </div>;
+  return <div style={{ textAlign: 'center', padding: '80px 20px', backgroundColor: 'var(--surface-alt)', borderRadius: 24 }}>
+    <Heart color="var(--line)" size={40} style={{ margin: '0 auto 16px' }} />
+    <p style={{ color: 'var(--text-muted)', fontSize: 15 }}>{favorites.length ? '저장한 제품 중 현재 볼 수 있는 제품이 없습니다.' : '저장한 제품이 없습니다.'}</p>
+    <Link to="/search" style={{ color: 'var(--primary)', fontWeight: 700, marginTop: 12, display: 'inline-block', textDecoration: 'none' }}>제품 탐색하기</Link>
+  </div>;
+}
+
 const petIconBtn: React.CSSProperties = {
   width: '38px',
   height: '38px',
@@ -618,3 +581,11 @@ const petIconBtn: React.CSSProperties = {
   justifyContent: 'center',
   flexShrink: 0,
 };
+
+// Remount local edit/account state when authentication identity changes.
+export default function Profile() {
+  const { userId } = useStore();
+  const [searchParams] = useSearchParams();
+  if (searchParams.get('tab') === 'diary') return <Navigate to="/diary" replace />;
+  return <ProfileContent key={userId ?? 'guest'} />;
+}

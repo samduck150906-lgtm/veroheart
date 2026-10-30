@@ -52,6 +52,7 @@ class FakeProcessingRepository implements ScanProcessingRepository {
       userId,
       scannedBarcode: '8801234567893',
       imagePaths: paths,
+      extractionVersion: EXTRACTION_VERSION,
     },
   };
   complete = vi.fn().mockResolvedValue(undefined);

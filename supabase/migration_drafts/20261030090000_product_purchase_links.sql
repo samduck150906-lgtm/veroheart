@@ -236,6 +236,7 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
       AND s.extracted_data->>'availability'=l.availability
       THEN l.availability ELSE 'unknown' END AS state) stock
   WHERE l.product_id=p_product_id AND p.is_visible=true
+    AND p.verification_status IN ('reviewed','verified')
     AND (NOT private.hide_unverified_products_enabled() OR p.verification_status='verified')
     AND l.link_kind='product' AND l.verification_status='verified' AND l.verification_valid_until>now()
     AND t.is_current AND s.is_current
