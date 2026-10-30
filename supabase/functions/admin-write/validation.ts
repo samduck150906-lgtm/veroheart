@@ -76,6 +76,7 @@ export const ALLOWED_ACTIONS = new Set([
   'restoreTrash',
   'purgeTrash',
   'applyProductCleanup',
+  'saveProductPurchaseLink',
 ]);
 
 export const MAX_NAME_LEN = 200;

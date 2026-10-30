@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
+import { normalizePurchaseLinkRequest } from './purchaseLinks.ts';
 import {
   ALLOWED_ACTIONS,
   MAX_PAGE_SIZE,
@@ -461,6 +462,13 @@ serve(async (req) => {
 
       case 'verifyAdmin':
         return json({ ok: true, actor }, 200, cors);
+
+      case 'saveProductPurchaseLink': {
+        const input = normalizePurchaseLinkRequest(body.link);
+        const { data, error } = await db.rpc('admin_save_product_purchase_link', { p_input: input, p_actor: actor });
+        if (error) throw new ValidationError('판매 연결 검증 또는 저장에 실패했습니다.');
+        return json({ ok: true, result: data }, 200, cors);
+      }
 
       // ── 제품 ───────────────────────────────────────────────────────────
       case 'saveProduct': {
