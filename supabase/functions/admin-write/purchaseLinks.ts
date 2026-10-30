@@ -52,6 +52,7 @@ export function normalizePurchaseLinkRequest(raw: unknown): Record<string, unkno
     const url = result.resolved_url ? new URL(String(result.resolved_url)) : null;
     if (!url || !['coupang.com', 'www.coupang.com', 'm.coupang.com'].includes(url.hostname)
       || url.hash || !/^\d{1,32}$/.test(String(result.seller_product_id))
+      || [...url.searchParams.keys()].some((key) => key !== 'itemId' && key !== 'vendorItemId')
       || !/^\d{1,32}$/.test(String(result.seller_item_id))
       || !/^\d{1,32}$/.test(String(result.seller_offer_id))
       || ![ `/vp/products/${result.seller_product_id}`, `/vp/products/${result.seller_product_id}/` ].includes(url.pathname)

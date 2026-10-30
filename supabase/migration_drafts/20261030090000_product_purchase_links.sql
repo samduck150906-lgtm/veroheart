@@ -70,6 +70,7 @@ CREATE FUNCTION public.purchase_coupang_option_url(p_url text, p_product text, p
 RETURNS boolean LANGUAGE sql IMMUTABLE SET search_path = '' AS $$
   SELECT coalesce(
     p_url ~ ('^https://(www\.|m\.)?coupang\.com/vp/products/' || p_product || '/?\?[^#[:space:][:cntrl:]]+$')
+    AND array_length(string_to_array(split_part(p_url,'?',2),'&'),1)=2
     AND (SELECT array_agg(v[1])=ARRAY[p_item] FROM regexp_matches(p_url,'[?&]itemId=([^&#]*)','g') AS parts(v))
     AND (SELECT array_agg(v[1])=ARRAY[p_offer] FROM regexp_matches(p_url,'[?&]vendorItemId=([^&#]*)','g') AS parts(v)), false);
 $$;

@@ -277,6 +277,8 @@ source_product_id 한 개를 옵션 증거로 대신 사용하지 않는다. 가
 - verified 목적지는 쿠팡의 `/vp/products/{productId}`와 단일 `itemId`/`vendorItemId`가 관찰 ID들과
   일치하는 직접 상품 URL만 받는다. 일반 검색·단축 URL은 원본으로 보존할 수 있으나 검증된 목적지가 아니다.
   URL 구조 일치는 필요조건일 뿐 포장·옵션 동일성의 증거를 대신하지 않는다. 공백/제어문자 URL은 거부한다.
+  공개 목적지에는 두 옵션 ID query만 허용하며, 원본의 추적·내부 근거·인증 관련 추가 query는 전달하지 않는다.
+  원본을 자동 정리/교체하지 않고 관리자가 근거와 일치하는 직접 상품 URL을 별도로 확인해야 한다.
 - 공개 함수는 제품 노출과 reviewed/verified 상태, 미검수 숨김 정책, 동일성 시한·관찰 current·fingerprint를 검사한다.
   반환값은 연결/제품 ID, 판매처, 목적 URL, action, 동일성 확인 시각/시한, 유효 재고 상태뿐이다.
   원본 URL·관찰 내용·확인자·actor·감사·내부 fingerprint는 노출하지 않는다. 가격 필드는 아예 제공하지 않는다.

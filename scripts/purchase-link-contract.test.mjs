@@ -139,6 +139,7 @@ describe('purchase-link real auth/router + draft PostgreSQL contract',()=>{
       payload().resolved_url.replace('/100?', '/999?'),
       payload().resolved_url.replace('itemId=200', 'itemId=999'),
       payload().resolved_url+'&itemId=200',
+      payload().resolved_url+'&source=private-evidence',
       payload().resolved_url+'#other-option',
       payload().resolved_url+'\n',
     ]) assert.equal((await request(payload({resolved_url:url}))).status,400);
