@@ -101,3 +101,14 @@ it('serializes two actual connections reviewing the same revision without duplic
   assert.equal(await sql('SELECT hold_reason FROM public.product_purchase_links;'),'winning review');
   assert.equal(await sql('SELECT count(*) FROM public.admin_audit_log;'),'2');
 });
+
+it('does not upsert over another product when two connections claim the same new link UUID',async()=>{
+  await sql(`INSERT INTO public.products(id,name,brand_name) VALUES(${quote(other)},'Other fixture','Fixture brand');`);
+  const id='66666666-6666-4666-8666-666666666666';
+  const input=payload({id,link_kind:'unknown',verification_status:'unverified',
+    target_observation_id:null,seller_observation_id:null,verification_valid_until:null});
+  await race(input,{...input,product_id:other});
+  assert.equal(await sql(`SELECT product_id FROM public.product_purchase_links WHERE id=${quote(id)};`),product);
+  assert.equal(await sql(`SELECT count(*) FROM public.admin_audit_log WHERE target_id=${quote(id)};`),'1');
+  assert.equal(await sql('SELECT count(*) FROM public.admin_audit_log;'),'3');
+});

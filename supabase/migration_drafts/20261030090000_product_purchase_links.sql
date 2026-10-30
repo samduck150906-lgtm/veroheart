@@ -208,7 +208,14 @@ BEGIN
     availability_valid_until=excluded.availability_valid_until,hold_reason=excluded.hold_reason,
     revision=excluded.revision,identity_revision=excluded.identity_revision,
     request_payload=excluded.request_payload,updated_at=now()
+  -- A different product can race to claim the same not-yet-visible UUID.
+  -- Never turn that insert collision into an unchecked update of its row.
+  WHERE v_old.id IS NOT NULL AND l.product_id=excluded.product_id
+    AND l.original_url=excluded.original_url AND l.revision=v_expected
   RETURNING * INTO v_saved;
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('status','conflict','reason','link_id_conflict','id',v_id);
+  END IF;
   INSERT INTO public.admin_audit_log(actor,action,target_table,target_id,detail)
     VALUES(p_actor,'saveProductPurchaseLink','product_purchase_links',v_id::text,
       jsonb_build_object('before',CASE WHEN v_old.id IS NOT NULL THEN to_jsonb(v_old) END,'after',to_jsonb(v_saved)));

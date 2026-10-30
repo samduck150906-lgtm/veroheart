@@ -310,6 +310,10 @@ describe('purchase-link real auth/router + draft PostgreSQL contract',()=>{
     const input=payload();await request(input);
     assert.equal((await request({...input,expected_revision:1,original_url:'https://link.coupang.com/a/new'})).status,400);
     assert.equal((await request({...input,id:other})).body.result.reason,'active_link_exists');
+    await db.query('INSERT INTO public.products(id,name,brand_name) VALUES($1,$2,$3)',[other,'Other fixture','Fixture brand']);
+    const before=await snapshot();
+    assert.equal((await request({...input,product_id:other})).status,400);
+    assert.deepEqual(await snapshot(),before);
     assert.equal((await snapshot()).admin_audit_log.length,1);
   });
   it('detects competing reviews of the same revision without overwriting the winner',async()=>{

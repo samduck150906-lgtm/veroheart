@@ -309,7 +309,9 @@ source_product_id 한 개를 옵션 증거로 대신 사용하지 않는다. 가
 - PGlite 테스트 DB는 최소 합성 스키마와 단일 연결이다. 별도 `test:purchase-links:concurrency`는
   CI의 빈 PostgreSQL 17 로컬 서비스에서 두 실제 연결을 사용한다. 첫 트랜잭션을 미커밋 상태로 유지하고,
   두 번째 연결의 실제 Lock 대기를 확인한 후 첫 연결을 커밋한다. 서로 다른 verified 연결 생성과 같은
-  revision 수정 경합에서 승자1/충돌1 및 감사 건수를 검사한다. DB/제품 자료는 모두 합성이다.
+  revision 수정 경합, 서로 다른 제품이 같은 신규 연결 UUID를 차지하려는 경합의 3건에서
+  승자1/충돌1 및 감사 건수를 검사한다. 조건부 upsert는 읽기 시점에 없던 UUID 충돌도 기존 행을
+  덮어쓰지 않고 conflict로 처리한다. DB/제품 자료는 모두 합성이다.
   로컬에는 psql/Docker가 없어 이 테스트를 실행하지 않았으며 Linux CI에서 실행한다.
 - 최신 main의 `.github/workflows/release-checks.yml` web job을 확장하고 중복 workflow를 추가하지 않는다.
   기존 Node24/npm11.13/npm ci, lint/전체 Vitest/build/기타 release 검사를 보존하고 신규 계약·동시성·관련 Vitest 및
