@@ -17,11 +17,16 @@ const databases=new Set(['purchase_link_full_schema_test','purchase_link_raw_rep
 function execute(database,statement,role='postgres') {
   assert.ok(databases.has(database));
   assert.ok(['postgres','service_role','anon','authenticated'].includes(role));
+  const environment={...process.env,PGHOSTADDR:'127.0.0.1',PGSSLMODE:'disable',
+    PGOPTIONS:'-c statement_timeout=30000',PGPASSFILE:'/dev/null'};
+  // libpq treats even an empty PGSERVICE as a named service; remove it entirely.
+  delete environment.PGSERVICE;
+  delete environment.PGSERVICEFILE;
+  assert.equal(Object.hasOwn(environment,'PGSERVICE'),false);
   return new Promise((resolve,reject)=>{
     const child=spawn('psql',['-X','--quiet','--tuples-only','--no-align','--no-password',
       '--dbname',database,'-v','ON_ERROR_STOP=1','-v','VERBOSITY=verbose'],{
-      env:{...process.env,PGHOSTADDR:'127.0.0.1',PGSSLMODE:'disable',PGSERVICE:'',PGSERVICEFILE:'/dev/null',
-        PGOPTIONS:'-c statement_timeout=30000',PGPASSFILE:'/dev/null'},stdio:['pipe','pipe','pipe']});
+      env:environment,stdio:['pipe','pipe','pipe']});
     let output='',error='';
     child.stdout.on('data',(chunk)=>{output+=chunk;});
     child.stderr.on('data',(chunk)=>{error+=chunk;});
