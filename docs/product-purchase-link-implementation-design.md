@@ -327,10 +327,20 @@ source_product_id 한 개를 옵션 증거로 대신 사용하지 않는다. 가
 
 1. 이 PR의 SQL은 `migration_drafts`에만 있으며 merge해도 Supabase 자동 migration 대상이 아니다.
 2. 새 `saveProductPurchaseLink` action은 아직 없는 `admin_save_product_purchase_link` RPC에 의존한다.
-   이 상태에서 함수를 먼저 배포해 호출하면 검증/저장 오류가 반환된다. 일반 action 경로는 변경하지 않았다.
+   또한 제품 `deleteProduct`는 원자적 `admin_delete_product` RPC에 의존한다. DB 함수를 준비하지 않은 채
+   admin-write를 먼저 배포하면 기존 제품 삭제도 실패한다. 비원자적 옛 경로로 fallback하지 않는다.
 3. 별도 승인된 후속 작업에서 전체 스키마·정책 호환성 및 백업을 확인하고, 최신 timestamp로 초안을
    정식 migration으로 승격/검토한 뒤 DB 테이블·RPC·권한을 먼저 적용한다. 이번 PR은 이를 실행하지 않는다.
 4. service_role 전용 쓰기, anon/authenticated private read/write 차단, 최소 공개 projection과 감사 실패 롤백을
    실제 격리 Supabase에서 확인한 다음 admin-write를 배포한다. UI/CTA/가격 연계는 그 이후 별도 단위다.
 5. 단일 활성 연결은 제품 행 잠금과 부분 unique index로 보장한다. 만료된 verified 행도 새 연결 전에
    명시적으로 stale로 전환해야 하며, 원본/이력은 삭제하지 않는다. 동시성 검증은 기본 READ COMMITTED 범위다.
+
+### 후속 삭제 원자성 단위
+
+첫 버전은 구매 연결 이력이 있는 제품의 물리 삭제를 거부하고 기존 비노출 기능으로 관리한다.
+`deleteProduct`는 인증 뒤 단일 DB RPC만 호출한다. 제품 행 잠금은 연결 저장과 공유하고,
+연결 없는 제품의 스냅샷/휴지통/삭제/감사를 한 트랜잭션으로 처리한다.
+삭제 거부·FK/휴지통/감사 실패와 동시 삭제/연결 생성의 불변성은 합성 테스트 대상이다.
+연결·관찰·감사 이력을 cascade 삭제하지 않으며, ingredient 삭제나 복구 UI는 확장하지 않는다.
+24시간 작업량 산정과 새 관찰의 수집·검토·승인 흐름은 위 재확인 문서 6절에 정리한다.

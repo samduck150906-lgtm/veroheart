@@ -374,29 +374,6 @@ async function replaceProductIngredients(db: Db, productId: string, rawItems: un
 // 바꾸면 앱의 모든 제품 조회에 필터를 더해야 하고 한 곳만 빠져도 삭제한 제품이
 // 사용자에게 다시 보이기 때문이다.
 
-/** 제품 스냅샷 — 제품 행 + cascade 로 함께 사라지는 자식 행. */
-async function snapshotProduct(db: Db, id: string): Promise<Record<string, unknown> | null> {
-  const { data: product, error } = await db.from('products').select('*').eq('id', id).maybeSingle();
-  if (error) throw error;
-  if (!product) return null;
-
-  const [links, nutrition, reviews] = await Promise.all([
-    db.from('product_ingredients').select('*').eq('product_id', id),
-    db.from('nutritional_profiles').select('*').eq('product_id', id),
-    db.from('reviews').select('*').eq('product_id', id),
-  ]);
-  if (links.error) throw links.error;
-  if (nutrition.error) throw nutrition.error;
-  if (reviews.error) throw reviews.error;
-
-  return {
-    product,
-    product_ingredients: links.data ?? [],
-    nutritional_profiles: nutrition.data ?? [],
-    reviews: reviews.data ?? [],
-  };
-}
-
 async function putInTrash(
   db: Db,
   actor: string,
@@ -548,23 +525,13 @@ serve(async (req) => {
 
       case 'deleteProduct': {
         const id = requireUuid(body.id, '제품 ID');
-        const snapshot = await snapshotProduct(db, id);
-        if (!snapshot) throw new ValidationError('삭제할 제품을 찾을 수 없습니다.');
-        const product = snapshot.product as Record<string, unknown>;
-
-        await putInTrash(
-          db,
-          actor,
-          'product',
-          id,
-          String(product.name ?? '이름 없는 제품'),
-          (product.brand_name as string | null) ?? null,
-          snapshot,
-        );
-
-        const { error } = await db.from('products').delete().eq('id', id);
+        const { data, error } = await db.rpc('admin_delete_product', { p_product_id: id, p_actor: actor });
         if (error) throw error;
-        await audit(db, actor, 'deleteProduct', 'products', id, { name: product.name, restorable: true });
+        if (data?.status === 'blocked_purchase_history') {
+          return json({ error: '구매 연결 이력이 있는 제품은 삭제할 수 없습니다. 비노출 기능을 사용해 주세요.', code: 'purchase_history_exists' }, 409, cors);
+        }
+        if (data?.status === 'not_found') throw new ValidationError('삭제할 제품을 찾을 수 없습니다.');
+        if (data?.status !== 'deleted') throw new Error('Unexpected product deletion result');
         return json({ ok: true, restorable: true }, 200, cors);
       }
 

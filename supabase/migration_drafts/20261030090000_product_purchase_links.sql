@@ -262,4 +262,39 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
 $$;
 REVOKE ALL ON FUNCTION public.get_product_purchase_links(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_product_purchase_links(uuid) TO anon, authenticated, service_role;
+
+-- One transaction owns the product lock, trash snapshot, delete and audit. Link
+-- writers take the same lock: a concurrent new link cannot slip past this check.
+CREATE FUNCTION public.admin_delete_product(p_product_id uuid, p_actor text)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
+DECLARE
+  v_product public.products%ROWTYPE;
+  v_snapshot jsonb;
+BEGIN
+  IF p_product_id IS NULL OR p_actor IS NULL OR btrim(p_actor) = '' OR length(p_actor)>200 THEN
+    RAISE EXCEPTION 'invalid deletion request' USING ERRCODE='22023';
+  END IF;
+  SELECT * INTO v_product FROM public.products WHERE id=p_product_id FOR UPDATE;
+  IF NOT FOUND THEN RETURN jsonb_build_object('status','not_found'); END IF;
+  IF EXISTS (SELECT 1 FROM public.product_purchase_links WHERE product_id=p_product_id) THEN
+    RETURN jsonb_build_object('status','blocked_purchase_history');
+  END IF;
+  v_snapshot := jsonb_build_object('product',to_jsonb(v_product),
+    'product_ingredients',COALESCE((SELECT jsonb_agg(to_jsonb(r)) FROM
+      (SELECT * FROM public.product_ingredients WHERE product_id=p_product_id FOR UPDATE) r),'[]'::jsonb),
+    'nutritional_profiles',COALESCE((SELECT jsonb_agg(to_jsonb(r)) FROM
+      (SELECT * FROM public.nutritional_profiles WHERE product_id=p_product_id FOR UPDATE) r),'[]'::jsonb),
+    'reviews',COALESCE((SELECT jsonb_agg(to_jsonb(r)) FROM
+      (SELECT * FROM public.reviews WHERE product_id=p_product_id FOR UPDATE) r),'[]'::jsonb));
+  INSERT INTO public.admin_trash(entity_type,entity_id,label,sub_label,snapshot,deleted_by)
+    VALUES('product',p_product_id,COALESCE(v_product.name,'이름 없는 제품'),v_product.brand_name,v_snapshot,p_actor);
+  DELETE FROM public.products WHERE id=p_product_id;
+  INSERT INTO public.admin_audit_log(actor,action,target_table,target_id,detail)
+    VALUES(p_actor,'deleteProduct','products',p_product_id::text,
+      jsonb_build_object('name',v_product.name,'restorable',true));
+  RETURN jsonb_build_object('status','deleted','restorable',true);
+END;
+$$;
+REVOKE ALL ON FUNCTION public.admin_delete_product(uuid,text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_delete_product(uuid,text) TO service_role;
 COMMIT;

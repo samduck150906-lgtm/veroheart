@@ -22,3 +22,11 @@ CREATE TABLE public.admin_audit_log (
   action text NOT NULL, target_table text, target_id text,
   detail jsonb, created_at timestamptz DEFAULT now()
 );
+CREATE TABLE public.admin_trash (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), entity_type text NOT NULL,
+  entity_id uuid NOT NULL, label text NOT NULL, sub_label text,
+  snapshot jsonb NOT NULL, deleted_by text NOT NULL
+);
+CREATE TABLE public.product_ingredients (product_id uuid REFERENCES public.products(id) ON DELETE CASCADE, value text);
+CREATE TABLE public.nutritional_profiles (product_id uuid REFERENCES public.products(id) ON DELETE CASCADE, value text);
+CREATE TABLE public.reviews (product_id uuid REFERENCES public.products(id) ON DELETE CASCADE, value text);

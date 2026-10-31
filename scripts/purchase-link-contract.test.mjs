@@ -34,12 +34,14 @@ async function loadRouter() {
   const sdk = new SyntheticModule(['createClient'], function () {
     this.setExport('createClient', () => ({ async rpc(name,args) {
       calls++;
-      assert.equal(name,'admin_save_product_purchase_link');
+      assert.ok(['admin_save_product_purchase_link','admin_delete_product'].includes(name));
       assert.equal(args.p_actor,'fixture-admin');
       try {
         await db.exec('SET ROLE service_role');
-        const result = await db.query('SELECT public.admin_save_product_purchase_link($1::jsonb,$2) AS result',
-          [JSON.stringify(args.p_input),args.p_actor]);
+        const result = await db.query(name==='admin_delete_product'
+          ? 'SELECT public.admin_delete_product($1::uuid,$2) AS result'
+          : 'SELECT public.admin_save_product_purchase_link($1::jsonb,$2) AS result',
+          [name==='admin_delete_product'?args.p_product_id:JSON.stringify(args.p_input),args.p_actor]);
         return {data:result.rows[0].result,error:null};
       } catch(error) { return {data:null,error}; }
       finally { await db.exec('RESET ROLE'); }
@@ -73,15 +75,15 @@ function payload(overrides={}) {
     verification_valid_until:new Date(Date.now()+3600_000).toISOString(),availability:'unknown',
     availability_valid_until:null,hold_reason:null,...overrides};
 }
-async function request(input,auth=token()) {
+async function request(input,auth=token(),action='saveProductPurchaseLink') {
   const response=await handler(new Request('https://fixture.invalid/functions/v1/admin-write',{
     method:'POST',headers:{'Content-Type':'application/json','x-admin-token':auth},
-    body:JSON.stringify({action:'saveProductPurchaseLink',link:input})}));
+    body:JSON.stringify(action==='deleteProduct'?{action,id:input}:{action,link:input})}));
   return {status:response.status,body:await response.json()};
 }
 async function snapshot() {
   const result={};
-  for (const table of ['products','product_purchase_links','admin_audit_log'])
+  for (const table of ['products','product_purchase_links','admin_audit_log','admin_trash'])
     result[table]=(await db.query(`SELECT * FROM public.${table} ORDER BY id`)).rows;
   return result;
 }
@@ -101,7 +103,8 @@ describe('purchase-link real auth/router + draft PostgreSQL contract',()=>{
   after(async()=>{await db?.close();});
   beforeEach(async()=>{
     await db.exec(`ALTER TABLE public.admin_audit_log DROP CONSTRAINT IF EXISTS reject_audit;
-      TRUNCATE public.products,public.product_observations,public.product_purchase_links,public.admin_audit_log CASCADE;
+      ALTER TABLE public.admin_trash DROP CONSTRAINT IF EXISTS reject_trash;
+      TRUNCATE public.products,public.product_observations,public.product_purchase_links,public.admin_audit_log,public.admin_trash CASCADE;
       CREATE OR REPLACE FUNCTION private.hide_unverified_products_enabled() RETURNS boolean LANGUAGE sql AS 'SELECT false';`);
     await db.query('INSERT INTO public.products(id,name,brand_name,is_visible,verification_status,coupang_link,unrelated) VALUES ($1,$2,$3,true,$4,$5,$6)',
       [product,'Fixture salmon 12g x 15','Fixture brand','reviewed','https://link.coupang.com/a/legacy','{"sentinel":true}']);
@@ -116,6 +119,50 @@ describe('purchase-link real auth/router + draft PostgreSQL contract',()=>{
   it('executes real session authentication before RPC; rejects missing/invalid token',async()=>{
     for(const auth of ['', 'invalid']) assert.equal((await request(payload(),auth)).status,401);
     assert.equal(calls,0); assert.equal((await snapshot()).admin_audit_log.length,0);
+  });
+  it('rejects physical deletion with any purchase history before trash or audit writes',async()=>{
+    assert.equal((await request(product,'','deleteProduct')).status,401);
+    assert.equal((await request(payload({link_kind:'unknown',verification_status:'unverified',
+      target_observation_id:null,seller_observation_id:null,verification_valid_until:null}))).body.result.status,'applied');
+    const before=await snapshot();
+    const result=await request(product,token(),'deleteProduct');
+    assert.equal(result.status,409);
+    assert.equal(result.body.code,'purchase_history_exists');
+    assert.deepEqual(await snapshot(),before);
+  });
+  it('deletes an unlinked product once with restorable snapshot and atomic audit',async()=>{
+    await db.exec('DELETE FROM public.product_observations');
+    await db.query('INSERT INTO public.reviews VALUES ($1,$2)',[product,'preserved review']);
+    const before=(await snapshot()).products[0];
+    assert.equal((await request(product,token(),'deleteProduct')).status,200);
+    const state=await snapshot();
+    assert.equal(state.products.length,0);
+    assert.equal(state.admin_trash.length,1);
+    assert.deepEqual(state.admin_trash[0].snapshot.product,before);
+    assert.equal(state.admin_trash[0].snapshot.reviews[0].value,'preserved review');
+    assert.equal(state.admin_audit_log.length,1);
+    assert.equal((await request(product,token(),'deleteProduct')).status,400);
+    assert.deepEqual(await snapshot(),state);
+  });
+  it('rolls back trash and deletion when audit or a foreign key rejects deletion',async()=>{
+    const original=await snapshot();
+    assert.equal((await request(product,token(),'deleteProduct')).status,409);
+    assert.deepEqual(await snapshot(),original);
+    await db.exec("DELETE FROM public.product_observations; ALTER TABLE public.admin_audit_log ADD CONSTRAINT reject_audit CHECK(action<>'deleteProduct')");
+    const before=await snapshot();
+    assert.equal((await request(product,token(),'deleteProduct')).status,500);
+    assert.deepEqual(await snapshot(),before);
+  });
+  it('leaves products and audit untouched when trash insertion fails; denies public deletion RPC',async()=>{
+    await db.exec("DELETE FROM public.product_observations; ALTER TABLE public.admin_trash ADD CONSTRAINT reject_trash CHECK(entity_type<>'product')");
+    const before=await snapshot();
+    assert.equal((await request(product,token(),'deleteProduct')).status,500);
+    assert.deepEqual(await snapshot(),before);
+    for(const role of ['anon','authenticated']) {
+      await db.exec(`SET ROLE ${role}`);
+      try { await assert.rejects(db.query('SELECT public.admin_delete_product($1,$2)',[product,'forged'])); }
+      finally { await db.exec('RESET ROLE'); }
+    }
   });
   it('validates UUIDs, revision, fields and HTTPS merchant URLs without writes',async()=>{
     for(const patch of [{id:'bad'},{expected_revision:-1},{actor:'forged'},

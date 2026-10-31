@@ -21,7 +21,7 @@ export async function assertPurchaseLinkFullSchema(db) {
     policies:await rows("SELECT * FROM pg_policies WHERE schemaname='public' AND tablename<>'product_purchase_links' ORDER BY tablename,policyname"),
     functions:await rows(`SELECT p.oid::text,pg_get_functiondef(p.oid) AS definition FROM pg_proc p
       JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname IN ('public','private') AND p.prokind='f'
-      AND p.proname NOT LIKE 'purchase_%' AND p.proname NOT IN ('admin_save_product_purchase_link','get_product_purchase_links') ORDER BY p.oid`),
+      AND p.proname NOT LIKE 'purchase_%' AND p.proname NOT IN ('admin_save_product_purchase_link','get_product_purchase_links','admin_delete_product') ORDER BY p.oid`),
     columns:await rows("SELECT * FROM information_schema.columns WHERE table_schema='public' AND table_name<>'product_purchase_links' ORDER BY table_name,ordinal_position"),
   });
   const before=await unchangedObjects();
@@ -141,9 +141,33 @@ export async function assertPurchaseLinkFullSchema(db) {
     const afterCleanup=await state();
     await assert.rejects(save({...input,expected_revision:3}));
     assert.deepEqual(await state(),afterCleanup);
+    const trashBefore=await rows('SELECT * FROM public.admin_trash ORDER BY id');
+    assert.equal((await rows(`SELECT public.admin_delete_product(${quote(product)},'schema-fixture-admin') AS r`,'service_role'))[0].r.status,'blocked_purchase_history');
+    assert.deepEqual(await state(),afterCleanup);
+    assert.deepEqual(await rows('SELECT * FROM public.admin_trash ORDER BY id'),trashBefore);
+    for(const role of ['anon','authenticated']) {
+      assert.equal((await rows(`SELECT has_function_privilege('${role}','public.admin_delete_product(uuid,text)','EXECUTE') AS allowed`))[0].allowed,false);
+    }
+    const unlinked='77777777-7777-4777-8777-777777777777';
+    await db.exec(`INSERT INTO public.products(id,name,brand_name,product_type,main_category,target_pet_type)
+      VALUES(${quote(unlinked)},'Unlinked deletion fixture','Synthetic','food','사료','dog')`);
+    const original=(await rows(`SELECT to_jsonb(p) AS p FROM public.products p WHERE id=${quote(unlinked)}`))[0].p;
+    await db.exec("ALTER TABLE public.admin_audit_log ADD CONSTRAINT delete_contract_reject_audit CHECK(action<>'deleteProduct') NOT VALID");
+    try {
+      await assert.rejects(rows(`SELECT public.admin_delete_product(${quote(unlinked)},'schema-fixture-admin')`,'service_role'));
+      assert.deepEqual((await rows(`SELECT to_jsonb(p) AS p FROM public.products p WHERE id=${quote(unlinked)}`))[0].p,original);
+      assert.deepEqual(await rows('SELECT * FROM public.admin_trash ORDER BY id'),trashBefore);
+    } finally { await db.exec('ALTER TABLE public.admin_audit_log DROP CONSTRAINT delete_contract_reject_audit'); }
+    assert.equal((await rows(`SELECT public.admin_delete_product(${quote(unlinked)},'schema-fixture-admin') AS r`,'service_role'))[0].r.status,'deleted');
+    const trash=(await rows(`SELECT snapshot FROM public.admin_trash WHERE entity_id=${quote(unlinked)}`))[0];
+    assert.deepEqual(trash.snapshot.product,original);
+    assert.equal((await rows(`SELECT public.admin_delete_product(${quote(unlinked)},'schema-fixture-admin') AS r`,'service_role'))[0].r.status,'not_found');
+    assert.equal((await rows(`SELECT count(*)::integer AS n FROM public.admin_audit_log WHERE action='deleteProduct' AND target_id=${quote(unlinked)}`))[0].n,1);
+    await db.exec(`DELETE FROM public.admin_trash WHERE entity_id=${quote(unlinked)};
+      DELETE FROM public.admin_audit_log WHERE target_id=${quote(unlinked)}`);
     console.log(JSON.stringify({purchaseLinkFullSchema:true,roleMatrix:true,publicPolicy:true,
       actualProductAndAuditSchema:true,existingCleanupCompatible:true,snapshotGuard:true,
-      auditFailureAtomic:true,connectedProductDeletion:'restricted; existing trash HTTP path is a deployment blocker',
+      auditFailureAtomic:true,connectedProductDeletion:'transactionally blocked; unlinked trash/delete/audit atomic',
       expiredReplayRejectedWithoutWrite:true,originalObjectDefinitionsUnchanged:true}));
   } finally {
     await db.exec(`DELETE FROM public.product_purchase_links WHERE product_id=${quote(product)};

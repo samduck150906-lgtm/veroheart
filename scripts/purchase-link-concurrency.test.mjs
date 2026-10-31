@@ -113,3 +113,54 @@ it('does not upsert over another product when two connections claim the same new
   assert.equal(await sql(`SELECT count(*) FROM public.admin_audit_log WHERE target_id=${quote(id)};`),'1');
   assert.equal(await sql('SELECT count(*) FROM public.admin_audit_log;'),'3');
 });
+
+async function deletionRace(first, second) {
+  const winner=session(),loser=session();
+  try {
+    winner.child.stdin.write(`BEGIN; SET LOCAL statement_timeout='15s'; SET LOCAL ROLE service_role;
+      ${first} SELECT 'DELETE_RACE_READY';\n`);
+    for(let i=0;!winner.output().includes('DELETE_RACE_READY') && i<100;i++) await delay(50);
+    assert.ok(winner.output().includes('DELETE_RACE_READY'));
+    loser.child.stdin.end(`SET application_name='purchase-delete-loser'; SET statement_timeout='15s'; SET ROLE service_role; ${second}`);
+    let waiting=false;
+    for(let i=0;i<100 && !waiting;i++) {
+      waiting=(await sql(`SELECT count(*) FROM pg_stat_activity WHERE datname=current_database()
+        AND application_name='purchase-delete-loser' AND wait_event_type='Lock'`))==='1';
+      if(!waiting) await delay(50);
+    }
+    assert.ok(waiting,'Contender must actually wait on the shared product row lock');
+    winner.child.stdin.end('COMMIT;\n');
+    return await Promise.all([winner.done,loser.done.catch(error=>error.message)]);
+  } finally {
+    for(const s of [winner,loser]) if(s.child.exitCode===null) s.child.kill();
+    await Promise.allSettled([winner.done,loser.done]);
+  }
+}
+
+it('serializes deletion against link creation in both lock orders without partial trash or audit',async()=>{
+  for(const linkFirst of [true,false]) {
+    const p=linkFirst?'81111111-1111-4111-8111-111111111111':'82222222-2222-4222-8222-222222222222';
+    await sql(`INSERT INTO public.products(id,name) VALUES(${quote(p)},'Deletion race fixture')`);
+    const create=call(payload({id:p,product_id:p,link_kind:'unknown',verification_status:'unverified',
+      target_observation_id:null,seller_observation_id:null,verification_valid_until:null}));
+    const remove=`SELECT public.admin_delete_product(${quote(p)},'fixture-admin');`;
+    const [a,b]=await deletionRace(linkFirst?create:remove,linkFirst?remove:create);
+    assert.ok(a.includes(linkFirst?'"status": "applied"':'"status": "deleted"'));
+    assert.ok(b.includes(linkFirst?'blocked_purchase_history':'product not found'));
+    assert.equal(await sql(`SELECT count(*) FROM public.products WHERE id=${quote(p)}`),linkFirst?'1':'0');
+    assert.equal(await sql(`SELECT count(*) FROM public.product_purchase_links WHERE product_id=${quote(p)}`),linkFirst?'1':'0');
+    assert.equal(await sql(`SELECT count(*) FROM public.admin_trash WHERE entity_id=${quote(p)}`),linkFirst?'0':'1');
+    assert.equal(await sql(`SELECT count(*) FROM public.admin_audit_log WHERE action='deleteProduct' AND target_id=${quote(p)}`),linkFirst?'0':'1');
+  }
+});
+
+it('two simultaneous deletes create only one restorable trash record and audit',async()=>{
+  const p='83333333-3333-4333-8333-333333333333';
+  await sql(`INSERT INTO public.products(id,name) VALUES(${quote(p)},'Double delete fixture')`);
+  const remove=`SELECT public.admin_delete_product(${quote(p)},'fixture-admin');`;
+  const [a,b]=await deletionRace(remove,remove);
+  assert.ok(a.includes('"status": "deleted"'));
+  assert.ok(b.includes('"status": "not_found"'));
+  assert.equal(await sql(`SELECT count(*) FROM public.admin_trash WHERE entity_id=${quote(p)}`),'1');
+  assert.equal(await sql(`SELECT count(*) FROM public.admin_audit_log WHERE action='deleteProduct' AND target_id=${quote(p)}`),'1');
+});
