@@ -166,7 +166,7 @@ UI·외부 API 자동화·운영 적용은 이 문서만으로 승인되지 않�
 | --- | --- | --- |
 | 현재 `coupang-price-sync`의 Partners 검색 | `CoupangProduct`는 productId/productName/productPrice/productUrl만 소비. 검색 상위20개에서 기존 productId만 비교하고 가격 제안을 생성한다. 옵션 ID/8개 동일성 항목/현재 제품 스냅샷을 수집하지 않는다 | 가격 탐색 보조일 뿐 verified 갱신 근거가 아님. URL 쿼리에 옵션 ID가 있더라도 옵션 내용 확인을 대체하지 못함 |
 | Partners 전체 공개 명세 | 공식 포털의 Open API 페이지는 JS 앱이라 이번 읽기 경로에서 상세 응답 명세를 확인하지 못했다 | API 전체에 옵션 정보가 절대 없다고 단정하지 않음. 정상 계정의 명세/허용된 합성 응답으로 필드·권한·호출 한도 확인이 필요. 추가 로그인/키 추출/운영 호출은 하지 않음 |
-| 판매자 Open API `seller-products/{sellerProductId}` | 공식 명세에 vendorItemId/itemId와 구매옵션 속성, 바코드/내용 정보가 있다. WING 판매자 계정/API key를 쓰는 별도 체계 | 구조화 후보이나 Partners key로 호출 가능하다고 가정하지 않음. 해당 판매 상품을 조회할 정당한 권한·ID 대응·필수 SKU 값의 완전성이 선행 조건. 현재 저장소에는 이 연동이 없음 |
+| 판매자 Open API `seller-products/{sellerProductId}` | 공식 명세에 vendorItemId와 구매옵션 속성, 바코드/내용 정보가 있고 itemId는 응답 예시에 나온다. WING 판매자 계정/API key를 쓰는 별도 체계 | 2026-11-01 추가 확인: 공식 오류 명세가 다른 업체 상품 조회를 거부한다. 타 판매자 상품의 일반 조회 대안이 아니다. Partners key로 대체할 수도 없으며 현재 저장소에 이 연동은 없음 |
 | 판매자 재고/가격 조회, 딥링크 변환, URL 접속 | 각 목적의 상태/목적지 정보 | 단독으로 상품 동일성 확인을 갱신할 수 없음. 단축 URL 형식도 검증 상태가 아님 |
 
 근거 코드: `supabase/functions/coupang-price-sync/index.ts`의 `CoupangProduct`, `fetchCoupangPrice`,
@@ -245,3 +245,10 @@ q/e/s는 아직 실측되지 않았다. 현재 정보가 부족해 q가 낮으�
 
 남은 실제 결정: 사용할 수 있는 권한 있는 SKU 출처의 확보, 필수 필드 완전성 입증, 초기 기준/예외 담당자와
 파일럿의 승인·정지 기준이다. 자동 수집기·관리자 UI·무인 인증 경로는 이번 범위에서 추가하지 않았다.
+
+## 8. 현재 API 이용 가능성에 대한 최종 권고
+
+[2026-11-01 필드·권한 결정표](product-purchase-link-api-feasibility.md)에 공식 명세/현 코드/기존 응답 근거를 분리했다.
+WING 타 업체 조회 제한과 Partners 실제 SKU 응답 근거 부재를 반영해 **지금은 구매 CTA를 보류하고 성분 판정 개발과
+의존성을 분리하는 경로**를 권고한다. 앞 절의 자동 재확인 AND 조건은 향후 출처 확보 시의 설계이지 현재 운영 가능 판정이 아니다.
+새 증거가 없으면 같은 WING/보류 자료를 반복 조사하지 않는다. 임시24시간 상한·기존 삭제 정책·DB 배포 의존성은 유지한다.
