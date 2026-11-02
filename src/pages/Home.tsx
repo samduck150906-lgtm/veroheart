@@ -222,14 +222,14 @@ export default function Home() {
                       className="vr-grade-pill"
                       style={{ position: 'absolute', left: '8px', top: '8px', color: palette.fg, background: palette.bg }}
                     >
-                      {canShowScore ? `${nutrition.limited ? '참고 ' : ''}${grade}` : describeIngredientAvailability(p).label}
+                      {canShowScore ? `참고 ${grade}` : describeIngredientAvailability(p).label}
                     </span>
                   </span>
                   <span style={{ display: 'block', fontSize: '11.5px', color: VR.sub, fontWeight: 700, marginTop: '8px' }}>{resolveBrandLabel(p)}</span>
                   <span className="line-clamp-2" style={{ display: 'block', fontSize: '13px', fontWeight: 700, lineHeight: 1.35, letterSpacing: '-0.02em', color: 'var(--vr-ink)' }}>
                     {normalizeProductDisplayName(p)}
                   </span>
-                  {canShowScore && nutrition.limited && <span style={{ display: 'block', fontSize: 11, lineHeight: 1.5, color: VR.sub }}>{nutrition.scopeLabel} · 영양 균형 미평가</span>}
+                  {canShowScore && <span style={{ display: 'block', fontSize: 11, lineHeight: 1.5, color: VR.sub }}>{nutrition.scopeLabel}{nutrition.limited ? ' · 영양 균형 미평가' : ''}</span>}
                 </button>
               );
             })}
@@ -289,7 +289,7 @@ export default function Home() {
                     </span>
                     <span style={{ display: 'block', fontSize: '11.5px', fontWeight: 700, color: 'var(--safe-strong)', marginTop: '3px' }}>
                       <span>{petLabel} 기준 궁합 점수 {verdict.score}점</span>
-                      {verdict.nutrition.limited && <span> · {verdict.nutrition.scopeLabel}</span>}
+                      <span> · {verdict.nutrition.scopeLabel}</span>
                     </span>
                     {verdict.nutrition.limited && <span style={{ display: 'block', fontSize: 11.5, lineHeight: 1.5, color: VR.sub }}>{verdict.nutrition.notice}</span>}
                   </span>

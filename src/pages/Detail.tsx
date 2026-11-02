@@ -55,13 +55,12 @@ import {
   type AltCardData,
   type RadarAxis,
 } from '../components/pdp/PdpParts';
-import { gradeMetaFromScore } from '../components/pdp/gradeMeta';
 import ProductThumb from '../components/ProductThumb';
 import ProductVerificationBadge from '../components/ProductVerificationBadge';
 import { HealthConcernEvidence } from '../components/HealthConcernEvidence';
 import { buildHealthConcernPresentation } from '../health/concernPresentation';
 import { getProductDisplayParts } from '../utils/productDisplay';
-import { gradePalette, gradeVerdict } from '../lib/veroroDesign';
+import { gradePalette } from '../lib/veroroDesign';
 import {
   describeProductCompleteness,
   describeIngredientAvailability,
@@ -305,12 +304,11 @@ export default function Detail() {
   const scrollProgress = Math.min(100, (scrollY / scrollMax) * 100);
 
   // 종합 의견 3줄 (breakdown 기반, 신규 데이터 불필요)
-  const gradeLabel = gradeMetaFromScore(safetyScore).label;
   const verdictLines = [
     {
       icon: <ShieldCheck size={16} />,
       text: analysisReady
-        ? `안전성: ${breakdown.dangerCount === 0 ? '현재 등록 원료에서 위험 성분 미확인' : `위험 성분 ${breakdown.dangerCount}개`}${breakdown.cautionCount ? `, 주의 ${breakdown.cautionCount}개` : ''} — ${nutrition.limited ? nutrition.scopeLabel : gradeLabel} 등급입니다.`
+        ? `안전성: ${breakdown.dangerCount === 0 ? '현재 등록 원료에서 위험 성분 미확인' : `위험 성분 ${breakdown.dangerCount}개`}${breakdown.cautionCount ? `, 주의 ${breakdown.cautionCount}개` : ''} — ${nutrition.scopeLabel} ${displayGrade}등급입니다.`
         : analysisStatus === 'partial'
           ? '안전성: 확인되지 않은 원료가 있어 부분 분석만 제공합니다.'
           : analysisStatus === 'blocked'
@@ -422,7 +420,7 @@ export default function Detail() {
       </Helmet>
 
       <OfflineBanner online={online} />
-      {analysisReady && <StickyScoreBar score={safetyScore} name={productDisplay.name} visible={showStickyScore} progress={scrollProgress} scopeLabel={nutrition.limited ? nutrition.scopeLabel : undefined} />}
+      {analysisReady && <StickyScoreBar score={safetyScore} name={productDisplay.name} visible={showStickyScore} progress={scrollProgress} scopeLabel={nutrition.scopeLabel} />}
 
       {isLoggedIn && userId && pets.length > 1 && (
         <section style={{ padding: 16, marginBottom: 16, borderRadius: 20, background: 'var(--surface)', border: '1px solid var(--line)' }}>
@@ -575,11 +573,11 @@ export default function Detail() {
         </span>
         <span style={{ flex: 1 }}>
           <span style={{ display: 'block', fontSize: '16.5px', fontWeight: 800, color: 'var(--vr-on-inverse)', letterSpacing: '-0.03em' }}>
-            {analysisReady ? nutrition.limited ? `${nutrition.scopeLabel} ${safetyScore}점 · ${displayGrade}등급` : `종합 ${safetyScore}점 · ${gradeVerdict(displayGrade)}` : allergyDisplay.notice?.title ?? '원료 분석 확인이 필요합니다'}
+            {analysisReady ? `${nutrition.scopeLabel} ${safetyScore}점 · ${displayGrade}등급` : allergyDisplay.notice?.title ?? '원료 분석 확인이 필요합니다'}
           </span>
           <span style={{ display: 'block', fontSize: '12.5px', color: 'var(--vr-on-inverse-sub)', marginTop: '3px' }}>
             {analysisReady
-              ? nutrition.limited ? nutrition.notice : `성분 ${product.ingredients?.length ?? 0}개 분석 · ${personalized ? `${profile.name} 기준` : '원료 정보'} 리포트 보기`
+              ? nutrition.limited ? nutrition.notice : nutrition.detail
               : `확인된 원료 ${product.ingredients?.length ?? 0}개 · 검토 상태 보기`}
           </span>
         </span>
@@ -589,7 +587,7 @@ export default function Detail() {
       </button>
 
       <GlanceGrid tiles={glanceTiles} />
-      {analysisReady && personalized && <FitForPetCard key={profile.id} petName={profile.name} percent={safetyScore} chips={fitChips} reasons={breakdown.reasons} scopeLabel={nutrition.limited ? nutrition.scopeLabel : undefined} />}
+      {analysisReady && personalized && <FitForPetCard key={profile.id} petName={profile.name} percent={safetyScore} chips={fitChips} reasons={breakdown.reasons} scopeLabel={nutrition.scopeLabel} />}
       {!personalized && <div style={{ marginBottom: 16 }}><PetCompatibilityPrompt /></div>}
       <div style={{ marginBottom: 16 }}>
         <HealthConcernEvidence presentation={concernPresentation} />

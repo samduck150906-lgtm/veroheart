@@ -99,4 +99,20 @@ describe('nutrition evidence on shared public display paths (synthetic data, no 
     expect(screen.queryByText(/비슷하게 잘 맞|선택해도 괜찮/)).toBeNull();
     expect(screen.getAllByText(new RegExp('영양정보 부족으로 영양 균형')).length).toBeGreaterThan(0);
   });
+  it('keeps complete basic nutrition scoped without an immediate-feeding promise', async () => {
+    const full = { ...product, guaranteedAnalysis: { crudeProtein: 30, crudeFat: 15, crudeFiber: 3, crudeAsh: 8, moisture: 10 } };
+    useStore.setState({ selectedProduct: full });
+    render(<HelmetProvider><MemoryRouter initialEntries={['/product/synthetic-food']}>
+      <Routes><Route path="/product/:id" element={<Detail />} /></Routes>
+    </MemoryRouter></HelmetProvider>);
+    const region = await screen.findByRole('region', { name: '합성 반려동물 참고 평가' });
+    expect(within(region).queryByText(/^\d+%$/)).toBeNull();
+    expect(screen.getAllByText(/원료·기초 영양 참고/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/완전한 영양 적합성을 보장하지 않습니다/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/믹스 없이 바로 급여 가능|영양정보 부족으로/)).toBeNull();
+    cleanup();
+    show(<ProductRow product={full} />);
+    expect(screen.queryByText(/에게 딱|무난합니다/)).toBeNull();
+    expect(screen.getByText(`원료·기초 영양 참고 ${resolveProductDisplayVerdict(full, profile).score}점`)).toBeTruthy();
+  });
 });

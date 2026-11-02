@@ -184,7 +184,7 @@ export default function ProductCard({
                     fontSize: '12px',
                   }}
                 >
-                  {canShowScore ? `${nutrition.limited ? `${nutrition.scopeLabel} ` : ''}${score}점` : describeIngredientAvailability(product).label}
+                  {canShowScore ? `${nutrition.scopeLabel} ${score}점` : describeIngredientAvailability(product).label}
                 </div>
               </div>
               {canShowScore && nutrition.limited && <p style={{ margin: '6px 0 0', fontSize: 11, lineHeight: 1.5, color: 'var(--text-muted)', overflowWrap: 'anywhere' }}>{nutrition.notice}</p>}
@@ -285,7 +285,7 @@ export default function ProductCard({
                   fontSize: compact ? '12px' : '14px',
                 }}
               >
-                {canShowScore ? `${nutrition.limited ? `${nutrition.scopeLabel} ` : ''}${score}점` : describeIngredientAvailability(product).label}
+                {canShowScore ? `${nutrition.scopeLabel} ${score}점` : describeIngredientAvailability(product).label}
               </div>
             </div>
           </div>

@@ -4,7 +4,7 @@ import { useStore } from '../store/useStore';
 import { describeIngredientAvailability } from '../utils/productDataCompleteness';
 import { isRealPetProfile, resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import { getProductDisplayParts } from '../utils/productDisplay';
-import { fitShortLabel, gradePalette, VR } from '../lib/veroroDesign';
+import { gradePalette, VR } from '../lib/veroroDesign';
 import { DEFAULT_USER_PET_PROFILE, type Product } from '../types';
 import ProductVerificationBadge from './ProductVerificationBadge';
 import PetCompatibilityPrompt from './PetCompatibilityPrompt';
@@ -25,7 +25,6 @@ export default function ProductRow({ product }: ProductRowProps) {
   const { score, grade, canShowScore, nutrition } = resolveProductDisplayVerdict(product, hasPetProfile ? profile : DEFAULT_USER_PET_PROFILE);
   const palette = canShowScore ? gradePalette(grade) : { fg: 'var(--text-muted)', bg: 'var(--vr-soft)' };
   const isFav = favorites.includes(product.id);
-  const petName = profile.name || '우리 아이';
   const display = getProductDisplayParts(product);
 
   const open = () => navigate(`/product/${product.id}`);
@@ -57,7 +56,7 @@ export default function ProductRow({ product }: ProductRowProps) {
                 color: palette.fg, background: palette.bg,
               }}
             >
-              {canShowScore ? `${nutrition.limited ? `${nutrition.scopeLabel} ` : hasPetProfile ? '' : '원료 '}${grade} ${score}` : describeIngredientAvailability(product).label}
+              {canShowScore ? `${nutrition.scopeLabel} ${grade} ${score}` : describeIngredientAvailability(product).label}
             </span>
           </span>
           <span style={{
@@ -99,7 +98,7 @@ export default function ProductRow({ product }: ProductRowProps) {
             {isFav ? '찜 해제' : '찜'}
           </button>
           {hasPetProfile && <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--safe-strong)', marginLeft: 'auto' }}>
-            {canShowScore ? nutrition.limited ? `${nutrition.scopeLabel} ${score}점` : fitShortLabel(score, petName) : '원료 확인 필요'}
+            {canShowScore ? `${nutrition.scopeLabel} ${score}점` : '원료 확인 필요'}
           </span>}
         </div>
         {canShowScore && nutrition.limited && <p style={{ margin: '6px 0 0', fontSize: 11.5, lineHeight: 1.5, color: VR.sub }}>{nutrition.notice}</p>}

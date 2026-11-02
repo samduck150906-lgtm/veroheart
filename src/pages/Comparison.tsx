@@ -50,7 +50,7 @@ function buildColumn(product: Product, profile: UserPetProfile): Column {
     display: getProductDisplayParts(product),
     grade,
     score,
-    scoreScope: nutrition.limited ? nutrition.scopeLabel : '',
+    scoreScope: nutrition.scopeLabel,
     nutritionNotice: nutrition.notice,
     kcal: kcalValue ? `${Math.round(kcalValue)}kcal` : '—',
     protein: proteinValue ? `${proteinValue}%` : '—',
