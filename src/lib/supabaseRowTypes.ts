@@ -1,3 +1,4 @@
+import { publicCatalogSourceUrl } from './publicCatalogSource';
 import type {
   FeedingProductType,
   Ingredient,
@@ -307,8 +308,10 @@ export function mapProductFromSupabaseRow(p: SupabaseProductRow): Product {
     netWeightText: p.net_weight_text ?? undefined,
     slug: p.slug ?? undefined,
     catalogSource: mappedCatalogSource,
-    catalogSourceUrl: p.catalog_source_url?.startsWith('https://') ? p.catalog_source_url : undefined,
+    catalogSourceUrl: publicCatalogSourceUrl(p.catalog_source_url),
     catalogSourceNote: p.catalog_source_note ?? undefined,
+    catalogSourceStatus: p.catalog_source_url === undefined ? 'not_loaded'
+      : !p.catalog_source_url ? 'absent' : publicCatalogSourceUrl(p.catalog_source_url) ? 'available' : 'invalid',
     requiresVeterinaryGuidance: p.requires_veterinary_guidance ?? false,
     analysisStatus: mappedAnalysisStatus,
     ingredientDataLoaded: p.product_ingredients !== undefined || p.product_ingredient_label_sets !== undefined,

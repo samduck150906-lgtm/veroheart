@@ -16,17 +16,18 @@ export default function Brand() {
   const [brandProducts, setBrandProducts] = useState<Product[]>([]);
   const [otherBrands, setOtherBrands] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     if (!decoded) return;
     let cancelled = false;
-    startTransition(() => setIsLoading(true));
+    startTransition(() => { setIsLoading(true); setLoadError(false); });
     void Promise.all([getProductsByBrand(decoded), getBrands()]).then(([prods, brands]) => {
       if (cancelled) return;
       setBrandProducts(prods);
       setOtherBrands(brands.filter((b) => b !== decoded).slice(0, 10));
       setIsLoading(false);
-    }).catch(() => { if (!cancelled) { setBrandProducts([]); setIsLoading(false); } });
+    }).catch(() => { if (!cancelled) { setBrandProducts([]); setIsLoading(false); setLoadError(true); } });
     return () => {
       cancelled = true;
     };
@@ -63,7 +64,7 @@ export default function Brand() {
           <div className="ui-info-card" style={{ padding: '16px' }}>
             <div className="ui-icon-pill" style={{ marginBottom: '10px' }}><Package size={16} color="var(--primary-dark)" /></div>
             <div style={{ fontSize: '12px', color: '#8A9099', fontWeight: 700 }}>등록 제품</div>
-            <div style={{ fontSize: '22px', fontWeight: 900, marginTop: '4px' }}>{brandProducts.length}</div>
+            <div style={{ fontSize: '22px', fontWeight: 900, marginTop: '4px' }}>{loadError ? '—' : brandProducts.length}</div>
           </div>
           <div className="ui-info-card" style={{ padding: '16px' }}>
             <div className="ui-icon-pill" style={{ marginBottom: '10px' }}><Star size={16} color="#F59E0B" /></div>
@@ -108,12 +109,14 @@ export default function Brand() {
           <div>
             <div className="ui-section-kicker">product lineup</div>
             <h2 className="ui-section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Package size={18} /> 전체 제품 ({brandProducts.length})
+              <Package size={18} /> 전체 제품 ({loadError ? '조회 실패' : brandProducts.length})
             </h2>
           </div>
         </div>
         {isLoading ? (
           <div className="ui-info-card" style={{ textAlign: 'center', padding: '60px', color: '#9CA3AF' }}>불러오는 중...</div>
+        ) : loadError ? (
+          <p role="alert">제품 목록을 불러오지 못했습니다. 등록된 제품이 없는 것으로 판정하지 않았습니다.</p>
         ) : brandProducts.length === 0 ? (
           <div className="ui-info-card" style={{ textAlign: 'center', padding: '60px', color: '#9CA3AF' }}>
             등록된 제품이 없습니다.

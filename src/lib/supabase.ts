@@ -6,6 +6,7 @@ import { AdminSessionExpiredError, notifyAdminSessionExpired, readAdminToken } f
 import { toExactIlikePattern, toOrIlikePattern } from './postgrestPattern';
 import { equivalentBarcodes } from '../utils/barcode';
 import { BarcodeLookupError } from './barcodeLookupError';
+import { ProductQueryError } from './productQueryError';
 import {
   mapFeedingLogFromRow,
   mapProductFromSupabaseRow,
@@ -108,7 +109,7 @@ function asProductRow(data: unknown): SupabaseProductRow {
   return data as SupabaseProductRow;
 }
 
-type VisibilityQueryError = { code?: string; message: string };
+type VisibilityQueryError = { code?: string; message: string; details?: string | null };
 type VisibilityQueryResult<T> = { data: T | null; error: VisibilityQueryError | null };
 /**
  * 관리자가 검수 완료 제품만 노출하도록 제한했는지.
@@ -321,8 +322,10 @@ export async function getProductDetail(productId: string): Promise<Product | nul
   });
 
   if (error) {
-    console.error('getProductDetail error:', error);
-    return null;
+    // PGRST116 is also returned for multiple rows: only an explicit zero-row
+    // result means unavailable under the public predicates/RLS.
+    if (error.code === 'PGRST116' && /(?:contains|result[^\n]*has) 0 rows/i.test(error.details ?? '')) return null;
+    throw new ProductQueryError();
   }
   return mapProductFromSupabaseRow(asProductRow(data));
 }
@@ -852,7 +855,7 @@ export async function getBrands(): Promise<string[]> {
     if (withVisibilityFilter) builder = builder.eq('is_visible', true).in('verification_status', publicProductReviewStatuses());
     return builder.order('brand_name');
   });
-  if (error) return [];
+  if (error) throw new ProductQueryError();
   const rows = (data ?? []) as SupabaseBrandNameRow[];
   const brands = [...new Set(rows.map((r) => r.brand_name).filter((name): name is string => Boolean(name)))];
   return brands;
@@ -887,7 +890,7 @@ export async function getProductsByBrand(brandName: string): Promise<Product[]> 
     if (withVisibilityFilter) builder = builder.eq('is_visible', true).in('verification_status', publicProductReviewStatuses());
     return builder;
   });
-  if (error) return [];
+  if (error) throw new ProductQueryError();
   return asProductRows(data).map(mapProductFromSupabaseRow);
 }
 
@@ -992,8 +995,7 @@ export async function searchDiaryProducts(
     return builder.limit(30);
   });
   if (error) {
-    console.error('searchDiaryProducts error:', error.message);
-    return [];
+    throw new ProductQueryError();
   }
   return asProductRows(data).map(mapProductFromSupabaseRow);
 }

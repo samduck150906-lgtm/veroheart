@@ -18,7 +18,7 @@ function respond(rows = catalog) {
     const chain: Record<string, unknown> = {
       eq: (key: string, expected: unknown) => { if (key !== 'user_id') selected = selected.filter(item => value(item, key) === expected); return chain; },
       in: (key: string, values: unknown[]) => { selected = selected.filter(item => values.includes(value(item, key))); return chain; },
-      single: () => Promise.resolve(selected[0] ? { data: selected[0], error: null } : { data: null, error: { code: 'PGRST116', message: 'not found' } }),
+      single: () => Promise.resolve(selected[0] ? { data: selected[0], error: null } : { data: null, error: { code: 'PGRST116', message: 'not found', details: 'The result contains 0 rows' } }),
       then: (resolve: (result: unknown) => void) => Promise.resolve(result()).then(resolve),
     };
     for (const method of ['select', 'order', 'range', 'limit', 'overlaps', 'or']) chain[method] = () => chain;
