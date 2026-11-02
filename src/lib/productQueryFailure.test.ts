@@ -32,12 +32,13 @@ describe('missing product source schema is an error, not product absence', () =>
     expect(api.calls.filter(([method]) => method === 'select')).toHaveLength(1); // no unsafe fallback
   });
   it('rejects list/search failures rather than returning an empty successful page', async () => {
-    const { getProductsPage, searchProductsPage, getProductsByBrand, searchDiaryProducts, getBrands } = await import('./supabase');
+    const { getProductsPage, searchProductsPage, getProductsByBrand, searchDiaryProducts, getBrands, getReviews } = await import('./supabase');
     await expect(getProductsPage()).rejects.toThrow('제품 목록을 불러오지 못했습니다');
     await expect(searchProductsPage('')).rejects.toThrow('제품 정보를 불러오지 못했습니다');
     await expect(getProductsByBrand('Fixture')).rejects.toThrow('제품 정보를 불러오지 못했습니다');
     await expect(searchDiaryProducts('fixture', 'food')).rejects.toThrow('제품 정보를 불러오지 못했습니다');
     await expect(getBrands()).rejects.toThrow('제품 정보를 불러오지 못했습니다');
+    await expect(getReviews('fixture-product')).rejects.toThrow('후기를 불러오지 못했습니다');
   });
   it('returns null only for an explicit zero-row response, not ambiguous rows or permissions', async () => {
     const { getProductDetail } = await import('./supabase');

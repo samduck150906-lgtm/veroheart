@@ -111,6 +111,7 @@ export default function Detail() {
     created_at: string;
   };
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
+  const [reviewLoadError, setReviewLoadError] = useState(false);
   const [reviewRating, setReviewRating] = useState(5);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedIngredient, setSelectedIngredient] = useState<(Ingredient & { description?: string }) | null>(null);
@@ -136,7 +137,9 @@ export default function Detail() {
   useEffect(() => {
     let active = true;
     setReviews([]);
-    if (id) void getReviews(id).then((rows) => { if (active) setReviews(rows); });
+    setReviewLoadError(false);
+    if (id) void getReviews(id).then((rows) => { if (active) setReviews(rows); })
+      .catch(() => { if (active) setReviewLoadError(true); });
     return () => { active = false; };
   }, [id, userId]);
 
@@ -407,7 +410,7 @@ export default function Detail() {
   const reviewRatings = reviews.map(r => r.rating);
   const topReviewTags: string[] = [];
   const avgRating = reviewRatings.length ? reviewRatings.reduce((s, r) => s + r, 0) / reviewRatings.length : 0;
-  const reviewSummary = reviews.length
+  const reviewSummary = reviewLoadError ? '후기를 불러오지 못했습니다.' : reviews.length
     ? `후기 ${reviews.length}개 요약 · 평균 ${avgRating.toFixed(1)}점${topReviewTags.length ? ` · 자주 언급: ${topReviewTags.slice(0, 3).map(t => t.replace(/\s\d+$/, '')).join(', ')}` : ''}`
     : undefined;
 
@@ -871,7 +874,7 @@ export default function Detail() {
       {/* 리뷰 섹션 */}
       <section style={{ marginBottom: '40px' }}>
         <h2 style={{ fontSize: '18px', fontWeight: 900, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-dark)' }}>
-          <MessageSquare size={20} /> 후기 <span style={{ color: 'var(--text-muted)', fontWeight: 700 }}>{reviews.length}</span>
+          <MessageSquare size={20} /> 후기 <span style={{ color: 'var(--text-muted)', fontWeight: 700 }}>{reviewLoadError ? '—' : reviews.length}</span>
         </h2>
         <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '16px', fontWeight: 600 }}>
           키워드만 선택해도 됩니다. {profile.name}와 비슷한 반려동물의 후기를 모아보려면 태그를 활용해 주세요.
@@ -907,7 +910,7 @@ export default function Detail() {
 
         {/* 리뷰 목록 */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {reviews.length === 0 ? (
+          {reviewLoadError ? <p role="alert">후기를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</p> : reviews.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-muted)', background: 'var(--surface-alt)', borderRadius: '16px' }}>
               아직 별점이 없습니다. 첫 별점을 남겨 주세요.
             </div>

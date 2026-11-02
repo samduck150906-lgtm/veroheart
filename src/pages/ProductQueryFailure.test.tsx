@@ -7,7 +7,7 @@ import Detail from './Detail';
 import AnalysisResult from './AnalysisResult';
 import Home from './Home';
 import Brand from './Brand';
-import { getBrands, getProductsByBrand } from '../lib/supabase';
+import { getBrands, getProductsByBrand, getReviews } from '../lib/supabase';
 
 vi.mock('../lib/productCategories', () => ({ useProductCategories: () => [] }));
 vi.mock('../lib/supabase', async original => ({ ...await original<typeof import('../lib/supabase')>(),
@@ -56,5 +56,14 @@ describe('product transport failure versus actual missing product', () => {
     show('/brand/Fixture', '/brand/:brandName', <Brand />);
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.queryByText('synthetic partial product')).toBeNull();
+    expect(screen.getByText('총 리뷰 수').nextElementSibling?.textContent).toBe('—');
+  });
+  it('keeps loaded product evidence but marks an independently failed review request unavailable', async () => {
+    vi.mocked(getReviews).mockRejectedValueOnce(new Error('synthetic review failure'));
+    useStore.setState({ selectedProduct: { id:'fixture-product',name:'Synthetic product',brand:'Fixture',category:'food',imageUrl:'',ingredients:[],reviewsCount:0,averageRating:0 }, productDetailError:'' });
+    show('/product/fixture-product','/product/:id',<Detail />);
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.queryByText('아직 별점이 없습니다. 첫 별점을 남겨 주세요.')).toBeNull();
+    expect(screen.queryByText('제품 조회에 실패했습니다')).toBeNull();
   });
 });

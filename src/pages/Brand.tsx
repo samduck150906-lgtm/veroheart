@@ -79,7 +79,7 @@ export default function Brand() {
             <div className="ui-icon-pill" style={{ marginBottom: '10px' }}><MessageSquare size={16} color="#3B82F6" /></div>
             <div style={{ fontSize: '12px', color: '#8A9099', fontWeight: 700 }}>총 리뷰 수</div>
             <div style={{ fontSize: '22px', fontWeight: 900, marginTop: '4px' }}>
-              {brandProducts.reduce((a, p) => a + (p.reviewsCount || 0), 0).toLocaleString()}
+              {loadError ? '—' : brandProducts.reduce((a, p) => a + (p.reviewsCount || 0), 0).toLocaleString()}
             </div>
           </div>
         </div>
