@@ -6,6 +6,7 @@ import { DEFAULT_USER_PET_PROFILE, type Product } from '../types';
 import { useStore } from '../store/useStore';
 import { NUTRITION_INSUFFICIENT_NOTICE } from '../analysis/nutritionReadiness';
 import { generateAnalysisReport } from '../utils/analysis';
+import { buildProductConclusion } from '../utils/productConclusion';
 import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import FeedAnalysisCard from '../components/FeedAnalysisCard';
 import ProductCard from '../components/ProductCard';
@@ -41,7 +42,7 @@ describe('nutrition evidence on shared public display paths (synthetic data, no 
     expect(screen.getByText('82')).toBeTruthy();
     expect(screen.getByText('원료 기준 참고 A등급')).toBeTruthy();
     expect(screen.getByText('영양 균형 미평가')).toBeTruthy();
-    expect(screen.getByText(NUTRITION_INSUFFICIENT_NOTICE)).toBeTruthy();
+    expect(screen.getAllByText(NUTRITION_INSUFFICIENT_NOTICE).length).toBeGreaterThan(0);
     expect(screen.queryByText(/균형 잡힌|매우 우수|무난하게 급여/)).toBeNull();
   });
   it.each([false, true])('qualifies search/catalog cards (grid: %s) without hiding the score', grid => {
@@ -61,7 +62,7 @@ describe('nutrition evidence on shared public display paths (synthetic data, no 
     </MemoryRouter></HelmetProvider>);
     const region = await screen.findByRole('region', { name: '합성 반려동물 참고 평가' });
     expect(within(region).queryByText(/^\d+%$/)).toBeNull();
-    expect(screen.getAllByText(new RegExp(NUTRITION_INSUFFICIENT_NOTICE.replace('.', '\\.'))).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(NUTRITION_INSUFFICIENT_NOTICE, { exact: false }).length).toBeGreaterThan(0);
     expect(screen.queryByText(/균형 잡힌/)).toBeNull();
     cleanup();
     show(<AnalysisResult />);
@@ -82,5 +83,11 @@ describe('nutrition evidence on shared public display paths (synthetic data, no 
       { id: 'synthetic-risk', nameKo: '합성 위험 원료', nameEn: '', purpose: '', riskLevel: 'danger' }] }, profile);
     expect(risk.summary).toMatch(/위험 성분.*영양정보 부족/);
     expect(risk.highlights.some(h => h.text.includes('위험 성분'))).toBe(true);
+    const conclusion = buildProductConclusion({ ...product, ingredients: [
+      { id: 'synthetic-risk', nameKo: '합성 위험 원료', nameEn: '', purpose: '', riskLevel: 'danger' },
+    ] }, profile, risk);
+    expect(conclusion.tone).toBe('alert');
+    expect(conclusion.headline).toContain('위험 등급');
+    expect(conclusion.subline).toContain(NUTRITION_INSUFFICIENT_NOTICE);
   });
 });

@@ -101,6 +101,13 @@ export function buildProductConclusion(
     }
   }
 
+  const nutrition = getNutritionPresentation(product.guaranteedAnalysis);
+  const danger = (product.ingredients ?? []).filter(ingredient => ingredient.riskLevel === 'danger');
+  if (danger.length > 0) {
+    return { tone: 'alert', headline: '위험 등급 성분을 확인해 주세요',
+      subline: `${danger.map(ingredient => ingredient.nameKo).join(', ')} 성분이 확인됐습니다.${nutrition.limited ? ` ${nutrition.notice}` : ''}` };
+  }
+
   // 4) 데이터 부족 — 원재료·보장성분이 모두 없으면 점수로 단정하지 않는다
   const hasIngredients = (product.ingredients?.length ?? 0) > 0;
   const guaranteedAnalysis = product.guaranteedAnalysis;
@@ -117,7 +124,6 @@ export function buildProductConclusion(
   }
 
   // 5) 제품 기본 평가 — 성분·건강·고민 적합도 통합 점수
-  const nutrition = getNutritionPresentation(product.guaranteedAnalysis);
   if (nutrition.limited) {
     return { tone: 'caution', headline: `${nutrition.scopeLabel} 점수입니다`, subline: nutrition.notice };
   }

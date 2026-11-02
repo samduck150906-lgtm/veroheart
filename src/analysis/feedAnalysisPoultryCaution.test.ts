@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Ingredient, Product, UserPetProfile } from '../types';
 import { analyzeFeed } from './feedAnalysis';
+import { NUTRITION_INSUFFICIENT_NOTICE } from './nutritionReadiness';
 
 function ingredient(nameKo: string): Ingredient {
   return {
@@ -46,7 +47,7 @@ describe('feed analysis poultry caution surface', () => {
     expect(chickenAllergy.score).toBe(neutral.score);
     expect(chickenAllergy.ingredientQuality.allergyHits).toEqual([]);
     expect(chickenAllergy.cautions).toContain('보리의 알레르기와 관련된 원료가 있어 급여 전 확인이 필요합니다');
-    expect(chickenAllergy.summary).toBe('보리의 알레르기와 관련된 원료가 있어 급여 전 확인이 필요합니다.');
+    expect(chickenAllergy.summary).toBe(`보리의 알레르기와 관련된 원료가 있어 급여 전 확인이 필요합니다. ${NUTRITION_INSUFFICIENT_NOTICE}`);
   });
 
   it('keeps hard same-source allergy wording stronger than caution wording', () => {
@@ -54,7 +55,7 @@ describe('feed analysis poultry caution surface', () => {
     const result = analyzeFeed(item, profile(['닭']));
 
     expect(result.ingredientQuality.allergyHits).toEqual(['닭고기']);
-    expect(result.summary).toBe('보리가 피해야 할 성분이 있어 급여 전 확인이 필요합니다.');
+    expect(result.summary).toBe(`보리가 피해야 할 성분이 있어 급여 전 확인이 필요합니다. ${NUTRITION_INSUFFICIENT_NOTICE}`);
     expect(result.cautions.some((text) => text.includes('회피 성분'))).toBe(true);
   });
 });

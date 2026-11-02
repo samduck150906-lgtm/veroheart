@@ -311,7 +311,7 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
     if (grade === 'A+' || grade === 'A') return '등록된 원료·기초 영양 지표 기준으로 점수가 높은 편입니다.';
     if (grade === 'B') return '등록된 원료·기초 영양 지표와 주의 항목을 함께 참고해 주세요.';
     if (grade === 'C') return '나쁘지 않지만 확인할 점이 몇 가지 있습니다.';
-    return '주의가 필요한 성분이 있어 신중히 선택해 주세요.';
+    return '등록된 원료·기초 영양 지표에서 확인할 항목이 있습니다.';
   })();
   const summary = nutritionPresentation.limited && !primarySummary.includes(nutritionPresentation.notice)
     ? `${primarySummary} ${nutritionPresentation.notice}` : primarySummary;
