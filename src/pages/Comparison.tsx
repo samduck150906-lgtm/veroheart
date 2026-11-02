@@ -205,7 +205,7 @@ export default function Comparison() {
           {verdict.kind === 'winner' ? (
             <>
               <div style={{ fontSize: '14.5px', fontWeight: 800, letterSpacing: '-0.02em' }}>
-                {petName}에게는 &lsquo;{verdict.winner.name}&rsquo;가 조금 더 잘 맞습니다
+                {petName} 기준 참고 점수는 &lsquo;{verdict.winner.name}&rsquo;가 더 높습니다
               </div>
               <ul style={{ margin: '9px 0 0', padding: '0 0 0 17px', fontSize: '12.5px', lineHeight: 1.6, color: 'var(--vr-body)' }}>
                 {verdict.reasons.map((reason) => (
@@ -221,11 +221,11 @@ export default function Comparison() {
           ) : (
             <>
               <div style={{ fontSize: '14.5px', fontWeight: 800, letterSpacing: '-0.02em' }}>
-                {verdict.leaders.length > 2 ? '담은 제품 모두' : '두 제품 모두'} 비슷하게 잘 맞습니다
+                {verdict.leaders.length > 2 ? '담은 제품 모두' : '두 제품 모두'} 참고 점수 차이가 없습니다
               </div>
               <p style={{ margin: '7px 0 0', fontSize: '12.5px', lineHeight: 1.55, color: 'var(--vr-body)' }}>
-                {petName} 기준으로 우열을 가릴 만한 차이가 없습니다. 급여량이나 가격처럼
-                표에 없는 조건으로 선택해도 괜찮습니다.
+                현재 등록된 정보로 계산한 {petName} 기준 점수 비교입니다.
+                실제 급여 적합성은 영양 근거와 건강 조건을 함께 확인해 주세요.
               </p>
             </>
           )}

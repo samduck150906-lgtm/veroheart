@@ -46,6 +46,8 @@ export default function FeedAnalysisCard({ product, profile }: { product: Produc
   const iq = a.ingredientQuality;
   const analysisReady = a.analysisReadiness.status === 'ready';
   const nutrition = getNutritionPresentation(product.guaranteedAnalysis);
+  // The score summary already displays this exact limitation; retain all actual warnings.
+  const visibleCautions = a.cautions.filter(text => !(nutrition.notice && text === nutrition.notice && a.summary.includes(text)));
 
   return (
     <section
@@ -175,11 +177,11 @@ export default function FeedAnalysisCard({ product, profile }: { product: Produc
           </ul>
         </div>
       )}
-      {a.cautions.length > 0 && (
+      {visibleCautions.length > 0 && (
         <div style={{ background: '#FFF7ED', borderRadius: 14, padding: 14, marginBottom: 10 }}>
           <div style={{ fontSize: 12.5, fontWeight: 800, color: '#C2410C', marginBottom: 8 }}>주의할 점</div>
           <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {a.cautions.map((t, i) => (
+            {visibleCautions.map((t, i) => (
               <li key={i} style={{ display: 'flex', gap: 8, fontSize: 13, fontWeight: 600, color: '#9A3412', lineHeight: 1.5 }}>
                 <AlertTriangle size={15} strokeWidth={2.4} style={{ flexShrink: 0, marginTop: 1 }} /> <span>{t}</span>
               </li>

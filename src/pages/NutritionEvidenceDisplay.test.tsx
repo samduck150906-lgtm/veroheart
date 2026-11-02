@@ -14,6 +14,7 @@ import ProductRow from '../components/ProductRow';
 import Detail from './Detail';
 import Home from './Home';
 import AnalysisResult from './AnalysisResult';
+import Comparison from './Comparison';
 
 const api = vi.hoisted(() => ({ search: vi.fn() }));
 vi.mock('../lib/supabase', async original => ({ ...await original<typeof import('../lib/supabase')>(),
@@ -42,7 +43,7 @@ describe('nutrition evidence on shared public display paths (synthetic data, no 
     expect(screen.getByText('82')).toBeTruthy();
     expect(screen.getByText('원료 기준 참고 A등급')).toBeTruthy();
     expect(screen.getByText('영양 균형 미평가')).toBeTruthy();
-    expect(screen.getAllByText(NUTRITION_INSUFFICIENT_NOTICE).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(NUTRITION_INSUFFICIENT_NOTICE)).toHaveLength(1);
     expect(screen.queryByText(/균형 잡힌|매우 우수|무난하게 급여/)).toBeNull();
   });
   it.each([false, true])('qualifies search/catalog cards (grid: %s) without hiding the score', grid => {
@@ -89,5 +90,13 @@ describe('nutrition evidence on shared public display paths (synthetic data, no 
     expect(conclusion.tone).toBe('alert');
     expect(conclusion.headline).toContain('위험 등급');
     expect(conclusion.subline).toContain(NUTRITION_INSUFFICIENT_NOTICE);
+  });
+  it('describes a comparison tie as a score comparison, never feeding suitability', () => {
+    const other = { ...product, id: 'synthetic-other', name: '두번째 합성 사료' };
+    useStore.setState({ products: [product, other], comparisonList: [product.id, other.id] });
+    show(<Comparison />);
+    expect(screen.getByText('두 제품 모두 참고 점수 차이가 없습니다')).toBeTruthy();
+    expect(screen.queryByText(/비슷하게 잘 맞|선택해도 괜찮/)).toBeNull();
+    expect(screen.getAllByText(new RegExp('영양정보 부족으로 영양 균형')).length).toBeGreaterThan(0);
   });
 });

@@ -61,4 +61,12 @@ describe('assessed warnings take precedence over general nutrition scope copy', 
     expect([report.summary, analyzeFeed(full, profile).summary, buildProductConclusion(full, profile, report).headline].join(' '))
       .not.toMatch(/균형 잡힌|무난하게 급여|완전한 영양|종합 안전/);
   });
+  it('retains an assessed calcium/phosphorus warning with partial nutrition', () => {
+    const product = { ...base, guaranteedAnalysis: { crudeProtein: 30, calcium: 2, phosphorus: 0.5 } };
+    const report = generateAnalysisReport(product, profile);
+    for (const text of [analyzeFeed(product, profile).summary, report.summary, buildProductConclusion(product, profile, report).subline!]) {
+      expect(text).toContain('칼슘:인 비율');
+      expect(text).toContain(NUTRITION_INSUFFICIENT_NOTICE);
+    }
+  });
 });
