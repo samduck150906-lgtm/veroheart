@@ -36,9 +36,11 @@ try{
    await p.goto(`${base}/product/${id(n)}`);await evidence('detail-'+name,expected);
    const text=await p.locator('body').innerText();
    if(n===3)assert.ok(!text.includes('영양정보 부족으로'));
-   await p.goto(`${base}/analysis?productId=${id(n)}`);await evidence('analysis-'+name,expected);
+   await p.goto(`${base}/analysis?productId=${id(n)}`);await evidence('analysis-'+name,n===5?'위험 성분':expected);
   }
   await p.goto(`${base}/product/${id(1)}?fixtureAllergy=1`);await evidence('allergy','급여를 권하지 않습니다');
+  await p.goto(`${base}/analysis?productId=${id(4)}&fixtureAllergy=1`);await evidence('combined-warnings','급여를 권하지 않습니다');
+  assert.ok((await p.locator('body').innerText()).includes('기준 미달'));
   await p.goto(base+'/brand/'+encodeURIComponent('합성브랜드'));await evidence('brand','전체 제품 (6)');
   await p.goto(base+'/__fixture/comparison');await evidence('comparison-fixture','원료 기준 참고');
   await setMode('failure');await p.goto(`${base}/product/${id(1)}`);await evidence('query-failure','제품 조회에 실패했습니다');
