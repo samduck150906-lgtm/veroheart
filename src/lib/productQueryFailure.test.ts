@@ -79,7 +79,9 @@ describe('missing product source schema is an error, not product absence', () =>
     }
   });
   it.each(['https://user:synthetic@example.com/path','https://manufacturer.example/path?token=synthetic',
-    'https://manufacturer.example/path#session=synthetic','https://',' http://example.com/path'])('does not expose a private/malformed source URL (%s)', url => {
+    'https://manufacturer.example/path#session=synthetic','https://manufacturer.example/path?',
+    'https://manufacturer.example/path#','https://@example.com/path','https://manufacturer.example/has space',
+    'https://',' http://example.com/path'])('does not expose a private/malformed source URL (%s)', url => {
     const p = mapProductFromSupabaseRow({ id:'fixture',name:'Fixture',brand_name:'Fixture',product_type:'food',catalog_source_url:url });
     expect(p.catalogSourceUrl).toBeUndefined();
     expect(p.catalogSourceStatus).toBe('invalid');
