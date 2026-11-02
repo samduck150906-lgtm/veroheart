@@ -60,6 +60,6 @@ const server=createServer(async(req,res)=>{try{
  try{if(!(await stat(file)).isFile())file=resolve(root,'index.html');}catch{file=resolve(root,'index.html');}
  const type={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml'}[extname(file)]??'application/octet-stream';
  res.writeHead(200,{'Content-Type':type});res.end(await readFile(file));
-}catch(error){json(res,500,{error:error.message});}});
+}catch(error){console.error('LOCAL FIXTURE',req.url,error.message);json(res,500,{error:error.message});}});
 server.listen(4179,'127.0.0.1',()=>console.log('READY http://127.0.0.1:4179 local fixtures only'));
 process.on('SIGTERM',()=>server.close(()=>void db.close()));

@@ -15,6 +15,7 @@ try{
   const context=await browser.newContext({viewport:{width,height:900}});
   await context.route('**/*',route=>{const u=new URL(route.request().url());return u.hostname==='127.0.0.1'||u.protocol==='data:'?route.continue():route.abort();});
   const p=await context.newPage();
+  p.on('pageerror',e=>{logs+='\nBROWSER '+e.message;});
   async function evidence(name,expected){await p.getByText(expected,{exact:false}).first().waitFor({timeout:20000});
    const text=await p.locator('body').innerText();assert.doesNotMatch(text,/믹스 없이 바로 급여 가능/);
    assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
@@ -23,7 +24,8 @@ try{
   await p.getByRole('button',{name:'전체 제품 찾아보기',exact:true}).click();
   await p.getByRole('button',{name:/상세 보기$/}).first().waitFor();
   await evidence('search','원료 기준 참고');
-  await p.getByRole('button',{name:/상세 보기$/}).first().click();
+  await p.getByRole('button',{name:/합성 테스트 영양 없음.*상세 보기$/}).click();
+  await p.waitForURL('**/product/**');
   await evidence('detail-none','영양정보 부족으로 영양 균형');
   await p.locator('button').filter({hasText:/원료 기준 참고.*등급/}).first().click();
   await p.waitForURL('**/analysis*');await evidence('analysis-none','원료 기준 참고 등급');
