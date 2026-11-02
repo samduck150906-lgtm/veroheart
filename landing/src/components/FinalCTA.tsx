@@ -14,7 +14,7 @@ export function FinalCTA() {
             더 쉽게 확인할 수 있도록.
           </h2>
           <p className="mx-auto mt-4 max-w-md text-pretty text-base leading-relaxed text-ink-700 sm:text-lg">
-            베로로가 정식 출시를 준비하고 있어요.
+            베로로가 정식 출시를 준비하고 있습니다.
           </p>
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row sm:flex-wrap">
             <a

@@ -288,13 +288,13 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
   /** "다시 기록" — 기존 기록을 복제해 새 기록으로 (오늘 날짜) */
   const openRelog = (log: PetFeedingLog) => {
     setEditingLog(null);
-    setSelectedDate(toDateKey(new Date()));
     setPresetLog(log);
     setFormOpen(true);
   };
   const openHistory = (ref: ProductRef) => setHistoryRef(ref);
 
   const handleSaved = (saved: PetFeedingLog) => {
+    setHistoryRef(null);
     // 저장된 기록의 날짜(및 반려동물)로 이동해 즉시 확인.
     // 달력·주간 상태를 모두 저장된 날짜에 맞추고 무조건 새로고침한다 —
     // 조건부 새로고침은 주간 뷰에서 달이 걸친 날짜에 저장했을 때(뷰 상태가
@@ -327,8 +327,8 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
     return (
       <StateView
         icon={<PawPrint size={30} />}
-        title="식이 기록을 시작하려면 반려동물을 먼저 등록해주세요."
-        description="반려동물을 등록하면 매일 먹은 사료·간식·영양제를 날짜별로 기록할 수 있어요."
+        title="식이 기록을 시작하려면 반려동물을 등록해 주세요."
+        description="반려동물을 등록하면 먹은 사료·간식·영양제를 날짜별로 기록할 수 있습니다."
         action={{ label: '반려동물 등록', onClick: onRegisterPet }}
         minHeight={360}
       />
@@ -374,7 +374,7 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
       {loadingDay ? (
         <DayLogSkeleton />
       ) : dayLogs.length === 0 ? (
-        <DayEmpty onAdd={openCreate} />
+        <DayEmpty />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {daySections.map((section) => (
@@ -412,6 +412,7 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
       {/* 반려동물 선택 카드 */}
       <div>
+        {pets.length > 1 && <p style={{ margin: '0 0 8px', fontSize: 12, color: 'var(--text-muted)' }}>등록순 · 먼저 등록한 아이부터 표시합니다</p>}
         <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
           {pets.map((p) => {
             const active = selectedPetId === p.id;
@@ -556,7 +557,7 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
           {loadingMonth ? (
             <DayLogSkeleton />
           ) : monthLogs.length === 0 ? (
-            <DayEmpty onAdd={openCreate} />
+            <DayEmpty />
           ) : (
             <>
               <MonthlyInsightsCard logs={monthLogs} onRelog={openRelog} onOpenProduct={openHistory} />
@@ -581,7 +582,7 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
         initialPetId={selectedPetId}
         editingLog={editingLog}
         presetLog={presetLog}
-        initialDate={selectedDate}
+        initialDate={presetLog ? todayKey : selectedDate}
         userId={userId}
         onSaved={handleSaved}
       />
@@ -602,9 +603,10 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
       <ProductHistorySheet
         petId={selectedPetId}
         productRef={historyRef}
+        suspended={formOpen}
         onClose={() => setHistoryRef(null)}
         onViewAnalysis={(pid) => navigate(`/product/${pid}`)}
-        onRelog={(log) => { setHistoryRef(null); openRelog(log); }}
+        onRelog={openRelog}
       />
 
       {/* 메모 검색 */}
@@ -1142,7 +1144,7 @@ function WeekSummary({ logs, loading }: { logs: PetFeedingLog[]; loading: boolea
               <Flame size={13} /> 약 {s.kcal.toLocaleString()}kcal
             </span>
           )}
-          {s.total === 0 && <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>이번 주 기록이 없어요.</span>}
+          {s.total === 0 && <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>이번 주 기록이 없습니다.</span>}
         </div>
       )}
     </div>
@@ -1153,12 +1155,14 @@ function WeekSummary({ logs, loading }: { logs: PetFeedingLog[]; loading: boolea
 function ProductHistorySheet({
   petId,
   productRef,
+  suspended,
   onClose,
   onViewAnalysis,
   onRelog,
 }: {
   petId: string | null;
   productRef: ProductRef | null;
+  suspended: boolean;
   onClose: () => void;
   onViewAnalysis: (productId: string) => void;
   onRelog: (log: PetFeedingLog) => void;
@@ -1186,11 +1190,11 @@ function ProductHistorySheet({
   const avgPref = prefs.length ? prefs.reduce((a, b) => a + b, 0) / prefs.length : null;
 
   return (
-    <BottomSheet isOpen={Boolean(productRef)} onClose={onClose} title={productRef?.label ?? '급여 이력'} footer={null}>
+    <BottomSheet isOpen={Boolean(productRef)} suspended={suspended} onClose={onClose} title={productRef?.label ?? '급여 이력'} footer={null}>
       {loading ? (
         <DayLogSkeleton />
       ) : logs.length === 0 ? (
-        <div style={{ padding: '32px 12px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '14px' }}>이 제품의 급여 기록이 없어요.</div>
+        <div style={{ padding: '32px 12px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '14px' }}>이 제품의 급여 기록이 없습니다.</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -1284,11 +1288,11 @@ function MemoSearchSheet({
         />
       </div>
       {q.trim() === '' ? (
-        <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>메모나 특이사항, 직접 입력한 제품명으로 검색해요.</div>
+        <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>메모·특이사항·직접 입력한 제품명으로 검색하세요.</div>
       ) : loading ? (
         <DayLogSkeleton />
       ) : results.length === 0 ? (
-        <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '14px' }}>검색 결과가 없어요.</div>
+        <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '14px' }}>검색 결과가 없습니다.</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {results.map((log) => {
@@ -1382,7 +1386,7 @@ function MonthList({
   );
 }
 
-function DayEmpty({ onAdd }: { onAdd: () => void }) {
+function DayEmpty() {
   return (
     <div
       style={{
@@ -1394,30 +1398,10 @@ function DayEmpty({ onAdd }: { onAdd: () => void }) {
       }}
     >
       <div style={{ fontSize: '30px', marginBottom: '10px' }} aria-hidden>🍽️</div>
-      <p style={{ margin: '0 0 4px', fontSize: '15px', fontWeight: 800, color: 'var(--text-dark)' }}>아직 기록된 식사가 없어요.</p>
-      <p style={{ margin: '0 0 16px', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-        오늘 먹은 사료, 간식, 영양제를 기록해보세요.
+      <p style={{ margin: '0 0 4px', fontSize: '15px', fontWeight: 800, color: 'var(--text-dark)' }}>아직 식사 기록이 없습니다.</p>
+      <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+        기록 추가를 눌러 먹은 사료·간식·영양제를 기록해 주세요.
       </p>
-      <button
-        type="button"
-        onClick={onAdd}
-        style={{
-          minHeight: '44px',
-          padding: '10px 20px',
-          borderRadius: '12px',
-          border: 'none',
-          background: 'var(--primary)',
-          color: 'var(--text-dark)',
-          fontWeight: 800,
-          fontSize: '14px',
-          cursor: 'pointer',
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '6px',
-        }}
-      >
-        <Plus size={16} /> 섭취 기록 추가
-      </button>
     </div>
   );
 }

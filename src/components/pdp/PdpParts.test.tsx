@@ -83,11 +83,11 @@ describe('PDP redesign parts', () => {
     expect(allergy).toContain('알레르기');
   });
 
-  it('StickyCtaBar: 가격·구매 대신 "우리 아이가 먹었어요"(섭취 기록) CTA를 노출한다', () => {
+  it('StickyCtaBar: 가격·구매 대신 "섭취 기록 추가"(섭취 기록) CTA를 노출한다', () => {
     const html = renderToStaticMarkup(
-      <StickyCtaBar isFav={false} isComparing={false} onFav={() => {}} onCompare={() => {}} onLog={() => {}} />
+      <StickyCtaBar isFav={false} onFav={() => {}} onLog={() => {}} />
     );
-    expect(html).toContain('우리 아이가 먹었어요');
+    expect(html).toContain('섭취 기록 추가');
     // 가격·구매·장바구니·외부 링크 흔적이 남지 않아야 함
     expect(html).not.toContain('원');
     expect(html).not.toContain('구매');
@@ -180,7 +180,7 @@ describe('PDP redesign parts', () => {
 
   it('ErrorState: 기본 문구와 재시도 버튼을 렌더한다', () => {
     const html = renderToStaticMarkup(<ErrorState onRetry={() => {}} />);
-    expect(html).toContain('정보를 불러오지 못했어요');
+    expect(html).toContain('정보를 불러오지 못했습니다');
     expect(html).toContain('다시 시도');
     expect(html).toContain('role="alert"');
   });

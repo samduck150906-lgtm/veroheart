@@ -23,7 +23,7 @@ describe('PetSafetyAlert', () => {
 
   it('위험 성분이 있으면 경고 문구·성분·제품 수를 렌더한다', () => {
     const html = renderToStaticMarkup(<PetSafetyAlert scan={dangerScan} petName="로니" onOpen={() => {}} />);
-    expect(html).toContain('로니가 주의할 성분이 있어요');
+    expect(html).toContain('로니의 주의 성분이 포함되어 있습니다');
     expect(html).toContain('최근 본 제품 2개');
     expect(html).toContain('BHA');
     expect(html).toContain('🚨'); // danger 톤

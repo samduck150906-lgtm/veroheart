@@ -24,8 +24,8 @@ export function WaitlistSection() {
                 가장 먼저 받아보세요.
               </h2>
               <p className="mt-5 max-w-md text-pretty text-base leading-relaxed text-ink-300">
-                정식 출시와 베타테스트 모집 소식을 보내드릴게요. 광고성
-                메시지를 무분별하게 보내지 않아요.
+                정식 출시와 베타테스트 모집 소식을 보내드립니다. 광고성
+                메시지를 무분별하게 보내지 않습니다.
               </p>
             </div>
           </Reveal>

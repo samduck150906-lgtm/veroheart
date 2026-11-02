@@ -34,12 +34,8 @@ describe('원재료 없는 제품을 목록 뒤로', () => {
     );
   });
 
-  it('컬럼이 없던 시절 조회로 되돌아가는 폴백이 새 컬럼도 알아본다', () => {
-    // 프런트가 마이그레이션보다 먼저 배포되면 PostgREST 가 컬럼 없음(42703)을
-    // 돌려준다. 폴백이 이 이름을 모르면 그 배포 구간 동안 목록이 통째로 빈다.
-    const body = bodyOf('function isMissingProductVisibilityColumn', 'async function queryVisibleProducts');
-    expect(body).toContain('has_ingredients');
-  });
+  // Missing-column access behavior is exercised in productVisibility.test.ts.
+  // Sorting compatibility must never disable the public visibility predicate.
 });
 
 describe('원재료 개수 캐시 마이그레이션', () => {

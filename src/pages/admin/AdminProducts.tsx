@@ -1,19 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
 import { Plus, Search, Edit2, Trash2, X, Upload, ChevronLeft, ChevronRight, AlertTriangle, Eye, EyeOff, Pin, PinOff } from 'lucide-react';
 import { notify } from '../../store/useNotification';
 import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
 import ProductIngredientsEditor from './ProductIngredientsEditor';
 import ProductLabelPasteBox from './ProductLabelPasteBox';
 import {
-  fetchProductForEdit,  type BulkProductPatch,
+  fetchProductEditBundle, type BulkProductPatch,
   bulkUpdateProducts,
   BULK_PRODUCT_LIMIT,
   deleteProduct as deleteProductApi,
   fetchCategories,
   saveIngredient,
-  fetchProductIngredients,
   fetchProductsPage,
   saveProduct as saveProductApi,
   setProductPinned as setProductPinnedApi,
@@ -41,7 +39,7 @@ interface ProductForm {
   min_price?: number;
   barcode?: string;
   kcal_per_100g?: number;
-  verification_status?: 'pending' | 'reviewed' | 'verified';
+  verification_status?: 'pending' | 'reviewed' | 'verified' | null;
   is_visible?: boolean;
   /** 판매처 링크 — 판매가 확인의 근거이므로 필수로 받는다. */
   coupang_link?: string;
@@ -116,6 +114,15 @@ function productCompleteness(product: AdminProductRow): number {
   return Math.round((fields.filter(Boolean).length / fields.length) * 100);
 }
 
+function productPublicationNote(product: Pick<ProductForm, 'is_visible' | 'verification_status'>): string {
+  if (product.is_visible !== true) return '앱 비공개 · 노출 설정 꺼짐';
+  if (product.verification_status === 'verified') return '앱 공개 대상 · 검수 완료';
+  if (product.verification_status === 'reviewed') {
+    return '공개 대상 · “검수 완료 제품만 노출” 설정이 꺼져 있을 때 공개';
+  }
+  return '앱 비공개 · 검수 대기 또는 검수 상태 미지정';
+}
+
 const AdminProducts: React.FC = () => {
   const [urlParams, setUrlParams] = useSearchParams();
 
@@ -141,7 +148,8 @@ const AdminProducts: React.FC = () => {
   const [currentProduct, setCurrentProduct] = useState<ProductForm>({});
   const [nutrition, setNutrition] = useState<NutritionForm>(EMPTY_NUTRITION);
   const [ingredientLinks, setIngredientLinks] = useState<ProductIngredientLink[]>([]);
-  const [ingredientsLoading, setIngredientsLoading] = useState(false);
+  const [editLoadState, setEditLoadState] = useState<'ready' | 'loading' | 'error'>('ready');
+  const editBlocked = editLoadState !== 'ready';
   const [isSaving, setIsSaving] = useState(false);
   const [formError, setFormError] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -162,6 +170,7 @@ const AdminProducts: React.FC = () => {
   const [quickIngredientSaving, setQuickIngredientSaving] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const editLoadIdRef = useRef(0);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -247,8 +256,11 @@ const AdminProducts: React.FC = () => {
   };
 
   const openCreateModal = () => {
+    editLoadIdRef.current += 1;
+    setEditLoadState('ready');
     setCurrentProduct({
       target_pet_type: 'dog',
+      main_category: mainCategoryNames.includes('사료') ? '사료' : mainCategoryNames[0],
       target_life_stage: [],
       product_health_concerns: [],
       min_price: 0,
@@ -263,47 +275,47 @@ const AdminProducts: React.FC = () => {
     setIsModalOpen(true);
   };
 
+  const closeProductModal = () => {
+    editLoadIdRef.current += 1;
+    setIsModalOpen(false);
+  };
+
   const openEditModal = async (row: AdminProductRow) => {
+    const loadId = ++editLoadIdRef.current;
     setFormError('');
+    setCurrentProduct(row as ProductForm);
     setNutrition(EMPTY_NUTRITION);
     setIngredientLinks([]);
     setHealthConcernText('');
     setPriceText('');
     setIsModalOpen(true);
-    setIngredientsLoading(true);
-
-    // 목록은 경량 컬럼만 조회하므로, 편집 시 전체 필드를 다시 읽는다.
-    // 제품 본문은 service_role 로 읽는다 — 비노출 제품도 편집할 수 있어야 한다.
-    // 보장성분(nutritional_profiles)은 공개 SELECT 라 그대로 anon 으로 읽는다.
-    const [full, { data: np }] = await Promise.all([
-      fetchProductForEdit(row.id),
-      supabase.from('nutritional_profiles').select('*').eq('product_id', row.id).maybeSingle(),
-    ]);
-
-    const loaded = (full ?? row) as ProductForm;
-    setCurrentProduct(loaded);
-    setHealthConcernText((loaded.product_health_concerns ?? []).join(', '));
-    setPriceText(loaded.min_price ? String(loaded.min_price) : '');
-
-    if (np) {
-      const s = (v: unknown) => (v === null || v === undefined ? '' : String(v));
-      setNutrition({
-        crude_protein: s(np.crude_protein),
-        crude_fat: s(np.crude_fat),
-        crude_fiber: s(np.crude_fiber),
-        crude_ash: s(np.crude_ash),
-        moisture: s(np.moisture),
-        calcium: s(np.calcium),
-        phosphorus: s(np.phosphorus),
-      });
-    }
+    setEditLoadState('loading');
 
     try {
-      setIngredientLinks(await fetchProductIngredients(row.id));
+      // 공개 RLS와 관계없이 제품·원재료·영양정보를 모두 읽은 뒤 편집을 허용한다.
+      const bundle = await fetchProductEditBundle(row.id);
+      if (loadId !== editLoadIdRef.current) return;
+      const loaded = bundle.product as ProductForm;
+      setCurrentProduct(loaded);
+      setHealthConcernText((loaded.product_health_concerns ?? []).join(', '));
+      setPriceText(loaded.min_price ? String(loaded.min_price) : '');
+      if (bundle.nutrition) {
+        const np = bundle.nutrition;
+        const s = (v: unknown) => (v === null || v === undefined ? '' : String(v));
+        setNutrition({
+          crude_protein: s(np.crude_protein), crude_fat: s(np.crude_fat),
+          crude_fiber: s(np.crude_fiber), crude_ash: s(np.crude_ash),
+          moisture: s(np.moisture), calcium: s(np.calcium), phosphorus: s(np.phosphorus),
+        });
+      }
+      setIngredientLinks(bundle.ingredients);
+      setEditLoadState('ready');
     } catch (err) {
-      notify.error(`원재료 조회 실패: ${err instanceof Error ? err.message : String(err)}`);
-    } finally {
-      setIngredientsLoading(false);
+      if (loadId !== editLoadIdRef.current) return;
+      const message = `편집 자료 조회 실패: ${err instanceof Error ? err.message : String(err)}. 창을 닫고 다시 열어 주세요.`;
+      setFormError(message);
+      setEditLoadState('error');
+      notify.error(message);
     }
   };
 
@@ -327,9 +339,13 @@ const AdminProducts: React.FC = () => {
   };
 
   const handleSave = async () => {
-    if (isSaving) return;
+    if (isSaving || editBlocked) return;
     if (!currentProduct.name?.trim() || !currentProduct.brand_name?.trim()) {
       setFormError('제품명과 브랜드는 필수입니다.');
+      return;
+    }
+    if (!currentProduct.main_category?.trim()) {
+      setFormError('대분류를 선택해 주세요.');
       return;
     }
     const sellerLink = (currentProduct.coupang_link || '').trim();
@@ -381,7 +397,7 @@ const AdminProducts: React.FC = () => {
 
     // 보장성분: 입력값이 하나라도 있을 때만 함께 전송(숫자로 변환)
     const hasNutrition = NUTRITION_FIELDS.some(({ key }) => nutrition[key].trim() !== '');
-    const num = (s: string) => Number(s);
+    const num = (s: string) => s.trim() === '' ? null : Number(s);
     const nutritionPayload = hasNutrition
       ? {
           crude_protein: num(nutrition.crude_protein),
@@ -409,8 +425,8 @@ const AdminProducts: React.FC = () => {
       });
       notify.success(
         currentProduct.id
-          ? `제품명 “${saved.product.name}” 저장 및 앱 조회 확인이 완료되었습니다.`
-          : `신규 제품 “${saved.product.name}” 등록 및 앱 조회 확인이 완료되었습니다.`,
+          ? `제품명 “${saved.product.name}” 저장이 완료되었습니다. ${productPublicationNote(saved.product)}`
+          : `신규 제품 “${saved.product.name}” 등록이 완료되었습니다. ${productPublicationNote(saved.product)}`,
       );
       setIsModalOpen(false);
       await loadProducts();
@@ -449,8 +465,12 @@ const AdminProducts: React.FC = () => {
       )));
       notify.success(
         nextVisible
-          ? `“${product.name}” 제품을 사용자 앱에 노출했습니다.`
-          : `“${product.name}” 제품을 사용자 앱에서 비노출 처리했습니다.`,
+          ? `“${product.name}” 제품의 노출 설정을 켰습니다. ${
+            product.verification_status === 'reviewed' || product.verification_status === 'verified'
+              ? productPublicationNote({ ...product, is_visible: true })
+              : '검수 대기 또는 검수 상태 미지정 제품은 계속 앱 비공개입니다.'
+          }`
+          : `“${product.name}” 제품의 노출 설정을 껐습니다. 앱 비공개로 유지됩니다.`,
       );
       if (visibility !== '전체') await loadProducts();
     } catch (err) {
@@ -630,14 +650,14 @@ const AdminProducts: React.FC = () => {
           </select>
         </label>
         <label className="admin-compact-field">
-          <span>앱 노출</span>
+          <span>노출 설정</span>
           <select value={visibility} onChange={(event) => {
             setVisibility(event.target.value as '전체' | 'visible' | 'hidden');
             setPage(1);
           }}>
             <option value="전체">전체</option>
-            <option value="visible">노출</option>
-            <option value="hidden">비노출</option>
+            <option value="visible">켜짐</option>
+            <option value="hidden">꺼짐</option>
           </select>
         </label>
         <label className="admin-compact-field">
@@ -669,9 +689,9 @@ const AdminProducts: React.FC = () => {
           <strong style={{ fontSize: 14 }}>{selectedIds.size.toLocaleString()}개 선택됨</strong>
           <div className="admin-actions" style={{ flexWrap: 'wrap' }}>
             <button type="button" className="admin-btn-soft" disabled={bulkBusy}
-              onClick={() => runBulk({ isVisible: true }, '앱 노출')}>앱 노출</button>
+              onClick={() => runBulk({ isVisible: true }, '노출 설정 켜짐')}>노출 설정 켜기</button>
             <button type="button" className="admin-btn-soft" disabled={bulkBusy}
-              onClick={() => runBulk({ isVisible: false }, '앱 미노출', true)}>앱 미노출</button>
+              onClick={() => runBulk({ isVisible: false }, '노출 설정 꺼짐', true)}>노출 설정 끄기</button>
             <button type="button" className="admin-btn-soft" disabled={bulkBusy}
               onClick={() => runBulk({ verificationStatus: 'verified' }, '검수 완료')}>검수 완료</button>
             <button type="button" className="admin-btn-soft" disabled={bulkBusy}
@@ -681,6 +701,11 @@ const AdminProducts: React.FC = () => {
           </div>
         </div>
       )}
+
+      <p className="admin-hint">
+        검수 대기·검수 상태 미지정 제품은 노출 설정을 켜도 앱 비공개입니다.
+        검토됨 제품은 “검수 완료 제품만 노출” 시스템 설정이 꺼져 있을 때 공개됩니다.
+      </p>
 
       <div className="admin-table-wrap">
         <table className="admin-table">
@@ -701,7 +726,7 @@ const AdminProducts: React.FC = () => {
               <th>원재료</th>
               <th>정보완성도</th>
               <th>검수 상태</th>
-              <th>앱 노출</th>
+              <th>노출 설정 / 공개 상태</th>
               <th>상단 고정</th>
               <th>가격</th>
               <th style={{ textAlign: 'right' }}>관리</th>
@@ -788,11 +813,16 @@ const AdminProducts: React.FC = () => {
                       className={`admin-visibility-btn ${p.is_visible ? 'is-visible' : 'is-hidden'}`}
                       onClick={() => toggleVisibility(p)}
                       disabled={visibilitySavingId !== null}
-                      aria-label={`${p.name} 앱 ${p.is_visible ? '비노출' : '노출'}로 변경`}
+                      aria-label={`${p.name} 노출 설정 ${p.is_visible ? '끄기' : '켜기'}`}
+                      aria-pressed={p.is_visible}
+                      aria-describedby={`product-publication-${p.id}`}
                     >
                       {p.is_visible ? <Eye size={13} /> : <EyeOff size={13} />}
-                      {visibilitySavingId === p.id ? '저장 중' : p.is_visible ? '노출' : '비노출'}
+                      {visibilitySavingId === p.id ? '저장 중' : p.is_visible ? '설정 켜짐' : '설정 꺼짐'}
                     </button>
+                    <p id={`product-publication-${p.id}`} className="admin-item-sub" style={{ marginTop: 6, maxWidth: 180, whiteSpace: 'normal' }}>
+                      {productPublicationNote(p)}
+                    </p>
                   </td>
                   <td>
                     <button
@@ -874,7 +904,7 @@ const AdminProducts: React.FC = () => {
               <button
                 type="button"
                 className="admin-btn-soft"
-                onClick={() => setIsModalOpen(false)}
+                onClick={closeProductModal}
                 aria-label="모달 닫기"
                 disabled={isSaving}
               >
@@ -882,7 +912,7 @@ const AdminProducts: React.FC = () => {
               </button>
             </div>
 
-            <div className="admin-form-grid">
+            <fieldset className="admin-form-grid" disabled={editBlocked || isSaving} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
               <InputField
                 id="pf-name"
                 label="제품명*"
@@ -988,7 +1018,7 @@ const AdminProducts: React.FC = () => {
                 label="메인 카테고리"
                 value={currentProduct.main_category}
                 options={mainCategoryNames}
-                onChange={(value) => setCurrentProduct({ ...currentProduct, main_category: value })}
+                onChange={(value) => setCurrentProduct({ ...currentProduct, main_category: value, sub_category: '' })}
               />
               <SelectField
                 id="pf-verification"
@@ -1001,15 +1031,22 @@ const AdminProducts: React.FC = () => {
                 <input
                   id="pf-visible"
                   type="checkbox"
-                  checked={currentProduct.is_visible !== false}
+                  aria-label="사용자 앱 노출 설정"
+                  aria-describedby="pf-visibility-help pf-publication-status"
+                  checked={currentProduct.is_visible === true}
                   onChange={(event) => setCurrentProduct({
                     ...currentProduct,
                     is_visible: event.target.checked,
                   })}
                 />
                 <span>
-                  <strong>사용자 앱에 노출</strong>
-                  <small>끄면 검색·목록·바코드·상세 화면에서 숨겨집니다.</small>
+                  <strong>사용자 앱 노출 설정</strong>
+                  <small id="pf-visibility-help">
+                    검수 대기·검수 상태 미지정 제품은 켜도 앱 비공개입니다.
+                    검토됨 또는 검수 완료 제품만 공개 대상이며, “검수 완료 제품만 노출” 시스템 설정을 켜면 검토됨 제품도 숨겨집니다.
+                    끄면 검색·목록·바코드·상세 화면에서 숨겨집니다.
+                  </small>
+                  <small id="pf-publication-status">{productPublicationNote(currentProduct)}</small>
                 </span>
               </label>
               <SelectField
@@ -1062,7 +1099,7 @@ const AdminProducts: React.FC = () => {
               <div className="admin-form-span-2">
                 <ProductLabelPasteBox
                   linkedIngredientIds={ingredientLinks.map((link) => link.ingredientId)}
-                  disabled={isSaving || ingredientsLoading}
+                  disabled={isSaving || editBlocked}
                   onRequestCreateIngredient={(name) => {
                     setQuickIngredientName(name);
                     setQuickIngredientRisk('safe');
@@ -1098,13 +1135,13 @@ const AdminProducts: React.FC = () => {
 
               {/* 원재료 구성 — 분석 엔진의 핵심 입력 */}
               <div className="admin-form-span-2">
-                {ingredientsLoading ? (
-                  <div className="admin-empty">원재료를 불러오는 중입니다…</div>
+                {editLoadState === 'loading' ? (
+                  <div className="admin-empty">제품·원재료·영양정보를 불러오는 중입니다…</div>
                 ) : (
                   <ProductIngredientsEditor
                     value={ingredientLinks}
                     onChange={setIngredientLinks}
-                    disabled={isSaving}
+                    disabled={isSaving || editBlocked}
                     onRequestCreateIngredient={(name) => {
                       setQuickIngredientName(name);
                       setQuickIngredientRisk('safe');
@@ -1135,7 +1172,7 @@ const AdminProducts: React.FC = () => {
                   onChange={(value) => setNutrition((prev) => ({ ...prev, [key]: value }))}
                 />
               ))}
-            </div>
+            </fieldset>
 
             {formError && (
               <p className="admin-form-error" role="alert">
@@ -1144,10 +1181,10 @@ const AdminProducts: React.FC = () => {
             )}
 
             <div className="admin-modal-footer">
-              <button type="button" className="admin-btn-soft" onClick={() => setIsModalOpen(false)} disabled={isSaving}>
+              <button type="button" className="admin-btn-soft" onClick={closeProductModal} disabled={isSaving}>
                 취소
               </button>
-              <button type="button" className="admin-btn-primary" onClick={handleSave} disabled={isSaving || uploading}>
+              <button type="button" className="admin-btn-primary" onClick={handleSave} disabled={isSaving || uploading || editBlocked}>
                 {isSaving ? '저장 중…' : '저장하기'}
               </button>
             </div>

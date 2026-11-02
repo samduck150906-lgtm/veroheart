@@ -2,7 +2,7 @@ import type { Config, Context } from '@netlify/functions';
 
 import { normalizeBarcode } from '../../src/lib/productIdentity';
 import type { ExtractedProductLabel, LabelComponent } from '../../src/scan/types';
-import { jsonResponse, readJsonObject } from './_shared/http';
+import { withScanCors, jsonResponse, readJsonObject } from './_shared/http';
 import {
   createDefaultPublicationDependencies,
   idFromRequest,
@@ -65,7 +65,7 @@ function sanitizeLabel(value: unknown): ExtractedProductLabel {
 type Handler = (request: Request, context?: Context) => Promise<Response>;
 
 export function createScanConfirmHandler(injected?: ScanPublishDependencies): Handler {
-  return async (request) => {
+  return withScanCors(async (request) => {
     if (request.method !== 'POST') return jsonResponse(405, { code: 'method_not_allowed' });
     try {
       const deps = injected ?? createDefaultPublicationDependencies();
@@ -75,9 +75,11 @@ export function createScanConfirmHandler(injected?: ScanPublishDependencies): Ha
       if (!submissionId) return jsonResponse(400, { code: 'invalid_scan_id' });
       const submission = await deps.repository.loadOwned(submissionId, userId);
       if (!submission) return jsonResponse(404, { code: 'scan_not_found' });
-      if (submission.status !== 'needs_confirmation') {
+      if (!['needs_confirmation', 'submitted'].includes(submission.status)) {
         return jsonResponse(409, { code: 'scan_not_ready' });
       }
+      if (!submission.evidenceVerified) return jsonResponse(422, { code: 'untrusted_scan_evidence' });
+      if (submission.status === 'submitted') return jsonResponse(200, { status: 'submitted' });
       const body = await readJsonObject(request);
       if (!body) return jsonResponse(400, { code: 'invalid_confirmation' });
       const confirmed = sanitizeLabel(body.confirmedData);
@@ -96,11 +98,11 @@ export function createScanConfirmHandler(injected?: ScanPublishDependencies): Ha
     } catch {
       return jsonResponse(400, { code: 'invalid_confirmation' });
     }
-  };
+  });
 }
 
 export default async function scanConfirm(request: Request, context: Context): Promise<Response> {
   return createScanConfirmHandler()(request, context);
 }
 
-export const config: Config = { path: '/api/scans/:id/confirm', method: 'POST' };
+export const config: Config = { path: '/api/scans/:id/confirm', method: ['POST', 'OPTIONS'] };

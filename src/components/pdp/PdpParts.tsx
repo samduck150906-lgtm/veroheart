@@ -9,7 +9,6 @@ import {
   ChevronDown,
   Star,
   Sparkles,
-  GitCompare,
   Heart,
   UtensilsCrossed,
   RefreshCw,
@@ -368,7 +367,7 @@ export function AltProductCarousel({ items, onOpen }: { items: AltCardData[]; on
   return (
     <section aria-label="대체 상품" style={{ marginBottom: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 16, fontWeight: 800, color: 'var(--pdp-ink,var(--pdp-ink))', marginBottom: 14 }}>
-        🔄 이런 대체 상품은 어때요?
+        대체 상품 확인
       </div>
       <div style={{ display: 'flex', gap: 12, overflowX: 'auto', scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch', padding: '2px 20px 6px', margin: '0 -20px' }}>
         {items.map((a) => <AltCard key={a.id} a={a} onOpen={onOpen} />)}
@@ -570,7 +569,7 @@ export function EmptyState({ emoji = '🐾', title, desc, actionLabel, onAction 
 }
 
 /* ─── Error state (spec §24) ─── */
-export function ErrorState({ title = '정보를 불러오지 못했어요', desc = '잠시 후 다시 시도해 주세요.', onRetry }: { title?: string; desc?: string; onRetry?: () => void }) {
+export function ErrorState({ title = '정보를 불러오지 못했습니다', desc = '잠시 후 다시 시도해 주세요.', onRetry }: { title?: string; desc?: string; onRetry?: () => void }) {
   return (
     <div role="alert" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '36px 24px', background: 'var(--pdp-surface,#fff)', borderRadius: 20, boxShadow: 'var(--pdp-e1,0 1px 2px rgba(15,23,42,.04))' }}>
       <div style={{ width: 56, height: 56, borderRadius: 18, background: 'var(--pdp-danger-bg,#FEF2F2)', color: 'var(--pdp-danger-fg,#B91C1C)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }} aria-hidden>
@@ -606,19 +605,15 @@ export function OfflineBanner({ online }: { online: boolean }) {
   );
 }
 
-/* ─── Sticky bottom action bar — 찜/비교 + "우리 아이가 먹었어요"(섭취 기록) ─── */
+/* ─── Sticky bottom action bar — 찜 + "섭취 기록 추가"(섭취 기록) ─── */
 export function StickyCtaBar({
   isFav,
-  isComparing,
   onFav,
-  onCompare,
   onLog,
 }: {
   isFav: boolean;
-  isComparing: boolean;
   onFav: () => void;
-  onCompare: () => void;
-  /** 섭취 기록 시트 열기 (우리 아이가 먹었어요) */
+  /** 섭취 기록 시트 열기 (섭취 기록 추가) */
   onLog: () => void;
 }) {
   return (
@@ -639,13 +634,9 @@ export function StickyCtaBar({
         style={{ width: 50, height: 50, flexShrink: 0, borderRadius: 14, border: '1.5px solid var(--vr-line)', background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
         <Heart size={21} color={isFav ? 'var(--danger-strong)' : 'var(--vr-ink)'} fill={isFav ? 'var(--danger-strong)' : 'none'} />
       </button>
-      <button type="button" onClick={onCompare} aria-pressed={isComparing} aria-label="비교 담기"
-        style={{ height: 50, padding: '0 16px', flexShrink: 0, borderRadius: 14, border: `1.5px solid ${isComparing ? 'var(--vr-inverse)' : 'var(--vr-line)'}`, background: isComparing ? 'var(--vr-inverse)' : 'var(--surface)', color: isComparing ? 'var(--vr-on-inverse)' : 'var(--vr-ink)', fontSize: 13.5, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-        <GitCompare size={17} /> 비교
-      </button>
       <button type="button" onClick={onLog}
         style={{ flex: 1, height: 50, borderRadius: 14, border: 'none', background: 'var(--vr-yellow)', color: '#15150F', fontWeight: 800, fontSize: 15, cursor: 'pointer', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-        <UtensilsCrossed size={18} /> 우리 아이가 먹었어요
+        <UtensilsCrossed size={18} /> 섭취 기록 추가
       </button>
     </div>
   );

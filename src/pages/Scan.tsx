@@ -1,22 +1,13 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { useStore } from '../store/useStore';
 import { getProductByBarcode } from '../lib/supabase';
 import { normalizeBarcode } from '../lib/productIdentity';
+import { createBarcodeDetector, type BarcodeDetectorLike } from '../lib/barcodeDetector';
+import { normalizeScannedBarcode } from '../lib/scanBarcode';
+import { BarcodeLookupError } from '../lib/barcodeLookupError';
 
 type CamState = 'idle' | 'starting' | 'live' | 'denied' | 'unavailable' | 'no-detector';
-
-/** 실험적 BarcodeDetector API — 표준 TS 타입이 없어 필요한 부분만 선언한다. */
-interface DetectedBarcode {
-  rawValue: string;
-}
-interface BarcodeDetectorLike {
-  detect(source: CanvasImageSource): Promise<DetectedBarcode[]>;
-}
-interface BarcodeDetectorCtor {
-  new (options?: { formats: string[] }): BarcodeDetectorLike;
-}
 
 /** 뷰파인더 안 자리표시자 바코드 패턴 — 프로토타입 barBars */
 const BAR_PATTERN = Array.from({ length: 16 }, (_, i) => ({
@@ -32,6 +23,10 @@ export default function Scan() {
   const rafRef = useRef<number | null>(null);
   const detectorRef = useRef<BarcodeDetectorLike | null>(null);
   const handledRef = useRef(false);
+  const mountedRef = useRef(false);
+  const cameraGeneration = useRef(0);
+  const lastFrameAt = useRef(0);
+  const removeCameraListeners = useRef<(() => void) | null>(null);
 
   const [camState, setCamState] = useState<CamState>('idle');
   const [torchOn, setTorchOn] = useState(false);
@@ -41,40 +36,52 @@ export default function Scan() {
   const [checkingBarcode, setCheckingBarcode] = useState(false);
 
   const stopCamera = useCallback(() => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    cameraGeneration.current += 1;
+    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
     rafRef.current = null;
+    detectorRef.current = null;
+    removeCameraListeners.current?.();
+    removeCameraListeners.current = null;
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
   }, []);
 
   const handleBarcode = useCallback(
     async (code: string) => {
       if (handledRef.current) return;
-      handledRef.current = true;
       const normalized = normalizeBarcode(code);
       if (!normalized) {
-        handledRef.current = false;
-        setManualError('8~14자리 바코드 번호를 확인해 주세요.');
+        setManualError('바코드의 8·12·13·14자리 숫자와 마지막 체크숫자를 확인해 주세요.');
         return;
       }
+      handledRef.current = true;
+      setCheckingBarcode(true);
+      setManualError(null);
+      setManualBarcode(normalized);
       setDetected(normalized);
       stopCamera();
-      // 1) 이미 로드된 상품의 바코드와 즉시 매칭.
-      //    이 효과는 마운트 때 한 번만 도는데 제품 목록은 그 뒤에 채워지므로,
-      //    클로저에 갇힌 값 대신 호출 시점의 스토어 값을 읽는다.
-      const local = useStore.getState().products.find((p) => normalizeBarcode(p.barcode ?? '') === normalized);
-      if (local) {
-        navigate(`/product/${local.id}`);
-        return;
+      setCamState('idle');
+      try {
+        // The loaded list is partial and can contain stale visibility. Validate
+        // both visibility and equivalent-code ambiguity against the public catalog.
+        const remote = await getProductByBarcode(normalized);
+        if (!mountedRef.current) return;
+        if (remote) {
+          navigate(`/product/${remote.id}`);
+          return;
+        }
+        // Only a successful, empty lookup means the barcode is unregistered.
+        navigate(`/scan/new?barcode=${encodeURIComponent(normalized)}`);
+      } catch (error) {
+        if (!mountedRef.current) return;
+        handledRef.current = false;
+        setManualError(error instanceof BarcodeLookupError
+          ? error.message
+          : '제품을 확인하지 못했습니다. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.');
+      } finally {
+        if (mountedRef.current) setCheckingBarcode(false);
       }
-      // 2) DB 조회 (products.barcode 컬럼이 있으면 매칭)
-      const remote = await getProductByBarcode(normalized);
-      if (remote) {
-        navigate(`/product/${remote.id}`);
-        return;
-      }
-      // 3) 등록되지 않은 바코드는 사진 근거를 받는 신규 제품 등록으로 연결한다.
-      navigate(`/scan/new?barcode=${encodeURIComponent(normalized)}`);
     },
     [navigate, stopCamera],
   );
@@ -82,22 +89,40 @@ export default function Scan() {
   const scanLoop = useCallback(() => {
     const video = videoRef.current;
     const detector = detectorRef.current;
-    if (!video || !detector || handledRef.current) return;
+    if (!video || !detector || handledRef.current || !mountedRef.current || !streamRef.current) return;
+    const generation = cameraGeneration.current;
+    if (performance.now() - lastFrameAt.current < 150) {
+      rafRef.current = requestAnimationFrame(scanLoop);
+      return;
+    }
+    lastFrameAt.current = performance.now();
+    const continueScanning = () => {
+      if (mountedRef.current && generation === cameraGeneration.current && !handledRef.current) rafRef.current = requestAnimationFrame(scanLoop);
+    };
     detector
       .detect(video)
-      .then((codes: DetectedBarcode[]) => {
-        if (codes && codes.length > 0 && codes[0].rawValue) {
-          handleBarcode(String(codes[0].rawValue));
+      .then((codes) => {
+        if (!mountedRef.current || generation !== cameraGeneration.current) return;
+        const candidate = codes?.map(normalizeScannedBarcode).find((code) => code !== null);
+        if (candidate) {
+          void handleBarcode(candidate);
           return;
         }
-        rafRef.current = requestAnimationFrame(scanLoop);
+        continueScanning();
       })
       .catch(() => {
-        rafRef.current = requestAnimationFrame(scanLoop);
+        if (!mountedRef.current || generation !== cameraGeneration.current) return;
+        stopCamera();
+        setCamState('no-detector');
       });
-  }, [handleBarcode]);
+  }, [handleBarcode, stopCamera]);
 
   const startCamera = useCallback(async () => {
+    stopCamera();
+    setTorchOn(false);
+    setDetected(null);
+    setManualError(null);
+    const generation = cameraGeneration.current;
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
       setCamState('unavailable');
       return;
@@ -105,36 +130,43 @@ export default function Scan() {
     setCamState('starting');
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' } },
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false,
       });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play().catch(() => {});
-      }
-      setCamState('live');
-
-      // BarcodeDetector 가 없으면(iOS Safari 등) 아무리 비춰도 인식되지 않는다.
-      // 카메라만 켜 둔 채 "읽고 있어요"처럼 보이면 사용자는 계속 기다리게 되므로,
-      // 카메라를 끄고 직접 검색으로 안내한다.
-      const BD = (window as unknown as { BarcodeDetector?: BarcodeDetectorCtor }).BarcodeDetector;
-      if (!BD) {
-        stopCamera();
-        setCamState('no-detector');
+      if (!mountedRef.current || generation !== cameraGeneration.current) {
+        stream.getTracks().forEach((track) => track.stop());
         return;
       }
+      streamRef.current = stream;
+      const cameraEnded = () => {
+        if (!mountedRef.current || generation !== cameraGeneration.current) return;
+        stopCamera();
+        setCamState('unavailable');
+      };
+      stream.getTracks().forEach((track) => track.addEventListener('ended', cameraEnded));
+      removeCameraListeners.current = () => stream.getTracks().forEach((track) => track.removeEventListener('ended', cameraEnded));
+      if (videoRef.current) {
+        // Set properties before srcObject/play as required for inline iPhone video.
+        videoRef.current.muted = true;
+        videoRef.current.playsInline = true;
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+      if (!mountedRef.current || generation !== cameraGeneration.current) return;
       try {
-        detectorRef.current = new BD({
-          formats: ['ean_13', 'ean_8', 'code_128', 'upc_a', 'upc_e', 'qr_code'],
-        });
+        const detector = await createBarcodeDetector();
+        if (!mountedRef.current || generation !== cameraGeneration.current) return;
+        detectorRef.current = detector;
+        setCamState('live');
         rafRef.current = requestAnimationFrame(scanLoop);
       } catch {
-        detectorRef.current = null;
+        if (!mountedRef.current || generation !== cameraGeneration.current) return;
         stopCamera();
         setCamState('no-detector');
       }
     } catch (err) {
+      if (!mountedRef.current || generation !== cameraGeneration.current) return;
+      stopCamera();
       const name = err instanceof DOMException ? err.name : '';
       if (name === 'NotAllowedError' || name === 'SecurityError') setCamState('denied');
       else setCamState('unavailable');
@@ -142,9 +174,23 @@ export default function Scan() {
   }, [scanLoop, stopCamera]);
 
   useEffect(() => {
+    mountedRef.current = true;
     handledRef.current = false;
-    startCamera();
-    return () => stopCamera();
+    if (!document.hidden) void startCamera();
+    const visibilityChanged = () => {
+      if (document.hidden) {
+        stopCamera();
+        setCamState('idle');
+      } else if (!handledRef.current) {
+        void startCamera();
+      }
+    };
+    document.addEventListener('visibilitychange', visibilityChanged);
+    return () => {
+      mountedRef.current = false;
+      document.removeEventListener('visibilitychange', visibilityChanged);
+      stopCamera();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -163,30 +209,23 @@ export default function Scan() {
 
   const showLive = camState === 'live' || camState === 'starting';
   const showFallback =
-    camState === 'denied' || camState === 'unavailable' || camState === 'no-detector';
+    camState === 'denied' || camState === 'unavailable' || camState === 'no-detector' || camState === 'idle';
 
-  const hint = detected
-    ? '제품을 찾았어'
+  const hint = checkingBarcode
+    ? '바코드로 제품을 확인하고 있습니다…'
     : showFallback
-      ? '카메라를 쓸 수 없어. 직접 검색으로 넘어가자'
-      : '바코드를 읽고 있어…';
+      ? '바코드 숫자를 입력하거나 제품명으로 검색해 주세요'
+      : '바코드를 읽고 있습니다…';
 
   const submitManualBarcode = useCallback(async () => {
-    setManualError(null);
-    setCheckingBarcode(true);
-    handledRef.current = false;
-    try {
-      await handleBarcode(manualBarcode);
-    } finally {
-      setCheckingBarcode(false);
-    }
+    await handleBarcode(manualBarcode);
   }, [handleBarcode, manualBarcode]);
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#0A0A08', zIndex: 30, overflow: 'hidden', display: 'flex', flexDirection: 'column', maxWidth: '480px', margin: '0 auto' }}>
       <Helmet>
         <title>스캔 | 베로로</title>
-        <meta name="description" content="바코드를 스캔해 제품 성분 분석을 확인하세요." />
+        <meta name="description" content="바코드를 스캔해 제품 성분 분석을 확인해 주세요." />
       </Helmet>
 
       {/* 상단 바 */}
@@ -226,14 +265,13 @@ export default function Scan() {
 
       {/* 뷰파인더 */}
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-        {showLive && (
           <video
             ref={videoRef}
+            autoPlay
             playsInline
             muted
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', visibility: showLive ? 'visible' : 'hidden' }}
           />
-        )}
         {!showLive && (
           <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(120% 80% at 50% 40%, #2A2A22 0%, #111110 70%)' }} />
         )}
@@ -277,14 +315,13 @@ export default function Scan() {
 
       {/* 하단 액션 */}
       <div style={{ flex: 'none', padding: '16px 16px calc(16px + env(safe-area-inset-bottom,0px))' }}>
-        {showFallback ? (
-          <>
             <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
               <input
                 aria-label="바코드 번호"
                 inputMode="numeric"
                 autoComplete="off"
                 value={manualBarcode}
+                disabled={checkingBarcode}
                 onChange={(event) => setManualBarcode(event.target.value.replace(/\D/g, '').slice(0, 14))}
                 onKeyDown={(event) => { if (event.key === 'Enter') void submitManualBarcode(); }}
                 placeholder="바코드 숫자 입력"
@@ -303,18 +340,15 @@ export default function Scan() {
             {manualError && <div role="alert" style={{ color: '#FFB3A7', fontSize: 12, margin: '-2px 0 10px' }}>{manualError}</div>}
             <button
               type="button"
-              className="vr-btn vr-btn--primary"
-              style={{ padding: '16px', fontSize: '15.5px' }}
+              style={{ width: '100%', padding: '13px', background: 'none', border: 'none', fontSize: '13.5px', fontWeight: 800, color: '#B6B6A9', cursor: 'pointer' }}
               onClick={() => { stopCamera(); navigate('/search'); }}
             >
-              직접 검색하기
+              제품명으로 직접 검색
             </button>
-            {camState === 'denied' && (
-              // 브라우저는 한 번 거절되면 다시 묻지 않는다. 설정에서 허용을 바꾼
-              // 뒤 앱을 껐다 켜지 않아도 되도록 재시도 경로를 열어 둔다.
+            {showFallback && !checkingBarcode && (
               <button
                 type="button"
-                onClick={() => { handledRef.current = false; startCamera(); }}
+                onClick={() => { handledRef.current = false; void startCamera(); }}
                 style={{
                   width: '100%', marginTop: '10px', padding: '13px', background: 'none',
                   border: '1.5px solid rgba(255,255,255,.22)', borderRadius: '12px',
@@ -324,26 +358,15 @@ export default function Scan() {
                 카메라 다시 시도
               </button>
             )}
-            <div style={{ textAlign: 'center', fontSize: '11.5px', color: '#8A8A7C', marginTop: '10px', lineHeight: 1.6 }}>
+            {showFallback && !checkingBarcode && <div style={{ textAlign: 'center', fontSize: '11.5px', color: '#B6B6A9', marginTop: '10px', lineHeight: 1.6 }}>
               {camState === 'denied'
-                ? '설정에서 카메라 접근을 허용하면 바로 스캔할 수 있어.'
+                ? '설정에서 카메라 권한을 허용한 뒤 다시 시도해 주세요.'
                 : camState === 'no-detector'
-                  ? '이 브라우저는 자동 인식을 지원하지 않아요. 바코드 숫자를 입력해 주세요.'
-                  : '이 기기에서는 카메라 스캔을 쓸 수 없어.'}
-            </div>
-          </>
-        ) : (
-          <button
-            type="button"
-            onClick={() => { stopCamera(); navigate('/search'); }}
-            style={{
-              width: '100%', textAlign: 'center', padding: '13px', background: 'none', border: 'none',
-              fontSize: '13.5px', fontWeight: 800, color: '#8A8A7C', cursor: 'pointer',
-            }}
-          >
-            제품명으로 직접 검색
-          </button>
-        )}
+                  ? '자동 인식을 시작하지 못했습니다. 바코드 숫자를 입력해 주세요.'
+                  : window.isSecureContext === false
+                    ? '카메라는 HTTPS 주소에서 사용할 수 있습니다. 안전한 주소로 다시 열어 주세요.'
+                    : '다른 앱의 카메라를 닫고 다시 시도해 주세요. 인앱 브라우저라면 Safari 또는 Chrome으로 열어 주세요.'}
+            </div>}
       </div>
     </div>
   );

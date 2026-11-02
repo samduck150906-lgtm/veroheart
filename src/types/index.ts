@@ -2,6 +2,8 @@ import type { GuaranteedAnalysis } from '../analysis/types';
 
 export interface UserPetProfile {
   id: string;
+  /** Original registration timestamp; edits do not change list order. */
+  createdAt?: string;
   name: string;
   species: 'Dog' | 'Cat';
   age: number;
@@ -119,10 +121,17 @@ export interface Product {
   netWeightText?: string;
   slug?: string;
   catalogSource?: ProductCatalogSource;
+  catalogSourceUrl?: string;
+  catalogSourceNote?: string;
+  requiresVeterinaryGuidance?: boolean;
   analysisStatus?: ProductAnalysisStatus;
+  /** False for lightweight rows whose ingredient joins have not been loaded. */
+  ingredientDataLoaded?: boolean;
   /** 현재 라벨 세트에서 canonical 원료로 확정되지 않은 원문. */
   unknownIngredientTerms?: string[];
   ingredientLabelSetId?: string;
+  /** False when the first current label row has no resolved risk evidence. */
+  firstIngredientResolved?: boolean;
   analysisEngineVersion?: string;
   category: string;
   mainCategory?: string;

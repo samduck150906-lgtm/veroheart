@@ -31,7 +31,7 @@ describe('buildProductConclusion — 판정 우선순위(§6)', () => {
       report(95),
     );
     expect(c.tone).toBe('alert');
-    expect(c.headline).toContain('급여를 권하지 않아요');
+    expect(c.headline).toContain('급여를 권하지 않습니다');
   });
 
   it('종이 다르면(고양이용을 강아지가) 종 부적합 경고(alert)를 최우선한다', () => {
@@ -62,7 +62,7 @@ describe('buildProductConclusion — 판정 우선순위(§6)', () => {
       dog,
       report(0),
     );
-    expect(c.headline).toContain('판정하기 어려워요');
+    expect(c.headline).toContain('판정하기 어렵습니다');
     expect(c.subline).toContain('정보가 부족');
     expect(c.headline).not.toContain('0%');
   });
@@ -73,7 +73,7 @@ describe('buildProductConclusion — 판정 우선순위(§6)', () => {
       dog,
       report(82),
     );
-    expect(c.headline).not.toContain('판정하기 어려워요');
+    expect(c.headline).not.toContain('판정하기 어렵습니다');
   });
 
   it('위험/부적합/데이터부족이 없으면 점수 기반 결론(매칭/보통/신중)', () => {
@@ -103,6 +103,6 @@ describe('buildProductConclusion — 판정 우선순위(§6)', () => {
       report(95),
     );
     expect(c.tone).toBe('alert');
-    expect(c.headline).toContain('급여를 권하지 않아요');
+    expect(c.headline).toContain('급여를 권하지 않습니다');
   });
 });

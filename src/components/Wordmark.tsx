@@ -19,9 +19,11 @@ export const VERORO_WORDMARK_SRC = '/veroro-wordmark.png';
 interface WordmarkProps {
   /** 워드마크 높이(px). 프로토타입 기준: 헤더 15, 로그인 20, 게이트 18, 스플래시 44 */
   height?: number;
+  onLoad?: () => void;
+  onError?: () => void;
 }
 
-export default function Wordmark({ height = 15 }: WordmarkProps) {
+export default function Wordmark({ height = 15, onLoad, onError }: WordmarkProps) {
   const width = height * WORDMARK_RATIO;
   const imgWidth = width / CROP_W;
   const imgHeight = height / CROP_H;
@@ -40,6 +42,8 @@ export default function Wordmark({ height = 15 }: WordmarkProps) {
       <img
         src={VERORO_WORDMARK_SRC}
         alt="VERORO"
+        onLoad={onLoad}
+        onError={onError}
         style={{
           position: 'absolute',
           left: `${-CROP_X * imgWidth}px`,

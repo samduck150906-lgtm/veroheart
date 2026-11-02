@@ -51,7 +51,7 @@ interface NetlifyEnvironment {
   env?: { get(name: string): string | undefined };
 }
 
-function environmentValue(name: string): string {
+export function environmentValue(name: string): string {
   const netlify = (globalThis as typeof globalThis & { Netlify?: NetlifyEnvironment }).Netlify;
   return netlify?.env?.get(name) ?? process.env[name] ?? '';
 }
@@ -128,7 +128,7 @@ export function createScanRepository(client: SupabaseClient): ScanRepository {
         .eq('user_id', userId)
         .maybeSingle();
       if (error) throw new Error('scan_read_failed');
-      return data as StoredScanSubmission | null;
+      return data as unknown as StoredScanSubmission | null;
     },
 
     async createSignedUploadUrl(path) {
@@ -138,6 +138,11 @@ export function createScanRepository(client: SupabaseClient): ScanRepository {
       if (error || !data?.path || !data.token || !data.signedUrl) {
         throw new Error('scan_upload_sign_failed');
       }
+      const [userId, submissionId, category] = path.split('/');
+      const { data: registered, error: registerError } = await client.rpc('register_scan_evidence_upload', {
+        p_submission_id: submissionId, p_user_id: userId, p_category: category, p_path: path,
+      });
+      if (registerError || registered !== true) throw new Error('scan_upload_register_failed');
       return { path: data.path, token: data.token, signedUrl: data.signedUrl };
     },
   };

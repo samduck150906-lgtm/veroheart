@@ -8,6 +8,7 @@ import { LogoChip } from './Wordmark';
 import ThemeToggle from './ThemeToggle';
 import { VR } from '../lib/veroroDesign';
 import { resolveRouteChrome } from '../lib/routeChrome';
+import { publicUrl } from '../lib/publicUrls';
 
 interface AppHeaderProps {
   /** 본문이 8px 이상 스크롤되었는지 — 헤더 그림자(headerShadow) 트리거 */
@@ -34,16 +35,16 @@ export default function AppHeader({ raised }: AppHeaderProps) {
   const SpeciesIcon = profile.species === 'Cat' ? Cat : Dog;
 
   const share = async () => {
-    const url = window.location.href;
+    const url = publicUrl(`${location.pathname}${location.search}`);
     try {
       if (navigator.share) {
         await navigator.share({ url });
         return;
       }
       await navigator.clipboard.writeText(url);
-      notify.success('공유 링크를 복사했어');
+      notify.success('공유 링크를 복사했습니다');
     } catch {
-      notify.info('공유 링크를 복사하지 못했어');
+      notify.info('공유 링크를 복사하지 못했습니다');
     }
   };
 

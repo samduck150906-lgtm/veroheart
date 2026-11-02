@@ -1,24 +1,14 @@
 import { Link, useLocation } from 'react-router-dom';
-import { useStore } from '../store/useStore';
-import { DEFAULT_USER_PET_PROFILE } from '../types';
 
 /**
- * 하단 탭바 — 홈 / 탐색 / (스캔 FAB) / 다이어리 / 마이 펫.
+ * 하단 탭바 — 홈 / 탐색 / (스캔 FAB) / 다이어리 / 마이페이지.
  * 아이콘은 디자인 핸드오프의 인라인 SVG를 그대로 옮겼다 (lucide 대체 아이콘과 형태가 다름).
  */
 export default function BottomNav() {
   const location = useLocation();
-  const { profile, isLoggedIn } = useStore();
   const tabParam = new URLSearchParams(location.search).get('tab');
   const onProfile = location.pathname === '/profile';
-  const onDiary = onProfile && tabParam === 'diary';
-
-  const petTabLabel =
-    isLoggedIn && profile.name.trim() && profile.name !== DEFAULT_USER_PET_PROFILE.name
-      ? profile.name.length > 5
-        ? `${profile.name.slice(0, 4)}…`
-        : profile.name
-      : '마이 펫';
+  const onDiary = location.pathname === '/diary' || onProfile && tabParam === 'diary';
 
   const items = [
     {
@@ -41,7 +31,7 @@ export default function BottomNav() {
       ),
     },
     {
-      path: '/profile?tab=diary',
+      path: '/diary',
       label: '다이어리',
       active: onDiary,
       icon: (
@@ -53,7 +43,7 @@ export default function BottomNav() {
     },
     {
       path: '/profile',
-      label: petTabLabel,
+      label: '마이페이지',
       active: onProfile && !onDiary,
       icon: (
         <>

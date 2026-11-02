@@ -18,6 +18,9 @@ import {
   deleteIngredient,
   applyProductCleanup,
   fetchDiaryPage,
+  fetchProductEditBundle,
+  fetchProductIngredients,
+  fetchProductsPage,
   fetchMemberDetail,
   fetchSettings,
   fetchWaitlistPage,
@@ -33,6 +36,65 @@ function fakeFile(type: string, size: number): File {
   Object.defineProperty(file, 'size', { value: size });
   return file;
 }
+
+describe('adminApi: 비공개 제품 편집 자료', () => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  const ingredient = { ingredient_id: 'ingredient-1', sort_order: 0, ingredients: { id: 'ingredient-1', name_ko: '연어', name_en: 'Salmon', risk_level: 'safe' } };
+  const nutrition = { crude_protein: 30, crude_fat: 12, crude_fiber: 3, crude_ash: 7, moisture: 10, calcium: 1.2, phosphorus: 0.8 };
+  const product = { id, name: '검수 중 사료', is_visible: true, verification_status: 'pending' };
+
+  beforeEach(() => {
+    h.callAdminFunction.mockReset().mockResolvedValue({ product: { ...product, product_ingredients: [ingredient], nutritional_profiles: nutrition } });
+    // 공개 경로에서는 비공개 제품의 원재료가 보이지 않는다.
+    h.from.mockReset().mockReturnValue({
+      select: () => ({ eq: () => ({ order: async () => ({ data: [], error: null }) }) }),
+    });
+  });
+
+  it('검수 대기 제품의 원재료는 인증된 관리자 조회로 읽는다', async () => {
+    await expect(fetchProductIngredients(id)).resolves.toEqual([{
+      ingredientId: 'ingredient-1', nameKo: '연어', nameEn: 'Salmon', riskLevel: 'safe', sortOrder: 0,
+    }]);
+    expect(h.callAdminFunction).toHaveBeenCalledWith('admin-products-read', { view: 'edit', id });
+    expect(h.from).not.toHaveBeenCalled();
+  });
+
+  it.each([nutrition, [nutrition]])('제품·원재료·영양정보를 하나의 완전한 편집 응답으로 보존한다 (%j)', async (profile) => {
+    h.callAdminFunction.mockResolvedValue({ product: { ...product, product_ingredients: [ingredient], nutritional_profiles: profile } });
+    await expect(fetchProductEditBundle(id)).resolves.toEqual({
+      product,
+      nutrition,
+      ingredients: [{ ingredientId: 'ingredient-1', nameKo: '연어', nameEn: 'Salmon', riskLevel: 'safe', sortOrder: 0 }],
+    });
+  });
+
+  it.each([
+    { ...product, nutritional_profiles: nutrition },
+    { ...product, product_ingredients: [ingredient] },
+    { ...product, product_ingredients: [{ ...ingredient, ingredients: null }], nutritional_profiles: nutrition },
+  ])('편집 자료가 불완전하면 빈 원재료·영양정보로 대체하지 않는다', async (incompleteProduct) => {
+    h.callAdminFunction.mockResolvedValue({ product: incompleteProduct });
+    await expect(fetchProductEditBundle(id)).rejects.toThrow(/편집 자료/);
+  });
+
+  it('조회 실패와 사라진 제품을 빈 편집 양식으로 반환하지 않는다', async () => {
+    h.callAdminFunction.mockRejectedValueOnce(new Error('관리자 조회 실패'));
+    await expect(fetchProductEditBundle(id)).rejects.toThrow('관리자 조회 실패');
+    h.callAdminFunction.mockResolvedValueOnce({ product: null });
+    await expect(fetchProductEditBundle(id)).rejects.toThrow(/제품/);
+  });
+
+  it('명시적으로 비어 있는 원재료와 영양정보는 편집할 수 있다', async () => {
+    h.callAdminFunction.mockResolvedValue({ product: { ...product, product_ingredients: [], nutritional_profiles: null } });
+    await expect(fetchProductEditBundle(id)).resolves.toEqual({ product, ingredients: [], nutrition: null });
+  });
+
+  it('노출 설정이 null인 목록 제품을 켜짐으로 바꾸지 않는다', async () => {
+    h.callAdminFunction.mockResolvedValue({ rows: [{ ...product, is_visible: null }], total: 1 });
+    const result = await fetchProductsPage({ page: 1, pageSize: 20 });
+    expect(result.rows[0].is_visible).toBe(false);
+  });
+});
 
 describe('adminApi: 제품 이미지 사전 검증', () => {
   it('JPG · PNG · WebP 를 허용한다', () => {

@@ -136,8 +136,8 @@ serve(async (req) => {
       code: hit.profile_type === 'allergy' ? 'ALLERGY_MATCH' : 'AVOIDANCE_MATCH',
       message:
         hit.profile_type === 'allergy'
-          ? `주의! ${hit.allergen_label_ko} 알러지 유발 성분이 포함되어 있어요`
-          : `참고: ${hit.allergen_label_ko} 기피 성분이 포함되어 있어요`,
+          ? `주의: ${hit.allergen_label_ko} 알레르기 유발 성분이 포함되어 있습니다`
+          : `참고: ${hit.allergen_label_ko} 기피 성분이 포함되어 있습니다`,
     }));
 
     return new Response(

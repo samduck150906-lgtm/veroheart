@@ -23,8 +23,8 @@ export function PersonalizationSection() {
             <SectionHeading
               kicker="맞춤 분석"
               id="personalization-heading"
-              title="모든 반려동물에게 같은 답을 보여주지 않아요."
-              description="강아지인지 고양이인지, 몇 살인지, 어떤 성분에 민감한지에 따라 확인해야 할 내용은 달라질 수 있어요."
+              title="모든 반려동물에게 같은 답을 보여주지 않습니다."
+              description="종, 나이, 민감한 성분에 따라 확인해야 할 내용은 달라질 수 있습니다."
             />
           </Reveal>
 

@@ -105,6 +105,23 @@ export function toGtin13(value: string): string {
   return normalized;
 }
 
+/** UPC-A, EAN-13 and zero-padded GTIN-14 can identify the same retail item. */
+export function equivalentBarcodes(value: string): string[] {
+  if (!/^[\d\s-]+$/.test(value)) return [];
+  const { valid, normalized } = checkBarcode(value);
+  if (!valid || !normalized) return [];
+  if (normalized.length === 8) return [normalized];
+
+  const gtin14 = normalized.padStart(14, '0');
+  // A nonzero packaging indicator denotes a different trade item.
+  if (!gtin14.startsWith('0')) return [gtin14];
+  return [
+    ...(gtin14.startsWith('00') ? [gtin14.slice(2)] : []),
+    gtin14.slice(1),
+    gtin14,
+  ];
+}
+
 /**
  * 여러 제품의 바코드에서 중복을 찾는다.
  *

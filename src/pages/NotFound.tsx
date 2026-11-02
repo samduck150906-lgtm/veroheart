@@ -8,18 +8,18 @@ export default function NotFound() {
   return (
     <div className="vr-anim-fade" style={{ padding: '80px 24px', textAlign: 'center' }}>
       <Helmet>
-        <title>페이지를 찾을 수 없어요 | 베로로</title>
-        <meta name="description" content="요청하신 페이지를 찾을 수 없습니다. 베로로 홈으로 돌아가 다시 탐색해 보세요." />
+        <title>페이지를 찾을 수 없습니다 | 베로로</title>
+        <meta name="description" content="요청하신 페이지를 찾을 수 없습니다. 베로로 홈에서 다시 찾아 주세요." />
       </Helmet>
 
       <div style={{ fontSize: '64px', fontWeight: 800, letterSpacing: '-0.06em', color: 'var(--vr-yellow)', lineHeight: 1 }}>
         404
       </div>
       <h1 style={{ margin: '8px 0', fontSize: '22px', fontWeight: 800, letterSpacing: '-0.03em' }}>
-        여긴 아무것도 없어
+        페이지를 찾을 수 없습니다
       </h1>
       <p style={{ margin: '0 0 24px', fontSize: '13.5px', color: VR.muted, lineHeight: 1.6 }}>
-        주소가 바뀌었을 수도 있어. 홈에서 다시 찾아보자.
+        주소가 변경되었을 수 있습니다. 홈에서 다시 찾아 주세요.
       </p>
 
       <button

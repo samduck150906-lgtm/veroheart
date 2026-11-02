@@ -17,7 +17,9 @@ import {
 import { evaluatePublicationGate } from '../../src/scan/publicationGate';
 import type { ExtractedProductLabel, ScanPhotoPaths } from '../../src/scan/types';
 import { authenticateRequest } from './_shared/auth';
-import { jsonResponse } from './_shared/http';
+import { validateExtractedProductLabel } from './_shared/extractionSchema';
+import { mapConfirmedLabelNutrition } from './_shared/labelNutrition';
+import { withScanCors, jsonResponse } from './_shared/http';
 import { getSupabaseServerClient } from './_shared/supabaseServer';
 
 export interface PublicationSubmission {
@@ -31,6 +33,8 @@ export interface PublicationSubmission {
   resolvedProductId: string | null;
   photoPaths: ScanPhotoPaths;
   confirmed: ExtractedProductLabel;
+  evidenceVerified: boolean;
+  publishedNewProduct: boolean;
 }
 
 export interface PublishTransactionInput {
@@ -51,6 +55,7 @@ export interface PublishTransactionInput {
     verificationStatus: 'pending';
     isVisible: true;
     label: ExtractedProductLabel;
+    nutrition: ReturnType<typeof mapConfirmedLabelNutrition>;
   };
 }
 
@@ -113,9 +118,10 @@ interface SubmissionRow {
   nutrition_image_paths: string[];
   extracted_data: Record<string, unknown>;
   confirmed_data: Record<string, unknown>;
+  published_new_product: boolean;
 }
 
-function mapSubmission(row: SubmissionRow): PublicationSubmission {
+function mapSubmission(row: SubmissionRow, evidenceVerified: boolean): PublicationSubmission {
   const wrapper = row.confirmed_data ?? {};
   const confirmed = ('label' in wrapper ? wrapper.label : wrapper) as ExtractedProductLabel;
   return {
@@ -135,6 +141,8 @@ function mapSubmission(row: SubmissionRow): PublicationSubmission {
       nutrition: row.nutrition_image_paths ?? [],
     },
     confirmed,
+    evidenceVerified,
+    publishedNewProduct: row.published_new_product === true,
   };
 }
 
@@ -145,12 +153,23 @@ export function createCommunityPublicationRepository(
     async loadOwned(submissionId, userId) {
       const { data, error } = await client
         .from('product_scan_submissions')
-        .select('id,user_id,status,scanned_barcode,processing_error_code,resolved_product_id,front_image_paths,ingredient_image_paths,nutrition_image_paths,extracted_data,confirmed_data')
+        .select('id,user_id,status,scanned_barcode,processing_error_code,resolved_product_id,front_image_paths,ingredient_image_paths,nutrition_image_paths,extracted_data,confirmed_data,published_new_product')
         .eq('id', submissionId)
         .eq('user_id', userId)
         .maybeSingle();
       if (error) throw new Error('scan_read_failed');
-      return data ? mapSubmission(data as SubmissionRow) : null;
+      if (!data) return null;
+      let evidenceVerified = false;
+      try {
+        validateExtractedProductLabel(data.extracted_data);
+        const { data: trusted, error: trustError } = await client.rpc('scan_has_trusted_evidence', {
+          p_submission_id: submissionId,
+        });
+        evidenceVerified = !trustError && trusted === true;
+      } catch {
+        // Legacy/unprocessed rows may be viewed, but cannot be confirmed or published.
+      }
+      return mapSubmission(data as SubmissionRow, evidenceVerified);
     },
 
     async findDuplicateCandidates(barcode, canonicalKey) {
@@ -205,16 +224,14 @@ export function createCommunityPublicationRepository(
       }));
       const items = prepareCanonicalScanIngredients(input.ingredients, canonicals);
 
-      const { error: ingestionError } = await client.rpc('ingest_product_ingredient_label', {
-        p_request_id: input.submissionId,
+      const { data: labelSetId, error: ingestionError } = await client.rpc('ingest_community_scan_ingredient_label', {
+        p_submission_id: input.submissionId,
         p_product_id: input.productId,
-        p_source_type: 'package_image',
-        p_source_reference: `community_scan:${input.submissionId}`,
-        p_raw_label_text: input.ingredients.join('\n'),
-        p_label_language: 'ko',
         p_items: items,
       });
       if (ingestionError) throw new Error('ingredient_ingestion_failed');
+      // A newer current label can win between publication and ingestion/retry.
+      if (!labelSetId) return;
 
       const { data: engine, error: engineError } = await client
         .from('analysis_engine_versions')
@@ -280,7 +297,7 @@ export { idFromRequest };
 type Handler = (request: Request, context?: Context) => Promise<Response>;
 
 export function createScanPublishHandler(injected?: ScanPublishDependencies): Handler {
-  return async (request) => {
+  return withScanCors(async (request) => {
     if (request.method !== 'POST') return jsonResponse(405, { code: 'method_not_allowed' });
     try {
       const deps = injected ?? createDefaultPublicationDependencies();
@@ -291,7 +308,7 @@ export function createScanPublishHandler(injected?: ScanPublishDependencies): Ha
       const submission = await deps.repository.loadOwned(submissionId, userId);
       if (!submission) return jsonResponse(404, { code: 'scan_not_found' });
       if (submission.status === 'published' && submission.resolvedProductId) {
-        if (submission.confirmed.ingredients.length > 0) {
+        if (submission.publishedNewProduct && submission.evidenceVerified && submission.confirmed.ingredients.length > 0) {
           await deps.repository.ingestAnalysis({
             submissionId,
             productId: submission.resolvedProductId,
@@ -302,6 +319,9 @@ export function createScanPublishHandler(injected?: ScanPublishDependencies): Ha
       }
       if (submission.status !== 'submitted') {
         return jsonResponse(409, { code: 'scan_not_confirmed' });
+      }
+      if (!submission.evidenceVerified) {
+        return jsonResponse(422, { code: 'untrusted_scan_evidence' });
       }
       if (submission.processingErrorCode === 'barcode_conflict' && !submission.confirmedBarcode) {
         await deps.repository.markNeedsReview(submissionId, 'barcode_conflict');
@@ -331,7 +351,7 @@ export function createScanPublishHandler(injected?: ScanPublishDependencies): Ha
         photoPaths: submission.photoPaths,
         confirmed: submission.confirmed,
       });
-      if (!gate.ok) {
+      if (gate.ok === false) {
         if (gate.code === 'barcode_conflict' || gate.code === 'ambiguous_duplicate') {
           await deps.repository.markNeedsReview(submissionId, gate.code);
           return jsonResponse(202, { status: 'needs_review', code: gate.code });
@@ -361,10 +381,11 @@ export function createScanPublishHandler(injected?: ScanPublishDependencies): Ha
           verificationStatus: 'pending',
           isVisible: true,
           label: submission.confirmed,
+          nutrition: mapConfirmedLabelNutrition(submission.confirmed),
         },
       });
       if (result.status === 'needs_review') {
-        return jsonResponse(202, result);
+        return jsonResponse(202, { ...result, code: 'duplicate_review' });
       }
       if (submission.confirmed.ingredients.length > 0) {
         await deps.repository.ingestAnalysis({
@@ -377,11 +398,11 @@ export function createScanPublishHandler(injected?: ScanPublishDependencies): Ha
     } catch {
       return jsonResponse(503, { code: 'scan_unavailable' });
     }
-  };
+  });
 }
 
 export default async function scanPublish(request: Request, context: Context): Promise<Response> {
   return createScanPublishHandler()(request, context);
 }
 
-export const config: Config = { path: '/api/scans/:id/publish', method: 'POST' };
+export const config: Config = { path: '/api/scans/:id/publish', method: ['POST', 'OPTIONS'] };

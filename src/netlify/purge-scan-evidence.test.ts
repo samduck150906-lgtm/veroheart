@@ -26,6 +26,7 @@ function candidate(overrides: Partial<PurgeCandidate> = {}): PurgeCandidate {
 function repository(rows: PurgeCandidate[], failing = new Set<string>()): EvidencePurgeRepository & { cleared: ReturnType<typeof vi.fn> } {
   return {
     listCandidates: vi.fn().mockResolvedValue(rows),
+    claimCandidate: vi.fn().mockImplementation((id: string) => Promise.resolve(id !== 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')),
     deleteObject: vi.fn().mockImplementation((path: string) => Promise.resolve(!failing.has(path))),
     cleared: vi.fn().mockResolvedValue(undefined),
     updateRemainingPaths(id, paths) { return this.cleared(id, paths); },
@@ -33,7 +34,7 @@ function repository(rows: PurgeCandidate[], failing = new Set<string>()): Eviden
 }
 
 describe('scan evidence retention', () => {
-  it('purges only terminal submissions older than 30 days', async () => {
+  it('purges only claimed expired submissions and skips a concurrently active row', async () => {
     const active = candidate({ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', status: 'processing' });
     const newRow = candidate({ id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', retentionAt: recent });
     const repo = repository([candidate(), active, newRow]);

@@ -4,23 +4,23 @@ import { SectionHeading } from "@/components/SectionHeading";
 const STEPS = [
   {
     step: "01",
-    title: "검색하거나 촬영해요",
-    body: "제품명, 성분명, 바코드 또는 성분표를 확인해요.",
+    title: "검색하거나 촬영합니다",
+    body: "제품명, 성분명, 바코드 또는 성분표를 확인합니다.",
   },
   {
     step: "02",
-    title: "한눈에 분석해요",
-    body: "원재료와 영양정보를 보기 쉽게 정리해요.",
+    title: "한눈에 분석합니다",
+    body: "원재료와 영양정보를 보기 쉽게 정리합니다.",
   },
   {
     step: "03",
-    title: "우리 아이 기준으로 확인해요",
-    body: "등록한 알레르기·건강 정보를 반영해 주의점을 알려드려요.",
+    title: "우리 아이 기준으로 확인합니다",
+    body: "등록한 알레르기·건강 정보를 반영해 주의점을 안내합니다.",
   },
   {
     step: "04",
-    title: "비교하고 선택해요",
-    body: "비슷한 제품의 성분과 가격을 함께 비교해요.",
+    title: "비교하고 선택합니다",
+    body: "비슷한 제품의 성분과 가격을 함께 비교합니다.",
   },
 ];
 
@@ -36,8 +36,8 @@ export function HowItWorks() {
           <SectionHeading
             kicker="이용 방법"
             id="how-it-works-heading"
-            title="네 단계면 충분해요"
-            description="복잡한 성분표 대신, 베로로가 정리한 결과부터 확인하세요."
+            title="네 단계면 충분합니다"
+            description="복잡한 성분표 대신, 베로로가 정리한 결과부터 확인해 주세요."
           />
         </Reveal>
         <div className="grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">

@@ -137,7 +137,7 @@ export function createReanalysisRepository(client: SupabaseClient): ReanalysisRe
         .eq('is_current', true)
         .maybeSingle();
       if (error) throw new Error('input_load_failed');
-      const row = data as LabelSetRow | null;
+      const row = data as unknown as LabelSetRow | null;
       return {
         labelSetId: row?.id ?? null,
         items: (row?.product_ingredient_label_items ?? []).map((item) => ({

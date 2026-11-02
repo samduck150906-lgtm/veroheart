@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, X, Check, FlaskConical, Camera, Trash2, PawPrint } from 'lucide-react';
 import BottomSheet from '../BottomSheet';
-import { searchDiaryProducts, createFeedingLog, updateFeedingLog, uploadFeedingLogPhoto } from '../../lib/supabase';
+import { searchDiaryProducts, createFeedingLog, updateFeedingLog, uploadFeedingLogPhoto, removeUnattachedFeedingPhoto } from '../../lib/supabase';
 import { notify } from '../../store/useNotification';
 import type {
   FeedingLogInput,
@@ -230,7 +230,7 @@ export default function FeedingLogForm({
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 900 * 1024) {
-      notify.warning('사진은 900KB 이하로 올려주세요. (더 작은 이미지를 선택해주세요)');
+      notify.warning('900KB 이하의 사진을 선택해 주세요.');
       e.target.value = '';
       return;
     }
@@ -258,14 +258,15 @@ export default function FeedingLogForm({
     const parsedAmount = amountMatch ? Number.parseFloat(amountMatch[0]) : NaN;
 
     setIsSaving(true);
+    let uploadedPath: string | null = null;
     try {
-      // 사진: 새로 고른 파일은 Storage에 올리고 URL만 저장한다. base64를 DB에
-      // 넣으면 목록 조회 payload가 수 MB로 커진다. 업로드 실패(버킷 미적용 등)
-      // 시에만 기존 방식(data URL)으로 폴백.
+      // Store only private object paths; upload failure leaves the form editable.
       let savedImageUrl: string | null = imageUrl || null;
       if (photoFile) {
         const uploaded = await uploadFeedingLogPhoto(userId, photoFile);
-        if (uploaded) savedImageUrl = uploaded;
+        if (!uploaded) { notify.error('사진 업로드에 실패했습니다. 다시 시도해 주세요.'); return; }
+        uploadedPath = uploaded;
+        savedImageUrl = uploaded;
       }
 
       const input: FeedingLogInput = {
@@ -289,11 +290,13 @@ export default function FeedingLogForm({
         ? await updateFeedingLog(editingLog.id, userId, input)
         : await createFeedingLog(userId, input);
       if (saved) {
-        notify.success(isEditing ? '기록을 수정했어요.' : '섭취 기록을 저장했어요.');
+        uploadedPath = null;
+        notify.success(isEditing ? '기록을 수정했습니다.' : '섭취 기록을 저장했습니다.');
         onSaved(saved);
         onClose();
       }
     } finally {
+      if (uploadedPath) await removeUnattachedFeedingPhoto(userId, uploadedPath);
       setIsSaving(false);
     }
   };
@@ -520,7 +523,7 @@ export default function FeedingLogForm({
                       검색 결과가 없습니다.
                     </p>
                     <p style={{ margin: '0 0 12px', fontSize: '12px', color: 'var(--text-muted)' }}>
-                      제품이 없다면 직접 입력할 수 있어요.
+                      제품이 없다면 직접 입력할 수 있습니다.
                     </p>
                     <button
                       type="button"
@@ -781,11 +784,11 @@ export default function FeedingLogForm({
             type="text"
             value={reaction}
             onChange={(e) => setReaction(e.target.value)}
-            placeholder="먹은 뒤 반응 — 예: 두 번 토했어요, 가려워했어요"
+            placeholder="섭취 후 반응 — 예: 구토 2회, 가려움"
             style={fieldInput}
           />
           <p style={{ margin: '6px 0 0', fontSize: '11px', color: 'var(--text-light)', lineHeight: 1.5 }}>
-            먹은 뒤 나타난 반응을 적어 두면, 나중에 어떤 제품과 겹치는지 찾기 쉬워요.
+            섭취 후 반응을 기록하면 함께 먹은 제품을 확인하기 쉽습니다.
           </p>
         </div>
 
@@ -858,7 +861,7 @@ export default function FeedingLogForm({
 
         {!canSave && (
           <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Check size={13} /> 반려동물과 제품(또는 직접 입력)을 선택하면 저장할 수 있어요.
+            <Check size={13} /> 반려동물과 제품을 선택하면 저장할 수 있습니다. 제품은 직접 입력할 수도 있습니다.
           </p>
         )}
       </div>

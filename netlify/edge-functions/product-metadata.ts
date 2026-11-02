@@ -52,6 +52,7 @@ async function fetchPublicProduct(id: string): Promise<ProductMetadataRow | null
   );
   url.searchParams.set('id', `eq.${id}`);
   url.searchParams.set('is_visible', 'eq.true');
+  url.searchParams.set('verification_status', 'in.(reviewed,verified)');
   url.searchParams.set('limit', '1');
 
   const controller = new AbortController();
@@ -59,12 +60,14 @@ async function fetchPublicProduct(id: string): Promise<ProductMetadataRow | null
   try {
     const response = await fetch(url, {
       method: 'GET',
+      cache: 'no-store',
       headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
       signal: controller.signal,
     });
     if (!response.ok) return null;
     const rows = await response.json();
-    return Array.isArray(rows) && rows[0] ? rows[0] as ProductMetadataRow : null;
+    const row = Array.isArray(rows) && rows[0] ? rows[0] as ProductMetadataRow : null;
+    return row?.verification_status === 'reviewed' || row?.verification_status === 'verified' ? row : null;
   } finally {
     clearTimeout(timeout);
   }
@@ -119,6 +122,8 @@ export default async function productMetadata(
     const headers = new Headers(shell.headers);
     headers.delete('content-length');
     headers.delete('content-encoding');
+    headers.set('cache-control', 'no-store');
+    headers.set('netlify-cdn-cache-control', 'no-store');
     return new Response(html, {
       status: shell.status,
       statusText: shell.statusText,

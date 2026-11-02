@@ -113,7 +113,7 @@ export function checkCalciumPhosphorusRatio(ga: GuaranteedAnalysis): string | nu
   if (ratio < 1.0 || ratio > 2.0) {
     // ratio 는 칼슘/인 이므로 "칼슘:인 = ratio:1" 로 적는다.
     // 예전에는 `1:${ratio}` 로 적어 칼슘 과다를 인 과다처럼 뒤집어 보여줬다.
-    return `칼슘:인 비율이 권장 범위를 벗어나요 (현재 ${ratio.toFixed(2)}:1, 권장 1:1~2:1).`;
+    return `칼슘:인 비율이 권장 범위를 벗어납니다 (현재 ${ratio.toFixed(2)}:1, 권장 1:1~2:1).`;
   }
   return null;
 }

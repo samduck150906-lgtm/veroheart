@@ -33,7 +33,7 @@ describe('원료 기반 제품 검색', () => {
   });
 
   it('searchProducts가 원료 검색을 포함한 랭킹 RPC를 호출한다', () => {
-    const body = functionBody('searchProducts');
+    const body = functionBody('searchProductsPage');
     expect(body).toContain("rpc('search_catalog_products'");
     expect(body).not.toContain('findProductIdsByIngredientName');
     expect(body).not.toContain('builder.or(');

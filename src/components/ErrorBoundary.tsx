@@ -72,7 +72,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
           🐾
         </div>
         <p style={{ color: '#191F28', fontSize: '18px', fontWeight: 700, margin: '0 0 8px' }}>
-          잠시 문제가 발생했어요
+          문제가 발생했습니다
         </p>
         <p style={{ color: '#8B95A1', fontSize: '14px', fontWeight: 500, margin: '0 0 24px', maxWidth: 300, lineHeight: 1.55 }}>
           화면을 불러오는 중 오류가 생겼습니다. 다시 시도하거나 홈으로 이동해 주세요.

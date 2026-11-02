@@ -44,10 +44,10 @@ export default function EntryGate({ onBrowse, onDismissForLogin }: EntryGateProp
         </div>
 
         <h2 style={{ margin: '0 0 8px', fontSize: '25px', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.25 }}>
-          VERORO 처음이야?
+          VERORO가 처음이신가요?
         </h2>
         <p style={{ margin: '0 0 18px', fontSize: '13.5px', color: VR.muted, lineHeight: 1.55 }}>
-          우리 아이 프로필만 등록하면, 성분을 우리 아이 기준으로 다시 계산해줄게.
+          반려동물 프로필을 등록하면 제품 성분을 우리 아이 기준으로 분석합니다.
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
@@ -85,7 +85,7 @@ export default function EntryGate({ onBrowse, onDismissForLogin }: EntryGateProp
           style={{ padding: '13px', fontWeight: 800, color: VR.sub }}
           onClick={() => onBrowse()}
         >
-          먼저 둘러볼게
+          먼저 둘러보기
         </button>
       </div>
     </div>

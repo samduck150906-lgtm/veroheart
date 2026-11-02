@@ -70,7 +70,7 @@ function classifyResult(
     return {
       factor: 1,
       disposition: 'supported_quantitative',
-      userFacingSummary: '공개된 비교 가능 수치가 검토 기준을 충족해요. 질환의 치료·예방 효과를 뜻하지는 않아요.',
+      userFacingSummary: '공개된 비교 가능 수치가 검토 기준을 충족합니다. 질환의 치료·예방 효과를 뜻하지는 않습니다.',
     };
   }
   if (
@@ -82,7 +82,7 @@ function classifyResult(
     return {
       factor: 0,
       disposition: 'contradictory_quantitative',
-      userFacingSummary: '공개된 비교 가능 수치가 검토 기준을 벗어나 있어 급여 전 확인이 필요해요.',
+      userFacingSummary: '공개된 비교 가능 수치가 검토 기준을 벗어나 있어 급여 전 확인이 필요합니다.',
     };
   }
   if (
@@ -95,7 +95,7 @@ function classifyResult(
     return {
       factor: limitedCredit ? 0.5 : 0.25,
       disposition: limitedCredit ? 'limited_partial_quantitative' : 'neutral_partial_quantitative',
-      userFacingSummary: '일부 수치는 비교할 수 있지만 필요한 정보가 모두 공개되지는 않았어요.',
+      userFacingSummary: '일부 수치는 비교할 수 있지만 필요한 정보가 모두 공개되지는 않았습니다.',
     };
   }
   if (
@@ -108,7 +108,7 @@ function classifyResult(
     return {
       factor: 0.5,
       disposition: 'limited_combined_evidence',
-      userFacingSummary: '관련 태그와 성분은 확인되지만 함량이 없어 제한적으로만 반영해요.',
+      userFacingSummary: '관련 태그와 성분은 확인되지만 함량이 없어 제한적으로만 반영합니다.',
     };
   }
   if (
@@ -120,7 +120,7 @@ function classifyResult(
     return {
       factor: 0.25,
       disposition: 'neutral_tag_only',
-      userFacingSummary: '관련 건강 태그는 있지만 이를 뒷받침할 상세 근거가 부족해 중립으로 반영해요.',
+      userFacingSummary: '관련 건강 태그는 있지만 이를 뒷받침할 상세 근거가 부족해 중립으로 반영합니다.',
     };
   }
   if (
@@ -132,7 +132,7 @@ function classifyResult(
     return {
       factor: 0.25,
       disposition: 'neutral_ingredient_only',
-      userFacingSummary: '관련 성분은 표시되어 있지만 함량과 적합 근거가 부족해 중립으로 반영해요.',
+      userFacingSummary: '관련 성분은 표시되어 있지만 함량과 적합 근거가 부족해 중립으로 반영합니다.',
     };
   }
   if (
@@ -143,7 +143,7 @@ function classifyResult(
     return {
       factor: 0.25,
       disposition: 'neutral_missing_evidence',
-      userFacingSummary: '현재 공개된 정보만으로 이 건강 고민에 대한 적합 여부를 판단하기 어려워요.',
+      userFacingSummary: '현재 공개된 정보만으로 이 건강 고민에 대한 적합 여부를 판단하기 어렵습니다.',
     };
   }
   if (
@@ -154,7 +154,7 @@ function classifyResult(
     return {
       factor: 0.25,
       disposition: 'neutral_not_applicable',
-      userFacingSummary: '현재 프로필이나 제품 유형에는 이 비교 기준을 적용하기 어려워 중립으로 반영해요.',
+      userFacingSummary: '현재 프로필이나 제품 유형에는 이 비교 기준을 적용하기 어려워 중립으로 반영합니다.',
     };
   }
   return null;

@@ -50,20 +50,20 @@ function buildReasons(winner: ComparisonCandidate, runnerUp: ComparisonCandidate
   if (isSaferAllergy(winner, runnerUp)) {
     reasons.push(
       winner.allergyLevel === 'none'
-        ? '알레르기 관련 원료가 확인되지 않았어'
-        : '알레르기 관련 신호가 더 약해',
+        ? '알레르기 관련 원료가 확인되지 않았습니다'
+        : '알레르기 관련 신호가 더 약합니다',
     );
   }
 
   if (winner.dangerCount < runnerUp.dangerCount) {
-    reasons.push(`주의가 필요한 원료가 ${runnerUp.dangerCount - winner.dangerCount}개 적어`);
+    reasons.push(`주의가 필요한 원료가 ${runnerUp.dangerCount - winner.dangerCount}개 적습니다`);
   } else if (winner.dangerCount === runnerUp.dangerCount && winner.cautionCount < runnerUp.cautionCount) {
-    reasons.push(`살펴볼 원료가 ${runnerUp.cautionCount - winner.cautionCount}개 적어`);
+    reasons.push(`살펴볼 원료가 ${runnerUp.cautionCount - winner.cautionCount}개 적습니다`);
   }
 
   const extraConcerns = winner.matchedConcerns.filter((c) => !runnerUp.matchedConcerns.includes(c));
   if (extraConcerns.length > 0) {
-    reasons.push(`${extraConcerns.slice(0, 2).join(', ')} 고민에 더 맞닿아 있어`);
+    reasons.push(`${extraConcerns.slice(0, 2).join(', ')} 고민에 더 맞닿아 있습니다`);
   }
 
   return reasons;

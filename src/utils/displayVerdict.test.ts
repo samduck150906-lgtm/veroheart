@@ -35,6 +35,12 @@ const profile: UserPetProfile = {
 };
 
 describe('resolveProductDisplayVerdict', () => {
+  it('withholds scores for unavailable, partial and stale-ready evidence', () => {
+    for (const input of [product({ ingredients: [] }), product({ ingredients: [], analysisStatus: 'ready' }), product({ analysisStatus: 'ready', unknownIngredientTerms: ['미확인'] })]) {
+      expect(resolveProductDisplayVerdict(input, profile).canShowScore).toBe(false);
+    }
+    expect(resolveProductDisplayVerdict(product(), profile).canShowScore).toBe(true);
+  });
   it('keeps safe product card score aligned with the recommendation score', () => {
     const input = product();
     const breakdown = getRecommendationBreakdown(input, profile);

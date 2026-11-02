@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   checkBarcode,
   computeCheckDigit,
+  equivalentBarcodes,
   findDuplicateBarcodes,
   normalizeBarcode,
   toGtin13,
@@ -72,6 +73,26 @@ describe('바코드 검증', () => {
 
     it('이미 13자리면 그대로 둔다', () => {
       expect(toGtin13('4006381333931')).toBe('4006381333931');
+    });
+  });
+
+  describe('동일 상품 조회용 GTIN', () => {
+    it.each(['036000291452', '0036000291452', '00036000291452'])(
+      '%s matches only its zero-padded UPC/EAN forms', (code) => {
+        expect(equivalentBarcodes(code)).toEqual(['036000291452', '0036000291452', '00036000291452']);
+      },
+    );
+
+    it('preserves a nonzero GTIN-14 packaging indicator', () => {
+      expect(equivalentBarcodes('10012345000017')).toEqual(['10012345000017']);
+      expect(equivalentBarcodes('4006381333931')).toEqual(['4006381333931', '04006381333931']);
+      expect(equivalentBarcodes('96385074')).toEqual(['96385074']);
+    });
+
+    it('does not search using invalid checksums or non-barcode text', () => {
+      expect(equivalentBarcodes('036000291453')).toEqual([]);
+      expect(equivalentBarcodes('https://example.test/036000291452')).toEqual([]);
+      expect(equivalentBarcodes('')).toEqual([]);
     });
   });
 

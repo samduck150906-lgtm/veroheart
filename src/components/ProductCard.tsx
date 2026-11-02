@@ -5,6 +5,7 @@ import { useStore } from '../store/useStore';
 import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import { getProductDisplayParts } from '../utils/productDisplay';
 import ProductVerificationBadge from './ProductVerificationBadge';
+import { describeIngredientAvailability } from '../utils/productDataCompleteness';
 
 type ProductCardProps = {
   product: Product;
@@ -32,12 +33,13 @@ export default function ProductCard({
   grid = false,
 }: ProductCardProps) {
   const { profile, favorites, toggleFavorite } = useStore();
-  const score = resolveProductDisplayVerdict(product, profile).score;
+  const { score, canShowScore } = resolveProductDisplayVerdict(product, profile);
   const isFav = favorites.includes(product.id);
   const petMeta = petTypeMeta(product.targetPetType);
   const display = getProductDisplayParts(product);
 
   const getScoreColor = (s: number) => {
+    if (!canShowScore) return 'var(--text-muted)';
     if (s >= 80) return 'var(--safe)';
     if (s >= 50) return 'var(--warning)';
     return 'var(--danger)';
@@ -182,7 +184,7 @@ export default function ProductCard({
                     fontSize: '12px',
                   }}
                 >
-                  {score}점
+                  {canShowScore ? `${score}점` : describeIngredientAvailability(product).label}
                 </div>
               </div>
             </div>
@@ -282,7 +284,7 @@ export default function ProductCard({
                   fontSize: compact ? '12px' : '14px',
                 }}
               >
-                {score}점
+                {canShowScore ? `${score}점` : describeIngredientAvailability(product).label}
               </div>
             </div>
           </div>

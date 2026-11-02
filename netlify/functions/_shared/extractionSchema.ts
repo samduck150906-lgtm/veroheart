@@ -189,22 +189,57 @@ export function validateExtractedProductLabel(value: unknown): ExtractedProductL
     guaranteedComponents,
     registeredComponents,
     fieldConfidence,
-    printedBarcode,
+    printedBarcode: printedBarcode as string | null,
   };
 }
 
+const nullableText = (maxLength: number) => ({ type: ['string', 'null'], minLength: 1, maxLength });
+const componentSchema = {
+  type: 'object', additionalProperties: false,
+  required: ['name', 'value', 'unit', 'qualifier'],
+  properties: {
+    name: { type: 'string', minLength: 1, maxLength: 200 },
+    value: { type: ['number', 'null'], minimum: 0 },
+    unit: nullableText(30),
+    qualifier: { type: ['string', 'null'], enum: ['min', 'max', 'exact', null] },
+  },
+};
 const RESPONSE_JSON_SCHEMA = {
   type: 'object',
   additionalProperties: false,
   required: [...TOP_LEVEL_KEYS],
   properties: {
-    identity: { type: 'object' },
-    labelPanels: { type: 'object' },
-    ingredients: { type: 'array' },
-    guaranteedComponents: { type: 'array' },
-    registeredComponents: { type: 'array' },
-    fieldConfidence: { type: 'object' },
-    printedBarcode: { type: ['string', 'null'] },
+    identity: {
+      type: 'object', additionalProperties: false, required: [...IDENTITY_KEYS],
+      properties: {
+        name: { type: 'string', minLength: 1, maxLength: 500 },
+        brand: nullableText(200), manufacturer: nullableText(300),
+        species: { type: ['string', 'null'], enum: ['dog', 'cat', 'all', null] },
+        productType: { type: ['string', 'null'], enum: ['food', 'treat', 'supplement', null] },
+        variantName: nullableText(200), netWeightText: nullableText(100),
+      },
+    },
+    labelPanels: {
+      type: 'object', additionalProperties: false, required: [...PANEL_KEYS],
+      properties: Object.fromEntries(PANEL_KEYS.map((key) => [key, nullableText(10_000)])),
+    },
+    ingredients: {
+      type: 'array', maxItems: 200,
+      items: {
+        type: 'object', additionalProperties: false, required: ['position', 'name'],
+        properties: {
+          position: { type: 'integer', minimum: 1, maximum: 200 },
+          name: { type: 'string', minLength: 1, maxLength: 200 },
+        },
+      },
+    },
+    guaranteedComponents: { type: 'array', maxItems: 100, items: componentSchema },
+    registeredComponents: { type: 'array', maxItems: 100, items: componentSchema },
+    fieldConfidence: {
+      type: 'object', additionalProperties: false, required: [...CONFIDENCE_KEYS],
+      properties: Object.fromEntries(CONFIDENCE_KEYS.map((key) => [key, { type: 'number', minimum: 0, maximum: 1 }])),
+    },
+    printedBarcode: { type: ['string', 'null'], pattern: '^\\d{8,14}$' },
   },
 };
 
@@ -214,6 +249,7 @@ const SYSTEM_INSTRUCTION = [
   '위험도, 안전 판정, 알레르기 판정, 추천, 점수는 생성하지 않는다.',
   '보이지 않거나 불확실한 값은 추측하지 말고 null 또는 빈 배열로 둔다.',
   '원재료는 표시된 순서를 그대로 유지한다.',
+  'ingredients.position은 1부터 시작하는 연속 정수다. 보충제가 아니면 원재료를 적어도 하나 읽어야 하며 읽을 수 없는 경우 추측하지 않는다.',
 ].join(' ');
 
 export function buildExtractionRequest(imageUrls: string[], externalContext?: unknown) {
@@ -223,7 +259,10 @@ export function buildExtractionRequest(imageUrls: string[], externalContext?: un
       role: 'user',
       parts: [
         { text: `반려동물 제품 라벨 사실을 JSON으로 추출하세요. 외부 참고값: ${JSON.stringify(externalContext ?? null)}` },
-        ...imageUrls.map((url) => ({ fileData: { fileUri: url, mimeType: 'image/webp' } })),
+        ...imageUrls.map((url) => ({ fileData: {
+          fileUri: url,
+          mimeType: /\.jpe?g(?:\?|$)/i.test(url) ? 'image/jpeg' : /\.png(?:\?|$)/i.test(url) ? 'image/png' : 'image/webp',
+        } })),
       ],
     }],
     config: {

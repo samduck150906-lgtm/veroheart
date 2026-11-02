@@ -92,17 +92,16 @@ for (const id of targetIds) {
   const path = `${row.user_id}/backfill-${row.id}.${parsed.ext}`;
   const { error: upErr } = await supabase.storage
     .from(BUCKET)
-    .upload(path, parsed.buffer, { contentType: parsed.mime, upsert: true, cacheControl: '31536000' });
+    .upload(path, parsed.buffer, { contentType: parsed.mime, upsert: true, cacheControl: '0' });
   if (upErr) {
     console.error(`업로드 실패 log=${id}:`, upErr.message);
     failed += 1;
     continue;
   }
 
-  const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(path);
   const { error: updErr } = await supabase
     .from('pet_feeding_logs')
-    .update({ image_url: pub.publicUrl })
+    .update({ image_url: path })
     .eq('id', id);
   if (updErr) {
     console.error(`URL 갱신 실패 log=${id}:`, updErr.message);

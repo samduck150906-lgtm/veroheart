@@ -2,7 +2,7 @@ import type { Config, Context } from '@netlify/functions';
 
 import { normalizeBarcode } from '../../src/lib/productIdentity';
 import { digestRateLimitKey } from './_shared/auth';
-import { jsonResponse, readJsonObject } from './_shared/http';
+import { withScanCors, jsonResponse, readJsonObject } from './_shared/http';
 import {
   createDefaultScanDependencies,
   type ScanEndpointContext,
@@ -19,7 +19,7 @@ function rateWindow(now: Date) {
 }
 
 export function createScanCreateHandler(injected?: ScanEndpointDependencies): Handler {
-  return async (request, context) => {
+  return withScanCors(async (request, context) => {
     if (request.method !== 'POST') return jsonResponse(405, { code: 'method_not_allowed' });
     try {
       const deps = injected ?? createDefaultScanDependencies();
@@ -66,7 +66,7 @@ export function createScanCreateHandler(injected?: ScanEndpointDependencies): Ha
     } catch {
       return jsonResponse(503, { code: 'scan_unavailable' });
     }
-  };
+  });
 }
 
 export default async function scanCreate(request: Request, context: Context): Promise<Response> {

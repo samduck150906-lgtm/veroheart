@@ -45,6 +45,18 @@ describe('product metadata edge function', () => {
     expect(html).toContain('/product/11111111-1111-1111-1111-111111111111/%EC%98%A4%EB%A6%AC%EC%A0%A0-%EC%98%A4%EB%A6%AC%EC%A7%80%EB%84%90-%EB%8F%85');
     expect(html).toContain('"@type":"Product"');
     expect(html).not.toContain('무료배송');
+    const calledUrl = new URL(String(vi.mocked(fetch).mock.calls[0][0]));
+    expect(calledUrl.searchParams.get('verification_status')).toBe('in.(reviewed,verified)');
+    expect(response.headers.get('cache-control')).toBe('no-store');
+  });
+
+  it.each(['pending', null, 'unknown'])('does not publish metadata for status %s even if returned upstream', async status => {
+    vi.stubGlobal('Netlify', edgeEnvironment);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify([{
+      id: '11111111-1111-1111-1111-111111111111', name: '검수 전 제품', verification_status: status,
+    }]), { status: 200 })));
+    const response = await handler(request, { next: async () => htmlResponse() });
+    expect(await response.text()).toBe(SHELL);
   });
 
   it.each([

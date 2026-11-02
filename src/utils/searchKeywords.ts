@@ -1,4 +1,5 @@
 import type { Product } from '../types';
+import { deriveBrandOptions } from './searchSuggestions';
 
 /**
  * 탐색 화면의 추천 키워드.
@@ -37,7 +38,7 @@ export function productMatchesKeyword(product: Product, keyword: string): boolea
   const needle = keyword.trim().toLowerCase();
   if (!needle) return false;
 
-  if (contains(product.name, needle) || contains(product.brand, needle)) return true;
+  if (contains(product.displayName, needle) || contains(product.name, needle) || contains(product.brand, needle)) return true;
   return (product.ingredients ?? []).some(
     (ingredient) => contains(ingredient.nameKo, needle) || contains(ingredient.nameEn, needle),
   );
@@ -50,15 +51,22 @@ export function countKeywordMatches(products: Product[], keyword: string): numbe
 /**
  * 실제로 결과가 있는 키워드만 남긴다.
  *
- * 제품 목록이 아직 안 실렸을 때(첫 진입 직후)는 전부 보여준다. 로딩 때문에 칩이
- * 사라졌다가 나타나면 오히려 더 어색하다.
+ * 제품을 아직 받지 못했을 때는 근거 없는 키워드를 추천하지 않는다.
  */
 export function visibleSymptomKeywords(
   products: Product[],
   keywords: readonly string[] = SYMPTOM_KEYWORDS,
 ): string[] {
-  if (products.length === 0) return [...keywords];
   return keywords.filter((keyword) => countKeywordMatches(products, keyword) > 0);
+}
+
+/** Browse keywords remain useful even when product health tags are sparse. */
+export function recommendedSearchKeywords(products: Product[], limit = 8): string[] {
+  return [...new Set([
+    ...visibleSymptomKeywords(products).slice(0, 4),
+    ...deriveBrandOptions(products, 4),
+    ...products.map(product => product.displayName?.trim() || product.name.trim()).filter(Boolean),
+  ])].slice(0, limit);
 }
 
 /**

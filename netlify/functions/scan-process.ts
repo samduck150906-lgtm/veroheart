@@ -1,3 +1,4 @@
+import { createHmac, randomUUID } from 'node:crypto';
 import type { Config, Context } from '@netlify/functions';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -8,9 +9,9 @@ import {
   extractProductLabelFromImages,
   type ExtractedProductLabelResult,
 } from './_shared/extractionSchema';
-import { jsonResponse, readJsonObject } from './_shared/http';
+import { withScanCors, jsonResponse, readJsonObject } from './_shared/http';
 import { lookupOpenPetFoodFacts } from './_shared/openPetFoodFacts';
-import { getSupabaseServerClient } from './_shared/supabaseServer';
+import { environmentValue, getSupabaseServerClient } from './_shared/supabaseServer';
 
 export const EXTRACTION_VERSION = 'community-label-v1';
 
@@ -20,11 +21,12 @@ interface ScanImagePaths {
   nutrition: string[];
 }
 
-interface ClaimedSubmission {
+export interface ClaimedSubmission {
   id: string;
   userId: string;
   scannedBarcode: string | null;
   imagePaths: ScanImagePaths;
+  extractionVersion: string;
 }
 
 type ClaimResult =
@@ -55,6 +57,7 @@ export interface ScanProcessingRepository {
 
 export interface ScanProcessDependencies {
   authenticate(request: Request): Promise<string | null>;
+  dispatch?(submission: ClaimedSubmission, request: Request): Promise<void>;
   repository: ScanProcessingRepository;
   lookupExternal(barcode: string): Promise<unknown>;
   extract(imageUrls: string[], externalContext?: unknown): Promise<ExtractedProductLabelResult>;
@@ -76,7 +79,7 @@ function validatePhotoPaths(value: unknown, userId: string, submissionId: string
     const paths = root[category];
     if (!Array.isArray(paths) || paths.length < 1 || paths.length > 10) return null;
     const pattern = new RegExp(
-      `^${userId}/${submissionId}/${category}/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\\.webp$`,
+      `^${userId}/${submissionId}/${category}/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\\.(webp|jpg|png)$`,
       'i',
     );
     if (!paths.every((path) => typeof path === 'string' && pattern.test(path))) return null;
@@ -118,14 +121,14 @@ export function createScanProcessingRepository(client: SupabaseClient): ScanProc
     },
 
     async complete(input) {
-      const { error } = await client.rpc('complete_scan_extraction', {
+      const { data, error } = await client.rpc('complete_scan_extraction', {
         p_submission_id: input.submissionId,
         p_extraction_version: input.extractionVersion,
         p_extraction: input.extraction,
         p_external_observation: input.externalObservation,
         p_warning_code: input.warningCode,
       });
-      if (error) throw new Error('complete_failed');
+      if (error || data !== true) throw new Error('complete_failed');
     },
 
     async fail(submissionId, extractionVersion, errorCode) {
@@ -139,11 +142,12 @@ export function createScanProcessingRepository(client: SupabaseClient): ScanProc
   };
 }
 
-function createDefaultDependencies(): ScanProcessDependencies {
+export function createDefaultDependencies(): ScanProcessDependencies {
   const client = getSupabaseServerClient();
   return {
     authenticate: (request) => authenticateRequest(request, client),
     repository: createScanProcessingRepository(client),
+    dispatch: dispatchScanWorker,
     lookupExternal: lookupOpenPetFoodFacts,
     extract: extractProductLabelFromImages,
   };
@@ -152,7 +156,7 @@ function createDefaultDependencies(): ScanProcessDependencies {
 type Handler = (request: Request, context?: Context) => Promise<Response>;
 
 export function createScanProcessHandler(injected?: ScanProcessDependencies): Handler {
-  return async (request) => {
+  return withScanCors(async (request) => {
     if (request.method !== 'POST') return jsonResponse(405, { code: 'method_not_allowed' });
     let deps: ScanProcessDependencies;
     try {
@@ -170,8 +174,9 @@ export function createScanProcessHandler(injected?: ScanProcessDependencies): Ha
     if (!submissionId || !photoPaths) return jsonResponse(400, { code: 'invalid_request' });
 
     let claim: ClaimResult;
+    const extractionVersion = `${EXTRACTION_VERSION}:${randomUUID()}`;
     try {
-      claim = await deps.repository.claim(submissionId, userId, photoPaths, EXTRACTION_VERSION);
+      claim = await deps.repository.claim(submissionId, userId, photoPaths, extractionVersion);
     } catch {
       return jsonResponse(503, { code: 'scan_unavailable' });
     }
@@ -181,47 +186,15 @@ export function createScanProcessHandler(injected?: ScanProcessDependencies): Ha
     }
 
     try {
-      let externalObservation: unknown = { found: false };
-      if (claim.submission.scannedBarcode) {
-        try {
-          externalObservation = await deps.lookupExternal(claim.submission.scannedBarcode);
-        } catch {
-          externalObservation = { found: false };
-        }
-      }
-      const imageUrls = await deps.repository.createSignedReadUrls(claim.submission.imagePaths);
-      const extraction = await deps.extract(imageUrls, externalObservation);
-      const scannedBarcode = claim.submission.scannedBarcode
-        ? normalizeBarcode(claim.submission.scannedBarcode)
-        : null;
-      const printedBarcode = extraction.printedBarcode
-        ? normalizeBarcode(extraction.printedBarcode)
-        : null;
-      const warningCode = extraction.printedBarcode && !printedBarcode
-        ? 'printed_barcode_invalid'
-        : scannedBarcode && printedBarcode && scannedBarcode !== printedBarcode
-          ? 'barcode_conflict'
-          : null;
-      await deps.repository.complete({
-        submissionId,
-        extractionVersion: EXTRACTION_VERSION,
-        extraction,
-        externalObservation,
-        warningCode,
-      });
-    } catch (error) {
-      const code = error instanceof ExtractionValidationError
-        ? 'invalid_extraction'
-        : 'extraction_failed';
-      try {
-        await deps.repository.fail(submissionId, EXTRACTION_VERSION, code);
-      } catch {
-        // The background retry remains safe because claim/complete are idempotent.
-      }
+      if (deps.dispatch) await deps.dispatch(claim.submission, request);
+      else await processClaimedScan(deps, claim.submission);
+    } catch {
+      await deps.repository.fail(submissionId, claim.submission.extractionVersion, 'dispatch_failed');
+      return jsonResponse(503, { code: 'scan_unavailable' });
     }
 
     return jsonResponse(202, { status: 'processing' });
-  };
+  });
 }
 
 export default async function scanProcess(request: Request, context: Context): Promise<Response> {
@@ -230,6 +203,60 @@ export default async function scanProcess(request: Request, context: Context): P
 
 export const config: Config = {
   path: '/api/scans/:id/process',
-  method: 'POST',
-  background: true,
+  method: ['POST', 'OPTIONS'],
 };
+
+export async function processClaimedScan(deps: ScanProcessDependencies, submission: ClaimedSubmission): Promise<void> {
+  try {
+    let externalObservation: unknown = { found: false };
+    if (submission.scannedBarcode) {
+      try {
+        externalObservation = await deps.lookupExternal(submission.scannedBarcode);
+      } catch {
+        externalObservation = { found: false };
+      }
+    }
+    const imageUrls = await deps.repository.createSignedReadUrls(submission.imagePaths);
+    const extraction = await deps.extract(imageUrls, externalObservation);
+    const scannedBarcode = submission.scannedBarcode
+      ? normalizeBarcode(submission.scannedBarcode)
+      : null;
+    const printedBarcode = extraction.printedBarcode
+      ? normalizeBarcode(extraction.printedBarcode)
+      : null;
+    const warningCode = extraction.printedBarcode && !printedBarcode
+      ? 'printed_barcode_invalid'
+      : scannedBarcode && printedBarcode && scannedBarcode !== printedBarcode
+        ? 'barcode_conflict'
+        : null;
+    await deps.repository.complete({
+      submissionId: submission.id,
+      extractionVersion: submission.extractionVersion,
+      extraction,
+      externalObservation,
+      warningCode,
+    });
+  } catch (error) {
+    const code = error instanceof ExtractionValidationError
+      ? 'invalid_extraction'
+      : 'extraction_failed';
+    try {
+      await deps.repository.fail(submission.id, submission.extractionVersion, code);
+    } catch {
+      // The background retry remains safe because claim/complete are idempotent.
+    }
+  }
+
+}
+
+async function dispatchScanWorker(submission: ClaimedSubmission, request: Request): Promise<void> {
+  const secret = environmentValue('SCAN_RATE_LIMIT_SECRET');
+  if (!secret) throw new Error('worker_secret_required');
+  const body = JSON.stringify({ submission, issuedAt: Date.now() });
+  const signature = createHmac('sha256', secret).update(body).digest('hex');
+  const response = await fetch(new URL('/.netlify/functions/scan-extract-worker', request.url), {
+    method: 'POST', headers: { 'content-type': 'application/json', 'x-scan-signature': signature }, body,
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (response.status !== 202) throw new Error('worker_dispatch_failed');
+}

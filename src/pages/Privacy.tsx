@@ -1,38 +1,32 @@
+import { Link } from 'react-router-dom';
 import { COMPANY } from '../constants/companyInfo';
+import { PRIVACY_CONTACT, PRIVACY_VERSION } from '../constants/privacyInfo';
 
 export default function Privacy() {
-  return (
-    <div style={{ padding: '18px 2px 40px', lineHeight: 1.7 }}>
-      <h1 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '8px' }}>VeRoRo(베로로) 개인정보처리방침</h1>
-      <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '20px' }}>시행일: 2026년 4월 12일</p>
-
-      <div style={{ fontSize: '13px', color: '#374151' }}>
-        <p style={{ fontWeight: 'bold', marginBottom: '8px' }}>사업자 정보</p>
-        <p style={{ marginBottom: '16px', fontSize: '12px', color: '#4B5563' }}>
-          상호 {COMPANY.tradeName}
-          <br />
-          대표자 {COMPANY.representative}
-          <br />
-          사업자등록번호 {COMPANY.bizRegNo}
-          <br />
-          연락처 {COMPANY.phone}
-          <br />
-          주소 {COMPANY.address}
-          <br />
-          이메일 {COMPANY.email}
-        </p>
-
-        <p>{COMPANY.tradeName}(이하 "회사")는 VeRoRo 서비스 운영과 관련하여 「개인정보 보호법」 등 관련 법령상의 개인정보보호 규정을 준수하며, 정보주체의 개인정보 보호 및 권익을 보호하고 이와 관련한 고충을 신속하고 원활하게 처리할 수 있도록 개인정보 처리방침을 수립·공개합니다.</p>
-        
-        <p style={{ fontWeight: 'bold', marginTop: '16px' }}>1. 개인정보의 수집 및 이용 목적</p>
-        <p>회사는 다음의 목적을 위하여 개인정보를 처리합니다. <br/>- 회원 가입 및 관리 <br/>- 재화 또는 서비스 제공(결제, 배송 등)</p>
-        
-        <p style={{ fontWeight: 'bold', marginTop: '16px' }}>2. 수집하는 개인정보 항목</p>
-        <p>회사는 서비스 제공을 위해 아래의 개인정보를 수집합니다. <br/>- 필수항목: 성명, 연락처, 이메일, 배송지 주소, 결제정보</p>
-        
-        <p style={{ fontWeight: 'bold', marginTop: '16px' }}>3. 개인정보의 보유 및 이용기간</p>
-        <p>회사는 법령에 따른 보존기간 또는 정보주체로부터 수집 시 동의받은 기간 내에서 개인정보를 보유·이용합니다. 전자상거래 등에서의 소비자 보호에 관한 법률 등 법령 기준에 따릅니다.</p>
-      </div>
-    </div>
-  );
+  return <article style={{ padding: '20px 4px 48px', lineHeight: 1.8, fontSize: 14 }}>
+    <h1 style={{ fontSize: 23 }}>VeRoRo 개인정보 처리방침</h1>
+    <p>개정일: {PRIVACY_VERSION}</p>
+    <p>운영자: {COMPANY.tradeName} · 대표 {COMPANY.representative}<br />사업자등록번호 {COMPANY.bizRegNo}<br />{COMPANY.address}<br />개인정보 문의: <a href={`mailto:${PRIVACY_CONTACT}`}>{PRIVACY_CONTACT}</a> · {COMPANY.phone}</p>
+    <h2>수집 항목과 이용 목적</h2>
+    <ul>
+      <li>계정: 이메일, 인증 정보, 닉네임, 가입·접속 시각. 회원 가입, 로그인, 본인 확인과 고객 지원에 사용합니다. 카카오 로그인을 선택하면 해당 서비스가 동의 화면에서 안내한 계정 식별 정보를 인증에 이용합니다.</li>
+      <li>선택한 반려동물 정보: 이름, 종, 나이대, 몸무게, 품종, 알레르기·건강 고민 및 프로필 사진. 제품 정보의 개인화와 반려동물 관리에 사용합니다.</li>
+      <li>식이 다이어리: 제품명, 날짜·시간, 급여량, 기호도, 메모·반응 및 선택한 사진. 본인의 급여 기록을 저장하고 조회하는 데 사용합니다.</li>
+      <li>앱 활동: 저장한 제품, 최근 본 제품, 별점, 제품 등록 요청. 저장·조회 기능과 제품 목록 개선에 사용합니다. 공개 평가는 숫자 별점으로 제공하며 기존 자유 서술 후기는 공개하지 않습니다.</li>
+      <li>라벨 스캔: 사용자가 선택한 제품 사진, 바코드, 추출·확인한 라벨 문구, 제출 상태. 제품 라벨 인식, 오류 확인 및 제품 정보 등록에 사용합니다. 공개된 제품 정보에는 라벨에서 확인한 제품 정보가 포함될 수 있습니다.</li>
+      <li>운영 정보: 서버 요청·오류 기록, 접속 IP 및 요청 제한을 위한 식별값. 보안, 남용 방지, 장애 대응에 사용합니다.</li>
+    </ul>
+    <p>현재 제품 검색·분석 서비스는 주문, 결제정보 또는 배송지 입력을 요구하지 않습니다. 사진과 메모에 사람의 얼굴, 연락처 등 불필요한 개인정보를 넣지 마세요.</p>
+    <h2>처리 서비스와 사진 전송</h2>
+    <p>Supabase는 로그인, 데이터베이스와 사진 저장에 사용하고, Netlify는 웹 제공 및 서버 요청 처리에 사용합니다. 제품 라벨 인식을 실행하면 선택한 라벨 사진과 인식 요청이 Google Gemini API로 전송됩니다. 일반 다이어리 사진을 라벨 AI에 보내는 기능은 없습니다. 앱 운영자는 지원과 데이터 관리에 필요한 범위에서 저장 정보를 조회할 수 있습니다.</p>
+    <p>AI 제공자의 데이터 사용·보존 조건은 이용 요금제와 계약에 따라 다를 수 있습니다. 제공자의 저장 지역, 백업·운영 로그 보존 기간 등은 운영 환경의 계약·설정에 따릅니다. 자세한 내용은 문의처로 요청할 수 있습니다. <a href="https://supabase.com/privacy">Supabase 개인정보 안내</a>, <a href="https://www.netlify.com/privacy/">Netlify 개인정보 안내</a>, <a href="https://ai.google.dev/gemini-api/terms">Google Gemini API 데이터 이용 조건</a>을 확인할 수 있습니다.</p>
+    <h2>보관과 삭제</h2>
+    <p>계정, 반려동물 정보, 다이어리, 사진, 저장한 제품 및 본인 제출 기록은 해당 항목이나 계정을 삭제할 때까지 서비스 제공을 위해 보관합니다. 사진 교체·기록 삭제 시 이전 사진도 정리하며, 저장소 오류가 나면 삭제 대기 목록에 남겨 재시도합니다. 다이어리 사진은 로그인한 소유자용 임시 접근 주소로 제공됩니다. 삭제된 사진이 오래된 편집 화면에서 다시 연결되지 않도록 사진 경로와 삭제 처리 시각은 계정 삭제까지 보관하며, 이 삭제 기록에는 사진 원본이 포함되지 않습니다.</p>
+    <p>제품 스캔 원본 사진은 마지막 상태 변경·업로드 활동 후 30일을 기준으로 정리 작업의 대상이 됩니다. 완료한 제출뿐 아니라 중단한 초안·업로드·확인 대기 및 실패한 제출도 포함합니다. 저장소 오류로 정리가 실패한 사진은 재시도가 완료될 때까지 남을 수 있습니다. 이미 공개 카탈로그에 반영된 제품 정보는 계정과 분리하여 계속 제공할 수 있습니다.</p>
+    <p>계정 삭제는 저장된 본인 사진을 먼저 정리한 뒤 로그인 계정과 연결된 데이터를 삭제합니다. 일부 정리가 실패하면 완료로 표시하지 않고 재시도할 수 있도록 계정을 남깁니다. 서비스 제공자의 백업·보안 기록과 고객 문의 기록에 대해서는 실제 보존 설정 및 적용되는 의무를 확인하여 삭제 요청을 처리합니다.</p>
+    <h2>접근·수정·삭제 요청</h2>
+    <p>마이페이지에서 프로필과 다이어리를 수정·삭제할 수 있습니다. 앱과 웹의 <Link to="/account/delete">계정 및 데이터 삭제</Link> 페이지에서 본인 인증 후 계정을 삭제할 수 있습니다. 자료 열람·정정·삭제 또는 문의는 <a href={`mailto:${PRIVACY_CONTACT}`}>{PRIVACY_CONTACT}</a>으로 요청해 주세요. 비밀번호를 보내지 마세요.</p>
+    <h2>기기 권한과 로그인 저장</h2>
+    <p>카메라는 바코드·라벨 촬영을 선택했을 때 사용하며, 사진은 직접 선택한 파일을 업로드합니다. 기기 설정에서 권한을 해제할 수 있습니다. 로그인 유지에 필요한 세션 정보와 화면 설정은 기기에 저장됩니다. 공용 기기에서는 이용 후 로그아웃해 주세요.</p>
+  </article>;
 }

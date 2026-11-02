@@ -76,11 +76,13 @@ async function loadHandler() {
     }).outputText, { context, identifier: path });
   }
   const validation = await sourceModule('supabase/functions/admin-write/validation.ts');
+  const accountStorage = await sourceModule('supabase/functions/_shared/accountStorage.ts');
   const edge = await sourceModule('supabase/functions/admin-write/index.ts');
   await edge.link((specifier) => {
     if (specifier === 'https://deno.land/std@0.168.0/http/server.ts') return http;
     if (specifier === 'https://esm.sh/@supabase/supabase-js@2.39.0') return supabase;
     if (specifier === './validation.ts') return validation;
+    if (specifier === '../_shared/accountStorage.ts') return accountStorage;
     throw new Error(`Unexpected module: ${specifier}`);
   });
   await edge.evaluate();

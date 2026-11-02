@@ -66,11 +66,11 @@ export function WaitlistForm() {
         <CheckIcon className="h-6 w-6 text-safe-deep" />
         <p className="text-base font-bold text-ink-950">
           {status === "duplicate"
-            ? "이미 신청해 주셨어요. 감사해요!"
-            : "출시 알림 신청이 완료됐어요."}
+            ? "이미 신청하셨습니다. 감사합니다."
+            : "출시 알림 신청이 완료되었습니다."}
         </p>
         <p className="max-w-xs text-sm leading-relaxed text-ink-700">
-          정식 출시와 베타테스트 모집 소식을 가장 먼저 전해 드릴게요.
+          정식 출시와 베타테스트 모집 소식을 가장 먼저 전해 드립니다.
         </p>
       </div>
     );
@@ -146,7 +146,7 @@ export function WaitlistForm() {
         </label>
         {fieldError === "privacy" && (
           <p id="waitlist-privacy-error" className="pl-[26px] text-xs font-medium text-risk-deep">
-            개인정보 수집·이용에 동의해 주셔야 신청할 수 있어요.
+            개인정보 수집·이용에 동의해야 신청할 수 있습니다.
           </p>
         )}
         <label className="flex items-start gap-2.5 text-sm text-ink-900">
