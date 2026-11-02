@@ -22,7 +22,7 @@ export default function ProductRow({ product }: ProductRowProps) {
   const { profile, favorites, toggleFavorite, isLoggedIn } = useStore();
   const hasPetProfile = isLoggedIn && isRealPetProfile(profile);
 
-  const { score, grade, canShowScore } = resolveProductDisplayVerdict(product, hasPetProfile ? profile : DEFAULT_USER_PET_PROFILE);
+  const { score, grade, canShowScore, nutrition } = resolveProductDisplayVerdict(product, hasPetProfile ? profile : DEFAULT_USER_PET_PROFILE);
   const palette = canShowScore ? gradePalette(grade) : { fg: 'var(--text-muted)', bg: 'var(--vr-soft)' };
   const isFav = favorites.includes(product.id);
   const petName = profile.name || '우리 아이';
@@ -47,7 +47,7 @@ export default function ProductRow({ product }: ProductRowProps) {
           onClick={open}
           style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', padding: 0, cursor: 'pointer' }}
         >
-          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px' }}>
             {display.brand && (
               <span style={{ fontSize: '11.5px', color: VR.sub, fontWeight: 700 }}>{display.brand}</span>
             )}
@@ -57,7 +57,7 @@ export default function ProductRow({ product }: ProductRowProps) {
                 color: palette.fg, background: palette.bg,
               }}
             >
-              {canShowScore ? `${hasPetProfile ? '' : '원료 '}${grade} ${score}` : describeIngredientAvailability(product).label}
+              {canShowScore ? `${nutrition.limited ? `${nutrition.scopeLabel} ` : hasPetProfile ? '' : '원료 '}${grade} ${score}` : describeIngredientAvailability(product).label}
             </span>
           </span>
           <span style={{
@@ -99,9 +99,10 @@ export default function ProductRow({ product }: ProductRowProps) {
             {isFav ? '찜 해제' : '찜'}
           </button>
           {hasPetProfile && <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--safe-strong)', marginLeft: 'auto' }}>
-            {canShowScore ? fitShortLabel(score, petName) : '원료 확인 필요'}
+            {canShowScore ? nutrition.limited ? `${nutrition.scopeLabel} ${score}점` : fitShortLabel(score, petName) : '원료 확인 필요'}
           </span>}
         </div>
+        {canShowScore && nutrition.limited && <p style={{ margin: '6px 0 0', fontSize: 11.5, lineHeight: 1.5, color: VR.sub }}>{nutrition.notice}</p>}
         {!hasPetProfile && <div style={{ marginTop: 8 }}><PetCompatibilityPrompt compact /></div>}
       </div>
     </div>

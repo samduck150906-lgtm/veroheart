@@ -33,7 +33,7 @@ export default function ProductCard({
   grid = false,
 }: ProductCardProps) {
   const { profile, favorites, toggleFavorite } = useStore();
-  const { score, canShowScore } = resolveProductDisplayVerdict(product, profile);
+  const { score, canShowScore, nutrition } = resolveProductDisplayVerdict(product, profile);
   const isFav = favorites.includes(product.id);
   const petMeta = petTypeMeta(product.targetPetType);
   const display = getProductDisplayParts(product);
@@ -184,9 +184,10 @@ export default function ProductCard({
                     fontSize: '12px',
                   }}
                 >
-                  {canShowScore ? `${score}점` : describeIngredientAvailability(product).label}
+                  {canShowScore ? `${nutrition.limited ? `${nutrition.scopeLabel} ` : ''}${score}점` : describeIngredientAvailability(product).label}
                 </div>
               </div>
+              {canShowScore && nutrition.limited && <p style={{ margin: '6px 0 0', fontSize: 11, lineHeight: 1.5, color: 'var(--text-muted)', overflowWrap: 'anywhere' }}>{nutrition.notice}</p>}
             </div>
           </div>
         </Link>
@@ -231,7 +232,7 @@ export default function ProductCard({
           {petBadge(true)}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: 1, paddingRight: '30px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: 1, minWidth: 0, paddingRight: '30px' }}>
           <div>
             {display.brand && (
               <div style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: 600 }}>{display.brand}</div>
@@ -284,10 +285,11 @@ export default function ProductCard({
                   fontSize: compact ? '12px' : '14px',
                 }}
               >
-                {canShowScore ? `${score}점` : describeIngredientAvailability(product).label}
+                {canShowScore ? `${nutrition.limited ? `${nutrition.scopeLabel} ` : ''}${score}점` : describeIngredientAvailability(product).label}
               </div>
             </div>
           </div>
+          {canShowScore && nutrition.limited && <p style={{ margin: '6px 0 0', fontSize: 11, lineHeight: 1.5, color: 'var(--text-muted)', overflowWrap: 'anywhere' }}>{nutrition.notice}</p>}
         </div>
       </Link>
 

@@ -1,6 +1,7 @@
 import type { Product, UserPetProfile } from '../types';
 import type { AllergyRelationshipMatch } from '../analysis/allergyFamilyMatcher';
 import { getCompatibilityBreakdown } from './score';
+import { getNutritionPresentation } from '../analysis/nutritionReadiness';
 
 export interface AnalysisReport {
   score: number;
@@ -46,6 +47,7 @@ export function generateAnalysisReport(product: Product, profile: UserPetProfile
     .filter((ingredient) => ingredient.riskLevel === 'caution')
     .map((ingredient) => ingredient.nameKo);
   const allergyCaution = allergyCautionText(compatibility.allergyCautions);
+  const nutrition = getNutritionPresentation(product.guaranteedAnalysis);
 
   const highlights: { text: string; type: 'positive' | 'negative' | 'caution' }[] = [];
 
@@ -107,6 +109,16 @@ export function generateAnalysisReport(product: Product, profile: UserPetProfile
   } else if (compatibility.total < 50) {
     grade = 'Poor';
     summary = '급여 전 성분과 건강 조건을 다시 확인하는 편이 좋습니다.';
+  }
+  if (!compatibility.speciesMismatch && compatibility.allergyHits.length === 0 && !allergyCaution && dangerIngredients.length > 0) {
+    summary = `위험 성분 ${dangerIngredients.join(', ')}이 확인돼 급여 전 확인이 필요합니다.`;
+  }
+  if (nutrition.limited) {
+    highlights.push({ text: nutrition.notice, type: 'caution' });
+    if (!compatibility.speciesMismatch && compatibility.allergyHits.length === 0 && !allergyCaution && dangerIngredients.length === 0) {
+      summary = `${nutrition.scopeLabel} 점수입니다.`;
+    }
+    summary = `${summary} ${nutrition.notice}`;
   }
 
   return {

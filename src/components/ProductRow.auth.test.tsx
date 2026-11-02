@@ -10,6 +10,7 @@ const product: Product = {
   id: 'food', name: '닭고기 사료', brand: '브랜드', category: 'food', targetPetType: 'dog',
   imageUrl: '', reviewsCount: 0, averageRating: 0, analysisStatus: 'ready',
   ingredients: [{ id: 'chicken', nameKo: '닭고기', nameEn: 'chicken', purpose: '', riskLevel: 'safe' }],
+  guaranteedAnalysis: { crudeProtein: 30, crudeFat: 15, crudeFiber: 3, crudeAsh: 8, moisture: 10 },
 };
 afterEach(cleanup);
 

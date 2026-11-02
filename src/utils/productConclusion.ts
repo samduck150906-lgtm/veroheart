@@ -1,6 +1,7 @@
 import type { Product, UserPetProfile } from '../types';
 import type { AnalysisReport } from './analysis';
 import { countAllergyCautions, countAllergyHits } from './score';
+import { getNutritionPresentation, isObservedPercent } from '../analysis/nutritionReadiness';
 
 export type ConclusionTone = 'match' | 'caution' | 'alert';
 
@@ -105,7 +106,7 @@ export function buildProductConclusion(
   const guaranteedAnalysis = product.guaranteedAnalysis;
   const hasNutrition = Boolean(
     guaranteedAnalysis &&
-      ((guaranteedAnalysis.crudeProtein ?? 0) > 0 || (guaranteedAnalysis.crudeFat ?? 0) > 0),
+      [guaranteedAnalysis.crudeProtein, guaranteedAnalysis.crudeFat].some(isObservedPercent),
   );
   if (!hasIngredients && !hasNutrition) {
     return {
@@ -116,6 +117,10 @@ export function buildProductConclusion(
   }
 
   // 5) 제품 기본 평가 — 성분·건강·고민 적합도 통합 점수
+  const nutrition = getNutritionPresentation(product.guaranteedAnalysis);
+  if (nutrition.limited) {
+    return { tone: 'caution', headline: `${nutrition.scopeLabel} 점수입니다`, subline: nutrition.notice };
+  }
   const score = report?.score ?? 0;
   if (score >= 85) {
     return {

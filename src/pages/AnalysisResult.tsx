@@ -64,11 +64,13 @@ function ReportHero({
   grade,
   productName,
   headline,
+  scopeLabel,
 }: {
   score: number;
   grade: CompatibilityGrade;
   productName: string;
   headline: string;
+  scopeLabel: string;
 }) {
   const r = 50;
   const circumference = 2 * Math.PI * r; // ≈314 — 프로토타입 stroke-dasharray와 동일
@@ -77,6 +79,7 @@ function ReportHero({
   return (
     <div className="vr-bleed" style={{ background: 'var(--vr-inverse)', padding: '24px 16px 28px', color: 'var(--vr-on-inverse)' }}>
       <div style={{ fontSize: 12.5, fontWeight: 800, color: '#FFD90A', letterSpacing: '.05em' }}>분석 리포트</div>
+      <div style={{ fontSize: 12.5, lineHeight: 1.5 }}>{scopeLabel} 등급 · 종합 영양 적합성 보장 아님</div>
       <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: '-.03em', marginTop: 5, lineHeight: 1.3 }}>{productName}</div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginTop: 20 }}>
@@ -374,7 +377,7 @@ export default function AnalysisResult() {
       <style>{`@keyframes veroFadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }`}</style>
 
       {canShowScore && display ? (
-        <ReportHero score={display.score} grade={display.grade} productName={product.name} headline={report?.summary || gradeVerdict(display.grade)} />
+        <ReportHero score={display.score} grade={display.grade} productName={product.name} headline={report?.summary || (display.nutrition.limited ? display.nutrition.notice : gradeVerdict(display.grade))} scopeLabel={display.nutrition.scopeLabel} />
       ) : (
         <section role="status" style={{ background: 'var(--secondary)', padding: 24, borderRadius: 16 }}>
           <h1 style={{ fontSize: 20 }}>{product.name}</h1>

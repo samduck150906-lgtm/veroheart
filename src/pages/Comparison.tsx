@@ -20,6 +20,8 @@ interface Column {
   display: ProductDisplayParts;
   grade: string;
   score: number;
+  scoreScope: string;
+  nutritionNotice: string;
   kcal: string;
   protein: string;
   signalText: string;
@@ -31,7 +33,7 @@ interface Column {
 }
 
 function buildColumn(product: Product, profile: UserPetProfile): Column {
-  const { score, grade, breakdown, canShowScore, analysisReadiness } = resolveProductDisplayVerdict(product, profile);
+  const { score, grade, breakdown, canShowScore, analysisReadiness, nutrition } = resolveProductDisplayVerdict(product, profile);
   const kcalValue = product.caloriesPer100g ?? product.guaranteedAnalysis?.kcalPer100g;
   const proteinValue = product.guaranteedAnalysis?.crudeProtein;
   const goodCount = product.ingredients?.filter((i) => i.riskLevel === 'safe').length ?? 0;
@@ -48,6 +50,8 @@ function buildColumn(product: Product, profile: UserPetProfile): Column {
     display: getProductDisplayParts(product),
     grade,
     score,
+    scoreScope: nutrition.limited ? nutrition.scopeLabel : '',
+    nutritionNotice: nutrition.notice,
     kcal: kcalValue ? `${Math.round(kcalValue)}kcal` : '—',
     protein: proteinValue ? `${proteinValue}%` : '—',
     signalText: canShowScore ? `주의 ${warnCount} · 좋음 ${goodCount}` : `확인 범위: 주의 ${warnCount} · 원료 정보 부족`,
@@ -91,7 +95,8 @@ export default function Comparison() {
   }
 
   const rows: { label: string; values: string[]; tone?: (col: Column) => string }[] = [
-    { label: '등급', values: columns.map((c) => c.canShowScore ? `${c.grade} ${c.score}` : '분석 정보 부족') },
+    { label: '등급', values: columns.map((c) => c.canShowScore ? `${c.scoreScope ? `${c.scoreScope} ` : ''}${c.grade} ${c.score}` : '분석 정보 부족') },
+    { label: '영양 평가', values: columns.map((c) => c.nutritionNotice || '등록 기초 영양 지표 참고') },
     { label: '열량', values: columns.map((c) => c.kcal) },
     { label: '조단백', values: columns.map((c) => c.protein) },
     { label: '평점', values: columns.map((c) => (c.product.reviewsCount > 0 ? `★ ${c.product.averageRating.toFixed(1)}` : '—')) },
@@ -196,6 +201,7 @@ export default function Comparison() {
             borderRadius: '16px', padding: '15px',
           }}
         >
+          {columns.some(c => c.nutritionNotice) && <p style={{ margin: '0 0 8px', fontSize: 12, lineHeight: 1.5 }}>확인된 정보 기준의 참고 비교입니다. 영양정보 부족으로 영양 균형을 평가할 수 없습니다.</p>}
           {verdict.kind === 'winner' ? (
             <>
               <div style={{ fontSize: '14.5px', fontWeight: 800, letterSpacing: '-0.02em' }}>
