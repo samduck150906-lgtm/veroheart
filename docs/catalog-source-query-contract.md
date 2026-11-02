@@ -128,6 +128,29 @@ are now explicit; local tests do not replace the hosted read-only preflight.
 CI uses existing Linux checks, no operational secrets/DB connection and no added
 deployment workflow. Existing npm audit failures stay visible and unchanged.
 
+### Follow-up hardening
+
+The draft takes its table DDL lock before inspecting definitions, closing the
+check/ADD race. Generated source columns are rejected even if their base type
+matches; each single missing field is tested independently. Existing generated
+columns, constraints and indexes are compared before/after, alongside values,
+RLS and grants. Local PGlite is single-connection; the lock statement follows
+PostgreSQL DDL serialization, not a claimed multi-connection stress result.
+
+Canonical public source links reject credentials, query strings, fragments and
+malformed URLs. The original supported manufacturer import validators already
+require canonical path URLs. Rejected links are not stripped/replaced or inferred;
+the row mapper marks them invalid. A draft preflight aborts on potentially private
+URLs without changing values. Syntax checks cannot establish disclosure authority
+for arbitrary path text or notes: review existing public-reference/caveat data
+before rollout. Hiding an href does not sanitize a raw API response; this is why
+the data preflight is an explicit deployment gate, not merely a UI check.
+
+Brand metadata errors now reject as well as product errors, so a successful
+product query plus failed brands query cannot be presented as a complete page.
+Later recommendation-page failure similarly rejects rather than publishing an
+incomplete set as successfully loaded; regression tests cover both cases.
+
 PR116 and purchase PR115 are separate. This draft does not normalize the hosted
 Preview until separately approved schema reconciliation; no integration Preview
 is claimed and no nutrition code, scoring or ranking is changed here.

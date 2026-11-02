@@ -855,7 +855,7 @@ export async function getBrands(): Promise<string[]> {
     if (withVisibilityFilter) builder = builder.eq('is_visible', true).in('verification_status', publicProductReviewStatuses());
     return builder.order('brand_name');
   });
-  if (error) return [];
+  if (error) throw new ProductQueryError();
   const rows = (data ?? []) as SupabaseBrandNameRow[];
   const brands = [...new Set(rows.map((r) => r.brand_name).filter((name): name is string => Boolean(name)))];
   return brands;

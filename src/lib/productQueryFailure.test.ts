@@ -32,11 +32,12 @@ describe('missing product source schema is an error, not product absence', () =>
     expect(api.calls.filter(([method]) => method === 'select')).toHaveLength(1); // no unsafe fallback
   });
   it('rejects list/search failures rather than returning an empty successful page', async () => {
-    const { getProductsPage, searchProductsPage, getProductsByBrand, searchDiaryProducts } = await import('./supabase');
+    const { getProductsPage, searchProductsPage, getProductsByBrand, searchDiaryProducts, getBrands } = await import('./supabase');
     await expect(getProductsPage()).rejects.toThrow('제품 목록을 불러오지 못했습니다');
     await expect(searchProductsPage('')).rejects.toThrow('제품 정보를 불러오지 못했습니다');
     await expect(getProductsByBrand('Fixture')).rejects.toThrow('제품 정보를 불러오지 못했습니다');
     await expect(searchDiaryProducts('fixture', 'food')).rejects.toThrow('제품 정보를 불러오지 못했습니다');
+    await expect(getBrands()).rejects.toThrow('제품 정보를 불러오지 못했습니다');
   });
   it('returns null only for an explicit zero-row response, not ambiguous rows or permissions', async () => {
     const { getProductDetail } = await import('./supabase');
@@ -76,5 +77,11 @@ describe('missing product source schema is an error, not product absence', () =>
       expect(p?.catalogSourceStatus).toBe('absent');
       expect(p?.catalogSourceUrl).toBeUndefined();
     }
+  });
+  it.each(['https://user:synthetic@example.com/path','https://manufacturer.example/path?token=synthetic',
+    'https://manufacturer.example/path#session=synthetic','https://',' http://example.com/path'])('does not expose a private/malformed source URL (%s)', url => {
+    const p = mapProductFromSupabaseRow({ id:'fixture',name:'Fixture',brand_name:'Fixture',product_type:'food',catalog_source_url:url });
+    expect(p.catalogSourceUrl).toBeUndefined();
+    expect(p.catalogSourceStatus).toBe('invalid');
   });
 });

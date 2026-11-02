@@ -7,6 +7,7 @@ import Detail from './Detail';
 import AnalysisResult from './AnalysisResult';
 import Home from './Home';
 import Brand from './Brand';
+import { getBrands, getProductsByBrand } from '../lib/supabase';
 
 vi.mock('../lib/productCategories', () => ({ useProductCategories: () => [] }));
 vi.mock('../lib/supabase', async original => ({ ...await original<typeof import('../lib/supabase')>(),
@@ -48,5 +49,12 @@ describe('product transport failure versus actual missing product', () => {
     show('/brand/Fixture', '/brand/:brandName', <Brand />);
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.queryByText('등록된 제품이 없습니다.')).toBeNull();
+  });
+  it('brand does not present partial success as a complete page when only the brand query fails', async () => {
+    vi.mocked(getProductsByBrand).mockResolvedValueOnce([{ id:'fixture',name:'synthetic partial product',brand:'Fixture',category:'food',imageUrl:'',ingredients:[],reviewsCount:0,averageRating:0 }]);
+    vi.mocked(getBrands).mockRejectedValueOnce(new Error('synthetic brand-list failure'));
+    show('/brand/Fixture', '/brand/:brandName', <Brand />);
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.queryByText('synthetic partial product')).toBeNull();
   });
 });
