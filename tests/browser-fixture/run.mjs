@@ -49,6 +49,10 @@ try{
   await setMode('empty');await p.goto(base+'/search');await evidence('empty-search','검색 결과가 없습니다');
   assert.equal(await p.getByRole('button',{name:/상세 보기$/}).count(),0);
   await setMode('partial');await p.goto(base+'/brand/'+encodeURIComponent('합성브랜드'));await evidence('partial-failure','등록된 제품이 없는 것으로 판정하지 않았습니다');
+  assert.equal(await p.getByText('총 리뷰 수').evaluate(e=>e.nextElementSibling.textContent),'—');
+  await setMode('review-failure');await p.goto(`${base}/product/${id(3)}`);await evidence('review-failure','후기를 불러오지 못했습니다');
+  assert.ok((await p.locator('body').innerText()).includes('원료·기초 영양 참고'));
+  assert.equal(await p.getByText('아직 별점이 없습니다. 첫 별점을 남겨 주세요.').count(),0);
   await context.close();
  }
  const status=await (await fetch(base+'/__fixture/status')).json();assert.equal(status.blockedWrites,0);assert.ok(status.requests>0);

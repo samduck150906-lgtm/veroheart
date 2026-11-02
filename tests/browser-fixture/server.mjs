@@ -47,6 +47,7 @@ const server=createServer(async(req,res)=>{try{
   }
   const table=url.pathname.slice('/rest/v1/'.length);
   if(!['products','ingredients','product_categories','app_settings','product_ratings'].includes(table))return json(res,404,{error:'unsupported fixture resource'});
+  if(table==='product_ratings'&&mode==='review-failure')return json(res,503,{message:'synthetic ratings failure'});
   if(table==='products'&&mode==='failure')return json(res,400,{code:'42703',message:'synthetic schema failure'});
   if(table==='products'&&mode==='partial'&&url.searchParams.get('select')==='brand_name')return json(res,503,{code:'FIXTURE_FAILURE',message:'synthetic brands failure'});
   const args=[];const where=conditions(url.searchParams,args);const select=url.searchParams.get('select')??'id';
