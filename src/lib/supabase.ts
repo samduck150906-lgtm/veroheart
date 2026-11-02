@@ -735,7 +735,7 @@ export async function getReviews(productId: string) {
   const { data, error } = await supabase.from('product_ratings')
     .select('id, product_id, rating, created_at, is_mine').eq('product_id', productId)
     .order('created_at', { ascending: false });
-  if (error) console.error('getReviews error:', error);
+  if (error) throw new Error('후기를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
   return data || [];
 }
 

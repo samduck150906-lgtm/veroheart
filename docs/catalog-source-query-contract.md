@@ -151,6 +151,10 @@ product query plus failed brands query cannot be presented as a complete page.
 Later recommendation-page failure similarly rejects rather than publishing an
 incomplete set as successfully loaded; regression tests cover both cases.
 
+An independently failed ratings read retains loaded product evidence but marks
+the review count/summary/list unavailable instead of claiming no ratings. Brand
+failure similarly uses unavailable statistics, not a false zero review total.
+
 PR116 and purchase PR115 are separate. This draft does not normalize the hosted
 Preview until separately approved schema reconciliation; no integration Preview
 is claimed and no nutrition code, scoring or ranking is changed here.
