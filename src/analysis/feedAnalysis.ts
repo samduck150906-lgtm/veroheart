@@ -306,6 +306,9 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
     if (allergyCautions.length > 0) return `${profile.name}의 알레르기와 관련된 원료가 있어 급여 전 확인이 필요합니다.`;
     if (iq.dangerCount > 0) return `위험 등급 성분 ${iq.dangerCount}개가 확인돼 급여 전 확인이 필요합니다.`;
     if (iq.cautionCount > 0) return `주의 등급 성분 ${iq.cautionCount}개가 확인돼 성분표 확인이 필요합니다.`;
+    if (product.requiresVeterinaryGuidance) return '수의사 상담이 필요한 제품입니다. 처방과 급여량은 담당 수의사의 안내를 따라 주세요.';
+    if (aafco.evaluated && !aafco.passed) return aafco.details.join(' ');
+    if (caP.note) return caP.note;
     if (analysisReadiness.status !== 'ready') return `${readinessMessage}.`;
     if (nutritionPresentation.limited) return nutritionPresentation.notice;
     if (grade === 'A+' || grade === 'A') return '등록된 원료·기초 영양 지표 기준으로 점수가 높은 편입니다.';
