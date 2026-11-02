@@ -24,7 +24,7 @@
     "test:catalog": "node --test scripts/import-official-catalog.test.mjs",
     "db:prepare-local": "node scripts/prepare-local-supabase.mjs",
     "test:bootstrap": "node scripts/validate-local-bootstrap.mjs",
-    "test:schemas": "node scripts/test-scan-schema.mjs && node scripts/test-account-schema.mjs && node scripts/test-catalog-schema.mjs"
+    "test:schemas": "node scripts/test-scan-schema.mjs && node scripts/test-account-schema.mjs && node scripts/test-catalog-schema.mjs && node scripts/test-catalog-source-schema.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.3",

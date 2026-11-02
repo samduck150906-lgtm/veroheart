@@ -90,6 +90,7 @@ export default function Detail() {
     isLoggedIn,
     selectedProduct: product,
     isLoadingProducts,
+    productDetailError,
     fetchProductDetail,
     products,
     userId,
@@ -216,8 +217,8 @@ export default function Detail() {
       <OfflineBanner online={online} />
       <EmptyState
         emoji={online ? '🔍' : '📡'}
-        title={online ? '제품을 찾을 수 없습니다' : '오프라인 상태입니다'}
-        desc={online ? '주소가 변경되었거나 삭제된 제품일 수 있습니다.' : '연결이 복구되면 다시 불러옵니다.'}
+        title={productDetailError ? '제품 조회에 실패했습니다' : online ? '제품을 찾을 수 없습니다' : '오프라인 상태입니다'}
+        desc={productDetailError || (online ? '주소가 변경되었거나 삭제된 제품일 수 있습니다.' : '연결이 복구되면 다시 불러옵니다.')}
         actionLabel="홈으로 이동"
         onAction={() => navigate('/')}
       />

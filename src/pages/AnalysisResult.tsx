@@ -192,7 +192,7 @@ type Tab = (typeof TABS)[number];
 export default function AnalysisResult() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile, products, selectedProduct, isLoggedIn, fetchProductDetail, isLoadingProducts } = useStore();
+  const { profile, products, selectedProduct, isLoggedIn, fetchProductDetail, isLoadingProducts, productDetailError } = useStore();
 
   const [activeTab, setActiveTab] = useState<Tab>('종합');
   const [selectedIng, setSelectedIng] = useState<Ingredient | null>(null);
@@ -354,6 +354,7 @@ export default function AnalysisResult() {
 
   if (!product) {
     if (productId && isLoadingProducts) return <StateView variant="loading" title="제품 정보를 불러오고 있습니다" />;
+    if (productId && productDetailError) return <StateView variant="error" title="제품 조회에 실패했습니다" description={productDetailError} />;
     return (
       <StateView
         variant="empty"

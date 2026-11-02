@@ -88,6 +88,7 @@ export default function FeedingLogForm({
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // 시트가 열릴 때(또는 편집 대상/프리셋이 바뀔 때) 폼 상태 초기화
@@ -192,11 +193,14 @@ export default function FeedingLogForm({
     const q = searchQuery.trim();
     const timer = setTimeout(async () => {
       setSearchLoading(true);
+      setSearchError(false);
       try {
         const res = await searchDiaryProducts(q, searchType);
         setSearchResults(res);
       } catch (e) {
         console.error(e);
+        setSearchResults([]);
+        setSearchError(true);
       } finally {
         setSearchLoading(false);
       }
@@ -517,6 +521,8 @@ export default function FeedingLogForm({
                   <div style={{ padding: '18px', textAlign: 'center', fontSize: '13px', color: 'var(--text-muted)' }}>
                     불러오는 중…
                   </div>
+                ) : searchError ? (
+                  <p role="alert">제품 정보를 불러오지 못했습니다. 잠시 후 다시 검색해 주세요.</p>
                 ) : searchResults.length === 0 ? (
                   <div style={{ padding: '18px 14px', textAlign: 'center' }}>
                     <p style={{ margin: '0 0 4px', fontSize: '14px', fontWeight: 700, color: 'var(--text-dark)' }}>

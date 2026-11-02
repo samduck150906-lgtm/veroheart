@@ -309,6 +309,8 @@ export function mapProductFromSupabaseRow(p: SupabaseProductRow): Product {
     catalogSource: mappedCatalogSource,
     catalogSourceUrl: p.catalog_source_url?.startsWith('https://') ? p.catalog_source_url : undefined,
     catalogSourceNote: p.catalog_source_note ?? undefined,
+    catalogSourceStatus: p.catalog_source_url === undefined ? 'not_loaded'
+      : !p.catalog_source_url ? 'absent' : p.catalog_source_url.startsWith('https://') ? 'available' : 'invalid',
     requiresVeterinaryGuidance: p.requires_veterinary_guidance ?? false,
     analysisStatus: mappedAnalysisStatus,
     ingredientDataLoaded: p.product_ingredients !== undefined || p.product_ingredient_label_sets !== undefined,
