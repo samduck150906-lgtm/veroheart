@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { gradeVerdict } from '../lib/veroroDesign';
 import { AlertCircle, Check, Sparkles } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
@@ -377,7 +376,7 @@ export default function AnalysisResult() {
       <style>{`@keyframes veroFadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }`}</style>
 
       {canShowScore && display ? (
-        <ReportHero score={display.score} grade={display.grade} productName={product.name} headline={report?.summary || (display.nutrition.limited ? display.nutrition.notice : gradeVerdict(display.grade))} scopeLabel={display.nutrition.scopeLabel} />
+        <ReportHero score={display.score} grade={display.grade} productName={product.name} headline={report?.summary || feedAnalysis?.summary || display.nutrition.detail} scopeLabel={display.nutrition.scopeLabel} />
       ) : (
         <section role="status" style={{ background: 'var(--secondary)', padding: 24, borderRadius: 16 }}>
           <h1 style={{ fontSize: 20 }}>{product.name}</h1>

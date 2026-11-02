@@ -115,4 +115,12 @@ describe('nutrition evidence on shared public display paths (synthetic data, no 
     expect(screen.queryByText(/에게 딱|무난합니다/)).toBeNull();
     expect(screen.getByText(`원료·기초 영양 참고 ${resolveProductDisplayVerdict(full, profile).score}점`)).toBeTruthy();
   });
+  it('guest analysis also uses assessed scope and warnings instead of the grade feeding slogan', () => {
+    const full = { ...product, guaranteedAnalysis: { crudeProtein: 30, crudeFat: 15, crudeFiber: 3, crudeAsh: 8, moisture: 10 } };
+    useStore.setState({ selectedProduct: full, isLoggedIn: false, userId: null });
+    show(<AnalysisResult />);
+    expect(screen.queryByText(/믹스 없이 바로 급여 가능/)).toBeNull();
+    expect(screen.getByText(/원료·기초 영양 참고 등급/)).toBeTruthy();
+    expect(screen.getAllByText(/등록된 원료·기초 영양 지표 기준/).length).toBeGreaterThan(0);
+  });
 });
