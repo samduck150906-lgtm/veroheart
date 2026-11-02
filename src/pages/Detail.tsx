@@ -55,13 +55,12 @@ import {
   type AltCardData,
   type RadarAxis,
 } from '../components/pdp/PdpParts';
-import { gradeMetaFromScore } from '../components/pdp/gradeMeta';
 import ProductThumb from '../components/ProductThumb';
 import ProductVerificationBadge from '../components/ProductVerificationBadge';
 import { HealthConcernEvidence } from '../components/HealthConcernEvidence';
 import { buildHealthConcernPresentation } from '../health/concernPresentation';
 import { getProductDisplayParts } from '../utils/productDisplay';
-import { gradePalette, gradeVerdict } from '../lib/veroroDesign';
+import { gradePalette } from '../lib/veroroDesign';
 import {
   describeProductCompleteness,
   describeIngredientAvailability,
@@ -240,7 +239,7 @@ export default function Detail() {
   // ── PDP 판단 스택 데이터 (점수 게이지 · 요약 · 우리 아이 적합도) ──
   // 표시 점수는 카드·분석결과와 동일한 하드캡(위험≤69, 알레르기≤9, 종 불일치=0)을
   // 거친 값을 쓴다. 게스트에게는 개인화 감점 없는 객관 점수를 보여준다.
-  const { breakdown, score: safetyScore, grade: displayGrade, analysisReadiness, canShowScore: analysisReady } = resolveProductDisplayVerdict(product, profile);
+  const { breakdown, score: safetyScore, grade: displayGrade, analysisReadiness, canShowScore: analysisReady, nutrition } = resolveProductDisplayVerdict(product, profile);
   const hasIngredientData = (product.ingredients?.length ?? 0) + (product.unknownIngredientTerms?.length ?? 0) > 0;
   const analysisStatus = analysisReadiness.status;
   const allergyDisplay = buildAllergyDisplayState(breakdown, profile.name || '우리 아이', {
@@ -306,12 +305,11 @@ export default function Detail() {
   const scrollProgress = Math.min(100, (scrollY / scrollMax) * 100);
 
   // 종합 의견 3줄 (breakdown 기반, 신규 데이터 불필요)
-  const gradeLabel = gradeMetaFromScore(safetyScore).label;
   const verdictLines = [
     {
       icon: <ShieldCheck size={16} />,
       text: analysisReady
-        ? `안전성: ${breakdown.dangerCount === 0 ? '현재 등록 원료에서 위험 성분 미확인' : `위험 성분 ${breakdown.dangerCount}개`}${breakdown.cautionCount ? `, 주의 ${breakdown.cautionCount}개` : ''} — ${gradeLabel} 등급입니다.`
+        ? `안전성: ${breakdown.dangerCount === 0 ? '현재 등록 원료에서 위험 성분 미확인' : `위험 성분 ${breakdown.dangerCount}개`}${breakdown.cautionCount ? `, 주의 ${breakdown.cautionCount}개` : ''} — ${nutrition.scopeLabel} ${displayGrade}등급입니다.`
         : analysisStatus === 'partial'
           ? '안전성: 확인되지 않은 원료가 있어 부분 분석만 제공합니다.'
           : analysisStatus === 'blocked'
@@ -327,7 +325,7 @@ export default function Detail() {
       text: !personalized
         ? '결론: 반려동물을 등록하면 제품 궁합을 확인할 수 있습니다.'
         : analysisReady
-        ? `결론: ${profile.name}의 현재 궁합 점수는 ${safetyScore}점입니다. ${safetyScore >= 75 ? '아래 근거와 정보 부족 항목을 함께 확인해 주세요.' : safetyScore >= 60 ? '급여 시 소량부터 확인해 주세요.' : '대체 상품을 함께 검토해 주세요.'}`
+        ? nutrition.limited ? `결론: ${nutrition.notice}` : `결론: ${profile.name}의 현재 궁합 점수는 ${safetyScore}점입니다. ${safetyScore >= 75 ? '아래 근거와 정보 부족 항목을 함께 확인해 주세요.' : safetyScore >= 60 ? '급여 시 소량부터 확인해 주세요.' : '대체 상품을 함께 검토해 주세요.'}`
         : '결론: 원료 검토가 끝난 뒤 전체 궁합 판정을 제공합니다.',
     },
   ];
@@ -423,7 +421,7 @@ export default function Detail() {
       </Helmet>
 
       <OfflineBanner online={online} />
-      {analysisReady && <StickyScoreBar score={safetyScore} name={productDisplay.name} visible={showStickyScore} progress={scrollProgress} />}
+      {analysisReady && <StickyScoreBar score={safetyScore} name={productDisplay.name} visible={showStickyScore} progress={scrollProgress} scopeLabel={nutrition.scopeLabel} />}
 
       {isLoggedIn && userId && pets.length > 1 && (
         <section style={{ padding: 16, marginBottom: 16, borderRadius: 20, background: 'var(--surface)', border: '1px solid var(--line)' }}>
@@ -576,11 +574,11 @@ export default function Detail() {
         </span>
         <span style={{ flex: 1 }}>
           <span style={{ display: 'block', fontSize: '16.5px', fontWeight: 800, color: 'var(--vr-on-inverse)', letterSpacing: '-0.03em' }}>
-            {analysisReady ? `종합 ${safetyScore}점 · ${gradeVerdict(displayGrade)}` : allergyDisplay.notice?.title ?? '원료 분석 확인이 필요합니다'}
+            {analysisReady ? `${nutrition.scopeLabel} ${safetyScore}점 · ${displayGrade}등급` : allergyDisplay.notice?.title ?? '원료 분석 확인이 필요합니다'}
           </span>
           <span style={{ display: 'block', fontSize: '12.5px', color: 'var(--vr-on-inverse-sub)', marginTop: '3px' }}>
             {analysisReady
-              ? `성분 ${product.ingredients?.length ?? 0}개 분석 · ${personalized ? `${profile.name} 기준` : '원료 정보'} 리포트 보기`
+              ? nutrition.limited ? nutrition.notice : nutrition.detail
               : `확인된 원료 ${product.ingredients?.length ?? 0}개 · 검토 상태 보기`}
           </span>
         </span>
@@ -590,7 +588,7 @@ export default function Detail() {
       </button>
 
       <GlanceGrid tiles={glanceTiles} />
-      {analysisReady && personalized && <FitForPetCard key={profile.id} petName={profile.name} percent={safetyScore} chips={fitChips} reasons={breakdown.reasons} />}
+      {analysisReady && personalized && <FitForPetCard key={profile.id} petName={profile.name} percent={safetyScore} chips={fitChips} reasons={breakdown.reasons} scopeLabel={nutrition.scopeLabel} />}
       {!personalized && <div style={{ marginBottom: 16 }}><PetCompatibilityPrompt /></div>}
       <div style={{ marginBottom: 16 }}>
         <HealthConcernEvidence presentation={concernPresentation} />

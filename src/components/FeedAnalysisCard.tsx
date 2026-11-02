@@ -6,6 +6,7 @@ import { Check, X, AlertTriangle, ShieldCheck, FlaskConical, Flame } from 'lucid
 import type { Product, UserPetProfile } from '../types';
 import { analyzeFeed, type FeedGrade } from '../analysis/feedAnalysis';
 import { describeIngredientAvailability } from '../utils/productDataCompleteness';
+import { getNutritionPresentation } from '../analysis/nutritionReadiness';
 
 const GRADE_TONE: Record<FeedGrade, { fg: string; bg: string; label: string }> = {
   'A+': { fg: '#15803D', bg: '#DCFCE7', label: '매우 우수' },
@@ -44,6 +45,9 @@ export default function FeedAnalysisCard({ product, profile }: { product: Produc
   const tone = GRADE_TONE[a.grade];
   const iq = a.ingredientQuality;
   const analysisReady = a.analysisReadiness.status === 'ready';
+  const nutrition = getNutritionPresentation(product.guaranteedAnalysis);
+  // The score summary already displays this exact limitation; retain all actual warnings.
+  const visibleCautions = a.cautions.filter(text => !(nutrition.notice && text === nutrition.notice && a.summary.includes(text)));
 
   return (
     <section
@@ -51,12 +55,12 @@ export default function FeedAnalysisCard({ product, profile }: { product: Produc
       style={{ background: 'var(--pdp-surface)', borderRadius: 24, padding: 20, marginBottom: 32, boxShadow: 'var(--pdp-e2)', border: '1px solid var(--pdp-line)' }}
     >
       {/* 헤더 */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 16 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 17, fontWeight: 900, color: 'var(--pdp-ink)' }}>
           <FlaskConical size={19} color="#7C3AED" /> 사료성분 분석
         </div>
         <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--pdp-ink-muted)', background: 'var(--pdp-surface-soft)', borderRadius: 999, padding: '4px 10px', whiteSpace: 'nowrap' }}>
-          원료·영양 분석
+          {nutrition.limited ? '영양 균형 미평가' : '기초 영양 지표 포함'}
         </span>
       </div>
 
@@ -68,9 +72,10 @@ export default function FeedAnalysisCard({ product, profile }: { product: Produc
         </div>
         <div style={{ minWidth: 0 }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 999, background: analysisReady ? tone.bg : '#FEF3C7', color: analysisReady ? tone.fg : '#B45309', fontSize: 14, fontWeight: 900, marginBottom: 6 }}>
-            {analysisReady ? `${a.grade}등급 · ${tone.label}` : '부분 분석'}
+            {analysisReady ? `${nutrition.scopeLabel} ${a.grade}등급` : '부분 분석'}
           </span>
           <p style={{ margin: 0, fontSize: 13.5, fontWeight: 600, color: 'var(--pdp-ink-muted)', lineHeight: 1.5 }}>{a.summary}</p>
+          <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--pdp-ink-muted)', lineHeight: 1.5 }}>{nutrition.detail}</p>
         </div>
       </div>
 
@@ -172,11 +177,11 @@ export default function FeedAnalysisCard({ product, profile }: { product: Produc
           </ul>
         </div>
       )}
-      {a.cautions.length > 0 && (
+      {visibleCautions.length > 0 && (
         <div style={{ background: '#FFF7ED', borderRadius: 14, padding: 14, marginBottom: 10 }}>
           <div style={{ fontSize: 12.5, fontWeight: 800, color: '#C2410C', marginBottom: 8 }}>주의할 점</div>
           <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {a.cautions.map((t, i) => (
+            {visibleCautions.map((t, i) => (
               <li key={i} style={{ display: 'flex', gap: 8, fontSize: 13, fontWeight: 600, color: '#9A3412', lineHeight: 1.5 }}>
                 <AlertTriangle size={15} strokeWidth={2.4} style={{ flexShrink: 0, marginTop: 1 }} /> <span>{t}</span>
               </li>

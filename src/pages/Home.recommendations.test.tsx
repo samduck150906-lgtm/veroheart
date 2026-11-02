@@ -26,7 +26,7 @@ function Destination() {
   return <output data-testid="destination">{JSON.stringify({ path: location.pathname + location.search, state: location.state })}</output>;
 }
 const show = () => render(<HelmetProvider><MemoryRouter><Home /><Destination /></MemoryRouter></HelmetProvider>);
-const recommendationSection = () => screen.getByRole('region', { name: '로니에게 잘 맞는 제품' });
+const recommendationSection = () => screen.getByRole('region', { name: '로니 기준 참고 제품' });
 
 beforeEach(() => {
   api.search.mockReset().mockResolvedValue({ products: [food], nextOffset: null });
