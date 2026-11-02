@@ -1,0 +1,5 @@
+{
+  "extends": "../../tsconfig.app.json",
+  "compilerOptions": { "tsBuildInfoFile": "../../.artifacts/fixture.tsbuildinfo" },
+  "include": ["../../src", "entry.tsx", "vite.config.ts"]
+}
