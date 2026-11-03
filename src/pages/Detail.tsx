@@ -685,7 +685,7 @@ export default function Detail() {
             <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '16px' }}>
               {profile.weightKg ? '제품 열량 정보가 부족해 급여량을 계산할 수 없습니다. 제품 포장의 급여 안내를 확인해 주세요.' : '몸무게와 제품 열량이 있으면 참고용 급여량을 계산할 수 있습니다.'}
             </p>
-            {!profile.weightKg && <button 
+            {!profile.weightKg && <button
               className="btn btn-outline" 
               style={{ borderRadius: 'var(--border-radius-sm)', width: '100%' }}
               onClick={() => navigate('/profile')}

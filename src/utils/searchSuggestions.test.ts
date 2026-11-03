@@ -75,3 +75,9 @@ describe('deriveBrandOptions', () => {
     expect(deriveBrandOptions(products, 1)).toEqual(['로얄캐닌']);
   });
 });
+
+it('does not expose generic brand labels in suggestions or filters', () => {
+ const items = [{ name: '고양이 템테이션 간식', brand: '고양이' }];
+ expect(buildSearchSuggestions('고양이', items, [])).toEqual([{kind:'product',label:'고양이 템테이션 간식',brand:undefined}]);
+ expect(deriveBrandOptions(items)).toEqual([]);
+});
