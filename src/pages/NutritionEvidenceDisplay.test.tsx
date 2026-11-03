@@ -115,6 +115,23 @@ describe('nutrition evidence on shared public display paths (synthetic data, no 
     expect(screen.queryByText(/에게 딱|무난합니다/)).toBeNull();
     expect(screen.getByText(`원료·기초 영양 참고 ${resolveProductDisplayVerdict(full, profile).score}점`)).toBeTruthy();
   });
+  it.each([false, undefined])('does not treat veterinary flag %s as clinical clearance for feeding', async requiresVeterinaryGuidance => {
+    useStore.setState({ selectedProduct: { ...product, requiresVeterinaryGuidance, caloriesPer100g: 100 } });
+    render(<HelmetProvider><MemoryRouter initialEntries={['/product/synthetic-food']}>
+      <Routes><Route path="/product/:id" element={<Detail />} /></Routes>
+    </MemoryRouter></HelmetProvider>);
+    expect(await screen.findByText(/일반식 여부나 급여 안전성을 확인하지 않으며/)).toBeTruthy();
+    expect(screen.getByRole('heading', { name: /열량 기준 참고 급여량/ })).toBeTruthy();
+  });
+  it('preserves veterinary guidance without requiring a source URL and explains why feeding is withheld', () => {
+    useStore.setState({ selectedProduct: { ...product, requiresVeterinaryGuidance: true, caloriesPer100g: 100 } });
+    render(<HelmetProvider><MemoryRouter initialEntries={['/product/synthetic-food']}>
+      <Routes><Route path="/product/:id" element={<Detail />} /></Routes>
+    </MemoryRouter></HelmetProvider>);
+    expect(screen.getAllByText(/수의사 상담이 필요한 제품/).length).toBeGreaterThan(0);
+    expect(screen.getByText('이 제품의 일반 급여량 계산은 제공하지 않습니다.')).toBeTruthy();
+    expect(screen.queryByText(/제품 열량 정보가 부족해 급여량/)).toBeNull();
+  });
   it('guest analysis also uses assessed scope and warnings instead of the grade feeding slogan', () => {
     const full = { ...product, guaranteedAnalysis: { crudeProtein: 30, crudeFat: 15, crudeFiber: 3, crudeAsh: 8, moisture: 10 } };
     useStore.setState({ selectedProduct: full, isLoggedIn: false, userId: null });

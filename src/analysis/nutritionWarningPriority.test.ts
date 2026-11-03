@@ -11,6 +11,18 @@ const base: Product = { id: 'synthetic-food', name: '합성 사료', brand: '합
   reviewsCount: 0, averageRating: 0 };
 
 describe('assessed warnings take precedence over general nutrition scope copy', () => {
+  it('FALSE does not suppress established allergy or measured deficiency warnings', () => {
+    const product = { ...base, requiresVeterinaryGuidance: false,
+      guaranteedAnalysis: { crudeProtein: 0, crudeFat: 0, moisture: 10 } };
+    const pet = { ...profile, allergies: ['연어'] };
+    const report = generateAnalysisReport(product, pet);
+    expect(report.summary).toContain('급여를 권하지 않습니다');
+    expect(report.summary).toContain('기준 미달');
+    expect(buildProductConclusion(product, pet, report).headline).toContain('급여를 권하지 않습니다');
+    const unset = analyzeFeed({ ...product, requiresVeterinaryGuidance: undefined }, pet);
+    const explicitFalse = analyzeFeed(product, pet);
+    expect(explicitFalse).toEqual(unset);
+  });
   it.each([0, 2])('keeps confirmed protein/fat deficits with partial nutrition (%s)', value => {
     const product = { ...base, guaranteedAnalysis: { crudeProtein: value, crudeFat: value, moisture: 10 } };
     const before = structuredClone(product);
