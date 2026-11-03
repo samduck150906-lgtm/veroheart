@@ -31,9 +31,12 @@ holds individual retrieval evidence. Substituting an arbitrary observation would
 change the contract. Removing the veterinary flag would weaken feeding and
 recommendation guards. No new source URL or source text is inferred here.
 
-Hosted absence of `catalog_source_url` is proven by the captured HTTP error.
-Hosted ledger status, the other two columns and the mechanism that caused drift
-are **not** proven. No Dashboard SELECT was executed in this work: this session
+Hosted absence of `catalog_source_url` was first proven by the captured HTTP error.
+Subsequent operator-supplied Dashboard results confirm all three columns absent,
+the three queried migration versions absent, the import function absent and both
+manufacturer indexes absent. The complete hosted ledger/projection and the reason
+for the missed deployment remain unverified. No agent-operated Dashboard SELECT
+was executed in this work: this session
 has no connected authenticated Dashboard control/SQL tool; fresh anonymous
 headless Chrome is not an authenticated Dashboard session. Private HTTP evidence
 is kept outside Git. No operational rows or credentials are included here.
@@ -56,6 +59,11 @@ states, **not** approval or identity-verification states. SQL NULL/blank source
 does not become fabricated text. Numeric zero remains a measurement.
 
 ## Minimal repair choice: C, draft only
+
+The current exact-only tracked-release proposal and CLI-managed transaction form
+are documented in `source-recovery-release-plan.md`. That document supersedes the
+earlier unresolved ledger alternatives below. The old standalone draft is not
+the CLI release file; no production application is approved or performed.
 
 `supabase/migration_drafts/restore_product_source_contract.sql` is a narrowly
 scoped forward-repair **draft** outside the automatically executed directory.
