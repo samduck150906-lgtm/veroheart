@@ -1,0 +1,1493 @@
+{
+  "generatedAt": "2026-11-03T14:12:47.729Z",
+  "projectRef": "nlutpmjloryqdomgbqrr",
+  "originalProjectAudit": {
+    "projectRef": "zddsnabeaenwvczilxeb",
+    "products": 1011,
+    "ingredients": 110,
+    "ingredientLinks": 32,
+    "productsWithIngredients": 7
+  },
+  "sources": [
+    {
+      "index": 10,
+      "url": "https://wooriwa.com/anf-life-stage-dog-5-aging/",
+      "title": "ANF 독 5단계 에이징",
+      "ingredientsText": "신선한 닭고기, 가수분해닭고기분말, 옥수수, 쌀, 오리고기분말, 글리세린, 소맥피, 설탕, 비트펄프, 소맥분, 닭고기분말, 닭기름, 가수분해닭고기분말(향미제), 감미료 합제(트레할로스, 소르비톨, 캐롭), 콘드로이친, 글루코사민, 보스웰리아, 식이유황(MSM), 가수분해대두단백, L-카르니틴, 공액리놀레산(CLA), 유카추출물, 페뉴그릭추출물, 대두박, 유익균(Bacillus subtilis, Bacillus licheniformis), 치커리추출물(이눌린공급원), 맥주효모, 항산화제(비타민E, 로즈마리추출물), 젤라틴, 알칼리성 프로테아제(단백질분해효소), 비타민E, L-트립토판, DL-메치오닌, 아마종실, 염화콜린, 비타민제 합제(비타민E, 나이아신, 판토텐산, 비타민A, 비타민D3, 비타민B1, 비타민B2, 비타민B6, 비타민B12, 비오틴, 엽산), 미량광물질류 합제(철, 아연, 망간, 구리, 요오드, 코발트, 셀레늄), 구연산, 제올라이트, 탄닌, 정제소금, 산미제(소르빈산칼륨) *유전자변형 옥수수, 대두 포함 가능성 있음 *유익균(Bacillus subtilis, Bacillus licheniformis) 첨가량: 3.6×10⁶ cfu/g *유익균(Bacillus subtilis, Bacillus licheniformis)은 첨가 기준으로 유통 중 소실 가능성 있음",
+      "nutritionText": "등록성분량 대사에너지 (열량) : 3,529 kcal/kg 조단백질 20.0% 이상 조지방 7.5% 이상 조섬유 2.5% 이하 조회분 8.0% 이하 칼슘 0.90% 이상 인 0.60% 이상 수분 25.0% 이하",
+      "image": "https://wooriwa.com/wp-content/uploads/2026/08/anf-life-stage-dog-5-aging.webp",
+      "retrievedAt": "2026-11-03T13:55:18.553Z",
+      "productId": "e06b0c80-d7bf-456d-86f1-1e712bf94954",
+      "expectedName": "ANF 강아지 에이징 사료 5단계 11~14세",
+      "hadIngredients": 0,
+      "language": "ko",
+      "caveat": "제조사 공식 제품 정보. 실제 구매한 포장과의 대조 전 검증 완료로 표시하지 않음.",
+      "requestId": "550f1907-ba3a-4491-a866-49f4c128012b",
+      "sourceHash": "b10a4f5c9cd5cd0e0fa0616e4aa5e8e565e0e63f9db3335963e9bbd9535e8a6b",
+      "nutrition": {
+        "crude_protein": 20,
+        "crude_fat": 7.5,
+        "crude_fiber": 2.5,
+        "crude_ash": 8,
+        "moisture": 25,
+        "calcium": 0.9,
+        "phosphorus": 0.6
+      },
+      "kcalPer100g": 352.9,
+      "ingredientItemCount": 43,
+      "matchedIngredientCount": 19
+    },
+    {
+      "index": 11,
+      "url": "https://wooriwa.com/anf-6free-indoor-cat-adult/",
+      "title": "ANF 식스프리 인도어 캣 어덜트",
+      "ingredientsText": "동물성단백질(건조 분쇄된 닭, 연어, 오리, 정어리), 쌀, 정제닭기름, 가수분해닭고기분(천연향미제), 완두, 정제어유, 병아리콩, 렌틸콩, 고구마, 아마종실, 셀룰로오스(정제섬유소), 프로테아제(단백질분해효소), 과일&야채믹스(토마토, 비트, 브로콜리, 바나나, 사과, 오렌지, 망고, 당근), DL-메치오닌, 타우린, L-라이신, 비타민 C, 맥주효모, 페뉴그릭추출물, 유카추출물, 인산칼슘, 탄산칼슘, 염화칼륨, 비타민제합제(비타민A, D3, E, B1, B2, B6, B12, 비오틴, 엽산, 판토텐산, 나이아신), 미량광물질류합제(철, 아연, 망간, 구리, 요오드, 코발트, 셀레늄), 탄닌, 천연항산화제(로즈마리추출물, 비타민 E, 구연산, 플라보노이드)",
+      "nutritionText": "등록성분량 대사에너지 (열량) : 3,550 kcal/kg 조단백질 34.0% 이상 조지방 12.0% 이상 조섬유 5.0% 이하 조회분 12.0% 이하 칼슘 1.0% 이상 인 0.5% 이상 수분 12.0% 이하",
+      "image": "https://wooriwa.com/wp-content/uploads/2026/08/anf-6free-indoor-cat-adult.webp",
+      "retrievedAt": "2026-11-03T13:55:18.623Z",
+      "productId": "7519087d-d8e9-4947-b3e6-dda0313914e5",
+      "expectedName": "ANF 고양이 식스프리 인도어 기능성 사료",
+      "hadIngredients": 15,
+      "language": "ko",
+      "caveat": "제조사 공식 제품 정보. 실제 구매한 포장과의 대조 전 검증 완료로 표시하지 않음.",
+      "requestId": "eaf6be07-389e-45f4-abeb-9448d1097e21",
+      "sourceHash": "6e50426734c787569440c47da25397682df1f2376a20a585f3a17a0cd64a112b",
+      "nutrition": {
+        "crude_protein": 34,
+        "crude_fat": 12,
+        "crude_fiber": 5,
+        "crude_ash": 12,
+        "moisture": 12,
+        "calcium": 1,
+        "phosphorus": 0.5
+      },
+      "kcalPer100g": 355,
+      "ingredientItemCount": 27,
+      "matchedIngredientCount": 12
+    },
+    {
+      "index": 14,
+      "url": "https://wooriwa.com/anf-vetter-plus-cat-aging-11-plus/",
+      "title": "ANF 베터플러스 캣 에이징 11+",
+      "ingredientsText": "신선한 닭고기, 가수분해 닭고기분, 옥수수, 계육분, 완두, 대두박, 오리육분, 쇄미, 비트펄프, 닭기름, 타피오카, 소맥분, 가수분해닭고기분(천연향미제), 보스웰리아, MSM(식이유황), 글루코사민, 콘드로이친, 어유, 아마종실, 염화콜린, L-라이신, DL-메치오닌, 가수분해대두단백 , 프로바이오틱스(Bacillus subtilis, Bacillus licheniformis), 프로테아제(단백질분해효소), 프리바이오틱스(이눌린, 프락토올리고당), 맥주효모, 정제소금, 타우린, 비타민제 합제(비타민E, 나이아신, 판토텐산, 비타민A, 비타민D3, 비타민B1, 비타민B2, 비타민B6, 비타민B12, 비오틴, 엽산), 미량광물질류 합제(철, 아연, 망간, 구리, 요오드, 코발트, 셀레늄), L-트립토판, 유카추출물, 페뉴그릭추출물, 구연산 *유전자 변형 옥수수, 대두 등 포함 가능성 있음 *프로바이오틱스(Bacillus subtilis, Bacillus licheniformis): 3.2×10^6 g/cfu",
+      "nutritionText": "등록성분량 대사에너지 (열량) : 3,827 kcal/kg 조단백질 31.0% 이상 조지방 14.0% 이상 조섬유 3.1% 이하 조회분 8.9% 이하 칼슘 1.20% 이상 인 1.00% 이상 수분 8.8% 이하",
+      "image": "https://wooriwa.com/wp-content/uploads/2026/08/anf-vetter-plus-cat-aging-11-plus.webp",
+      "retrievedAt": "2026-11-03T13:55:18.687Z",
+      "productId": "65a172b4-ff0a-4e4c-8a62-5d58583aa70a",
+      "expectedName": "ANF 베터플러스 캣 기능성 사료 에이징 11+",
+      "hadIngredients": 14,
+      "language": "ko",
+      "caveat": "제조사 공식 제품 정보. 실제 구매한 포장과의 대조 전 검증 완료로 표시하지 않음.",
+      "requestId": "bc8ebf5d-546e-41f0-a83a-e2b1a189f848",
+      "sourceHash": "e6284167261f41a553afa19d3d0229c957d043f19eb92574cf1746d831856b42",
+      "nutrition": {
+        "crude_protein": 31,
+        "crude_fat": 14,
+        "crude_fiber": 3.1,
+        "crude_ash": 8.9,
+        "moisture": 8.8,
+        "calcium": 1.2,
+        "phosphorus": 1
+      },
+      "kcalPer100g": 382.7,
+      "ingredientItemCount": 36,
+      "matchedIngredientCount": 15
+    },
+    {
+      "index": 15,
+      "url": "https://wooriwa.com/anf-6free-indoor-dog-salmon/",
+      "title": "ANF 식스프리 인도어 독 연어",
+      "ingredientsText": "동물성단백질(건조 분쇄된 연어, 흰살생선, 크릴, 닭), 쌀, 정제닭기름, 가수분해닭고기분(천연향미제), 소맥피, 비트펄프, 완두, 병아리콩, 고구마, 렌틸콩, 정제어유, 프로테아제(단백질분해효소), 과일&야채믹스(토마토, 비트, 브로콜리, 바나나, 사과, 오렌지, 망고, 당근), 셀룰로오스(정제섬유소), DL-메치오닌, 비타민 C, 맥주효모, 페뉴그릭추출물, 유카추출물, 인산칼슘, 탄산칼슘, 염화칼륨, 비타민제합제(비타민A, D3, E, B1, B2, B6, B12, 비오틴, 엽산, 판토텐산, 나이아신), 미량광물질류합제(철, 아연, 망간, 구리, 요오드, 코발트, 셀레늄), 천연항산화제(로즈마리추출물, 비타민 E, 구연산, 플라보노이드)",
+      "nutritionText": "등록성분량 대사에너지 (열량) : 3,600 kcal/kg 조단백질 26.0% 이상 조지방 10.0% 이상 조섬유 8.0% 이하 조회분 11.0% 이하 칼슘 1.2% 이상 인 1.0% 이상 수분 12.0% 이하",
+      "image": "https://wooriwa.com/wp-content/uploads/2026/08/anf-6free-indoor-dog-salmon.webp",
+      "retrievedAt": "2026-11-03T13:55:18.752Z",
+      "productId": "ac6b82c7-f08a-4324-8617-1640ecdf0722",
+      "expectedName": "ANF 생후 4개월 이상 인도어 독 식스프리 건식사료",
+      "hadIngredients": 15,
+      "language": "ko",
+      "caveat": "제조사 공식 제품 정보. 실제 구매한 포장과의 대조 전 검증 완료로 표시하지 않음.",
+      "requestId": "3fdc75e6-118d-4f4b-a6c5-6ace92344217",
+      "sourceHash": "fc1b5dd80d4817bb16fba151a9ff615009ea2d4a8cf2f7ec11161fe238561cd6",
+      "nutrition": {
+        "crude_protein": 26,
+        "crude_fat": 10,
+        "crude_fiber": 8,
+        "crude_ash": 11,
+        "moisture": 12,
+        "calcium": 1.2,
+        "phosphorus": 1
+      },
+      "kcalPer100g": 360,
+      "ingredientItemCount": 25,
+      "matchedIngredientCount": 12
+    },
+    {
+      "index": 16,
+      "url": "https://wooriwa.com/anf-lamb28-dog/",
+      "title": "ANF 램28 독",
+      "ingredientsText": "양육분, 소맥피, 대두박, 옥수수, 쌀, 옥분, 육골분, 동물성지방(소), 비트펄프, 정제어유, 완두, 아미종실, 계란분말, 가수분해닭고기분(천연향미제), 과일&야채믹스(토마토, 비트, 브로콜리, 바나나, 사과, 오렌지, 망고, 당근), 프리바이오틱스(치커리이눌린, 프락토올리고당), 정제대두유, 식염, 글루코사민, 콘드로이친, 염화칼륨, 비타민제합제, 미량광물질류합제, 탄산칼슘, 염화콜린, 타우린, DL-메치오닌, 로즈마리추출물, 산미제, 항산화제",
+      "nutritionText": "등록성분량 대사에너지 (열량) : 3,850 kcal/kg 조단백질 28.0% 이상 조지방 12.0% 이상 조섬유 4.0% 이하 조회분 9.0% 이하 칼슘 2.6% 이상 인 1.4% 이상 수분 12.0% 이하",
+      "image": "https://wooriwa.com/wp-content/uploads/2026/08/anf-lamb28-dog.webp",
+      "retrievedAt": "2026-11-03T13:55:18.817Z",
+      "productId": "fb3138f7-7a76-4090-b02a-c735f1657353",
+      "expectedName": "ANF 전연령 강아지 램28 건식사료, 양, 10kg, 1개",
+      "hadIngredients": 0,
+      "language": "ko",
+      "caveat": "제조사 공식 제품 정보. 실제 구매한 포장과의 대조 전 검증 완료로 표시하지 않음.",
+      "requestId": "12d2d183-5eae-40ef-a214-1f0323b8686e",
+      "sourceHash": "8651b351c24d4b2a02ce9d26107a3297d1744f54425f6c21f5f8e41ec25efe81",
+      "nutrition": {
+        "crude_protein": 28,
+        "crude_fat": 12,
+        "crude_fiber": 4,
+        "crude_ash": 9,
+        "moisture": 12,
+        "calcium": 2.6,
+        "phosphorus": 1.4
+      },
+      "kcalPer100g": 385,
+      "ingredientItemCount": 30,
+      "matchedIngredientCount": 15
+    },
+    {
+      "index": 17,
+      "url": "https://wooriwa.com/anf-advantage-cat-feline/",
+      "title": "ANF 어드밴티지 캣 필라인",
+      "ingredientsText": "동물성단백질(소), 곡류, 박류, 동물성지방(소), 소맥피, 소맥분, 비트펄프, 가수분해닭고기분(천연향미제), 맥주효모, 프로테아제(단백질분해효소), 유카추출물, 아미종실, DL-메치오닌, 타우린, 염화콜린, 비타민제합제(비타민 E, 나이아신, 판토텐산, 비타민A, 비타민D₃, 비타민B₁, 비타민B₂, 비타민B₆, 비타민B₁₂, 비오틴, 엽산), 미량광물질류합제(철분, 아연, 망간, 구리, 요오드, 코발트, 셀레늄), 비타민E, 탄산칼슘, 정제소금, 산미제, 항산화제 *유전자변형 옥수수, 대두 등 포함 가능성 있음",
+      "nutritionText": "등록성분량 대사에너지 (열량) : 4,030 kcal/kg 조단백질 30.0% 이상 조지방 15.0% 이상 조섬유 2.2% 이하 조회분 10.0% 이하 칼슘 1.7% 이상 인 1.3% 이상 수분 10.0% 이하",
+      "image": "https://wooriwa.com/wp-content/uploads/2026/08/anf-advantage-cat-feline.webp",
+      "retrievedAt": "2026-11-03T13:55:18.884Z",
+      "productId": "dd15ea58-472a-43dc-bde2-c9975af78ec5",
+      "expectedName": "ANF 전연령 고양이 AD 어드밴티지 필라인 건식사료, 4kg, 1개, 소",
+      "hadIngredients": 15,
+      "language": "ko",
+      "caveat": "제조사 공식 제품 정보. 실제 구매한 포장과의 대조 전 검증 완료로 표시하지 않음.",
+      "requestId": "1a5e5c7a-c2fe-45ec-a410-89c017806725",
+      "sourceHash": "475dc7a5fb051b7a9224f7bf293bda76e7db90c04388b30012f099bca9111ea0",
+      "nutrition": {
+        "crude_protein": 30,
+        "crude_fat": 15,
+        "crude_fiber": 2.2,
+        "crude_ash": 10,
+        "moisture": 10,
+        "calcium": 1.7,
+        "phosphorus": 1.3
+      },
+      "kcalPer100g": 403,
+      "ingredientItemCount": 23,
+      "matchedIngredientCount": 11
+    },
+    {
+      "index": 18,
+      "url": "https://wooriwa.com/anf-6free-plus-indoor-dog-beef-salmon/",
+      "title": "ANF 식스프리플러스 인도어 독 소고기&연어",
+      "ingredientsText": "동물성단백질(건조 분쇄된 소, 연어, 닭, 오리), 쌀, 정제닭기름, 가수분해닭고기분(천연향미제), 완두, 비트펄프, 병아리콩, 렌틸콩, 고구마, 셀룰로오스(정제섬유소), 과일&야채믹스(토마토, 비트, 브로콜리, 바나나, 사과, 오렌지, 망고, 당근), 정제어유, DL-메치오닌, 비타민 C, 프로테아제(단백질분해효소), 맥주효모, 페뉴그릭추출물, 유카추출물, 인산칼슘, 탄산칼슘, 염화칼륨, 비타민제합제(비타민A, D3, E, B1, B2, B6, B12, 비오틴, 엽산, 판토텐산, 나이아신), 미량광물질류합제(철, 아연, 망간, 구리, 요오드, 코발트, 셀레늄), 천연항산화제(로즈마리추출물, 비타민 E, 구연산, 플라보노이드), 베리믹스(마키베리, 아사이베리, 아로니아)",
+      "nutritionText": "등록성분량 대사에너지 (열량) : 3,600 kcal/kg 조단백질 27.0% 이상 조지방 10.0% 이상 조섬유 8.0% 이하 조회분 11.0% 이하 칼슘 1.2% 이상 인 1.0% 이상 수분 12.0% 이하",
+      "image": "https://wooriwa.com/wp-content/uploads/2026/08/anf-6free-plus-indoor-dog-beef-salmon.webp",
+      "retrievedAt": "2026-11-03T13:55:18.953Z",
+      "productId": "a6035f7c-97d3-460f-86e2-3f1821da4460",
+      "expectedName": "ANF 전연령 독 식스프리 플러스 레드 건식사료",
+      "hadIngredients": 0,
+      "language": "ko",
+      "caveat": "제조사 공식 제품 정보. 실제 구매한 포장과의 대조 전 검증 완료로 표시하지 않음.",
+      "requestId": "c3e4bd84-2981-49a3-aea5-34511adfaeaa",
+      "sourceHash": "9a56a7babf995326f3d20ddc50697bd21f082b86300f0d5eb9f630f5734c0d24",
+      "nutrition": {
+        "crude_protein": 27,
+        "crude_fat": 10,
+        "crude_fiber": 8,
+        "crude_ash": 11,
+        "moisture": 12,
+        "calcium": 1.2,
+        "phosphorus": 1
+      },
+      "kcalPer100g": 360,
+      "ingredientItemCount": 25,
+      "matchedIngredientCount": 12
+    },
+    {
+      "index": 275,
+      "url": "https://wooriwa.com/iskhan-dog-adult-balance/",
+      "title": "이즈칸 독 어덜트 밸런스",
+      "ingredientsText": "닭고기분, 신선한 닭고기, 완두, 타피오카, 바나나분말, 닭기름, 오리고기분, 비트펄프, 가수분해닭고기분(천연향미제), 아마종실, 맥주효모, 프로바이오틱스(Bacillus subtilis, Bacillus licheniformis), 프리바이오틱스(치커리 이눌린, 프락토올리고당), 가수분해연어분, 글루코사민, 콘드로이친, 탄산칼슘, 비타민제 합제(비타민E, 나이아신, 판토텐산, 비타민A, 비타민D3, 비타민B1, 비타민B2, 비타민B6, 비타민B12, 비오틴, 엽산), 구연산, 미량광물질류 합제(철, 아연, 망간, 구리, 요오드, 코발트, 셀레늄), 비타민E, DL-메치오닌, 염화칼륨, 항산화제(비타민E, 로즈마리추출물), 프로테아제(단백질분해효소), 베리믹스(마키베리, 아사이베리, 아로니아) ※ 프로바이오틱스(Bacillus subtilis, Bacillus licheniformis)는 첨가 기준으로 유통 중 소실 가능성 있음",
+      "nutritionText": "등록성분량 대사에너지 (열량) : 4,040kcal/kg 조단백질 30.0% 이상 조지방 14.0% 이상 조섬유 3.2% 이하 조회분 11.0% 이하 칼슘 1.65% 이상 인 1.05% 이상 수분 11.0% 이하",
+      "image": "https://wooriwa.com/wp-content/uploads/2026/08/iskhan-dog-adult-balance.webp",
+      "retrievedAt": "2026-11-03T13:55:19.009Z",
+      "productId": "d5deda2a-b791-4ba8-b3c6-db06e1b7ebba",
+      "expectedName": "이즈칸 강아지 어덜트 밸런스",
+      "hadIngredients": 0,
+      "language": "ko",
+      "caveat": "제조사 공식 제품 정보. 실제 구매한 포장과의 대조 전 검증 완료로 표시하지 않음.",
+      "requestId": "2223c19f-4c8d-45f5-af9e-1c289745ffb4",
+      "sourceHash": "7754508735a4cf78728fb25cecdd2970cca5fb5ac6eb0fbff78691e64c07ac99",
+      "nutrition": {
+        "crude_protein": 30,
+        "crude_fat": 14,
+        "crude_fiber": 3.2,
+        "crude_ash": 11,
+        "moisture": 11,
+        "calcium": 1.65,
+        "phosphorus": 1.05
+      },
+      "kcalPer100g": 404,
+      "ingredientItemCount": 26,
+      "matchedIngredientCount": 12
+    },
+    {
+      "index": 276,
+      "url": "https://wooriwa.com/iskhan-cat-senior-balance/",
+      "title": "이즈칸 캣 시니어 밸런스",
+      "ingredientsText": "닭고기분, 신선한 닭고기, 완두, 타피오카, 닭기름, 비트펄프, 바나나분말, 셀룰로오스(정제섬유소), 오리고기분, 가수분해닭고기분(천연향미제), 어분, 신선한 연어, 염화콜린, 코엔자임 Q10, 차전자피, 구연산, 항산화제(비타민E, 로즈마리추출물), 비타민제 합제(비타민E, 나이아신, 판토텐산, 비타민A, 비타민D3, 비타민B1, 비타민B2, 비타민B6, 비타민B12, 비오틴, 엽산), 아마종실, 타우린, 미량광물질류 합제(철, 아연, 망간, 구리, 요오드, 코발트, 셀레늄), 맥주효모, DL-메치오닌",
+      "nutritionText": "등록성분량 대사에너지 (열량) : 3,940kcal/kg 조단백질 28.5% 이상 조지방 14.0% 이상 조섬유 5.0% 이하 조회분 9.5% 이하 칼슘 1.15% 이상 인 1.10% 이상 수분 10.0% 이하",
+      "image": "https://wooriwa.com/wp-content/uploads/2026/08/iskhan-cat-senior-balance.webp",
+      "retrievedAt": "2026-11-03T13:55:19.073Z",
+      "productId": "bc79237e-d522-41a4-8a49-6f11ab85dedb",
+      "expectedName": "이즈칸 고양이 시니어 밸런스 기능성 사료",
+      "hadIngredients": 15,
+      "language": "ko",
+      "caveat": "제조사 공식 제품 정보. 실제 구매한 포장과의 대조 전 검증 완료로 표시하지 않음.",
+      "requestId": "b393aa2d-8252-427a-aeb4-cf62e38256d2",
+      "sourceHash": "b7ee37fbdedd8a97e3901eab6bb86f330a58c39020b9ce7191221fa96f1015cc",
+      "nutrition": {
+        "crude_protein": 28.5,
+        "crude_fat": 14,
+        "crude_fiber": 5,
+        "crude_ash": 9.5,
+        "moisture": 10,
+        "calcium": 1.15,
+        "phosphorus": 1.1
+      },
+      "kcalPer100g": 394,
+      "ingredientItemCount": 23,
+      "matchedIngredientCount": 13
+    },
+    {
+      "index": 277,
+      "url": "https://wooriwa.com/iskhan-cat-all-life-balance/",
+      "title": "이즈칸 캣 올라이프 밸런스",
+      "ingredientsText": "닭고기분, 신선한 닭고기, 완두, 닭기름, 타피오카, 비트펄프, 오리고기분, 바나나분말, 가수분해닭고기분(천연향미제), 신선한 연어, 프로바이오틱스(Bacillus subtilis, Bacillus licheniformis), 맥주효모, 프리바이오틱스(치커리 이눌린, 프락토올리고당), 셀룰로오스(정제섬유소), 아마종실, 가수분해연어분, 염화콜린, 정제소금, 비타민제 합제(비타민E, 나이아신, 판토텐산, 비타민A, 비타민D3, 비타민B1, 비타민B2, 비타민B6, 비타민B12, 비오틴, 엽산), 타우린, DL-메치오닌, 미량광물질류 합제(철, 아연, 망간, 구리, 요오드, 코발트, 셀레늄), 구연산, 베리믹스(마키베리, 아사이베리, 아로니아), 항산화제(비타민E, 로즈마리추출물) ※ 프로바이오틱스(Bacillus subtilis, Bacillus licheniformis)는 첨가 기준으로 유통 중 소실 가능성 있음",
+      "nutritionText": "등록성분량 대사에너지 (열량) : 4,160kcal/kg 조단백질 32.0% 이상 조지방 17.0% 이상 조섬유 3.5% 이하 조회분 11.0% 이하 칼슘 1.35% 이상 인 1.15% 이상 수분 10.0% 이하",
+      "image": "https://wooriwa.com/wp-content/uploads/2026/08/iskhan-cat-all-life-balance.webp",
+      "retrievedAt": "2026-11-03T13:55:19.127Z",
+      "productId": "0dc1553c-e3ed-41e5-b234-4a2db292e221",
+      "expectedName": "이즈칸 고양이 올라이프 밸런스",
+      "hadIngredients": 14,
+      "language": "ko",
+      "caveat": "제조사 공식 제품 정보. 실제 구매한 포장과의 대조 전 검증 완료로 표시하지 않음.",
+      "requestId": "603689d6-987b-4f87-a183-688c43509ee8",
+      "sourceHash": "fe247d4bd1ae2360bd78aba66fa01826d36da846dc68a69583d1a5862ffc07ff",
+      "nutrition": {
+        "crude_protein": 32,
+        "crude_fat": 17,
+        "crude_fiber": 3.5,
+        "crude_ash": 11,
+        "moisture": 10,
+        "calcium": 1.35,
+        "phosphorus": 1.15
+      },
+      "kcalPer100g": 416,
+      "ingredientItemCount": 25,
+      "matchedIngredientCount": 11
+    },
+    {
+      "index": 278,
+      "url": "https://wooriwa.com/iskhan-dog-senior-balance/",
+      "title": "이즈칸 독 시니어 밸런스",
+      "ingredientsText": "닭고기분, 신선한 닭고기, 완두, 타피오카, 바나나분말, 비트펄프, 닭기름, 오리고기분, 가수분해닭고기분(천연향미제), 렌틸콩, 고구마, 셀룰로오스(정제섬유소), 코엔자임 Q10, 항산화제(비타민E, 로즈마리추출물), 코코넛분말(MCT), 비타민E, 탄산칼슘, 맥주효모, 아마종실, 비타민제 합제(비타민E, 나이아신, 판토텐산, 비타민A, 비타민D3, 비타민B1, 비타민B2, 비타민B6, 비타민B12, 비오틴, 엽산), 미량광물질류 합제(철, 아연, 망간, 구리, 요오드, 코발트, 셀레늄), 구연산, 정제소금, 어유, 공액리놀레산(CLA), 염화콜린, 프리바이오틱스(치커리 이눌린, 프락토올리고당), 글루코사민, 프로테아제(단백질분해효소)",
+      "nutritionText": "등록성분량 대사에너지 (열량) : 3,750kcal/kg 조단백질 30.0% 이상 조지방 12.0% 이상 조섬유 5.7% 이하 조회분 9.5% 이하 칼슘 1.40% 이상 인 0.85% 이상 수분 10.0% 이하",
+      "image": "https://wooriwa.com/wp-content/uploads/2026/08/iskhan-dog-senior-balance.webp",
+      "retrievedAt": "2026-11-03T13:55:19.185Z",
+      "productId": "03d3e49c-e00e-4e29-bb37-0a2efb333b61",
+      "expectedName": "이즈칸 독 시니어 밸런스 사료",
+      "hadIngredients": 0,
+      "language": "ko",
+      "caveat": "제조사 공식 제품 정보. 실제 구매한 포장과의 대조 전 검증 완료로 표시하지 않음.",
+      "requestId": "a3c7496b-c0c8-4b97-a970-a588e32d73d2",
+      "sourceHash": "f210c8d0da21f10ead06b57959d7723c1042b34df06fb3ca28a7caec4c5b0ec9",
+      "nutrition": {
+        "crude_protein": 30,
+        "crude_fat": 12,
+        "crude_fiber": 5.7,
+        "crude_ash": 9.5,
+        "moisture": 10,
+        "calcium": 1.4,
+        "phosphorus": 0.85
+      },
+      "kcalPer100g": 375,
+      "ingredientItemCount": 29,
+      "matchedIngredientCount": 16
+    },
+    {
+      "index": 279,
+      "url": "https://wooriwa.com/iskhan-dog-weight-control-solution/",
+      "title": "이즈칸 독 웨이트 컨트롤 솔루션",
+      "ingredientsText": "닭고기분, 신선한 닭고기, 완두, 타피오카, 바나나분말, 비트펄프, 닭기름, 오리고기분, 렌틸콩, 가수분해닭고기분(천연향미제), 고구마, 셀룰로오스(정제섬유소), 아마종실, 공액리놀레산(CLA), L-카르니틴, 맥주효모, 탄산칼슘, 염화콜린, 정제소금, 미량광물질류 합제(철, 아연, 망간, 구리, 요오드, 코발트, 셀레늄), 비타민제 합제(비타민E, 나이아신, 판토텐산, 비타민A, 비타민D3, 비타민B1, 비타민B2, 비타민B6, 비타민B12, 비오틴, 엽산), 비타민E, 구연산, 인산칼슘, 프로테아제(단백질분해효소), 글루코사민, 콘드로이친, 항산화제(비타민E, 로즈마리추출물), 프리바이오틱스(치커리 이눌린, 프락토올리고당)",
+      "nutritionText": "등록성분량 대사에너지 (열량) : 3,610kcal/kg 조단백질 26.0% 이상 조지방 11.0% 이상 조섬유 5.5% 이하 조회분 10.0% 이하 칼슘 1.30% 이상 인 0.80% 이상 수분 10.0% 이하",
+      "image": "https://wooriwa.com/wp-content/uploads/2026/08/iskhan-dog-weight-control-solution.webp",
+      "retrievedAt": "2026-11-03T13:55:19.239Z",
+      "productId": "a379d88b-4f52-410f-b231-47fabb5b3dc0",
+      "expectedName": "이즈칸 독 웨이트 컨트롤 솔루션 사료",
+      "hadIngredients": 15,
+      "language": "ko",
+      "caveat": "제조사 공식 제품 정보. 실제 구매한 포장과의 대조 전 검증 완료로 표시하지 않음.",
+      "requestId": "08bbf99f-bc3a-4d72-a371-dbe98083a21f",
+      "sourceHash": "3e7e7ce46db7bf98e3b5134a31e4f8a626a30412840224b091a03e773aeaa58d",
+      "nutrition": {
+        "crude_protein": 26,
+        "crude_fat": 11,
+        "crude_fiber": 5.5,
+        "crude_ash": 10,
+        "moisture": 10,
+        "calcium": 1.3,
+        "phosphorus": 0.8
+      },
+      "kcalPer100g": 361,
+      "ingredientItemCount": 29,
+      "matchedIngredientCount": 17
+    },
+    {
+      "index": 280,
+      "url": "https://wooriwa.com/iskhan-cat-urinary-solution/",
+      "title": "이즈칸 캣 유리너리 솔루션",
+      "ingredientsText": "닭고기분, 신선한 닭고기, 완두, 타피오카, 오리고기분, 바나나분말, 비트펄프, 닭기름, 가수분해닭고기분(천연향미제), 신선한 연어, 베리믹스(마키베리, 아사이베리, 아로니아), 항산화제(비타민E, 로즈마리추출물), DL-메치오닌, 대두유, 아마종실, 구연산, 염화콜린, 정제소금, 비타민제 합제(비타민E, 나이아신, 판토텐산, 비타민A, 비타민D3, 비타민B1, 비타민B2, 비타민B6, 비타민B12, 비오틴, 엽산), 타우린, 미량광물질류 합제(철, 아연, 망간, 구리, 요오드, 코발트, 셀레늄), 셀룰로오스(정제섬유소), 인산칼슘, 페뉴그릭추출물, L-트립토판",
+      "nutritionText": "등록성분량 대사에너지 (열량) : 3,980kcal/kg 조단백질 30.0% 이상 조지방 14.0% 이상 조섬유 4.0% 이하 조회분 11.0% 이하 칼슘 1.25% 이상 인 1.10% 이상 수분 10.0% 이하",
+      "image": "https://wooriwa.com/wp-content/uploads/2026/08/iskhan-cat-urinary-solution.webp",
+      "retrievedAt": "2026-11-03T13:55:19.292Z",
+      "productId": "ed507695-b673-4077-9b39-c3a26b577424",
+      "expectedName": "이즈칸 캣 유리너리 솔루션 사료",
+      "hadIngredients": 15,
+      "language": "ko",
+      "caveat": "제조사 공식 제품 정보. 실제 구매한 포장과의 대조 전 검증 완료로 표시하지 않음.",
+      "requestId": "b2f65ae6-88bb-4582-ae41-1639c6f94f13",
+      "sourceHash": "802df028139733fdcbafecba481f8b0b7ccd75960fbdf418ba7385cfa2fe60d4",
+      "nutrition": {
+        "crude_protein": 30,
+        "crude_fat": 14,
+        "crude_fiber": 4,
+        "crude_ash": 11,
+        "moisture": 10,
+        "calcium": 1.25,
+        "phosphorus": 1.1
+      },
+      "kcalPer100g": 398,
+      "ingredientItemCount": 25,
+      "matchedIngredientCount": 12
+    },
+    {
+      "index": 1,
+      "url": "https://www.royalcanin.com/kr/dogs/products/vet-products/hypoallergenic-small-dog-3952",
+      "title": "독 하이포알러제닉 스몰독",
+      "ingredientsText": "쌀, 대두박(가수분해 대두단백질), 동물성 지방 (닭, 오리, 돼지), 혼합광물질류 합제, 동물성 유도단백질(닭, 칠면조), 대두유, 사탕무박, 프락토올리고당, 어유, 보리지유, 금잔화 분말, 비타민 A, 비타민 D3, 철, 요오드, 구리, 망간, 아연, 셀레늄, 제올라이트, 소르빈산칼륨, 항산화제",
+      "image": "https://marspetcareaprimocdn.petcare.global/aa8fb1ab-54e8-4724-9e8b-b2490009f546/aa8fb1ab-54e8-4724-9e8b-b2490009f546_DownloadAsJpg.jpg",
+      "retrievedAt": "2026-11-03T14:05:18.040Z",
+      "caveat": "제조사 한국 웹사이트의 기본 정보이며 실제 국내 유통 포장 표시와 다를 수 있음. 포장 라벨 대조 전 검증 완료로 표시하지 않음.",
+      "veterinaryOnly": true,
+      "nutritionText": null,
+      "productId": "c5b6a5cb-9ebc-46d1-84df-ced870c1e82a",
+      "expectedName": ")당일발송( 로얄캐닌 독 하이포알러제닉 스몰독 1kg 강아지 알러지 피부질환 처방식사료",
+      "hadIngredients": 14,
+      "language": "ko",
+      "requestId": "218e78de-3996-43fa-aa5c-1ee29aec905d",
+      "sourceHash": "9533655d353d34da4dfb74649d30004295e2dd45ee44b3a1f738e45160798c3f",
+      "nutrition": {},
+      "ingredientItemCount": 22,
+      "matchedIngredientCount": 16
+    },
+    {
+      "index": 146,
+      "url": "https://www.royalcanin.com/kr/dogs/products/vet-products/hypoallergenic-small-dog-3952",
+      "title": "독 하이포알러제닉 스몰독",
+      "ingredientsText": "쌀, 대두박(가수분해 대두단백질), 동물성 지방 (닭, 오리, 돼지), 혼합광물질류 합제, 동물성 유도단백질(닭, 칠면조), 대두유, 사탕무박, 프락토올리고당, 어유, 보리지유, 금잔화 분말, 비타민 A, 비타민 D3, 철, 요오드, 구리, 망간, 아연, 셀레늄, 제올라이트, 소르빈산칼륨, 항산화제",
+      "image": "https://marspetcareaprimocdn.petcare.global/aa8fb1ab-54e8-4724-9e8b-b2490009f546/aa8fb1ab-54e8-4724-9e8b-b2490009f546_DownloadAsJpg.jpg",
+      "retrievedAt": "2026-11-03T14:05:18.040Z",
+      "caveat": "제조사 한국 웹사이트의 기본 정보이며 실제 국내 유통 포장 표시와 다를 수 있음. 포장 라벨 대조 전 검증 완료로 표시하지 않음.",
+      "veterinaryOnly": true,
+      "nutritionText": null,
+      "productId": "2017d9e2-ade3-48ea-abb2-ce54832f198e",
+      "expectedName": "로얄캐닌 강아지 하이포알러제닉 스몰독 사료",
+      "hadIngredients": 15,
+      "language": "ko",
+      "requestId": "a3a1b31f-f11d-479c-a9f2-aa64a38a302b",
+      "sourceHash": "9533655d353d34da4dfb74649d30004295e2dd45ee44b3a1f738e45160798c3f",
+      "nutrition": {},
+      "ingredientItemCount": 22,
+      "matchedIngredientCount": 16
+    },
+    {
+      "index": 147,
+      "url": "https://www.royalcanin.com/kr/cats/products/vet-products/urinary-so-moderate-calorie-3954",
+      "title": "캣 유리너리 S/O 모더레이트 칼로리",
+      "ingredientsText": "쌀, 육분(닭, 칠면조, 오리), 밀 글루텐, 분말 셀룰로스, 옥수수, 혼합광물질류 합제, 동물성 지방(닭, 칠면조, 오리), 옥수수 글루텐, 동물성 유도단백질(닭, 칠면조), 어유, 대두유, 프락토올리고당, 금잔화 추출물, 밀, L-카르니틴, 아미노산제 합제, 비타민 A, 비타민 D3, 비타민 E, 철, 요오드, 구리, 망간, 아연, 셀레늄, 소르빈산칼륨, 항산화제",
+      "image": "https://marspetcareaprimocdn.petcare.global/163788bf-0e63-4f7b-8e7f-b2490009f7b3/163788bf-0e63-4f7b-8e7f-b2490009f7b3_DownloadAsJpg.jpg",
+      "retrievedAt": "2026-11-03T14:05:21.790Z",
+      "caveat": "제조사 한국 웹사이트의 기본 정보이며 실제 국내 유통 포장 표시와 다를 수 있음. 포장 라벨 대조 전 검증 완료로 표시하지 않음.",
+      "veterinaryOnly": true,
+      "nutritionText": null,
+      "productId": "e9b16121-1bd2-4031-a594-0d8287f52731",
+      "expectedName": "로얄캐닌 고양이 기능성 사료",
+      "hadIngredients": 0,
+      "language": "ko",
+      "requestId": "82a7e969-757e-43a2-a806-493beed72189",
+      "sourceHash": "d2ca5dd07055f8e8c6206d0d3b445f484468a1e8691f431145b31255e3ba443f",
+      "nutrition": {},
+      "ingredientItemCount": 27,
+      "matchedIngredientCount": 21
+    },
+    {
+      "index": 149,
+      "url": "https://www.royalcanin.com/kr/dogs/products/retail-products/mini-indoor-adult-2434",
+      "title": "미니 인도어 어덜트",
+      "ingredientsText": "쌀, 밀가루, 육분(닭, 오리), 옥수수, 동물성 유지(닭, 오리), 밀 글루텐, 유도 단백질(닭, 칠면조, 어류), 옥수수가루, 사탕무박, 양조효모, 대두유, 분말 셀룰로오스, 제올라이트, 정제소금, 비타민제 합제, 탄산칼슘, DL-메티오닌, 제일인산칼슘, 글리세린 지방산 에스테르, 염화칼륨, 혼합광물질류 합제, 어유, 프락토올리고당, 폴리인산나트륨, 소르빈산칼륨, 염화콜린, L-라이신, 비타민 E, L-타이로신, 해조유(EPA+DHA의 원료), 비타민 C, L-카르니틴, 식물성 유지, 산화마그네슘, 로즈마리 추출물.",
+      "nutritionText": "조단백 19.0% 이상, 조지방 12.0% 이상, 칼슘 0.76% 이상, 인 0.56% 이상, 조섬유 2.8% 이하, 조회분 7.4% 이하, 수분 10.5% 이하",
+      "image": "https://marspetcareaprimocdn.petcare.global/88e9a3c2-24f9-4328-b7e9-b3a7002b2517/88e9a3c2-24f9-4328-b7e9-b3a7002b2517_DownloadAsJpg.jpg",
+      "retrievedAt": "2026-11-03T14:05:24.506Z",
+      "caveat": "제조사 한국 웹사이트의 기본 정보이며 실제 국내 유통 포장 표시와 다를 수 있음. 포장 라벨 대조 전 검증 완료로 표시하지 않음.",
+      "veterinaryOnly": false,
+      "productId": "00000000-0000-0000-0000-000000000201",
+      "expectedName": "로얄캐닌 미니 인도어 어덜트",
+      "hadIngredients": 5,
+      "language": "ko",
+      "requestId": "f809e67e-e093-4266-a0ed-b0b26a83284a",
+      "sourceHash": "ee3e591fc1382e150c86f58ce0b7ff1281c903b79632eaade6efedee838b1fbd",
+      "nutrition": {
+        "crude_protein": 19,
+        "crude_fat": 12,
+        "crude_fiber": 2.8,
+        "crude_ash": 7.4,
+        "moisture": 10.5,
+        "calcium": 0.76,
+        "phosphorus": 0.56
+      },
+      "ingredientItemCount": 35,
+      "matchedIngredientCount": 19
+    },
+    {
+      "index": 151,
+      "url": "https://www.royalcanin.com/kr/cats/products/retail-products/indoor-27-2529",
+      "title": "인도어",
+      "ingredientsText": "밀, 쌀, 육분(닭, 오리), 밀 글루텐, 옥수수, 동물성 지방(닭, 오리), 동물성 유도단백질(닭, 칠면조, 어류), 밀가루, 분말셀룰로오스, 혼합광물질류 합제, 사탕무박, 대두유, 효모, 어유, 프락토올리고당, 차전자피식이섬유, L-카르니틴, 아미노산제 합제, 비타민 A, 비타민 D3, 철, 요오드, 구리, 망간, 아연, 셀레늄, 제올라이트, 항산화제.",
+      "nutritionText": "단백질 27%, 지방 13%, 조섬유 4%, 조회분 7.3%, NFE 43.2%",
+      "image": "https://marspetcareaprimocdn.petcare.global/6e85bfb2-2a80-4d09-800d-b3aa00a4ebfc/6e85bfb2-2a80-4d09-800d-b3aa00a4ebfc_DownloadAsJpg.jpg",
+      "retrievedAt": "2026-11-03T14:05:27.221Z",
+      "caveat": "제조사 한국 웹사이트의 기본 정보이며 실제 국내 유통 포장 표시와 다를 수 있음. 포장 라벨 대조 전 검증 완료로 표시하지 않음.",
+      "veterinaryOnly": false,
+      "productId": "e0b4f9a4-a6c3-4314-8680-051741239650",
+      "expectedName": "로얄캐닌 인도어 고양이 사료",
+      "hadIngredients": 0,
+      "language": "ko",
+      "requestId": "756beddb-c55b-4429-a079-d286b7c28cfb",
+      "sourceHash": "da61b54f6ffc62589712f029ce13dc5e493948486a4e995ec91083ead83aa3a0",
+      "nutrition": {
+        "crude_protein": 27,
+        "crude_fat": 13,
+        "crude_fiber": 4,
+        "crude_ash": 7.3
+      },
+      "ingredientItemCount": 28,
+      "matchedIngredientCount": 21
+    },
+    {
+      "index": 152,
+      "url": "https://www.royalcanin.com/kr/cats/products/retail-products/hairball-care-2534",
+      "title": "헤어볼 케어",
+      "ingredientsText": "육분(닭, 오리), 옥수수, 분말셀룰로오스, 쌀, 밀 글루텐, 동물성 지방(닭, 오리), 옥수수 글루텐, 동물성 유도단백질(닭, 칠면조), 밀, 밀가루, 사탕무박, 혼합광물질류 합제, 효모, 대두유, 어유, 차전자피식이섬유(0.5%), 프락토올리고당, 아미노산제 합제, 비타민 A, 비타민 D3, 철, 요오드, 구리, 망간, 아연, 셀레늄, 항산화제",
+      "nutritionText": "단백질 34%, 지방 15%, 조섬유 6.9%, 조회분 6.9%",
+      "image": "https://marspetcareaprimocdn.petcare.global/23c87388-76e1-49d0-81e3-b42500c5b199/23c87388-76e1-49d0-81e3-b42500c5b199_DownloadAsJpg.jpg",
+      "retrievedAt": "2026-11-03T14:05:29.362Z",
+      "caveat": "제조사 한국 웹사이트의 기본 정보이며 실제 국내 유통 포장 표시와 다를 수 있음. 포장 라벨 대조 전 검증 완료로 표시하지 않음.",
+      "veterinaryOnly": false,
+      "productId": "7941adf0-c2c9-402c-a40d-2570fa0d504e",
+      "expectedName": "로얄캐닌 캣 헤어볼 케어 사료 2kg 고양이 헤어볼 사료",
+      "hadIngredients": 14,
+      "language": "ko",
+      "requestId": "2b06cfed-9bf4-4bd9-a896-c76f3cf8a467",
+      "sourceHash": "9f1fddf7af25a06ef6c1d4f3769c86a6c3ecc8d0a2b2dc430351a4c6e150030d",
+      "nutrition": {
+        "crude_protein": 34,
+        "crude_fat": 15,
+        "crude_fiber": 6.9,
+        "crude_ash": 6.9
+      },
+      "ingredientItemCount": 27,
+      "matchedIngredientCount": 21
+    },
+    {
+      "index": 153,
+      "url": "https://www.royalcanin.com/kr/cats/products/retail-products/hairball-care-2534",
+      "title": "헤어볼 케어",
+      "ingredientsText": "육분(닭, 오리), 옥수수, 분말셀룰로오스, 쌀, 밀 글루텐, 동물성 지방(닭, 오리), 옥수수 글루텐, 동물성 유도단백질(닭, 칠면조), 밀, 밀가루, 사탕무박, 혼합광물질류 합제, 효모, 대두유, 어유, 차전자피식이섬유(0.5%), 프락토올리고당, 아미노산제 합제, 비타민 A, 비타민 D3, 철, 요오드, 구리, 망간, 아연, 셀레늄, 항산화제",
+      "nutritionText": "단백질 34%, 지방 15%, 조섬유 6.9%, 조회분 6.9%",
+      "image": "https://marspetcareaprimocdn.petcare.global/23c87388-76e1-49d0-81e3-b42500c5b199/23c87388-76e1-49d0-81e3-b42500c5b199_DownloadAsJpg.jpg",
+      "retrievedAt": "2026-11-03T14:05:29.362Z",
+      "caveat": "제조사 한국 웹사이트의 기본 정보이며 실제 국내 유통 포장 표시와 다를 수 있음. 포장 라벨 대조 전 검증 완료로 표시하지 않음.",
+      "veterinaryOnly": false,
+      "productId": "05127958-76a2-419d-8619-fcffaba90960",
+      "expectedName": "로얄캐닌 헤어볼 케어 고양이 사료",
+      "hadIngredients": 0,
+      "language": "ko",
+      "requestId": "30dea009-1b24-4198-aafd-15959a96baf4",
+      "sourceHash": "9f1fddf7af25a06ef6c1d4f3769c86a6c3ecc8d0a2b2dc430351a4c6e150030d",
+      "nutrition": {
+        "crude_protein": 34,
+        "crude_fat": 15,
+        "crude_fiber": 6.9,
+        "crude_ash": 6.9
+      },
+      "ingredientItemCount": 27,
+      "matchedIngredientCount": 21
+    },
+    {
+      "index": 175,
+      "url": "https://www.royalcanin.com/kr/dogs/products/retail-products/medium-adult-3004",
+      "title": "미디엄 어덜트",
+      "ingredientsText": "옥수수, 육분(닭, 칠면조, 오리), 밀, 동물성 지방(닭, 칠면조), 유도단백질(닭, 칠면조), 사탕무박, 혼합광물질류 합제, 어유, 효모, 대두유, 가수분해효모(만난올리고당의 원료), 아미노산제 합제, 비타민A, 비타민D3, 철, 요오드, 구리, 망간, 아연, 셀레늄, 소르빈산칼륨, 항산화제",
+      "nutritionText": "단백질 25%, 지방 14%, 조섬유 1.3%, 조회분 6.1%, NFE 44.1%",
+      "image": "https://marspetcareaprimocdn.petcare.global/737a3a8d-549a-4448-aeb6-b37701520bcb/737a3a8d-549a-4448-aeb6-b37701520bcb_DownloadAsJpg.jpg",
+      "retrievedAt": "2026-11-03T14:05:29.632Z",
+      "caveat": "제조사 한국 웹사이트의 기본 정보이며 실제 국내 유통 포장 표시와 다를 수 있음. 포장 라벨 대조 전 검증 완료로 표시하지 않음.",
+      "veterinaryOnly": false,
+      "productId": "d1e3c5a7-1234-4567-8901-234567890abc",
+      "expectedName": "미디엄 어덜트",
+      "hadIngredients": 4,
+      "language": "ko",
+      "requestId": "dae3bdaa-5df0-4a8b-a979-60b7a8d3c36e",
+      "sourceHash": "db7575ecab9fc8151b88ce91a3ec791e92230400c6ce9e7086ae08f7aa0c4e59",
+      "nutrition": {
+        "crude_protein": 25,
+        "crude_fat": 14,
+        "crude_fiber": 1.3,
+        "crude_ash": 6.1
+      },
+      "ingredientItemCount": 22,
+      "matchedIngredientCount": 18
+    },
+    {
+      "index": 186,
+      "url": "https://www.bonacibo.com/bonacibo-adult-cat-lamb-rice/",
+      "title": "Bonacibo Adult Cat Lamb & Rice",
+      "ingredientsText": "Dehydrated Lamb Protein (27%), Hydrolized Lamb Protein (22%), Baldo Rice (16%), Maize, Refined Chicken Oil, Anchovy Meal, Krill Meal, Brewers Dried Yeast, Anchovy Oil, Nucleotide Yeast Protein, Minerals, Prebiotic Mannan Oligo Saccarides, Seaweed, Yucca Extract, Cranberry Powder, Psyllium.",
+      "image": "https://www.bonacibo.com/wp-content/uploads/2020/03/BC_Cat_LR_2kg.png",
+      "retrievedAt": "2026-11-03T14:05:31.572Z",
+      "language": "en",
+      "caveat": "제조사 국제 공식 제품 정보. 국내 유통 포장과의 라벨 대조 전 검증 완료로 표시하지 않음.",
+      "productId": "93450fff-2617-446a-b3e4-890027f5bd53",
+      "expectedName": "보나시보 어덜트 고양이 건식 사료, 1개, 5kg, 양+쌀",
+      "hadIngredients": 0,
+      "requestId": "b0468203-05b3-4720-ac38-6cbc43bf34e5",
+      "sourceHash": "33ccee5e883b7d7bd159d1f86776cfb1c611d88041ef35f86f24a7542ec34a6f",
+      "nutrition": {},
+      "ingredientItemCount": 16,
+      "matchedIngredientCount": 1
+    },
+    {
+      "index": 187,
+      "url": "https://www.bonacibo.com/bonacibo-kitten-chicken/",
+      "title": "Bonacibo Kitten",
+      "ingredientsText": "Dehydrated Chicken Protein (46%), Baldo Rice (14%), Maize, Refined Chicken Oil, Anchovy Meal (7%), Krill Meal, Brewers Dried Yeast, Hydrolized Chicken Liver, Anchovy Oil, Nucleotide Yeast Protein, Minerals, Prebiotic Mannan Oligo Saccarides, Seaweed, Yucca Extract, Cranberry Powder, Psyllium.",
+      "image": "https://www.bonacibo.com/wp-content/uploads/2020/03/BC_Kitten_Tvk_2kg.png",
+      "retrievedAt": "2026-11-03T14:05:32.645Z",
+      "language": "en",
+      "caveat": "제조사 국제 공식 제품 정보. 국내 유통 포장과의 라벨 대조 전 검증 완료로 표시하지 않음.",
+      "productId": "e817662d-67ea-461b-902e-21062199a804",
+      "expectedName": "보나시보 키튼 고양이 건식사료, 닭+쌀, 1.5kg, 2개",
+      "hadIngredients": 0,
+      "requestId": "2d8f2aac-3d92-4e4b-a966-b58b490d26a6",
+      "sourceHash": "d0c42d08b632e9c56b9c4f75f066a3c5cffeda4b7a8d75af466758dce4281420",
+      "nutrition": {},
+      "ingredientItemCount": 16,
+      "matchedIngredientCount": 2
+    },
+    {
+      "index": 400,
+      "title": "덴티페어리 SS",
+      "url": "https://forcans.co.kr/product/detail.html?product_no=128&cate_no=29&display_group=1",
+      "ingredientsText": "타피오카, 말티톨, 이소말토올리고당, 글리세린, 현미, 귀리, 젤라틴, 식이섬유, 아마씨분말, 셀룰로오스검, 모노글리세라이드, 비타민B1라우릴황산염, 아세트산아연, 향료",
+      "retrievedAt": "2026-11-03T14:12:47.655Z",
+      "caveat": "제조사 공식몰의 현재 원료 표기. 리뉴얼 이전 포장과 성분이 다를 수 있음.",
+      "productId": "132d7875-bb4a-4072-ad0b-b940fae902ea",
+      "expectedName": "포켄스 덴티페어리 디스펜서 덴탈껌 SS 124개입",
+      "hadIngredients": 0,
+      "language": "ko",
+      "requestId": "622cdc32-c629-459c-ab57-c65183f20d18",
+      "sourceHash": "d1cd38c40d59b9f65e3460ad8ae660c0562f5449077d55c7510623040d5fd626",
+      "nutrition": {},
+      "ingredientItemCount": 14,
+      "matchedIngredientCount": 7
+    },
+    {
+      "index": 401,
+      "title": "덴티페어리 SS",
+      "url": "https://forcans.co.kr/product/detail.html?product_no=128&cate_no=29&display_group=1",
+      "ingredientsText": "타피오카, 말티톨, 이소말토올리고당, 글리세린, 현미, 귀리, 젤라틴, 식이섬유, 아마씨분말, 셀룰로오스검, 모노글리세라이드, 비타민B1라우릴황산염, 아세트산아연, 향료",
+      "retrievedAt": "2026-11-03T14:12:47.655Z",
+      "caveat": "제조사 공식몰의 현재 원료 표기. 리뉴얼 이전 포장과 성분이 다를 수 있음.",
+      "productId": "5153ec90-75c3-4eb3-a754-953379564e02",
+      "expectedName": "포켄스덴티페어리 강아지 덴탈껌 SS",
+      "hadIngredients": 0,
+      "language": "ko",
+      "requestId": "9d2b3edf-5fb7-4146-a5f7-436224bb15d0",
+      "sourceHash": "d1cd38c40d59b9f65e3460ad8ae660c0562f5449077d55c7510623040d5fd626",
+      "nutrition": {},
+      "ingredientItemCount": 14,
+      "matchedIngredientCount": 7
+    },
+    {
+      "index": 73,
+      "title": "멀티프로테인95%",
+      "url": "https://naturalcore.co.kr/product/멀티프로테인95/84/",
+      "labelImageUrl": "https://naturalcore.co.kr/detail/cat/feed/multi95.jpg",
+      "ingredientsText": "가수분해 유기농 닭 살코기, 유기농 녹두, 유기농 해바라기씨, 유기농 콩분말, 유기농 완두콩, 유기농 고구마, 유기농 통아마씨, 유기농 통보리, 유기농 현미, 유기농 닭기름, 메티오닌, 가수분해 연어 살코기, 오리 살코기, 타우린, 이눌린, 유카시디게라 추출물, 천일염, 프락토 올리고당, 알긴산, 유기농 통귀리, 인산칼슘, 유산균, 씨벅턴 열매, 달맞이꽃 씨, 고수, 당근, 시금치, 각종 비타민 (비타민 C, 비타민 E, 비타민 A, 비타민 D3, 비타민 K3, 비타민 B1, 비타민 B2, 비타민 B6, 비타민 B12, 비오틴, 엽산, 판토텐산, 나이아신)과 미네랄 (철, 아연, 구리, 셀레늄, 아이오딘, 망간)",
+      "nutritionText": "조단백질 30.0% 이상, 조지방 15.0% 이상, 칼슘 0.9% 이상, 인 0.4% 이상, 수분 12.0% 이하, 조회분 8.0% 이하, 조섬유 6.0% 이하",
+      "retrievedAt": "2026-11-03T14:12:47.655Z",
+      "caveat": "제조사 공식 상세 이미지의 사용 원료 명칭을 원문 순서대로 전사함. 실제 구매한 포장과의 대조 전 검증 완료로 표시하지 않음.",
+      "productId": "69781ba6-fa3e-4320-9c24-ec931165e4dd",
+      "expectedName": "네츄럴코어 고양이 유기농 멀티95 기능성 사료",
+      "hadIngredients": 0,
+      "language": "ko",
+      "requestId": "e3ce6623-7682-4a73-a522-f0011a619c7d",
+      "sourceHash": "c8ec50d440df91d07b8dfe54c0172103780f5b3cdcddf6af4266c9168a246a61",
+      "nutrition": {
+        "crude_protein": 30,
+        "crude_fat": 15,
+        "crude_fiber": 6,
+        "crude_ash": 8,
+        "moisture": 12,
+        "calcium": 0.9,
+        "phosphorus": 0.4
+      },
+      "ingredientItemCount": 28,
+      "matchedIngredientCount": 8
+    },
+    {
+      "index": 250,
+      "title": "오리지널 도그",
+      "url": "https://apac.orijenpetfoods.com/en/dogs/dog-food/ap-ori-ds-original-dog.html",
+      "ingredientsText": "Fresh chicken meat (27%), frozen turkey meat (8%), fresh chicken livers (6%), whole herring (5%), whole hake (5%), eggs (5%), frozen turkey livers (4.5%), chicken meat meal (4%), turkey meat meal (4%), mackerel fish meal (4%), sardine fish meal (4%), herring fish meal (4%), red lentils, green peas, chicken fat (3%), pea fiber, chickpeas, yellow peas, pinto common beans, green lentils, navy common beans, fish oil (1%), alfalfa pellets, fresh chicken hearts (0.5%), dried sea kelp, pumpkin, butternut squash, zucchini, dried chopped carrots, apples, pears, kale, spinach, beet greens, turnip greens, cranberries, blueberries, saskatoon berries, freeze-dried beef meat (natural flavor), freeze-dried goat meat (natural flavor), freeze-dried lamb meat (natural flavor).zinc proteinate, natural vitamin E, dl-α-tocopherol acetate, vitamin A acetate, vitamin D3, thiamine mononitrate (vitamin B1), copper proteinate, rosemary extract, citric acid (preservative), Enterococcus faecium. Metabolizable energy is 3940 kcal/kg (473 kcal per 8oz. cup) with 39% from protein, 20% from carbohydrates, and 41% from fat. ORIJEN Original Dog Food is formulated to meet the nutritional levels established by the AAFCO Dog Food Nutrient Profiles for All Life Stages, including growth of large size dogs (70 lb. or more as an adult).",
+      "image": "https://apac.orijenpetfoods.com/dw/image/v2/bfdw_prd/on/demandware.static/-/Sites-orijen-ap-master-catalog/en/dw14667bc3/2023/ORIGINAL%20DOG/ORIJEN%20Original%20Dog%20Front%20Right%2011.4kg%20APAC.png?sw=450",
+      "language": "en",
+      "retrievedAt": "2026-11-03T14:12:47.728Z",
+      "caveat": "제조사 아시아 태평양 공식 제품 정보. 국내 유통 포장과의 라벨 대조 전 검증 완료로 표시하지 않음.",
+      "productId": "e2f4d6b8-2345-5678-9012-34567890abcd",
+      "expectedName": "오리지널 도그",
+      "hadIngredients": 7,
+      "requestId": "33f53e87-069d-4f88-ad28-62202e85eadd",
+      "sourceHash": "258f48ea724f763960a929e672da97327f8a7204c7f256a23d1031a9b9b2cd9f",
+      "nutrition": {},
+      "ingredientItemCount": 53,
+      "matchedIngredientCount": 11
+    }
+  ],
+  "hidden": [
+    {
+      "productId": "a1193183-842b-412e-b880-a57cfc379deb",
+      "expectedName": "[묘향] 고양이 투명한 마약 캣닢 스프레이 100% 원액 완전캣잎, 50g, 1개",
+      "reason": "사료·간식·영양제가 아닌 용품"
+    },
+    {
+      "productId": "2482c407-7a76-4d3c-8f4f-46b76f41e89a",
+      "expectedName": "굿딜즈 고양이 360도 회전 고슴도치 캣닢볼 그린",
+      "reason": "사료·간식·영양제가 아닌 용품"
+    },
+    {
+      "productId": "b808c359-03b7-4c5d-a196-c65d7fdef4b9",
+      "expectedName": "굿딜즈 고양이 360도 회전 고슴도치 캣닢볼 브라운",
+      "reason": "사료·간식·영양제가 아닌 용품"
+    },
+    {
+      "productId": "995e8e39-8cf5-4f01-a646-00f89bfa98d0",
+      "expectedName": "굿딜즈 고양이 360도 회전 고슴도치 캣닢볼 블루",
+      "reason": "사료·간식·영양제가 아닌 용품"
+    },
+    {
+      "productId": "c6139309-06e2-4305-a348-8b937c16d3b5",
+      "expectedName": "굿포펫 스틱 간식 짜개 강아지 고양이 간식 숟가락",
+      "reason": "사료·간식·영양제가 아닌 용품"
+    },
+    {
+      "productId": "15381f96-35cd-4f16-9c8f-93fc417adea5",
+      "expectedName": "마카롱 고양이 강아지 밥그릇 스테인레스 소형견 반려동물 물그릇 미끄럼방지 사료그릇 위생 펫 식기",
+      "reason": "사료·간식·영양제가 아닌 용품"
+    },
+    {
+      "productId": "1ed67ba3-c978-4430-894c-b25e42fa0966",
+      "expectedName": "상덕 강아지 식기 높이조절 2구 스테인리스 반려동물 밥그릇 식기대",
+      "reason": "사료·간식·영양제가 아닌 용품"
+    },
+    {
+      "productId": "a4b6c8d0-4567-7890-1234-567890abcdef",
+      "expectedName": "알뜰 영양사료",
+      "reason": "실제 제품을 식별할 수 없는 예시 데이터"
+    },
+    {
+      "productId": "8dde0425-318c-4e09-a3e6-6ffc07a3c9be",
+      "expectedName": "저알러지 치석제거 과일껌 레이지독 덴탈프루츠 [30개], 3개",
+      "reason": "사료·간식·영양제가 아닌 용품"
+    },
+    {
+      "productId": "93df6b06-2c3d-4310-8ccc-421187a5af23",
+      "expectedName": "정글몬스터 고양이 마약스프레이, 마따캣닢, 40ml, 2개",
+      "reason": "사료·간식·영양제가 아닌 용품"
+    },
+    {
+      "productId": "2b8d3f9a-99cd-4c53-8068-ac981725d603",
+      "expectedName": "테스트",
+      "reason": "테스트 데이터"
+    },
+    {
+      "productId": "9c86f6e0-79af-4eb3-9c8a-5565ca314c9e",
+      "expectedName": "테스트테스트",
+      "reason": "테스트 데이터"
+    },
+    {
+      "productId": "9b3b0e93-3804-452f-b8c2-dbf85d116ebb",
+      "expectedName": "행복한댕냥이 캣그라스 수경재배기",
+      "reason": "사료·간식·영양제가 아닌 용품"
+    }
+  ],
+  "imageClears": [
+    {
+      "productId": "00000000-0000-0000-0000-000000000203",
+      "expectedName": "L.I.D. 감자 & 오리 건식 사료",
+      "expectedImageUrl": "https://www.naturalbalanceinc.com/wp-content/uploads/2021/01/LID_PotatoDuck_DryDog_5lb.png",
+      "reason": "기존 제조사 이미지가 HTTP 404로 소실됨"
+    },
+    {
+      "productId": "00000000-0000-0000-0000-000000000202",
+      "expectedName": "오리젠 캣 앤 키튼",
+      "expectedImageUrl": "https://orijen.ca/wp-content/uploads/2021/04/OR_Cat_Kitten_1.8kg_Front.png",
+      "reason": "기존 제조사 이미지가 HTTP 404로 소실됨"
+    },
+    {
+      "productId": "00000000-0000-0000-0000-000000000204",
+      "expectedName": "퓨리나 프로플랜 스테릴라이즈드",
+      "expectedImageUrl": "https://purina.co.kr/sites/default/files/2021-03/pro-plan-cat-indoor-adult-1.5kg.png",
+      "reason": "기존 제조사 이미지가 HTTP 404로 소실됨"
+    }
+  ],
+  "appliedAt": "2026-11-03T14:26:37.477Z",
+  "result": {
+    "visibleProducts": 427,
+    "sourceBackedLabels": 27,
+    "labelItems": 717,
+    "formerlyEmptyProductsFilled": 13,
+    "nutritionProfiles": 23,
+    "hiddenNonCatalogOrTestProducts": 13,
+    "remainingWithoutIngredients": 119
+  },
+  "remaining": [
+    {
+      "productId": "9d04b445-28a5-44bd-a942-1fdc1c7ae731",
+      "name": "[대용량] 슬로울리라이프 10+ (10~12세) 노령견 노견 시니어 소프트 사료 MEGA PACK 4.8kg, 1개, 4.8kg, 연어+오리",
+      "brand": "슬로울리라이프",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "9474f155-e528-4c8c-b70a-c4fb3bc42d17",
+      "name": "[친절한도그씨] 캣츠랑 키튼주니어 8kg x2개 아기고양이사료",
+      "brand": "쿠팡검색",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "8de2cb8c-f461-409c-a0b0-da4da00aff3a",
+      "name": "ANF 고양이 캔 생선",
+      "brand": "ANF",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "28f1041f-65a1-4e3c-b683-0283cfd13412",
+      "name": "ANF 베터플러스 독 샘플 멀티팩 40g x 4종 세트",
+      "brand": "ANF",
+      "status": "variant_labels_required"
+    },
+    {
+      "productId": "491011ba-e888-482c-b95d-6c55458d4e8f",
+      "name": "INDIGO 고양이 그레이비 캔, 80g, 24개, 흰살참치",
+      "brand": "INDIGO",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "60bc1503-38fb-424a-b6ea-72fc8f849e48",
+      "name": "now 어덜트 강아지 그레인프리 스몰브리드 건식사료, 칠면조, 2kg, 1개",
+      "brand": "now",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "5ea18edf-e036-4066-96ac-458ed3c7fd7c",
+      "name": "Vef 8free 전연령 고양이 기능성 사료, 2개, 3kg, 헤어볼+체중조절",
+      "brand": "Vef",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "dde79e24-371f-414e-8f8c-aa9f39f9d57b",
+      "name": "강아지 깨끗한 육포 실속 수제간식 콜라겐 돼지꼬리 껌 300g, 1개, 300g, 돼지꼬리껌",
+      "brand": "강아지",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "d57713c1-bc15-41e7-b8d8-b23faf82d89f",
+      "name": "강아지 수제간식 국내산100% 닭가슴살 300g 육포 무첨가 멍개간식",
+      "brand": "강아지",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "c2f52605-bbc6-43d1-a43c-ef16fba200d9",
+      "name": "건강백서 강아지 기능성 사료",
+      "brand": "건강백서",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "a4e42533-189d-4689-8447-943dea1a2adf",
+      "name": "건강백서 어덜트 반려견 기능성 사료",
+      "brand": "건강백서",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "1e6eff4e-a6e2-4dd3-8e0e-f3f5ecc88aac",
+      "name": "고양이 맛보기 간식 15종 10종 닭가슴살 노른자 오리 열빙어 대용량 치킨 수제 간식 영양 동결건조 샘플 파우더 간식 선물세트",
+      "brand": "고양이",
+      "status": "variant_labels_required"
+    },
+    {
+      "productId": "3030268e-7c75-47b2-9480-5af2cf229a87",
+      "name": "고지식 냥치펀치 고양이 구강관리 이빨과자 대용량 덴탈트릿 간식, 1개, 400g, 치킨맛",
+      "brand": "고지식",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "d983da6e-15db-4751-8148-24d1d7c96f83",
+      "name": "굿데이 맛있는 유산균껌 강아지 간식",
+      "brand": "굿데이",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "c0ad08f7-2668-44cf-9181-f743b28de1ac",
+      "name": "굿포펫 엔자이츄 강아지 덴탈껌 효소 치석 양치껌 오래먹는 강아지간식 소형견 이갈이 꿀고구마맛, 1개, 100g, 꿀고구마맛",
+      "brand": "굿포펫",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "35040101-3ccd-473b-b50f-451da548c08d",
+      "name": "그리니즈 강아지 덴탈껌",
+      "brand": "그리니즈",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "d54c012f-f2c3-4167-ae70-f9ee4df9ef8c",
+      "name": "냥묵냥묵 고양이 대용량 짜먹는 간식 60p, 1개, 720g, 콤보(치킨/참치/연어)",
+      "brand": "냥묵냥묵",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "c849ee80-a79e-438d-8981-d4857274dd05",
+      "name": "네이처펫 반려동물 동결건조 간식",
+      "brand": "네이처펫",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "4b2a1374-005a-4e72-8687-664f4c4e97af",
+      "name": "네이처펫 전연령 고양이 아임트릿 동결건조 큐브 사료, 닭, 300g, 1개",
+      "brand": "네이처펫",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "a802eb7c-2c41-40bd-a70e-b1f7438d7d65",
+      "name": "네츄럴랩 강아지 수제 건조간식",
+      "brand": "네츄럴랩",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "23217335-0f44-4816-88b9-62f34dce6ec2",
+      "name": "네츄럴코어 전연령 강아지 에코플러스6 건식사료",
+      "brand": "네츄럴코어",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "fe0b5107-e5ea-4c15-965b-0e54eabb2f51",
+      "name": "네츄럴코어 캣쵸 고양이 간식",
+      "brand": "네츄럴코어",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "13054f23-0d8f-4615-a148-267954ccd0bd",
+      "name": "네츄럴펫스낵 국내산 안전한 무첨가 강아지 수제 간식, 1개, 300g, 오리육포",
+      "brand": "네츄럴펫스낵",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "84209e08-dbdd-4185-9043-c19733391508",
+      "name": "네코판타지 고양이 크런치 간식, 연어, 40g, 10개",
+      "brand": "네코판타지",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "ff7a2a42-13de-42d4-b560-df9a5b16b07f",
+      "name": "노마펫, 고양이 간식, 산양유 스틱형, 츄츄 참치맛 10개입",
+      "brand": "노마펫,",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "4cc4073d-4b4f-4a1d-bff9-934d622cdfc9",
+      "name": "뉴트리나 어덜트 고양이 비스트로 에코 건식사료",
+      "brand": "뉴트리나",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "bdcba0d0-5d72-49a0-bf0d-0a16e03ff367",
+      "name": "뉴트리나 프라임캣 블루 20kg 고양이사료 대용량 대포장 길냥이밥 길고양이 전연령",
+      "brand": "뉴트리나",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "8d6f95b3-0de8-445d-afae-bec042a172f3",
+      "name": "뉴트리나건강백서 강아지 기능성 사료",
+      "brand": "뉴트리나",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "5db7eab4-672d-47e0-b422-8ea0fe10dd6b",
+      "name": "닥터95 반려동물 촉촉 간식, 닭가슴살, 22g, 35개",
+      "brand": "닥터95",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "a0057203-c0bd-4893-b41f-dd1f28823263",
+      "name": "닥터뉴토 고양이 짜먹는 간식 한입 스틱 (유산균 장건강, 헤어볼 케어에 도움), 10g, 60개, 유산균 참치",
+      "brand": "닥터뉴토",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "66066c75-3075-475c-9463-f4668607bcdf",
+      "name": "닥터뉴트리코어 강아지 가수분해 덴탈껌, 새우, 540g, 2개",
+      "brand": "닥터뉴트리코어",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "c6bcb34b-3fa4-4467-944a-b597fc53720b",
+      "name": "닥터도비 강아지 기능성 사료",
+      "brand": "닥터도비",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "957ae72f-c278-40cd-864f-142a79af45bb",
+      "name": "닥터독 강아지 기능성 사료",
+      "brand": "닥터독",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "a0d7a958-36e3-4634-8ea0-dcc1c8700428",
+      "name": "닥터바이오 강아지 영양트릿 장건강 프로젝트 유산균 프리바이오틱스 간식",
+      "brand": "닥터바이오",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "611d2a84-0552-418e-8284-f432f711bea8",
+      "name": "닥터클라우더 고양이 하이 프리미엄 인도어 사료",
+      "brand": "닥터클라우더",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "1699c43b-b28f-41f1-b583-16d04bf83986",
+      "name": "더스탠다드 맛있는 덴탈껌 구강&관절 리프레시 100p 가수분해 저알러지 양치껌, 1개, 600g, 구강&관절(리프레시)",
+      "brand": "더스탠다드",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "e0d6b4e4-3110-48dc-b635-84f992bf03c1",
+      "name": "더캣츠 고양이 미니 베로베로 파우치 20개입",
+      "brand": "더캣츠",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "8f4e543a-a617-49f9-9b5a-bfb20ba6c61b",
+      "name": "덴탈펫츄 소프트 소형견 노령견 말랑한 강아지 덴탈껌 치석 입냄새 제거",
+      "brand": "덴탈펫츄",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "ab470b88-c8c6-439d-b65a-598f5a38a4df",
+      "name": "동원 뉴트리플랜 대용량 고양이캔, 24개, 160g, 혼합맛(6종콤보)",
+      "brand": "동원",
+      "status": "variant_labels_required"
+    },
+    {
+      "productId": "f149d2b7-1666-4644-b5e7-23589a2ffc4c",
+      "name": "디어랩스 전연령 강아지 울애기쌩쌩 스팀베이크드 사료, 연어, 1kg, 1개",
+      "brand": "디어랩스",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "dfc09914-c114-4fd3-a7eb-989a2fb7a60e",
+      "name": "라피끄 강아지 유산균 품은 져키, 연어, 1kg, 1개",
+      "brand": "라피끄",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "ef140b94-4c90-44dd-8278-96fddbf7be0b",
+      "name": "마도로스펫 반려동물 데일리 트릿 동결건조간식",
+      "brand": "마도로스펫",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "a947bd47-77fc-4d94-9e49-8b1587dbb97c",
+      "name": "마마캣 전연령 시그니처 서퍼 캣 그레인프리 건식사료, 닭, 5.4kg, 1개",
+      "brand": "마마캣",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "a2b9b0a6-b048-49de-8ee5-ce89a7acc8de",
+      "name": "마싯츄 리포좀 강아지 기관지 심장",
+      "brand": "마싯츄",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "808eba12-cb35-4fbe-8fcf-81b77b39a151",
+      "name": "마이펫닥터 강아지 시그니처 유기농 기능성 사료, 눈물개선/눈건강, 1kg, 3개",
+      "brand": "마이펫닥터",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "5380bfce-dd4e-425d-936c-1afeca505b4a",
+      "name": "마이펫닥터 고양이 시그니처 슬림 솔루션 처방식 사료",
+      "brand": "마이펫닥터",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "456e7178-c708-400b-9c40-d44b63283b79",
+      "name": "마코펫 고양이 촉촉한 닭가슴살 코코데이 간식",
+      "brand": "마코펫",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "753d90d9-e2b0-4b16-8ec5-eb054dc3cdcb",
+      "name": "멍냥보감 국산강아지간식 대용량 국산HACCP오리100% 수제간식, 500g, 3개, 육포",
+      "brand": "멍냥보감",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "84f03a9a-4ccd-4711-9364-16e44c96743f",
+      "name": "메가츄 짜먹는 고양이 간식 츄 90스틱 대용량, 2개, 연어+치킨+참치, 15g, 180개",
+      "brand": "메가츄",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "d0b0e39a-1672-47d7-8db3-60e8b0d53fe3",
+      "name": "반려소반 강아지 바른채식 노즈워크 트릿",
+      "brand": "반려소반",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "444b97dd-8949-42b8-9de5-a4a50025097e",
+      "name": "반려소반 반려동물 바른트릿 동결건조 열빙어 간식, 1개, 열빙어, 130g",
+      "brand": "반려소반",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "61bfd01a-eb4e-4b0a-a549-9e827cc40d07",
+      "name": "본아페티 강아지 기능성 사료, 눈물개선/눈건강, 1kg, 2개",
+      "brand": "본아페티",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "e693c63d-56cc-47a8-a4fe-0b5b5e7dc5a4",
+      "name": "블루버팔로 퍼피 와일드 스피릿 건식사료, 5.8kg, 1개, 닭",
+      "brand": "블루버팔로",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "3ecd1538-8f22-4ef6-bccf-e65a2c465026",
+      "name": "비스트로캣 (키튼) 2kg X 2포 고양이사료 (유통기한 26.10.21)",
+      "brand": "비스트로캣",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "a4f50812-174e-4f2c-b7e1-0b894a9d4fce",
+      "name": "뽀시래기 강아지 동결건조 간식 큐브 트릿",
+      "brand": "뽀시래기",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "524a4520-39e4-4386-b550-7de6f9d0495d",
+      "name": "뽀시래기 든든한 고양이 사료 대용량 엘라이신 길고양이 길냥이 전연령용, 500g, 20개",
+      "brand": "뽀시래기",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "f383a100-8f99-4e6a-a212-710661181dd1",
+      "name": "뿌와캔디 국묘간식 국내산 관절&눈&피부 고양이 간식 250g",
+      "brand": "뿌와캔디",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "890c2c86-fbd1-4b5c-a9ff-53a64e1a4e2f",
+      "name": "사조러브잇 고양이 레드라벨 간식캔",
+      "brand": "사조러브잇",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "5156338f-c93f-4a32-a6c6-bcb2f08bcc3f",
+      "name": "사조로하이캣푸드 고양이 간식캔",
+      "brand": "사조로하이캣푸드",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "ceec4155-ddb7-4742-be54-aa6c822ffae6",
+      "name": "삼색츄 고양이 짜먹는 간식, 참치맛, 스틱형",
+      "brand": "삼색츄",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "962659f6-cd93-459c-907d-89647d38b94c",
+      "name": "세라피드 고양이 그레인프리 기능성 사료",
+      "brand": "세라피드",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "2b87742f-de21-419f-96f5-b86a3abb10b1",
+      "name": "쉨잇 전연령 캣 동결건조 프레시 치킨&살몬 키블 건식사료 20p, 북어, 3kg, 1개",
+      "brand": "쉨잇",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "026e1a48-6a83-424a-b679-9d0e0b49793e",
+      "name": "슬로울리라이프 연어 오리 (10~12세) 노령견 사료, 1개, 1.6kg, 연어+오리",
+      "brand": "슬로울리라이프",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "bdad0c84-ac3f-475c-8743-db81af67daeb",
+      "name": "아이누 심플리야미 치킨포캣 전연령 고양이사료 그레인프리 기호성 작은알갱이, 1개, 3kg, 닭",
+      "brand": "아이누",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "d1d7a685-eb7b-4888-9429-79bdc6982a82",
+      "name": "애니몬다 인테그라 유리너리 고양이 사료 1.2kg, 1개, 1.2kg, 닭+칠면조",
+      "brand": "애니몬다",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "8de95002-5310-4a7d-a2ce-11605f45769c",
+      "name": "야미야미 반려동물 간식 순닭가슴살 오리지날",
+      "brand": "야미야미",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "d41d8e37-a612-4f61-810a-9d821f702d69",
+      "name": "어스본홀리스틱 그레인프리 와일드 씨캐치, 해산물, 5.67kg, 1개",
+      "brand": "어스본홀리스틱",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "ed028001-5511-4c66-a404-c84330430d01",
+      "name": "어스본홀리스틱 그레인프리 프리머티브 필라인, 닭, 5.67kg, 1개",
+      "brand": "어스본홀리스틱",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "ff15f7cc-21e3-45fd-9ea1-0bc865e19d67",
+      "name": "에이비에스엘 뽀로로 맛있는 고양이 스낵, 혼합맛(참치/페퍼민트), 40g, 12개",
+      "brand": "에이비에스엘",
+      "status": "variant_labels_required"
+    },
+    {
+      "productId": "0e11f224-9a96-49cc-930a-59e607c0e7e9",
+      "name": "엔젤스캣 5kgx4개 꿀벌사료 구내염 헤어볼 면역개선",
+      "brand": "엔젤스캣",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "96bd97fc-3f33-478d-aa69-c92e755a9fa7",
+      "name": "예스몽 오늘은 고구마 강아지 간식, 건조 미니고구마, 300g, 1개",
+      "brand": "예스몽",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "232d07ae-4fb1-4a99-8a80-27e181ae1f86",
+      "name": "오가닉스토리 하이포알러제닉 가수분해 강아지 눈물 사료, 7kg, 1개, 가수분해연어",
+      "brand": "오가닉스토리",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "8bf77a40-199d-49a2-9aa1-17123750d236",
+      "name": "웁스 강아지 수제간식",
+      "brand": "웁스",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "a757ab2e-106c-459d-b454-90fb67baae7b",
+      "name": "웁스 반려동물 닭가슴살 간식",
+      "brand": "웁스",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "0fc99403-d0e1-45d6-941b-6906255a6346",
+      "name": "위스카스 어덜트 고양이 습식사료",
+      "brand": "위스카스",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "fc5f8064-a9cd-4d81-83d9-4ca80c0510d0",
+      "name": "이나바 고양이 생선 가득 파우치",
+      "brand": "이나바",
+      "status": "variant_labels_required"
+    },
+    {
+      "productId": "9f5e0793-0287-4d28-b1c5-8db7bd1daa7f",
+      "name": "이나바 고양이 챠오츄르 버라이어티 간식",
+      "brand": "이나바",
+      "status": "variant_labels_required"
+    },
+    {
+      "productId": "57aefa40-2ad3-44d4-a259-35b2c32a4898",
+      "name": "이나바 마구로쥬레 유산균 12P 고양이간식",
+      "brand": "이나바",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "ddb77408-2476-451c-99b2-74b99726cb9b",
+      "name": "이나바 챠오츄르",
+      "brand": "이나바",
+      "status": "variant_labels_required"
+    },
+    {
+      "productId": "2a625af0-be37-4eae-b118-e18b79787e8d",
+      "name": "인디고포 고양이 면역 기능성 사료, 헤어볼, 6kg, 1개",
+      "brand": "인디고포",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "39f948a6-e632-4988-a7f5-3d90f1bdc134",
+      "name": "자연애보틀 유산균 장&눈 강아지 고양이 영양간식, 오리_유산균샌드, 500g, 1개",
+      "brand": "자연애보틀",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "896c84aa-ec7a-41ba-9946-1d97e36b94f3",
+      "name": "잘먹잘싸 전연령용 고양이 건식사료",
+      "brand": "잘먹잘싸",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "9568f0bf-b9a6-49f1-a447-150957c4c9c1",
+      "name": "조공 반려동물 미니트릿 동결건조 간식, 혼합맛(닭/북어), 130g, 1세트",
+      "brand": "조공",
+      "status": "variant_labels_required"
+    },
+    {
+      "productId": "918b17a0-be62-40fe-aba5-a20bd3c47f10",
+      "name": "챠오츄르 고양이 츄르 유산균 크런키",
+      "brand": "챠오츄르",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "96db8a21-c49e-459e-922b-049ed4057615",
+      "name": "캐츠랑 키튼 아기고양이사료 수유묘 전용 건식사료",
+      "brand": "캐츠랑",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "7a7f0c08-a19e-49c8-98a7-de8fca64db4f",
+      "name": "캐티맨 반려동물 슬라이스 간식, 게살맛, 100g, 2개",
+      "brand": "캐티맨",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "d07fea1f-05fe-440e-ad60-7fd4e00e8d9c",
+      "name": "캣츠러브 전연령 오리 닭고기 고양이 건식사료",
+      "brand": "캣츠러브",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "9d86fd05-08d1-4c39-97b6-e675952d0ecc",
+      "name": "탐사 X 사조 뉴 고메 고양이 캔",
+      "brand": "탐사",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "756a02c5-2b0a-49be-a856-6ceaf144df71",
+      "name": "탐사 강아지 뉴트리션 비전 트릿",
+      "brand": "탐사",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "a27f0157-d6bc-4ce0-b8d6-11ef86c7386d",
+      "name": "탐사 고양이 간식 스낵",
+      "brand": "탐사",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "83b02394-337a-4d85-a91e-69dc4e32c8d4",
+      "name": "탐사 반려동물 간식 황태채, 200g",
+      "brand": "탐사",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "0c7f316b-991e-4782-ade4-431f48d81cff",
+      "name": "탐사 클래식 진도 사료",
+      "brand": "탐사",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "c92f647c-1054-4949-a555-369253e905af",
+      "name": "테비 아리캔 160g x 24입 박스",
+      "brand": "테비",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "dbb14135-1858-4434-822b-cfd5b0174b2e",
+      "name": "템테이션 고양이 메가팩 스낵 3종 세트",
+      "brand": "템테이션",
+      "status": "variant_labels_required"
+    },
+    {
+      "productId": "6ac9bb48-feda-4f75-a537-e696d28708fc",
+      "name": "팜스코 캣츠미",
+      "brand": "팜스코",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "26cf5ef1-d564-47e1-a95f-41b04497a7ef",
+      "name": "팝케어 팝스 유리너리 저지방 고양이 주식캔 습식 파우치 무스",
+      "brand": "팝케어",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "1238be78-a381-4b44-831a-671a402bf94b",
+      "name": "팝케어 팝스 픽키앤 센서티브 저지방 고양이 주식캔 습식 파우치",
+      "brand": "팝케어",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "60f74477-6c9c-4a1c-905a-385be47c3a6c",
+      "name": "패밀리펫케어 시니어 강아지 관절 소프트사료, 1개, 3kg, 닭",
+      "brand": "패밀리펫케어",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "78b13a90-b4a6-4e6f-8ad4-c7fd1e836759",
+      "name": "펫세븐 강아지 소프트 져키 90g, 2개, 스트레스완화/안정/집중력관리, 90정",
+      "brand": "펫세븐",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "4a1965dc-f2db-423b-861a-9c13f313fed6",
+      "name": "펫쉴드 고양이 덴탈 치아튼튼 이빨과자 치석 입냄새 제거, 3개, 100g, (5/11순차출고) 닭고기맛",
+      "brand": "펫쉴드",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "ef366111-2e27-4c31-a635-dc8fb3b3f7d1",
+      "name": "펫스토리로얄 고양이 미쵸 캔 간식",
+      "brand": "펫스토리로얄",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "2b7966bd-4b34-42a4-a0a0-142819f9526d",
+      "name": "펫츠맘마 반려동물 국내산 수제간식",
+      "brand": "펫츠맘마",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "aad2cf27-44ca-4242-996d-1c4b78f801ce",
+      "name": "펫츠몬 고양이 짜먹는 스틱, 혼합맛(닭고기/참치/연어), 900g, 2개",
+      "brand": "펫츠몬",
+      "status": "variant_labels_required"
+    },
+    {
+      "productId": "9413ab23-b83b-48b8-9ad8-607c0ec74c0c",
+      "name": "펫츠몬 고양이 짜먹는 주식 스틱 30p",
+      "brand": "펫츠몬",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "d7086a20-33b3-41fb-8390-cc3d1bdadf33",
+      "name": "펫쿠르트 강아지 야채믹스 수제 동결건조간식",
+      "brand": "펫쿠르트",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "f7ba0449-525f-426f-b801-9ccd5743f9c3",
+      "name": "펫퍼스 애묘비책 영양죽 고양이죽 사료 보양식 닭고기 참치 연어 가쓰오부시, 15개, 50g, 참치+가쓰오부시",
+      "brand": "펫퍼스",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "875207ea-3e92-4671-9f39-a4df1d9fdfb6",
+      "name": "펫프레시 촉촉치킨25g 강아지 고양이 저알러지 눈물자국 신장 수제간식 원물간식",
+      "brand": "펫프레시",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "9e8e6e72-251d-45f0-b9f1-6ecd0e077ee3",
+      "name": "푸디 더특별한식탁 전연령 고양이 기능성 유리너리 & 장건강 건식 사료 헬시플렉스, 5개, 1kg, 참치",
+      "brand": "푸디",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "768de2bc-a547-45f4-a566-3c05a89a6837",
+      "name": "풀무원아미오 강아지 건강담은 트릿",
+      "brand": "풀무원아미오",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "8a62a782-db60-48b4-8c72-d655715000dc",
+      "name": "풀무원아미오 전연령 자연담은 식단 강아지 건식사료",
+      "brand": "풀무원아미오",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "fceddedd-3fe2-4f36-966a-d0d0c0596de7",
+      "name": "퓨어비타 고양이 치킨&완두콩 그레인프리 사료",
+      "brand": "퓨어비타",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "4c4bc283-22e1-402c-9e81-97600f638139",
+      "name": "프레스티지 캣 키튼 성장기 아기 고양이 대용량 소화잘되는 사료, 흰살생선, 1개, 8kg",
+      "brand": "프레스티지",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "24d055de-83e0-49d3-ad23-c87ba8b77c71",
+      "name": "프로바이오틱라이브 어덜트 캣 중성화 건식사료, 생선, 2kg, 1개",
+      "brand": "프로바이오틱라이브",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "f2856c54-1775-4976-92c4-414a10067ae9",
+      "name": "프로바이오틱라이브 어덜트용 고양이 건식사료, 닭, 2kg, 1개",
+      "brand": "프로바이오틱라이브",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "a758b272-e6ae-4c64-8b2a-1f1281f1ff99",
+      "name": "프로파인 강아지 스몰브리드 내추럴터치 사료",
+      "brand": "프로파인",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "c2ac82e0-8fa4-4a56-b4a5-4e7ad55b94cd",
+      "name": "프리미엄 PN 퓨어라이프 캣 어덜트 그레인프리 저알러지 기호성 고양이사료, 1개, 오리",
+      "brand": "프리미엄",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "e66cfd69-a983-4cee-abdc-56cd5367418b",
+      "name": "프리스키 고양이 퓨리나 그레이비 키튼 치킨 주식 습식 파우치",
+      "brand": "프리스키",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "4c6ceb90-2d43-4a14-a619-94101565bddf",
+      "name": "하림펫푸드더리얼 강아지 동결건조 트릿",
+      "brand": "하림펫푸드",
+      "status": "manufacturer_label_required"
+    },
+    {
+      "productId": "307a92d0-5a63-413b-ab48-0a05f1f583fe",
+      "name": "헬시얌 아이즈 강아지 간식 눈 영양제 눈물자국 개선 눈건강 기능성 영양 간식, 1개, 120g, 눈물개선/눈건강",
+      "brand": "헬시얌",
+      "status": "manufacturer_label_required"
+    }
+  ]
+}

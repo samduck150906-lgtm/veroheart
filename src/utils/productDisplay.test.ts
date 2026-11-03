@@ -30,6 +30,13 @@ describe('normalizeProductDisplayName', () => {
       .toBe('로얄캐닌 미니 어덜트');
   });
 
+  it('수입된 표시명에도 배송·환불 홍보가 남지 않는다', () => {
+    expect(normalizeProductDisplayName({ displayName: ')당일발송( 로얄캐닌 하이포알러제닉 스몰독 1kg' }))
+      .toBe('로얄캐닌 하이포알러제닉 스몰독 1kg');
+    expect(normalizeProductDisplayName({ displayName: '올바른끼니 알파 양고기 (안먹으면 100% 환불 보장) 1.2kg' }))
+      .toBe('올바른끼니 알파 양고기 1.2kg');
+  });
+
   it('과도하게 제거되어 비면 원본으로 안전 폴백한다', () => {
     // 전부 프로모션 토큰이면 원본 유지
     expect(normalizeProductDisplayName({ name: '무료배송 로켓배송' })).toBe('무료배송 로켓배송');
