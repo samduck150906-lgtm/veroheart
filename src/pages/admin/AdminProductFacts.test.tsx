@@ -1,0 +1,33 @@
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+const h = vi.hoisted(() => ({ fetch: vi.fn(), save: vi.fn() }));
+vi.mock('../../lib/adminApi', async original => ({ ...await original<typeof import('../../lib/adminApi')>(), fetchProductFacts: h.fetch, saveProductFacts: h.save }));
+vi.mock('../../store/useNotification', () => ({ notify: { success: vi.fn(), error: vi.fn() } }));
+import AdminProductFacts from './AdminProductFacts';
+import { NUTRITION_KEYS, type ProductFactsRow } from '../../lib/adminApi';
+const rows: ProductFactsRow[] = Array.from({ length: 45 }, (_, index) => ({ id: String(index), name: '제품 ' + index, brandName: '제조사', imageUrl: null, sourceUrl: 'https://manufacturer.example/' + index, barcode: null, kcalPer100g: null, hasNutrition: false, nutrition: Object.fromEntries(NUTRITION_KEYS.map(key => [key, null])) as ProductFactsRow['nutrition'] }));
+afterEach(cleanup);
+beforeEach(() => { vi.clearAllMocks(); h.fetch.mockResolvedValue(rows); h.save.mockResolvedValue({ saved: 2 }); });
+it('reaches later products and preserves edits across pages for a combined save', async () => {
+  render(<AdminProductFacts />);
+  const first = await screen.findByLabelText('제품 0 조단백');
+  expect(screen.queryByLabelText('제품 20 조단백')).toBeNull();
+  fireEvent.change(first, { target: { value: '25' } });
+  fireEvent.click(screen.getByRole('button', { name: '다음 페이지' }));
+  fireEvent.change(screen.getByLabelText('제품 20 조단백'), { target: { value: '33' } });
+  fireEvent.click(screen.getByRole('button', { name: '이전 페이지' }));
+  expect(screen.getByLabelText('제품 0 조단백')).toHaveProperty('value', '25');
+  fireEvent.click(screen.getByRole('button', { name: '2건 저장' }));
+  await waitFor(() => expect(h.save).toHaveBeenCalledOnce());
+  expect(h.save.mock.calls[0][0]).toEqual(expect.arrayContaining([expect.objectContaining({ id: '0', nutrition: expect.objectContaining({ crude_protein: 25 }) }), expect.objectContaining({ id: '20', nutrition: expect.objectContaining({ crude_protein: 33 }) })]));
+});
+it('ignores a late old search response after a new query has loaded', async () => {
+  let finish!: (value: ProductFactsRow[]) => void;
+  h.fetch.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; })).mockResolvedValueOnce([{ ...rows[0], id: 'new', name: '새 제품' }]);
+  render(<AdminProductFacts />);
+  fireEvent.change(screen.getByLabelText('제품명 또는 브랜드 검색'), { target: { value: '새 제품' } });
+  await screen.findByLabelText('새 제품 조단백');
+  await act(async () => finish(rows));
+  expect(screen.queryByLabelText('제품 0 조단백')).toBeNull();
+  expect(screen.getByLabelText('새 제품 조단백')).toBeTruthy();
+});

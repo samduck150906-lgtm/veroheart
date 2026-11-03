@@ -98,8 +98,8 @@ export default function ProductRow({ product }: ProductRowProps) {
           >
             {isFav ? '찜 해제' : '찜'}
           </button>
-          {hasPetProfile && <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--safe-strong)', marginLeft: 'auto' }}>
-            {canShowScore ? fitShortLabel(score, petName) : '원료 확인 필요'}
+          {hasPetProfile && canShowScore && <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--safe-strong)', marginLeft: 'auto' }}>
+            {fitShortLabel(score, petName)}
           </span>}
         </div>
         {!hasPetProfile && <div style={{ marginTop: 8 }}><PetCompatibilityPrompt compact /></div>}

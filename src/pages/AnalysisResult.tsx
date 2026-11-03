@@ -6,7 +6,7 @@ import { AlertCircle, Check, Sparkles } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
 import type { CompatibilityGrade } from '../utils/score';
-import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
+import { isRealPetProfile, resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import { analyzeFeed } from '../analysis/feedAnalysis';
 import { analysisReadinessCopy } from '../analysis/analysisReadiness';
 import { runScoringPipeline, type ScoringPipelineResult } from '../analysis/scoringPipeline';
@@ -218,9 +218,7 @@ export default function AnalysisResult() {
     if (productId && useStore.getState().selectedProduct?.id !== productId) void fetchProductDetail(productId);
   }, [fetchProductDetail, productId]);
 
-  const hasPetProfile = Boolean(
-    isLoggedIn && profile?.id && profile.id !== 'local-profile' && profile.name && profile.name !== '우리 아이',
-  );
+  const hasPetProfile = isLoggedIn && isRealPetProfile(profile);
 
   const ingredients = product?.ingredients ?? [];
   const safeIngredients = ingredients.filter((i) => i.riskLevel === 'safe');

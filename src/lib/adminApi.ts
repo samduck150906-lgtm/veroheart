@@ -1375,6 +1375,7 @@ export interface ProductFactsRow {
 export type ProductFactsFilter = 'missing' | 'missing_barcode' | 'missing_nutrition' | 'all';
 
 interface ProductFactsJoinRow {
+  catalog_source_url?: string | null;
   id: string;
   name: string;
   brand_name: string | null;
@@ -1401,6 +1402,7 @@ export async function fetchProductFacts(params: {
   filter: ProductFactsFilter;
   search?: string;
   limit?: number;
+  visibility?: 'visible' | 'hidden' | 'all';
 }): Promise<ProductFactsRow[]> {
   // 바코드·영양정보가 비어 있는 제품에는 비노출 제품도 섞여 있어 service_role 로
   // 읽는다. 공개 경로로 읽으면 채워야 할 제품이 목록에서 빠진다.
@@ -1410,6 +1412,7 @@ export async function fetchProductFacts(params: {
       view: 'facts',
       filters: {
         search: params.search,
+        visibility: params.visibility ?? 'visible',
         missingBarcode: params.filter === 'missing' || params.filter === 'missing_barcode',
       },
     },
@@ -1433,7 +1436,7 @@ export async function fetchProductFacts(params: {
       name: raw.name,
       brandName: raw.brand_name ?? '',
       imageUrl: raw.image_url,
-      sourceUrl: raw.coupang_link,
+      sourceUrl: raw.catalog_source_url || raw.coupang_link,
       barcode: raw.barcode,
       kcalPer100g: raw.kcal_per_100g === null ? null : Number(raw.kcal_per_100g),
       nutrition,
@@ -1441,11 +1444,11 @@ export async function fetchProductFacts(params: {
     };
   });
 
-  const limited = rows.slice(0, Math.min(params.limit ?? 100, 300));
-  if (params.filter === 'missing' || params.filter === 'missing_nutrition') {
-    return limited.filter((row) => !row.hasNutrition);
-  }
-  return limited;
+  // Filter the complete authenticated result before an explicit caller limit.
+  // The editor paginates locally; a silent 100-row cutoff hid later products.
+  const filtered = params.filter === 'missing' || params.filter === 'missing_nutrition'
+    ? rows.filter((row) => !row.hasNutrition) : rows;
+  return params.limit === undefined ? filtered : filtered.slice(0, Math.max(0, Math.min(params.limit, 300)));
 }
 
 export interface ProductFactsInput {
