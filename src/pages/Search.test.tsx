@@ -159,3 +159,15 @@ describe('search defaults and refresh', () => {
  fireEvent.change(screen.getByRole('searchbox'), { target: { value: '' } }); await finishDebounce();
  params = new URLSearchParams(screen.getByTestId('route').textContent ?? ''); expect(params.has('q')).toBe(false);
  });
+
+it('distinguishes a partial loaded count and offers more products above the list', async () => {
+  const product = { id: 'first', name: '첫 제품', brand: '브랜드', category: 'food', imageUrl: '', ingredients: [], reviewsCount: 0, averageRating: 0 };
+  api.search.mockResolvedValueOnce({ products: [product], nextOffset: 100 }).mockResolvedValueOnce({ products: [{ ...product, id: 'second', name: '다음 제품' }], nextOffset: null });
+  show(); await finishDebounce();
+  expect(screen.getByText('1개 표시 중 · 추천순')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: '제품 더 보기', exact: true }));
+  await act(async () => {});
+  expect(screen.getByText('2개 · 추천순')).toBeTruthy();
+  expect(screen.getByText('다음 제품')).toBeTruthy();
+  expect(screen.queryByRole('button', { name: '제품 더 보기', exact: true })).toBeNull();
+});

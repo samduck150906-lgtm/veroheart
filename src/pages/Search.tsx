@@ -623,9 +623,11 @@ export default function Search() {
           {isLoading
             ? '불러오는 중…'
             : sortBy === 'rating'
-              ? `${displayResults.length}개 · 평점 높은 순`
-              : `${displayResults.length}개 · 추천순`}
+              ? `${displayResults.length}개${nextOffset !== null ? ' 표시 중' : ''} · 평점 높은 순`
+              : `${displayResults.length}개${nextOffset !== null ? ' 표시 중' : ''} · 추천순`}
         </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        {nextOffset !== null && !isLoading && <button type="button" onClick={() => void loadMore()} disabled={isLoadingMore} style={{ border: 0, background: 'none', color: 'var(--vr-ink)', minHeight: 44, padding: 0, fontSize: 12.5, fontWeight: 800, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 3 }}>{isLoadingMore ? '불러오는 중…' : '제품 더 보기'}</button>}
         <button
           type="button"
           onClick={() => setIsFilterOpen(true)}
@@ -633,6 +635,7 @@ export default function Search() {
         >
           {sortLabel} ↓
         </button>
+        </div>
       </div>
 
       {isLoading && displayResults.length === 0 && <ProductGridSkeleton count={6} />}
