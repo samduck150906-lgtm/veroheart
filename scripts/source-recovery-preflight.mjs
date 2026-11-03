@@ -29,7 +29,8 @@ expected_relations(parent,child,hint) AS (VALUES ${tuples(relationships)}),
 column_checks AS (
  SELECT e.*,c.column_name IS NOT NULL AS present,c.data_type,c.is_nullable,c.is_generated,
  md5(c.column_default) AS default_fingerprint,
- CASE WHEN c.column_name IS NOT NULL THEN has_column_privilege('anon',format('public.%I',e.table_name),e.column_name,'SELECT') END AS anon_select
+ CASE WHEN c.column_name IS NOT NULL THEN has_column_privilege('anon',format('public.%I',e.table_name),e.column_name,'SELECT') END AS anon_select,
+ CASE WHEN c.column_name IS NOT NULL THEN has_column_privilege('authenticated',format('public.%I',e.table_name),e.column_name,'SELECT') END AS authenticated_select
  FROM expected_columns e LEFT JOIN information_schema.columns c
  ON c.table_schema='public' AND c.table_name=e.table_name AND c.column_name=e.column_name
 ), relation_checks AS (
@@ -44,6 +45,7 @@ column_checks AS (
  SELECT 'public.search_catalog_products(text,text,text,integer,integer)' AS signature,
  p.oid IS NOT NULL AS present,p.prosecdef AS security_definer,
  CASE WHEN p.oid IS NOT NULL THEN has_function_privilege('anon',p.oid,'EXECUTE') END AS anon_execute,
+ CASE WHEN p.oid IS NOT NULL THEN has_function_privilege('authenticated',p.oid,'EXECUTE') END AS authenticated_execute,
  CASE WHEN p.oid IS NOT NULL THEN md5(pg_get_functiondef(p.oid)) END AS definition_fingerprint
  FROM (SELECT to_regprocedure('public.search_catalog_products(text,text,text,integer,integer)') oid) t
  LEFT JOIN pg_proc p ON p.oid=t.oid
@@ -56,7 +58,7 @@ SELECT jsonb_build_object(
  'relationships',(SELECT jsonb_agg(to_jsonb(r) ORDER BY parent,child,hint) FROM relation_checks r),
  'functions',(SELECT jsonb_agg(to_jsonb(f)) FROM function_checks f),
  'publication_policies',(SELECT jsonb_agg(jsonb_build_object('name',policyname,'definition_fingerprint',md5(concat_ws('|',permissive,roles::text,cmd,qual,with_check)))) FROM pg_policies WHERE schemaname='public' AND tablename='products'),
- 'product_rls',(SELECT jsonb_build_object('enabled',relrowsecurity,'forced',relforcerowsecurity,'anon_table_select',has_table_privilege('anon',oid,'SELECT'),'acl_fingerprint',md5(COALESCE(relacl::text,''))) FROM pg_class WHERE oid=to_regclass('public.products'))
+ 'product_rls',(SELECT jsonb_build_object('enabled',relrowsecurity,'forced',relforcerowsecurity,'anon_table_select',has_table_privilege('anon',oid,'SELECT'),'authenticated_table_select',has_table_privilege('authenticated',oid,'SELECT'),'acl_fingerprint',md5(COALESCE(relacl::text,''))) FROM pg_class WHERE oid=to_regclass('public.products'))
 ) AS recovery_preflight;
 `;
 }

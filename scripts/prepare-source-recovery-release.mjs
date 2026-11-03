@@ -21,9 +21,10 @@ export async function prepareRelease({ repo, evidence, output, version, projectR
   const permittedMissing = new Set(['catalog_source_url','catalog_source_note','requires_veterinary_guidance']);
   assert.ok(Array.isArray(evidence.columns) && evidence.columns.length > 0, 'Projection schema evidence required');
   assert.equal(evidence.product_rls?.anon_table_select, true, 'New columns would lack public SELECT; grants require separate review');
+  assert.equal(evidence.product_rls?.authenticated_table_select, true, 'New columns would lack authenticated SELECT; grants require separate review');
   for (const c of evidence.columns) {
     if (c.present === false && c.table_name === 'products' && permittedMissing.has(c.column_name)) continue;
-    assert.ok(c.present === true && c.anon_select === true, `Unavailable public column ${c.table_name}.${c.column_name}`);
+    assert.ok(c.present === true && c.anon_select === true && c.authenticated_select === true, `Unavailable public column ${c.table_name}.${c.column_name}`);
   }
   for (const name of permittedMissing) assert.ok(evidence.columns.some(c => c.table_name === 'products' && c.column_name === name), 'Source column evidence incomplete');
   assert.ok(Array.isArray(evidence.relationships) && evidence.relationships.length > 0, 'Relationship evidence required');
@@ -33,7 +34,8 @@ export async function prepareRelease({ repo, evidence, output, version, projectR
   assert.deepEqual(evidence.relationships.map(r => JSON.stringify([r.parent,r.child,r.hint])).sort(), [...expected.relationships].sort(), 'Relationship evidence incomplete or stale');
   assert.ok(Array.isArray(evidence.functions) && evidence.functions.length === 1
     && evidence.functions[0].signature === 'public.search_catalog_products(text,text,text,integer,integer)'
-    && evidence.functions[0].present === true && evidence.functions[0].anon_execute === true, 'Public search function unavailable');
+    && evidence.functions[0].present === true && evidence.functions[0].anon_execute === true
+    && evidence.functions[0].authenticated_execute === true, 'Public search function unavailable');
   const files = (await readdir(path.join(repo, 'supabase/migrations'))).filter(f => f.endsWith('.sql'));
   const local = new Map();
   for (const file of files) {

@@ -22,10 +22,10 @@ async function fixture(run) {
       evidence: { project_ref: projectRef, observed_at: new Date(now).toISOString(), ledger: [{ version: '20260101000000', name: 'old' }] },
       version: '20261103120000', projectRef, now };
     const expected = await recoveryRequirements(options.repo);
-    options.evidence.columns = [...expected.columns].map(s => {const [table_name,column_name]=JSON.parse(s);return {table_name,column_name,present:!column_name.startsWith('catalog_source') && column_name!=='requires_veterinary_guidance',anon_select:true};});
+    options.evidence.columns = [...expected.columns].map(s => {const [table_name,column_name]=JSON.parse(s);return {table_name,column_name,present:!column_name.startsWith('catalog_source') && column_name!=='requires_veterinary_guidance',anon_select:true,authenticated_select:true};});
     options.evidence.relationships = [...expected.relationships].map(s => {const [parent,child,hint]=JSON.parse(s);return {parent,child,hint,present:true,candidate_count:1};});
-    options.evidence.functions = [{ signature:'public.search_catalog_products(text,text,text,integer,integer)',present:true,anon_execute:true }];
-    options.evidence.product_rls = { anon_table_select:true };
+    options.evidence.functions = [{ signature:'public.search_catalog_products(text,text,text,integer,integer)',present:true,anon_execute:true,authenticated_execute:true }];
+    options.evidence.product_rls = { anon_table_select:true,authenticated_table_select:true };
     await run(options);
   } finally { await rm(root, { recursive: true, force: true }); }
 }
@@ -51,6 +51,8 @@ for (const [name, change] of [
   ['missing search', o => { o.evidence.functions[0].present = false; }],
   ['truncated projection', o => { o.evidence.columns.pop(); }],
   ['new columns would lack SELECT', o => { o.evidence.product_rls.anon_table_select=false; }],
+  ['authenticated read denied', o => { o.evidence.columns[0].present=true;o.evidence.columns[0].authenticated_select=false; }],
+  ['authenticated search denied', o => { o.evidence.functions[0].authenticated_execute=false; }],
 ]) test(`fails closed before writing: ${name}`, () => fixture(async options => {
   change(options);
   await assert.rejects(prepareRelease(options));
@@ -59,7 +61,7 @@ for (const [name, change] of [
 test('full projection/ledger preflight executes as SELECT only against isolated missing-schema fixture', async () => {
   const db = new PGlite();
   try {
-    await db.exec('CREATE ROLE anon; CREATE TABLE products(id integer); CREATE SCHEMA supabase_migrations; CREATE TABLE supabase_migrations.schema_migrations(version text,name text);');
+    await db.exec('CREATE ROLE anon; CREATE ROLE authenticated; CREATE TABLE products(id integer); CREATE SCHEMA supabase_migrations; CREATE TABLE supabase_migrations.schema_migrations(version text,name text);');
     const sql = await recoveryPreflightSql();
     assert.ok(!/\b(?:INSERT|UPDATE|DELETE|ALTER|DROP|CREATE|DO|CALL|NOTIFY)\b/i.test(sql));
     const result = await db.query(sql);
