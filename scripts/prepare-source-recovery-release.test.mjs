@@ -85,3 +85,20 @@ test('CLI transaction shape rolls back schema if its trailing ledger insert fail
     assert.deepEqual((await db.query('SELECT catalog_source_url,catalog_source_note,requires_veterinary_guidance FROM products')).rows,[{catalog_source_url:null,catalog_source_note:null,requires_veterinary_guidance:false}]);
   } finally {await db.close();}
 });
+test('deferred original import migrations can subsequently add their own effects without duplicating restored columns', async () => {
+  const db = new PGlite();
+  try {
+    await db.exec("CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role; CREATE TABLE products(id integer PRIMARY KEY,name text,canonical_product_key text); INSERT INTO products VALUES(1,'synthetic','existing');");
+    const recovery = await readFile(new URL('../supabase/migration_drafts/20261103120000_restore_product_source_contract.sql',import.meta.url),'utf8');
+    await db.exec(`BEGIN;${recovery}COMMIT;`);
+    const before = (await db.query('SELECT * FROM products')).rows;
+    for (const file of ['20261026120000_official_catalog_import.sql','20261026190000_hills_official_catalog_import.sql']) {
+      await db.exec(await readFile(new URL(`../supabase/migrations/${file}`,import.meta.url),'utf8'));
+    }
+    assert.deepEqual((await db.query('SELECT * FROM products')).rows,before);
+    assert.equal((await db.query("SELECT count(*)::int n FROM information_schema.columns WHERE table_name='products' AND column_name IN ('catalog_source_url','catalog_source_note','requires_veterinary_guidance')")).rows[0].n,3);
+    assert.equal((await db.query("SELECT count(*)::int n FROM pg_indexes WHERE indexname IN ('products_official_catalog_key','products_hills_official_catalog_key')")).rows[0].n,2);
+    const grants=(await db.query("SELECT has_function_privilege('anon','public.import_official_catalog_product(jsonb)','EXECUTE') anon,has_function_privilege('authenticated','public.import_official_catalog_product(jsonb)','EXECUTE') authenticated,has_function_privilege('service_role','public.import_official_catalog_product(jsonb)','EXECUTE') service_role")).rows[0];
+    assert.deepEqual(grants,{anon:false,authenticated:false,service_role:true});
+  } finally {await db.close();}
+});
