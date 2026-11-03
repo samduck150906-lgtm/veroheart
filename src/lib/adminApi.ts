@@ -162,6 +162,8 @@ export type MealPeriod = 'morning' | 'lunch' | 'dinner' | 'snack';
 
 export interface AdminDiaryRow {
   id: string;
+  userId?: string;
+  productType?: string;
   feedingDate: string;
   feedingTime: string | null;
   /** 앱 입력 화면의 아침·점심·저녁·간식 구분. 값이 없는 과거 기록도 있다. */
@@ -181,6 +183,7 @@ export interface AdminDiaryRow {
 }
 
 export interface DiaryListParams {
+  userId?: string;
   page: number;
   pageSize: number;
   query?: string;
@@ -879,6 +882,7 @@ export async function deleteMember(id: string, reason?: string): Promise<DeleteM
 
 export async function fetchDiaryPage(params: DiaryListParams): Promise<Paged<AdminDiaryRow>> {
   const res = await adminWrite<{ total: number; logs: AdminDiaryRow[] }>('listFeedingLogs', {
+    ...(params.userId ? { userId: params.userId } : {}),
     page: params.page,
     pageSize: params.pageSize,
     query: params.query ?? null,

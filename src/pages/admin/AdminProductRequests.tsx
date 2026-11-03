@@ -1,3 +1,4 @@
+import AdminCorrectionDialog from './AdminCorrectionDialog';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Check, ChevronLeft, ChevronRight, ExternalLink, RefreshCw, X } from 'lucide-react';
 import { notify } from '../../store/useNotification';
@@ -9,6 +10,11 @@ import {
 } from '../../lib/adminApi';
 
 const PAGE_SIZE = 20;
+function safeRequestUrl(value: string | null): string | null {
+  if (!value) return null;
+  try { const url = new URL(value); return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password ? url.href : null; }
+  catch { return null; }
+}
 
 const STATUS_FILTERS: { key: ProductRequestStatus | 'all'; label: string }[] = [
   { key: 'pending', label: '대기' },
@@ -47,6 +53,7 @@ const AdminProductRequests: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [decision, setDecision] = useState<{request:AdminProductRequest;status:ProductRequestStatus} | null>(null);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -68,19 +75,20 @@ const AdminProductRequests: React.FC = () => {
     load();
   }, [load]);
 
-  const review = async (request: AdminProductRequest, next: ProductRequestStatus) => {
-    if (busyId) return;
+  const review = async (request: AdminProductRequest, next: ProductRequestStatus, note: string) => {
+    if (busyId) throw new Error('처리 중입니다. 잠시 후 다시 시도해 주세요.');
     setBusyId(request.id);
     try {
-      await reviewProductRequest(request.id, next);
+      await reviewProductRequest(request.id, next, note);
       notify.success(
         next === 'registered'
           ? `“${request.requestedName}”을(를) 등록함으로 표시했습니다.`
-          : `“${request.requestedName}” 요청을 반려했습니다.`,
+          : next === 'pending' ? '재검토 대기로 되돌렸습니다.' : `“${request.requestedName}” 요청을 반려했습니다.`,
       );
       await load();
     } catch (err) {
       notify.error(`처리 실패: ${err instanceof Error ? err.message : String(err)}`);
+      throw err;
     } finally {
       setBusyId(null);
     }
@@ -167,8 +175,10 @@ const AdminProductRequests: React.FC = () => {
                       <div className="admin-item-sub">검색어: {row.searchQuery}</div>
                     )}
                     {row.note && <div className="admin-item-sub">{row.note}</div>}
-                    {row.productUrl && (
-                      <a className="admin-item-sub" href={row.productUrl} target="_blank" rel="noreferrer">
+                    <a className="admin-item-sub" href={'/admin/products?q='+encodeURIComponent(row.requestedName)}>제품 조회·등록 관리</a>
+                    {row.reviewNote && <div className="admin-item-sub">처리 사유: {row.reviewNote}</div>}
+                    {safeRequestUrl(row.productUrl) && (
+                      <a className="admin-item-sub" href={safeRequestUrl(row.productUrl)!} target="_blank" rel="noreferrer">
                         제품 링크 <ExternalLink size={11} />
                       </a>
                     )}
@@ -190,22 +200,22 @@ const AdminProductRequests: React.FC = () => {
                         <button
                           type="button"
                           className="admin-btn-primary"
-                          onClick={() => review(row, 'registered')}
+                          onClick={() => setDecision({request:row,status:'registered'})}
                           disabled={busyId !== null}
                         >
-                          <Check size={14} /> {busyId === row.id ? '처리 중' : '등록함'}
+                          <Check size={14} /> {busyId === row.id ? '처리 중' : '등록 완료로 표시'}
                         </button>
                         <button
                           type="button"
                           className="admin-btn-soft"
-                          onClick={() => review(row, 'rejected')}
+                          onClick={() => setDecision({request:row,status:'rejected'})}
                           disabled={busyId !== null}
                         >
                           <X size={14} /> 반려
                         </button>
                       </div>
                     ) : (
-                      <span className="admin-item-sub">{formatDateTime(row.reviewedAt)}</span>
+                      <div><span className="admin-item-sub">{formatDateTime(row.reviewedAt)}</span><button type="button" className="admin-btn-soft" onClick={() => setDecision({request:row,status:'pending'})}>재검토</button></div>
                     )}
                   </td>
                 </tr>
@@ -215,6 +225,7 @@ const AdminProductRequests: React.FC = () => {
         </table>
       </div>
 
+      {decision && <AdminCorrectionDialog title={decision.status === 'pending' ? '제품 요청 재검토' : decision.status === 'registered' ? '제품 요청 등록 완료' : '제품 요청 반려'} fields={[]} onClose={()=>setDecision(null)} onSave={async (_,reason)=>{await review(decision.request,decision.status,reason);}}/>}
       <nav className="admin-pagination" aria-label="등록 요청 페이지">
         <button type="button" className="admin-btn-soft" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1 || loading}>
           <ChevronLeft size={14} /> 이전

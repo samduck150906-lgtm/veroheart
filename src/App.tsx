@@ -24,6 +24,8 @@ const NewProductScan = lazy(() => import('./pages/NewProductScan'));
 const Brand = lazy(() => import('./pages/Brand'));
 const Login = lazy(() => import('./pages/Login'));
 const ViralEvent = lazy(() => import('./pages/ViralEvent'));
+const AdminReviews = lazy(() => import('./pages/admin/AdminReviews'));
+const AdminAudit = lazy(() => import('./pages/admin/AdminAudit'));
 const Test = lazy(() => import('./pages/Test'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const Terms = lazy(() => import('./pages/Terms'));
@@ -175,6 +177,8 @@ function Application() {
           <Route path="users" element={<AdminMembers />} />
           <Route path="members" element={<Navigate to="/admin/users" replace />} />
           <Route path="diary" element={<AdminDiary />} />
+          <Route path="reviews" element={<AdminReviews />} />
+          <Route path="audit" element={<AdminAudit />} />
           <Route path="waitlist" element={<AdminWaitlist />} />
           <Route path="settings" element={<AdminSettings />} />
           <Route path="data-quality" element={<AdminDataQuality />} />
