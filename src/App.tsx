@@ -63,11 +63,12 @@ function RouteFallback() {
 
 function EntryGateRoute({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation();
-  if (['/privacy', '/terms', '/account/delete', '/auth/recovery', '/auth/callback'].includes(pathname)) return null;
+  if (['/privacy', '/terms', '/account/delete', '/account/find', '/auth/recovery', '/auth/callback'].includes(pathname)) return null;
   return children;
 }
 
 const AccountDelete = lazy(() => import('./pages/AccountDelete'));
+const FindAccount = lazy(() => import('./pages/FindAccount'));
 const PasswordRecovery = lazy(() => import('./pages/PasswordRecovery'));
 
 function Application() {
@@ -152,6 +153,7 @@ function Application() {
           <Route path="privacy" element={<Privacy />} />
           <Route path="account/delete" element={<AccountDelete />} />
           <Route path="auth/recovery" element={<PasswordRecovery />} />
+          <Route path="account/find" element={<FindAccount />} />
           <Route path="refund" element={<Refund />} />
           <Route path="*" element={<NotFound />} />
         </Route>

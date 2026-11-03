@@ -28,11 +28,15 @@ vi.mock('../lib/supabase', async (importOriginal) => ({
 
 import Profile from './Profile';
 import Diary from './Diary';
-import { getAuthRedirectUrl } from '../lib/nativeAuth';
 
 function LoginDestination() {
   const { state } = useLocation();
   return <p>로그인 후 돌아갈 화면: {state?.from}</p>;
+}
+
+function RecoveryDestination() {
+  const { state, search } = useLocation();
+  return <p>계정 찾기: {search} {state?.email}</p>;
 }
 
 function mount(path = '/profile') {
@@ -40,6 +44,7 @@ function mount(path = '/profile') {
     <Route path="/profile" element={<Profile />} />
     <Route path="/diary" element={<Diary />} />
     <Route path="/login" element={<LoginDestination />} />
+    <Route path="/account/find" element={<RecoveryDestination />} />
     <Route path="/" element={<h1>홈 화면</h1>} />
   </Routes></MemoryRouter>);
 }
@@ -191,7 +196,7 @@ describe('Profile navigation and account settings', () => {
     mount('/profile?tab=account');
     expect(await screen.findByText('가입이름')).toBeTruthy();
     expect(screen.getByText('010-1234-5678')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: '비밀번호 재설정 메일 받기' })).toBeNull();
+    expect(screen.queryByRole('link', { name: '비밀번호 변경' })).toBeNull();
   });
 
   it('distinguishes a failed profile lookup from unset fields and supports retry', async () => {
@@ -225,17 +230,12 @@ describe('Profile navigation and account settings', () => {
     expect(screen.queryByRole('link', { name: '계정 및 데이터 삭제' })).toBeNull();
   });
 
-  it('sends one recovery email only after an explicit click and shows the next step', async () => {
+  it('opens the shared password recovery flow with the current email without automatically sending mail', async () => {
     mount('/profile?tab=account');
     await screen.findByText('owner@example.com');
-    const button = screen.getByRole('button', { name: '비밀번호 재설정 메일 받기' });
+    fireEvent.click(screen.getByRole('link', { name: '비밀번호 변경' }));
+    expect(screen.getByText('계정 찾기: ?mode=password owner@example.com')).toBeTruthy();
     expect(h.resetPassword).not.toHaveBeenCalled();
-    fireEvent.click(button);
-    await waitFor(() => expect(h.resetPassword).toHaveBeenCalledWith('owner@example.com', { redirectTo: getAuthRedirectUrl('recovery') }));
-    expect((await screen.findByRole('status')).textContent).toContain('메일');
-    expect(button.hasAttribute('disabled')).toBe(true);
-    fireEvent.click(button);
-    expect(h.resetPassword).toHaveBeenCalledOnce();
   });
 
   it('asks guests to log in before showing a diary and keeps the diary return destination', () => {
@@ -250,7 +250,7 @@ describe('Profile navigation and account settings', () => {
     h.currentUser.mockResolvedValue({ id: 'owner', email: 'owner@example.com', app_metadata: { provider: 'kakao', providers: ['kakao'] } });
     mount('/profile?tab=account');
     expect(await screen.findByText('카카오')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: '비밀번호 재설정 메일 받기' })).toBeNull();
+    expect(screen.queryByRole('link', { name: '비밀번호 변경' })).toBeNull();
     expect(h.resetPassword).not.toHaveBeenCalled();
   });
 
@@ -275,7 +275,7 @@ describe('Profile navigation and account settings', () => {
     mount('/profile?tab=account');
     await screen.findByRole('alert');
     expect(screen.queryByText('previous@example.com')).toBeNull();
-    expect(screen.queryByRole('button', { name: '비밀번호 재설정 메일 받기' })).toBeNull();
+    expect(screen.queryByRole('link', { name: '비밀번호 변경' })).toBeNull();
   });
 
   it('ignores an old account response when the signed-in identity changes', async () => {
@@ -289,19 +289,6 @@ describe('Profile navigation and account settings', () => {
     await act(async () => finishOldRequest({ id: 'owner', email: 'owner@example.com', app_metadata: { provider: 'email', providers: ['email'] } }));
     expect(screen.queryByText('owner@example.com')).toBeNull();
     expect(screen.getByText('next@example.com')).toBeTruthy();
-  });
-
-  it('lets a failed recovery request be retried without reporting success', async () => {
-    h.resetPassword.mockResolvedValueOnce({ data: {}, error: { message: 'offline' } });
-    mount('/profile?tab=account');
-    await screen.findByText('owner@example.com');
-    const button = screen.getByRole('button', { name: '비밀번호 재설정 메일 받기' });
-    fireEvent.click(button);
-    expect((await screen.findByRole('alert')).textContent).toContain('메일을 보내지 못했습니다');
-    expect(button.hasAttribute('disabled')).toBe(false);
-    expect(screen.queryByRole('status')).toBeNull();
-    fireEvent.click(button);
-    expect((await screen.findByRole('status')).textContent).toContain('메일');
   });
 
   it('runs pending-photo cleanup without invoking account deletion', async () => {

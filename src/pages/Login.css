@@ -5,9 +5,16 @@
   border-radius: 16px;
   background: var(--vr-soft);
   color: var(--vr-ink);
-  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family:
+    'Pretendard',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
   letter-spacing: -0.025em;
-  transition: border-color 150ms ease, background-color 150ms ease;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
 }
 
 .login-consent.is-checked {
@@ -44,7 +51,9 @@
   border-radius: 8px;
   background: var(--surface);
   color: transparent;
-  transition: border-color 150ms ease, background-color 150ms ease;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
 }
 
 .login-consent__input:checked + .login-consent__check {
@@ -131,5 +140,248 @@
   .login-consent,
   .login-consent__check {
     transition: none;
+  }
+}
+
+.login-recovery-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.login-recovery-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--vr-body-2);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.login-recovery-links span {
+  width: 1px;
+  height: 12px;
+  background: var(--vr-line);
+}
+.login-recovery-links a:hover {
+  color: var(--vr-ink);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.account-recovery {
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 24px 4px 56px;
+  color: var(--vr-ink);
+  letter-spacing: -0.025em;
+}
+.account-recovery__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  margin-bottom: 28px;
+  color: var(--vr-body-2);
+  font-size: 13px;
+  text-decoration: none;
+}
+.account-recovery__icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 20px;
+  border-radius: 18px;
+  background: var(--vr-yellow-tint);
+  color: var(--vr-ink);
+}
+.account-recovery h1 {
+  margin: 0;
+  font-size: clamp(24px, 6vw, 29px);
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: -0.05em;
+  word-break: keep-all;
+}
+.account-recovery__intro {
+  margin: 12px 0 26px;
+  font-size: 14px;
+  color: var(--vr-body-2);
+  line-height: 1.7;
+  word-break: keep-all;
+}
+.account-recovery__tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  margin: 24px 0;
+  background: var(--vr-soft);
+  border-radius: 13px;
+}
+.account-recovery__tabs button {
+  flex: 1;
+  min-height: 43px;
+  border: 0;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  background: transparent;
+  color: var(--vr-body-2);
+  cursor: pointer;
+}
+.account-recovery__tabs button[aria-pressed='true'] {
+  background: var(--surface);
+  color: var(--vr-ink);
+  box-shadow: 0 2px 8px #00000009;
+}
+.account-recovery h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 750;
+}
+.account-recovery__email-section > p,
+.account-recovery__social p,
+.account-recovery__help p {
+  margin: 0 0 20px;
+  color: var(--vr-body-2);
+  font-size: 13px;
+  line-height: 1.75;
+  word-break: keep-all;
+}
+.account-recovery form,
+.account-recovery__verified {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.account-recovery form label {
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 650;
+}
+.account-recovery .vr-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+.account-recovery form .vr-btn {
+  margin-top: 6px;
+  min-height: 50px;
+  width: 100%;
+}
+.account-recovery__social {
+  border-top: 1px solid var(--vr-card-line);
+  margin-top: 30px;
+  padding-top: 26px;
+}
+.account-recovery__social p {
+  margin-bottom: 12px;
+}
+.account-recovery__social a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 0 16px;
+  border-radius: 12px;
+  background: var(--vr-soft);
+  text-decoration: none;
+  color: var(--vr-ink);
+  font-size: 13px;
+  font-weight: 650;
+}
+.account-recovery__help {
+  margin-top: 20px;
+  font-size: 12px;
+  color: var(--vr-body-2);
+}
+.account-recovery__help summary {
+  padding: 12px 0;
+  min-height: 20px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.account-recovery__help p {
+  margin: 6px 0 10px;
+}
+.account-recovery__help a,
+.account-recovery__text-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--vr-ink);
+  font-size: 13px;
+  text-underline-offset: 4px;
+}
+.account-recovery__notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 16px;
+  margin-top: 18px;
+  border-radius: 13px;
+  background: var(--vr-yellow-tint);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.account-recovery__notice svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.account-recovery__notice p {
+  margin: 4px 0 0;
+  color: var(--vr-body-2);
+}
+.account-recovery__verified {
+  padding-top: 6px;
+}
+.account-recovery__verified p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--vr-body-2);
+}
+.account-recovery__verified strong {
+  padding: 20px 0;
+  font-size: 20px;
+  overflow-wrap: anywhere;
+}
+.account-recovery__verified .account-recovery__text-link {
+  justify-content: center;
+}
+.account-recovery__error {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--danger-tint, #fff0ef);
+  color: var(--danger-strong);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.account-recovery a:focus-visible,
+.account-recovery button:focus-visible,
+.account-recovery summary:focus-visible,
+.login-recovery-links a:focus-visible {
+  outline: 2px solid var(--vr-ink);
+  outline-offset: 4px;
+  border-radius: 5px;
+}
+.account-recovery button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+@media (max-width: 360px) {
+  .login-recovery-links {
+    gap: 8px;
+  }
+  .login-recovery-links a {
+    font-size: 12px;
+  }
+  .account-recovery {
+    padding-top: 12px;
   }
 }
