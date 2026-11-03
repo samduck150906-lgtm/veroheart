@@ -472,7 +472,7 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
       </div>
 
       {/* 이동 + 검색 + 뷰 전환 */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           {viewMode === 'week' ? (
             <>
