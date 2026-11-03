@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
 
-const sql = await readFile(new URL('../supabase/migration_drafts/restore_product_source_contract.sql', import.meta.url), 'utf8');
+const sql = await readFile(new URL('./fixtures/catalog-source-drift-repair.sql', import.meta.url), 'utf8');
 const db = new PGlite();
 try {
   await db.exec(`CREATE ROLE anon; CREATE ROLE authenticated;

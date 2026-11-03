@@ -1,10 +1,11 @@
+-- LOCAL SYNTHETIC REGRESSION FIXTURE ONLY. Never deploy.
+-- Hosted columns were already restored by 20261103140000; no repair approval.
 -- DRAFT ONLY. Do not move into migrations/apply until the hosted ledger and
 -- all three column definitions have been checked. No imports/history repair.
 -- Same product metadata contract as 20261026120000_official_catalog_import.sql.
 -- FALSE is the legacy contract default, NOT evidence that veterinary advice
 -- is unnecessary. Review known veterinary products before any publication.
--- CLI deployment form: the pinned CLI transaction includes its ledger INSERT.
--- Do not execute this file standalone in SQL Editor.
+BEGIN;
 SET LOCAL lock_timeout = '5s';
 -- Serialize the definition check and ADD COLUMN with other DDL. A pre-check
 -- alone could race with an incompatible concurrent ADD COLUMN IF NOT EXISTS.
@@ -45,3 +46,5 @@ BEGIN
     RAISE EXCEPTION 'Potentially private/noncanonical product source URLs; review before public rollout';
   END IF;
 END $$;
+
+COMMIT;
