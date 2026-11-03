@@ -345,7 +345,7 @@ function ProfileContent() {
                 title="내 반려동물"
                 subtitle="등록한 순서로 표시합니다. 기록·분석 기준이 될 반려동물을 선택해 주세요."
                 right={
-                  <button type="button" onClick={startAddPet} className="ui-text-button" style={{ padding: 0 }}>
+                  <button type="button" onClick={startAddPet} className="ui-text-button" style={{ padding: 0, flexShrink: 0, whiteSpace: 'nowrap' }}>
                     <Plus size={14} /> 추가
                   </button>
                 }
