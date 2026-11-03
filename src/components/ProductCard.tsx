@@ -5,6 +5,7 @@ import { useStore } from '../store/useStore';
 import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import { getProductDisplayParts } from '../utils/productDisplay';
 import ProductVerificationBadge from './ProductVerificationBadge';
+import ProductImage from './ProductImage';
 import { describeIngredientAvailability } from '../utils/productDataCompleteness';
 
 type ProductCardProps = {
@@ -123,12 +124,12 @@ export default function ProductCard({
               boxShadow: '0 4px 14px rgba(43, 38, 36, 0.08)',
             }}
           >
-            <img
+            <ProductImage
               src={product.imageUrl}
               alt={display.name}
               loading="lazy"
               decoding="async"
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
             />
             {petBadge()}
           </div>
@@ -222,12 +223,12 @@ export default function ProductCard({
             boxShadow: '0 4px 14px rgba(43, 38, 36, 0.08)',
           }}
         >
-          <img
+          <ProductImage
             src={product.imageUrl}
             alt={display.name}
             loading="lazy"
             decoding="async"
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
           />
           {petBadge(true)}
         </div>

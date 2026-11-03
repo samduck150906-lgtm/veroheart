@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { monogram } from '../lib/veroroDesign';
+import { productImageUrl } from '../utils/productImage';
 
 interface ProductThumbProps {
   src?: string;
@@ -28,8 +29,9 @@ export default function ProductThumb({
   fontSize = 19,
   style,
 }: ProductThumbProps) {
-  const [failed, setFailed] = useState(false);
-  const showImage = Boolean(src) && !failed;
+  const [failedSrc, setFailedSrc] = useState<string>();
+  const imageSrc = productImageUrl(src);
+  const showImage = Boolean(imageSrc) && failedSrc !== imageSrc;
 
   return (
     <div
@@ -45,13 +47,13 @@ export default function ProductThumb({
     >
       {showImage ? (
         <img
-          src={src}
+          src={imageSrc}
           alt={alt}
           loading="lazy"
           decoding="async"
           referrerPolicy="no-referrer"
-          onError={() => setFailed(true)}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          onError={() => setFailedSrc(imageSrc)}
+          style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
         />
       ) : (
         <span aria-hidden>{monogram(monoSource)}</span>

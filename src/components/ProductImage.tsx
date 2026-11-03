@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { productImageUrl } from '../utils/productImage';
 
 interface ProductImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src?: string;
@@ -11,11 +12,14 @@ interface ProductImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
  * - Premium gradient placeholder fallback on load error or missing image
  */
 export default function ProductImage({ src, alt, style, ...props }: ProductImageProps) {
-  const [hasError, setHasError] = useState(false);
+  const [failedSrc, setFailedSrc] = useState<string>();
+  const imageSrc = productImageUrl(src);
 
-  if (hasError || !src) {
+  if (!imageSrc || failedSrc === imageSrc) {
     return (
       <div
+        role="img"
+        aria-label={`${alt || '제품'} 사진 준비 중`}
         style={{
           display: 'flex',
           flexDirection: 'column',
@@ -45,7 +49,7 @@ export default function ProductImage({ src, alt, style, ...props }: ProductImage
           whiteSpace: 'nowrap',
           letterSpacing: '-0.02em'
         }}>
-          {alt || '베로로 추천'}
+          제품 사진 준비 중
         </span>
       </div>
     );
@@ -53,13 +57,13 @@ export default function ProductImage({ src, alt, style, ...props }: ProductImage
 
   return (
     <img
-      src={src}
+      src={imageSrc}
       alt={alt || '상품 이미지'}
       referrerPolicy="no-referrer"
       loading="lazy"
       decoding="async"
       onError={() => {
-        if (!hasError) setHasError(true);
+        setFailedSrc(imageSrc);
       }}
       style={{
         display: 'block',
