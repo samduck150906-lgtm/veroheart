@@ -25,13 +25,13 @@ describe('public surfaces preserve unresolved evidence', () => {
   it.each([false, true])('card grid=%s does not invent a numeric score', grid => {
     prepare();
     render(<MemoryRouter><ProductCard product={unknown} grid={grid} /></MemoryRouter>);
-    expect(screen.getByText('원료 상세 확인 필요')).toBeTruthy();
+    expect(screen.getByText('원료 1개 등록')).toBeTruthy();
     expect(screen.queryByText(/^\d+점$/)).toBeNull();
   });
   it('search row withholds grade and fit claim for stale-ready unknown labels', () => {
     prepare();
     render(<MemoryRouter><ProductRow product={unknown} /></MemoryRouter>);
-    expect(screen.getByText('원료 상세 확인 필요')).toBeTruthy();
+    expect(screen.getByText('원료 1개 등록')).toBeTruthy();
     expect(screen.getByRole('button', { name: '우리 아이를 등록하고 궁합을 확인해 주세요.' })).toBeTruthy();
     expect(screen.queryByText(/^[A-F] \d+$/)).toBeNull();
   });

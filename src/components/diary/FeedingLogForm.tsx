@@ -1,3 +1,4 @@
+import ProductThumb from '../ProductThumb';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, X, Check, FlaskConical, Camera, Trash2, PawPrint } from 'lucide-react';
@@ -48,7 +49,6 @@ interface FeedingLogFormProps {
 
 type SelectedProduct = { id: string; name: string; brand: string; imageUrl: string };
 
-const FALLBACK_IMG = 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&q=80';
 
 export default function FeedingLogForm({
   isOpen,
@@ -457,10 +457,11 @@ export default function FeedingLogForm({
                 background: 'var(--surface-alt)',
               }}
             >
-              <img
-                src={selectedProduct.imageUrl || FALLBACK_IMG}
+              <ProductThumb
+                src={selectedProduct.imageUrl}
                 alt={selectedProduct.name}
-                style={{ width: '48px', height: '48px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }}
+                monoSource={selectedProduct.brand || selectedProduct.name}
+                size={48} radius={10} style={{ flexShrink: 0 }}
               />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>{selectedProduct.brand}</div>
@@ -558,10 +559,11 @@ export default function FeedingLogForm({
                         borderBottom: '1px solid var(--surface-alt)',
                       }}
                     >
-                      <img
-                        src={p.imageUrl || FALLBACK_IMG}
+                      <ProductThumb
+                        src={p.imageUrl}
                         alt={p.name}
-                        style={{ width: '42px', height: '42px', borderRadius: '9px', objectFit: 'cover', flexShrink: 0 }}
+                        monoSource={p.brand || p.name}
+                        size={42} radius={9} style={{ flexShrink: 0 }}
                       />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>{p.brand}</div>

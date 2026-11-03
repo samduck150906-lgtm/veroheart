@@ -1,3 +1,5 @@
+import ProductThumb from '../ProductThumb';
+import { productImageUrl } from '../../utils/productImage';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -77,7 +79,6 @@ function shiftDateKey(key: string, delta: number): string {
   return toDateKey(dt);
 }
 
-const FALLBACK_IMG = 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&q=80';
 
 function petAgeLabel(age: number): string {
   if (age < 2) return '아기';
@@ -833,7 +834,7 @@ function FeedingLogCard({
       <div style={{ display: 'flex', gap: '12px' }}>
         <div style={{ flexShrink: 0 }}>
           {img ? (
-            <img src={img || FALLBACK_IMG} alt={name} style={{ width: '56px', height: '56px', borderRadius: '12px', objectFit: 'cover' }} />
+            <ProductThumb src={productImageUrl(img)} alt={name} monoSource={name} size={56} radius={12} />
           ) : (
             <div
               style={{
