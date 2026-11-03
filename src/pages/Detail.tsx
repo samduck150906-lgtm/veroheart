@@ -659,8 +659,13 @@ export default function Detail() {
       {/* 일일 급여량 계산기 */}
       <section className="card" style={{ marginBottom: '40px' }}>
         <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-dark)' }}>
-          <Dog size={22} color="var(--safe)" /> {profile.name} 맞춤 일일 급여량
+          <Dog size={22} color="var(--safe)" /> {profile.name} 열량 기준 참고 급여량
         </h2>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: 1.6 }}>
+          {product.requiresVeterinaryGuidance
+            ? '수의사 상담이 필요한 제품입니다. 처방과 급여량은 담당 수의사의 안내를 따라 주세요.'
+            : '수의사 상담 필요 여부가 확인된 것은 아닙니다. 이 계산은 일반식 여부나 급여 안전성을 확인하지 않으며, 처방식·질환 관련 급여는 수의사와 상담해 주세요.'}
+        </p>
         {feedingGrams ? (
           <div>
             <div style={{ fontSize: '32px', fontWeight: 900, color: 'var(--safe)', marginBottom: '8px' }}>
@@ -676,7 +681,7 @@ export default function Detail() {
         ) : (
           <div>
             <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '16px' }}>
-              {profile.weightKg ? '제품 열량 정보가 부족해 급여량을 계산할 수 없습니다. 제품 포장의 급여 안내를 확인해 주세요.' : '몸무게와 제품 열량이 있으면 참고용 급여량을 계산할 수 있습니다.'}
+              {product.requiresVeterinaryGuidance ? '이 제품의 일반 급여량 계산은 제공하지 않습니다.' : profile.weightKg ? '제품 열량 정보가 부족해 급여량을 계산할 수 없습니다. 제품 포장의 급여 안내를 확인해 주세요.' : '몸무게와 제품 열량이 있으면 참고용 급여량을 계산할 수 있습니다.'}
             </p>
             <button 
               className="btn btn-outline" 
