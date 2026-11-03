@@ -64,7 +64,7 @@ export default function ProductImageSlider({ images, productName, isFav, onToggl
               <ProductImage
                 src={src}
                 alt={`${productName} 이미지 ${i + 1}`}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
               />
             ) : (
               <div

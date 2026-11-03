@@ -32,7 +32,15 @@ const QUANTITY_RE = /^(?:\d+개|\d+개입|\d+매|\d+팩|\d+포|\d+입|묶음\d*|
 
 /** 괄호류 안이 광고/배송 문구일 때 통째 제거 */
 const PROMO_BRACKET_RE =
-  /[[(【「{][^\])】」}]*(?:무료|로켓|배송|정품|공식|할인|특가|사은품|증정|쿠폰|택배|당일|오늘출발|이벤트|한정|최저가)[^\])】」}]*[\])】」}]/g;
+  /[[(【「{][^\])】」}]*(?:무료|로켓|배송|정품|공식|할인|특가|사은품|증정|쿠폰|택배|당일|오늘출발|이벤트|한정|최저가|환불\s*보장|순차\s*출고)[^\])】」}]*[\])】」}]/g;
+
+// Some marketplace titles contain reversed brackets: ")당일발송(".
+const REVERSED_PROMO_BRACKET_RE = /[\])](?:당일\s*(?:발송|출고)|무료\s*배송|오늘\s*출발)[[(]/g;
+
+function removePromotions(value: string): string {
+  return value.replace(REVERSED_PROMO_BRACKET_RE, ' ').replace(PROMO_BRACKET_RE, ' ')
+    .split(/\s+/).filter((token) => token && !stripToken(token)).join(' ').trim();
+}
 
 function stripToken(tokenRaw: string): boolean {
   const t = tokenRaw.trim();
@@ -51,11 +59,12 @@ function stripToken(tokenRaw: string): boolean {
 export function normalizeProductDisplayName(product: NameSource): string {
   const explicit = (product.displayName ?? '').trim();
   const raw = (product.name ?? '').trim();
-  if (explicit) return explicit;
+  // Imported display names can still contain marketplace promotions.
+  if (explicit) return removePromotions(explicit) || removePromotions(raw) || raw;
   if (!raw) return '';
 
   // 1) 광고성 괄호 블록 제거
-  let s = raw.replace(PROMO_BRACKET_RE, ' ');
+  let s = removePromotions(raw);
 
   // 2) 토큰 단위로 광고/수량 제거
   let tokens = s.split(/\s+/).filter((tok) => tok && !stripToken(tok));

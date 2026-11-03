@@ -1,3 +1,4 @@
+import { productImageUrl } from '../utils/productImage';
 import type {
   FeedingProductType,
   Ingredient,
@@ -199,9 +200,7 @@ export function mapFeedingLogFromRow(row: SupabaseFeedingLogRow): PetFeedingLog 
         id: row.products.id,
         name: row.products.name ?? '',
         brand: row.products.brand_name ?? '',
-        imageUrl:
-          row.products.image_url ||
-          'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&q=80',
+        imageUrl: productImageUrl(row.products.image_url),
         productType: row.products.product_type ?? 'food',
         caloriesPer100g: toNum(row.products.kcal_per_100g) ?? null,
       }
@@ -328,9 +327,7 @@ export function mapProductFromSupabaseRow(p: SupabaseProductRow): Product {
     barcode: p.barcode ?? undefined,
     guaranteedAnalysis,
     caloriesPer100g: toNum(p.kcal_per_100g),
-    imageUrl:
-      p.image_url ||
-      'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&q=80',
+    imageUrl: productImageUrl(p.image_url),
     ingredients,
     reviewsCount: p.review_count ?? 0,
     averageRating: p.avg_rating ?? 0,
