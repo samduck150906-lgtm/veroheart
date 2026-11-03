@@ -331,7 +331,7 @@ export default function Login() {
                     ? '이미 사용 중인 닉네임입니다.'
                     : nicknameStatus === 'available'
                       ? '사용할 수 있는 닉네임입니다.'
-                      : '앱과 관리자 화면에 이 이름으로 표시됩니다.')}
+                      : '')}
             </p>
           </div>
         )}
