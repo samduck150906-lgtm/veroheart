@@ -24,11 +24,12 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe('missing product source schema is an error, not product absence', () => {
-  it('rejects the observed 42703 in detail and preserves public filters', async () => {
-    const { getProductDetail } = await import('./supabase');
+  it.each([false, true])('rejects the observed 42703 and preserves current public filters (verified-only %s)', async strict => {
+    const { getProductDetail, setHideUnverifiedProducts } = await import('./supabase');
+    setHideUnverifiedProducts(strict);
     await expect(getProductDetail('fixture-product')).rejects.toThrow('제품 정보를 불러오지 못했습니다');
     expect(api.calls).toContainEqual(['eq', ['is_visible', true]]);
-    expect(api.calls).toContainEqual(['in', ['verification_status', ['reviewed', 'verified']]]);
+    expect(api.calls).toContainEqual(['in', ['verification_status', strict ? ['verified'] : ['pending', 'reviewed', 'verified']]]);
     expect(api.calls.filter(([method]) => method === 'select')).toHaveLength(1); // no unsafe fallback
   });
   it('rejects list/search failures rather than returning an empty successful page', async () => {
