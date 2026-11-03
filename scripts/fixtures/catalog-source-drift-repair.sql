@@ -1,3 +1,5 @@
+-- LOCAL SYNTHETIC REGRESSION FIXTURE ONLY. Never deploy.
+-- Hosted columns were already restored by 20261103140000; no repair approval.
 -- DRAFT ONLY. Do not move into migrations/apply until the hosted ledger and
 -- all three column definitions have been checked. No imports/history repair.
 -- Same product metadata contract as 20261026120000_official_catalog_import.sql.
