@@ -43,6 +43,10 @@ interface StandardFeedItem {
 
 const RECENT_KEY = 'vh_recent_searches';
 const RECENT_MAX = 8;
+const SUBCATEGORY_LABELS: Record<string, string> = {
+  dry: '건식', wet: '습식', snack: '간식', supplement: '영양제',
+  freeze_dried: '동결건조', semi_moist: '반습식', raw: '생식',
+};
 
 function loadRecentSearches(): string[] {
   try {
@@ -131,6 +135,15 @@ export default function Search() {
   useEffect(() => {
     setQuery(qParam);
   }, [qParam]);
+  const updateQuery = (value: string) => {
+    setQuery(value);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (value) next.set('q', value);
+      else next.delete('q');
+      return next;
+    }, { replace: true });
+  };
   const [recentSearches, setRecentSearches] = useState<string[]>(() => loadRecentSearches());
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [isShowingBroadMatches, setIsShowingBroadMatches] = useState(false);
@@ -303,7 +316,7 @@ export default function Search() {
 
   const displayResults = useMemo(() => {
     if (sortBy === 'default') {
-      return rankProductsForProfile(searchResults, profile).map(({ product, breakdown, score }) => ({
+      return rankProductsForProfile(searchResults, profile, { filterByPetType: false }).map(({ product, breakdown, score }) => ({
         product,
         breakdown,
         score,
@@ -379,22 +392,22 @@ export default function Search() {
     // 검색어로 넘긴다. searchProducts 가 제품명·브랜드명에 더해 원료명까지 훑으므로
     // '관절'·'귀리' 같은 말이 제품명에 없어도 해당 원료를 쓰는 제품이 잡힌다.
     // (예전에는 건강 태그 필터로 이었는데, 그 컬럼이 운영 DB 에서 비어 있어 늘 0건이었다.)
-    setQuery(kw);
+    updateQuery(kw);
     recordRecent(kw);
     setShowSuggest(false);
   };
 
   const handleQueryChange = (v: string) => {
-    setQuery(v);
+    updateQuery(v);
     setShowSuggest(true);
   };
 
   const applySuggestion = (s: Suggestion) => {
     if (s.kind === 'brand') {
       setFilters((f) => ({ ...f, brand: s.label }));
-      setQuery('');
+      updateQuery('');
     } else {
-      setQuery(s.label);
+      updateQuery(s.label);
     }
     recordRecent(s.label);
     setShowSuggest(false);
@@ -419,7 +432,6 @@ export default function Search() {
 
   const showDiscovery = query.trim() === '';
 
-  const petName = profile.name || '우리 아이';
   const sortLabel = sortBy === 'rating' ? '평점순' : '추천순';
 
   return (
@@ -470,7 +482,7 @@ export default function Search() {
           {query !== '' && (
             <button
               type="button"
-              onClick={() => { setQuery(''); setShowSuggest(false); }}
+              onClick={() => { updateQuery(''); setShowSuggest(false); }}
               aria-label="검색어 지우기"
               style={{
                 width: '20px', height: '20px', borderRadius: '50%', border: 'none', flex: 'none',
@@ -532,7 +544,7 @@ export default function Search() {
           <div className="search-chip-row">
             <FilterChip label={`${category} 전체`} selected={!subCategory} onClick={() => setSubCategory('')} />
             {subCategories.map(name => (
-              <FilterChip key={name} label={name} selected={subCategory === name} onClick={() => setSubCategory(name)} />
+              <FilterChip key={name} label={SUBCATEGORY_LABELS[name] ?? name} selected={subCategory === name} onClick={() => setSubCategory(name)} />
             ))}
           </div>
         </div>
@@ -612,7 +624,7 @@ export default function Search() {
             ? '불러오는 중…'
             : sortBy === 'rating'
               ? `${displayResults.length}개 · 평점 높은 순`
-              : `${displayResults.length}개 · ${petName}에게 잘 맞는 순`}
+              : `${displayResults.length}개 · 추천순`}
         </span>
         <button
           type="button"

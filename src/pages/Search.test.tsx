@@ -62,13 +62,13 @@ describe('category navigation', () => {
     show(route);
     await finishDebounce();
     expect(api.search).toHaveBeenLastCalledWith('', main, [], expect.objectContaining({ subCategory: child }));
-    expect(within(screen.getByRole('group', { name: `${main} 세부 분류` })).getByRole('button', { name: child }).getAttribute('aria-pressed')).toBe('true');
+    expect(within(screen.getByRole('group', { name: `${main} 세부 분류` })).getByRole('button', { name: child === 'dry' ? '건식' : '간식' }).getAttribute('aria-pressed')).toBe('true');
   });
 
   it('selects children using the URL and restores the selection on back navigation', async () => {
     show('/search?category=사료');
     await finishDebounce();
-    fireEvent.click(screen.getByRole('button', { name: 'dry' }));
+    fireEvent.click(screen.getByRole('button', { name: '건식' }));
     await finishDebounce();
     const params = new URLSearchParams(screen.getByTestId('route').textContent ?? '');
     expect(params.get('category')).toBe('사료');
@@ -76,7 +76,7 @@ describe('category navigation', () => {
     fireEvent.click(screen.getByRole('button', { name: '간식', exact: true }));
     await finishDebounce();
     expect(api.search.mock.calls.at(-1)?.[3].subCategory).toBeUndefined();
-    expect(screen.queryByRole('button', { name: 'dry' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '건식' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: '뒤로' }));
     await finishDebounce();
     expect(api.search).toHaveBeenLastCalledWith('', '사료', [], expect.objectContaining({ subCategory: 'dry' }));
@@ -149,3 +149,13 @@ describe('search defaults and refresh', () => {
     expect(api.search).toHaveBeenCalledTimes(2);
   });
 });
+
+ it('persists a typed query in the URL and removes it when cleared', async () => {
+ show('/search?category=사료'); await finishDebounce();
+ fireEvent.change(screen.getByRole('searchbox'), { target: { value: '로얄캐닌' } });
+ await finishDebounce();
+ let params = new URLSearchParams(screen.getByTestId('route').textContent ?? '');
+ expect(params.get('q')).toBe('로얄캐닌'); expect(params.get('category')).toBe('사료');
+ fireEvent.change(screen.getByRole('searchbox'), { target: { value: '' } }); await finishDebounce();
+ params = new URLSearchParams(screen.getByTestId('route').textContent ?? ''); expect(params.has('q')).toBe(false);
+ });

@@ -13,7 +13,8 @@ import {
 } from 'lucide-react';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import AllergyIngredientPicker from '../components/AllergyIngredientPicker';
-import { petAgeDisplay } from '../utils/allergyPicker';
+import { ageGroupFromAge } from '../lib/supabaseRowTypes';
+import { notify } from '../store/useNotification';
 import { TossCard, TossButton, TossChip, TossInput, TossSectionTitle } from '../components/TossUI';
 import ProductCard from '../components/ProductCard';
 import AccountSettings from '../components/AccountSettings';
@@ -89,6 +90,7 @@ function ProfileContent() {
 
   const [editingPet, setEditingPet] = useState<UserPetProfile | null>(null);
   const [formData, setFormData] = useState<UserPetProfile>(newPetDraft());
+  const [weightText, setWeightText] = useState('');
   const [profileStep, setProfileStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<UserPetProfile | null>(null);
@@ -98,6 +100,7 @@ function ProfileContent() {
     if (activeTab === 'pets' && isLoggedIn && pets.length === 0 && !editingPet) {
       setEditingPet(newPetDraft());
       setFormData(newPetDraft());
+      setWeightText('');
       setProfileStep(0);
     }
   }, [activeTab, isLoggedIn, pets.length, editingPet]);
@@ -106,12 +109,14 @@ function ProfileContent() {
     const draft = newPetDraft();
     setEditingPet(draft);
     setFormData(draft);
+    setWeightText('');
     setProfileStep(0);
   };
 
   const startEditPet = (pet: UserPetProfile) => {
     setEditingPet(pet);
     setFormData({ ...pet });
+    setWeightText(pet.weightKg != null ? String(pet.weightKg) : '');
     setProfileStep(0);
   };
 
@@ -126,9 +131,17 @@ function ProfileContent() {
       setProfileStep(0);
       return;
     }
+    const rawWeight = weightText.trim();
+    const weightKg = rawWeight ? Number(rawWeight) : undefined;
+    if (rawWeight && (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(rawWeight) || !Number.isFinite(weightKg) || weightKg! <= 0)) {
+      notify.error('몸무게는 0보다 큰 숫자로 입력해 주세요.');
+      setProfileStep(3);
+      return;
+    }
     setSaving(true);
     try {
-      await savePet(formData);
+      const saved = await savePet({ ...formData, weightKg });
+      if (!saved) return;
       setEditingPet(null);
       setProfileStep(0);
     } finally {
@@ -218,11 +231,10 @@ function ProfileContent() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <TossInput
-                value={formData.weightKg != null ? String(formData.weightKg) : ''}
-                onChange={(v) => {
-                  const n = parseFloat(v.replace(/[^0-9.]/g, ''));
-                  setFormData({ ...formData, weightKg: Number.isFinite(n) && n > 0 ? n : undefined });
-                }}
+                value={weightText}
+                onChange={setWeightText}
+                inputMode="decimal"
+                ariaLabel="몸무게 (kg)"
                 placeholder="몸무게 예: 5.2"
               />
               <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-muted)' }}>kg</span>
@@ -395,7 +407,7 @@ function ProfileContent() {
                         </div>
                         <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600, marginTop: '3px' }}>
                           {pet.species === 'Cat' ? '고양이' : '강아지'}
-                          {pet.breed ? ` · ${pet.breed}` : ''} · {petAgeDisplay(pet.age, pet.species)}
+                          {pet.breed ? ` · ${pet.breed}` : ''} · {{ baby: '아기', adult: '성인', senior: '시니어' }[ageGroupFromAge(pet.age)]}
                           {pet.weightKg ? ` · ${pet.weightKg}kg` : ''}
                         </div>
                       </button>
@@ -471,7 +483,7 @@ function ProfileContent() {
                 <TossButton variant="outline" onClick={() => setProfileStep((s) => Math.max(0, s - 1))} disabled={profileStep === 0} style={{ flex: 1 }}>
                   이전
                 </TossButton>
-                <TossButton variant="soft" onClick={() => setProfileStep((s) => Math.min(stepCount - 1, s + 1))} disabled={profileStep === stepCount - 1} style={{ flex: 1 }}>
+                <TossButton variant="soft" onClick={() => setProfileStep((s) => Math.min(stepCount - 1, s + 1))} disabled={profileStep === stepCount - 1 || (profileStep === 0 && !formData.name.trim())} style={{ flex: 1 }}>
                   다음
                 </TossButton>
               </div>
@@ -480,7 +492,7 @@ function ProfileContent() {
                 className="btn btn-primary"
                 style={{ width: '100%', padding: '16px', borderRadius: '14px', fontWeight: 800, fontSize: '16px', opacity: saving ? 0.6 : 1 }}
                 onClick={handleSavePet}
-                disabled={saving}
+                disabled={saving || !formData.name.trim()}
               >
                 {saving ? '저장 중…' : editingPet.id ? '변경 사항 저장' : '반려동물 등록'}
               </button>

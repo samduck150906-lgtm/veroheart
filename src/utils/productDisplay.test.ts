@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getProductDisplayParts, normalizeProductDisplayName, truncateName } from './productDisplay';
+import { getProductDisplayParts, normalizeProductDisplayName, truncateName, resolveBrandLabel } from './productDisplay';
 
 describe('normalizeProductDisplayName', () => {
   it('쿠팡 원문의 배송·수량·홍보 문구를 제거하되 제품 구분 정보는 보존한다', () => {
@@ -78,4 +78,8 @@ describe('getProductDisplayParts', () => {
       netWeightText: '',
     })).toEqual({ brand: '', name: '실제 제품명', meta: '' });
   });
+});
+
+it.each(['강아지', '고양이', 'NEW', '영국1위'])('hides a generic source label instead of presenting it as brand: %s', brand => {
+ expect(resolveBrandLabel({name: '연어 간식', brand})).toBe('');
 });

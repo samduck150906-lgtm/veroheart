@@ -21,6 +21,7 @@ export function feedingTypeMeta(type: FeedingProductType) {
 
 /** DB product_type → 다이어리 유형 */
 export function productTypeToFeedingType(productType?: string | null): FeedingProductType {
+  if (productType === 'custom') return 'custom';
   if (productType === 'snack') return 'snack';
   if (productType === 'supplement') return 'supplement';
   return 'food';

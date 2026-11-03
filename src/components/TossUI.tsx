@@ -222,6 +222,8 @@ type TossInputProps = {
   onChange: (value: string) => void;
   placeholder?: string;
   type?: string;
+  inputMode?: 'text' | 'decimal' | 'numeric';
+  ariaLabel?: string;
   readOnly?: boolean;
   disabled?: boolean;
   style?: CSSProperties;
@@ -291,6 +293,8 @@ export function TossInput({
   onChange,
   placeholder,
   type = 'text',
+  inputMode,
+  ariaLabel,
   readOnly = false,
   disabled = false,
   style,
@@ -298,6 +302,8 @@ export function TossInput({
   return (
     <input
       type={type}
+      inputMode={inputMode}
+      aria-label={ariaLabel}
       value={value}
       readOnly={readOnly}
       disabled={disabled}

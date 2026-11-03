@@ -247,12 +247,12 @@ export default function AnalysisResult() {
     () => breakdown
       ? buildAllergyDisplayState(breakdown, profile.name || '우리 아이', {
           hasIngredientData: ingredients.length + (product?.unknownIngredientTerms?.length ?? 0) > 0,
-          hasAllergyProfile: hasPetProfile && profile.allergies.length > 0,
+          hasAllergyProfile: hasPetProfile,
           analysisStatus: display?.analysisReadiness.status,
           unknownIngredientTerms: product?.unknownIngredientTerms,
         })
       : null,
-    [breakdown, profile.name, profile.allergies.length, ingredients.length, hasPetProfile, display, product],
+    [breakdown, profile.name, ingredients.length, hasPetProfile, display, product],
   );
 
   // ── Phase 2 별칭 관찰(기본 OFF) ──

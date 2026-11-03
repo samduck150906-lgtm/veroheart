@@ -49,6 +49,8 @@ export default function ProductCard({
   const favButton = (offset: number) => (
     <button
       type="button"
+      aria-label={isFav ? '찜 해제' : '찜하기'}
+      aria-pressed={isFav}
       onClick={(event) => {
         event.preventDefault();
         toggleFavorite(product.id);

@@ -50,6 +50,9 @@ beforeEach(() => {
   h.state.favorites = [];
   h.state.products = [];
   h.state.catalogRevision = 0;
+  h.state.pets = [{ id: 'pet-1', name: '초코', species: 'Dog', age: 4, allergies: [], healthConcerns: [] }];
+  h.state.profile = h.state.pets[0];
+  h.state.savePet.mockReset().mockImplementation(async data => ({ ...data, id: data.id || 'saved-pet' }));
   h.savedProducts.mockReset().mockResolvedValue([]);
   h.currentUser.mockResolvedValue({ id: 'owner', email: 'owner@example.com', app_metadata: { provider: 'email', providers: ['email'] } });
   h.userProfile.mockReset().mockImplementation(async (id: string) => ({ id, nickname: '가입닉네임' }));
@@ -119,6 +122,46 @@ describe('Profile saved products', () => {
   });
 });
 afterEach(cleanup);
+
+describe('pet registration validation', () => {
+  it('disables progression and saving for an empty pet name', () => {
+    h.state.pets = [];
+    mount();
+    expect(screen.getByRole('button', { name: '다음', exact: true }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: '반려동물 등록', exact: true }).hasAttribute('disabled')).toBe(true);
+  });
+
+  it('keeps an in-progress decimal weight and saves the decimal value', async () => {
+    mount();
+    fireEvent.click(screen.getByRole('button', { name: '수정', exact: true }));
+    for (let step = 0; step < 3; step++) fireEvent.click(screen.getByRole('button', { name: '다음', exact: true }));
+    const weight = screen.getByRole('textbox', { name: '몸무게 (kg)' });
+    fireEvent.change(weight, { target: { value: '6' } });
+    fireEvent.change(weight, { target: { value: '6.' } });
+    expect(weight).toHaveProperty('value', '6.');
+    fireEvent.change(weight, { target: { value: '6.8' } });
+    fireEvent.click(screen.getByRole('button', { name: '변경 사항 저장' }));
+    await waitFor(() => expect(h.state.savePet).toHaveBeenCalledWith(expect.objectContaining({ weightKg: 6.8 })));
+  });
+
+  it('keeps the form and weight when the server could not save', async () => {
+    h.state.savePet.mockResolvedValue(null);
+    mount();
+    fireEvent.click(screen.getByRole('button', { name: '수정', exact: true }));
+    for (let step = 0; step < 3; step++) fireEvent.click(screen.getByRole('button', { name: '다음', exact: true }));
+    fireEvent.change(screen.getByRole('textbox', { name: '몸무게 (kg)' }), { target: { value: '6.8' } });
+    fireEvent.click(screen.getByRole('button', { name: '변경 사항 저장' }));
+    await waitFor(() => expect(h.state.savePet).toHaveBeenCalledOnce());
+    expect(screen.getByRole('textbox', { name: '몸무게 (kg)' })).toHaveProperty('value', '6.8');
+  });
+
+  it('displays the stored age band without inventing an exact age or a different life stage', () => {
+    h.state.pets = [{ ...h.state.pets[0], species: 'Cat', age: 10 }];
+    mount();
+    expect(screen.getByRole('button', { name: /초코 선택됨/ }).textContent).toContain('시니어');
+    expect(screen.queryByText(/10살|중년기/)).toBeNull();
+  });
+});
 
 describe('Profile navigation and account settings', () => {
   it('opens real account details from the account row instead of leaving it inert', async () => {
