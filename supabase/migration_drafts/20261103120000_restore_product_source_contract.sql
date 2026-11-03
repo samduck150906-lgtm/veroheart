@@ -45,4 +45,3 @@ BEGIN
     RAISE EXCEPTION 'Potentially private/noncanonical product source URLs; review before public rollout';
   END IF;
 END $$;
-

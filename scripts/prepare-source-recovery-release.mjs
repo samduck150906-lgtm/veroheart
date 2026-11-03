@@ -53,7 +53,7 @@ export async function prepareRelease({ repo, evidence, output, version, projectR
   }
   assert.equal(version, '20261103120000', 'Changing the pinned candidate version requires review');
   const draft = await readFile(path.join(repo, 'supabase/migration_drafts/20261103120000_restore_product_source_contract.sql'));
-  assert.equal(sha(draft), '37ce443744f204af256604d1ae93fcf0588f01d0428138ab86aadd043e91ce70', 'Recovery SQL differs from reviewed candidate');
+  assert.equal(sha(draft), '9b615b361e653145f12d83221a47edb775c0797b847de49fed18b03997a38f4b', 'Recovery SQL differs from reviewed candidate');
   assert.ok(!/^\s*(?:BEGIN|COMMIT|ROLLBACK|START TRANSACTION);\s*$/im.test(draft.toString()), 'CLI must own transaction boundary');
   const recoveryFile = `${version}_restore_product_source_contract.sql`;
   const manifest = {

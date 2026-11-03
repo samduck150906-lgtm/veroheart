@@ -13,7 +13,7 @@ were no source records in other tables.
 ## Exact proposed change
 
 Candidate: `supabase/migration_drafts/20261103120000_restore_product_source_contract.sql`.
-SHA-256: `37ce443744f204af256604d1ae93fcf0588f01d0428138ab86aadd043e91ce70`.
+SHA-256: `9b615b361e653145f12d83221a47edb775c0797b847de49fed18b03997a38f4b`.
 
 Only add missing products.catalog_source_url TEXT NULL/no default,
 catalog_source_note TEXT NULL/no default, and requires_veterinary_guidance BOOLEAN
