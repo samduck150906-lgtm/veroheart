@@ -98,7 +98,14 @@ export async function signInWithKakao(redirectTo?: string): Promise<KakaoSignInR
   const target = redirectTo ?? getAuthRedirectUrl();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'kakao',
-    options: { redirectTo: target, skipBrowserRedirect: true },
+    options: {
+      redirectTo: target,
+      skipBrowserRedirect: true,
+      // The Kakao app has no account_email permission. `scopes` only appends to
+      // Supabase's defaults, so override the outgoing OAuth scope instead.
+      // Supabase's Kakao provider must allow users without an email.
+      queryParams: { scope: 'profile_nickname profile_image' },
+    },
   });
 
   if (error) return describeKakaoAuthError(error.message);
