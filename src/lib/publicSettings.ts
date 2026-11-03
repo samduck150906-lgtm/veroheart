@@ -20,7 +20,7 @@ export interface PublicSettings {
   viralEventVisible: boolean;
   serviceNotice: ServiceNotice;
   phase2AliasObservationEnabled: boolean;
-  /** 켜면 verified만, 끄면 reviewed·verified 허용. pending은 항상 비공개. */
+  /** 켜면 verified만, 끄면 노출 설정이 켜진 pending·reviewed·verified 허용. */
   hideUnverifiedProducts: boolean;
 }
 
@@ -36,7 +36,7 @@ export const DEFAULT_PUBLIC_SETTINGS: PublicSettings = {
   viralEventVisible: false,
   serviceNotice: { enabled: false, message: '' },
   phase2AliasObservationEnabled: false,
-  // 추가 제한의 기본은 끔. 검수 대기 제외는 설정과 무관한 필수 조건이다.
+  // 기존 공개 카탈로그를 유지하고 검수 완료 전용 제한은 운영자가 켠다.
   hideUnverifiedProducts: false,
 };
 

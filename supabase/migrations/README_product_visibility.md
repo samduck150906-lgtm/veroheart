@@ -10,10 +10,14 @@
 
 ```
 is_visible = true
+AND verification_status IN ('pending', 'reviewed', 'verified')
 AND (NOT private.hide_unverified_products_enabled() OR verification_status = 'verified')
 ```
 
 - `is_visible = false` → 언제나 미노출
+- 검수 게이트가 꺼져 있으면 노출 설정이 켜진 `pending`·`reviewed`·`verified` 제품 허용
+- 미지정·알 수 없는 검수 상태는 항상 미노출
+- 검수 상태는 배지/업무 상태이며 조회 과정에서 자동으로 변경하지 않음
 - 검수 게이트(`app_settings.hide_unverified_products`)가 켜지면 `verified` 만 노출
 
 `service_role` 은 RLS 를 우회하므로 관리자 경로는 영향받지 않는다.
@@ -24,8 +28,8 @@ EXECUTE 가 필요해 권한을 회수할 수 없으므로, 노출 스키마 밖
 
 ## 검수 게이트를 켜기 전에
 
-지금은 **꺼져 있다.** 켜면 `verification_status = 'verified'` 인 제품만 남는데,
-현재 459개가 전부 `pending` 이라 앱이 빈 화면이 된다.
+켜면 `verification_status = 'verified'` 인 제품만 남는데,
+검수 완료 제품이 없는 환경에서는 앱이 빈 화면이 된다.
 
 순서:
 

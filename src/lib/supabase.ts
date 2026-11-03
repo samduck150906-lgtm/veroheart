@@ -116,7 +116,8 @@ type VisibilityQueryResult<T> = { data: T | null; error: VisibilityQueryError | 
  * 제품 조회마다 설정을 새로 읽으면 요청이 배로 늘고, 설정 조회가 실패한 순간
  * 목록이 통째로 비어 버린다. 그래서 publicSettings 로더가 값을 여기에 밀어
  * 넣고(setHideUnverifiedProducts), 조회는 그 값만 본다. 아직 한 번도 읽지
- * 못했다면 검토됨·검수 완료를 허용한다. 검수 대기·미정 상태는 항상 제외한다.
+ * 못했다면 노출 설정이 켜진 제품을 허용한다. 검수 완료 전용 설정을 켰을 때만
+ * 검수 대기·검토됨 제품을 제외한다. 검수 상태 자체는 변경하지 않는다.
  *
  * (publicSettings 가 이 모듈을 import 하므로 반대 방향 import 는 두지 않는다.)
  */
@@ -127,7 +128,7 @@ export function setHideUnverifiedProducts(value: boolean): void {
 }
 
 function publicProductReviewStatuses(): string[] {
-  return hideUnverifiedProducts ? ['verified'] : ['reviewed', 'verified'];
+  return hideUnverifiedProducts ? ['verified'] : ['pending', 'reviewed', 'verified'];
 }
 
 async function queryVisibleProducts<T>(
