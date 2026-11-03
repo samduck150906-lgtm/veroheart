@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
+import { Check, ChevronRight, Eye, EyeOff } from 'lucide-react';
+import './Login.css';
 import { supabase } from '../lib/supabase';
 import { getAuthRedirectUrl } from '../lib/nativeAuth';
 import { PRIVACY_VERSION } from '../constants/privacyInfo';
@@ -395,10 +396,29 @@ export default function Login() {
       )}
 
       {mode === 'login' && <button type="button" className="vr-btn vr-btn--outline" style={{ marginTop: 14 }} disabled={!emailOk || resetLoading || resetCooldown > 0} onClick={() => void requestPasswordReset()}>{resetLoading ? '메일 전송 중…' : resetCooldown > 0 ? `${resetCooldown}초 후 메일 다시 요청` : '비밀번호 재설정 메일 받기'}</button>}
-      <label style={{ display: 'block', marginTop: 18, fontSize: 13, lineHeight: 1.7 }}>
-        <input type="checkbox" checked={privacyAccepted} onChange={(e) => setPrivacyAccepted(e.target.checked)} />
-        회원가입 또는 카카오로 계속하기 전에 <a href="/terms" target="_blank" rel="noreferrer">이용약관</a>과 <a href="/privacy" target="_blank" rel="noreferrer">개인정보 처리방침</a>을 확인하고 동의합니다.
-      </label>
+      <div className={`login-consent${privacyAccepted ? ' is-checked' : ''}`}>
+        <label className="login-consent__choice">
+          <input
+            className="login-consent__input"
+            type="checkbox"
+            checked={privacyAccepted}
+            onChange={(e) => setPrivacyAccepted(e.target.checked)}
+            aria-label="이용약관 및 개인정보 처리방침에 동의합니다. (필수)"
+            aria-describedby="login-consent-note"
+          />
+          <span className="login-consent__check" aria-hidden="true"><Check size={16} strokeWidth={2.6} /></span>
+          <span className="login-consent__heading">
+            약관 및 개인정보 동의
+            <span className="login-consent__required">필수</span>
+          </span>
+        </label>
+        <p className="login-consent__note" id="login-consent-note">회원가입 및 카카오 로그인 시 적용돼요.</p>
+        <div className="login-consent__links">
+          <a href="/terms" target="_blank" rel="noreferrer">이용약관 <ChevronRight size={13} aria-hidden="true" /></a>
+          <span className="login-consent__divider" aria-hidden="true" />
+          <a href="/privacy" target="_blank" rel="noreferrer">개인정보 처리방침 <ChevronRight size={13} aria-hidden="true" /></a>
+        </div>
+      </div>
 
       <button
         type="button"
