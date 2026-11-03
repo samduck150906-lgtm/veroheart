@@ -56,7 +56,7 @@ SELECT jsonb_build_object(
  'relationships',(SELECT jsonb_agg(to_jsonb(r) ORDER BY parent,child,hint) FROM relation_checks r),
  'functions',(SELECT jsonb_agg(to_jsonb(f)) FROM function_checks f),
  'publication_policies',(SELECT jsonb_agg(jsonb_build_object('name',policyname,'definition_fingerprint',md5(concat_ws('|',permissive,roles::text,cmd,qual,with_check)))) FROM pg_policies WHERE schemaname='public' AND tablename='products'),
- 'product_rls',(SELECT jsonb_build_object('enabled',relrowsecurity,'forced',relforcerowsecurity,'acl_fingerprint',md5(COALESCE(relacl::text,''))) FROM pg_class WHERE oid=to_regclass('public.products'))
+ 'product_rls',(SELECT jsonb_build_object('enabled',relrowsecurity,'forced',relforcerowsecurity,'anon_table_select',has_table_privilege('anon',oid,'SELECT'),'acl_fingerprint',md5(COALESCE(relacl::text,''))) FROM pg_class WHERE oid=to_regclass('public.products'))
 ) AS recovery_preflight;
 `;
 }

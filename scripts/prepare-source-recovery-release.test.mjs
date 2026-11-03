@@ -25,6 +25,7 @@ async function fixture(run) {
     options.evidence.columns = [...expected.columns].map(s => {const [table_name,column_name]=JSON.parse(s);return {table_name,column_name,present:!column_name.startsWith('catalog_source') && column_name!=='requires_veterinary_guidance',anon_select:true};});
     options.evidence.relationships = [...expected.relationships].map(s => {const [parent,child,hint]=JSON.parse(s);return {parent,child,hint,present:true,candidate_count:1};});
     options.evidence.functions = [{ signature:'public.search_catalog_products(text,text,text,integer,integer)',present:true,anon_execute:true }];
+    options.evidence.product_rls = { anon_table_select:true };
     await run(options);
   } finally { await rm(root, { recursive: true, force: true }); }
 }
@@ -49,6 +50,7 @@ for (const [name, change] of [
   ['ambiguous FK', o => { o.evidence.relationships[0].candidate_count = 2; }],
   ['missing search', o => { o.evidence.functions[0].present = false; }],
   ['truncated projection', o => { o.evidence.columns.pop(); }],
+  ['new columns would lack SELECT', o => { o.evidence.product_rls.anon_table_select=false; }],
 ]) test(`fails closed before writing: ${name}`, () => fixture(async options => {
   change(options);
   await assert.rejects(prepareRelease(options));

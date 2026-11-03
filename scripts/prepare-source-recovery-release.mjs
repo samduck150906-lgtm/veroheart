@@ -20,6 +20,7 @@ export async function prepareRelease({ repo, evidence, output, version, projectR
   assert.ok(ledger.every(v => v < version), 'Recovery version must follow entire remote ledger');
   const permittedMissing = new Set(['catalog_source_url','catalog_source_note','requires_veterinary_guidance']);
   assert.ok(Array.isArray(evidence.columns) && evidence.columns.length > 0, 'Projection schema evidence required');
+  assert.equal(evidence.product_rls?.anon_table_select, true, 'New columns would lack public SELECT; grants require separate review');
   for (const c of evidence.columns) {
     if (c.present === false && c.table_name === 'products' && permittedMissing.has(c.column_name)) continue;
     assert.ok(c.present === true && c.anon_select === true, `Unavailable public column ${c.table_name}.${c.column_name}`);
