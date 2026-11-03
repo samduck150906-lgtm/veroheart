@@ -7,8 +7,9 @@ or account is created. No operational credentials, records or DB connection.
 
 The fixture Vite build runs the real App/router/components/store and real
 Supabase SDK against a loopback-only readonly HTTP adapter backed by PGlite.
-The minimal SQL fixture intentionally lacks the three source fields and explicitly
-applies the PR117 draft locally. All public projection/FK trees are checked;
+The minimal SQL fixture directly includes the three source fields restored by current main.
+No retired recovery SQL is applied. Both hidden fixture rows stay nonvisible; the
+public fixture policy admits visible pending/reviewed/verified rows like the new main. All public projection/FK trees are checked;
 SQL product queries execute as anon with product publication RLS. This is not a
 hosted PostgREST/Auth test or full original-schema replay. The separate existing
 guard-included bootstrap verifies the complete repository schema.

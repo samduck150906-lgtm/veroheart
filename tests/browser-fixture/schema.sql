@@ -1,7 +1,7 @@
 -- Synthetic minimal PostgreSQL/Supabase-shaped fixture, NOT a production snapshot.
 CREATE ROLE anon;
 CREATE TABLE products(id UUID PRIMARY KEY,name TEXT,display_name TEXT,variant_name TEXT,net_weight_text TEXT,slug TEXT,
- catalog_source TEXT,analysis_status TEXT,brand_name TEXT,manufacturer_name TEXT,product_type TEXT,main_category TEXT,sub_category TEXT,
+ catalog_source TEXT,catalog_source_url TEXT,catalog_source_note TEXT,requires_veterinary_guidance BOOLEAN NOT NULL DEFAULT FALSE,analysis_status TEXT,brand_name TEXT,manufacturer_name TEXT,product_type TEXT,main_category TEXT,sub_category TEXT,
  target_pet_type TEXT,target_life_stage TEXT[],formulation TEXT,product_health_concerns TEXT[],has_risk_factors TEXT[],
  verification_status TEXT,verified_at TIMESTAMPTZ,barcode TEXT,kcal_per_100g NUMERIC,image_url TEXT,review_count INT DEFAULT 0,avg_rating NUMERIC DEFAULT 0,
  is_visible BOOLEAN,is_pinned BOOLEAN DEFAULT FALSE,pinned_order INT,has_ingredients BOOLEAN DEFAULT TRUE,created_at TIMESTAMPTZ DEFAULT now());
@@ -21,7 +21,7 @@ SELECT ('10000000-0000-4000-8000-'||lpad(n::TEXT,12,'0'))::UUID,
  '합성브랜드','food','사료','dog','admin','ready','reviewed',TRUE FROM generate_series(1,6) n;
 INSERT INTO products(id,name,brand_name,product_type,is_visible,verification_status)
 VALUES('10000000-0000-4000-8000-000000000007','숨긴 합성 제품','합성브랜드','food',FALSE,'verified'),
- ('10000000-0000-4000-8000-000000000008','검수 대기 합성 제품','합성브랜드','food',TRUE,'pending');
+ ('10000000-0000-4000-8000-000000000008','검수 대기 합성 제품','합성브랜드','food',FALSE,'pending');
 INSERT INTO ingredients VALUES
  ('20000000-0000-4000-8000-000000000001','닭고기','Chicken','safe','합성'),
  ('20000000-0000-4000-8000-000000000002','연어','Salmon','safe','합성'),
@@ -38,6 +38,6 @@ INSERT INTO nutritional_profiles VALUES
  ('10000000-0000-4000-8000-000000000006',30,15,3,8,10,NULL,NULL);
 INSERT INTO product_categories VALUES('30000000-0000-4000-8000-000000000001','사료','합성 분류',0,TRUE,NULL);
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
-CREATE POLICY public_products ON products FOR SELECT TO anon USING(is_visible AND verification_status IN('reviewed','verified'));
+CREATE POLICY public_products ON products FOR SELECT TO anon USING(is_visible AND verification_status IN('pending','reviewed','verified'));
 GRANT USAGE ON SCHEMA public TO anon;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon;

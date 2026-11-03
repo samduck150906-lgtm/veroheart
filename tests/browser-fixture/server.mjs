@@ -7,7 +7,6 @@ import { PGlite } from '@electric-sql/pglite';
 import { parseProjection, assertPublicProductProjectionContract } from '../../scripts/product-projection-contract.mjs';
 const db=new PGlite();
 await db.exec(await readFile(new URL('schema.sql',import.meta.url),'utf8'));
-await db.exec(await readFile(new URL('../../supabase/migration_drafts/restore_product_source_contract.sql',import.meta.url),'utf8'));
 await db.exec("UPDATE products SET requires_veterinary_guidance=true,catalog_source_url='https://manufacturer.example/fixture',catalog_source_note='합성 출처' WHERE id='10000000-0000-4000-8000-000000000006'");
 console.log('Fixture contract',await assertPublicProductProjectionContract(db));
 await db.exec('SET ROLE anon');
