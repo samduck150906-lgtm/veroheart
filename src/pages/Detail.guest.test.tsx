@@ -29,9 +29,9 @@ const show = () => render(<HelmetProvider><MemoryRouter initialEntries={['/produ
 describe('product detail guest compatibility', () => {
   it('replaces fit percentage and personal conclusions with registration guidance on logout', async () => {
     show();
-    await screen.findByRole('region', { name: '로니 적합도' });
+    await screen.findByRole('region', { name: '로니 참고 평가' });
     act(() => useStore.setState({ isLoggedIn: false, userId: null }));
-    expect(screen.queryByRole('region', { name: '로니 적합도' })).toBeNull();
+    expect(screen.queryByRole('region', { name: '로니 참고 평가' })).toBeNull();
     expect(screen.queryByText(/현재 궁합 점수는/)).toBeNull();
     expect(screen.getByRole('button', { name: '우리 아이를 등록하고 궁합을 확인해 주세요.' })).toBeTruthy();
   });

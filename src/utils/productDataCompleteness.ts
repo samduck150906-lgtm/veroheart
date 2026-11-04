@@ -1,5 +1,6 @@
 import type { Product } from '../types';
 import { readinessFromStoredStatus } from '../analysis/analysisReadiness';
+import { getNutritionPresentation } from '../analysis/nutritionReadiness';
 
 export function describeIngredientAvailability(product: Product): { label: string; detail: string } {
   if (product.ingredientDataLoaded === false) {
@@ -41,13 +42,8 @@ export interface ProductCompletenessDisplay {
 
 export function resolveProductCompleteness(product: Product): ProductDataCompleteness {
   const hasIngredients = (product.ingredients?.length ?? 0) + (product.unknownIngredientTerms?.length ?? 0) > 0;
-  const analysis = product.guaranteedAnalysis;
-  // 성분 분석표는 값이 하나라도 실제로 들어와야 의미가 있다.
-  const hasNutrition = Boolean(
-    analysis && Object.values(analysis).some((value) => typeof value === 'number' && Number.isFinite(value)),
-  );
-
-  if (hasIngredients && hasNutrition && !product.unknownIngredientTerms?.length) return 'full';
+  const nutrition = getNutritionPresentation(product.guaranteedAnalysis);
+  if (hasIngredients && !nutrition.limited && !product.unknownIngredientTerms?.length) return 'full';
   if (hasIngredients) return 'partial';
   return 'minimal';
 }
@@ -57,12 +53,12 @@ export function describeProductCompleteness(product: Product): ProductCompletene
   if (product.unknownIngredientTerms?.length) return { level: 'partial', ...describeIngredientAvailability(product) };
   switch (resolveProductCompleteness(product)) {
     case 'full':
-      return { level: 'full', label: '원료·영양 정보 확인됨', detail: '' };
+      return { level: 'full', label: '원료·기초 영양 정보 확인됨', detail: '' };
     case 'partial':
       return {
         level: 'partial',
         label: '일부 정보만 확인할 수 있습니다',
-        detail: '원료는 확인했지만 영양성분이 등록되지 않아 급여량·영양 균형은 분석할 수 없습니다.',
+        detail: getNutritionPresentation(product.guaranteedAnalysis).notice,
       };
     default:
       return {
