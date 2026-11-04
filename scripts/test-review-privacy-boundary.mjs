@@ -92,6 +92,10 @@ for(const legacy of [true,false])test(`real PostgreSQL read boundary with ${lega
 });
 test('unexpected existing policy and public-view contract fail closed with no partial changes',async()=>{
  const db=await fixture();try{
+ await db.exec('ALTER TABLE reviews DISABLE ROW LEVEL SECURITY;');
+ await assert.rejects(apply(db),/RLS is disabled/);
+ assert.equal((await rows(db,"SELECT count(*)::int n FROM pg_policy WHERE polname='reviews_owner_read_required'"))[0].n,0);
+ await db.exec('ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;');
  await db.exec('CREATE POLICY reviews_owner_read_required ON reviews AS RESTRICTIVE FOR SELECT TO anon,authenticated;');
  const before=await snapshot(db);await assert.rejects(apply(db),/Existing reviews_owner_read_required differs/);assert.deepEqual(await snapshot(db),before);
  await db.exec('DROP POLICY reviews_owner_read_required ON reviews; ALTER VIEW product_ratings SET(security_invoker=true);');

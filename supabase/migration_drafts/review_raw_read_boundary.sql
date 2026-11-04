@@ -9,6 +9,9 @@ LOCK TABLE public.reviews IN ACCESS EXCLUSIVE MODE;
 DO $$
 DECLARE v_columns text[]; v_types text[]; existing_policy record;
 BEGIN
+  IF NOT (SELECT relrowsecurity FROM pg_class WHERE oid='public.reviews'::regclass) THEN
+    RAISE EXCEPTION 'Existing reviews RLS is disabled: review all operation policies first';
+  END IF;
   SELECT array_agg(column_name::text ORDER BY ordinal_position),
          array_agg(data_type::text ORDER BY ordinal_position)
     INTO v_columns,v_types
@@ -43,4 +46,3 @@ BEGIN
       FOR SELECT TO anon, authenticated USING (auth.uid() = user_id);
   END IF;
 END $$;
-ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;

@@ -41,7 +41,8 @@ legacy content and back-office fields are not a replacement public API.
 `supabase/migration_drafts/review_raw_read_boundary.sql` stays outside automatic
 migration execution. It serializes on reviews, verifies the existing five-column
 public view/owner execution model and adds one RESTRICTIVE SELECT policy for
-anon/authenticated: auth.uid()=user_id. Enable existing reviews RLS, never FORCE it.
+anon/authenticated: auth.uid()=user_id. Existing reviews RLS must already be enabled;
+otherwise abort for a separate per-operation review. Never toggle or FORCE RLS.
 No existing permissive policy is dropped/replaced; no GRANT/REVOKE, content/data
 rewrite, public view/trigger/function change or INSERT/UPDATE/DELETE policy change.
 An existing different same-name guard aborts instead of being silently overwritten.
