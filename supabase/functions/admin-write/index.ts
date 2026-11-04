@@ -1,3 +1,4 @@
+import { handleSupport } from './support.ts';
 import { deleteAccountData, ownedPhotoPath } from '../_shared/accountStorage.ts';
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
@@ -456,6 +457,13 @@ serve(async (req) => {
 
   try {
     switch (action) {
+      case 'correctPet':
+      case 'correctFeedingLog':
+      case 'moderateReview':
+      case 'getMemberActivity':
+      case 'listAdminAudit':
+      case 'listAdminReviews':
+        return json(await handleSupport(db, actor, action, body), 200, cors);
       // ── 인증 확인 ──────────────────────────────────────────────────────
       case 'createAdminSession':
         if (token.startsWith('v1.')) return json({ error: 'Reauthentication required' }, 401, cors);
@@ -1626,7 +1634,7 @@ serve(async (req) => {
           .from('pet_feeding_logs')
           .select(
             `id, user_id, feeding_date, feeding_time, meal_period, amount, unit, preference_level, image_url, memo,
-             reaction_note, custom_product_name, created_at,
+             reaction_note, custom_product_name, product_type, created_at,
              users (nickname), pets!inner (name, pet_type), products (name, brand_name)`,
             { count: 'exact' },
           )
@@ -1634,6 +1642,8 @@ serve(async (req) => {
           .order('feeding_time', { ascending: false, nullsFirst: false })
           .range(from, from + pageSize - 1);
 
+        const memberId = optionalUuid(body.userId, '회원 ID');
+        if (memberId) query = query.eq('user_id', memberId);
         if (dateFrom) query = query.gte('feeding_date', dateFrom);
         if (dateTo) query = query.lte('feeding_date', dateTo);
         if (petType) query = query.eq('pets.pet_type', petType);
@@ -1680,6 +1690,8 @@ serve(async (req) => {
               const imageUrl = signed?.data?.signedUrl ?? (typeof row.image_url === 'string' && row.image_url.startsWith('data:image/') ? row.image_url : null);
               return {
                 id: row.id,
+                userId: row.user_id,
+                productType: row.product_type,
                 feedingDate: row.feeding_date,
                 feedingTime: row.feeding_time ?? null,
                 mealPeriod: row.meal_period ?? null,

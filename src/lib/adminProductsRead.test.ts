@@ -15,8 +15,12 @@ function adminToken() {
 
 function loadHandler(result: { data: unknown; error: unknown }) {
   let handler!: (request: Request) => Promise<Response>;
+  let from = 0, to = 999;
   const builder = {
     select: vi.fn().mockReturnThis(),
+    order: vi.fn().mockReturnThis(),
+    range: vi.fn((start: number, end: number) => { from = start; to = end; return builder; }),
+    then: (resolve: (value: unknown) => unknown) => Promise.resolve({ ...result, data: Array.isArray(result.data) ? result.data.slice(from, to + 1) : result.data }).then(resolve),
     eq: vi.fn().mockReturnThis(),
     maybeSingle: vi.fn().mockResolvedValue(result),
   };
@@ -92,4 +96,16 @@ describe('admin-products-read edit evidence', () => {
     expect((await handler(request(adminToken(), 'not-an-id'))).status).toBe(400);
     expect(db.from).not.toHaveBeenCalled();
   });
+});
+
+it('reads later facts pages with stable ties and manufacturer source evidence', async () => {
+  const rows = Array.from({ length: 1005 }, (_, i) => ({ id: String(i), name: '같은 제품명', catalog_source_url: 'https://manufacturer.example/' + i }));
+  const { handler, builder } = loadHandler({ data: rows, error: null });
+  const response = await handler(new Request('https://test.invalid/functions/v1/admin-products-read', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken() }, body: JSON.stringify({ view: 'facts' }) }));
+  expect(response.status).toBe(200);
+  const result = await response.json();
+  expect(result.rows).toHaveLength(1005);
+  expect(result.rows.at(-1).id).toBe('1004');
+  expect(builder.select.mock.calls[0][0]).toContain('catalog_source_url');
+  expect(builder.order).toHaveBeenCalledWith('id', { ascending: true });
 });

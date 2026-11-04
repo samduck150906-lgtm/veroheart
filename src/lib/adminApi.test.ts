@@ -19,6 +19,7 @@ import {
   applyProductCleanup,
   fetchDiaryPage,
   fetchProductEditBundle,
+  fetchProductFacts,
   fetchProductIngredients,
   fetchProductsPage,
   fetchMemberDetail,
@@ -357,5 +358,15 @@ describe('adminApi: 쓰기 경로', () => {
       'signup_enabled',
       'viral_event_visible',
     ]);
+  });
+});
+
+describe('admin product facts complete result', () => {
+  it('keeps products beyond the first hundred and prefers manufacturer evidence', async () => {
+    h.callAdminFunction.mockResolvedValue({ rows: Array.from({ length: 140 }, (_, index) => ({ id: String(index), name: '제품 ' + index, brand_name: '제조사', barcode: null, kcal_per_100g: null, image_url: null, coupang_link: 'https://shop.example/item', catalog_source_url: 'https://manufacturer.example/product', nutritional_profiles: index < 120 ? { crude_protein: 25 } : null })) });
+    expect(await fetchProductFacts({ filter: 'all' })).toHaveLength(140);
+    const missing = await fetchProductFacts({ filter: 'missing_nutrition', limit: 5 });
+    expect(missing.map(row => row.id)).toEqual(['120', '121', '122', '123', '124']);
+    expect(missing[0].sourceUrl).toBe('https://manufacturer.example/product');
   });
 });

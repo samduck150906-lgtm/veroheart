@@ -36,17 +36,21 @@ export default function AuthCallback() {
           navigate('/auth/recovery', { replace: true });
           return;
         }
+        if (intent === 'account') {
+          navigate('/account/find?mode=id&verified=1', { replace: true });
+          return;
+        }
         notify.success('로그인되었습니다!');
         navigate('/', { replace: true });
       } catch (error) {
         if (cancelled) return;
         notify.error(error instanceof Error ? error.message : '로그인에 실패했습니다. 다시 시도해 주세요.');
-        navigate('/login', { replace: true });
+        navigate(callback?.intent === 'account' ? '/account/find?mode=id&link=expired' : callback?.intent === 'recovery' ? '/account/find?mode=password&link=expired' : '/login', { replace: true });
       }
     }
     void handleCallback();
     return () => { cancelled = true; };
-  }, [navigate, initApp, raw, nativeUrl]);
+  }, [navigate, initApp, raw, nativeUrl, callback?.intent]);
 
   return (
     <div style={{

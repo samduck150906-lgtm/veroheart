@@ -226,6 +226,13 @@ describe('ingredient-centered compatibility score', () => {
       expect(ranked[index - 1].score).toBeGreaterThanOrEqual(ranked[index].score);
     }
   });
+
+  it('can sort an explicit search result without hiding the other species', () => {
+    const products = [product({ id: 'dog', targetPetType: 'dog' }), product({ id: 'cat', targetPetType: 'cat' })];
+    const dogProfile = { ...profile, species: 'Dog' as const };
+    expect(rankProductsForProfile(products, dogProfile).map(row => row.product.id)).toEqual(['dog']);
+    expect(rankProductsForProfile(products, dogProfile, { filterByPetType: false }).map(row => row.product.id)).toEqual(['dog', 'cat']);
+  });
 });
 
 describe('preferencePenaltyFromLevel', () => {

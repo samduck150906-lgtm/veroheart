@@ -5,6 +5,8 @@
 [build.environment]
   NODE_VERSION = "24"
   NPM_VERSION = "11.13.0"
+  # Browser-public configuration; server credentials remain covered by scanning.
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY"
 
 [[headers]]
   for = "/*"

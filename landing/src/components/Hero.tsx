@@ -1,116 +1,127 @@
 "use client";
-
-import { Reveal } from "@/components/Reveal";
-import { PhoneMockup } from "@/components/PhoneMockup";
-import { ScanIcon, ShieldCheckIcon, ArrowRightIcon } from "@/components/icons";
+import Image from "next/image";
+import {
+  ArrowRightIcon,
+  CheckIcon,
+  LeafIcon,
+  PawIcon,
+  SearchIcon,
+} from "@/components/icons";
 import { trackEvent } from "@/lib/analytics";
 import { launchConfig } from "@/constants/launchConfig";
-
 export function Hero() {
   return (
-    <header className="relative overflow-hidden bg-paper pt-28 sm:pt-32">
-      <div className="mx-auto flex max-w-6xl flex-col items-start gap-14 px-5 pb-20 sm:px-6 sm:pb-24 lg:flex-row lg:gap-16 lg:pb-28">
-        <div className="max-w-xl flex-1">
-          <Reveal>
-            <span className="text-xs font-bold uppercase tracking-[0.14em] text-ink-500">
-              출시 준비 중 · 반려동물 사료·간식 성분분석
-            </span>
-          </Reveal>
-
-          <Reveal delayMs={80}>
-            <h1 className="mt-5 text-balance text-[2.5rem] font-extrabold leading-[1.08] tracking-tightest text-ink-950 sm:text-6xl lg:text-[3.6rem]">
-              우리 아이 먹거리,
-              <br />
-              <span className="text-accent">성분부터 확인해 주세요.</span>
-            </h1>
-          </Reveal>
-
-          <Reveal delayMs={140}>
-            <p className="mt-7 max-w-lg text-pretty text-lg leading-relaxed text-ink-700">
-              제품명이나 성분을 검색하고, 성분표를 촬영하면 원재료와 영양정보를
-              우리 아이 기준으로 알기 쉽게 정리합니다.
-            </p>
-          </Reveal>
-
-          <Reveal delayMs={200}>
-            <div className="mt-10 flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap">
-              <a
-                href="#waitlist"
-                onClick={() => trackEvent("hero_waitlist_click", { from: "hero_primary" })}
-                className="group inline-flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-7 py-4 text-center text-sm font-bold text-ink-950 transition hover:bg-accent-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:w-auto"
-              >
-                출시 알림 받기
-                <ArrowRightIcon className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </a>
-              <a
-                href="#analysis-preview"
-                onClick={() => trackEvent("preview_click", { from: "hero" })}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-ink-950/15 px-7 py-4 text-center text-sm font-bold text-ink-950 transition hover:bg-sand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:w-auto"
-              >
-                베로로 미리 보기
-              </a>
-            </div>
-          </Reveal>
-
-          <Reveal delayMs={260}>
-            <p className="mt-6 text-sm leading-relaxed text-ink-500">
-              정식 출시 전에 가장 먼저 소식을 전해 드립니다. 광고성 메시지를
-              무분별하게 보내지 않습니다.
-            </p>
-          </Reveal>
-
-          <Reveal delayMs={300}>
-            <div className="mt-6 flex items-center gap-2" aria-label="스토어 출시 예정">
-              <span className="rounded-md border border-ink-950/10 px-3 py-1.5 text-[11px] font-semibold text-ink-500">
-                App Store 출시 예정
-              </span>
-              <span className="rounded-md border border-ink-950/10 px-3 py-1.5 text-[11px] font-semibold text-ink-500">
-                Google Play 출시 예정
-              </span>
-            </div>
-          </Reveal>
-        </div>
-
-        <Reveal className="relative flex flex-1 justify-center lg:justify-end" delayMs={120}>
-          <div className="animate-float-y">
-            <PhoneMockup label="베로로 분석 결과 예시 화면">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-ink-500">성분표 스캔</span>
-                  <span className="inline-flex items-center gap-1 rounded-md bg-accent-soft px-2 py-0.5 text-[10px] font-bold text-accent-dark">
-                    <ScanIcon className="h-3 w-3" /> 분석 중
-                  </span>
-                </div>
-                <div className="rounded-xl border border-ink-950/10 bg-paper p-3.5">
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-ink-500">
-                    코코(고양이)에게 대체로 잘 맞습니다
-                  </p>
-                  <p className="mt-1 text-sm font-bold text-ink-950">
-                    연어, 현미, 완두단백…
-                  </p>
-                  <div className="mt-2.5 flex flex-wrap gap-1.5">
-                    <span className="inline-flex items-center gap-1 rounded-md bg-safe-soft px-2 py-0.5 text-[10px] font-bold text-safe-deep">
-                      <ShieldCheckIcon className="h-3 w-3" /> 등록 알레르기 미검출
-                    </span>
-                    <span className="rounded-md bg-caution-soft px-2 py-0.5 text-[10px] font-bold text-caution-deep">
-                      오메가 함량 정보 부족
-                    </span>
-                  </div>
-                </div>
-                <p className="px-1 text-[10px] leading-relaxed text-ink-500">
-                  예시 화면입니다. 실제 분석 결과는 제품마다 다를 수 있습니다.
-                </p>
-              </div>
-            </PhoneMockup>
+    <section className="v3-hero" aria-labelledby="hero-heading">
+      <div className="v3-container v3-hero-grid">
+        <div className="v3-hero-copy">
+          <div className="v3-eyebrow">
+            <span className="v3-live-dot" />
+            {launchConfig.status === "prelaunch"
+              ? "우리 아이를 위한 새로운 식생활"
+              : "베로로와 함께하는 식생활"}
           </div>
-        </Reveal>
-      </div>
-
-      {launchConfig.status !== "prelaunch" && (
-        <div className="border-y border-ink-950/10 bg-sand py-3 text-center text-xs text-ink-700">
-          현재 {launchConfig.status === "beta" ? "베타테스트" : "정식 서비스"} 진행 중입니다.
+          <h1 id="hero-heading">
+            사랑하니까,
+            <br />
+            성분까지
+            <br className="v3-small-break" /> <span>꼼꼼하게.</span>
+          </h1>
+          <p className="v3-hero-description">
+            매일 먹는 사료부터 작은 간식까지.
+            <br />
+            낯선 성분표를 우리 아이 기준으로 읽어주는
+            <br className="v3-desktop-break" /> 반려동물 먹거리 가이드, 베로로.
+          </p>
+          <div className="v3-hero-actions">
+            <a
+              href="#waitlist"
+              className="v3-button v3-button-yellow"
+              onClick={() =>
+                trackEvent("hero_waitlist_click", { from: "hero_primary" })
+              }
+            >
+              출시 알림 받기 <ArrowRightIcon />
+            </a>
+            <a
+              href="#features"
+              className="v3-text-link"
+              onClick={() => trackEvent("preview_click", { from: "hero" })}
+            >
+              베로로 알아보기 <span aria-hidden>↗</span>
+            </a>
+          </div>
+          <div className="v3-hero-note">
+            <PawIcon /> 강아지도, 고양이도. 우리 집 아이에 맞게.
+          </div>
         </div>
-      )}
-    </header>
+        <div className="v3-hero-art">
+          <div className="v3-pet-photo">
+            <Image
+              src="/images/pets-studio-v3.webp"
+              alt="나란히 앉아 있는 크림색 강아지와 회색 줄무늬 고양이"
+              width={1536}
+              height={1024}
+              priority
+              sizes="(max-width: 760px) 92vw, 50vw"
+            />
+            <span className="v3-photo-caption">FOR THEIR HAPPY EVERYDAY</span>
+            <div className="v3-love-stamp" aria-hidden="true">
+              <PawIcon />
+              <span>
+                made with
+                <br />
+                love & care
+              </span>
+            </div>
+          </div>
+          <div className="v3-floating-note">
+            <span className="v3-note-icon">
+              <SearchIcon />
+            </span>
+            <div>
+              <span>작은 글씨 속 원료까지</span>
+              <strong>알기 쉽게, 한눈에.</strong>
+            </div>
+            <span className="v3-note-check">
+              <CheckIcon />
+            </span>
+          </div>
+          <span className="v3-art-spark" aria-hidden="true">
+            ✳
+          </span>
+        </div>
+      </div>
+      <div className="v3-container v3-benefit-strip">
+        <span className="v3-strip-intro">
+          좋은 선택의 시작은
+          <br />
+          <strong>제대로 아는 것부터.</strong>
+        </span>
+        <div>
+          <SearchIcon />
+          <span>
+            제품과 원료를
+            <br />
+            <strong>쉽게 찾아보고</strong>
+          </span>
+        </div>
+        <div>
+          <PawIcon />
+          <span>
+            알레르기와 프로필을
+            <br />
+            <strong>우리 아이 기준으로</strong>
+          </span>
+        </div>
+        <div>
+          <LeafIcon />
+          <span>
+            매일 먹인 기록을
+            <br />
+            <strong>차곡차곡 남겨요</strong>
+          </span>
+        </div>
+      </div>
+    </section>
   );
 }

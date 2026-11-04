@@ -7,6 +7,7 @@ import { toExactIlikePattern, toOrIlikePattern } from './postgrestPattern';
 import { equivalentBarcodes } from '../utils/barcode';
 import { BarcodeLookupError } from './barcodeLookupError';
 import { ProductQueryError } from './productQueryError';
+import { isSourceLabelBrand } from '../utils/productDisplay';
 import {
   mapFeedingLogFromRow,
   mapProductFromSupabaseRow,
@@ -859,7 +860,7 @@ export async function getBrands(): Promise<string[]> {
   if (error) throw new ProductQueryError();
   const rows = (data ?? []) as SupabaseBrandNameRow[];
   const brands = [...new Set(rows.map((r) => r.brand_name).filter((name): name is string => Boolean(name)))];
-  return brands;
+  return brands.filter((brand) => !isSourceLabelBrand(brand));
 }
 
 export async function getProductsByBrand(brandName: string): Promise<Product[]> {
@@ -1274,6 +1275,15 @@ export async function createProductRequest(
 
   const name = input.requestedName.trim();
   if (!name) return { ok: false, reason: 'error', message: '제품명을 입력해 주세요.' };
+  const productUrl = input.productUrl?.trim() || null;
+  if (productUrl) {
+    try {
+      const parsedUrl = new URL(productUrl);
+      if (!['http:', 'https:'].includes(parsedUrl.protocol) || parsedUrl.username || parsedUrl.password) throw new Error('invalid_url');
+    } catch {
+      return { ok: false, reason: 'error', message: '제품 링크는 http:// 또는 https://로 시작하는 올바른 주소를 입력해 주세요.' };
+    }
+  }
 
   const { data: auth } = await supabase.auth.getUser();
   const userId = auth?.user?.id;
@@ -1285,7 +1295,7 @@ export async function createProductRequest(
     user_id: userId,
     requested_name: name.slice(0, 200),
     search_query: input.searchQuery?.trim()?.slice(0, 200) || null,
-    product_url: input.productUrl?.trim()?.slice(0, 500) || null,
+    product_url: productUrl?.slice(0, 500) || null,
     note: input.note?.trim()?.slice(0, 1000) || null,
   });
 

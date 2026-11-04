@@ -24,6 +24,8 @@ const NewProductScan = lazy(() => import('./pages/NewProductScan'));
 const Brand = lazy(() => import('./pages/Brand'));
 const Login = lazy(() => import('./pages/Login'));
 const ViralEvent = lazy(() => import('./pages/ViralEvent'));
+const AdminReviews = lazy(() => import('./pages/admin/AdminReviews'));
+const AdminAudit = lazy(() => import('./pages/admin/AdminAudit'));
 const Test = lazy(() => import('./pages/Test'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const Terms = lazy(() => import('./pages/Terms'));
@@ -61,11 +63,12 @@ function RouteFallback() {
 
 function EntryGateRoute({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation();
-  if (['/privacy', '/terms', '/account/delete', '/auth/recovery', '/auth/callback'].includes(pathname)) return null;
+  if (['/privacy', '/terms', '/account/delete', '/account/find', '/auth/recovery', '/auth/callback'].includes(pathname)) return null;
   return children;
 }
 
 const AccountDelete = lazy(() => import('./pages/AccountDelete'));
+const FindAccount = lazy(() => import('./pages/FindAccount'));
 const PasswordRecovery = lazy(() => import('./pages/PasswordRecovery'));
 
 function Application() {
@@ -150,6 +153,7 @@ function Application() {
           <Route path="privacy" element={<Privacy />} />
           <Route path="account/delete" element={<AccountDelete />} />
           <Route path="auth/recovery" element={<PasswordRecovery />} />
+          <Route path="account/find" element={<FindAccount />} />
           <Route path="refund" element={<Refund />} />
           <Route path="*" element={<NotFound />} />
         </Route>
@@ -175,6 +179,8 @@ function Application() {
           <Route path="users" element={<AdminMembers />} />
           <Route path="members" element={<Navigate to="/admin/users" replace />} />
           <Route path="diary" element={<AdminDiary />} />
+          <Route path="reviews" element={<AdminReviews />} />
+          <Route path="audit" element={<AdminAudit />} />
           <Route path="waitlist" element={<AdminWaitlist />} />
           <Route path="settings" element={<AdminSettings />} />
           <Route path="data-quality" element={<AdminDataQuality />} />
