@@ -20,6 +20,8 @@ jobs:
       - run: npm install --global npm@11.13.0
       - run: npm ci
       - run: npm run lint
+      - name: Conditional review privacy SQL and role regression
+        run: npm run test:review-privacy
       - run: npm test
       - run: npm run test:catalog
       - run: npm run test:bootstrap
