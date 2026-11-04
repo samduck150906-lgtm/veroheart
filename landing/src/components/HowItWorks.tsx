@@ -1,57 +1,62 @@
 import { Reveal } from "@/components/Reveal";
-import { SectionHeading } from "@/components/SectionHeading";
-
-const STEPS = [
+import {
+  SearchIcon,
+  PawIcon,
+  CheckIcon,
+  ArrowRightIcon,
+} from "@/components/icons";
+const steps = [
   {
-    step: "01",
-    title: "검색하거나 촬영합니다",
-    body: "제품명, 성분명, 바코드 또는 성분표를 확인합니다.",
+    title: "먹거리를 찾아요",
+    description: "제품명이나 브랜드로 사료·간식·영양제를 찾아보세요.",
+    icon: SearchIcon,
   },
   {
-    step: "02",
-    title: "한눈에 분석합니다",
-    body: "원재료와 영양정보를 보기 쉽게 정리합니다.",
+    title: "우리 아이로 확인해요",
+    description: "아이의 프로필과 원료를 함께 보고, 확인할 부분을 살펴보세요.",
+    icon: PawIcon,
   },
   {
-    step: "03",
-    title: "우리 아이 기준으로 확인합니다",
-    body: "등록한 알레르기·건강 정보를 반영해 주의점을 안내합니다.",
-  },
-  {
-    step: "04",
-    title: "비교하고 선택합니다",
-    body: "비슷한 제품의 성분과 가격을 함께 비교합니다.",
+    title: "오늘의 한 끼를 남겨요",
+    description:
+      "얼마나 먹었는지, 잘 먹었는지. 급여 기록을 차곡차곡 남겨보세요.",
+    icon: CheckIcon,
   },
 ];
-
 export function HowItWorks() {
   return (
     <section
       id="how-it-works"
-      className="bg-paper py-20 sm:py-28"
+      className="v3-section v3-how"
       aria-labelledby="how-it-works-heading"
     >
-      <div className="mx-auto max-w-6xl px-5 sm:px-6">
+      <div className="v3-container">
         <Reveal>
-          <SectionHeading
-            kicker="이용 방법"
-            id="how-it-works-heading"
-            title="네 단계면 충분합니다"
-            description="복잡한 성분표 대신, 베로로가 정리한 결과부터 확인해 주세요."
-          />
+          <div className="v3-section-intro">
+            <div>
+              <p className="v3-kicker">SMALL STEPS, BETTER CHOICES</p>
+              <h2 id="how-it-works-heading">
+                더 잘 챙기는 일,
+                <br />
+                어렵지 않도록.
+              </h2>
+            </div>
+            <a href="#waitlist" className="v3-text-link">
+              베로로와 시작하기 <ArrowRightIcon />
+            </a>
+          </div>
         </Reveal>
-        <div className="grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
-          {STEPS.map((s, i) => (
-            <Reveal key={s.title} delayMs={i * 70}>
-              <div className="border-t-2 border-ink-950 pt-5">
-                <span className="text-sm font-bold text-accent">{s.step}</span>
-                <h3 className="mt-2 text-lg font-bold leading-snug text-ink-950">
-                  {s.title}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-ink-700">
-                  {s.body}
-                </p>
-              </div>
+        <div className="v3-steps">
+          {steps.map((step, index) => (
+            <Reveal key={step.title} delayMs={index * 80}>
+              <article>
+                <div className="v3-step-top">
+                  <span>STEP 0{index + 1}</span>
+                  <step.icon />
+                </div>
+                <h3>{step.title}</h3>
+                <p>{step.description}</p>
+              </article>
             </Reveal>
           ))}
         </div>

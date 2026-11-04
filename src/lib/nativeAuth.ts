@@ -3,12 +3,12 @@ import { Browser } from '@capacitor/browser';
 import { supabase } from './supabase';
 import { getPublicOrigin, publicUrl } from './publicUrls';
 
-export type AuthIntent = 'signin' | 'recovery';
+export type AuthIntent = 'signin' | 'recovery' | 'account';
 const NATIVE_CALLBACK = 'com.veroro.app://auth/callback';
 
 export function getAuthRedirectUrl(intent: AuthIntent = 'signin'): string {
   const url = new URL(publicUrl('/auth/callback'));
-  if (intent === 'recovery') url.searchParams.set('intent', intent);
+  if (intent !== 'signin') url.searchParams.set('intent', intent);
   if (Capacitor.isNativePlatform()) url.searchParams.set('native', '1');
   return url.href;
 }
@@ -34,7 +34,7 @@ export function readAuthCallback(raw: string): AuthCallbackData | null {
     const code = params.get('code');
     const error = params.get('error_description') || params.get('error') || hash.get('error_description') || hash.get('error');
     if ((!code && !error) || (code && (code.length > 2048 || /\s/.test(code)))) return null;
-    return { code, error, intent: params.get('intent') === 'recovery' ? 'recovery' : 'signin', native: params.get('native') === '1' };
+    return { code, error, intent: params.get('intent') === 'recovery' ? 'recovery' : params.get('intent') === 'account' ? 'account' : 'signin', native: params.get('native') === '1' };
   } catch { return null; }
 }
 
@@ -45,7 +45,7 @@ export function toNativeCallbackUrl(raw: string): string | null {
   const url = new URL(NATIVE_CALLBACK);
   if (callback.code) url.searchParams.set('code', callback.code);
   if (callback.error) url.searchParams.set('error_description', callback.error);
-  if (callback.intent === 'recovery') url.searchParams.set('intent', 'recovery');
+  if (callback.intent !== 'signin') url.searchParams.set('intent', callback.intent);
   return url.href;
 }
 
@@ -60,7 +60,7 @@ export async function completeAuthCallback(raw: string): Promise<{ intent: AuthI
   const promise = (async () => {
     const { data, error } = await supabase.auth.exchangeCodeForSession(callback.code!);
     if (error || !data.session) throw new Error('인증 링크가 만료되었거나 요청한 기기와 다릅니다. 이 기기에서 다시 요청해 주세요.');
-    return { intent: ('redirectType' in data && data.redirectType === 'recovery') || callback.intent === 'recovery' ? 'recovery' as const : 'signin' as const };
+    return { intent: ('redirectType' in data && data.redirectType === 'recovery') || callback.intent === 'recovery' ? 'recovery' as const : callback.intent };
   })();
   lastExchange = { code: callback.code, created: Date.now(), promise };
   return promise;

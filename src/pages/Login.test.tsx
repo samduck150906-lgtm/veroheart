@@ -54,3 +54,10 @@ describe('email signup without confirmation mail', () => {
     expect(screen.queryByText('내 프로필')).toBeNull();
   });
 });
+
+it('opens ID and password recovery without first entering an email', () => {
+  render(<MemoryRouter><Login /></MemoryRouter>);
+  expect(screen.getByRole('link', { name: '아이디를 잊었어요!' }).getAttribute('href')).toBe('/account/find?mode=id');
+  expect(screen.getByRole('link', { name: '비밀번호를 잊었어요!' }).getAttribute('href')).toBe('/account/find?mode=password');
+  expect(screen.queryByRole('button', { name: '비밀번호 재설정 메일 받기' })).toBeNull();
+});

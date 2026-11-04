@@ -51,3 +51,11 @@ describe('native auth callback trust boundary', () => {
     await expect(completeAuthCallback('com.veroro.app://auth/callback?code=expired')).rejects.toThrow();
   });
 });
+
+it('preserves verified account-finding intent across web and native callbacks', async () => {
+  expect(getAuthRedirectUrl('account')).toBe('https://app.example.com/auth/callback?intent=account');
+  expect(toNativeCallbackUrl('https://app.example.com/auth/callback?code=account-code&intent=account&native=1')).toBe('com.veroro.app://auth/callback?code=account-code&intent=account');
+  exchangeCodeForSession.mockResolvedValue({ data: { session: { user: { id: 'owner' } } }, error: null });
+  await expect(completeAuthCallback('com.veroro.app://auth/callback?code=account-code&intent=account')).resolves.toEqual({ intent: 'account' });
+  expect(readAuthCallback('https://app.example.com/auth/callback?code=unknown&intent=evil')).toMatchObject({ intent: 'signin' });
+});

@@ -247,7 +247,8 @@ export default function Detail() {
   const analysisStatus = analysisReadiness.status;
   const allergyDisplay = buildAllergyDisplayState(breakdown, profile.name || '우리 아이', {
     hasIngredientData,
-    hasAllergyProfile: personalized && profile.allergies.length > 0,
+    // A saved pet with an empty allergy list explicitly means "none".
+    hasAllergyProfile: personalized,
     analysisStatus,
     unknownIngredientTerms: product.unknownIngredientTerms,
   });
@@ -663,14 +664,18 @@ export default function Detail() {
       {/* 일일 급여량 계산기 */}
       <section className="card" style={{ marginBottom: '40px' }}>
         <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-dark)' }}>
-          <Dog size={22} color="var(--safe)" /> {profile.name} 열량 기준 참고 급여량
+          <Dog size={22} color="var(--safe)" /> {personalized && !breakdown.speciesMismatch ? `${profile.name} 열량 기준 참고 급여량` : '열량 기준 참고 급여량 안내'}
         </h2>
         <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: 1.6 }}>
           {product.requiresVeterinaryGuidance
             ? '수의사 상담이 필요한 제품입니다. 처방과 급여량은 담당 수의사의 안내를 따라 주세요.'
             : '수의사 상담 필요 여부가 확인된 것은 아닙니다. 이 계산은 일반식 여부나 급여 안전성을 확인하지 않으며, 처방식·질환 관련 급여는 수의사와 상담해 주세요.'}
         </p>
-        {feedingGrams ? (
+        {personalized && breakdown.speciesMismatch ? (
+          <p role="status" style={{ color: 'var(--caution-strong)', lineHeight: 1.6 }}>
+            {profile.name}의 종과 제품의 급여 대상이 다릅니다. {petTypeLabel} 제품이므로 맞춤 급여량을 제공하지 않습니다.
+          </p>
+        ) : feedingGrams ? (
           <div>
             <div style={{ fontSize: '32px', fontWeight: 900, color: 'var(--safe)', marginBottom: '8px' }}>
               하루 약 {feedingGrams}g
@@ -687,13 +692,13 @@ export default function Detail() {
             <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '16px' }}>
               {product.requiresVeterinaryGuidance ? '이 제품의 일반 급여량 계산은 제공하지 않습니다.' : profile.weightKg ? '제품 열량 정보가 부족해 급여량을 계산할 수 없습니다. 제품 포장의 급여 안내를 확인해 주세요.' : '몸무게와 제품 열량이 있으면 참고용 급여량을 계산할 수 있습니다.'}
             </p>
-            <button 
+            {!profile.weightKg && <button
               className="btn btn-outline" 
               style={{ borderRadius: 'var(--border-radius-sm)', width: '100%' }}
               onClick={() => navigate('/profile')}
             >
               몸무게 입력하러 가기
-            </button>
+            </button>}
           </div>
         )}
       </section>
@@ -882,7 +887,7 @@ export default function Detail() {
           <MessageSquare size={20} /> 후기 <span style={{ color: 'var(--text-muted)', fontWeight: 700 }}>{reviewLoadError ? '—' : reviews.length}</span>
         </h2>
         <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '16px', fontWeight: 600 }}>
-          키워드만 선택해도 됩니다. {profile.name}와 비슷한 반려동물의 후기를 모아보려면 태그를 활용해 주세요.
+          실제로 급여해 본 제품의 별점을 남겨 주세요.
         </p>
 
         <ReviewSummaryCard ratings={reviewRatings} topTags={topReviewTags} summary={reviewSummary} />
@@ -895,7 +900,7 @@ export default function Detail() {
           </p>
           <div style={{ display: 'flex', gap: '4px', marginBottom: '12px' }}>
             {[1, 2, 3, 4, 5].map(star => (
-              <button key={star} onClick={() => setReviewRating(star)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}>
+              <button key={star} type="button" aria-label={`별점 ${star}점`} aria-pressed={reviewRating === star} onClick={() => setReviewRating(star)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}>
                 <Star size={24} fill={star <= reviewRating ? '#FCD34D' : 'none'} color={star <= reviewRating ? '#FCD34D' : 'var(--line)'} />
               </button>
             ))}
@@ -933,7 +938,7 @@ export default function Detail() {
                   </div>
                 </div>
                 {review.is_mine && userId && (
-                  <button onClick={() => handleDeleteReview(review.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--line)' }}>
+                  <button type="button" aria-label="내 별점 삭제" onClick={() => handleDeleteReview(review.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--line)' }}>
                     <Trash2 size={16} />
                   </button>
                 )}

@@ -372,6 +372,8 @@ export function rankProductsForProfile(
     preferredPetType?: 'dog' | 'cat';
     preferredCategory?: string;
     excludeProductId?: string;
+    /** Search already applies explicit species filters; sorting must not drop results. */
+    filterByPetType?: boolean;
   } = {},
 ) {
   const expectedPetType = options.preferredPetType || (profile.species === 'Cat' ? 'cat' : 'dog');
@@ -380,6 +382,7 @@ export function rankProductsForProfile(
     .filter((product) => product.id !== options.excludeProductId)
     .filter(
       (product) =>
+        options.filterByPetType === false ||
         !product.targetPetType ||
         product.targetPetType === expectedPetType ||
         product.targetPetType === 'all',
