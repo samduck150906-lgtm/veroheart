@@ -123,6 +123,8 @@ export interface Product {
   catalogSource?: ProductCatalogSource;
   catalogSourceUrl?: string;
   catalogSourceNote?: string;
+  /** Projection not loaded is distinct from an explicitly absent source. */
+  catalogSourceStatus?: 'not_loaded' | 'absent' | 'available' | 'invalid';
   requiresVeterinaryGuidance?: boolean;
   analysisStatus?: ProductAnalysisStatus;
   /** False for lightweight rows whose ingredient joins have not been loaded. */
