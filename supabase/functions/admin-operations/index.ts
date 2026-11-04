@@ -382,7 +382,7 @@ serve(async (req) => {
         if (!updated) throw new ValidationError('요청을 찾을 수 없습니다.');
 
         await audit(db, actor, 'reviewProductRequest', 'product_requests', id, {
-          name: updated.requested_name, status,
+          name: updated.requested_name, status, reason: note,
         });
         return json({ ok: true, status }, 200, cors);
       }

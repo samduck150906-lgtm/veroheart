@@ -1,0 +1,876 @@
+{
+  "date": "2026-11-04",
+  "basis": "Explicit species and product-type words in existing product title; no expansion to multi-species suitability; no ingredient or nutrition inference",
+  "changes": [
+    {
+      "id": "5156338f-c93f-4a32-a6c6-bcb2f08bcc3f",
+      "name": "사조로하이캣푸드 고양이 간식캔",
+      "before": {
+        "target_pet_type": "cat",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "6331cb60-eaf2-44d6-89a0-126beec4cfba",
+      "name": "[겟플렉스]이나바 제이타크 퐁츄르 버라이어티팩 고양이간식",
+      "before": {
+        "target_pet_type": "cat",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "a2b9b0a6-b048-49de-8ee5-ce89a7acc8de",
+      "name": "마싯츄 리포좀 강아지 기관지 심장",
+      "before": {
+        "target_pet_type": "cat",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "target_pet_type": "dog"
+      }
+    },
+    {
+      "id": "890c2c86-fbd1-4b5c-a9ff-53a64e1a4e2f",
+      "name": "사조러브잇 고양이 레드라벨 간식캔",
+      "before": {
+        "target_pet_type": "cat",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "3dd2e3d2-f4ed-4e59-bd52-f5badaadf3ee",
+      "name": "진수성찬 고양이 간식 습식 영양가득 대용량 원형캔 1BOX, 24개, 닭고기",
+      "before": {
+        "target_pet_type": "cat",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "6d3fe771-c020-490d-af2e-80bfd26a516f",
+      "name": "로얄 어드밴스캔, 고양이간식캔, 48개, 85g, 콤보",
+      "before": {
+        "target_pet_type": "cat",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "89e94732-a91e-4c37-8392-acb75fb1f3d5",
+      "name": "로얄 어드밴스캔, 고양이간식캔, 어드밴스 콤보, 85g, 24개",
+      "before": {
+        "target_pet_type": "cat",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "c1767d0e-5180-4df2-8dd8-b8f97629ae95",
+      "name": "펫시딘 강아지 프리미엄 영양제, 60g, 눈물개선/눈건강, 1개",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": "snack",
+        "formulation": null
+      },
+      "after": {
+        "product_type": "supplement",
+        "main_category": "영양제",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "defb96f7-3e7e-4d53-bd82-d024d6aa2fa5",
+      "name": "베리봄 강아지 눈 영양제 피부 눈물자국 오메가3, 60정, 종합영양제, 4개",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": "snack",
+        "formulation": null
+      },
+      "after": {
+        "product_type": "supplement",
+        "main_category": "영양제",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "baca52bd-7bdb-48d7-9700-414639145c05",
+      "name": "샤랩바이오 강아지 눈 영양제 아이즈 눈물자국 눈꼽 냄새 항산화 루테인, 30회분, 눈물개선/눈건강, 1개",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": "snack",
+        "formulation": null
+      },
+      "after": {
+        "product_type": "supplement",
+        "main_category": "영양제",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "b8708712-13cb-449f-8a7f-48cfadb56839",
+      "name": "캣퓨어 고양이 올데이 유산균 미니 장건강 신장관리 도움 기능성 습식 간식캔",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "target_pet_type": "cat",
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "89600c2e-65b6-48f5-bdb8-ebc0b3d74c79",
+      "name": "탐사 고양이 뉴고메 덴탈껌",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "target_pet_type": "cat",
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "71bc01b3-7175-42d5-a720-46f4bc509ceb",
+      "name": "캐츠랑 고양이 저요저요 보양간식",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "target_pet_type": "cat",
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "f93b861c-b78d-4e19-a654-a2fa38de5ef9",
+      "name": "굿밸런스 짜먹는 고양이 간식 플러스",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "target_pet_type": "cat",
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "67cb71f4-45fa-43b0-a0e5-616c34cfc488",
+      "name": "고양이 템테이션 간식 8가지맛 세트",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "target_pet_type": "cat",
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "2437dcf5-ebd7-42c0-be37-e356c38805dc",
+      "name": "탐사 반려동물 동결건조 간식 닭가슴살 240g",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "1fc7d0a3-7c78-49b5-b79d-7b8ccba6def2",
+      "name": "탐사 고양이 간식 순살 닭가슴살 대용량",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "target_pet_type": "cat",
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "6ca6edf4-c8f0-46b7-8add-140450648f78",
+      "name": "뽀시래기 고양이 큐브 트릿 동결건조간식",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "target_pet_type": "cat",
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "02f82ae8-2be4-4d10-bb9e-28e7cb18c7fa",
+      "name": "츄릅츄릅 짜먹는 고양이간식 60스틱 혼합팩 헤어볼케어, 2개, 연어+치킨+참치, 15g, 120개",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "target_pet_type": "cat",
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "9f8dd1cb-9fe2-49ee-9782-18bf2e58e300",
+      "name": "닥터뉴토 고양이 동결건조 간식 유산균 트릿 (구내염/구취/치석제거 도움), 5개, 55g, 치킨",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "target_pet_type": "cat",
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "84f03a9a-4ccd-4711-9364-16e44c96743f",
+      "name": "메가츄 짜먹는 고양이 간식 츄 90스틱 대용량, 2개, 연어+치킨+참치, 15g, 180개",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "target_pet_type": "cat",
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "2b7f99d3-9ec8-4286-a503-3f5c467a9fe7",
+      "name": "럭셔리발란스 참좋은 고양이 황태사료",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "target_pet_type": "cat"
+      }
+    },
+    {
+      "id": "b31ba999-b1ca-4ab3-be70-2d35c8e72c82",
+      "name": "내추럴발란스 고양이 어덜트 오리지날 울트라 인도어 레시피 사료",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "target_pet_type": "cat"
+      }
+    },
+    {
+      "id": "b68b79e2-4a10-4bc2-ba0d-5a6bcaa5fc2d",
+      "name": "탐사 전연령용 고양이 사료",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "target_pet_type": "cat"
+      }
+    },
+    {
+      "id": "5dbb59e0-aaee-4d8c-b43f-ca132ea72dc7",
+      "name": "본아페티 고양이 기능성 사료, 면역/항산화, 1kg, 6개",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "target_pet_type": "cat"
+      }
+    },
+    {
+      "id": "13a56f5b-6564-4e12-90d0-f5a5683a8185",
+      "name": "하림펫푸드밥이보약 고양이 기능성 사료",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "target_pet_type": "cat"
+      }
+    },
+    {
+      "id": "a184dfdb-ee67-401e-a66f-0d8d0c0940f3",
+      "name": "본아페티 고양이 허피스 사료 구강 면역력 구내염 기능성 무보존제 건식 사료, 면역/항산화, 1kg, 3개",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "target_pet_type": "cat"
+      }
+    },
+    {
+      "id": "a4686987-fe9b-492d-b632-86c610609d56",
+      "name": "코멧 베이직 전연령 고양이 사료",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "target_pet_type": "cat"
+      }
+    },
+    {
+      "id": "bdad0c84-ac3f-475c-8743-db81af67daeb",
+      "name": "아이누 심플리야미 치킨포캣 전연령 고양이사료 그레인프리 기호성 작은알갱이, 1개, 3kg, 닭",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "target_pet_type": "cat"
+      }
+    },
+    {
+      "id": "bdcba0d0-5d72-49a0-bf0d-0a16e03ff367",
+      "name": "뉴트리나 프라임캣 블루 20kg 고양이사료 대용량 대포장 길냥이밥 길고양이 전연령",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "target_pet_type": "cat"
+      }
+    },
+    {
+      "id": "f551adeb-d56d-41ad-a7f3-15159a2e7b3e",
+      "name": "캐츠랑 전연령 고양이 건식사료",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "target_pet_type": "cat"
+      }
+    },
+    {
+      "id": "a09b209c-d34b-4479-a96e-a1919e26fed0",
+      "name": "프레스티지 캣 시니어 8+ 노령 대용량 관절 신장케어 고양이 사료, 1개, 10kg, 닭+칠면조",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "target_pet_type": "cat"
+      }
+    },
+    {
+      "id": "79b2ec35-68df-4641-8b8c-f5177e67e29c",
+      "name": "마마쇼 건강한 반려동물 간식 모음전",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "e30189f4-02f5-47bc-aff7-1f294ce8e06b",
+      "name": "댕냥이생활연구소 강아지 듬뿍 대용량 간식",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "69c77616-1b56-4d49-b9b7-0a8af0a134f4",
+      "name": "탐사 강아지 고구마말랭이 간식",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "d2990596-c505-4d44-bc30-5ffbdc291d7e",
+      "name": "탐사 강아지 간식 리얼 촉촉 큐브 져키",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "faec6f11-fc64-4562-9b7b-5f0970219f19",
+      "name": "더스탠다드 강아지저키 국내산 노즈워크간식 생육져키, 1개, 1kg, 소고기",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "a3ac9da8-47ce-4f0d-8c17-c395f528eaf9",
+      "name": "멍멍팔팔 강아지 져키, 황태맛, 200g, 9개",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "3495ec0b-d471-4fb0-9475-27e6d4137328",
+      "name": "제로랩스 강아지 고기가득 노즈워크 져키, 소고기, 1kg, 2개",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "222554da-ff5d-47e9-855b-dcb9fb787cb1",
+      "name": "굿데이 강아지 건강한 육포",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": "dry",
+        "formulation": null
+      },
+      "after": {
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "554818f3-80b0-4bdc-9abf-689604e42e08",
+      "name": "도기맨 강아지 한톨 트릿 큐브 치킨 & 야채",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      },
+      "after": {
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "f60791f2-8cad-4b4e-820d-84fba3dc4946",
+      "name": "로얄 어드밴스 캔 콤보 (1box/24개입) 고양이 캔 간식 통조림, 어드밴스 콤보, 85g, 24개",
+      "before": {
+        "target_pet_type": "cat",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": null,
+        "formulation": null
+      },
+      "after": {
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "f3a07b48-56aa-4b2b-b1f5-e24ea0e6ee50",
+      "name": "동원뉴트리플랜 고양이 간식 습식캔",
+      "before": {
+        "target_pet_type": "cat",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": null,
+        "formulation": null
+      },
+      "after": {
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "4ab8eb79-7f32-4a75-b854-3f6fb878ee99",
+      "name": "펫리서치 짜먹는 고양이 간식 츄",
+      "before": {
+        "target_pet_type": "cat",
+        "product_type": "food",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      },
+      "after": {
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "94b21c43-4319-4c08-b6cd-82da25a6a0b2",
+      "name": "챠오츄르 고양이 구루메 버라이어티 간식 60p",
+      "before": {
+        "target_pet_type": "cat",
+        "product_type": "food",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      },
+      "after": {
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "02c77610-a28b-4c93-be12-465ce10049e8",
+      "name": "에스카도로시 강아지 간식 큐브",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      },
+      "after": {
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "09e32a20-43f8-4645-8823-f86d3108e456",
+      "name": "펫리서치 짜먹는 고양이 간식 츄, 참치+연어+닭고기, 15g, 90개",
+      "before": {
+        "target_pet_type": "cat",
+        "product_type": "food",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      },
+      "after": {
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "38156f33-31df-47ae-abdc-552d1a4703f1",
+      "name": "펫생각 하루조이 미니말랑 저칼로리 자색고구마 노즈워크 강아지 간식 다이어트 칭찬 보상 교육 훈련용 대용량 간식, 자색고구마, 200g, 1개",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      },
+      "after": {
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "ac363c1b-5ca9-4394-9bf0-cb5277fb083e",
+      "name": "동원뉴트리플랜 고양이 모이스트루 습식 간식",
+      "before": {
+        "target_pet_type": "cat",
+        "product_type": "food",
+        "main_category": "사료",
+        "sub_category": null,
+        "formulation": null
+      },
+      "after": {
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "bb264d69-d9b4-4201-b6cf-575b812e5068",
+      "name": "챠오츄르 대용량 90P 코스트코 고양이 츄르 간식 버라이어티 반려묘 차오추르 90P",
+      "before": {
+        "target_pet_type": "cat",
+        "product_type": "food",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      },
+      "after": {
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "f52545c6-35aa-4dc7-9943-dbe14ad762c5",
+      "name": "제로랩스 강아지 국내산 노즈워크 영양간식 베리가득 져키, 혼합맛(블루베리/딸기/요거트), 1kg, 1개",
+      "before": {
+        "target_pet_type": "dog",
+        "product_type": "food",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      },
+      "after": {
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    },
+    {
+      "id": "fc83de03-7390-4de9-a3f0-88bfa5e31427",
+      "name": "챠오츄르 참치 고양이간식 SC-71, 참치맛, 56g, 12개",
+      "before": {
+        "target_pet_type": "cat",
+        "product_type": "food",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      },
+      "after": {
+        "product_type": "snack",
+        "main_category": "간식",
+        "sub_category": null,
+        "formulation": null
+      }
+    }
+  ],
+  "reviewSummaryRepair": {
+    "id": "e2f4d6b8-2345-5678-9012-34567890abcd",
+    "before": {
+      "review_count": 890,
+      "avg_rating": 4.9
+    },
+    "after": {
+      "review_count": 0,
+      "avg_rating": 0
+    },
+    "basis": "recalculated from actual reviews; zero existing rows"
+  }
+}

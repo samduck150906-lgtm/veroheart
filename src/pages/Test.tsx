@@ -94,9 +94,9 @@ export default function Test() {
   const handleCopy = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      alert('공유 문구를 복사했습니다.');
+      notify.success('공유 문구를 복사했습니다.');
     } catch {
-      alert('복사에 실패했습니다. 다시 시도해 주세요.');
+      notify.error('복사에 실패했습니다. 다시 시도해 주세요.');
     }
   };
 
@@ -136,7 +136,7 @@ export default function Test() {
       <section style={{ marginBottom: '14px' }}>
         <button
           type="button"
-          onClick={() => navigate(-1)}
+          onClick={() => step > 0 ? setStep((value) => value - 1) : navigate(-1)}
           style={{ border: 'none', background: 'none', color: '#6B7280', fontWeight: 700, cursor: 'pointer', padding: 0 }}
         >
           ← 이전으로

@@ -35,4 +35,11 @@ describe('product row personalization boundary', () => {
     expect(screen.queryByText(scopedScore)).toBeNull();
     expect(screen.getByRole('button', { name: '우리 아이를 등록하고 궁합을 확인해 주세요.' })).toBeTruthy();
   });
+  it('does not add a personalized score for unavailable ingredients', () => {
+    useStore.setState({ isLoggedIn: true, profile: pet, favorites: [] });
+    render(<MemoryRouter><ProductRow product={{ ...product, ingredients: [], analysisStatus: 'unavailable' }} /></MemoryRouter>);
+    expect(screen.queryByText(/참고.*점$/)).toBeNull();
+    expect(screen.queryByText(/로니에게/)).toBeNull();
+  });
+
 });

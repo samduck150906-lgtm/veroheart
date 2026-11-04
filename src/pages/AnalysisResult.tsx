@@ -5,7 +5,7 @@ import { AlertCircle, Check, Sparkles } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
 import type { CompatibilityGrade } from '../utils/score';
-import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
+import { isRealPetProfile, resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import { analyzeFeed } from '../analysis/feedAnalysis';
 import { analysisReadinessCopy } from '../analysis/analysisReadiness';
 import { runScoringPipeline, type ScoringPipelineResult } from '../analysis/scoringPipeline';
@@ -220,9 +220,7 @@ export default function AnalysisResult() {
     if (productId && useStore.getState().selectedProduct?.id !== productId) void fetchProductDetail(productId);
   }, [fetchProductDetail, productId]);
 
-  const hasPetProfile = Boolean(
-    isLoggedIn && profile?.id && profile.id !== 'local-profile' && profile.name && profile.name !== '우리 아이',
-  );
+  const hasPetProfile = isLoggedIn && isRealPetProfile(profile);
 
   const ingredients = product?.ingredients ?? [];
   const safeIngredients = ingredients.filter((i) => i.riskLevel === 'safe');
@@ -249,12 +247,12 @@ export default function AnalysisResult() {
     () => breakdown
       ? buildAllergyDisplayState(breakdown, profile.name || '우리 아이', {
           hasIngredientData: ingredients.length + (product?.unknownIngredientTerms?.length ?? 0) > 0,
-          hasAllergyProfile: hasPetProfile && profile.allergies.length > 0,
+          hasAllergyProfile: hasPetProfile,
           analysisStatus: display?.analysisReadiness.status,
           unknownIngredientTerms: product?.unknownIngredientTerms,
         })
       : null,
-    [breakdown, profile.name, profile.allergies.length, ingredients.length, hasPetProfile, display, product],
+    [breakdown, profile.name, ingredients.length, hasPetProfile, display, product],
   );
 
   // ── Phase 2 별칭 관찰(기본 OFF) ──

@@ -34,6 +34,24 @@ const show = () => render(<HelmetProvider><MemoryRouter initialEntries={['/produ
 const picker = () => screen.getByRole('group', { name: '궁합을 확인할 반려동물' });
 
 describe('product detail pet switching', () => {
+  it('accepts a saved pet with no allergies instead of asking for a nonexistent allergy', async () => {
+    show();
+    await screen.findByRole('heading', { level: 1, name: '닭고기 사료' });
+    expect(screen.queryByText('알레르기 프로필을 채워 주세요')).toBeNull();
+    expect(screen.queryByText('프로필 미등록')).toBeNull();
+  });
+
+  it('does not offer a personalized feeding calculator for another species', async () => {
+    useStore.setState({ profile: { ...cat, weightKg: 4.2 }, activePetId: cat.id });
+    show();
+    await screen.findByRole('heading', { level: 1, name: '닭고기 사료' });
+    expect(screen.getByText(/나비의 종과 제품의 급여 대상이 다릅니다/)).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: /나비.*급여량/ })).toBeNull();
+    expect(screen.getByRole('heading', { name: '열량 기준 참고 급여량 안내' })).toBeTruthy();
+    expect(screen.queryByText(/하루 약 .*g/)).toBeNull();
+    expect(screen.getAllByText(/영양정보 부족으로 영양 균형을 평가할 수 없/).length).toBeGreaterThan(0);
+    expect(screen.queryByRole('button', { name: '몸무게 입력하러 가기' })).toBeNull();
+  });
   it('switches the actual saved profile and updates compatibility and allergy warnings without leaving the product', async () => {
     show();
     const originalFit = await screen.findByRole('region', { name: '로니 참고 평가' });

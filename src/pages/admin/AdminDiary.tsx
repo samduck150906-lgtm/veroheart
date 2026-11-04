@@ -1,3 +1,6 @@
+import AdminCorrectionDialog from './AdminCorrectionDialog';
+import { correctFeedingLog } from '../../lib/adminSupportApi';
+import { notify } from '../../store/useNotification';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, Image as ImageIcon, RefreshCw, Search } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
@@ -16,6 +19,7 @@ const MEAL_PERIOD_LABEL: Record<string, { label: string; tag: string }> = {
   lunch: { label: '점심', tag: 'blue' },
   dinner: { label: '저녁', tag: 'gray' },
   snack: { label: '간식', tag: 'green' },
+  other: { label: '기타', tag: 'gray' },
 };
 
 function mealPeriodBadge(value: string | null) {
@@ -27,6 +31,7 @@ const AdminDiary: React.FC = () => {
   const [params, setParams] = useSearchParams();
   const page = Math.max(1, Number(params.get('page')) || 1);
   const search = params.get('q') ?? '';
+  const userId = params.get('userId') ?? '';
   const dateFrom = params.get('from') ?? '';
   const dateTo = params.get('to') ?? '';
   const petType = params.get('species') === 'cat' ? 'cat' : params.get('species') === 'dog' ? 'dog' : '';
@@ -36,6 +41,7 @@ const AdminDiary: React.FC = () => {
   const [searchInput, setSearchInput] = useState(search);
   const [rows, setRows] = useState<AdminDiaryRow[]>([]);
   const [total, setTotal] = useState(0);
+  const [editing, setEditing] = useState<AdminDiaryRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -69,6 +75,7 @@ const AdminDiary: React.FC = () => {
       const result = await fetchDiaryPage({
         page,
         pageSize: PAGE_SIZE,
+        ...(userId ? { userId } : {}),
         query: search,
         dateFrom,
         dateTo,
@@ -84,7 +91,7 @@ const AdminDiary: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [dateFrom, dateTo, hasPhoto, page, petType, search, updateParams]);
+  }, [dateFrom, dateTo, hasPhoto, page, petType, search, userId, updateParams]);
 
   useEffect(() => {
     load();
@@ -95,7 +102,7 @@ const AdminDiary: React.FC = () => {
       <div className="admin-toolbar">
         <div className="admin-title-wrap">
           <h2>식이 다이어리</h2>
-          <p>보호자가 앱에서 기록한 급여 일지입니다. 읽기 전용 · 총 {total.toLocaleString()}건</p>
+          <p>보호자가 앱에서 기록한 급여 일지입니다. 조회·지원 정정 · 총 {total.toLocaleString()}건</p>
         </div>
         <button type="button" className="admin-btn-soft" onClick={load} disabled={loading}>
           <RefreshCw size={15} /> 새로고침
@@ -106,10 +113,11 @@ const AdminDiary: React.FC = () => {
         <p className="admin-item-sub" style={{ lineHeight: 1.7 }}>
           <strong>이 화면은 “보호자가 무엇을 언제 먹였는지 앱에 남긴 기록”입니다.</strong> 관리자가 만드는 데이터가
           아니라 사용자가 직접 올린 것이며, 실제로 앱을 쓰는 회원이 있는지·어떤 제품이 실제로 급여되는지 확인하는
-          용도입니다. 여기서는 수정·삭제하지 않고 조회만 합니다.
+          용도입니다. 보호자의 문의를 확인한 뒤 사유를 남겨 정정할 수 있습니다.
         </p>
       </div>
 
+      {userId && <p className="admin-item-sub">선택한 회원의 기록만 표시 중 <button type="button" className="admin-btn-soft" onClick={() => updateParams({userId:null,page:null})}>회원 필터 해제</button></p>}
       <div className="admin-query-bar">
         <div className="admin-search-wrap admin-query-search">
           <Search size={16} className="admin-search-icon" />
@@ -159,19 +167,20 @@ const AdminDiary: React.FC = () => {
               <th>기호도</th>
               <th>사진</th>
               <th>메모 · 특이사항</th>
+              <th>관리</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               Array.from({ length: 5 }, (_, index) => (
                 <tr key={index} aria-hidden="true">
-                  <td colSpan={8}><span className="admin-skeleton admin-skeleton-row" /></td>
+                  <td colSpan={9}><span className="admin-skeleton admin-skeleton-row" /></td>
                 </tr>
               ))
             ) : error ? (
-              <tr><td colSpan={8}><div className="admin-empty">다이어리 기록을 불러오지 못했습니다: {error} <button type="button" className="admin-btn-soft" onClick={load}>다시 시도</button></div></td></tr>
+              <tr><td colSpan={9}><div className="admin-empty">다이어리 기록을 불러오지 못했습니다: {error} <button type="button" className="admin-btn-soft" onClick={load}>다시 시도</button></div></td></tr>
             ) : rows.length === 0 ? (
-              <tr><td colSpan={8}><div className="admin-empty">조건에 맞는 다이어리 기록이 없습니다.</div></td></tr>
+              <tr><td colSpan={9}><div className="admin-empty">조건에 맞는 다이어리 기록이 없습니다.</div></td></tr>
             ) : rows.map((row) => (
               <tr key={row.id}>
                 <td>{formatDateTime(row.feedingDate, row.feedingTime)}</td>
@@ -185,7 +194,7 @@ const AdminDiary: React.FC = () => {
                   <div className="admin-item-main">{row.memberNickname}</div>
                   <div className="admin-item-sub">{row.petName} · {row.petType.toUpperCase()}</div>
                 </td>
-                <td className="admin-item-main">{row.productName}</td>
+                <td className="admin-item-main">{row.productName}<div className="admin-item-sub">{({food:'사료',snack:'간식',supplement:'영양제',custom:'직접 입력'} as Record<string,string>)[row.productType ?? ''] ?? '유형 미표기'}</div></td>
                 <td>{row.amount === null ? '-' : `${row.amount.toLocaleString()} ${row.unit ?? ''}`.trim()}</td>
                 <td>{row.preferenceLevel === null ? '-' : `${'★'.repeat(row.preferenceLevel)}${'☆'.repeat(5 - row.preferenceLevel)}`}</td>
                 <td>
@@ -201,11 +210,28 @@ const AdminDiary: React.FC = () => {
                     <div className="admin-item-sub" style={{ color: '#b45309' }}>특이사항: {row.reactionNote}</div>
                   )}
                 </td>
+                <td><button type="button" className="admin-btn-soft" onClick={() => setEditing(row)} aria-label={row.petName + ' 급여 기록 정정'}>정정</button> <a href={'/admin/audit?targetId=' + row.id}>변경 이력</a></td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+
+      {editing && <AdminCorrectionDialog title={editing.petName + ' 급여 기록 정정'} onClose={() => setEditing(null)} fields={[
+        {key:'feeding_date',label:'급여일',type:'date',value:editing.feedingDate},
+        {key:'feeding_time',label:'급여 시각',type:'time',value:editing.feedingTime?.slice(0,5) ?? ''},
+        {key:'meal_period',label:'시간대',value:editing.mealPeriod ?? '',options:[{value:'',label:'미지정'},...Object.entries(MEAL_PERIOD_LABEL).map(([value,meta])=>({value,label:meta.label}))]},
+        {key:'amount',label:'급여량',type:'number',value:editing.amount === null ? '' : String(editing.amount)},
+        {key:'unit',label:'단위',value:editing.unit ?? '',options:['','g','ml','개','정','캡슐','포','스푼'].map(value=>({value,label:value || '미지정'}))},
+        {key:'preference_level',label:'기호도',value:editing.preferenceLevel === null ? '' : String(editing.preferenceLevel),options:['','1','2','3','4','5'].map(value=>({value,label:value ? value + '점' : '미지정'}))},
+        {key:'memo',label:'메모',type:'textarea',value:editing.memo ?? ''},
+        {key:'reaction_note',label:'특이사항',type:'textarea',value:editing.reactionNote ?? ''},
+      ]} onSave={async (values, reason) => {
+        const expected = {feeding_date:editing.feedingDate,feeding_time:editing.feedingTime,meal_period:editing.mealPeriod,amount:editing.amount,unit:editing.unit,preference_level:editing.preferenceLevel,memo:editing.memo,reaction_note:editing.reactionNote};
+        await correctFeedingLog(editing.id,{...values,amount:values.amount ? Number(values.amount) : null,preference_level:values.preference_level ? Number(values.preference_level) : null},expected,reason);
+        notify.success('급여 기록을 정정했습니다.'); await load();
+      }} />}
 
       <nav className="admin-pagination" aria-label="다이어리 목록 페이지">
         <button type="button" className="admin-btn-soft" onClick={() => updateParams({ page: page > 2 ? String(page - 1) : null })} disabled={page <= 1 || loading}>

@@ -6,6 +6,7 @@ import { getProductsByBrand, getBrands } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import ProductCard from '../components/ProductCard';
 import type { Product } from '../types';
+import { isSourceLabelBrand } from '../utils/productDisplay';
 
 export default function Brand() {
   const { brandName } = useParams<{ brandName: string }>();
@@ -32,7 +33,7 @@ export default function Brand() {
     };
   }, [decoded, products]);
 
-  const allBrands = [...new Set(products.map(p => p.brand))].filter(Boolean);
+  const allBrands = [...new Set(products.map(p => p.brand))].filter((brand) => brand && !isSourceLabelBrand(brand));
   const displayOtherBrands = otherBrands.length > 0 ? otherBrands : allBrands.filter(b => b !== decoded).slice(0, 10);
 
   return (

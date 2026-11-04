@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Check, ChevronRight, Eye, EyeOff } from 'lucide-react';
+import './Login.css';
 import { supabase } from '../lib/supabase';
 import { getAuthRedirectUrl } from '../lib/nativeAuth';
 import { PRIVACY_VERSION } from '../constants/privacyInfo';
@@ -53,7 +54,6 @@ function passwordPolicyOk(password: string): boolean {
   return PASSWORD_RULES.every((r) => r.test(password));
 }
 
-const RESET_COOLDOWN_SEC = 60;
 /** 닉네임 중복 확인 디바운스(ms) — 타자 중 매 글자마다 조회하지 않는다. */
 const NICKNAME_CHECK_DEBOUNCE_MS = 400;
 
@@ -62,7 +62,6 @@ export default function Login() {
   const location = useLocation();
   const { initApp } = useStore();
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
-  const [resetLoading, setResetLoading] = useState(false);
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   // 관리자 콘솔(시스템 설정)에서 신규 가입을 잠글 수 있다.
   const { signupEnabled } = usePublicSettings();
@@ -72,9 +71,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [resetCooldown, setResetCooldown] = useState(0);
   const [kakaoLoading, setKakaoLoading] = useState(false);
-  const resetIntervalRef = useRef<number | null>(null);
   // 카카오 키가 준비되기 전에는 버튼을 잠가 둔다 (lib/kakaoAuth 참고).
   const kakaoReady = isKakaoLoginEnabled();
 
@@ -106,42 +103,6 @@ export default function Login() {
     if (!from || from === '/login') return '/profile';
     return from;
   }, [location.state]);
-
-  useEffect(() => () => {
-    if (resetIntervalRef.current != null) window.clearInterval(resetIntervalRef.current);
-  }, []);
-
-  const startResetCooldown = useCallback(() => {
-    if (resetIntervalRef.current != null) {
-      window.clearInterval(resetIntervalRef.current);
-      resetIntervalRef.current = null;
-    }
-    setResetCooldown(RESET_COOLDOWN_SEC);
-    resetIntervalRef.current = window.setInterval(() => {
-      setResetCooldown((s) => {
-        if (s <= 1) {
-          if (resetIntervalRef.current != null) {
-            window.clearInterval(resetIntervalRef.current);
-            resetIntervalRef.current = null;
-          }
-          return 0;
-        }
-        return s - 1;
-      });
-    }, 1000);
-  }, []);
-
-  const requestPasswordReset = async () => {
-    if (!isValidEmail(email) || resetLoading || resetCooldown > 0) return;
-    setResetLoading(true);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: getAuthRedirectUrl('recovery') });
-      if (error) throw error;
-      notify.success('가입된 이메일이면 재설정 메일을 받을 수 있습니다. 같은 기기에서 링크를 열어 주세요.');
-      startResetCooldown();
-    } catch { notify.error('재설정 메일을 보내지 못했습니다. 잠시 후 다시 시도해 주세요.'); }
-    finally { setResetLoading(false); }
-  };
 
   const handleKakao = async () => {
     if (kakaoLoading) return;
@@ -330,7 +291,7 @@ export default function Login() {
                     ? '이미 사용 중인 닉네임입니다.'
                     : nicknameStatus === 'available'
                       ? '사용할 수 있는 닉네임입니다.'
-                      : '앱과 관리자 화면에 이 이름으로 표시됩니다.')}
+                      : '')}
             </p>
           </div>
         )}
@@ -394,11 +355,34 @@ export default function Login() {
         </div>
       )}
 
-      {mode === 'login' && <button type="button" className="vr-btn vr-btn--outline" style={{ marginTop: 14 }} disabled={!emailOk || resetLoading || resetCooldown > 0} onClick={() => void requestPasswordReset()}>{resetLoading ? '메일 전송 중…' : resetCooldown > 0 ? `${resetCooldown}초 후 메일 다시 요청` : '비밀번호 재설정 메일 받기'}</button>}
-      <label style={{ display: 'block', marginTop: 18, fontSize: 13, lineHeight: 1.7 }}>
-        <input type="checkbox" checked={privacyAccepted} onChange={(e) => setPrivacyAccepted(e.target.checked)} />
-        회원가입 또는 카카오로 계속하기 전에 <a href="/terms" target="_blank" rel="noreferrer">이용약관</a>과 <a href="/privacy" target="_blank" rel="noreferrer">개인정보 처리방침</a>을 확인하고 동의합니다.
-      </label>
+      {mode === 'login' && <nav className="login-recovery-links" aria-label="계정 찾기">
+        <Link to="/account/find?mode=id" state={{email}}>아이디를 잊었어요!</Link>
+        <span aria-hidden="true" />
+        <Link to="/account/find?mode=password" state={{email}}>비밀번호를 잊었어요!</Link>
+      </nav>}
+      <div className={`login-consent${privacyAccepted ? ' is-checked' : ''}`}>
+        <label className="login-consent__choice">
+          <input
+            className="login-consent__input"
+            type="checkbox"
+            checked={privacyAccepted}
+            onChange={(e) => setPrivacyAccepted(e.target.checked)}
+            aria-label="이용약관 및 개인정보 처리방침에 동의합니다. (필수)"
+            aria-describedby="login-consent-note"
+          />
+          <span className="login-consent__check" aria-hidden="true"><Check size={16} strokeWidth={2.6} /></span>
+          <span className="login-consent__heading">
+            약관 및 개인정보 동의
+            <span className="login-consent__required">필수</span>
+          </span>
+        </label>
+        <p className="login-consent__note" id="login-consent-note">회원가입 및 카카오 로그인 시 적용돼요.</p>
+        <div className="login-consent__links">
+          <a href="/terms" target="_blank" rel="noreferrer">이용약관 <ChevronRight size={13} aria-hidden="true" /></a>
+          <span className="login-consent__divider" aria-hidden="true" />
+          <a href="/privacy" target="_blank" rel="noreferrer">개인정보 처리방침 <ChevronRight size={13} aria-hidden="true" /></a>
+        </div>
+      </div>
 
       <button
         type="button"

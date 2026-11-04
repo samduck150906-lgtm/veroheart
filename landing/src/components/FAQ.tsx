@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { Reveal } from "@/components/Reveal";
-import { SectionHeading } from "@/components/SectionHeading";
-import { ChevronDownIcon } from "@/components/icons";
+
 import { trackEvent } from "@/lib/analytics";
 
 const FAQ_ITEMS = [
@@ -35,65 +34,71 @@ const FAQ_ITEMS = [
 
 export function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
-
   const toggle = (i: number) => {
     const next = openIndex === i ? null : i;
     setOpenIndex(next);
     if (next !== null) trackEvent("faq_open", { question: FAQ_ITEMS[i].q });
   };
-
   return (
     <section
       id="faq"
-      className="bg-paper py-20 sm:py-28"
+      className="v3-section v3-faq"
       aria-labelledby="faq-heading"
     >
-      <div className="mx-auto max-w-3xl px-5 sm:px-6">
+      <div className="v3-container v3-faq-grid">
         <Reveal>
-          <SectionHeading kicker="FAQ" id="faq-heading" title="자주 묻는 질문" />
+          <div>
+            <p className="v3-kicker">A FEW THINGS TO KNOW</p>
+            <h2 id="faq-heading">
+              궁금한 점이
+              <br />
+              있으신가요?
+            </h2>
+            <a href="mailto:veroro@eternalsix.com" className="v3-text-link">
+              베로로에 문의하기 <span aria-hidden>↗</span>
+            </a>
+          </div>
         </Reveal>
-
-        <div className="divide-y divide-ink-950/10 border-t border-ink-950/10">
-          {FAQ_ITEMS.map((item, i) => {
-            const open = openIndex === i;
-            const panelId = `faq-panel-${i}`;
-            const buttonId = `faq-button-${i}`;
-            return (
-              <Reveal key={item.q} delayMs={i * 40}>
-                <div>
+        <Reveal delayMs={80}>
+          <div className="v3-faq-list">
+            {FAQ_ITEMS.map((item, i) => {
+              const open = openIndex === i;
+              return (
+                <div className="v3-faq-item" key={item.q}>
                   <h3>
                     <button
-                      id={buttonId}
+                      id={"faq-button-" + i}
                       type="button"
                       onClick={() => toggle(i)}
                       aria-expanded={open}
-                      aria-controls={panelId}
-                      className="flex w-full items-center justify-between gap-4 py-5 text-left text-base font-semibold text-ink-950"
+                      aria-controls={"faq-panel-" + i}
                     >
-                      {item.q}
-                      <ChevronDownIcon
-                        className={`h-4 w-4 shrink-0 text-ink-500 transition-transform ${open ? "rotate-180" : ""}`}
-                      />
+                      <span>{item.q}</span>
+                      <span
+                        className={"v3-faq-plus" + (open ? " is-open" : "")}
+                        aria-hidden
+                      >
+                        +
+                      </span>
                     </button>
                   </h3>
                   <div
-                    id={panelId}
+                    id={"faq-panel-" + i}
                     role="region"
-                    aria-labelledby={buttonId}
+                    aria-labelledby={"faq-button-" + i}
+                    aria-hidden={!open}
                     className="accordion-panel"
                     data-open={open}
                   >
                     <div>
-                      <p className="pb-5 text-sm leading-relaxed text-ink-700">
-                        {item.a}
-                      </p>
+                      <p>{item.a}</p>
                     </div>
                   </div>
                 </div>
-              </Reveal>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        </Reveal>
       </div>
     </section>
   );
