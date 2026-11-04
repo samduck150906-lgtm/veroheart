@@ -1,6 +1,7 @@
 import type { Product, UserPetProfile } from '../types';
 import { DEFAULT_USER_PET_PROFILE } from '../types';
 import { readinessFromStoredStatus, type AnalysisReadiness } from '../analysis/analysisReadiness';
+import { getNutritionPresentation } from '../analysis/nutritionReadiness';
 import {
   getRecommendationBreakdown,
   resolveDisplayVerdict,
@@ -16,6 +17,7 @@ export interface ProductDisplayVerdict {
   verdict: DisplayVerdict;
   score: number;
   grade: CompatibilityGrade;
+  nutrition: ReturnType<typeof getNutritionPresentation>;
 }
 
 /**
@@ -53,5 +55,6 @@ export function resolveProductDisplayVerdict(product: Product, profile: UserPetP
     verdict,
     score: verdict.score,
     grade: verdict.grade,
+    nutrition: getNutritionPresentation(product.guaranteedAnalysis),
   };
 }

@@ -55,13 +55,12 @@ import {
   type AltCardData,
   type RadarAxis,
 } from '../components/pdp/PdpParts';
-import { gradeMetaFromScore } from '../components/pdp/gradeMeta';
 import ProductThumb from '../components/ProductThumb';
 import ProductVerificationBadge from '../components/ProductVerificationBadge';
 import { HealthConcernEvidence } from '../components/HealthConcernEvidence';
 import { buildHealthConcernPresentation } from '../health/concernPresentation';
 import { getProductDisplayParts } from '../utils/productDisplay';
-import { gradePalette, gradeVerdict } from '../lib/veroroDesign';
+import { gradePalette } from '../lib/veroroDesign';
 import {
   describeProductCompleteness,
   describeIngredientAvailability,
@@ -90,6 +89,7 @@ export default function Detail() {
     isLoggedIn,
     selectedProduct: product,
     isLoadingProducts,
+    productDetailError,
     fetchProductDetail,
     products,
     userId,
@@ -111,6 +111,7 @@ export default function Detail() {
     created_at: string;
   };
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
+  const [reviewLoadError, setReviewLoadError] = useState(false);
   const [reviewRating, setReviewRating] = useState(5);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedIngredient, setSelectedIngredient] = useState<(Ingredient & { description?: string }) | null>(null);
@@ -136,7 +137,9 @@ export default function Detail() {
   useEffect(() => {
     let active = true;
     setReviews([]);
-    if (id) void getReviews(id).then((rows) => { if (active) setReviews(rows); });
+    setReviewLoadError(false);
+    if (id) void getReviews(id).then((rows) => { if (active) setReviews(rows); })
+      .catch(() => { if (active) setReviewLoadError(true); });
     return () => { active = false; };
   }, [id, userId]);
 
@@ -216,8 +219,8 @@ export default function Detail() {
       <OfflineBanner online={online} />
       <EmptyState
         emoji={online ? '🔍' : '📡'}
-        title={online ? '제품을 찾을 수 없습니다' : '오프라인 상태입니다'}
-        desc={online ? '주소가 변경되었거나 삭제된 제품일 수 있습니다.' : '연결이 복구되면 다시 불러옵니다.'}
+        title={productDetailError ? '제품 조회에 실패했습니다' : online ? '제품을 찾을 수 없습니다' : '오프라인 상태입니다'}
+        desc={productDetailError || (online ? '주소가 변경되었거나 삭제된 제품일 수 있습니다.' : '연결이 복구되면 다시 불러옵니다.')}
         actionLabel="홈으로 이동"
         onAction={() => navigate('/')}
       />
@@ -239,7 +242,7 @@ export default function Detail() {
   // ── PDP 판단 스택 데이터 (점수 게이지 · 요약 · 우리 아이 적합도) ──
   // 표시 점수는 카드·분석결과와 동일한 하드캡(위험≤69, 알레르기≤9, 종 불일치=0)을
   // 거친 값을 쓴다. 게스트에게는 개인화 감점 없는 객관 점수를 보여준다.
-  const { breakdown, score: safetyScore, grade: displayGrade, analysisReadiness, canShowScore: analysisReady } = resolveProductDisplayVerdict(product, profile);
+  const { breakdown, score: safetyScore, grade: displayGrade, analysisReadiness, canShowScore: analysisReady, nutrition } = resolveProductDisplayVerdict(product, profile);
   const hasIngredientData = (product.ingredients?.length ?? 0) + (product.unknownIngredientTerms?.length ?? 0) > 0;
   const analysisStatus = analysisReadiness.status;
   const allergyDisplay = buildAllergyDisplayState(breakdown, profile.name || '우리 아이', {
@@ -306,12 +309,11 @@ export default function Detail() {
   const scrollProgress = Math.min(100, (scrollY / scrollMax) * 100);
 
   // 종합 의견 3줄 (breakdown 기반, 신규 데이터 불필요)
-  const gradeLabel = gradeMetaFromScore(safetyScore).label;
   const verdictLines = [
     {
       icon: <ShieldCheck size={16} />,
       text: analysisReady
-        ? `안전성: ${breakdown.dangerCount === 0 ? '현재 등록 원료에서 위험 성분 미확인' : `위험 성분 ${breakdown.dangerCount}개`}${breakdown.cautionCount ? `, 주의 ${breakdown.cautionCount}개` : ''} — ${gradeLabel} 등급입니다.`
+        ? `안전성: ${breakdown.dangerCount === 0 ? '현재 등록 원료에서 위험 성분 미확인' : `위험 성분 ${breakdown.dangerCount}개`}${breakdown.cautionCount ? `, 주의 ${breakdown.cautionCount}개` : ''} — ${nutrition.scopeLabel} ${displayGrade}등급입니다.`
         : analysisStatus === 'partial'
           ? '안전성: 확인되지 않은 원료가 있어 부분 분석만 제공합니다.'
           : analysisStatus === 'blocked'
@@ -327,7 +329,7 @@ export default function Detail() {
       text: !personalized
         ? '결론: 반려동물을 등록하면 제품 궁합을 확인할 수 있습니다.'
         : analysisReady
-        ? `결론: ${profile.name}의 현재 궁합 점수는 ${safetyScore}점입니다. ${safetyScore >= 75 ? '아래 근거와 정보 부족 항목을 함께 확인해 주세요.' : safetyScore >= 60 ? '급여 시 소량부터 확인해 주세요.' : '대체 상품을 함께 검토해 주세요.'}`
+        ? nutrition.limited ? `결론: ${nutrition.notice}` : `결론: ${profile.name}의 현재 궁합 점수는 ${safetyScore}점입니다. ${safetyScore >= 75 ? '아래 근거와 정보 부족 항목을 함께 확인해 주세요.' : safetyScore >= 60 ? '급여 시 소량부터 확인해 주세요.' : '대체 상품을 함께 검토해 주세요.'}`
         : '결론: 원료 검토가 끝난 뒤 전체 궁합 판정을 제공합니다.',
     },
   ];
@@ -409,7 +411,7 @@ export default function Detail() {
   const reviewRatings = reviews.map(r => r.rating);
   const topReviewTags: string[] = [];
   const avgRating = reviewRatings.length ? reviewRatings.reduce((s, r) => s + r, 0) / reviewRatings.length : 0;
-  const reviewSummary = reviews.length
+  const reviewSummary = reviewLoadError ? '후기를 불러오지 못했습니다.' : reviews.length
     ? `후기 ${reviews.length}개 요약 · 평균 ${avgRating.toFixed(1)}점${topReviewTags.length ? ` · 자주 언급: ${topReviewTags.slice(0, 3).map(t => t.replace(/\s\d+$/, '')).join(', ')}` : ''}`
     : undefined;
 
@@ -423,7 +425,7 @@ export default function Detail() {
       </Helmet>
 
       <OfflineBanner online={online} />
-      {analysisReady && <StickyScoreBar score={safetyScore} name={productDisplay.name} visible={showStickyScore} progress={scrollProgress} />}
+      {analysisReady && <StickyScoreBar score={safetyScore} name={productDisplay.name} visible={showStickyScore} progress={scrollProgress} scopeLabel={nutrition.scopeLabel} />}
 
       {isLoggedIn && userId && pets.length > 1 && (
         <section style={{ padding: 16, marginBottom: 16, borderRadius: 20, background: 'var(--surface)', border: '1px solid var(--line)' }}>
@@ -576,11 +578,11 @@ export default function Detail() {
         </span>
         <span style={{ flex: 1 }}>
           <span style={{ display: 'block', fontSize: '16.5px', fontWeight: 800, color: 'var(--vr-on-inverse)', letterSpacing: '-0.03em' }}>
-            {analysisReady ? `종합 ${safetyScore}점 · ${gradeVerdict(displayGrade)}` : allergyDisplay.notice?.title ?? '원료 분석 확인이 필요합니다'}
+            {analysisReady ? `${nutrition.scopeLabel} ${safetyScore}점 · ${displayGrade}등급` : allergyDisplay.notice?.title ?? '원료 분석 확인이 필요합니다'}
           </span>
           <span style={{ display: 'block', fontSize: '12.5px', color: 'var(--vr-on-inverse-sub)', marginTop: '3px' }}>
             {analysisReady
-              ? `성분 ${product.ingredients?.length ?? 0}개 분석 · ${personalized ? `${profile.name} 기준` : '원료 정보'} 리포트 보기`
+              ? nutrition.limited ? nutrition.notice : nutrition.detail
               : `확인된 원료 ${product.ingredients?.length ?? 0}개 · 검토 상태 보기`}
           </span>
         </span>
@@ -590,7 +592,7 @@ export default function Detail() {
       </button>
 
       <GlanceGrid tiles={glanceTiles} />
-      {analysisReady && personalized && <FitForPetCard key={profile.id} petName={profile.name} percent={safetyScore} chips={fitChips} reasons={breakdown.reasons} />}
+      {analysisReady && personalized && <FitForPetCard key={profile.id} petName={profile.name} percent={safetyScore} chips={fitChips} reasons={breakdown.reasons} scopeLabel={nutrition.scopeLabel} />}
       {!personalized && <div style={{ marginBottom: 16 }}><PetCompatibilityPrompt /></div>}
       <div style={{ marginBottom: 16 }}>
         <HealthConcernEvidence presentation={concernPresentation} />
@@ -662,8 +664,13 @@ export default function Detail() {
       {/* 일일 급여량 계산기 */}
       <section className="card" style={{ marginBottom: '40px' }}>
         <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-dark)' }}>
-          <Dog size={22} color="var(--safe)" /> {personalized && !breakdown.speciesMismatch ? `${profile.name} 맞춤 일일 급여량` : '일일 급여량 안내'}
+          <Dog size={22} color="var(--safe)" /> {personalized && !breakdown.speciesMismatch ? `${profile.name} 열량 기준 참고 급여량` : '열량 기준 참고 급여량 안내'}
         </h2>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: 1.6 }}>
+          {product.requiresVeterinaryGuidance
+            ? '수의사 상담이 필요한 제품입니다. 처방과 급여량은 담당 수의사의 안내를 따라 주세요.'
+            : '수의사 상담 필요 여부가 확인된 것은 아닙니다. 이 계산은 일반식 여부나 급여 안전성을 확인하지 않으며, 처방식·질환 관련 급여는 수의사와 상담해 주세요.'}
+        </p>
         {personalized && breakdown.speciesMismatch ? (
           <p role="status" style={{ color: 'var(--caution-strong)', lineHeight: 1.6 }}>
             {profile.name}의 종과 제품의 급여 대상이 다릅니다. {petTypeLabel} 제품이므로 맞춤 급여량을 제공하지 않습니다.
@@ -683,7 +690,7 @@ export default function Detail() {
         ) : (
           <div>
             <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '16px' }}>
-              {profile.weightKg ? '제품 열량 정보가 부족해 급여량을 계산할 수 없습니다. 제품 포장의 급여 안내를 확인해 주세요.' : '몸무게와 제품 열량이 있으면 참고용 급여량을 계산할 수 있습니다.'}
+              {product.requiresVeterinaryGuidance ? '이 제품의 일반 급여량 계산은 제공하지 않습니다.' : profile.weightKg ? '제품 열량 정보가 부족해 급여량을 계산할 수 없습니다. 제품 포장의 급여 안내를 확인해 주세요.' : '몸무게와 제품 열량이 있으면 참고용 급여량을 계산할 수 있습니다.'}
             </p>
             {!profile.weightKg && <button
               className="btn btn-outline" 
@@ -877,7 +884,7 @@ export default function Detail() {
       {/* 리뷰 섹션 */}
       <section style={{ marginBottom: '40px' }}>
         <h2 style={{ fontSize: '18px', fontWeight: 900, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-dark)' }}>
-          <MessageSquare size={20} /> 후기 <span style={{ color: 'var(--text-muted)', fontWeight: 700 }}>{reviews.length}</span>
+          <MessageSquare size={20} /> 후기 <span style={{ color: 'var(--text-muted)', fontWeight: 700 }}>{reviewLoadError ? '—' : reviews.length}</span>
         </h2>
         <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '16px', fontWeight: 600 }}>
           실제로 급여해 본 제품의 별점을 남겨 주세요.
@@ -913,7 +920,7 @@ export default function Detail() {
 
         {/* 리뷰 목록 */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {reviews.length === 0 ? (
+          {reviewLoadError ? <p role="alert">후기를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</p> : reviews.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-muted)', background: 'var(--surface-alt)', borderRadius: '16px' }}>
               아직 별점이 없습니다. 첫 별점을 남겨 주세요.
             </div>

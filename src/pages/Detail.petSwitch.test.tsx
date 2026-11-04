@@ -46,18 +46,21 @@ describe('product detail pet switching', () => {
     show();
     await screen.findByRole('heading', { level: 1, name: '닭고기 사료' });
     expect(screen.getByText(/나비의 종과 제품의 급여 대상이 다릅니다/)).toBeTruthy();
-    expect(screen.queryByRole('heading', { name: '나비 맞춤 일일 급여량' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: /나비.*급여량/ })).toBeNull();
+    expect(screen.getByRole('heading', { name: '열량 기준 참고 급여량 안내' })).toBeTruthy();
+    expect(screen.queryByText(/하루 약 .*g/)).toBeNull();
+    expect(screen.getAllByText(/영양정보 부족으로 영양 균형을 평가할 수 없/).length).toBeGreaterThan(0);
     expect(screen.queryByRole('button', { name: '몸무게 입력하러 가기' })).toBeNull();
   });
   it('switches the actual saved profile and updates compatibility and allergy warnings without leaving the product', async () => {
     show();
-    const originalFit = await screen.findByRole('region', { name: '로니 적합도' });
-    expect(Number(within(originalFit).getByText(/^\d+%$/).textContent?.replace('%', ''))).toBeGreaterThan(0);
+    const originalFit = await screen.findByRole('region', { name: '로니 참고 평가' });
+    expect(Number(within(originalFit).getByText(/^\d+점$/).textContent?.replace('점', ''))).toBeGreaterThan(0);
     expect(screen.queryByRole('button', { name: '닭고기 알레르기' })).toBeNull();
     fireEvent.click(within(picker()).getByRole('button', { name: '모찌 선택' }));
-    const fit = screen.getByRole('region', { name: '모찌 적합도' });
-    expect(screen.queryByRole('region', { name: '로니 적합도' })).toBeNull();
-    expect(within(fit).getByText('0%')).toBeTruthy();
+    const fit = screen.getByRole('region', { name: '모찌 참고 평가' });
+    expect(screen.queryByRole('region', { name: '로니 참고 평가' })).toBeNull();
+    expect(within(fit).getByText('0점')).toBeTruthy();
     expect(screen.getByRole('button', { name: '닭고기 알레르기' })).toBeTruthy();
     expect(screen.getByRole('heading', { level: 1, name: '닭고기 사료' })).toBeTruthy();
     expect(useStore.getState().activePetId).toBe('second');
@@ -67,12 +70,12 @@ describe('product detail pet switching', () => {
 
   it('keeps registration order instead of moving the selected pet to the front', async () => {
     show();
-    await screen.findByRole('region', { name: '로니 적합도' });
+    await screen.findByRole('region', { name: '로니 참고 평가' });
     const names = () => within(picker()).getAllByRole('button').map(button => button.getAttribute('aria-label'));
     expect(names()).toEqual(['로니 선택', '모찌 선택', '나비 선택']);
     fireEvent.click(within(picker()).getByRole('button', { name: '나비 선택' }));
     expect(names()).toEqual(['로니 선택', '모찌 선택', '나비 선택']);
-    expect(within(screen.getByRole('region', { name: '나비 적합도' })).getByText('0%')).toBeTruthy();
+    expect(within(screen.getByRole('region', { name: '나비 참고 평가' })).getByText('0점')).toBeTruthy();
   });
 
   it.each([
@@ -92,12 +95,12 @@ describe('product detail pet switching', () => {
     await screen.findByRole('heading', { level: 1, name: '닭고기 사료' });
     fireEvent.click(within(picker()).getByRole('button', { name: '모찌 선택' }));
     expect(useStore.getState().activePetId).toBe('second');
-    expect(screen.queryByRole('region', { name: '모찌 적합도' })).toBeNull();
+    expect(screen.queryByRole('region', { name: '모찌 참고 평가' })).toBeNull();
   });
 
   it('re-evaluates an open ingredient sheet when the active pet changes, in either direction', async () => {
     show();
-    await screen.findByRole('region', { name: '로니 적합도' });
+    await screen.findByRole('region', { name: '로니 참고 평가' });
     fireEvent.click(screen.getByRole('button', { name: '닭고기 안전' }));
     const sheet = screen.getByRole('dialog', { name: '닭고기' });
     act(() => useStore.getState().selectPet(second.id));

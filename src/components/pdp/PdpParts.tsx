@@ -157,19 +157,19 @@ export function GlanceGrid({ tiles }: { tiles: GlanceTileData[] }) {
 }
 
 /* ─── Fit-for-my-pet card (spec §7 FitForPetCard) ─── */
-export function FitForPetCard({ petName, percent, chips, reasons }: { petName: string; percent: number; chips: string[]; reasons: string[] }) {
+export function FitForPetCard({ petName, percent, chips, reasons, scopeLabel }: { petName: string; percent: number; chips: string[]; reasons: string[]; scopeLabel?: string }) {
   const meta = gradeFromScore(percent);
   const shown = useCountUp(percent, 700);
   return (
     <section
-      aria-label={`${petName} 적합도`}
+      aria-label={`${petName} ${scopeLabel ? '참고 평가' : '적합도'}`}
       style={{ background: 'var(--pdp-surface,#fff)', borderRadius: 24, padding: 20, marginBottom: 16, boxShadow: 'var(--pdp-e2,0 8px 24px rgba(15,23,42,.06))' }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 16, fontWeight: 800, color: 'var(--pdp-ink,var(--pdp-ink))' }}>
-          🐶 {petName} 적합도
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <div style={{ display: 'flex', minWidth: 0, flex: 1, lineHeight: 1.4, overflowWrap: 'anywhere', alignItems: 'center', gap: 8, fontSize: 16, fontWeight: 800, color: 'var(--pdp-ink,var(--pdp-ink))' }}>
+          {scopeLabel ? `${petName} · ${scopeLabel}` : `🐶 ${petName} 적합도`}
         </div>
-        <div style={{ fontSize: 24, fontWeight: 900, color: meta.fg, fontVariantNumeric: 'tabular-nums' }}>{shown}%</div>
+        <div style={{ fontSize: 24, fontWeight: 900, color: meta.fg, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{shown}{scopeLabel ? '점' : '%'}</div>
       </div>
       <div style={{ height: 10, borderRadius: 999, background: 'var(--pdp-line,var(--pdp-line))', overflow: 'hidden', marginBottom: 14 }}>
         <div style={{ width: `${shown}%`, height: '100%', borderRadius: 999, background: meta.ring, transition: 'width 700ms cubic-bezier(0.05,0.7,0.1,1)' }} />
@@ -245,7 +245,7 @@ export function IngredientCard({ ing, onOpen }: { ing: IngredientLike; onOpen: (
 }
 
 /* ─── Sticky top score bar + scroll progress (spec §21, P0-3) ─── */
-export function StickyScoreBar({ score, name, visible, progress }: { score: number; name: string; visible: boolean; progress: number }) {
+export function StickyScoreBar({ score, name, visible, progress, scopeLabel }: { score: number; name: string; visible: boolean; progress: number; scopeLabel?: string }) {
   const meta = gradeFromScore(score);
   return (
     <div
@@ -261,7 +261,7 @@ export function StickyScoreBar({ score, name, visible, progress }: { score: numb
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 999, background: meta.bg, color: meta.fg, fontWeight: 900, fontSize: 14, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
           {Math.round(score)} <span style={{ fontSize: 12 }}>{meta.grade}</span>
         </span>
-        <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--pdp-ink,var(--pdp-ink))', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</span>
+        <span style={{ minWidth: 0, fontSize: 14, fontWeight: 700, color: 'var(--pdp-ink,var(--pdp-ink))', overflowWrap: 'anywhere' }}>{scopeLabel ? `${scopeLabel} · ${name}` : name}</span>
       </div>
       <div style={{ height: 3, background: 'transparent' }}>
         <div style={{ width: `${Math.max(0, Math.min(100, progress))}%`, height: '100%', background: meta.ring, transition: 'width 80ms linear' }} />

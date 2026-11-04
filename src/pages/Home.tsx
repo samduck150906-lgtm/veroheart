@@ -20,7 +20,7 @@ import { DEFAULT_USER_PET_PROFILE, type Product } from '../types';
 // DB 가 작아 보이는 역효과만 있었다.
 
 export default function Home() {
-  const { profile, recentViews, isLoggedIn, catalogRevision } = useStore();
+  const { profile, recentViews, isLoggedIn, catalogRevision, catalogError } = useStore();
   const navigate = useNavigate();
   const categories = useProductCategories();
   const hasPetProfile = isLoggedIn && isRealPetProfile(profile);
@@ -72,6 +72,8 @@ export default function Home() {
         <title>베로로 — 사료·간식·영양제 성분 분석</title>
         <meta name="description" content="반려동물 사료·간식·영양제의 원재료와 성분을 분석하고, 먹은 제품을 기록해 주세요." />
       </Helmet>
+
+      {catalogError && <p role="alert" style={{ padding: 14, borderRadius: 12, background: 'var(--caution-bg)', lineHeight: 1.5 }}>{catalogError}</p>}
 
       <h1 style={{ margin: '14px 0 4px', fontSize: '29px', fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 1.18 }}>
         우리 아이에게<br />맞는지 확인해 주세요
@@ -207,7 +209,7 @@ export default function Home() {
           </div>
           <div className="vr-rail vr-bleed" style={{ padding: '0 16px 4px', marginBottom: '24px' }}>
             {recentViews.slice(0, 8).map((p) => {
-              const { grade, canShowScore } = gradeOf(p);
+              const { grade, canShowScore, nutrition } = gradeOf(p);
               const palette = canShowScore ? gradePalette(grade) : { fg: 'var(--text-muted)', bg: 'var(--vr-soft)' };
               return (
                 <button
@@ -222,13 +224,14 @@ export default function Home() {
                       className="vr-grade-pill"
                       style={{ position: 'absolute', left: '8px', top: '8px', color: palette.fg, background: palette.bg }}
                     >
-                      {canShowScore ? grade : describeIngredientAvailability(p).label}
+                      {canShowScore ? `참고 ${grade}` : describeIngredientAvailability(p).label}
                     </span>
                   </span>
                   <span style={{ display: 'block', fontSize: '11.5px', color: VR.sub, fontWeight: 700, marginTop: '8px' }}>{resolveBrandLabel(p)}</span>
                   <span className="line-clamp-2" style={{ display: 'block', fontSize: '13px', fontWeight: 700, lineHeight: 1.35, letterSpacing: '-0.02em', color: 'var(--vr-ink)' }}>
                     {normalizeProductDisplayName(p)}
                   </span>
+                  {canShowScore && <span style={{ display: 'block', fontSize: 11, lineHeight: 1.5, color: VR.sub }}>{nutrition.scopeLabel}{nutrition.limited ? ' · 영양 균형 미평가' : ''}</span>}
                 </button>
               );
             })}
@@ -244,7 +247,7 @@ export default function Home() {
         <section aria-labelledby="home-recommendations-title" aria-busy={recommendations.status === 'loading'} style={{ marginBottom: '24px' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 12px', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '8px' }}>
             <h2 id="home-recommendations-title" style={{ margin: 0, fontSize: '18px', fontWeight: 800, letterSpacing: '-0.03em' }}>
-              {petLabel}에게 잘 맞는 제품
+              {petLabel} 기준 참고 제품
             </h2>
             <span style={{ fontSize: '11.5px', fontWeight: 700, color: VR.sub }}>궁합 점수 {HOME_RECOMMENDATION_MIN_SCORE}점 이상</span>
           </div>
@@ -287,8 +290,10 @@ export default function Home() {
                       {normalizeProductDisplayName(product)}
                     </span>
                     <span style={{ display: 'block', fontSize: '11.5px', fontWeight: 700, color: 'var(--safe-strong)', marginTop: '3px' }}>
-                      {petLabel} 기준 궁합 점수 {verdict.score}점
+                      <span>{petLabel} 기준 궁합 점수 {verdict.score}점</span>
+                      <span> · {verdict.nutrition.scopeLabel}</span>
                     </span>
+                    {verdict.nutrition.limited && <span style={{ display: 'block', fontSize: 11.5, lineHeight: 1.5, color: VR.sub }}>{verdict.nutrition.notice}</span>}
                   </span>
                   <span style={{
                     width: '38px', height: '38px', borderRadius: '11px', flex: 'none',

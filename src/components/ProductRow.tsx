@@ -4,7 +4,7 @@ import { useStore } from '../store/useStore';
 import { describeIngredientAvailability } from '../utils/productDataCompleteness';
 import { isRealPetProfile, resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import { getProductDisplayParts } from '../utils/productDisplay';
-import { fitShortLabel, gradePalette, VR } from '../lib/veroroDesign';
+import { gradePalette, VR } from '../lib/veroroDesign';
 import { DEFAULT_USER_PET_PROFILE, type Product } from '../types';
 import ProductVerificationBadge from './ProductVerificationBadge';
 import PetCompatibilityPrompt from './PetCompatibilityPrompt';
@@ -22,10 +22,9 @@ export default function ProductRow({ product }: ProductRowProps) {
   const { profile, favorites, toggleFavorite, isLoggedIn } = useStore();
   const hasPetProfile = isLoggedIn && isRealPetProfile(profile);
 
-  const { score, grade, canShowScore } = resolveProductDisplayVerdict(product, hasPetProfile ? profile : DEFAULT_USER_PET_PROFILE);
+  const { score, grade, canShowScore, nutrition } = resolveProductDisplayVerdict(product, hasPetProfile ? profile : DEFAULT_USER_PET_PROFILE);
   const palette = canShowScore ? gradePalette(grade) : { fg: 'var(--text-muted)', bg: 'var(--vr-soft)' };
   const isFav = favorites.includes(product.id);
-  const petName = profile.name || '우리 아이';
   const display = getProductDisplayParts(product);
 
   const open = () => navigate(`/product/${product.id}`);
@@ -47,7 +46,7 @@ export default function ProductRow({ product }: ProductRowProps) {
           onClick={open}
           style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', padding: 0, cursor: 'pointer' }}
         >
-          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px' }}>
             {display.brand && (
               <span style={{ fontSize: '11.5px', color: VR.sub, fontWeight: 700 }}>{display.brand}</span>
             )}
@@ -57,7 +56,7 @@ export default function ProductRow({ product }: ProductRowProps) {
                 color: palette.fg, background: palette.bg,
               }}
             >
-              {canShowScore ? `${hasPetProfile ? '' : '원료 '}${grade} ${score}` : describeIngredientAvailability(product).label}
+              {canShowScore ? `${nutrition.scopeLabel} ${grade} ${score}` : describeIngredientAvailability(product).label}
             </span>
           </span>
           <span style={{
@@ -99,9 +98,10 @@ export default function ProductRow({ product }: ProductRowProps) {
             {isFav ? '찜 해제' : '찜'}
           </button>
           {hasPetProfile && canShowScore && <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--safe-strong)', marginLeft: 'auto' }}>
-            {fitShortLabel(score, petName)}
+            {`${nutrition.scopeLabel} ${score}점`}
           </span>}
         </div>
+        {canShowScore && nutrition.limited && <p style={{ margin: '6px 0 0', fontSize: 11.5, lineHeight: 1.5, color: VR.sub }}>{nutrition.notice}</p>}
         {!hasPetProfile && <div style={{ marginTop: 8 }}><PetCompatibilityPrompt compact /></div>}
       </div>
     </div>

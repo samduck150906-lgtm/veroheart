@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { gradeVerdict } from '../lib/veroroDesign';
 import { AlertCircle, Check, Sparkles } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
@@ -64,11 +63,13 @@ function ReportHero({
   grade,
   productName,
   headline,
+  scopeLabel,
 }: {
   score: number;
   grade: CompatibilityGrade;
   productName: string;
   headline: string;
+  scopeLabel: string;
 }) {
   const r = 50;
   const circumference = 2 * Math.PI * r; // ≈314 — 프로토타입 stroke-dasharray와 동일
@@ -77,6 +78,7 @@ function ReportHero({
   return (
     <div className="vr-bleed" style={{ background: 'var(--vr-inverse)', padding: '24px 16px 28px', color: 'var(--vr-on-inverse)' }}>
       <div style={{ fontSize: 12.5, fontWeight: 800, color: '#FFD90A', letterSpacing: '.05em' }}>분석 리포트</div>
+      <div style={{ fontSize: 12.5, lineHeight: 1.5 }}>{scopeLabel} 등급 · 종합 영양 적합성 보장 아님</div>
       <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: '-.03em', marginTop: 5, lineHeight: 1.3 }}>{productName}</div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginTop: 20 }}>
@@ -192,7 +194,7 @@ type Tab = (typeof TABS)[number];
 export default function AnalysisResult() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile, products, selectedProduct, isLoggedIn, fetchProductDetail, isLoadingProducts } = useStore();
+  const { profile, products, selectedProduct, isLoggedIn, fetchProductDetail, isLoadingProducts, productDetailError } = useStore();
 
   const [activeTab, setActiveTab] = useState<Tab>('종합');
   const [selectedIng, setSelectedIng] = useState<Ingredient | null>(null);
@@ -352,6 +354,7 @@ export default function AnalysisResult() {
 
   if (!product) {
     if (productId && isLoadingProducts) return <StateView variant="loading" title="제품 정보를 불러오고 있습니다" />;
+    if (productId && productDetailError) return <StateView variant="error" title="제품 조회에 실패했습니다" description={productDetailError} />;
     return (
       <StateView
         variant="empty"
@@ -372,7 +375,7 @@ export default function AnalysisResult() {
       <style>{`@keyframes veroFadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }`}</style>
 
       {canShowScore && display ? (
-        <ReportHero score={display.score} grade={display.grade} productName={product.name} headline={report?.summary || gradeVerdict(display.grade)} />
+        <ReportHero score={display.score} grade={display.grade} productName={product.name} headline={report?.summary || feedAnalysis?.summary || display.nutrition.detail} scopeLabel={display.nutrition.scopeLabel} />
       ) : (
         <section role="status" style={{ background: 'var(--secondary)', padding: 24, borderRadius: 16 }}>
           <h1 style={{ fontSize: 20 }}>{product.name}</h1>

@@ -12,6 +12,7 @@ function product(overrides: Partial<Product> = {}): Product {
     id: 'p1', brand: '브랜드', name: '연어 사료', category: 'food',
     targetPetType: 'dog', imageUrl: '',
     ingredients: [ing('연어'), ing('현미')],
+    guaranteedAnalysis: { crudeProtein: 30, crudeFat: 15, crudeFiber: 3, crudeAsh: 8, moisture: 10 },
     reviewsCount: 0, averageRating: 0,
     ...overrides,
   };
