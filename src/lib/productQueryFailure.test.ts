@@ -41,6 +41,12 @@ describe('missing product source schema is an error, not product absence', () =>
     await expect(getBrands()).rejects.toThrow('제품 정보를 불러오지 못했습니다');
     await expect(getReviews('fixture-product')).rejects.toThrow('후기를 불러오지 못했습니다');
   });
+  it('keeps main source-label brand exclusion when a read succeeds', async () => {
+    response = { data: [{ brand_name: '쿠팡검색' }, { brand_name: 'Fixture' }, { brand_name: '쿠팡상품' }], error: null };
+    const { getBrands } = await import('./supabase');
+    expect(await getBrands()).toEqual(['Fixture']);
+    expect(api.calls).toContainEqual(['eq', ['is_visible', true]]);
+  });
   it('returns null only for an explicit zero-row response, not ambiguous rows or permissions', async () => {
     const { getProductDetail } = await import('./supabase');
     response = { data: null, error: { code: 'PGRST116', message: 'Cannot coerce', details: 'The result contains 0 rows' } };
