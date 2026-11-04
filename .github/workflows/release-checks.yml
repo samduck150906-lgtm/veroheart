@@ -11,6 +11,19 @@ permissions:
 jobs:
   web:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: synthetic-ci-only
+          POSTGRES_DB: purchase_link_contract_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d purchase_link_contract_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -20,11 +33,39 @@ jobs:
       - run: npm install --global npm@11.13.0
       - run: npm ci
       - run: npm run lint
-      - run: npm test
+      - run: npm run test:purchase-links
+      - name: Purchase-link two-connection PostgreSQL contract
+        run: npm run test:purchase-links:concurrency
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: synthetic-ci-only
+          PGDATABASE: purchase_link_contract_test
+      - name: Purchase-link complete repository schema (isolated PostgreSQL only)
+        run: |
+          createdb --maintenance-db=postgres purchase_link_full_schema_test
+          createdb --maintenance-db=postgres purchase_link_raw_replay_test
+          npm run test:purchase-links:schema
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: synthetic-ci-only
+          PGDATABASE: purchase_link_full_schema_test
+      - name: Related Vitest regression
+        run: npx --no-install vitest run src/lib/adminWriteValidation.test.ts src/lib/productCleanupServerContract.test.ts src/lib/migrationLedgerReconciliation.test.ts
+      - run: npm test -- --run
+      - name: App, Netlify functions and purchase-link validation types
+        run: |
+          npm run typecheck
+          npx --no-install tsc --noEmit --strict --target ES2022 --module ESNext --moduleResolution bundler --allowImportingTsExtensions --skipLibCheck supabase/functions/admin-write/purchaseLinks.ts
+      - run: npx --no-install eslint --no-ignore supabase/functions/admin-write/purchaseLinks.ts
       - run: npm run test:catalog
       - run: npm run test:bootstrap
       - run: npm run test:schemas
       - run: npm run build
+      - run: git diff --exit-code && git diff --check
       - run: npm audit --audit-level=moderate
       - run: npm ci
         working-directory: landing
