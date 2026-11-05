@@ -1,5 +1,5 @@
--- CONDITIONAL DRAFT ONLY. Not an automatic migration; do not apply without
--- actual policy/view/GRANT evidence and separate tracked-deployment approval.
+-- REVIEWED MIGRATION: raw-review SELECT boundary only.
+-- Apply only through a separately approved, exact-only tracked release bundle.
 -- Existing release exposes stars via product_ratings; raw legacy rows remain
 -- author/admin data per the existing account_privacy_release contract.
 -- No authored outer BEGIN/COMMIT: a reviewed CLI migration must own the

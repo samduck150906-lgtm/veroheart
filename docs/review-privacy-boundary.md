@@ -69,8 +69,8 @@ legacy content and back-office fields are not a replacement public API.
 
 ## Minimal conditional SQL
 
-`supabase/migration_drafts/review_raw_read_boundary.sql` stays outside automatic
-migration execution. It serializes on reviews, verifies the existing five-column
+`supabase/migrations/20261106090000_restrict_raw_review_reads.sql` is promoted
+to a tracked migration under preparation approval; no operational apply is approved. It serializes on reviews, verifies the existing five-column
 public view/owner execution model and adds one RESTRICTIVE SELECT policy for
 anon/authenticated: auth.uid()=user_id. Existing reviews RLS must already be enabled;
 otherwise abort for a separate per-operation review. Never toggle or FORCE RLS.
@@ -120,7 +120,7 @@ raw review rows/credentials/accounts were used. Current code/normal-admin unit
 regressions and build run through existing Linux CI; contents:read, no operational
 secrets/DB/deployment steps. The known audit gate remains unchanged.
 
-## Approval and tracked deployment plan — not performed
+## Release workflow — preparation approved, application not performed
 
 1. The supplied metadata establishes necessity at its observation time. Immediately
    before any approved release, repeat only metadata preflight to detect drift:
@@ -130,11 +130,11 @@ secrets/DB/deployment steps. The known audit gate remains unchanged.
 2. Check normal owner/star CRUD, service-only admin/audit, public view definition
    and backup/restore access before any deployment approval. Preserve original
    review data and all public/moderation/strict-product gates.
-3. After separate approval only: promote exact reviewed SQL to a fresh tracked
-   migration later than the actual remote maximum, using an audited exact-only
-   release plan. Pending originals are not marked applied. No include-all, repair,
+3. Preparation approval promoted the reviewed executable SQL body to a version
+   later than the confirmed remote maximum; only its header changed. Application
+   still needs separate approval and an exact-only release plan. Pending originals are not marked applied. No include-all, repair,
    manual ledger INSERT or untracked SQL Editor DDL. CLI must own the transaction
-   and normal ledger insert; this draft has no authored outer BEGIN/COMMIT.
+   and normal ledger insert; this migration has no authored outer BEGIN/COMMIT.
 4. Record product/review row and existing ACL/view/trigger/function fingerprints,
    role-access probes on synthetic nonproduction data and policy metadata. Apply
    under lock_timeout5s; ACCESS EXCLUSIVE can block reads/writes once acquired.
@@ -148,15 +148,15 @@ secrets/DB/deployment steps. The known audit gate remains unchanged.
 The current new main already includes other admin/catalog/account changes. This
 PR does not deploy any of those pending migrations to obtain its prerequisites.
 #116/#117 stay separate; #118 remains integration-only. Reported operational RLS/ACL/view/admin-function metadata now establishes the
-read gap at the supplied timestamp. Current full ledger/remote migration statement
-identity, hosted HTTP access, real row contents/counts and later drift are not
-verified by this evidence. #116/#117 validation is unchanged and not repeated.
+read gap at the supplied timestamp. Full remote statement/file identity was later
+verified during release preparation below. Hosted HTTP exploitation, real review
+contents/counts and future drift are not established by metadata or dry-run. #116/#117 validation is unchanged and not repeated.
 
 
 ## Frozen deployment candidate and remaining release gates
 
-- Exact file: `supabase/migration_drafts/review_raw_read_boundary.sql`.
-- SHA-256: `30cc1af3adcdc8e9b53547ca40afc8e48ca8d69a662aaeeb01ebaafcd929271f`.
+- Exact file: `supabase/migrations/20261106090000_restrict_raw_review_reads.sql`.
+- SHA-256: `56e969a2c2a2f82de3cdbde7ba168d59d3efaf68e11472c36dfc012da41f413d`.
 - Effect: CREATE one restrictive SELECT policy `reviews_owner_read_required` for
   anon/authenticated, `auth.uid() = user_id`. No table/view/function/ACL/data change.
 - Same-name equivalent policy: no replacement or duplicate; different definition:
@@ -164,19 +164,45 @@ verified by this evidence. #116/#117 validation is unchanged and not repeated.
 - ACCESS EXCLUSIVE lock on reviews; 5s lock wait timeout. Reads/writes may block
   while held. Do not hold this transaction open for manual inspection. No duration
   guarantee from the single-connection tests and no lock-contention test claim.
-- Local candidate SQL is unchanged from the already tested draft: no new grant,
+- The executable SQL body is unchanged from the tested draft; only the promotion
+  header was updated. There is no new grant,
   ownership, RLS enable/force, view rewrite or unrelated write restriction was added.
 
-Only after separate release approval: capture fresh metadata + full remote version/
-name ledger (not review rows), latest completed backup/restore capability and
-current application/PR heads. Assign a fresh version above the actual remote max;
-copy these exact bytes to a tracked migration in an isolated release branch and
-verify the hash. Reconcile the full remote statement manifest through a reviewed
-normal release bundle; do not run pending originals, repair history or add
-include-all. Do not infer SQL equality from version/name equality. If a normal
-linked dry-run cannot show **only the approved new policy file**, stop before apply.
-No release bundle, version promotion, linked dry-run or operational command has
-been performed by this PR update.
+Preparation performed on 2026-11-06 through normal CLI authentication (no token
+extraction). Latest main remained `f1065f82066d6fd6408cd94a2eefc8c68fdd55da`.
+The linked target was confirmed to be the intended active project. Fresh read-only
+metadata confirmed the raw-read gap remains. The remote ledger contains65 unique
+versions, latest20261104110000, with every statement available. Official migration
+fetch ran only into a private disposable release bundle. All65 version/name pairs
+and file bytes match the remote statements rendered by the official
+`statements.join(";\n") + ";\n"` format, including preserved CRLF bytes. Statement
+secret-pattern scan had no matches. Fetch changed local files only, not history.
+
+The normal repository contains seven old local-only migrations. They are preserved
+and excluded from the bundle, not executed, removed, repaired or marked applied:
+20261026090100,20261026120000,20261026160000,20261026170000,
+20261026180000,20261026190000,20261027010000.
+The bundle contains the65 applied ledger files plus exactly the new
+20261106090000_restrict_raw_review_reads.sql, with no seeds or role payloads.
+Repository-wide db push is NOT the approved release command; its unrelated pending
+files remain a separate release decision. No source-history reconciliation or
+other developer's migration was rewritten.
+
+Actual linked dry-run on the private bundle returned only the new policy migration,
+no history errors, seeds=[], roles=[], no include-all. Final-header/hash validation
+and final dry-run are recorded in the PR validation evidence. Dry-run does not
+execute this new policy body and is not proof of live policy enforcement.
+Post-dry-run read-only verification at2026-11-06 02:20:41 KST confirmed all65
+ledger rows/statements and review policies/ACL/view/function metadata unchanged;
+new version/policy still absent. No application approval is implied.
+
+Backup API reported latest physical backup COMPLETED at2026-11-04T21:30:03.058Z
+(2026-11-05 06:30:03 KST); PITR disabled. Restore was NOT tested or invoked.
+A physical restore can lose subsequent changes and is not an automatic rollback.
+Recheck latest completed backup/status, project ref, fresh metadata/ledger
+fingerprints and exact file manifest immediately before a separately approved apply.
+Any drift, extra proposed migration, incompatible view/policy, lock error or SQL
+error stops the release. This preparation did not run an actual db push or repair.
 
 The approved CLI must atomically own migration SQL plus its normal history entry.
 No SQL Editor DDL, manual ledger INSERT, fake applied status or nested transaction.
@@ -194,3 +220,26 @@ no automatic rerun, broad recovery migration or rollback. Dropping the restricti
 policy restores the known exposure and requires an explicit security decision.
 Normal public star fields remain available; UI/public HTTP behavior is not newly
 certified by local PostgreSQL role tests. Audit failures stay visible and unchanged.
+
+
+### Application command template — requires separate approval
+
+Use the private frozen bundle (65 remote files + the one migration), not the
+repository's full migration directory. Substitute only the recorded private bundle
+and verified temporary CLI paths; inspect their hashes/manifest/ref first:
+
+```sh
+"$SUPABASE_BIN" db push --linked --workdir "$RELEASE_BUNDLE"
+```
+
+The command has not been run. Immediately beforehand rerun the same command with
+`--dry-run`; its JSON migrations array must equal only
+`["20261106090000_restrict_raw_review_reads.sql"]`, with empty seeds/roles and no
+history error. After application, require version20261106090000 exactly once plus
+all65 previous ledger rows/statements unchanged; the exact restrictive SELECT
+policy and previous ACL/view/admin functions unchanged. Public/owner/admin
+behavior must remain as the synthetic role tests, without fetching other users'
+raw live contents. No automatic policy drop, RLS disable or physical restore.
+Persist this migration in repository history so a future checkout contains the
+same version/bytes; do not rewrite any of the other65 historical files. The seven
+old pending migrations remain explicitly pending after this one-policy release.

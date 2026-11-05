@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-export const draftUrl = new URL('../supabase/migration_drafts/review_raw_read_boundary.sql',import.meta.url);
+export const migrationUrl = new URL('../supabase/migrations/20261106090000_restrict_raw_review_reads.sql',import.meta.url);
 export async function assertReviewReadBoundaryOnBootstrap(db) {
   const snapshot = async () => (await db.query(`SELECT
     md5(pg_get_viewdef('public.product_ratings'::regclass,true)) AS view_hash,
@@ -11,7 +11,7 @@ export async function assertReviewReadBoundaryOnBootstrap(db) {
   await db.exec('BEGIN');
   try {
     const before=await snapshot();
-    const sql=await readFile(draftUrl,'utf8'); await db.exec(sql); await db.exec(sql);
+    const sql=await readFile(migrationUrl,'utf8'); await db.exec(sql); await db.exec(sql);
     assert.deepEqual(await snapshot(),before,'view, ACL, administrator function and rows preserved');
     for (const role of ['anon','authenticated','service_role']) {
       await db.exec(`SET LOCAL ROLE ${role}`);
@@ -23,6 +23,6 @@ export async function assertReviewReadBoundaryOnBootstrap(db) {
     }
     const p=(await db.query("SELECT polpermissive,polcmd FROM pg_policy WHERE polrelid='public.reviews'::regclass AND polname='reviews_owner_read_required'")).rows;
     assert.deepEqual(p,[{polpermissive:false,polcmd:'r'}]);
-    console.log('PASS: conditional review read draft on guard-included complete bootstrap; existing view/ACL/admin function unchanged');
+    console.log('PASS: review read migration on guard-included complete bootstrap; existing view/ACL/admin function unchanged');
   } finally {await db.exec('ROLLBACK; RESET ROLE');}
 }
