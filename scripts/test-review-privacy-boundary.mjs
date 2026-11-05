@@ -6,6 +6,7 @@ import { draftUrl } from './review-privacy-contract.mjs';
 const ids={a:'11111111-1111-4111-8111-111111111111',b:'22222222-2222-4222-8222-222222222222',visible:'33333333-3333-4333-8333-333333333333',hidden:'44444444-4444-4444-8444-444444444444',ra:'55555555-5555-4555-8555-555555555555',rb:'66666666-6666-4666-8666-666666666666',rh:'77777777-7777-4777-8777-777777777777'};
 const draft=await readFile(draftUrl,'utf8');
 async function fixture(legacy=true){
+ const observed=legacy==='observed';
  const db=new PGlite();
  await db.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role BYPASSRLS;
  CREATE SCHEMA auth; CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
@@ -16,8 +17,8 @@ async function fixture(legacy=true){
  CREATE TABLE pet_feeding_logs(id uuid PRIMARY KEY,user_id uuid,pet_id uuid,product_id uuid,feeding_date date,feeding_time time,meal_period text,amount numeric,unit text,preference_level smallint,memo text,reaction_note text,updated_at timestamptz);
  CREATE TABLE reviews(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),user_id uuid,product_id uuid REFERENCES products,rating int CHECK(rating BETWEEN 1 AND 5),content text NOT NULL DEFAULT '',created_at timestamptz DEFAULT now());
  ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
- CREATE POLICY initial_read ON reviews FOR SELECT TO ${legacy?'anon,authenticated USING(true)':'authenticated USING(auth.uid()=user_id)'};
- CREATE POLICY "Users delete own reviews" ON reviews FOR DELETE TO authenticated USING(auth.uid()=user_id);
+ CREATE POLICY ${observed?'"Anyone can read reviews"':'initial_read'} ON reviews FOR SELECT TO ${observed?'PUBLIC USING(true)':legacy?'anon,authenticated USING(true)':'authenticated USING(auth.uid()=user_id)'};
+ CREATE POLICY "Users delete own reviews" ON reviews FOR DELETE TO ${observed?'PUBLIC':'authenticated'} USING(auth.uid()=user_id);
  GRANT SELECT,INSERT,UPDATE,DELETE ON reviews TO anon,authenticated,service_role;
  GRANT SELECT,UPDATE ON products TO service_role;
  CREATE VIEW product_ratings WITH(security_barrier=true) AS SELECT id,product_id,rating,created_at,(user_id=auth.uid()) is_mine FROM reviews;
@@ -28,6 +29,14 @@ async function fixture(legacy=true){
  INSERT INTO products(id,is_visible,verification_status) VALUES('${ids.visible}',true,'pending'),('${ids.hidden}',false,'verified');
  INSERT INTO reviews(id,user_id,product_id,rating,content) VALUES('${ids.ra}','${ids.a}','${ids.visible}',5,'synthetic private A'),('${ids.rb}','${ids.b}','${ids.visible}',3,'synthetic private B'),('${ids.rh}','${ids.a}','${ids.hidden}',1,'synthetic hidden product');`);
  for(const f of ['20260914144655_sync_product_review_aggregates.sql','20261104110000_admin_support_management.sql'])await db.exec(await readFile(new URL('../supabase/migrations/'+f,import.meta.url),'utf8'));
+ if(observed)await db.exec(`CREATE ROLE observed_review_owner NOLOGIN BYPASSRLS;
+ GRANT USAGE ON SCHEMA public,auth,private TO observed_review_owner;
+ GRANT SELECT ON products TO observed_review_owner;
+ -- Match supplied operational effective grants; these are fixture setup only,
+ -- not new grants in the deployment SQL or a claim that migrations imply them.
+ GRANT EXECUTE ON FUNCTION refresh_product_review_aggregate(uuid),sync_product_review_aggregate() TO service_role;
+ ALTER TABLE reviews OWNER TO observed_review_owner;
+ ALTER VIEW product_ratings OWNER TO observed_review_owner;`);
  return db;
 }
 async function as(db,role,uid,run){
@@ -42,11 +51,37 @@ const snapshot=async db=>(await rows(db,`SELECT
  (SELECT jsonb_agg(to_jsonb(a)) FROM admin_audit_log a) AS audit,
  (SELECT relacl::text FROM pg_class WHERE oid='reviews'::regclass) AS acl,
  md5(pg_get_viewdef('product_ratings'::regclass,true)) AS view_hash`))[0];
-for(const legacy of [true,false])test(`real PostgreSQL read boundary with ${legacy?'legacy permissive':'existing owner'} policy`,async t=>{
+for(const legacy of [true,false,'observed'])test(`real PostgreSQL read boundary with ${legacy==='observed'?'operational-metadata':legacy?'legacy permissive':'existing owner'} policy`,async t=>{
  const db=await fixture(legacy);try{
  await t.test('reproduces legacy risk conditionally without live data',async()=>{
   const n=await as(db,'anon',null,()=>rows(db,'SELECT id FROM reviews'));
   assert.equal(n.length,legacy?3:0);
+ });
+ if(legacy==='observed')await t.test('matches supplied operational ACL, policies and view/function definition fingerprints before hardening',async()=>{
+  const m=(await rows(db,await readFile(new URL('./sql/review-privacy-metadata-select.sql',import.meta.url),'utf8')))[0].review_privacy_metadata;
+  assert.deepEqual(m.reviews_rls,{enabled:true,forced:false});
+  assert.deepEqual(m.policies.map(p=>[p.policyname,p.cmd,p.roles,p.permissive,p.definition_fingerprint]),[
+   ['Anyone can read reviews','SELECT',['public'],'PERMISSIVE','b326b5062b2f0e69046810717534cb09'],
+   ['Users delete own reviews','DELETE',['public'],'PERMISSIVE','19300d155780585259ede73ac370586c'],
+   ['Users insert own reviews','INSERT',['authenticated'],'PERMISSIVE','c2d554d8298649ad6e31be9b4471d7e0']]);
+  for(const role of ['anon','authenticated']){
+   assert.deepEqual(m.table_privileges[role],{select:true,insert:true,update:false,delete:true});
+   assert.ok(m.review_columns.every(c=>c.privileges[role].select && c.privileges[role].insert && !c.privileges[role].update));
+  }
+  assert.equal(m.ratings_view.owns_reviews,true);assert.equal(m.ratings_view.owner_bypasses_rls,true);assert.equal(m.ratings_view.owner_is_superuser,false);
+  assert.deepEqual(m.ratings_view.reloptions,['security_barrier=true']);
+  assert.equal(m.ratings_view.definition_fingerprint,'7b9c5a38ceb443f2c1fac0f81def9315');
+  const expected={
+   'admin_support_correct(text,uuid,jsonb,jsonb,text,text)':'54382251f95b7c47aaaf0231ab821be0',
+   'refresh_product_review_aggregate(uuid)':'0473a9b076b6ac2b71fa8b3cdc873013',
+   'sync_product_review_aggregate()':'4129f994337eec8a5c513ac8d903b71e'};
+  for(const f of m.admin_function_privileges){assert.equal(f.definition_fingerprint,expected[f.signature]);assert.equal(f.security_definer,true);assert.deepEqual(f.execute,{anon:false,authenticated:false,service_role:true});}
+  assert.equal(Object.keys(expected).length,m.admin_function_privileges.length);
+  for(const [role,uid] of [['anon',null],['authenticated',ids.b]])await as(db,role,uid,async()=>{
+   const raw=await rows(db,'SELECT user_id,content,product_id FROM reviews');
+   assert.equal(raw.length,3);assert.ok(raw.some(r=>r.user_id===ids.a && r.content==='synthetic private A'));
+   assert.ok(raw.some(r=>r.product_id===ids.hidden));
+  });
  });
  const before=await snapshot(db);await apply(db);assert.deepEqual(await snapshot(db),before);
  await t.test('anon gets public stars only, no raw rows/identity/free text or hidden product reviews',async()=>{
