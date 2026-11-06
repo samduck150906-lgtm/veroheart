@@ -14,6 +14,10 @@ assert(['127.0.0.1', 'localhost', '[::1]'].includes(admin.hostname), 'Loopback P
 assert.equal(admin.username, 'postgres');
 assert.equal(admin.password, '', 'Use a disposable trust-authenticated local service, no credentials');
 assert.equal(admin.pathname, '/postgres');
+// libpq query parameters can override the visible URI host/user: reject them.
+assert([...admin.searchParams.keys()].every(key => key === 'sslmode'), 'No connection-target overrides');
+assert(admin.searchParams.getAll('sslmode').length <= 1);
+assert(!admin.searchParams.has('sslmode') || admin.searchParams.get('sslmode') === 'disable');
 admin.searchParams.set('sslmode', 'disable');
 const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('SUPABASE_') && !key.startsWith('PG')));
 const resultsDir = resolve(process.env.REVIEW_PRIVACY_RESULTS || '.artifacts/review-privacy-cli');
