@@ -103,7 +103,7 @@ const unchangedFailure = (fixture, result, expectedCode) => {
   assert.equal(after.ledgerCount, 0);
   assert.deepEqual(after.events, []);
   assert.deepEqual(snapshot(fixture.uri), fixture.before);
-  records.push({ case: fixture.label, passed: true, expectedCode, candidateBytesUnchanged: fixture.candidateBytesUnchanged, partialApplication: false });
+  records.push({ case: fixture.label, passed: true, expectedCode, candidateBytesUnchanged: fixture.candidateBytesUnchanged, partialApplication: false, elapsedMs: result.elapsedMs, observedState: after });
 };
 
 try {
@@ -122,11 +122,11 @@ try {
   assert.equal(new Set(applied.events.map(e => e.txid)).size, 1, 'Policy DDL and ledger INSERT must share a transaction');
   assert(applied.events.every(e => e.lock_timeout === '5s'), 'Local timeout must remain active through the ledger INSERT');
   assert.deepEqual(snapshot(success.uri), success.before);
-  records.push({ case: 'success', passed: true, candidateBytesUnchanged: true, onePolicy: true, oneLedger: true, oneSplitStatement: true, sameBackendAndTransaction: true });
+  records.push({ case: 'success', passed: true, candidateBytesUnchanged: true, onePolicy: true, oneLedger: true, oneSplitStatement: true, sameBackendAndTransaction: true, observedState: applied });
   const again = await apply(success);
   assert.equal(again.status, 0, again.stderr);
   assert.deepEqual(state(success.uri), applied);
-  records.push({ case: 'successful-rerun', passed: true, noReapplication: true, candidateBytesUnchanged: true });
+  records.push({ case: 'successful-rerun', passed: true, noReapplication: true, candidateBytesUnchanged: true, observedState: state(success.uri) });
 
   for (const [label, timing] of [['before-policy', 'ddl_command_start'], ['after-policy', 'ddl_command_end']]) {
     const f = await fresh(label);
@@ -161,7 +161,7 @@ try {
   assert.notEqual(naiveResult.status, 0);
   assert.equal(state(naive.uri).policyCount, 1, 'Counterexample: authored COMMIT precedes CLI ledger INSERT');
   assert.equal(state(naive.uri).ledgerCount, 0);
-  records.push({ case: 'rejected-authored-commit', passed: true, counterexample: true, policyCommittedBeforeFailedLedger: true, notReleaseCandidate: true });
+  records.push({ case: 'rejected-authored-commit', passed: true, counterexample: true, policyCommittedBeforeFailedLedger: true, notReleaseCandidate: true, observedState: state(naive.uri) });
 
   const old = await fresh('rejected-top-level-lock', "SET LOCAL lock_timeout='5s';\nLOCK TABLE public.reviews IN ACCESS EXCLUSIVE MODE;\n" + migration);
   unchangedFailure(old, await apply(old), '25P01');
