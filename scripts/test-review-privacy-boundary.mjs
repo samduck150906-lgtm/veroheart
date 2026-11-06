@@ -44,7 +44,8 @@ async function as(db,role,uid,run){
  try{return await run();}finally{await db.exec('RESET ROLE');}
 }
 const rows=async(db,sql,args=[]) => (await db.query(sql,args)).rows;
-const apply=async db=>{try{await db.exec('BEGIN;'+draft+'COMMIT;');}catch(e){await db.exec('ROLLBACK');throw e;}};
+// No external BEGIN: test the shipped single DO in its normal statement context.
+const apply=async db=>{await db.exec(draft);};
 const snapshot=async db=>(await rows(db,`SELECT
  (SELECT jsonb_agg(to_jsonb(r) ORDER BY id) FROM reviews r) AS reviews,
  (SELECT jsonb_agg(to_jsonb(p) ORDER BY id) FROM products p) AS products,

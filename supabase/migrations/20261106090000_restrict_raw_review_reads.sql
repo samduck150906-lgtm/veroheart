@@ -2,13 +2,14 @@
 -- Apply only through a separately approved, exact-only tracked release bundle.
 -- Existing release exposes stars via product_ratings; raw legacy rows remain
 -- author/admin data per the existing account_privacy_release contract.
--- No authored outer BEGIN/COMMIT: a reviewed CLI migration must own the
--- transaction including its normal history insert. Never paste as standalone SQL.
-SET LOCAL lock_timeout = '5s';
-LOCK TABLE public.reviews IN ACCESS EXCLUSIVE MODE;
+-- A single DO statement keeps lock/guard/DDL together. Do NOT add authored
+-- BEGIN/COMMIT: CLI 2.118.0 must retain its normal batch + ledger INSERT path.
+-- Real CLI/PostgreSQL failure tests, not a caller BEGIN, establish this contract.
 DO $$
 DECLARE v_columns text[]; v_types text[]; existing_policy record;
 BEGIN
+  PERFORM set_config('lock_timeout', '5s', true);
+  LOCK TABLE public.reviews IN ACCESS EXCLUSIVE MODE;
   IF NOT (SELECT relrowsecurity FROM pg_class WHERE oid='public.reviews'::regclass) THEN
     RAISE EXCEPTION 'Existing reviews RLS is disabled: review all operation policies first';
   END IF;
