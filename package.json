@@ -24,6 +24,7 @@
     "test:catalog": "node --test scripts/import-official-catalog.test.mjs",
     "db:prepare-local": "node scripts/prepare-local-supabase.mjs",
     "test:bootstrap": "node scripts/validate-local-bootstrap.mjs",
+    "test:review-privacy": "node --test scripts/test-review-privacy-boundary.mjs",
     "test:schemas": "node scripts/test-scan-schema.mjs && node scripts/test-account-schema.mjs && node scripts/test-catalog-schema.mjs && node scripts/test-admin-support-schema.mjs && node scripts/test-catalog-source-schema.mjs"
   },
   "dependencies": {
