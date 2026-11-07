@@ -8,6 +8,7 @@ import { pg_trgm } from '@electric-sql/pglite/contrib/pg_trgm';
 import { uuid_ossp } from '@electric-sql/pglite/contrib/uuid_ossp';
 import { LEGACY_LABEL_MIGRATION, prepareLocalSupabase } from './prepare-local-supabase.mjs';
 import { assertProductPublication, assertPublicationMigrationPreservesIntent, PRODUCT_PUBLICATION_MIGRATION } from './test-product-publication.mjs';
+import { assertPublicProductProjectionContract } from './product-projection-contract.mjs';
 import { assertReviewReadBoundaryOnBootstrap } from './review-privacy-contract.mjs';
 
 const repository = fileURLToPath(new URL('../', import.meta.url));
@@ -59,6 +60,10 @@ try {
     }
     console.log('Applied', file);
   }
+  console.log('Public product SQL column/FK contract', await assertPublicProductProjectionContract(db));
+  await db.exec('SET ROLE anon');
+  await assertPublicProductProjectionContract(db);
+  await db.exec('RESET ROLE');
   assert.equal((await db.query('SELECT count(*)::integer AS n FROM public.products')).rows[0].n, 0);
   assert.equal((await db.query("SELECT count(*)::integer AS n FROM pg_namespace WHERE nspname='local_bootstrap'")).rows[0].n, 0);
   assert.equal((await db.query("SELECT public FROM storage.buckets WHERE id='feeding-log-photos'")).rows[0].public, false);
