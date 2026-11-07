@@ -22,6 +22,8 @@ jobs:
       - run: npm run lint
       - name: Nutrition evidence regression
         run: node --experimental-vm-modules --test scripts/feed-nutrition-evidence.test.mjs
+      - name: Conditional review privacy SQL and role regression
+        run: npm run test:review-privacy
       - run: npm test
       - run: npm run test:catalog
       - run: npm run test:bootstrap

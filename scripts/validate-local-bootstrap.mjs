@@ -8,6 +8,7 @@ import { pg_trgm } from '@electric-sql/pglite/contrib/pg_trgm';
 import { uuid_ossp } from '@electric-sql/pglite/contrib/uuid_ossp';
 import { LEGACY_LABEL_MIGRATION, prepareLocalSupabase } from './prepare-local-supabase.mjs';
 import { assertProductPublication, assertPublicationMigrationPreservesIntent, PRODUCT_PUBLICATION_MIGRATION } from './test-product-publication.mjs';
+import { assertReviewReadBoundaryOnBootstrap } from './review-privacy-contract.mjs';
 
 const repository = fileURLToPath(new URL('../', import.meta.url));
 const db = new PGlite({ extensions: { pgcrypto, pg_trgm, uuid_ossp } });
@@ -98,6 +99,7 @@ try {
   await db.exec('RESET ROLE');
   console.log('PASS: current canonical/raw ingredient search; stale legacy excluded, empty current labels respected, anon RLS works');
   await assertProductPublication(db);
+  await assertReviewReadBoundaryOnBootstrap(db);
   await db.exec("INSERT INTO public.products(name,brand_name,is_visible) VALUES ('local guard test fixture','local test',false)");
   await assert.rejects(db.exec(await readFile(path.join(repository, 'supabase/local-bootstrap/before-legacy-labels.sql'), 'utf8')), /empty products table/);
   console.log(JSON.stringify({ passed: true, historicalMigrations: prepared.historicalMigrations, localMigrations: files.length, skippedKnownOrphanRows: orphanCount, fabricatedCatalogRows: 0, historicalFilesUnchanged: true, foreignKeysEnforced: true, storagePrivate: true }, null, 2));
