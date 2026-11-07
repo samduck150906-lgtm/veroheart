@@ -20,7 +20,7 @@ import { DEFAULT_USER_PET_PROFILE, type Product } from '../types';
 // DB 가 작아 보이는 역효과만 있었다.
 
 export default function Home() {
-  const { profile, recentViews, isLoggedIn, catalogRevision } = useStore();
+  const { profile, recentViews, isLoggedIn, catalogRevision, catalogError } = useStore();
   const navigate = useNavigate();
   const categories = useProductCategories();
   const hasPetProfile = isLoggedIn && isRealPetProfile(profile);
@@ -72,6 +72,8 @@ export default function Home() {
         <title>베로로 — 사료·간식·영양제 성분 분석</title>
         <meta name="description" content="반려동물 사료·간식·영양제의 원재료와 성분을 분석하고, 먹은 제품을 기록해 주세요." />
       </Helmet>
+
+      {catalogError && <p role="alert" style={{ padding: 14, borderRadius: 12, background: 'var(--caution-bg)', lineHeight: 1.5 }}>{catalogError}</p>}
 
       <h1 style={{ margin: '14px 0 4px', fontSize: '29px', fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 1.18 }}>
         우리 아이에게<br />맞는지 확인해 주세요

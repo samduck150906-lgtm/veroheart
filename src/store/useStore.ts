@@ -103,6 +103,8 @@ interface StoreState {
   isLoadingProducts: boolean;
   isLoadingCatalog: boolean;
   isLoadingDetail: boolean;
+  productDetailError: string;
+  catalogError: string;
   isInitializing: boolean;
   initApp: () => Promise<void>;
   fetchProducts: (background?: boolean) => Promise<void>;
@@ -140,6 +142,8 @@ export const useStore = create<StoreState>((set, get) => ({
   isLoadingProducts: false,
   isLoadingCatalog: false,
   isLoadingDetail: false,
+  productDetailError: '',
+  catalogError: '',
   isInitializing: true,
 
   signOut: async () => { await get().logout(); },
@@ -304,15 +308,16 @@ export const useStore = create<StoreState>((set, get) => ({
 
   fetchProducts: async (background = false) => {
     const requestId = ++productsRequestId;
-    if (!background) set({ isLoadingProducts: true, isLoadingCatalog: true });
+    if (!background) set({ isLoadingProducts: true, isLoadingCatalog: true, catalogError: '' });
     try {
       const data = await getProducts();
       if (requestId !== productsRequestId) return;
-      set((state) => ({ products: data, catalogRevision: state.catalogRevision + 1, isLoadingCatalog: false, isLoadingProducts: state.isLoadingDetail }));
+      set((state) => ({ products: data, catalogRevision: state.catalogRevision + 1, isLoadingCatalog: false, isLoadingProducts: state.isLoadingDetail, catalogError: '' }));
     } catch (err) {
       console.error(err);
       if (requestId !== productsRequestId) return;
-      set((state) => ({ products: [], catalogRevision: state.catalogRevision + 1, isLoadingCatalog: false, isLoadingProducts: state.isLoadingDetail }));
+      set((state) => ({ products: [], catalogRevision: state.catalogRevision + 1, isLoadingCatalog: false, isLoadingProducts: state.isLoadingDetail,
+        catalogError: '제품 목록을 불러오지 못했습니다. 검색 결과가 없는 상태와 다릅니다.' }));
     }
   },
 
@@ -321,12 +326,12 @@ export const useStore = create<StoreState>((set, get) => ({
     const requestId = productDetailRequestId;
     const isStale = () => requestId !== productDetailRequestId;
 
-    if (!background) set({ isLoadingProducts: true, isLoadingDetail: true, selectedProduct: null });
+    if (!background) set({ isLoadingProducts: true, isLoadingDetail: true, selectedProduct: null, productDetailError: '' });
     try {
       const data = await getProductDetail(id);
       if (isStale()) return;
       if (!data) { ++productsRequestId; ++recentViewsRevision; }
-      set((state) => ({ selectedProduct: data ?? null, isLoadingDetail: false, isLoadingProducts: data ? state.isLoadingCatalog : false,
+      set((state) => ({ selectedProduct: data ?? null, productDetailError: '', isLoadingDetail: false, isLoadingProducts: data ? state.isLoadingCatalog : false,
         ...(!data ? { isLoadingCatalog: false, catalogRevision: state.catalogRevision + 1 } : {}),
         ...(!data ? { products: state.products.filter((p) => p.id !== id), recentViews: state.recentViews.filter((p) => p.id !== id) } : {}),
       }));
@@ -337,6 +342,7 @@ export const useStore = create<StoreState>((set, get) => ({
       ++recentViewsRevision;
       if (!background) notify.error('상품 정보를 가져오지 못했습니다.');
       set((state) => ({ selectedProduct: null, isLoadingDetail: false, isLoadingCatalog: false, isLoadingProducts: false,
+        productDetailError: '제품 정보를 불러오지 못했습니다. 제품 정보가 없는 것으로 판정하지 않았습니다.',
         catalogRevision: state.catalogRevision + 1,
         products: state.products.filter((p) => p.id !== id), recentViews: state.recentViews.filter((p) => p.id !== id),
       }));
