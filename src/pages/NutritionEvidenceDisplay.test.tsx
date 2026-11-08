@@ -54,11 +54,12 @@ describe('nutrition evidence on shared public display paths (synthetic data, no 
     expect(screen.getByText('이 제품의 전성분 표기가 아직 등록되지 않았습니다.')).toBeTruthy();
     expect(screen.queryByText(/원료 분석이 완료/)).toBeNull();
   });
-  it('does not describe an unloaded ingredient projection as an empty ingredient list', () => {
-    useStore.setState({ selectedProduct: { ...product, analysisStatus: 'unavailable', ingredientDataLoaded: false, ingredients: [] } });
+  it.each(['unavailable', 'ready'] as const)('does not treat unloaded ingredients as absent or fully assessed (stored: %s)', analysisStatus => {
+    useStore.setState({ selectedProduct: { ...product, analysisStatus, ingredientDataLoaded: false,
+      ingredients: analysisStatus === 'ready' ? product.ingredients : [] } });
     show(<AnalysisResult />);
     expect(screen.getByText('상세 화면에서 전성분 정보를 확인해 주세요.')).toBeTruthy();
-    expect(screen.queryByText(/전성분 표기가 아직 등록되지|등록된 원료 정보가 없습니다/)).toBeNull();
+    expect(screen.queryByText(/전성분 표기가 아직 등록되지|등록된 원료 정보가 없습니다|원료 분석이 완료되었습니다/)).toBeNull();
   });
   it.each([0, 1])('keeps unmatched/partially matched labels distinct from no label (known: %s)', known => {
     const pending = { ...product, analysisStatus: 'unavailable' as const, ingredientDataLoaded: true,
@@ -69,8 +70,8 @@ describe('nutrition evidence on shared public display paths (synthetic data, no 
     expect(screen.queryByText('등록된 원료 정보가 없습니다')).toBeNull();
     expect(resolveProductDisplayVerdict(pending, profile).canShowScore).toBe(false);
   });
-  it('keeps a conflicting label warning instead of converting it to an absence message', () => {
-    useStore.setState({ selectedProduct: { ...product, analysisStatus: 'blocked' } });
+  it.each([true, false])('retains a known conflicting label warning even with an incomplete projection (loaded: %s)', ingredientDataLoaded => {
+    useStore.setState({ selectedProduct: { ...product, analysisStatus: 'blocked', ingredientDataLoaded } });
     show(<AnalysisResult />);
     expect(screen.getByText('원료 정보가 서로 달라 확인이 필요합니다')).toBeTruthy();
   });

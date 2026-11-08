@@ -237,9 +237,11 @@ export default function AnalysisResult() {
   // An unavailable analysis is not evidence of an empty ingredient list.
   // Reuse the detail page's loaded/registered-evidence distinction without
   // promoting stored analysis readiness or changing score eligibility.
-  const readinessText = product && (product.ingredientDataLoaded === false || display?.analysisReadiness.status === 'unavailable')
+  const readinessStatus = display?.analysisReadiness.status ?? 'unavailable';
+  const readinessText = product && (readinessStatus === 'unavailable' ||
+    (readinessStatus === 'ready' && product.ingredientDataLoaded === false))
     ? describeIngredientAvailability(product).detail
-    : analysisReadinessCopy(display?.analysisReadiness.status ?? 'unavailable');
+    : analysisReadinessCopy(readinessStatus);
   const feedAnalysis = useMemo(() => product ? analyzeFeed(product, profile) : null, [product, profile]);
   const report = useMemo(
     () => product && canShowScore && hasPetProfile ? generateAnalysisReport(product, profile) : null,
