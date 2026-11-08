@@ -37,3 +37,25 @@ for the unresolved development tooling path. No PR-specific exception is used.
 No operating data, database access, deployment or migration is involved. Linux
 CI performs installation/build validation; blocked Mac native bindings are not
 executed, reinstalled or bypassed.
+
+## Final release preparation
+
+The independent workflow uses the original landing web steps verbatim on
+ubuntu-latest, Node from .nvmrc (24), npm11.13.0: landing npm ci, then
+lint/typecheck/build, then audit at moderate. It does not change or bypass the
+original web job's order or audit failure. Independent landing success must not
+be reported as success of the full web job.
+
+A separate installation receipt compares declarations, lockfile versions,
+package dependencies and npm ci's installed integrity metadata. Its artifact
+contains only public package metadata, not environment variables or operating
+data. The explicitly named temporary integration branch additionally builds
+main + this dependency patch + the separate mobile layout PR and runs only
+the focused detail/layout tests justified by that combination. No integration
+commit is copied back into either feature PR; no verification PR is required.
+
+The 2026-11-09 recheck found no newer solution in the official latest metadata:
+typescript-eslint and typescript-estree remain8.72.1, with minimatch^10.2.2.
+The residual seven moderate tooling entries remain a release condition. Resume
+only for a supported patched dependency range/backport; no further candidate
+installation or failed override experiment is justified by unchanged metadata.
