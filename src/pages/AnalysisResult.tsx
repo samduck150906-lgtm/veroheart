@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { gradeVerdict } from '../lib/veroroDesign';
 import { AlertCircle, Check, Sparkles } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
@@ -9,6 +8,7 @@ import type { CompatibilityGrade } from '../utils/score';
 import { isRealPetProfile, resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import { analyzeFeed } from '../analysis/feedAnalysis';
 import { analysisReadinessCopy } from '../analysis/analysisReadiness';
+import { describeIngredientAvailability } from '../utils/productDataCompleteness';
 import { runScoringPipeline, type ScoringPipelineResult } from '../analysis/scoringPipeline';
 import { evaluateDiseases, type ActiveDiseaseResult } from '../analysis/breedDiseaseEngine';
 import { concernsToDiseaseIds } from '../analysis/adapter';
@@ -64,11 +64,13 @@ function ReportHero({
   grade,
   productName,
   headline,
+  scopeLabel,
 }: {
   score: number;
   grade: CompatibilityGrade;
   productName: string;
   headline: string;
+  scopeLabel: string;
 }) {
   const r = 50;
   const circumference = 2 * Math.PI * r; // ≈314 — 프로토타입 stroke-dasharray와 동일
@@ -77,6 +79,7 @@ function ReportHero({
   return (
     <div className="vr-bleed" style={{ background: 'var(--vr-inverse)', padding: '24px 16px 28px', color: 'var(--vr-on-inverse)' }}>
       <div style={{ fontSize: 12.5, fontWeight: 800, color: '#FFD90A', letterSpacing: '.05em' }}>분석 리포트</div>
+      <div style={{ fontSize: 12.5, lineHeight: 1.5 }}>{scopeLabel} 등급 · 종합 영양 적합성 보장 아님</div>
       <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: '-.03em', marginTop: 5, lineHeight: 1.3 }}>{productName}</div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginTop: 20 }}>
@@ -231,7 +234,14 @@ export default function AnalysisResult() {
   );
   const canShowScore = display?.canShowScore === true;
   const breakdown = display && hasPetProfile ? display.breakdown : null;
-  const readinessText = analysisReadinessCopy(display?.analysisReadiness.status ?? 'unavailable');
+  // An unavailable analysis is not evidence of an empty ingredient list.
+  // Reuse the detail page's loaded/registered-evidence distinction without
+  // promoting stored analysis readiness or changing score eligibility.
+  const readinessStatus = display?.analysisReadiness.status ?? 'unavailable';
+  const readinessText = product && (readinessStatus === 'unavailable' ||
+    (readinessStatus === 'ready' && product.ingredientDataLoaded === false))
+    ? describeIngredientAvailability(product).detail
+    : analysisReadinessCopy(readinessStatus);
   const feedAnalysis = useMemo(() => product ? analyzeFeed(product, profile) : null, [product, profile]);
   const report = useMemo(
     () => product && canShowScore && hasPetProfile ? generateAnalysisReport(product, profile) : null,
@@ -373,7 +383,7 @@ export default function AnalysisResult() {
       <style>{`@keyframes veroFadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }`}</style>
 
       {canShowScore && display ? (
-        <ReportHero score={display.score} grade={display.grade} productName={product.name} headline={report?.summary || gradeVerdict(display.grade)} />
+        <ReportHero score={display.score} grade={display.grade} productName={product.name} headline={report?.summary || feedAnalysis?.summary || display.nutrition.detail} scopeLabel={display.nutrition.scopeLabel} />
       ) : (
         <section role="status" style={{ background: 'var(--secondary)', padding: 24, borderRadius: 16 }}>
           <h1 style={{ fontSize: 20 }}>{product.name}</h1>

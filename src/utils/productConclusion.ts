@@ -1,6 +1,8 @@
 import type { Product, UserPetProfile } from '../types';
 import type { AnalysisReport } from './analysis';
 import { countAllergyCautions, countAllergyHits } from './score';
+import { getNutritionPresentation, isObservedPercent } from '../analysis/nutritionReadiness';
+import { getAssessedNutritionWarnings } from '../analysis/nutritionWarnings';
 
 export type ConclusionTone = 'match' | 'caution' | 'alert';
 
@@ -100,12 +102,28 @@ export function buildProductConclusion(
     }
   }
 
+  const nutrition = getNutritionPresentation(product.guaranteedAnalysis);
+  const danger = (product.ingredients ?? []).filter(ingredient => ingredient.riskLevel === 'danger');
+  if (danger.length > 0) {
+    return { tone: 'alert', headline: '위험 등급 성분을 확인해 주세요',
+      subline: `${danger.map(ingredient => ingredient.nameKo).join(', ')} 성분이 확인됐습니다.${nutrition.limited ? ` ${nutrition.notice}` : ''}` };
+  }
+
+  const nutritionWarnings = getAssessedNutritionWarnings(product, profile);
+  if (nutritionWarnings.length > 0) {
+    return {
+      tone: 'caution',
+      headline: product.requiresVeterinaryGuidance ? '수의사 상담이 필요한 제품입니다' : '확인된 영양 주의 항목이 있습니다',
+      subline: `${nutritionWarnings.join(' ')}${nutrition.limited ? ` ${nutrition.notice}` : ''}`,
+    };
+  }
+
   // 4) 데이터 부족 — 원재료·보장성분이 모두 없으면 점수로 단정하지 않는다
   const hasIngredients = (product.ingredients?.length ?? 0) > 0;
   const guaranteedAnalysis = product.guaranteedAnalysis;
   const hasNutrition = Boolean(
     guaranteedAnalysis &&
-      ((guaranteedAnalysis.crudeProtein ?? 0) > 0 || (guaranteedAnalysis.crudeFat ?? 0) > 0),
+      [guaranteedAnalysis.crudeProtein, guaranteedAnalysis.crudeFat].some(isObservedPercent),
   );
   if (!hasIngredients && !hasNutrition) {
     return {
@@ -116,6 +134,9 @@ export function buildProductConclusion(
   }
 
   // 5) 제품 기본 평가 — 성분·건강·고민 적합도 통합 점수
+  if (nutrition.limited) {
+    return { tone: 'caution', headline: `${nutrition.scopeLabel} 점수입니다`, subline: nutrition.notice };
+  }
   const score = report?.score ?? 0;
   if (score >= 85) {
     return {

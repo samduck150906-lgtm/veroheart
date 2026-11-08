@@ -14,6 +14,7 @@
 import type { Product, UserPetProfile } from '../types';
 import { allergyCautionMatches, allergyIngredientNames } from './allergyFamilyMatcher';
 import type { GuaranteedAnalysis } from './types';
+import { getNutritionPresentation, getNutritionReadiness, isObservedPercent } from './nutritionReadiness';
 import {
   analysisReadinessCopy,
   readinessFromStoredStatus,
@@ -142,11 +143,6 @@ function derFactor(profile: UserPetProfile): number {
   return 1.6; // 성체 유지(평균)
 }
 
-function isObservedPercent(value: unknown): boolean {
-  return (typeof value === 'number' || (typeof value === 'string' && value.trim() !== ''))
-    && Number.isFinite(Number(value)) && Number(value) >= 0 && Number(value) <= 100;
-}
-
 export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnalysis {
   const species: 'dog' | 'cat' = profile.species === 'Cat' ? 'cat' : 'dog';
   const productType = detectProductType(product);
@@ -159,6 +155,7 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
 
   // ── 1) 영양 계산 (보장성분 실측치가 있을 때만) ──
   const ga: GuaranteedAnalysis | undefined = product.guaranteedAnalysis;
+  const nutritionPresentation = getNutritionPresentation(ga);
   const hasNutritionData = Boolean(
     ga && [ga.crudeProtein, ga.crudeFat].some(isObservedPercent),
   );
@@ -181,11 +178,7 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
     const ash = toPercent(ga.crudeAsh);
     const moisture = toPercent(ga.moisture);
     const carb = Math.max(0, Math.round((100 - protein - fat - fiber - ash - moisture) * 10) / 10);
-    const proximateValues = [ga.crudeProtein, ga.crudeFat, ga.crudeFiber, ga.crudeAsh, ga.moisture];
-    const canEstimateEnergy = proximateValues.every(isObservedPercent)
-      && proximateValues.reduce<number>((sum, value) => sum + Number(value), 0) <= 100;
-    const canEvaluateProteinFat = [ga.crudeProtein, ga.crudeFat, ga.moisture].every(isObservedPercent)
-      && moisture < 100 && protein + fat + moisture <= 100;
+    const { canEstimateEnergy, canEvaluateProteinFat } = getNutritionReadiness(ga);
     macros = canEstimateEnergy ? { protein, fat, fiber, ash, moisture, carb } : null;
 
     macrosDMB = canEvaluateProteinFat ? {
@@ -302,20 +295,29 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
     : analysisReadinessCopy(analysisReadiness.status);
   if (iq.total === 0 && !product.unknownIngredientTerms?.length) cautions.push('전성분이 아직 등록되지 않아 원료 품질은 평가하지 못했습니다');
   else if (analysisReadiness.status !== 'ready') cautions.push(readinessMessage);
+  if (nutritionPresentation.limited) cautions.push(nutritionPresentation.notice);
 
   // ── 요약(한 줄) ──
-  const summary = (() => {
+  const primarySummary = (() => {
     // 데이터 부족을 "미포함"으로 단정하지 않는다. 원재료·보장성분이 모두 없으면
     // grade 기반 부정 문장("주의가 필요한 성분…") 대신 정보 부족을 명시한다.
     if (iq.total === 0 && !hasNutritionData && !product.unknownIngredientTerms?.length) return '원재료·영양 정보가 부족해 아직 정확히 평가하기 어렵습니다.';
     if (allergyHits.length > 0) return `${profile.name}가 피해야 할 성분이 있어 급여 전 확인이 필요합니다.`;
     if (allergyCautions.length > 0) return `${profile.name}의 알레르기와 관련된 원료가 있어 급여 전 확인이 필요합니다.`;
+    if (iq.dangerCount > 0) return `위험 등급 성분 ${iq.dangerCount}개가 확인돼 급여 전 확인이 필요합니다.`;
+    if (iq.cautionCount > 0) return `주의 등급 성분 ${iq.cautionCount}개가 확인돼 성분표 확인이 필요합니다.`;
+    if (product.requiresVeterinaryGuidance) return '수의사 상담이 필요한 제품입니다. 처방과 급여량은 담당 수의사의 안내를 따라 주세요.';
+    if (aafco.evaluated && !aafco.passed) return aafco.details.join(' ');
+    if (caP.note) return caP.note;
     if (analysisReadiness.status !== 'ready') return `${readinessMessage}.`;
-    if (grade === 'A+' || grade === 'A') return iq.firstIsAnimalProtein ? '동물성 단백질 중심의 균형 잡힌 우수한 사료입니다.' : '전반적으로 품질이 우수한 사료입니다.';
-    if (grade === 'B') return '무난하게 급여할 수 있는 사료입니다.';
+    if (nutritionPresentation.limited) return nutritionPresentation.notice;
+    if (grade === 'A+' || grade === 'A') return '등록된 원료·기초 영양 지표 기준으로 점수가 높은 편입니다.';
+    if (grade === 'B') return '등록된 원료·기초 영양 지표와 주의 항목을 함께 참고해 주세요.';
     if (grade === 'C') return '나쁘지 않지만 확인할 점이 몇 가지 있습니다.';
-    return '주의가 필요한 성분이 있어 신중히 선택해 주세요.';
+    return '등록된 원료·기초 영양 지표에서 확인할 항목이 있습니다.';
   })();
+  const summary = nutritionPresentation.limited && !primarySummary.includes(nutritionPresentation.notice)
+    ? `${primarySummary} ${nutritionPresentation.notice}` : primarySummary;
 
   // ── 5) 1일 권장 급여량 (실제 열량 기반) ──
   let feeding: FeedAnalysis['feeding'] = null;
