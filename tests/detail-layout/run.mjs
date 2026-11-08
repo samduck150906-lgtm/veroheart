@@ -43,6 +43,10 @@ try {
     });
     await page.goto(`${base}/?safeArea=${safeArea}`);
     await page.getByRole('heading', { name: '후기 3', exact: true }).waitFor();
+    // Wait for the real entrance animation to release its temporary transform
+    // containing block before measuring fixed footer geometry; do not disable it.
+    await page.waitForFunction(() => getComputedStyle(document.querySelector('.detail-page-root')).transform === 'none'
+      && !document.querySelector('[aria-label="제품 액션"]').getAnimations().some(a => a.playState === 'running'));
     const tools = page.getByRole('group', { name: '빠른 이동 버튼' });
     assert.equal(await page.locator('.bottom-nav').count(), 0, 'Actual detail route has no bottom navigation');
     await page.locator('.app-main').evaluate(el => { el.scrollTop = el.scrollHeight / 3; });
