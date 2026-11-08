@@ -20,6 +20,8 @@ jobs:
       - run: npm install --global npm@11.13.0
       - run: npm ci
       - run: npm run lint
+      - name: Product cleanup safety regression
+        run: npm run test:product-cleanup-safety
       - name: Nutrition evidence regression
         run: node --experimental-vm-modules --test scripts/feed-nutrition-evidence.test.mjs
       - name: Conditional review privacy SQL and role regression
