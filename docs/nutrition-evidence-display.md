@@ -42,3 +42,24 @@
 타입·린트·순수 Node 재현은 로컬, 전체 Vitest/production build는 기존 Linux CI에서 확인한다.
 CI의 기존 audit gate를 낮추지 않는다. 성공/실패 결과는 PR 본문에 실제 실행 기준으로 기록한다.
 운영 화면/실제품 영향 수·실제 영양 정확성은 이번 합성 회귀 검증 범위가 아니다.
+# Registered ingredients versus analysis readiness
+
+The pre-existing analysis heading translated stored `unavailable` readiness as
+"등록된 원료 정보가 없습니다", even when the same detail response contained
+registered ingredients. A synthetic example reproduces this on main and on this
+PR before the presentation correction. This is not evidence of a query failure,
+nor does the existence of ingredient rows establish completed matching or analysis.
+
+For unavailable analysis, the analysis heading now reuses the detail page's
+`describeIngredientAvailability` copy. Loaded empty lists, unloaded ingredient
+projections, and registered ingredients awaiting label/analysis review remain
+distinct. Partial and conflicting matching keep their existing warnings. The
+stored readiness, score eligibility, formulas, ranks and matching rules are
+unchanged; a pending analysis is not promoted to ready. Query failures retain
+the separate error screen rather than being translated to ingredient absence.
+
+Synthetic UI regressions cover these distinctions and retain danger/allergy
+warnings while withholding scores. Normal-ready, nutrient insufficiency and
+species-warning coverage remains in the existing regression suite. Public
+case identities and operating evidence are kept outside this document and tests.
+

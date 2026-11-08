@@ -8,6 +8,7 @@ import type { CompatibilityGrade } from '../utils/score';
 import { isRealPetProfile, resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import { analyzeFeed } from '../analysis/feedAnalysis';
 import { analysisReadinessCopy } from '../analysis/analysisReadiness';
+import { describeIngredientAvailability } from '../utils/productDataCompleteness';
 import { runScoringPipeline, type ScoringPipelineResult } from '../analysis/scoringPipeline';
 import { evaluateDiseases, type ActiveDiseaseResult } from '../analysis/breedDiseaseEngine';
 import { concernsToDiseaseIds } from '../analysis/adapter';
@@ -233,7 +234,12 @@ export default function AnalysisResult() {
   );
   const canShowScore = display?.canShowScore === true;
   const breakdown = display && hasPetProfile ? display.breakdown : null;
-  const readinessText = analysisReadinessCopy(display?.analysisReadiness.status ?? 'unavailable');
+  // An unavailable analysis is not evidence of an empty ingredient list.
+  // Reuse the detail page's loaded/registered-evidence distinction without
+  // promoting stored analysis readiness or changing score eligibility.
+  const readinessText = product && (product.ingredientDataLoaded === false || display?.analysisReadiness.status === 'unavailable')
+    ? describeIngredientAvailability(product).detail
+    : analysisReadinessCopy(display?.analysisReadiness.status ?? 'unavailable');
   const feedAnalysis = useMemo(() => product ? analyzeFeed(product, profile) : null, [product, profile]);
   const report = useMemo(
     () => product && canShowScore && hasPetProfile ? generateAnalysisReport(product, profile) : null,

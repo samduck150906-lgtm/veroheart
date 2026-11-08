@@ -8,6 +8,7 @@ import { NUTRITION_INSUFFICIENT_NOTICE } from '../analysis/nutritionReadiness';
 import { generateAnalysisReport } from '../utils/analysis';
 import { buildProductConclusion } from '../utils/productConclusion';
 import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
+import { describeIngredientAvailability } from '../utils/productDataCompleteness';
 import FeedAnalysisCard from '../components/FeedAnalysisCard';
 import ProductCard from '../components/ProductCard';
 import ProductRow from '../components/ProductRow';
@@ -38,6 +39,50 @@ afterEach(() => { cleanup(); useStore.setState(initial); vi.restoreAllMocks(); }
 const show = (element: React.ReactNode) => render(<HelmetProvider><MemoryRouter>{element}</MemoryRouter></HelmetProvider>);
 
 describe('nutrition evidence on shared public display paths (synthetic data, no API)', () => {
+  it('distinguishes registered ingredients awaiting assessment from absent ingredients in analysis', () => {
+    const pending = { ...product, analysisStatus: 'unavailable' as const, ingredientDataLoaded: true };
+    useStore.setState({ selectedProduct: pending });
+    show(<AnalysisResult />);
+    expect(screen.getByText(describeIngredientAvailability(pending).detail)).toBeTruthy();
+    expect(screen.queryByText('등록된 원료 정보가 없습니다')).toBeNull();
+    expect(resolveProductDisplayVerdict(pending, profile).canShowScore).toBe(false);
+    expect(screen.getByText(/종합 점수·등급과 건강 적합성을 판정할 수 없습니다/)).toBeTruthy();
+  });
+  it('only describes an actually loaded empty ingredient list as unregistered', () => {
+    useStore.setState({ selectedProduct: { ...product, analysisStatus: 'unavailable', ingredientDataLoaded: true, ingredients: [] } });
+    show(<AnalysisResult />);
+    expect(screen.getByText('이 제품의 전성분 표기가 아직 등록되지 않았습니다.')).toBeTruthy();
+    expect(screen.queryByText(/원료 분석이 완료/)).toBeNull();
+  });
+  it('does not describe an unloaded ingredient projection as an empty ingredient list', () => {
+    useStore.setState({ selectedProduct: { ...product, analysisStatus: 'unavailable', ingredientDataLoaded: false, ingredients: [] } });
+    show(<AnalysisResult />);
+    expect(screen.getByText('상세 화면에서 전성분 정보를 확인해 주세요.')).toBeTruthy();
+    expect(screen.queryByText(/전성분 표기가 아직 등록되지|등록된 원료 정보가 없습니다/)).toBeNull();
+  });
+  it.each([0, 1])('keeps unmatched/partially matched labels distinct from no label (known: %s)', known => {
+    const pending = { ...product, analysisStatus: 'unavailable' as const, ingredientDataLoaded: true,
+      ingredients: product.ingredients.slice(0, known), unknownIngredientTerms: ['합성 미검토 원료'] };
+    useStore.setState({ selectedProduct: pending });
+    show(<AnalysisResult />);
+    expect(screen.getByText('확인되지 않은 원료가 있어 부분 분석만 제공합니다')).toBeTruthy();
+    expect(screen.queryByText('등록된 원료 정보가 없습니다')).toBeNull();
+    expect(resolveProductDisplayVerdict(pending, profile).canShowScore).toBe(false);
+  });
+  it('keeps a conflicting label warning instead of converting it to an absence message', () => {
+    useStore.setState({ selectedProduct: { ...product, analysisStatus: 'blocked' } });
+    show(<AnalysisResult />);
+    expect(screen.getByText('원료 정보가 서로 달라 확인이 필요합니다')).toBeTruthy();
+  });
+  it('retains observed danger and allergy warnings while withholding an unavailable analysis', () => {
+    useStore.setState({ profile: { ...profile, allergies: ['닭'] }, selectedProduct: { ...product,
+      analysisStatus: 'unavailable', ingredients: [...product.ingredients,
+        { id: 'synthetic-observed-risk', nameKo: '합성 위험 원료', nameEn: '', purpose: '', riskLevel: 'danger' }] } });
+    show(<AnalysisResult />);
+    expect(screen.getByText(/종합 점수·등급과 건강 적합성을 판정할 수 없습니다/)).toBeTruthy();
+    expect(screen.getAllByText(/합성 위험 원료/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/알레르기|이\(가\) 들어 있습니다/).length).toBeGreaterThan(0);
+  });
   it('keeps 82/A but scopes the feed card and clearly withholds nutrition balance', () => {
     show(<FeedAnalysisCard product={product} profile={profile} />);
     expect(screen.getByText('82')).toBeTruthy();
