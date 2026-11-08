@@ -1,0 +1,93 @@
+name: Independent landing and dependency checks
+on:
+  pull_request:
+    paths:
+      - package.json
+      - package-lock.json
+      - 'landing/**'
+      - .github/workflows/release-independent-checks.yml
+  push:
+    branches: [verify/pr121-pr120-integration]
+
+permissions:
+  contents: read
+
+jobs:
+  landing:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: landing/package-lock.json
+      - run: npm install --global npm@11.13.0
+      - run: npm ci
+        working-directory: landing
+      - run: npm run lint && npm run typecheck && npm run build
+        working-directory: landing
+      - run: npm audit --audit-level=moderate
+        working-directory: landing
+
+  dependency-install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm install --global npm@11.13.0
+      - run: npm ci
+      - name: Verify actual installed subtree against declarations and lock
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
+          const json = path => JSON.parse(readFileSync(path, 'utf8'));
+          const manifest = json('package.json');
+          const lock = json('package-lock.json');
+          const installedLock = json('node_modules/.package-lock.json');
+          assert.deepEqual(manifest.dependencies, lock.packages[''].dependencies);
+          assert.deepEqual(manifest.devDependencies, lock.packages[''].devDependencies);
+          const paths = ['@capacitor/cli', 'rimraf', 'glob', 'glob/node_modules/minimatch',
+            'path-scurry', 'path-scurry/node_modules/lru-cache', '@isaacs/nonrecursive-glob-match',
+            '@typescript-eslint/typescript-estree', '@typescript-eslint/typescript-estree/node_modules/minimatch'];
+          const receipt = paths.map(name => {
+            const path = `node_modules/${name}`;
+            const actual = json(`${path}/package.json`);
+            const expected = lock.packages[path];
+            assert.equal(actual.version, expected.version, path);
+            assert.deepEqual(actual.dependencies ?? {}, expected.dependencies ?? {}, path);
+            assert.equal(installedLock.packages[path].integrity, expected.integrity, path);
+            return { path, name: actual.name, version: actual.version,
+              dependencies: actual.dependencies ?? {}, integrity: expected.integrity };
+          });
+          mkdirSync('.artifacts/dependency-install', { recursive: true });
+          writeFileSync('.artifacts/dependency-install/receipt.json', JSON.stringify({
+            node: process.version, rootDeclarationsMatchLock: true, receipt }, null, 2));
+          console.log(JSON.stringify(receipt, null, 2));
+          NODE
+      - name: Integration build and focused detail regression
+        if: github.event_name == 'push'
+        run: npm run build && npm test -- src/pages/Detail.navigation.test.tsx
+      - name: Integration fixture server cleanup
+        if: github.event_name == 'push'
+        run: node --test tests/detail-layout/fixture-server.test.mjs
+      - name: Integration browser layout
+        if: github.event_name == 'push'
+        run: npx playwright install --with-deps chromium && node tests/detail-layout/run.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: independent-check-evidence
+          path: |
+            .artifacts/dependency-install/
+            .artifacts/detail-layout-results/
