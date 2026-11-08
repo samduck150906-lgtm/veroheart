@@ -1,27 +1,16 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { createServer } from 'node:http';
-import { readFile, mkdir, writeFile } from 'node:fs/promises';
-import { resolve, extname, sep } from 'node:path';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 import { chromium } from 'playwright';
+import { withFixtureServer } from './fixture-server.mjs';
 
 const build = spawnSync(process.execPath, ['node_modules/vite/bin/vite.js', 'build', '--config', 'tests/detail-layout/vite.config.ts'], { stdio: 'inherit' });
 assert.equal(build.status, 0, 'Synthetic fixture build');
 const root = resolve('.artifacts/detail-layout-app');
 const output = resolve('.artifacts/detail-layout-results');
 await mkdir(output, { recursive: true });
-const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.png': 'image/png' };
-const server = createServer(async (req, res) => {
-  try {
-    const path = resolve(root, `.${new URL(req.url, 'http://fixture.local').pathname === '/' ? '/index.html' : new URL(req.url, 'http://fixture.local').pathname}`);
-    assert.ok(path.startsWith(root + sep));
-    const body = await readFile(path);
-    res.writeHead(200, { 'Content-Type': mime[extname(path)] ?? 'application/octet-stream' });
-    res.end(body);
-  } catch { res.writeHead(404); res.end(); }
-});
-await new Promise(done => server.listen(0, '127.0.0.1', done));
-const base = `http://127.0.0.1:${server.address().port}`;
+await withFixtureServer(root, async base => {
 const browser = await chromium.launch();
 const results = [];
 try {
@@ -54,6 +43,17 @@ try {
     const middle = await tools.evaluate(el => ({ position: getComputedStyle(el).position, y: el.getBoundingClientRect().top }));
     assert.notEqual(middle.position, 'fixed');
     assert.ok(middle.y >= size.height, 'End-of-page tools must not float over mid-page evidence');
+    const header = page.locator('.app-header');
+    for (const label of ['뒤로', '공유']) {
+      const rect = await header.getByRole('button', { name: label, exact: true }).boundingBox();
+      assert.ok(rect && rect.y >= 0 && rect.y + rect.height <= size.height, 'Existing header actions remain visible mid-page');
+    }
+    assert.ok(await page.locator('header').evaluate(el => Boolean(el.compareDocumentPosition(document.querySelector('main')) & Node.DOCUMENT_POSITION_FOLLOWING)), 'Header precedes content in reading order');
+    await header.getByRole('button', { name: '뒤로', exact: true }).focus();
+    await page.keyboard.press('Tab');
+    assert.equal(await page.evaluate(() => document.activeElement.getAttribute('aria-label')), '공유');
+    await page.keyboard.press('Enter');
+    assert.equal(await page.locator('body').getAttribute('data-share-clicks'), '1', 'Existing header share remains available mid-page');
     await page.locator('.app-main').evaluate(el => { el.scrollTop = el.scrollHeight; });
     await tools.getByRole('button', { name: '맨 위로 이동', exact: true }).waitFor();
     const geometry = await tools.evaluate(el => {
@@ -70,7 +70,7 @@ try {
     assert.ok(geometry.scrollWidth <= geometry.clientWidth + 1, 'No horizontal overflow');
     for (const b of geometry.buttons) assert.ok(b.x >= 0 && b.right <= size.width + 1 && b.width >= 44 && b.height >= 44);
     await tools.getByRole('button', { name: '공유하기', exact: true }).click();
-    assert.equal(await page.locator('body').getAttribute('data-share-clicks'), '1', 'Real share handler uses synthetic navigator adapter');
+    assert.equal(await page.locator('body').getAttribute('data-share-clicks'), '2', 'Real share handler uses synthetic navigator adapter');
     await tools.getByRole('button', { name: '뒤로 가기', exact: true }).focus();
     await page.keyboard.press('Tab');
     assert.equal(await page.evaluate(() => document.activeElement.getAttribute('aria-label')), '공유하기');
@@ -94,5 +94,5 @@ try {
   console.log(`Synthetic detail layout: ${results.length} cases passed; no external service or operating writes`);
 } finally {
   await browser.close();
-  await new Promise(done => server.close(done));
 }
+});
