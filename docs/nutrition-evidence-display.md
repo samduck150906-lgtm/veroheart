@@ -62,4 +62,3 @@ Synthetic UI regressions cover these distinctions and retain danger/allergy
 warnings while withholding scores. Normal-ready, nutrient insufficiency and
 species-warning coverage remains in the existing regression suite. Public
 case identities and operating evidence are kept outside this document and tests.
-
