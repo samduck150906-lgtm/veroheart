@@ -15,8 +15,9 @@ const server = createServer(async (req, res) => {
   try {
     const path = resolve(root, `.${new URL(req.url, 'http://fixture.local').pathname === '/' ? '/index.html' : new URL(req.url, 'http://fixture.local').pathname}`);
     assert.ok(path.startsWith(root + sep));
+    const body = await readFile(path);
     res.writeHead(200, { 'Content-Type': mime[extname(path)] ?? 'application/octet-stream' });
-    res.end(await readFile(path));
+    res.end(body);
   } catch { res.writeHead(404); res.end(); }
 });
 await new Promise(done => server.listen(0, '127.0.0.1', done));
