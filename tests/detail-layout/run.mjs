@@ -57,13 +57,14 @@ try {
       return { tools: box(el), lastContent: box(el.previousElementSibling), cta: box(document.querySelector('[aria-label="제품 액션"]')),
         buttons: [...el.querySelectorAll('button')].map(box), clientWidth: document.documentElement.clientWidth, scrollWidth: document.documentElement.scrollWidth };
     });
+    console.log(JSON.stringify({ size: size.label, safeArea, geometry }));
+    await page.screenshot({ path: `${output}/${size.label}-safe${safeArea}.png` });
     assert.ok(geometry.lastContent.bottom <= geometry.tools.y, 'Last content precedes tool group');
     assert.ok(geometry.tools.bottom < geometry.cta.y, 'All tools stay reachable above padded action bar');
     assert.ok(geometry.lastContent.bottom < geometry.cta.y, 'Last review is not obscured');
     assert.ok(geometry.cta.height >= 75 + safeArea, 'Synthetic extra footer safe-area is applied');
     assert.ok(geometry.scrollWidth <= geometry.clientWidth + 1, 'No horizontal overflow');
     for (const b of geometry.buttons) assert.ok(b.x >= 0 && b.right <= size.width + 1 && b.width >= 44 && b.height >= 44);
-    await page.screenshot({ path: `${output}/${size.label}-safe${safeArea}.png` });
     await tools.getByRole('button', { name: '공유하기', exact: true }).click();
     assert.equal(await page.locator('body').getAttribute('data-share-clicks'), '1', 'Real share handler uses synthetic navigator adapter');
     await tools.getByRole('button', { name: '뒤로 가기', exact: true }).focus();
