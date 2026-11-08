@@ -71,13 +71,16 @@ async function loadHandler() {
   }, { context });
   const sources = new Map();
   async function sourceModule(path) {
-    if (sources.has(path)) return sources.get(path);
-    const source = await readFile(new URL(path, root), 'utf8');
-    const module = new SourceTextModule(ts.transpileModule(source, {
-      compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
-    }).outputText, { context, identifier: path });
-    sources.set(path, module);
-    return module;
+    if (!sources.has(path)) {
+      // Cache the promise before I/O: sibling imports can request the shared
+      // validation module concurrently and must receive one class identity.
+      sources.set(path, readFile(new URL(path, root), 'utf8').then((source) => (
+        new SourceTextModule(ts.transpileModule(source, {
+          compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
+        }).outputText, { context, identifier: path })
+      )));
+    }
+    return sources.get(path);
   }
   const edge = await sourceModule('supabase/functions/admin-write/index.ts');
   await edge.link((specifier, importer) => {
