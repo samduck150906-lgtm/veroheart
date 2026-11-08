@@ -53,3 +53,20 @@ test('the prepared Hill\'s subset has distinct identities and leaves label facts
   assert.equal(product.caloriesPer100g, undefined);
  }
 });
+
+test('the refreshed expansion has distinct manufacturer identities and real label facts', async () => {
+ const source = JSON.parse(await readFile(new URL('../data/enrichment/official-expansion-2026-11-04.json', import.meta.url), 'utf8'));
+ const seen = new Set();
+ for (const product of source.products) {
+  validateCandidate(product);
+  const key = product.sourceProductId + ':' + product.species;
+  assert.ok(!seen.has(key)); seen.add(key);
+  assert.match(product.sourceHash, /^[a-f0-9]{64}$/);
+  assert.equal(new URL(product.image).hostname, 'marspetcareaprimocdn.petcare.global');
+  assert.ok(product.ingredientsText.length > 20);
+  assert.doesNotMatch(product.ingredientsText, /Cookie Settings|080-041|등록성분량|반려동물에게 적절한/);
+  for (const value of Object.values(product.nutrition)) assert.ok(Number.isFinite(value) && value >= 0 && value <= 100);
+  assert.equal(product.packageBarcodes, undefined);
+ }
+ assert.ok(source.products.length > 150);
+});

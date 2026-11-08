@@ -1,14 +1,14 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { gradeVerdict } from '../lib/veroroDesign';
 import { AlertCircle, Check, Sparkles } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { generateAnalysisReport } from '../utils/analysis';
 import type { CompatibilityGrade } from '../utils/score';
-import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
+import { isRealPetProfile, resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import { analyzeFeed } from '../analysis/feedAnalysis';
 import { analysisReadinessCopy } from '../analysis/analysisReadiness';
+import { describeIngredientAvailability } from '../utils/productDataCompleteness';
 import { runScoringPipeline, type ScoringPipelineResult } from '../analysis/scoringPipeline';
 import { evaluateDiseases, type ActiveDiseaseResult } from '../analysis/breedDiseaseEngine';
 import { concernsToDiseaseIds } from '../analysis/adapter';
@@ -64,11 +64,13 @@ function ReportHero({
   grade,
   productName,
   headline,
+  scopeLabel,
 }: {
   score: number;
   grade: CompatibilityGrade;
   productName: string;
   headline: string;
+  scopeLabel: string;
 }) {
   const r = 50;
   const circumference = 2 * Math.PI * r; // ≈314 — 프로토타입 stroke-dasharray와 동일
@@ -77,6 +79,7 @@ function ReportHero({
   return (
     <div className="vr-bleed" style={{ background: 'var(--vr-inverse)', padding: '24px 16px 28px', color: 'var(--vr-on-inverse)' }}>
       <div style={{ fontSize: 12.5, fontWeight: 800, color: '#FFD90A', letterSpacing: '.05em' }}>분석 리포트</div>
+      <div style={{ fontSize: 12.5, lineHeight: 1.5 }}>{scopeLabel} 등급 · 종합 영양 적합성 보장 아님</div>
       <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: '-.03em', marginTop: 5, lineHeight: 1.3 }}>{productName}</div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginTop: 20 }}>
@@ -192,7 +195,7 @@ type Tab = (typeof TABS)[number];
 export default function AnalysisResult() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile, products, selectedProduct, isLoggedIn, fetchProductDetail, isLoadingProducts } = useStore();
+  const { profile, products, selectedProduct, isLoggedIn, fetchProductDetail, isLoadingProducts, productDetailError } = useStore();
 
   const [activeTab, setActiveTab] = useState<Tab>('종합');
   const [selectedIng, setSelectedIng] = useState<Ingredient | null>(null);
@@ -218,9 +221,7 @@ export default function AnalysisResult() {
     if (productId && useStore.getState().selectedProduct?.id !== productId) void fetchProductDetail(productId);
   }, [fetchProductDetail, productId]);
 
-  const hasPetProfile = Boolean(
-    isLoggedIn && profile?.id && profile.id !== 'local-profile' && profile.name && profile.name !== '우리 아이',
-  );
+  const hasPetProfile = isLoggedIn && isRealPetProfile(profile);
 
   const ingredients = product?.ingredients ?? [];
   const safeIngredients = ingredients.filter((i) => i.riskLevel === 'safe');
@@ -233,7 +234,14 @@ export default function AnalysisResult() {
   );
   const canShowScore = display?.canShowScore === true;
   const breakdown = display && hasPetProfile ? display.breakdown : null;
-  const readinessText = analysisReadinessCopy(display?.analysisReadiness.status ?? 'unavailable');
+  // An unavailable analysis is not evidence of an empty ingredient list.
+  // Reuse the detail page's loaded/registered-evidence distinction without
+  // promoting stored analysis readiness or changing score eligibility.
+  const readinessStatus = display?.analysisReadiness.status ?? 'unavailable';
+  const readinessText = product && (readinessStatus === 'unavailable' ||
+    (readinessStatus === 'ready' && product.ingredientDataLoaded === false))
+    ? describeIngredientAvailability(product).detail
+    : analysisReadinessCopy(readinessStatus);
   const feedAnalysis = useMemo(() => product ? analyzeFeed(product, profile) : null, [product, profile]);
   const report = useMemo(
     () => product && canShowScore && hasPetProfile ? generateAnalysisReport(product, profile) : null,
@@ -247,12 +255,12 @@ export default function AnalysisResult() {
     () => breakdown
       ? buildAllergyDisplayState(breakdown, profile.name || '우리 아이', {
           hasIngredientData: ingredients.length + (product?.unknownIngredientTerms?.length ?? 0) > 0,
-          hasAllergyProfile: hasPetProfile && profile.allergies.length > 0,
+          hasAllergyProfile: hasPetProfile,
           analysisStatus: display?.analysisReadiness.status,
           unknownIngredientTerms: product?.unknownIngredientTerms,
         })
       : null,
-    [breakdown, profile.name, profile.allergies.length, ingredients.length, hasPetProfile, display, product],
+    [breakdown, profile.name, ingredients.length, hasPetProfile, display, product],
   );
 
   // ── Phase 2 별칭 관찰(기본 OFF) ──
@@ -354,6 +362,7 @@ export default function AnalysisResult() {
 
   if (!product) {
     if (productId && isLoadingProducts) return <StateView variant="loading" title="제품 정보를 불러오고 있습니다" />;
+    if (productId && productDetailError) return <StateView variant="error" title="제품 조회에 실패했습니다" description={productDetailError} />;
     return (
       <StateView
         variant="empty"
@@ -374,7 +383,7 @@ export default function AnalysisResult() {
       <style>{`@keyframes veroFadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }`}</style>
 
       {canShowScore && display ? (
-        <ReportHero score={display.score} grade={display.grade} productName={product.name} headline={report?.summary || gradeVerdict(display.grade)} />
+        <ReportHero score={display.score} grade={display.grade} productName={product.name} headline={report?.summary || feedAnalysis?.summary || display.nutrition.detail} scopeLabel={display.nutrition.scopeLabel} />
       ) : (
         <section role="status" style={{ background: 'var(--secondary)', padding: 24, borderRadius: 16 }}>
           <h1 style={{ fontSize: 20 }}>{product.name}</h1>

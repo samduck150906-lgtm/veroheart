@@ -69,20 +69,25 @@ async function loadHandler() {
       };
     });
   }, { context });
+  const sources = new Map();
   async function sourceModule(path) {
+    if (sources.has(path)) return sources.get(path);
     const source = await readFile(new URL(path, root), 'utf8');
-    return new SourceTextModule(ts.transpileModule(source, {
+    const module = new SourceTextModule(ts.transpileModule(source, {
       compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
     }).outputText, { context, identifier: path });
+    sources.set(path, module);
+    return module;
   }
-  const validation = await sourceModule('supabase/functions/admin-write/validation.ts');
-  const accountStorage = await sourceModule('supabase/functions/_shared/accountStorage.ts');
   const edge = await sourceModule('supabase/functions/admin-write/index.ts');
-  await edge.link((specifier) => {
+  await edge.link((specifier, importer) => {
     if (specifier === 'https://deno.land/std@0.168.0/http/server.ts') return http;
     if (specifier === 'https://esm.sh/@supabase/supabase-js@2.39.0') return supabase;
-    if (specifier === './validation.ts') return validation;
-    if (specifier === '../_shared/accountStorage.ts') return accountStorage;
+    if (specifier.startsWith('.')) {
+      const url = new URL(specifier, new URL(importer.identifier, root));
+      assert.ok(url.href.startsWith(new URL('supabase/functions/', root).href));
+      return sourceModule(url.href.slice(root.href.length));
+    }
     throw new Error(`Unexpected module: ${specifier}`);
   });
   await edge.evaluate();
@@ -148,6 +153,9 @@ describe('local admin-write authentication/router + real cleanup PL/pgSQL', () =
     const beforeState = await snapshot();
     assert.equal((await request([item], '')).status, 401);
     assert.equal((await request([item], 'invalid-local-token')).status, 401);
+    // A user-shaped token is not an admin session. This does not simulate a
+    // hosted Supabase user login or verify its gateway/JWT implementation.
+    assert.equal((await request([item], 'eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiYXV0aGVudGljYXRlZCJ9.synthetic')).status, 401);
     assert.equal(rpcCalls, 0);
     assert.deepEqual(await snapshot(), beforeState);
   });
@@ -184,6 +192,22 @@ describe('local admin-write authentication/router + real cleanup PL/pgSQL', () =
     assert.equal(body.conflicts, 1);
     assert.equal(body.results[0].status, 'conflict');
     assert.deepEqual(await snapshot(), beforeState);
+  });
+
+  it('changes only the selected brand and retains name/SKU fields with one audit', async () => {
+    const beforeState = await snapshot();
+    const response = await request([{
+      id: productId, expectedName: oldName, expectedBrandName: brand,
+      brandName: 'Updated fixture brand',
+    }]);
+    assert.equal(response.status, 200);
+    assert.equal(response.body.applied, 1);
+    const afterState = await snapshot();
+    assert.deepEqual(afterState.products, beforeState.products.map((p) => (
+      p.id === productId ? { ...p, brand_name: 'Updated fixture brand' } : p
+    )));
+    assert.equal(afterState.audits.length, 1);
+    assert.deepEqual(afterState.audits[0].detail.changedFields, ['brand_name']);
   });
 
   it('replays the identical successful payload as already_applied with no duplicate audit', async () => {
@@ -261,6 +285,45 @@ describe('local admin-write authentication/router + real cleanup PL/pgSQL', () =
     assert.equal((await request([item, item])).status, 400);
     assert.equal(rpcCalls, 0);
     assert.deepEqual(await snapshot(), beforeState);
+  });
+
+  it('rejects invalid IDs, empty fields/expected values and oversized batches before RPC', async () => {
+    const beforeState = await snapshot();
+    const invalid = [
+      [], null,
+      [{ ...item, id: 'not-a-uuid' }],
+      [{ ...item, name: ' ' }],
+      [{ ...item, brandName: '' }],
+      [{ ...item, expectedName: undefined }],
+      [{ ...item, expectedBrandName: ' ' }],
+      Array.from({ length: 101 }, () => item),
+    ];
+    for (const items of invalid) assert.equal((await request(items)).status, 400);
+    assert.equal(rpcCalls, 0);
+    assert.deepEqual(await snapshot(), beforeState);
+  });
+
+  it('retains successes on both sides of a failed item audit and rolls back that item only', async () => {
+    await db.exec(`ALTER TABLE public.admin_audit_log ADD CONSTRAINT reject_fixture_audit
+      CHECK (target_id <> '${otherId}')`);
+    const beforeState = await snapshot();
+    const response = await request([
+      item,
+      { id: otherId, expectedName: 'Other product 200g', expectedBrandName: brand, name: 'Failed fixture target' },
+      { id: thirdId, expectedName: 'Third product 300g', expectedBrandName: brand, name: 'Successful third target' },
+    ]);
+    assert.equal(response.status, 200);
+    assert.deepEqual(response.body.results.map((r) => r.status), ['applied', 'failed', 'applied']);
+    assert.equal(response.body.applied, 2);
+    assert.equal(response.body.failed, 1);
+    assert.equal(response.body.conflicts, 0);
+    const afterState = await snapshot();
+    assert.deepEqual(afterState.products, beforeState.products.map((p) => (
+      p.id === productId ? { ...p, name: targetName }
+        : p.id === thirdId ? { ...p, name: 'Successful third target' } : p
+    )));
+    assert.deepEqual(afterState.audits.map((a) => a.target_id).sort(), [productId, thirdId].sort());
+    assert.ok(afterState.audits.every((a) => a.detail.batchId === response.body.batchId));
   });
 
   it('distinguishes partial per-item success, conflict and missing rows atomically', async () => {

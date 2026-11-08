@@ -31,10 +31,10 @@ describe('product sitemap function', () => {
     expect(calledUrl.pathname).toBe('/rest/v1/products');
     expect(calledUrl.searchParams.get('select')).toBe('id,slug,last_observed_at,verification_status');
     expect(calledUrl.searchParams.get('is_visible')).toBe('eq.true');
-    expect(calledUrl.searchParams.get('verification_status')).toBe('in.(reviewed,verified)');
+    expect(calledUrl.searchParams.get('verification_status')).toBe('in.(pending,reviewed,verified)');
     expect(xml).toContain('/product/11111111-1111-1111-1111-111111111111/');
     expect(xml).not.toContain('private-product');
-    expect(xml).not.toContain('pending-product');
+    expect(xml).toContain('pending-product');
     expect(xml).not.toContain('unknown-product');
     expect(response.headers.get('cache-control')).toBe('no-store');
     expect(response.headers.get('content-type')).toContain('application/xml');

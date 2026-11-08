@@ -6,6 +6,8 @@ import { AdminSessionExpiredError, notifyAdminSessionExpired, readAdminToken } f
 import { toExactIlikePattern, toOrIlikePattern } from './postgrestPattern';
 import { equivalentBarcodes } from '../utils/barcode';
 import { BarcodeLookupError } from './barcodeLookupError';
+import { ProductQueryError } from './productQueryError';
+import { isSourceLabelBrand } from '../utils/productDisplay';
 import {
   mapFeedingLogFromRow,
   mapProductFromSupabaseRow,
@@ -108,7 +110,7 @@ function asProductRow(data: unknown): SupabaseProductRow {
   return data as SupabaseProductRow;
 }
 
-type VisibilityQueryError = { code?: string; message: string };
+type VisibilityQueryError = { code?: string; message: string; details?: string | null };
 type VisibilityQueryResult<T> = { data: T | null; error: VisibilityQueryError | null };
 /**
  * 관리자가 검수 완료 제품만 노출하도록 제한했는지.
@@ -116,7 +118,8 @@ type VisibilityQueryResult<T> = { data: T | null; error: VisibilityQueryError | 
  * 제품 조회마다 설정을 새로 읽으면 요청이 배로 늘고, 설정 조회가 실패한 순간
  * 목록이 통째로 비어 버린다. 그래서 publicSettings 로더가 값을 여기에 밀어
  * 넣고(setHideUnverifiedProducts), 조회는 그 값만 본다. 아직 한 번도 읽지
- * 못했다면 검토됨·검수 완료를 허용한다. 검수 대기·미정 상태는 항상 제외한다.
+ * 못했다면 노출 설정이 켜진 제품을 허용한다. 검수 완료 전용 설정을 켰을 때만
+ * 검수 대기·검토됨 제품을 제외한다. 검수 상태 자체는 변경하지 않는다.
  *
  * (publicSettings 가 이 모듈을 import 하므로 반대 방향 import 는 두지 않는다.)
  */
@@ -127,7 +130,7 @@ export function setHideUnverifiedProducts(value: boolean): void {
 }
 
 function publicProductReviewStatuses(): string[] {
-  return hideUnverifiedProducts ? ['verified'] : ['reviewed', 'verified'];
+  return hideUnverifiedProducts ? ['verified'] : ['pending', 'reviewed', 'verified'];
 }
 
 async function queryVisibleProducts<T>(
@@ -321,8 +324,10 @@ export async function getProductDetail(productId: string): Promise<Product | nul
   });
 
   if (error) {
-    console.error('getProductDetail error:', error);
-    return null;
+    // PGRST116 is also returned for multiple rows: only an explicit zero-row
+    // result means unavailable under the public predicates/RLS.
+    if (error.code === 'PGRST116' && /(?:contains|result[^\n]*has) 0 rows/i.test(error.details ?? '')) return null;
+    throw new ProductQueryError();
   }
   return mapProductFromSupabaseRow(asProductRow(data));
 }
@@ -732,7 +737,7 @@ export async function getReviews(productId: string) {
   const { data, error } = await supabase.from('product_ratings')
     .select('id, product_id, rating, created_at, is_mine').eq('product_id', productId)
     .order('created_at', { ascending: false });
-  if (error) console.error('getReviews error:', error);
+  if (error) throw new Error('후기를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
   return data || [];
 }
 
@@ -852,10 +857,10 @@ export async function getBrands(): Promise<string[]> {
     if (withVisibilityFilter) builder = builder.eq('is_visible', true).in('verification_status', publicProductReviewStatuses());
     return builder.order('brand_name');
   });
-  if (error) return [];
+  if (error) throw new ProductQueryError();
   const rows = (data ?? []) as SupabaseBrandNameRow[];
   const brands = [...new Set(rows.map((r) => r.brand_name).filter((name): name is string => Boolean(name)))];
-  return brands;
+  return brands.filter((brand) => !isSourceLabelBrand(brand));
 }
 
 export async function getProductsByBrand(brandName: string): Promise<Product[]> {
@@ -887,7 +892,7 @@ export async function getProductsByBrand(brandName: string): Promise<Product[]> 
     if (withVisibilityFilter) builder = builder.eq('is_visible', true).in('verification_status', publicProductReviewStatuses());
     return builder;
   });
-  if (error) return [];
+  if (error) throw new ProductQueryError();
   return asProductRows(data).map(mapProductFromSupabaseRow);
 }
 
@@ -992,8 +997,7 @@ export async function searchDiaryProducts(
     return builder.limit(30);
   });
   if (error) {
-    console.error('searchDiaryProducts error:', error.message);
-    return [];
+    throw new ProductQueryError();
   }
   return asProductRows(data).map(mapProductFromSupabaseRow);
 }
@@ -1271,6 +1275,15 @@ export async function createProductRequest(
 
   const name = input.requestedName.trim();
   if (!name) return { ok: false, reason: 'error', message: '제품명을 입력해 주세요.' };
+  const productUrl = input.productUrl?.trim() || null;
+  if (productUrl) {
+    try {
+      const parsedUrl = new URL(productUrl);
+      if (!['http:', 'https:'].includes(parsedUrl.protocol) || parsedUrl.username || parsedUrl.password) throw new Error('invalid_url');
+    } catch {
+      return { ok: false, reason: 'error', message: '제품 링크는 http:// 또는 https://로 시작하는 올바른 주소를 입력해 주세요.' };
+    }
+  }
 
   const { data: auth } = await supabase.auth.getUser();
   const userId = auth?.user?.id;
@@ -1282,7 +1295,7 @@ export async function createProductRequest(
     user_id: userId,
     requested_name: name.slice(0, 200),
     search_query: input.searchQuery?.trim()?.slice(0, 200) || null,
-    product_url: input.productUrl?.trim()?.slice(0, 500) || null,
+    product_url: productUrl?.slice(0, 500) || null,
     note: input.note?.trim()?.slice(0, 1000) || null,
   });
 

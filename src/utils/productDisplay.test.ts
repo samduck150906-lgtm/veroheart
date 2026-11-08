@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getProductDisplayParts, normalizeProductDisplayName, truncateName } from './productDisplay';
+import { getProductDisplayParts, normalizeProductDisplayName, truncateName, resolveBrandLabel } from './productDisplay';
 
 describe('normalizeProductDisplayName', () => {
   it('쿠팡 원문의 배송·수량·홍보 문구를 제거하되 제품 구분 정보는 보존한다', () => {
@@ -28,6 +28,13 @@ describe('normalizeProductDisplayName', () => {
   it('displayName 이 있으면 그대로 최우선 사용한다', () => {
     expect(normalizeProductDisplayName({ displayName: '로얄캐닌 미니 어덜트', name: '아무거나 로켓배송' }))
       .toBe('로얄캐닌 미니 어덜트');
+  });
+
+  it('수입된 표시명에도 배송·환불 홍보가 남지 않는다', () => {
+    expect(normalizeProductDisplayName({ displayName: ')당일발송( 로얄캐닌 하이포알러제닉 스몰독 1kg' }))
+      .toBe('로얄캐닌 하이포알러제닉 스몰독 1kg');
+    expect(normalizeProductDisplayName({ displayName: '올바른끼니 알파 양고기 (안먹으면 100% 환불 보장) 1.2kg' }))
+      .toBe('올바른끼니 알파 양고기 1.2kg');
   });
 
   it('과도하게 제거되어 비면 원본으로 안전 폴백한다', () => {
@@ -71,4 +78,8 @@ describe('getProductDisplayParts', () => {
       netWeightText: '',
     })).toEqual({ brand: '', name: '실제 제품명', meta: '' });
   });
+});
+
+it.each(['강아지', '고양이', 'NEW', '영국1위'])('hides a generic source label instead of presenting it as brand: %s', brand => {
+ expect(resolveBrandLabel({name: '연어 간식', brand})).toBe('');
 });

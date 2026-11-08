@@ -109,7 +109,7 @@ export function buildSearchSuggestions(
     .filter((p) => norm(publicName(p)).includes(q))
     .sort((a, b) => rankScore(norm(publicName(a)), q) - rankScore(norm(publicName(b)), q))
     .slice(0, 4)
-    .forEach((p) => push({ kind: 'product', label: publicName(p), brand: p.brand }));
+    .forEach((p) => push({ kind: 'product', label: publicName(p), brand: isSourceLabelBrand(p.brand) ? undefined : p.brand }));
 
   // ── 성분명 ──
   ingredients

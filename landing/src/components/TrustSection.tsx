@@ -1,63 +1,56 @@
 import { Reveal } from "@/components/Reveal";
-import { SectionHeading } from "@/components/SectionHeading";
-import { CheckIcon } from "@/components/icons";
-
-const BASIS_ITEMS = [
-  "공개된 원재료 정보",
-  "보장성분과 영양정보",
-  "성분명과 유사어 정규화",
-  "반려동물 프로필 정보",
-  "데이터 출처와 확인 상태",
-  "규칙 기반 분석 결과",
-];
-
+import { ArrowRightIcon, ShieldCheckIcon } from "@/components/icons";
 export function TrustSection() {
   return (
-    <section
-      id="trust"
-      className="bg-sand py-20 sm:py-28"
-      aria-labelledby="trust-heading"
-    >
-      <div className="mx-auto max-w-6xl px-5 sm:px-6">
+    <section id="trust" className="v3-trust" aria-labelledby="trust-heading">
+      <div className="v3-container v3-trust-grid">
         <Reveal>
-          <SectionHeading
-            kicker="분석 방식"
-            id="trust-heading"
-            title="그럴듯한 답보다, 확인 가능한 근거를 보여드립니다."
-            description="베로로는 공개된 제품 정보와 기준을 바탕으로 원재료와 영양정보를 분석합니다. 확인되지 않은 정보는 임의로 채우지 않고 '정보 부족'으로 구분해 표시합니다."
-          />
+          <span className="v3-trust-icon">
+            <ShieldCheckIcon />
+          </span>
+          <p className="v3-kicker">CLEAR INFORMATION, REAL CARE</p>
+          <h2 id="trust-heading">
+            좋다는 말보다,
+            <br />
+            <span>확인할 수 있는 근거.</span>
+          </h2>
+          <p className="v3-trust-description">
+            보호자가 스스로 선택할 수 있도록,
+            <br />
+            무엇을 보고 안내하는지 함께 보여드립니다.
+          </p>
         </Reveal>
-
-        <div className="grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:gap-20">
-          <Reveal>
-            <ul className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
-              {BASIS_ITEMS.map((item) => (
-                <li key={item} className="flex items-center gap-2.5 text-sm font-medium text-ink-900">
-                  <CheckIcon className="h-4 w-4 shrink-0 text-accent" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </Reveal>
-
-          <Reveal delayMs={80}>
-            <div className="rounded-2xl bg-paper p-6 sm:p-8">
-              <h3 className="text-sm font-bold text-ink-950">이렇게 판단합니다</h3>
-              <p className="mt-2 text-sm leading-relaxed text-ink-700">
-                베로로의 판정과 점수는 AI가 즉흥적으로 만든 답이 아니라, 성분
-                사전과 반려동물 프로필을 기준으로 한 규칙 기반 로직에서
-                도출됩니다. 같은 조건이면 항상 같은 결과가 나옵니다.
-              </p>
-              <div className="mt-5 border-t border-ink-950/10 pt-5">
-                <p className="text-xs font-semibold text-ink-500">중요한 고지</p>
-                <p className="mt-1.5 text-sm leading-relaxed text-ink-900">
-                  이 분석은 제품 라벨 기반 참고 정보이며, 질병·치료 목적의
-                  급여 판단은 수의사 상담이 필요합니다.
-                </p>
+        <Reveal delayMs={100}>
+          <div className="v3-trust-principles">
+            {[
+              [
+                "공개된 정보에서 시작해요",
+                "제품의 원재료와 영양정보, 확인된 출처를 바탕으로 정리합니다.",
+              ],
+              [
+                "우리 아이의 정보를 함께 봐요",
+                "등록한 종·연령대·알레르기·건강 고민을 기준에 반영합니다.",
+              ],
+              [
+                "모르는 정보는 구분해요",
+                "확인되지 않은 원료나 정보는 확정된 결과와 나누어 안내합니다.",
+              ],
+            ].map(([title, description], index) => (
+              <div key={title}>
+                <span>0{index + 1}</span>
+                <div>
+                  <h3>{title}</h3>
+                  <p>{description}</p>
+                </div>
+                <ArrowRightIcon />
               </div>
-            </div>
-          </Reveal>
-        </div>
+            ))}
+          </div>
+          <p className="v3-medical-note">
+            제품 라벨 기반 참고 정보입니다. 질병·치료 목적의 급여 판단은
+            수의사와 상담해 주세요.
+          </p>
+        </Reveal>
       </div>
     </section>
   );

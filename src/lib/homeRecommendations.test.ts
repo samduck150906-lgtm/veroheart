@@ -89,4 +89,9 @@ describe('qualified home recommendations', () => {
     api.search.mockResolvedValueOnce({ products: [], nextOffset: 0 });
     await expect(loadHomeRecommendations(profile)).rejects.toThrow('추천 제품을 불러오지 못했습니다.');
   });
+  it('does not publish an incomplete recommendation set after a later page fails', async () => {
+    api.search.mockResolvedValueOnce({ products: [food], nextOffset: 100 })
+      .mockRejectedValueOnce(new Error('synthetic later-page failure'));
+    await expect(loadHomeRecommendations(profile)).rejects.toThrow('synthetic later-page failure');
+  });
 });

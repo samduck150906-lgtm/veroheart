@@ -1,3 +1,5 @@
+import ProductThumb from '../ProductThumb';
+import { productImageUrl } from '../../utils/productImage';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -77,7 +79,6 @@ function shiftDateKey(key: string, delta: number): string {
   return toDateKey(dt);
 }
 
-const FALLBACK_IMG = 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&q=80';
 
 function petAgeLabel(age: number): string {
   if (age < 2) return '아기';
@@ -359,6 +360,7 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
           <SummaryPill label={`사료 ${summary.food}회`} show={summary.food > 0} tone="food" />
           <SummaryPill label={`간식 ${summary.snack}회`} show={summary.snack > 0} tone="snack" />
           <SummaryPill label={`영양제 ${summary.supplement}종`} show={summary.supplement > 0} tone="supplement" />
+          <SummaryPill label={`직접 입력 ${summary.custom}회`} show={summary.custom > 0} tone="total" />
           <SummaryPill label={`총 ${summary.total}건`} show tone="total" />
           {summary.kcal != null && (
             <span style={{ fontSize: '13px', fontWeight: 800, color: '#B45309', background: 'rgba(245, 158, 11, 0.14)', padding: '6px 12px', borderRadius: '999px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
@@ -470,7 +472,7 @@ export default function FeedingDiary({ onRegisterPet }: FeedingDiaryProps) {
       </div>
 
       {/* 이동 + 검색 + 뷰 전환 */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           {viewMode === 'week' ? (
             <>
@@ -813,7 +815,7 @@ function FeedingLogCard({
   onHistory: () => void;
   onViewAnalysis: (productId: string) => void;
 }) {
-  const meta = feedingTypeMeta(log.productType === 'custom' ? productTypeToFeedingType(log.product?.productType) : log.productType);
+  const meta = feedingTypeMeta(logFeedingType(log));
   const name = log.isCustomProduct ? log.customProductName ?? '직접 입력 제품' : log.product?.name ?? '제품';
   const brand = log.isCustomProduct ? '직접 입력' : log.product?.brand ?? '';
   const img = log.isCustomProduct ? null : log.product?.imageUrl ?? null;
@@ -833,7 +835,7 @@ function FeedingLogCard({
       <div style={{ display: 'flex', gap: '12px' }}>
         <div style={{ flexShrink: 0 }}>
           {img ? (
-            <img src={img || FALLBACK_IMG} alt={name} style={{ width: '56px', height: '56px', borderRadius: '12px', objectFit: 'cover' }} />
+            <ProductThumb src={productImageUrl(img)} alt={name} monoSource={name} size={56} radius={12} />
           ) : (
             <div
               style={{
@@ -949,11 +951,12 @@ function MonthlyInsightsCard({
 }) {
   const ins = computeMonthlyInsights(logs);
   const trend = computePreferenceTrend(logs);
-  const typeTotal = ins.typeCounts.food + ins.typeCounts.snack + ins.typeCounts.supplement || 1;
-  const bars: { key: 'food' | 'snack' | 'supplement'; label: string; color: string; count: number }[] = [
+  const typeTotal = ins.totalRecords || 1;
+  const bars: { key: 'food' | 'snack' | 'supplement' | 'custom'; label: string; color: string; count: number }[] = [
     { key: 'food', label: '사료', color: '#F59E0B', count: ins.typeCounts.food },
     { key: 'snack', label: '간식', color: '#F97316', count: ins.typeCounts.snack },
     { key: 'supplement', label: '영양제', color: '#6366F1', count: ins.typeCounts.supplement },
+    { key: 'custom', label: '직접 입력', color: '#64748B', count: ins.typeCounts.custom },
   ];
 
   return (
@@ -1138,6 +1141,7 @@ function WeekSummary({ logs, loading }: { logs: PetFeedingLog[]; loading: boolea
           <SummaryPill label={`사료 ${s.food}회`} show={s.food > 0} tone="food" />
           <SummaryPill label={`간식 ${s.snack}회`} show={s.snack > 0} tone="snack" />
           <SummaryPill label={`영양제 ${s.supplement}종`} show={s.supplement > 0} tone="supplement" />
+          <SummaryPill label={`직접 입력 ${s.custom}회`} show={s.custom > 0} tone="total" />
           <SummaryPill label={`총 ${s.total}건`} show tone="total" />
           {s.kcal != null && (
             <span style={{ fontSize: '13px', fontWeight: 800, color: '#B45309', background: 'rgba(245, 158, 11, 0.14)', padding: '6px 12px', borderRadius: '999px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>

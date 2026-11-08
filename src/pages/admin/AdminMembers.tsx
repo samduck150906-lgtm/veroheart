@@ -1,3 +1,6 @@
+import AdminMemberActivity from './AdminMemberActivity';
+import AdminCorrectionDialog from './AdminCorrectionDialog';
+import { correctPet } from '../../lib/adminSupportApi';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Check, ChevronLeft, ChevronRight, Copy, Eye, MessageSquare, NotebookPen, PawPrint, Search, UserMinus, X } from 'lucide-react';
 import { notify } from '../../store/useNotification';
@@ -7,6 +10,7 @@ import {
   fetchMembers,
   type AdminMember,
   type AdminMemberDetail,
+  type AdminMemberPet,
 } from '../../lib/adminApi';
 
 const PAGE_SIZE = 20;
@@ -75,6 +79,7 @@ const AdminMembers: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [detail, setDetail] = useState<AdminMemberDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [editingPet, setEditingPet] = useState<AdminMemberPet | null>(null);
   const [copiedValue, setCopiedValue] = useState<string | null>(null);
   const [withdrawTarget, setWithdrawTarget] = useState<AdminMember | null>(null);
   const [withdrawReason, setWithdrawReason] = useState('');
@@ -118,7 +123,8 @@ const AdminMembers: React.FC = () => {
     setDetailLoading(true);
     try {
       setDetail(await fetchMemberDetail(member.id));
-    } catch {
+    } catch (err) {
+      notify.error(err instanceof Error ? err.message : '회원 정보를 불러오지 못했습니다.');
       setDetail(null);
     } finally {
       setDetailLoading(false);
@@ -165,7 +171,7 @@ const AdminMembers: React.FC = () => {
       <div className="admin-toolbar">
         <div className="admin-title-wrap">
           <h2>회원 관리</h2>
-          <p>총 {total.toLocaleString()}명 · 조회와 탈퇴 처리만 가능합니다</p>
+          <p>총 {total.toLocaleString()}명 · 회원 조회·지원 정정·탈퇴 처리를 관리합니다</p>
         </div>
       </div>
 
@@ -365,19 +371,22 @@ const AdminMembers: React.FC = () => {
                       <article className="admin-pet-card" key={pet.id}>
                         <div className="admin-pet-card-heading">
                           <strong>{pet.name}</strong>
-                          <span className="admin-tag yellow">{pet.petType.toUpperCase()}</span>
+                          <span className="admin-tag yellow">{pet.petType === 'cat' ? '고양이' : '강아지'}</span>
                         </div>
                         <dl>
                           <div><dt>품종</dt><dd>{pet.breed || '-'}</dd></div>
-                          <div><dt>라이프 스테이지</dt><dd>{pet.ageGroup}</dd></div>
+                          <div><dt>라이프 스테이지</dt><dd>{{ baby: '아기', adult: '성인', senior: '시니어' }[pet.ageGroup] ?? pet.ageGroup}</dd></div>
                           <div><dt>체중</dt><dd>{pet.weight === null ? '-' : `${pet.weight} kg`}</dd></div>
                           <div><dt>알레르기</dt><dd>{pet.allergies.join(', ') || '없음'}</dd></div>
                           <div><dt>건강 고민</dt><dd>{pet.conditions.join(', ') || '없음'}</dd></div>
                         </dl>
+                        <button type="button" className="admin-btn-soft" onClick={() => setEditingPet(pet)}>{pet.name} 프로필 정정</button>
+                        <a className="admin-btn-soft" href={'/admin/audit?targetId=' + pet.id}>변경 이력</a>
                       </article>
                     ))}
                   </div>
                 )}
+                <AdminMemberActivity key={detail.id} userId={detail.id} />
               </>
             ) : (
               <div className="admin-empty">회원 정보를 불러오지 못했습니다.</div>
@@ -396,6 +405,23 @@ const AdminMembers: React.FC = () => {
           </div>
         </div>
       )}
+
+
+      {editingPet && <AdminCorrectionDialog title={editingPet.name + ' 프로필 정정'} fields={[
+        { key: 'name', label: '이름', value: editingPet.name },
+        { key: 'pet_type', label: '종', value: editingPet.petType, options: [{value:'dog',label:'강아지'},{value:'cat',label:'고양이'}] },
+        { key: 'age_group', label: '연령대', value: editingPet.ageGroup, options: [{value:'baby',label:'아기'},{value:'adult',label:'성인'},{value:'senior',label:'시니어'}] },
+        { key: 'breed', label: '품종', value: editingPet.breed ?? '' },
+        { key: 'weight', label: '몸무게 (kg)', value: editingPet.weight === null ? '' : String(editingPet.weight), type:'number' },
+        { key: 'allergies', label: '알레르기 (쉼표로 구분, 없으면 빈칸)', value: editingPet.allergies.join(', ') },
+        { key: 'conditions', label: '건강 고민 (쉼표로 구분)', value: editingPet.conditions.join(', ') },
+      ]} onClose={() => setEditingPet(null)} onSave={async (values, reason) => {
+        const split = (value: string) => value.split(',').map(v => v.trim()).filter(Boolean);
+        const expected = {name:editingPet.name,pet_type:editingPet.petType,age_group:editingPet.ageGroup,breed:editingPet.breed,weight:editingPet.weight,allergies:editingPet.allergies,conditions:editingPet.conditions};
+        await correctPet(editingPet.id, {...values,weight:values.weight ? Number(values.weight) : null,allergies:split(values.allergies),conditions:split(values.conditions)}, expected, reason);
+        if (detail) setDetail(await fetchMemberDetail(detail.id));
+        notify.success('반려동물 프로필을 정정했습니다.');
+      }} />}
 
       {withdrawTarget && (
         <div

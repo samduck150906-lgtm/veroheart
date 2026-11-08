@@ -91,3 +91,10 @@ describe('analysis result evidence boundary', () => {
     expect(useStore.getState().fetchProductDetail).toHaveBeenCalledWith('food-1');
   });
 });
+
+it('recognizes an owned pet named 우리 아이 while keeping guest personalization disabled', () => {
+  useStore.setState({ profile: { ...DEFAULT_USER_PET_PROFILE, id: 'owned-pet', name: '우리 아이', allergies: ['닭'], healthConcerns: [] } });
+  show(base);
+  expect(screen.queryByText(/프로필을 등록하면/)).toBeNull();
+  expect(screen.getByText(/우리 아이는 이 성분을 피하는 것이 좋습니다/)).toBeTruthy();
+});

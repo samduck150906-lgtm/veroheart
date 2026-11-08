@@ -64,6 +64,7 @@ export const ALLOWED_ACTIONS = new Set([
   'updateEnrichmentStatus',
   'listMembers',
   'getMemberDetail',
+  'correctPet', 'correctFeedingLog', 'moderateReview', 'getMemberActivity', 'listAdminAudit', 'listAdminReviews',
   'deleteMember',
   'listFeedingLogs',
   'listWaitlist',

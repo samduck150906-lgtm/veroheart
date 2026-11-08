@@ -3,7 +3,7 @@ import { MEAL_PERIOD_OPTIONS, productTypeToFeedingType, toDateKey } from './feed
 
 /** 기록의 대표 유형 — custom 이면 조인된 제품 유형으로 보정 */
 export function logFeedingType(log: PetFeedingLog): FeedingProductType {
-  return log.productType === 'custom'
+  return log.productType === 'custom' && log.product?.productType
     ? productTypeToFeedingType(log.product?.productType)
     : log.productType;
 }
@@ -12,6 +12,7 @@ export interface DailySummary {
   food: number;
   snack: number;
   supplement: number;
+  custom: number;
   total: number;
   /** 계산 가능한 기록으로 합산한 열량(kcal). 계산 가능한 기록이 없으면 null */
   kcal: number | null;
@@ -27,6 +28,7 @@ export function computeDailySummary(logs: PetFeedingLog[]): DailySummary {
   let food = 0;
   let snack = 0;
   let supplement = 0;
+  let custom = 0;
   let kcal = 0;
   let kcalCounted = 0;
 
@@ -34,6 +36,7 @@ export function computeDailySummary(logs: PetFeedingLog[]): DailySummary {
     const t = logFeedingType(log);
     if (t === 'snack') snack += 1;
     else if (t === 'supplement') supplement += 1;
+    else if (t === 'custom') custom += 1;
     else food += 1;
 
     const per100 = log.product?.caloriesPer100g;
@@ -48,6 +51,7 @@ export function computeDailySummary(logs: PetFeedingLog[]): DailySummary {
     food,
     snack,
     supplement,
+    custom,
     total: logs.length,
     kcal: kcalCounted > 0 ? Math.round(kcal) : null,
     kcalCounted,
@@ -95,7 +99,7 @@ export interface TopProduct {
 export interface MonthlyInsights {
   daysLogged: number;
   totalRecords: number;
-  typeCounts: { food: number; snack: number; supplement: number };
+  typeCounts: { food: number; snack: number; supplement: number; custom: number };
   /** 가장 최근 기록일부터 이어진 연속 기록 일수 */
   streak: number;
   topProducts: TopProduct[];
@@ -165,13 +169,13 @@ function logLabel(log: PetFeedingLog): string {
 /** 월간(또는 임의 기간) 기록 집합에서 인사이트를 계산한다. */
 export function computeMonthlyInsights(logs: PetFeedingLog[]): MonthlyInsights {
   const dates = new Set<string>();
-  const typeCounts = { food: 0, snack: 0, supplement: 0 };
+  const typeCounts = { food: 0, snack: 0, supplement: 0, custom: 0 };
   const freq = new Map<string, TopProduct>();
 
   for (const log of logs) {
     dates.add(log.feedingDate);
     const t = logFeedingType(log);
-    typeCounts[t === 'snack' ? 'snack' : t === 'supplement' ? 'supplement' : 'food'] += 1;
+    typeCounts[t] += 1;
 
     const key = logKey(log);
     const existing = freq.get(key);

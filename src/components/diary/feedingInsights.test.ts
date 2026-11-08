@@ -39,6 +39,11 @@ function log(over: Partial<PetFeedingLog> = {}): PetFeedingLog {
 }
 
 describe('computeDailySummary', () => {
+  it('keeps a custom meal out of food totals and monthly food statistics', () => {
+    const custom = log({ productType: 'custom', isCustomProduct: true, customProductName: '집밥' });
+    expect(computeDailySummary([custom])).toMatchObject({ food: 0, snack: 0, supplement: 0, custom: 1, total: 1 });
+    expect(computeMonthlyInsights([custom]).typeCounts).toEqual({ food: 0, snack: 0, supplement: 0, custom: 1 });
+  });
   it('counts by type and totals', () => {
     const s = computeDailySummary([
       log({ productType: 'food' }),

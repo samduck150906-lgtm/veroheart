@@ -1,3 +1,5 @@
+import { publicCatalogSourceUrl } from './publicCatalogSource';
+import { productImageUrl } from '../utils/productImage';
 import type {
   FeedingProductType,
   Ingredient,
@@ -199,9 +201,7 @@ export function mapFeedingLogFromRow(row: SupabaseFeedingLogRow): PetFeedingLog 
         id: row.products.id,
         name: row.products.name ?? '',
         brand: row.products.brand_name ?? '',
-        imageUrl:
-          row.products.image_url ||
-          'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&q=80',
+        imageUrl: productImageUrl(row.products.image_url),
         productType: row.products.product_type ?? 'food',
         caloriesPer100g: toNum(row.products.kcal_per_100g) ?? null,
       }
@@ -307,8 +307,10 @@ export function mapProductFromSupabaseRow(p: SupabaseProductRow): Product {
     netWeightText: p.net_weight_text ?? undefined,
     slug: p.slug ?? undefined,
     catalogSource: mappedCatalogSource,
-    catalogSourceUrl: p.catalog_source_url?.startsWith('https://') ? p.catalog_source_url : undefined,
+    catalogSourceUrl: publicCatalogSourceUrl(p.catalog_source_url),
     catalogSourceNote: p.catalog_source_note ?? undefined,
+    catalogSourceStatus: p.catalog_source_url === undefined ? 'not_loaded'
+      : !p.catalog_source_url ? 'absent' : publicCatalogSourceUrl(p.catalog_source_url) ? 'available' : 'invalid',
     requiresVeterinaryGuidance: p.requires_veterinary_guidance ?? false,
     analysisStatus: mappedAnalysisStatus,
     ingredientDataLoaded: p.product_ingredients !== undefined || p.product_ingredient_label_sets !== undefined,
@@ -328,9 +330,7 @@ export function mapProductFromSupabaseRow(p: SupabaseProductRow): Product {
     barcode: p.barcode ?? undefined,
     guaranteedAnalysis,
     caloriesPer100g: toNum(p.kcal_per_100g),
-    imageUrl:
-      p.image_url ||
-      'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&q=80',
+    imageUrl: productImageUrl(p.image_url),
     ingredients,
     reviewsCount: p.review_count ?? 0,
     averageRating: p.avg_rating ?? 0,

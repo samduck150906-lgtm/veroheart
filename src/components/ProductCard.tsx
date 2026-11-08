@@ -5,6 +5,7 @@ import { useStore } from '../store/useStore';
 import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import { getProductDisplayParts } from '../utils/productDisplay';
 import ProductVerificationBadge from './ProductVerificationBadge';
+import ProductImage from './ProductImage';
 import { describeIngredientAvailability } from '../utils/productDataCompleteness';
 
 type ProductCardProps = {
@@ -33,7 +34,7 @@ export default function ProductCard({
   grid = false,
 }: ProductCardProps) {
   const { profile, favorites, toggleFavorite } = useStore();
-  const { score, canShowScore } = resolveProductDisplayVerdict(product, profile);
+  const { score, canShowScore, nutrition } = resolveProductDisplayVerdict(product, profile);
   const isFav = favorites.includes(product.id);
   const petMeta = petTypeMeta(product.targetPetType);
   const display = getProductDisplayParts(product);
@@ -48,6 +49,8 @@ export default function ProductCard({
   const favButton = (offset: number) => (
     <button
       type="button"
+      aria-label={isFav ? '찜 해제' : '찜하기'}
+      aria-pressed={isFav}
       onClick={(event) => {
         event.preventDefault();
         toggleFavorite(product.id);
@@ -123,12 +126,12 @@ export default function ProductCard({
               boxShadow: '0 4px 14px rgba(43, 38, 36, 0.08)',
             }}
           >
-            <img
+            <ProductImage
               src={product.imageUrl}
               alt={display.name}
               loading="lazy"
               decoding="async"
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
             />
             {petBadge()}
           </div>
@@ -184,9 +187,10 @@ export default function ProductCard({
                     fontSize: '12px',
                   }}
                 >
-                  {canShowScore ? `${score}점` : describeIngredientAvailability(product).label}
+                  {canShowScore ? `${nutrition.scopeLabel} ${score}점` : describeIngredientAvailability(product).label}
                 </div>
               </div>
+              {canShowScore && nutrition.limited && <p style={{ margin: '6px 0 0', fontSize: 11, lineHeight: 1.5, color: 'var(--text-muted)', overflowWrap: 'anywhere' }}>{nutrition.notice}</p>}
             </div>
           </div>
         </Link>
@@ -221,17 +225,17 @@ export default function ProductCard({
             boxShadow: '0 4px 14px rgba(43, 38, 36, 0.08)',
           }}
         >
-          <img
+          <ProductImage
             src={product.imageUrl}
             alt={display.name}
             loading="lazy"
             decoding="async"
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
           />
           {petBadge(true)}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: 1, paddingRight: '30px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: 1, minWidth: 0, paddingRight: '30px' }}>
           <div>
             {display.brand && (
               <div style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: 600 }}>{display.brand}</div>
@@ -284,10 +288,11 @@ export default function ProductCard({
                   fontSize: compact ? '12px' : '14px',
                 }}
               >
-                {canShowScore ? `${score}점` : describeIngredientAvailability(product).label}
+                {canShowScore ? `${nutrition.scopeLabel} ${score}점` : describeIngredientAvailability(product).label}
               </div>
             </div>
           </div>
+          {canShowScore && nutrition.limited && <p style={{ margin: '6px 0 0', fontSize: 11, lineHeight: 1.5, color: 'var(--text-muted)', overflowWrap: 'anywhere' }}>{nutrition.notice}</p>}
         </div>
       </Link>
 

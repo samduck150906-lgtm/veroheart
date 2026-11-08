@@ -20,6 +20,8 @@ interface Column {
   display: ProductDisplayParts;
   grade: string;
   score: number;
+  scoreScope: string;
+  nutritionNotice: string;
   kcal: string;
   protein: string;
   signalText: string;
@@ -31,7 +33,7 @@ interface Column {
 }
 
 function buildColumn(product: Product, profile: UserPetProfile): Column {
-  const { score, grade, breakdown, canShowScore, analysisReadiness } = resolveProductDisplayVerdict(product, profile);
+  const { score, grade, breakdown, canShowScore, analysisReadiness, nutrition } = resolveProductDisplayVerdict(product, profile);
   const kcalValue = product.caloriesPer100g ?? product.guaranteedAnalysis?.kcalPer100g;
   const proteinValue = product.guaranteedAnalysis?.crudeProtein;
   const goodCount = product.ingredients?.filter((i) => i.riskLevel === 'safe').length ?? 0;
@@ -48,6 +50,8 @@ function buildColumn(product: Product, profile: UserPetProfile): Column {
     display: getProductDisplayParts(product),
     grade,
     score,
+    scoreScope: nutrition.scopeLabel,
+    nutritionNotice: nutrition.notice,
     kcal: kcalValue ? `${Math.round(kcalValue)}kcal` : '—',
     protein: proteinValue ? `${proteinValue}%` : '—',
     signalText: canShowScore ? `주의 ${warnCount} · 좋음 ${goodCount}` : `확인 범위: 주의 ${warnCount} · 원료 정보 부족`,
@@ -91,7 +95,8 @@ export default function Comparison() {
   }
 
   const rows: { label: string; values: string[]; tone?: (col: Column) => string }[] = [
-    { label: '등급', values: columns.map((c) => c.canShowScore ? `${c.grade} ${c.score}` : '분석 정보 부족') },
+    { label: '등급', values: columns.map((c) => c.canShowScore ? `${c.scoreScope ? `${c.scoreScope} ` : ''}${c.grade} ${c.score}` : '분석 정보 부족') },
+    { label: '영양 평가', values: columns.map((c) => c.nutritionNotice || '등록 기초 영양 지표 참고') },
     { label: '열량', values: columns.map((c) => c.kcal) },
     { label: '조단백', values: columns.map((c) => c.protein) },
     { label: '평점', values: columns.map((c) => (c.product.reviewsCount > 0 ? `★ ${c.product.averageRating.toFixed(1)}` : '—')) },
@@ -196,10 +201,11 @@ export default function Comparison() {
             borderRadius: '16px', padding: '15px',
           }}
         >
+          {columns.some(c => c.nutritionNotice) && <p style={{ margin: '0 0 8px', fontSize: 12, lineHeight: 1.5 }}>확인된 정보 기준의 참고 비교입니다. 영양정보 부족으로 영양 균형을 평가할 수 없습니다.</p>}
           {verdict.kind === 'winner' ? (
             <>
               <div style={{ fontSize: '14.5px', fontWeight: 800, letterSpacing: '-0.02em' }}>
-                {petName}에게는 &lsquo;{verdict.winner.name}&rsquo;가 조금 더 잘 맞습니다
+                {petName} 기준 참고 점수는 &lsquo;{verdict.winner.name}&rsquo;가 더 높습니다
               </div>
               <ul style={{ margin: '9px 0 0', padding: '0 0 0 17px', fontSize: '12.5px', lineHeight: 1.6, color: 'var(--vr-body)' }}>
                 {verdict.reasons.map((reason) => (
@@ -215,11 +221,11 @@ export default function Comparison() {
           ) : (
             <>
               <div style={{ fontSize: '14.5px', fontWeight: 800, letterSpacing: '-0.02em' }}>
-                {verdict.leaders.length > 2 ? '담은 제품 모두' : '두 제품 모두'} 비슷하게 잘 맞습니다
+                {verdict.leaders.length > 2 ? '담은 제품 모두' : '두 제품 모두'} 참고 점수 차이가 없습니다
               </div>
               <p style={{ margin: '7px 0 0', fontSize: '12.5px', lineHeight: 1.55, color: 'var(--vr-body)' }}>
-                {petName} 기준으로 우열을 가릴 만한 차이가 없습니다. 급여량이나 가격처럼
-                표에 없는 조건으로 선택해도 괜찮습니다.
+                현재 등록된 정보로 계산한 {petName} 기준 점수 비교입니다.
+                실제 급여 적합성은 영양 근거와 건강 조건을 함께 확인해 주세요.
               </p>
             </>
           )}

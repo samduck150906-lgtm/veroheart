@@ -14,6 +14,8 @@ import {
 import { checkBarcode, findDuplicateBarcodes } from '../../utils/barcode';
 import { parseProductFactsCsv, toProductFactsCsv } from '../../utils/productFactsCsv';
 
+const FACTS_PAGE_SIZE = 20;
+
 const FILTERS: { key: ProductFactsFilter; label: string }[] = [
   { key: 'missing', label: '둘 다 없음' },
   { key: 'missing_barcode', label: '바코드 없음' },
@@ -66,29 +68,39 @@ const AdminProductFacts: React.FC = () => {
   const [rows, setRows] = useState<ProductFactsRow[]>([]);
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [filter, setFilter] = useState<ProductFactsFilter>('missing');
+  const [visibility, setVisibility] = useState<'visible' | 'hidden' | 'all'>('visible');
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const loadRequest = useRef(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
+    const request = ++loadRequest.current;
     setLoading(true);
     setError(null);
     try {
-      const result = await fetchProductFacts({ filter, search });
+      const result = await fetchProductFacts({ filter, search, visibility });
+      if (request !== loadRequest.current) return;
       setRows(result);
       setDrafts(Object.fromEntries(result.map((row) => [row.id, toDraft(row)])));
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      if (request === loadRequest.current) setError(err instanceof Error ? err.message : String(err));
     } finally {
-      setLoading(false);
+      if (request === loadRequest.current) setLoading(false);
     }
-  }, [filter, search]);
+  }, [filter, search, visibility]);
 
   useEffect(() => {
-    load();
+    void load();
+    return () => { loadRequest.current += 1; };
   }, [load]);
+
+  const totalPages = Math.max(1, Math.ceil(rows.length / FACTS_PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pageRows = rows.slice((currentPage - 1) * FACTS_PAGE_SIZE, currentPage * FACTS_PAGE_SIZE);
 
   const changed = useMemo(
     () => rows.filter((row) => drafts[row.id] && draftChanged(row, drafts[row.id])),
@@ -274,20 +286,23 @@ const AdminProductFacts: React.FC = () => {
             type="button"
             key={item.key}
             className={`admin-chip ${filter === item.key ? 'active' : ''}`}
-            onClick={() => setFilter(item.key)}
+            onClick={() => { setFilter(item.key); setPage(1); }}
           >
             {item.label}
           </button>
         ))}
       </div>
 
+      <div className="admin-filter-row" aria-label="제품 노출 상태">
+        {([['visible', '노출 중인 제품'], ['hidden', '숨긴 제품'], ['all', '노출·숨김 전체']] as const).map(([value, label]) => <button type="button" key={value} className={`admin-chip ${visibility === value ? 'active' : ''}`} aria-pressed={visibility === value} onClick={() => { setVisibility(value); setPage(1); }}>{label}</button>)}
+      </div>
       <div className="admin-search-wrap">
         <Search size={16} className="admin-search-icon" />
         <label htmlFor="admin-facts-search" className="admin-visually-hidden">제품명 또는 브랜드 검색</label>
         <input
           id="admin-facts-search"
           value={search}
-          onChange={(event) => setSearch(event.target.value)}
+          onChange={(event) => { setSearch(event.target.value); setPage(1); }}
           placeholder="제품명 또는 브랜드 검색"
         />
       </div>
@@ -326,7 +341,7 @@ const AdminProductFacts: React.FC = () => {
                   </div>
                 </td>
               </tr>
-            ) : rows.map((row) => {
+            ) : pageRows.map((row) => {
               const draft = drafts[row.id];
               if (!draft) return null;
               const check = checkBarcode(draft.barcode);
@@ -347,7 +362,7 @@ const AdminProductFacts: React.FC = () => {
                             <>
                               {' · '}
                               <a href={row.sourceUrl} target="_blank" rel="noreferrer">
-                                판매처 <ExternalLink size={10} />
+                                출처 <ExternalLink size={10} />
                               </a>
                             </>
                           )}
@@ -399,6 +414,11 @@ const AdminProductFacts: React.FC = () => {
           </tbody>
         </table>
       </div>
+      <nav className="admin-pagination" aria-label="영양정보 제품 목록 페이지">
+        <button type="button" className="admin-btn-soft" disabled={loading || saving || currentPage <= 1} onClick={() => setPage(currentPage - 1)}>이전 페이지</button>
+        <span className="admin-pagination-label">{currentPage} / {totalPages} 페이지 · 전체 {rows.length.toLocaleString()}건</span>
+        <button type="button" className="admin-btn-soft" disabled={loading || saving || currentPage >= totalPages} onClick={() => setPage(currentPage + 1)}>다음 페이지</button>
+      </nav>
     </div>
   );
 };

@@ -33,7 +33,7 @@ const VIEWS: Record<string, string> = {
     + 'pinned_order, product_ingredients(count), nutritional_profiles(count)',
   names: 'id, name, brand_name, main_category, image_url',
   facts:
-    'id, name, brand_name, image_url, barcode, kcal_per_100g, coupang_link, '
+    'id, name, brand_name, image_url, barcode, kcal_per_100g, coupang_link, catalog_source_url, '
     + 'nutritional_profiles(crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus)',
   categories: 'main_category',
   full: '*',
@@ -234,6 +234,7 @@ serve(async (req) => {
         .from('products')
         .select(columns)
         .order('name', { ascending: true })
+        .order('id', { ascending: true })
         .range(offset, offset + SCAN_PAGE - 1);
       builder = applyFilters(builder, filters);
 

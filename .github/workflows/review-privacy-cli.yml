@@ -1,0 +1,53 @@
+name: Review privacy actual CLI transaction
+on:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  postgres-cli:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Verified official Supabase CLI 2.118.0 (temporary directory only)
+        shell: bash
+        run: |
+          cli_dir="$(mktemp -d)"
+          curl --fail --location --proto '=https' --tlsv1.2 --output "$cli_dir/cli.tar.gz" https://github.com/supabase/cli/releases/download/v2.118.0/supabase_2.118.0_linux_amd64.tar.gz
+          printf '%s  %s\n' f6089a86fb9d9221c958193a277338daddd6822f706929943812fa32e106c86d "$cli_dir/cli.tar.gz" | sha256sum --check
+          python3 - "$cli_dir" <<'PY'
+          import pathlib,sys,tarfile,shutil
+          p=pathlib.Path(sys.argv[1])
+          with tarfile.open(p/'cli.tar.gz') as t:
+              assert sorted(m.name for m in t.getmembers())==['supabase','supabase-go']
+              assert all(m.isfile() for m in t.getmembers())
+              for m in t.getmembers():
+                  with t.extractfile(m) as src,(p/m.name).open('wb') as dst: shutil.copyfileobj(src,dst)
+                  (p/m.name).chmod(0o700)
+          PY
+          echo "REVIEW_PRIVACY_TEST_CLI=$cli_dir/supabase" >> "$GITHUB_ENV"
+      - name: Actual CLI and isolated PostgreSQL, including ledger failure and lock contention
+        run: node scripts/test-review-privacy-cli.mjs
+        env:
+          REVIEW_PRIVACY_PG_URL: postgresql://postgres@127.0.0.1:5432/postgres?sslmode=disable
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: review-privacy-cli-transaction-evidence
+          path: .artifacts/review-privacy-cli

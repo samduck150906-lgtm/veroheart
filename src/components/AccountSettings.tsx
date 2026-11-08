@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { ChevronRight, LogOut } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getCurrentUser, getUserProfile, manageAccount, supabase } from '../lib/supabase';
-import { getAuthRedirectUrl } from '../lib/nativeAuth';
+import { getCurrentUser, getUserProfile, manageAccount } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import { TossButton, TossCard, TossSectionTitle } from './TossUI';
 
@@ -31,8 +30,7 @@ export default function AccountSettings() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [retry, setRetry] = useState(0);
-  const [busy, setBusy] = useState<'reset' | 'cleanup' | 'logout' | null>(null);
-  const [resetSent, setResetSent] = useState(false);
+  const [busy, setBusy] = useState<'cleanup' | 'logout' | null>(null);
   const [message, setMessage] = useState('');
   const [actionError, setActionError] = useState('');
 
@@ -68,18 +66,13 @@ export default function AccountSettings() {
     : account?.app_metadata.provider ? [account.app_metadata.provider] : [];
   const canResetPassword = Boolean(account?.email && providers.includes('email'));
 
-  const runAction = async (action: 'reset' | 'cleanup' | 'logout') => {
-    if (busy || (action === 'reset' && (!canResetPassword || resetSent))) return;
+  const runAction = async (action: 'cleanup' | 'logout') => {
+    if (busy) return;
     setBusy(action);
     setMessage('');
     setActionError('');
     try {
-      if (action === 'reset') {
-        const { error } = await supabase.auth.resetPasswordForEmail(account!.email!, { redirectTo: getAuthRedirectUrl('recovery') });
-        if (error) throw error;
-        setResetSent(true);
-        setMessage('비밀번호 재설정 메일을 보냈습니다. 이 기기에서 링크를 열어 새 비밀번호를 설정해 주세요.');
-      } else if (action === 'cleanup') {
+      if (action === 'cleanup') {
         await manageAccount('cleanup-photos');
         setMessage('삭제 대기 사진 정리를 완료했습니다.');
       } else {
@@ -87,9 +80,7 @@ export default function AccountSettings() {
         navigate('/');
       }
     } catch {
-      setActionError(action === 'reset'
-        ? '메일을 보내지 못했습니다. 잠시 후 다시 시도해 주세요.'
-        : action === 'cleanup'
+      setActionError(action === 'cleanup'
           ? '사진 정리를 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.'
           : '로그아웃하지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.');
     } finally {
@@ -113,7 +104,7 @@ export default function AccountSettings() {
           <div><dt style={{ color: 'var(--text-muted)', marginBottom: 4 }}>로그인 방식</dt><dd style={{ margin: 0, fontWeight: 700 }}>{providers.map((provider) => providerLabels[provider] ?? '연결된 외부 계정').join(' · ') || '확인할 수 없습니다'}</dd></div>
         </dl>
         {canResetPassword
-          ? <TossButton variant="outline" disabled={busy !== null || resetSent} onClick={() => void runAction('reset')}>{busy === 'reset' ? '메일을 보내는 중…' : '비밀번호 재설정 메일 받기'}</TossButton>
+          ? <Link to="/account/find?mode=password" state={{ email: account.email }} style={settingsLinkStyle}>비밀번호 변경 <ChevronRight size={17} /></Link>
           : <p style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--text-muted)' }}>연결한 서비스의 계정 설정에서 로그인 정보를 관리해 주세요.</p>}
       </>}
     </TossCard>

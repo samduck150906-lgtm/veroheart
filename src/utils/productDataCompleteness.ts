@@ -1,5 +1,6 @@
 import type { Product } from '../types';
 import { readinessFromStoredStatus } from '../analysis/analysisReadiness';
+import { getNutritionPresentation } from '../analysis/nutritionReadiness';
 
 export function describeIngredientAvailability(product: Product): { label: string; detail: string } {
   if (product.ingredientDataLoaded === false) {
@@ -9,8 +10,11 @@ export function describeIngredientAvailability(product: Product): { label: strin
   const unknown = product.unknownIngredientTerms?.length ?? 0;
   const { status } = readinessFromStoredStatus(product.analysisStatus, known, unknown);
   if (status === 'blocked') return { label: '원료 표기 확인 필요', detail: '전성분 표기가 서로 달라 전체 점수를 계산하지 않았습니다. 아래 원료 목록을 확인해 주세요.' };
+  if (status === 'unavailable' && known > 0 && unknown === 0) {
+    return { label: `원료 ${known}개 등록`, detail: '등록된 원료는 아래에서 확인할 수 있습니다. 전성분 라벨 대조와 원료별 분석은 별도로 진행합니다.' };
+  }
   if (status !== 'ready' && known + unknown > 0) {
-    return { label: '원료 상세 확인 필요', detail: '전성분은 등록되어 있습니다. 아직 특성을 확인하지 못한 원료가 있어 전체 점수를 계산하지 않았습니다.' };
+    return { label: `원료 ${known + unknown}개 등록`, detail: `등록된 원료 중 ${unknown}개는 분석 준비 중입니다. 원료 목록은 아래에서 확인할 수 있습니다.` };
   }
   if (known + unknown === 0) return { label: '원료 등록 필요', detail: '이 제품의 전성분 표기가 아직 등록되지 않았습니다.' };
   return { label: '원료 확인 가능', detail: '등록된 전성분을 바탕으로 분석했습니다.' };
@@ -38,13 +42,8 @@ export interface ProductCompletenessDisplay {
 
 export function resolveProductCompleteness(product: Product): ProductDataCompleteness {
   const hasIngredients = (product.ingredients?.length ?? 0) + (product.unknownIngredientTerms?.length ?? 0) > 0;
-  const analysis = product.guaranteedAnalysis;
-  // 성분 분석표는 값이 하나라도 실제로 들어와야 의미가 있다.
-  const hasNutrition = Boolean(
-    analysis && Object.values(analysis).some((value) => typeof value === 'number' && Number.isFinite(value)),
-  );
-
-  if (hasIngredients && hasNutrition && !product.unknownIngredientTerms?.length) return 'full';
+  const nutrition = getNutritionPresentation(product.guaranteedAnalysis);
+  if (hasIngredients && !nutrition.limited && !product.unknownIngredientTerms?.length) return 'full';
   if (hasIngredients) return 'partial';
   return 'minimal';
 }
@@ -54,12 +53,12 @@ export function describeProductCompleteness(product: Product): ProductCompletene
   if (product.unknownIngredientTerms?.length) return { level: 'partial', ...describeIngredientAvailability(product) };
   switch (resolveProductCompleteness(product)) {
     case 'full':
-      return { level: 'full', label: '원료·영양 정보 확인됨', detail: '' };
+      return { level: 'full', label: '원료·기초 영양 정보 확인됨', detail: '' };
     case 'partial':
       return {
         level: 'partial',
         label: '일부 정보만 확인할 수 있습니다',
-        detail: '원료는 확인했지만 영양성분이 등록되지 않아 급여량·영양 균형은 분석할 수 없습니다.',
+        detail: getNutritionPresentation(product.guaranteedAnalysis).notice,
       };
     default:
       return {
