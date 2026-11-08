@@ -1,0 +1,6 @@
+{
+  "extends": "../../tsconfig.app.json",
+  "compilerOptions": { "tsBuildInfoFile": "../../node_modules/.tmp/tsconfig.detail-layout.tsbuildinfo" },
+  "include": ["entry.tsx", "vite.config.ts"],
+  "exclude": []
+}
