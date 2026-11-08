@@ -530,15 +530,16 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--primary-dark);
 }
 
-/* 제품 상세: 하단 네비 바로 위 고정 FAB 묶음 */
-.detail-fab-stack {
-  position: fixed;
-  z-index: 55;
-  left: max(16px, calc(50% - 240px + 16px));
-  bottom: calc(12px + 64px + 14px + env(safe-area-inset-bottom, 0px));
+/* Product navigation stays in content flow; fixed controls obscured evidence.
+   Header back/share remain available while scrolling; this end-of-page group
+   also wraps when space is constrained, above the existing padded action bar. */
+.detail-page-tools {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
   gap: 10px;
+  margin: 20px 0 12px;
 }
 
 .detail-back-fab,
@@ -573,7 +574,6 @@ h1, h2, h3, h4, h5, h6 {
 .detail-scroll-top-fab {
   width: 46px;
   height: 46px;
-  margin-left: 3px;
   background: rgba(255, 251, 235, 0.98);
 }
 
