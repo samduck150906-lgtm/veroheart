@@ -60,6 +60,7 @@ describe('getProductDisplayParts', () => {
     expect(display.name).toBe('그릭 요거트');
     expect(display.meta).toContain('12g');
     expect(display.meta).toContain('30개입');
+    expect(getProductDisplayParts({ name: '제품 2kg 1개', displayName: '제조사 제품명' }).meta).toContain('2kg');
     expect(normalizeProductDisplayName({ name: '다이제스티브 200 연어 30% 비타민 500mg 14gX30개' }))
       .toBe('다이제스티브 200 연어 30% 비타민 500mg');
   });

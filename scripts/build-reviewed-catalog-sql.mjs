@@ -23,6 +23,7 @@ DO $review$
 DECLARE item JSONB; previous public.products%ROWTYPE; v_product_id UUID; nutrition_id UUID;
 BEGIN
 FOR item IN SELECT value FROM jsonb_array_elements(${literal(JSON.stringify(rows))}::JSONB) LOOP
+  PERFORM pg_advisory_xact_lock(hashtextextended('manufacturer-url:' || (item->>'sourceUrl'),0));
   IF item->>'existingProductId' IS NOT NULL THEN
     SELECT * INTO previous FROM public.products WHERE id=(item->>'existingProductId')::UUID FOR UPDATE;
     IF NOT FOUND OR NOT (to_jsonb(previous) @> (item->'before')) THEN RAISE EXCEPTION 'catalog changed since review: %', item->>'sourceUrl'; END IF;

@@ -130,7 +130,8 @@ export function isSourceLabelBrand(brand: string | null | undefined): boolean {
 
 /** 카드·목록·상세에서 공통으로 쓰는 공개 제품 식별 정보. */
 export function getProductDisplayParts(product: NameSource): ProductDisplayParts {
-  const extracted = splitProductPackaging(product.displayName?.trim() || product.name || '').packaging;
+  const extracted = [...splitProductPackaging(product.displayName || '').packaging,
+    ...splitProductPackaging(product.name || '').packaging];
   const meta = [...new Set([product.variantName, product.netWeightText, ...extracted]
     .map((value) => (value ?? '').trim())
     .filter(Boolean))]
