@@ -105,6 +105,16 @@ try {
   console.log('PASS: current canonical/raw ingredient search; stale legacy excluded, empty current labels respected, anon RLS works');
   await assertProductPublication(db);
   await assertReviewReadBoundaryOnBootstrap(db);
+  if (process.argv.includes('--label-comparison-draft')) {
+    await db.exec(await readFile(path.join(repository,'supabase/migration_drafts/ingredient_label_comparison_evidence.sql'),'utf8'));
+    await db.exec('SET ROLE anon');
+    const receipts = await db.query('SELECT public.get_public_label_comparison(ARRAY(SELECT id FROM public.products LIMIT 10)) result');
+    assert.ok(Array.isArray(receipts.rows[0].result));
+    await assert.rejects(db.query('SELECT * FROM public.ingredient_label_comparisons'), e => e.code === '42501');
+    await db.exec('RESET ROLE');
+    console.log('PASS: label comparison draft on existing guarded full bootstrap; anon public reader/private table isolation');
+  }
+
   await db.exec("INSERT INTO public.products(name,brand_name,is_visible) VALUES ('local guard test fixture','local test',false)");
   await assert.rejects(db.exec(await readFile(path.join(repository, 'supabase/local-bootstrap/before-legacy-labels.sql'), 'utf8')), /empty products table/);
   console.log(JSON.stringify({ passed: true, historicalMigrations: prepared.historicalMigrations, localMigrations: files.length, skippedKnownOrphanRows: orphanCount, fabricatedCatalogRows: 0, historicalFilesUnchanged: true, foreignKeysEnforced: true, storagePrivate: true }, null, 2));
