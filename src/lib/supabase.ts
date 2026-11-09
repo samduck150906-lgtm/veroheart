@@ -118,8 +118,8 @@ type VisibilityQueryResult<T> = { data: T | null; error: VisibilityQueryError | 
  * 제품 조회마다 설정을 새로 읽으면 요청이 배로 늘고, 설정 조회가 실패한 순간
  * 목록이 통째로 비어 버린다. 그래서 publicSettings 로더가 값을 여기에 밀어
  * 넣고(setHideUnverifiedProducts), 조회는 그 값만 본다. 아직 한 번도 읽지
- * 못했다면 노출 설정이 켜진 제품을 허용한다. 검수 완료 전용 설정을 켰을 때만
- * 검수 대기·검토됨 제품을 제외한다. 검수 상태 자체는 변경하지 않는다.
+ * 못했어도 검수 대기 제품은 항상 제외한다. 검수 완료 전용 설정을 켜면
+ * 검토됨 제품도 제외한다. 검수 상태와 노출 설정 자체는 변경하지 않는다.
  *
  * (publicSettings 가 이 모듈을 import 하므로 반대 방향 import 는 두지 않는다.)
  */
@@ -130,7 +130,7 @@ export function setHideUnverifiedProducts(value: boolean): void {
 }
 
 function publicProductReviewStatuses(): string[] {
-  return hideUnverifiedProducts ? ['verified'] : ['pending', 'reviewed', 'verified'];
+  return hideUnverifiedProducts ? ['verified'] : ['reviewed', 'verified'];
 }
 
 async function queryVisibleProducts<T>(
@@ -410,9 +410,22 @@ export async function getProductByBarcode(barcode: string): Promise<Product | nu
   });
 
   if (error) throw new BarcodeLookupError('unavailable');
-  if (!data?.length) return null;
-  if (data.length > 1) throw new BarcodeLookupError('ambiguous');
-  return mapProductFromSupabaseRow(asProductRow(data[0]));
+  if ((data?.length ?? 0) > 1) throw new BarcodeLookupError('ambiguous');
+  // Manufacturer package GTINs remain behind the parent's publication RLS.
+  const aliases = await Promise.resolve().then(() => supabase.from('product_barcodes').select('product_id').in('barcode', candidates).limit(100))
+    .catch(() => { throw new BarcodeLookupError('unavailable'); });
+  if (aliases.error) throw new BarcodeLookupError('unavailable');
+  if ((aliases.data?.length ?? 0) >= 100) throw new BarcodeLookupError('ambiguous');
+  const ids = new Set<string>([
+    ...(data ?? []).map(row => asProductRow(row).id),
+    ...(aliases.data ?? []).map(row => row.product_id).filter((id): id is string => typeof id === 'string'),
+  ]);
+  if (ids.size > 1) throw new BarcodeLookupError('ambiguous');
+  if (data?.length) return mapProductFromSupabaseRow(asProductRow(data[0]));
+  const id = [...ids][0];
+  if (!id) return null;
+  try { return await getProductDetail(id); }
+  catch { throw new BarcodeLookupError('unavailable'); }
 }
 
 /** 다이어트·체중 관련 태그( DB product_health_concerns 값과 맞추면 매칭됨 ) */

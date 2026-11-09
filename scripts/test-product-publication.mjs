@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 
-export const PRODUCT_PUBLICATION_MIGRATION = '20261103140000_restore_optional_catalog_review_gate.sql';
+export const PRODUCT_PUBLICATION_MIGRATION = '20261109125602_require_review_before_publication.sql';
 
 export async function assertPublicationMigrationPreservesIntent(db, applyMigration) {
   const fixtureIds = ['e1000000-0000-4000-8000-000000000001', 'e1000000-0000-4000-8000-000000000002'];
@@ -19,7 +19,7 @@ export async function assertPublicationMigrationPreservesIntent(db, applyMigrati
 // rather than a write-time CHECK constraint, must reject null/unknown statuses.
 export async function assertProductPublication(db) {
   const ids = Array.from({ length: 9 }, (_, index) => `e0000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`);
-  const expectedVisible = [ids[0], ids[1], ids[2]];
+  const expectedVisible = [ids[1], ids[2]];
   const expectedVerified = [ids[2]];
   const allIds = async (sql, params = [ids]) => (await db.query(sql, params)).rows.map((row) => row.product_id).sort();
   const fixtures = [
@@ -113,7 +113,7 @@ export async function assertProductPublication(db) {
     await db.exec('RESET ROLE');
     await assertPublicSurfaces([], 'reviewed is not verified/verified-only on');
     await setVerifiedOnly(false);
-    await assertPublicSurfaces(expectedVisible, 'verified-only off restores visible catalog');
+    await assertPublicSurfaces([ids[0], ids[1]], 'pending remains blocked when verified-only is off');
     console.log('PASS: product publication RLS, direct evidence/views/search, verified-only setting, restrictive-policy bypass guard, admin review transitions');
   } finally {
     await db.exec('ROLLBACK; RESET ROLE');

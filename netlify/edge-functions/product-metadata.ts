@@ -52,7 +52,7 @@ async function fetchPublicProduct(id: string): Promise<ProductMetadataRow | null
   );
   url.searchParams.set('id', `eq.${id}`);
   url.searchParams.set('is_visible', 'eq.true');
-  url.searchParams.set('verification_status', 'in.(pending,reviewed,verified)');
+  url.searchParams.set('verification_status', 'in.(reviewed,verified)');
   url.searchParams.set('limit', '1');
 
   const controller = new AbortController();
@@ -67,7 +67,7 @@ async function fetchPublicProduct(id: string): Promise<ProductMetadataRow | null
     if (!response.ok) return null;
     const rows = await response.json();
     const row = Array.isArray(rows) && rows[0] ? rows[0] as ProductMetadataRow : null;
-    return row?.verification_status === 'pending' || row?.verification_status === 'reviewed' || row?.verification_status === 'verified' ? row : null;
+    return row?.verification_status === 'reviewed' || row?.verification_status === 'verified' ? row : null;
   } finally {
     clearTimeout(timeout);
   }

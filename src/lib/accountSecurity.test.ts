@@ -4,7 +4,7 @@ import { webcrypto } from 'node:crypto';
 import ts from 'typescript';
 import { expect, it, vi } from 'vitest';
 
-function load(name: string, extra = '') {
+function load(name: string, extra = '', env: Record<string,string> = {}) {
   let handler;
   const deleteAccountData = vi.fn();
   const drainPhotoCleanup = vi.fn();
@@ -13,7 +13,7 @@ function load(name: string, extra = '') {
   const source = readFileSync(`supabase/functions/${name}/index.ts`, 'utf8') + extra;
   const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
   runInContext(code, createContext({ exports, Request, Response, TextEncoder, TextDecoder, crypto: webcrypto, btoa, atob, Date, console,
-    Deno: { env: { get: (key: string) => ({ SUPABASE_URL: 'https://test.invalid', SUPABASE_SERVICE_ROLE_KEY: 'test-secret', ADMIN_SESSION_SECRET: 'test-secret' })[key] } },
+    Deno: { env: { get: (key: string) => ({ SUPABASE_URL: 'https://test.invalid', SUPABASE_SERVICE_ROLE_KEY: 'test-secret', ADMIN_SESSION_SECRET: 'test-secret', ...env })[key] } },
     require(specifier: string) {
       if (specifier.includes('/http/server.ts')) return { serve: (fn) => { handler = fn; } };
       if (specifier.includes('supabase-js')) return { createClient: () => db };
@@ -32,6 +32,21 @@ it.each(['signup', 'confirm'])('retired admin-auth fails closed for %s without a
   expect(db.from).not.toHaveBeenCalled();
   expect(db.auth.admin.createUser).not.toHaveBeenCalled();
   expect(db.auth.admin.updateUserById).not.toHaveBeenCalled();
+});
+it('operator-provisioned QA credentials require matching identity, hash, and a bounded expiry', async () => {
+  const expiry=Math.floor(Date.now()/1000)+600;
+  const env={ TEMP_ADMIN_ID:'qa-inspection',TEMP_ADMIN_CREDENTIAL_SHA256:'a'.repeat(64),TEMP_ADMIN_EXPIRES_AT:String(expiry) };
+  const extra='\nexport { temporaryAdminAllowed, issueAdminSession };';
+  const {exports}=load('admin-write',extra,env);
+  expect(exports.temporaryAdminAllowed('a'.repeat(64),'qa-inspection')).toBe(true);
+  expect(exports.temporaryAdminAllowed('b'.repeat(64),'qa-inspection')).toBe(false);
+  expect(exports.temporaryAdminAllowed('a'.repeat(64),'other')).toBe(false);
+  for(const deadline of [String(expiry-1000),String(expiry+3600),'NaN']) {
+    const invalid=load('admin-write',extra,{...env,TEMP_ADMIN_EXPIRES_AT:deadline});
+    expect(invalid.exports.temporaryAdminAllowed('a'.repeat(64),'qa-inspection')).toBe(false);
+  }
+  const token=await exports.issueAdminSession('qa-inspection','test-secret');
+  expect(JSON.parse(Buffer.from(token.split('.')[1],'base64url').toString()).exp).toBe(expiry);
 });
 it('an existing signed admin session cannot mint a new session', async () => {
   const { handler, exports } = load('admin-write', '\nexport { issueAdminSession };');

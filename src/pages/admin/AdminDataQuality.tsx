@@ -210,7 +210,8 @@ export default function AdminDataQuality() {
             <h2 className="admin-card-title">제품 데이터 보완 큐</h2>
             <p className="admin-item-sub" style={{ marginTop: 5, lineHeight: 1.7 }}>
               <strong>이 화면은 “정보가 덜 채워진 제품의 작업 목록”입니다.</strong> 원재료·영양정보·바코드·이미지 중
-              하나라도 빠진 제품이 자동으로 여기 쌓이고, 채워 넣으면 목록에서 빠집니다.
+              하나라도 빠진 제품이 자동으로 여기 쌓이고, 채워 넣으면 기본 목록에서 빠집니다.
+              현재 전성분 라벨과 제조사 영양 자료·포장별 바코드도 반영합니다. 건물기준 영양값은 보장성분과 구분해 보관합니다.
               <br />
               제품을 골라 <strong>조사·검수</strong>를 누르면 제조사 공식 페이지 같은 출처 URL과 원재료 원문을 그대로
               보관할 수 있습니다. 나중에 “이 값을 어디서 가져왔는지” 되짚을 수 있게 하려는 것이며, 비슷한 제품의

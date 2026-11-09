@@ -30,6 +30,7 @@ export function normalizeBarcode(value: string): string | null {
   const digits = String(value ?? '').replace(/\D/g, '');
   const normalized = digits.length === 12 ? `0${digits}` : digits;
   if (![8, 13, 14].includes(normalized.length)) return null;
+  if (/^0+$/.test(normalized)) return null;
   return hasValidCheckDigit(normalized) ? normalized : null;
 }
 

@@ -30,7 +30,7 @@ async function readPublicProducts(baseUrl: string, anonKey: string): Promise<Sit
     const url = new URL('/rest/v1/products', baseUrl);
     url.searchParams.set('select', 'id,slug,last_observed_at,verification_status');
     url.searchParams.set('is_visible', 'eq.true');
-    url.searchParams.set('verification_status', 'in.(pending,reviewed,verified)');
+    url.searchParams.set('verification_status', 'in.(reviewed,verified)');
     url.searchParams.set('order', 'id.asc');
     url.searchParams.set('offset', String(offset));
     url.searchParams.set('limit', String(PAGE_SIZE));
@@ -43,7 +43,7 @@ async function readPublicProducts(baseUrl: string, anonKey: string): Promise<Sit
     if (!response.ok) throw new Error(`public products query failed (${response.status})`);
     const page = await response.json();
     if (!Array.isArray(page)) throw new Error('public products response is not an array');
-    rows.push(...(page as SitemapProductRow[]).filter(row => row.verification_status === 'pending' || row.verification_status === 'reviewed' || row.verification_status === 'verified'));
+    rows.push(...(page as SitemapProductRow[]).filter(row => row.verification_status === 'reviewed' || row.verification_status === 'verified'));
     if (page.length < PAGE_SIZE) break;
   }
   return rows;
