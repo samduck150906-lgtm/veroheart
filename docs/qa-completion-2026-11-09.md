@@ -25,7 +25,7 @@ has been verified.
 manufacturer dry-matter tables; those tables remain separate from guaranteed
 analysis and score inputs. Missing measurements are not replaced with zero.
 Explicit kcal/kg is divided by ten for kcal/100g; no default energy is invented.
-265 records have a raw ingredient list. Unmatched terms retain their raw text
+266 records have a raw ingredient list. Unmatched terms retain their raw text
 and order rather than acquiring invented risk ratings.
 
 `prepare-reviewed-catalog.mjs` reads downloaded manufacturer HTML and a bounded
@@ -43,7 +43,7 @@ other historical pending migrations as part of this repair.
 
 ## Validation
 
-The full application checks cover lint, 1,831 unit tests, 14 catalog tests,
+The full application checks cover lint, 1,831 unit tests, 15 catalog tests,
 complete SQL bootstrap, publication/scan/account/catalog/RLS contracts, app/server
 types and production build. The catalog transaction regression verifies hidden
 intent, numeric zero, dry-matter isolation, stale snapshot rejection and public
@@ -78,8 +78,8 @@ list and remain accessible by explicit status. Publication filters honor review
 status as well as the visibility flag.
 
 The final hosted transaction reduced public supplementation targets
-from 277 to 197 (80 complete). Remaining fields overlap: 189 lack a source-confirmed
-GTIN, 135 lack adequate nutrition evidence, and 12 lack ingredients. Product
+from 277 to 196 (81 complete). Remaining fields overlap: 189 lack a source-confirmed
+GTIN, 135 lack adequate nutrition evidence, and 11 lack ingredients. Product
 gallery extraction recovered all 27 missing images. These are
 real source gaps; removing them from the list or inventing values would not
 complete the data. Pending records remain private and are still available to

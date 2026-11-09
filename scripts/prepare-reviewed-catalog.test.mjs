@@ -34,3 +34,8 @@ test('uses the current product gallery even when manufacturer image alt is missi
   const result=readManufacturerPage({brand:'힐스',httpStatus:200,nameMatches:true,sourceUrl:'https://www.hillspet.co.kr/dog-food/current-product'},'<h1>현재 제품</h1><img alt="추천 제품 제품 사진" src="https://pxmshare.colgatepalmolive.com/PNG_500/other.png"><div id="current-product-simpleCarousel-abc"><img class="swiper-image-desktop" alt="null" src="https://pxmshare.colgatepalmolive.com/PNG_2000/current.png"></div>');
   assert.equal(result.image,'https://pxmshare.colgatepalmolive.com/PNG_2000/current.png');
 });
+test('recognizes the manufacturer alternate ingredient heading', () => {
+  const result=readManufacturerPage({brand:'힐스',httpStatus:200,nameMatches:true},'<h1>제품</h1><button aria-controls="ingredients"><span class="cmp-accordion__title">재료</span></button><div id="ingredients">닭고기, 쌀</div>');
+  assert.equal(result.ingredientsText,'닭고기, 쌀');
+  assert.equal(result.items.length,2);
+});

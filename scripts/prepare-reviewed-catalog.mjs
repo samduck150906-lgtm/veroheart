@@ -34,7 +34,7 @@ export function readManufacturerPage(source, html) {
         if (/등록성분량/.test(title) || /조단백\s*\d|조단백질\s*\d|Crude protein\s*\d/i.test(text)) nutritionText += text + '\n';
       }
     } else if (source.brand === '힐스') {
-      const title = [...d.querySelectorAll('.cmp-accordion__title')].find(e => e.textContent.trim() === '성분');
+      const title = [...d.querySelectorAll('.cmp-accordion__title')].find(e => /^(?:성분|재료)$/.test(e.textContent.trim()));
       ingredientsText = d.getElementById(title?.closest('button')?.getAttribute('aria-controls'))?.textContent.trim() ?? '';
       const table = [...d.querySelectorAll('table')].find(t => /Dry Matter/i.test(t.textContent));
       dryMatterText = table ? [...table.querySelectorAll('tr')].map(tr => [...tr.querySelectorAll('td,th')].map(td => td.textContent.trim()).join(' ')).join(' · ').replace(/\s+/g, ' ') : '';
