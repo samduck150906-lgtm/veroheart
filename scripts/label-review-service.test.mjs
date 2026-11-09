@@ -83,3 +83,8 @@ it('invalidates a changed target species even if an old updated_at is retained',
  assert.equal((await approval()).http,200);await db.exec("UPDATE products SET target_pet_type='cat'");
  assert.equal((await publicReceipt()).state,'stale');assert.deepEqual(await counts(),{evidence:1,audit:1});
 });
+it('does not reuse approval after an ABA edit with restored timestamps',async()=>{
+ assert.equal((await approval()).http,200);
+ await db.exec("UPDATE product_ingredient_label_sets SET raw_label_text='temporary'; UPDATE product_ingredient_label_sets SET raw_label_text='닭고기, 대두'");
+ assert.notEqual((await publicReceipt()).state,'verified');
+});

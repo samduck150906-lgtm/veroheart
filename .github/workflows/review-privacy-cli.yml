@@ -46,8 +46,14 @@ jobs:
         run: node scripts/test-review-privacy-cli.mjs
         env:
           REVIEW_PRIVACY_PG_URL: postgresql://postgres@127.0.0.1:5432/postgres?sslmode=disable
+      - name: Label evidence actual PostgreSQL two-connection and CLI contract
+        run: node scripts/test-label-evidence-postgres.mjs
+        env:
+          REVIEW_PRIVACY_PG_URL: postgresql://postgres@127.0.0.1:5432/postgres?sslmode=disable
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: review-privacy-cli-transaction-evidence
-          path: .artifacts/review-privacy-cli
+          path: |
+            .artifacts/review-privacy-cli
+            .artifacts/label-evidence-postgres

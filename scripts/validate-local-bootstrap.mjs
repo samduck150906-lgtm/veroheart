@@ -107,7 +107,7 @@ try {
   await assertProductPublication(db);
   await assertReviewReadBoundaryOnBootstrap(db);
   if (process.argv.includes('--label-comparison-draft')) {
-    await db.exec(await readFile(path.join(repository,'supabase/migration_drafts/ingredient_label_comparison_evidence.sql'),'utf8'));
+    // Already replayed once above as the candidate migration; verify, never reapply.
     await db.exec('SET ROLE anon');
     const receipts = await db.query('SELECT public.get_public_label_comparison(ARRAY(SELECT id FROM public.products LIMIT 10)) result');
     assert.ok(Array.isArray(receipts.rows[0].result));

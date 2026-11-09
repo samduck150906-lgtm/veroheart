@@ -4,7 +4,7 @@
 WITH published AS (
  SELECT p.id,p.analysis_status,row_number() OVER(ORDER BY p.id) n
  FROM public.products p WHERE p.is_visible=TRUE
- AND p.verification_status IN ('pending','reviewed','verified')
+ AND p.verification_status IN ('reviewed','verified')
  AND (NOT private.hide_unverified_products_enabled() OR p.verification_status='verified')
 ), batches AS (
  SELECT array_agg(id) ids FROM published GROUP BY ((n-1)/100)

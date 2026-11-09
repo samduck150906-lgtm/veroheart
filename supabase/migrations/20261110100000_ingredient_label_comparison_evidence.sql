@@ -1,6 +1,41 @@
--- DRAFT ONLY. Not an automatic migration. No backfill or readiness promotion.
--- Deploy storage/RPCs -> authenticated admin-write actions -> fresh reviews ->
--- compatibility counts/approval -> consumer rollout. See the contract document.
+-- Approval candidate only: no operating execution approved.
+-- One DO statement; actual CLI transaction/ledger atomicity is tested separately.
+DO $label_foundation$
+BEGIN
+ PERFORM set_config('lock_timeout','3s',true);
+CREATE TABLE private.ingredient_label_revisions(product_id UUID PRIMARY KEY, revision BIGINT NOT NULL);
+REVOKE ALL ON private.ingredient_label_revisions FROM PUBLIC,anon,authenticated,service_role;
+CREATE FUNCTION private.invalidate_label_evidence() RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public AS $epoch$
+DECLARE b JSONB := '{}'; a JSONB := '{}'; ids UUID[]; pid UUID;
+BEGIN
+ IF TG_OP<>'INSERT' THEN b:=to_jsonb(OLD); END IF;
+ IF TG_OP<>'DELETE' THEN a:=to_jsonb(NEW); END IF;
+ IF TG_TABLE_NAME='products' THEN ids:=ARRAY[(b->>'id')::uuid,(a->>'id')::uuid];
+ ELSIF TG_TABLE_NAME='product_ingredient_label_sets' THEN ids:=ARRAY[(b->>'product_id')::uuid,(a->>'product_id')::uuid];
+ ELSIF TG_TABLE_NAME='product_ingredient_label_items' THEN
+   SELECT array_agg(DISTINCT product_id) INTO ids FROM public.product_ingredient_label_sets
+   WHERE id IN ((b->>'label_set_id')::uuid,(a->>'label_set_id')::uuid);
+ ELSE
+   SELECT array_agg(DISTINCT l.product_id) INTO ids FROM public.product_ingredient_label_sets l
+   JOIN public.product_ingredient_label_items i ON i.label_set_id=l.id
+   LEFT JOIN public.canonical_ingredients c ON c.id=i.canonical_ingredient_id
+   WHERE l.is_current AND ((TG_TABLE_NAME='canonical_ingredients' AND i.canonical_ingredient_id IN ((b->>'id')::uuid,(a->>'id')::uuid))
+     OR (TG_TABLE_NAME='ingredients' AND (i.legacy_ingredient_id IN ((b->>'id')::uuid,(a->>'id')::uuid)
+       OR c.legacy_ingredient_id IN ((b->>'id')::uuid,(a->>'id')::uuid))));
+ END IF;
+ FOR pid IN SELECT DISTINCT x FROM unnest(ids) x WHERE x IS NOT NULL ORDER BY x LOOP
+   INSERT INTO private.ingredient_label_revisions VALUES(pid,1)
+   ON CONFLICT(product_id) DO UPDATE SET revision=private.ingredient_label_revisions.revision+1;
+ END LOOP;
+ RETURN NULL;
+END $epoch$;
+REVOKE ALL ON FUNCTION private.invalidate_label_evidence() FROM PUBLIC,anon,authenticated,service_role;
+CREATE TRIGGER invalidate_label_evidence AFTER INSERT OR UPDATE OR DELETE ON public.products FOR EACH ROW EXECUTE FUNCTION private.invalidate_label_evidence();
+CREATE TRIGGER invalidate_label_evidence AFTER INSERT OR UPDATE OR DELETE ON public.product_ingredient_label_sets FOR EACH ROW EXECUTE FUNCTION private.invalidate_label_evidence();
+CREATE TRIGGER invalidate_label_evidence AFTER INSERT OR UPDATE OR DELETE ON public.product_ingredient_label_items FOR EACH ROW EXECUTE FUNCTION private.invalidate_label_evidence();
+CREATE TRIGGER invalidate_label_evidence AFTER INSERT OR UPDATE OR DELETE ON public.canonical_ingredients FOR EACH ROW EXECUTE FUNCTION private.invalidate_label_evidence();
+CREATE TRIGGER invalidate_label_evidence AFTER INSERT OR UPDATE OR DELETE ON public.ingredients FOR EACH ROW EXECUTE FUNCTION private.invalidate_label_evidence();
 CREATE TABLE public.ingredient_label_comparisons (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   sequence BIGINT GENERATED ALWAYS AS IDENTITY UNIQUE,
@@ -20,6 +55,7 @@ REVOKE ALL ON public.ingredient_label_comparisons FROM PUBLIC, anon, authenticat
 CREATE FUNCTION private.label_review_snapshot(p_id UUID) RETURNS JSONB
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public AS $$
  SELECT jsonb_build_object(
+   'generation',COALESCE((SELECT revision FROM private.ingredient_label_revisions WHERE product_id=p.id),0),
    'productRevision',to_jsonb(p)->'updated_at',
    'product', jsonb_build_array(p.id,p.name,p.brand_name,p.variant_name,p.net_weight_text,p.barcode,
      CASE WHEN to_jsonb(p)->>'target_pet_type' IN ('dog','cat','all') THEN to_jsonb(p)->>'target_pet_type' END,
@@ -124,7 +160,7 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,public AS $$
  FROM (SELECT p.id,private.label_review_snapshot(p.id) s,
    encode(sha256(convert_to(private.label_review_snapshot(p.id)::text,'UTF8')),'hex') r
    FROM public.products p WHERE p.id=ANY(p_product_ids) AND cardinality(p_product_ids)<=100
-     AND p.is_visible=TRUE AND p.verification_status IN ('pending','reviewed','verified')
+     AND p.is_visible=TRUE AND p.verification_status IN ('reviewed','verified')
      AND (NOT private.hide_unverified_products_enabled() OR p.verification_status='verified')) q
  LEFT JOIN LATERAL(SELECT e.id,e.revision FROM public.ingredient_label_comparisons e
    WHERE e.product_id=q.id ORDER BY e.sequence DESC LIMIT 1) e ON TRUE
@@ -133,3 +169,5 @@ REVOKE ALL ON FUNCTION public.get_public_label_comparison(UUID[]) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_public_label_comparison(UUID[]) TO anon,authenticated,service_role;
 -- No product/ingredient/readiness updates; no old row promoted by counts.
 -- Raw snapshot, observation, source and reviewer never appear in public output.
+
+END $label_foundation$;
