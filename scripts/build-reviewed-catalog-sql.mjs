@@ -20,7 +20,7 @@ SET LOCAL statement_timeout = '120s';
 SET LOCAL lock_timeout = '10s';
 SET LOCAL request.jwt.claim.role = 'service_role';
 DO $review$
-DECLARE item JSONB; previous public.products%ROWTYPE; v_product_id UUID; nutrition_id UUID;
+DECLARE item JSONB; previous public.products%ROWTYPE; v_product_id UUID; nutrition_id UUID; observation_id UUID;
 BEGIN
 FOR item IN SELECT value FROM jsonb_array_elements(${literal(JSON.stringify(rows))}::JSONB) LOOP
   PERFORM pg_advisory_xact_lock(hashtextextended('manufacturer-url:' || (item->>'sourceUrl'),0));
@@ -44,7 +44,10 @@ FOR item IN SELECT value FROM jsonb_array_elements(${literal(JSON.stringify(rows
     last_observed_at=(item->>'checkedAt')::TIMESTAMPTZ
   WHERE id=v_product_id;
   INSERT INTO public.product_observations(product_id,source_type,source_url,source_title,retrieved_at,raw_name,raw_brand,raw_label_text,extracted_data,is_current)
-    VALUES(v_product_id,'manufacturer',item->>'sourceUrl',item->>'name',(item->>'checkedAt')::TIMESTAMPTZ,item->>'name',item->>'brand',item->>'ingredientsText',item,FALSE);
+    VALUES(v_product_id,'manufacturer',item->>'sourceUrl',item->>'name',(item->>'checkedAt')::TIMESTAMPTZ,item->>'name',item->>'brand',item->>'ingredientsText',item,FALSE) RETURNING id INTO observation_id;
+  INSERT INTO public.product_barcodes(product_id,barcode,source_url,source_observation_id)
+    SELECT v_product_id,value,item->>'sourceUrl',observation_id FROM jsonb_array_elements_text(COALESCE(item->'barcodes','[]'::JSONB))
+    ON CONFLICT(product_id,barcode) DO UPDATE SET source_url=EXCLUDED.source_url,source_observation_id=EXCLUDED.source_observation_id;
   IF jsonb_array_length(item->'items') > 0 THEN
     PERFORM public.ingest_product_ingredient_label((item->>'requestId')::UUID,v_product_id,'manufacturer',item->>'sourceUrl',item->>'ingredientsText','ko',item->'items');
   END IF;

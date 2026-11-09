@@ -29,7 +29,7 @@ describe('ProductCard catalog identity', () => {
     );
 
     expect(screen.getByText('오리지널 독')).toBeTruthy();
-    expect(screen.getByText('닭고기 · 성견 · 2kg')).toBeTruthy();
+    expect(screen.getByText('닭고기 · 성견 · 2kg · 2개')).toBeTruthy();
     expect(screen.queryByText(/검증 전/)).toBeNull();
     expect(screen.queryByText('쿠팡검색')).toBeNull();
     expect(screen.queryByText(product.name)).toBeNull();

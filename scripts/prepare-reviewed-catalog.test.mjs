@@ -24,3 +24,13 @@ test('separates nutrition embedded in a manufacturer ingredient accordion from a
   assert.deepEqual(result.nutrition, {crude_protein:9,moisture:84.1});
   assert.equal(result.items.length, 2);
 });
+test('accepts only checksum-valid manufacturer-declared barcode identities', () => {
+  const result=readManufacturerPage({brand:'힐스',httpStatus:200,nameMatches:true},'<h1>제품</h1><script>swnDataLayer.product_eans = "052742567006,000000000001,not-a-code";</script>');
+  assert.deepEqual(result.barcodes,[]); // reject an untrusted non-numeric declaration as a whole
+  const valid=readManufacturerPage({brand:'힐스',httpStatus:200,nameMatches:true},'<h1>제품</h1><script>swnDataLayer.product_eans = "052742567006,000000000001";</script>');
+  assert.deepEqual(valid.barcodes,['0052742567006']);
+});
+test('uses the current product gallery even when manufacturer image alt is missing', () => {
+  const result=readManufacturerPage({brand:'힐스',httpStatus:200,nameMatches:true,sourceUrl:'https://www.hillspet.co.kr/dog-food/current-product'},'<h1>현재 제품</h1><img alt="추천 제품 제품 사진" src="https://pxmshare.colgatepalmolive.com/PNG_500/other.png"><div id="current-product-simpleCarousel-abc"><img class="swiper-image-desktop" alt="null" src="https://pxmshare.colgatepalmolive.com/PNG_2000/current.png"></div>');
+  assert.equal(result.image,'https://pxmshare.colgatepalmolive.com/PNG_2000/current.png');
+});

@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { JSDOM } from 'jsdom';
 import { parseIngredientLabelItems } from '../src/analysis/labelIngredientParser.ts';
+import { normalizeBarcode } from '../src/lib/productIdentity.ts';
 
 const fields = { crude_protein: '조단백(?:질)?', crude_fat: '조지방', crude_fiber: '조섬유', crude_ash: '조회분', moisture: '수분', calcium: '칼슘', phosphorus: '(?:^|[,\\s])인' };
 export function parseAsFedNutrition(text) {
@@ -42,9 +43,16 @@ export function readManufacturerPage(source, html) {
     const energyArea = source.brand === '로얄캐닌' ? nutritionText : body.slice(body.indexOf('평균 영양소 및 칼로리 함량'));
     const energy = energyArea.match(/([0-9]+(?:[,.][0-9]+)?)\s*kcal\s*\/\s*kg/i);
     const kcalPer100g = energy ? Number(energy[1].replace(',', '')) / 10 : null;
-    const image = source.image || d.querySelector('meta[property="og:image"]')?.content || null;
+    const productImage=[...d.querySelectorAll('img')].find(img=>img.alt.replace(/\s+(?:제품 사진|Packshot)$/i,'').replace(/\s+/g,' ').trim()===name && /^https:\/\/(?:cdn\.royalcanin-weshare-online\.io|marspetcareaprimocdn\.petcare\.global|p1\.aprimocdn\.net|pxmshare\.colgatepalmolive\.com)\//.test(img.src))?.src;
+    const slug = source.sourceUrl?.split('/').at(-1);
+    const galleries = slug ? [...d.querySelectorAll('div[id]')].filter(e => e.id.startsWith(slug + '-simpleCarousel-')) : [];
+    const galleryImage = source.brand === '힐스' && galleries.length === 1
+      ? [...galleries[0].querySelectorAll('img.swiper-image-desktop')].find(img => /^https:\/\/pxmshare\.colgatepalmolive\.com\/PNG_2000\//.test(img.src))?.src : null;
+    const image = source.image || productImage || galleryImage || d.querySelector('meta[property="og:image"]')?.content || null;
     const items = ingredientsText ? parseIngredientLabelItems(ingredientsText).map(p => ({ ...p, normalizedText: p.baseText.normalize('NFKC').toLowerCase().replace(/\s+/g, ''), matchStatus: 'unreviewed' })) : [];
-    return { name, ingredientsText, items, nutrition: parseAsFedNutrition(nutritionText), nutritionText, dryMatterText, kcalPer100g, image };
+    const declaredBarcodes = html.match(/product_eans\s*=\s*"([0-9, ]+)"/i)?.[1] ?? '';
+    const barcodes = [...new Set(declaredBarcodes.split(',').map(value => normalizeBarcode(value.trim())).filter(Boolean))];
+    return { name, ingredientsText, items, nutrition: parseAsFedNutrition(nutritionText), nutritionText, dryMatterText, kcalPer100g, image, barcodes };
   } finally { window.close(); }
 }
 

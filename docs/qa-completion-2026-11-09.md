@@ -43,7 +43,7 @@ other historical pending migrations as part of this repair.
 
 ## Validation
 
-The full application checks cover lint, 1,828 unit tests, 12 catalog tests,
+The full application checks cover lint, 1,830 unit tests, 14 catalog tests,
 complete SQL bootstrap, publication/scan/account/catalog/RLS contracts, app/server
 types and production build. The catalog transaction regression verifies hidden
 intent, numeric zero, dry-matter isolation, stale snapshot rejection and public
@@ -58,3 +58,29 @@ a clean install.
 Real iPhone/Galaxy optical recognition, and operating signup/recovery/upload/
 account-deletion flows, still need dedicated devices or test accounts. Passing
 code and SQL checks does not certify those scenarios.
+
+## Barcode and enrichment repair
+
+Manufacturer-declared package GTINs are normalized and checksum validated. The
+review found 119 codes for 88 products, with no cross-product conflicts.
+`product_barcodes` retains source URL and observation provenance for every code;
+public access inherits the product's publication policy. Primary codes and
+package aliases are checked together, with conflicts and network errors kept
+distinct from an unknown product. An unknown GTIN still requires actual package
+photos for registration: a barcode cannot supply ingredients or nutrition.
+
+The enrichment queue now reads current raw labels, measured protein and fat,
+manufacturer dry-matter evidence, validated package aliases, and product images.
+Dry-matter evidence remains separate from as-fed measurements. All nutrient
+updates and label, barcode, and observation edits refresh the queue, and deleted
+evidence reopens completed rows. Empty rows leave the default supplementation
+list and remain accessible by explicit status. Publication filters honor review
+status as well as the visibility flag.
+
+The hosted rollback rehearsal initially reduced public supplementation targets
+from 277 to 198 (79 complete). Remaining fields overlap: 189 lack a source-confirmed
+GTIN, 135 lack adequate nutrition evidence, and 12 lack ingredients. Product
+gallery extraction subsequently recovered the last missing image. These are
+real source gaps; removing them from the list or inventing values would not
+complete the data. Pending records remain private and are still available to
+administrators for source review.

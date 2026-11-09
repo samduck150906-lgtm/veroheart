@@ -410,9 +410,22 @@ export async function getProductByBarcode(barcode: string): Promise<Product | nu
   });
 
   if (error) throw new BarcodeLookupError('unavailable');
-  if (!data?.length) return null;
-  if (data.length > 1) throw new BarcodeLookupError('ambiguous');
-  return mapProductFromSupabaseRow(asProductRow(data[0]));
+  if ((data?.length ?? 0) > 1) throw new BarcodeLookupError('ambiguous');
+  // Manufacturer package GTINs remain behind the parent's publication RLS.
+  const aliases = await Promise.resolve().then(() => supabase.from('product_barcodes').select('product_id').in('barcode', candidates).limit(100))
+    .catch(() => { throw new BarcodeLookupError('unavailable'); });
+  if (aliases.error) throw new BarcodeLookupError('unavailable');
+  if ((aliases.data?.length ?? 0) >= 100) throw new BarcodeLookupError('ambiguous');
+  const ids = new Set<string>([
+    ...(data ?? []).map(row => asProductRow(row).id),
+    ...(aliases.data ?? []).map(row => row.product_id).filter((id): id is string => typeof id === 'string'),
+  ]);
+  if (ids.size > 1) throw new BarcodeLookupError('ambiguous');
+  if (data?.length) return mapProductFromSupabaseRow(asProductRow(data[0]));
+  const id = [...ids][0];
+  if (!id) return null;
+  try { return await getProductDetail(id); }
+  catch { throw new BarcodeLookupError('unavailable'); }
 }
 
 /** 다이어트·체중 관련 태그( DB product_health_concerns 값과 맞추면 매칭됨 ) */
