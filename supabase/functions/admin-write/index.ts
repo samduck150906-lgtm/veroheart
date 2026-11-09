@@ -146,6 +146,22 @@ function savedProductMatches(saved: Record<string, unknown> | null, expected: Re
 
 const ADMIN_SESSION_SECONDS = 8 * 60 * 60;
 
+// Operator-provisioned QA account: no client signup, plaintext password, or
+// permanent access. Both credential login and issued sessions share the deadline.
+function temporaryAdminExpiry(actor: string): number {
+  const id = Deno.env.get('TEMP_ADMIN_ID') ?? '';
+  const expiry = Number(Deno.env.get('TEMP_ADMIN_EXPIRES_AT'));
+  const now = Math.floor(Date.now() / 1000);
+  if (!/^qa-[a-z0-9-]{1,40}$/.test(id) || actor !== id || !Number.isSafeInteger(expiry)
+    || expiry <= now || expiry > now + 3600) return 0;
+  return expiry;
+}
+
+function temporaryAdminAllowed(hash: string, actor: string): boolean {
+  const expected = Deno.env.get('TEMP_ADMIN_CREDENTIAL_SHA256') ?? '';
+  return /^[a-f0-9]{64}$/.test(expected) && hash === expected && temporaryAdminExpiry(actor) > 0;
+}
+
 function base64UrlEncode(bytes: Uint8Array): string {
   return btoa(String.fromCharCode(...bytes)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
 }
@@ -167,9 +183,11 @@ async function sessionKey(secret: string, usage: KeyUsage[]): Promise<CryptoKey>
 }
 
 async function issueAdminSession(actor: string, secret: string): Promise<string> {
+  const temporaryExpiry = temporaryAdminExpiry(actor);
+  if (actor.startsWith('qa-') && !temporaryExpiry) throw new Error('Temporary administrator expired');
   const payload = base64UrlEncode(new TextEncoder().encode(JSON.stringify({
     actor,
-    exp: Math.floor(Date.now() / 1000) + ADMIN_SESSION_SECONDS,
+    exp: temporaryExpiry || Math.floor(Date.now() / 1000) + ADMIN_SESSION_SECONDS,
     nonce: crypto.randomUUID(),
   })));
   const message = `v1.${payload}`;
@@ -206,8 +224,10 @@ async function verifyAdminSession(token: string, secret: string): Promise<string
 
 async function authenticateAdminToken(token: string, secret: string): Promise<string | null> {
   if (token.startsWith('v1.')) return verifyAdminSession(token, secret);
-  if (!ALLOWED_TOKEN_HASHES.has(await sha256Hex(token))) return null;
-  return actorFromToken(token);
+  const hash = await sha256Hex(token);
+  const actor = actorFromToken(token);
+  if (!ALLOWED_TOKEN_HASHES.has(hash) && !temporaryAdminAllowed(hash, actor)) return null;
+  return actor;
 }
 
 const SAVED_INGREDIENT_COLUMNS =

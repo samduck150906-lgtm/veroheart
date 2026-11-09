@@ -13,7 +13,7 @@ describe('normalizeProductDisplayName', () => {
     expect(out).toContain('연어');
     expect(out).toContain('피부건강');
     expect(out).toContain('전연령');
-    expect(out).toContain('2kg');
+    expect(out).not.toContain('2kg');
     // 선행 브랜드 중복 제거
     expect(out.startsWith('브랜드')).toBe(false);
   });
@@ -22,7 +22,7 @@ describe('normalizeProductDisplayName', () => {
     const out = normalizeProductDisplayName({ name: '고양이 사료 참치 [무료배송] (오늘출발) 3kg' });
     expect(out).not.toMatch(/무료배송|오늘출발|[[\]()]/);
     expect(out).toContain('참치');
-    expect(out).toContain('3kg');
+    expect(out).not.toContain('3kg');
   });
 
   it('displayName 이 있으면 그대로 최우선 사용한다', () => {
@@ -32,9 +32,9 @@ describe('normalizeProductDisplayName', () => {
 
   it('수입된 표시명에도 배송·환불 홍보가 남지 않는다', () => {
     expect(normalizeProductDisplayName({ displayName: ')당일발송( 로얄캐닌 하이포알러제닉 스몰독 1kg' }))
-      .toBe('로얄캐닌 하이포알러제닉 스몰독 1kg');
+      .toBe('로얄캐닌 하이포알러제닉 스몰독');
     expect(normalizeProductDisplayName({ displayName: '올바른끼니 알파 양고기 (안먹으면 100% 환불 보장) 1.2kg' }))
-      .toBe('올바른끼니 알파 양고기 1.2kg');
+      .toBe('올바른끼니 알파 양고기');
   });
 
   it('과도하게 제거되어 비면 원본으로 안전 폴백한다', () => {
@@ -55,6 +55,15 @@ describe('normalizeProductDisplayName', () => {
 });
 
 describe('getProductDisplayParts', () => {
+  it('moves marketplace package weight/count out of the name while preserving formula identifiers', () => {
+    const display = getProductDisplayParts({ brand: '펫라벨', name: '그릭 요거트 30 개입 (12 g x 30ea)' });
+    expect(display.name).toBe('그릭 요거트');
+    expect(display.meta).toContain('12g');
+    expect(display.meta).toContain('30개입');
+    expect(getProductDisplayParts({ name: '제품 2kg 1개', displayName: '제조사 제품명' }).meta).toContain('2kg');
+    expect(normalizeProductDisplayName({ name: '다이제스티브 200 연어 30% 비타민 500mg 14gX30개' }))
+      .toBe('다이제스티브 200 연어 30% 비타민 500mg');
+  });
   it('정제 이름을 우선하고 변형·중량만 한 줄 메타로 합친다', () => {
     expect(getProductDisplayParts({
       brand: '오리젠',

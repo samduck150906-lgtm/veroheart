@@ -1,0 +1,51 @@
+import assert from 'node:assert/strict';
+import {buildReviewedCatalogSql} from './build-reviewed-catalog-sql.mjs';
+export async function assertReviewedCatalogRepair(db) {
+  await db.exec('BEGIN');
+  try {
+    const ids=['b1000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000002'];
+    for(const [i,id] of ids.entries())await db.query("INSERT INTO products(id,name,brand_name,target_pet_type,product_type,is_visible,verification_status) VALUES($1,'Synthetic original','로얄캐닌','cat','food',$2,'pending')",[id,i===0]);
+    const rows=(await db.query('SELECT id,name,brand_name,target_pet_type,is_visible,verification_status FROM products WHERE id=ANY($1::uuid[]) ORDER BY id',[ids])).rows;
+    const base={httpStatus:200,nameMatches:true,htmlHash:'a'.repeat(64),checkedAt:'2026-11-09T13:00:00Z',name:'Synthetic reviewed',brand:'로얄캐닌',species:'cat',productType:'food',note:'Synthetic official evidence, not an operating product',formulation:'건식',items:[],barcodes:['0052742567006'],nutrition:{crude_protein:0,crude_fat:10,moisture:70},nutritionText:'Synthetic label',ingredientsText:'',image:null,kcalPer100g:null,veterinaryOnly:false};
+    const accepted=[...rows.map((p,i)=>({...base,sourceUrl:`https://www.royalcanin.com/kr/cats/products/retail-products/synthetic-${i}`,existingProductId:p.id,before:p})),{...base,sourceUrl:'https://www.royalcanin.com/kr/cats/products/retail-products/synthetic-new',existingProductId:null,before:null,nutrition:{},dryMatterText:'Synthetic dry matter'}];
+    const sql=buildReviewedCatalogSql({accepted}).replace(/^BEGIN;\n/,'').replace(/COMMIT;\n$/,'');
+    await db.exec(sql);
+    assert.equal((await db.query("SELECT is_visible FROM products WHERE id=$1",[ids[1]])).rows[0].is_visible,false);
+    assert.deepEqual((await db.query('SELECT verification_status FROM products WHERE id=ANY($1::uuid[])',[ids])).rows.map(x=>x.verification_status),['reviewed','reviewed']);
+    assert.equal(Number((await db.query('SELECT crude_protein FROM nutritional_profiles WHERE product_id=$1',[ids[0]])).rows[0].crude_protein),0);
+    assert.equal((await db.query("SELECT count(*)::int n FROM nutritional_profiles n JOIN products p ON p.id=n.product_id WHERE p.catalog_source_url LIKE '%synthetic-new' ")).rows[0].n,0);
+    const missing=async id=>(await db.query('SELECT missing_fields FROM product_enrichment_queue WHERE product_id=$1',[id])).rows[0].missing_fields;
+    await db.query("UPDATE products SET barcode='052742567006' WHERE id=$1",[ids[0]]);
+    await db.query('UPDATE products SET barcode=NULL WHERE id=$1',[ids[0]]);
+    assert.equal((await db.query('SELECT count(*)::int n FROM product_barcodes WHERE product_id=$1',[ids[0]])).rows[0].n,1);
+    assert.deepEqual(await missing(ids[0]),['ingredients','image']);
+    const label=(await db.query("INSERT INTO product_ingredient_label_sets(product_id,raw_label_text,is_current) VALUES($1,'Synthetic ingredient',true) RETURNING id",[ids[0]])).rows[0].id;
+    const ingredient=(await db.query("INSERT INTO product_ingredient_label_items(label_set_id,display_order,raw_ingredient_text,match_status) VALUES($1,0,'Synthetic ingredient','unmatched') RETURNING id",[label])).rows[0].id;
+    assert.deepEqual(await missing(ids[0]),['image']);
+    await db.query("UPDATE products SET image_url='https://example.com/synthetic.jpg' WHERE id=$1",[ids[0]]);
+    assert.deepEqual(await missing(ids[0]),[]);
+    await db.query("UPDATE product_enrichment_queue SET status='completed' WHERE product_id=$1",[ids[0]]);
+    await db.query('DELETE FROM product_ingredient_label_items WHERE id=$1',[ingredient]);
+    assert.deepEqual(await missing(ids[0]),['ingredients']);
+    assert.equal((await db.query('SELECT status FROM product_enrichment_queue WHERE product_id=$1',[ids[0]])).rows[0].status,'pending');
+    await db.exec('SAVEPOINT invalid_barcode');
+    await assert.rejects(db.query("INSERT INTO product_barcodes(product_id,barcode) VALUES($1,'0000000000000')",[ids[0]]),/check constraint/);
+    await db.exec('ROLLBACK TO SAVEPOINT invalid_barcode');
+    const added=(await db.query("SELECT id FROM products WHERE catalog_source_url LIKE '%synthetic-new'")).rows[0].id;
+    assert.deepEqual(await missing(added),['ingredients','image']);
+    await db.query("INSERT INTO product_observations(product_id,source_type,retrieved_at,extracted_data) VALUES($1,'manufacturer','2026-11-10T13:00:00Z','{}')",[added]);
+    assert.deepEqual(await missing(added),['ingredients','nutrition','image']);
+    await db.exec('SET ROLE anon');
+    assert.equal((await db.query("SELECT count(*)::int n FROM products WHERE catalog_source_url LIKE '%/synthetic-%'")).rows[0].n,2);
+    assert.equal((await db.query("SELECT count(*)::int n FROM product_barcodes WHERE product_id=ANY($1::uuid[])",[ids])).rows[0].n,1);
+    await db.exec('RESET ROLE');
+    await db.query("UPDATE products SET verification_status='pending' WHERE id=$1",[ids[0]]);
+    await db.exec('SET ROLE anon');
+    assert.equal((await db.query('SELECT count(*)::int n FROM product_barcodes WHERE product_id=$1',[ids[0]])).rows[0].n,0);
+    await db.exec('RESET ROLE');
+    await db.exec('SAVEPOINT stale_review');
+    await assert.rejects(db.exec(sql),/catalog changed since review/);
+    await db.exec('ROLLBACK TO SAVEPOINT stale_review');
+    console.log('PASS: reviewed catalog preserves hidden intent, observes numeric zero, separates dry matter, rejects stale snapshots, and publishes only reviewed rows');
+  } finally {await db.exec('ROLLBACK; RESET ROLE');}
+}

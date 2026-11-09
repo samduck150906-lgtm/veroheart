@@ -43,14 +43,14 @@ describe.each([false, true])('public review boundary with verified-only setting 
     const db = await import('./supabase');
     db.setHideUnverifiedProducts(strict);
     const result = await db.searchProductsPage('', '사료', [], { subCategory: 'dry' });
-    expect(result.products.map(product => product.id)).toEqual(strict ? ['verified'] : ['pending', 'reviewed', 'verified']);
+    expect(result.products.map(product => product.id)).toEqual(strict ? ['verified'] : ['reviewed', 'verified']);
     expect(api.rpc).toHaveBeenCalledWith('search_catalog_products', expect.objectContaining({ p_category: '사료' }));
   });
 
   it('filters initial, ranked/fallback search, brand, diary, saved and recent products', async () => {
     const db = await import('./supabase');
     db.setHideUnverifiedProducts(strict);
-    const expected = strict ? ['verified'] : ['pending', 'reviewed', 'verified'];
+    const expected = strict ? ['verified'] : ['reviewed', 'verified'];
     expect((await db.getProducts()).map(p => p.id)).toEqual(expected);
     expect((await db.searchProductsPage('')).products.map(p => p.id)).toEqual(expected);
     api.rpc.mockResolvedValueOnce({ data: null, error: { code: 'PGRST202', message: 'missing RPC' } });
@@ -64,10 +64,10 @@ describe.each([false, true])('public review boundary with verified-only setting 
   it('honors the optional review gate for direct detail and barcode access', async () => {
     const db = await import('./supabase');
     db.setHideUnverifiedProducts(strict);
-    expect((await db.getProductDetail('pending'))?.id ?? null).toBe(strict ? null : 'pending');
+    expect((await db.getProductDetail('pending'))?.id ?? null).toBeNull();
     expect(await db.getProductDetail('null-status')).toBeNull();
     expect(await db.getProductDetail('unknown-status')).toBeNull();
-    expect((await db.getProductByBarcode('036000291452'))?.id ?? null).toBe(strict ? null : 'pending');
+    expect((await db.getProductByBarcode('036000291452'))?.id ?? null).toBeNull();
     expect((await db.getProductDetail('verified'))?.id).toBe('verified');
     expect((await db.getProductDetail('reviewed'))?.id ?? null).toBe(strict ? null : 'reviewed');
   });
@@ -76,6 +76,6 @@ describe.each([false, true])('public review boundary with verified-only setting 
     respond([row('pending', 'pending')]);
     const db = await import('./supabase');
     db.setHideUnverifiedProducts(strict);
-    expect(await db.getBrands()).toEqual(strict ? [] : ['Brand']);
+    expect(await db.getBrands()).toEqual([]);
   });
 });

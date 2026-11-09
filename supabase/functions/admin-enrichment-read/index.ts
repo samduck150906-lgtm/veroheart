@@ -158,10 +158,11 @@ serve(async (req) => {
 
     if (status && status !== 'all') query = query.eq('status', status);
     if (missingField && missingField !== 'all') query = query.contains('missing_fields', [missingField]);
+    if (!status || status === 'all') query = query.not('missing_fields', 'eq', '{}');
     // 큐에는 노출을 내린 제품도 남는다(정보를 채우면 다시 켜야 하므로).
     // 기본 작업 대상은 지금 사용자에게 보이는 제품이다.
-    if (visibility === 'visible') query = query.eq('products.is_visible', true);
-    else if (visibility === 'hidden') query = query.eq('products.is_visible', false);
+    if (visibility === 'visible') query = query.eq('products.is_visible', true).in('products.verification_status', ['reviewed','verified']);
+    else if (visibility === 'hidden') query = query.or('is_visible.eq.false,verification_status.not.in.(reviewed,verified)', { referencedTable: 'products' });
 
     const { data, count, error } = await query;
     if (error) throw error;
@@ -177,6 +178,10 @@ serve(async (req) => {
       for (const source of sources ?? []) {
         sourceCounts.set(source.product_id, (sourceCounts.get(source.product_id) ?? 0) + 1);
       }
+      const {data:observations,error:observationError}=await db.from('product_observations')
+        .select('product_id').in('product_id',productIds).eq('source_type','manufacturer');
+      if(observationError)throw observationError;
+      for(const observation of observations??[])sourceCounts.set(observation.product_id,(sourceCounts.get(observation.product_id)??0)+1);
     }
 
     const rows = (data ?? []).map((row: { product_id: string }) => ({

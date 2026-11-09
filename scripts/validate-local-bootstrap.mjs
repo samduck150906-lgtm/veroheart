@@ -10,6 +10,7 @@ import { LEGACY_LABEL_MIGRATION, prepareLocalSupabase } from './prepare-local-su
 import { assertProductPublication, assertPublicationMigrationPreservesIntent, PRODUCT_PUBLICATION_MIGRATION } from './test-product-publication.mjs';
 import { assertPublicProductProjectionContract } from './product-projection-contract.mjs';
 import { assertReviewReadBoundaryOnBootstrap } from './review-privacy-contract.mjs';
+import { assertReviewedCatalogRepair } from './test-reviewed-catalog-repair.mjs';
 
 const repository = fileURLToPath(new URL('../', import.meta.url));
 const db = new PGlite({ extensions: { pgcrypto, pg_trgm, uuid_ossp } });
@@ -115,6 +116,7 @@ try {
     console.log('PASS: label comparison draft on existing guarded full bootstrap; anon public reader/private table isolation');
   }
 
+  await assertReviewedCatalogRepair(db);
   await db.exec("INSERT INTO public.products(name,brand_name,is_visible) VALUES ('local guard test fixture','local test',false)");
   await assert.rejects(db.exec(await readFile(path.join(repository, 'supabase/local-bootstrap/before-legacy-labels.sql'), 'utf8')), /empty products table/);
   console.log(JSON.stringify({ passed: true, historicalMigrations: prepared.historicalMigrations, localMigrations: files.length, skippedKnownOrphanRows: orphanCount, fabricatedCatalogRows: 0, historicalFilesUnchanged: true, foreignKeysEnforced: true, storagePrivate: true }, null, 2));

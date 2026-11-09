@@ -29,7 +29,7 @@ describe('missing product source schema is an error, not product absence', () =>
     setHideUnverifiedProducts(strict);
     await expect(getProductDetail('fixture-product')).rejects.toThrow('제품 정보를 불러오지 못했습니다');
     expect(api.calls).toContainEqual(['eq', ['is_visible', true]]);
-    expect(api.calls).toContainEqual(['in', ['verification_status', strict ? ['verified'] : ['pending', 'reviewed', 'verified']]]);
+    expect(api.calls).toContainEqual(['in', ['verification_status', strict ? ['verified'] : ['reviewed', 'verified']]]);
     expect(api.calls.filter(([method]) => method === 'select')).toHaveLength(1); // no unsafe fallback
   });
   it('rejects list/search failures rather than returning an empty successful page', async () => {

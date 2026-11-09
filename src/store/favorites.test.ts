@@ -39,12 +39,12 @@ vi.mock('./useNotification', () => ({
   },
 }));
 
-const { useStore, MAX_COMPARISON } = await import('./useStore');
+const { useStore } = await import('./useStore');
 
 const initial = useStore.getState();
 
 beforeEach(() => {
-  useStore.setState({ ...initial, comparisonList: [], favorites: [], userId: null });
+  useStore.setState({ ...initial, favorites: [], userId: null });
   addFavorite.mockReset();
   removeFavorite.mockReset();
   notifyWarning.mockReset();
@@ -53,44 +53,6 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.clearAllMocks();
-});
-
-describe('비교함 상한', () => {
-  it(`${MAX_COMPARISON}개까지는 담긴다`, () => {
-    const { addToComparison } = useStore.getState();
-    for (let i = 0; i < MAX_COMPARISON; i += 1) {
-      expect(addToComparison(`p${i}`)).toBe(true);
-    }
-    expect(useStore.getState().comparisonList).toHaveLength(MAX_COMPARISON);
-  });
-
-  it('상한을 넘긴 담기는 거절되고 기존 목록을 바꾸지 않는다', () => {
-    const { addToComparison } = useStore.getState();
-    for (let i = 0; i < MAX_COMPARISON; i += 1) addToComparison(`p${i}`);
-
-    const before = useStore.getState().comparisonList;
-    expect(addToComparison('overflow')).toBe(false);
-    expect(useStore.getState().comparisonList).toEqual(before);
-    expect(useStore.getState().comparisonList).not.toContain('overflow');
-  });
-
-  it('이미 담긴 제품을 다시 담으면 거절하고 중복되지 않는다', () => {
-    const { addToComparison } = useStore.getState();
-    expect(addToComparison('dup')).toBe(true);
-    expect(addToComparison('dup')).toBe(false);
-    expect(useStore.getState().comparisonList).toEqual(['dup']);
-  });
-
-  it('빼고 나면 다시 담을 수 있다', () => {
-    const { addToComparison, removeFromComparison } = useStore.getState();
-    for (let i = 0; i < MAX_COMPARISON; i += 1) addToComparison(`p${i}`);
-    expect(addToComparison('later')).toBe(false);
-
-    removeFromComparison('p0');
-    expect(addToComparison('later')).toBe(true);
-    expect(useStore.getState().comparisonList).toContain('later');
-    expect(useStore.getState().comparisonList).toHaveLength(MAX_COMPARISON);
-  });
 });
 
 describe('찜 낙관적 갱신', () => {
