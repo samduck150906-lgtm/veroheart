@@ -1,0 +1,28 @@
+name: Isolated detail navigation layout
+on:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  layout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm install --global npm@11.13.0
+      - run: npm ci
+      - run: npx tsc -p tests/detail-layout/tsconfig.json
+      - run: node --test tests/detail-layout/fixture-server.test.mjs
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/detail-layout/run.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: synthetic-detail-layout
+          path: .artifacts/detail-layout-results/

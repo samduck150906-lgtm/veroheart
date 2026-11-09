@@ -502,35 +502,6 @@ export default function Detail() {
         </section>
       )}
 
-      <div className="detail-fab-stack" aria-label="빠른 이동 버튼">
-        <button
-          type="button"
-          className="detail-back-fab"
-          onClick={() => navigate(-1)}
-          aria-label="뒤로 가기"
-        >
-          <ArrowLeft size={24} strokeWidth={2.25} aria-hidden />
-        </button>
-        <button
-          type="button"
-          className="detail-scroll-top-fab"
-          onClick={handleShare}
-          aria-label="공유하기"
-        >
-          <Share2 size={20} strokeWidth={2.25} aria-hidden />
-        </button>
-        {scrollY > 320 && (
-          <button
-            type="button"
-            className="detail-scroll-top-fab"
-            onClick={handleScrollTop}
-            aria-label="맨 위로 이동"
-          >
-            <ChevronUp size={22} strokeWidth={2.4} aria-hidden />
-          </button>
-        )}
-      </div>
-
       <div className="vr-bleed" style={{ position: 'relative', height: '250px', background: 'var(--vr-soft)', marginBottom: '18px', overflow: 'hidden' }}>
         <ProductThumb
           src={product.imageUrl}
@@ -947,6 +918,35 @@ export default function Detail() {
           ))}
         </div>
       </section>
+
+      <div className="detail-page-tools" role="group" aria-label="빠른 이동 버튼">
+        <button
+          type="button"
+          className="detail-back-fab"
+          onClick={() => navigate(-1)}
+          aria-label="뒤로 가기"
+        >
+          <ArrowLeft size={24} strokeWidth={2.25} aria-hidden />
+        </button>
+        <button
+          type="button"
+          className="detail-scroll-top-fab"
+          onClick={handleShare}
+          aria-label="공유하기"
+        >
+          <Share2 size={20} strokeWidth={2.25} aria-hidden />
+        </button>
+        {scrollY > 320 && (
+          <button
+            type="button"
+            className="detail-scroll-top-fab"
+            onClick={handleScrollTop}
+            aria-label="맨 위로 이동"
+          >
+            <ChevronUp size={22} strokeWidth={2.4} aria-hidden />
+          </button>
+        )}
+      </div>
 
       <StickyCtaBar
         isFav={isFav}
