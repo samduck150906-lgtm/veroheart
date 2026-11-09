@@ -34,3 +34,14 @@ describe('draft approval/read privileges, synthetic PG only', () => {
     expect(await receipt()).toEqual([]);
   });
 });
+
+it('honors the optional verified-only publication setting for both public roles', async () => {
+  await db.exec("UPDATE products SET is_visible=true,verification_status='pending'; CREATE OR REPLACE FUNCTION private.hide_unverified_products_enabled() RETURNS boolean LANGUAGE sql AS 'SELECT TRUE'");
+  for (const role of ['anon','authenticated']) {
+    await db.exec(`SET ROLE ${role}`); expect(await receipt()).toEqual([]); await db.exec('RESET ROLE');
+  }
+  await db.exec("UPDATE products SET verification_status='verified'");
+  for (const role of ['anon','authenticated']) {
+    await db.exec(`SET ROLE ${role}`); expect(await receipt()).toHaveLength(1); await db.exec('RESET ROLE');
+  }
+});

@@ -21,7 +21,9 @@ CREATE FUNCTION private.label_review_snapshot(p_id UUID) RETURNS JSONB
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public AS $$
  SELECT jsonb_build_object(
    'productRevision',to_jsonb(p)->'updated_at',
-   'product', jsonb_build_array(p.id,p.name,p.brand_name,p.variant_name,p.net_weight_text,p.barcode),
+   'product', jsonb_build_array(p.id,p.name,p.brand_name,p.variant_name,p.net_weight_text,p.barcode,
+     CASE WHEN to_jsonb(p)->>'target_pet_type' IN ('dog','cat','all') THEN to_jsonb(p)->>'target_pet_type' END,
+     to_jsonb(p)->'target_life_stage',to_jsonb(p)->'product_type',to_jsonb(p)->'formulation'),
    'labels', COALESCE((SELECT jsonb_agg(jsonb_build_object(
      'id',l.id,'raw',l.raw_label_text,'source',l.source_reference,'sourceType',l.source_type,
      'revision',l.updated_at,'items',COALESCE((SELECT jsonb_agg(jsonb_build_object(

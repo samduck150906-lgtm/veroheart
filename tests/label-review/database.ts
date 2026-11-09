@@ -10,7 +10,7 @@ export async function labelReviewDatabase() {
   await db.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role BYPASSRLS;
     CREATE SCHEMA private; REVOKE ALL ON SCHEMA private FROM PUBLIC;
     CREATE FUNCTION private.hide_unverified_products_enabled() RETURNS boolean LANGUAGE sql AS 'SELECT FALSE';
-    CREATE TABLE products(id uuid PRIMARY KEY,name text,brand_name text,variant_name text,net_weight_text text,barcode text,is_visible boolean DEFAULT true,verification_status text DEFAULT 'reviewed',analysis_status text DEFAULT 'ready',updated_at timestamptz DEFAULT now());
+    CREATE TABLE products(id uuid PRIMARY KEY,name text,brand_name text,variant_name text,net_weight_text text,barcode text,target_pet_type text DEFAULT 'dog',target_life_stage text[],product_type text DEFAULT 'food',formulation text,is_visible boolean DEFAULT true,verification_status text DEFAULT 'reviewed',analysis_status text DEFAULT 'ready',updated_at timestamptz DEFAULT now());
     CREATE TYPE risk_level_enum AS ENUM ('safe','caution','danger');
     CREATE TABLE ingredients(id uuid PRIMARY KEY,name_ko text,name_en text,risk_level risk_level_enum,description text);
     CREATE TABLE canonical_ingredients(id uuid PRIMARY KEY,legacy_ingredient_id uuid,canonical_name_ko text,canonical_name_en text,status text);

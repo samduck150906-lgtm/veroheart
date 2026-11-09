@@ -77,3 +77,8 @@ it('does not approve a flag/hash-only request with no new review observation',as
  const result=await approval({sourceReference:'',identityNotes:'',coverageNotes:'',hash:'client-assertion'});
  assert.equal(result.http,400);assert.deepEqual(await counts(),{evidence:0,audit:0});
 });
+
+it('invalidates a changed target species even if an old updated_at is retained',async()=>{
+ assert.equal((await approval()).http,200);await db.exec("UPDATE products SET target_pet_type='cat'");
+ assert.equal((await publicReceipt()).state,'stale');assert.deepEqual(await counts(),{evidence:1,audit:1});
+});
