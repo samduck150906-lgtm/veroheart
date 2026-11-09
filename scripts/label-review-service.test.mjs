@@ -57,6 +57,7 @@ it('normal auth -> server review -> atomic storage/audit -> sanitized public sta
  assert.equal((await approval()).body.result.status,'approved');assert.deepEqual(await counts(),{evidence:1,audit:1});
  const receipt=await publicReceipt();assert.equal(receipt.state,'verified');
  assert.doesNotMatch(JSON.stringify(receipt),/synthetic-admin|fixture:source|identityNotes|coverageNotes|raw_label_text/);
+ const recheck=await request('getIngredientLabelReview');assert.equal(recheck.body.review.approvalState,'verified');assert.equal(recheck.body.review.auditRecorded,true);
  assert.equal((await approval()).body.result.status,'already_reviewed');assert.deepEqual(await counts(),{evidence:1,audit:1});
 });
 it('denies non-admin approval before database reads',async()=>{assert.equal((await request('approveIngredientLabelReview',{},false)).http,401);assert.deepEqual(await counts(),{evidence:0,audit:0});});

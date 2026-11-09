@@ -61,8 +61,15 @@ REVOKE ALL ON FUNCTION private.label_review_valid(JSONB) FROM PUBLIC, anon, auth
 CREATE FUNCTION public.admin_get_label_comparison_review(p_product_id UUID) RETURNS JSONB
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,public AS $$
  SELECT CASE WHEN s IS NULL THEN NULL ELSE jsonb_build_object('snapshot',s,
-   'revision',encode(sha256(convert_to(s::text,'UTF8')),'hex'),'eligible',private.label_review_valid(s)) END
+   'revision',encode(sha256(convert_to(s::text,'UTF8')),'hex'),'eligible',private.label_review_valid(s),
+   'approvalState',CASE WHEN e.id IS NULL THEN 'absent'
+     WHEN e.revision=encode(sha256(convert_to(s::text,'UTF8')),'hex') THEN 'verified' ELSE 'stale' END,
+   'approvalId',e.id,'approvedAt',e.reviewed_at,
+   'auditRecorded',EXISTS(SELECT 1 FROM public.admin_audit_log a WHERE a.action='approveIngredientLabelReview'
+     AND a.target_table='ingredient_label_comparisons' AND a.target_id=e.id::text)) END
  FROM (SELECT private.label_review_snapshot(p_product_id) s) q
+ LEFT JOIN LATERAL(SELECT id,revision,reviewed_at FROM public.ingredient_label_comparisons
+   WHERE product_id=p_product_id ORDER BY sequence DESC LIMIT 1) e ON TRUE
 $$;
 REVOKE ALL ON FUNCTION public.admin_get_label_comparison_review(UUID) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_get_label_comparison_review(UUID) TO service_role;

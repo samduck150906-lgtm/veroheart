@@ -36,6 +36,8 @@ export default function ProductLabelReview({ productId }: { productId: string })
     <button type="button" onClick={load} disabled={busy}>저장된 라벨 전체 대조 자료 조회</button>
     <p>현재 편집 중인 값은 승인되지 않습니다. 제품·원료 저장을 마친 뒤 새로 조회하고 실제 원본 포장의 전성분과 직접 대조하세요.</p>
     {message && <p role="status">{message}</p>}
+    {review?.approvalState && <p role="status">저장된 대조 증거: {review.approvalState === 'verified' ? '현재 버전' : review.approvalState === 'stale' ? '이전 버전 — 재검토 필요' : '없음'}
+      {review.auditRecorded ? ' · 감사 기록 확인됨' : ''}</p>}
     {review && review.snapshot.labels.length !== 1 && <p role="status">{review.snapshot.labels.length === 0
       ? '저장된 현재 라벨이 없습니다. 원문·항목 등록이 필요하며 기존 원료 목록을 대조 완료로 승격하지 않습니다.'
       : '현재 라벨이 여러 개여서 검토할 수 없습니다. 충돌을 먼저 해결해 주세요.'}</p>}

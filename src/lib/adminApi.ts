@@ -1625,6 +1625,8 @@ export async function fetchProductForEdit(id: string): Promise<Record<string, un
 
 /** Permissioned whole-label comparison. Credentials stay in the existing admin session path. */
 export interface AdminLabelReview {
+  approvalState?: 'absent' | 'stale' | 'verified';
+  auditRecorded?: boolean;
   revision: string;
   eligible: boolean;
   snapshot: { product: unknown[]; labels: Array<{ id: string; raw: string; source?: string;
