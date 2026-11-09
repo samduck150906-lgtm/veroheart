@@ -40,6 +40,11 @@ try{
  const f=await fresh('normal');const dry=await push(f,true);assert.equal(dry.status,0,dry.stderr);assert.ok((dry.stdout+dry.stderr).includes(name));assert.equal((await push(f)).status,0);
  const s=state(f.uri);assert.equal(s.objects,2);assert.equal(s.ledger,1);const idsTx=[...new Set(s.events.map(e=>e.txid))];assert.equal(idsTx.length,1,'DDL and actual CLI ledger must share one transaction');
  assert.equal((await push(f)).status,0);assert.equal(state(f.uri).ledger,1);results.push({case:'real_cli_apply_and_ledger_atomic',pass:true,transactionCount:idsTx.length});
+ const sharedRevision=review(f.uri).revision;
+ const firstApproval=await session(f.uri,`BEGIN;${approve(sharedRevision)};SELECT pg_sleep(0.7);COMMIT;`,'label_first_approval');await asleep(f.uri,'label_first_approval');
+ const secondApproval=await session(f.uri,approve(sharedRevision),'label_second_approval');
+ assert.equal((await firstApproval.done).code,0);const secondResult=await secondApproval.done;
+ assert.equal(secondResult.code,0);assert.match(secondResult.stdout,/already_reviewed/);assert.deepEqual(business(f.uri),{evidence:1,audit:1});results.push({case:'concurrent_same_revision_one_evidence_one_audit',pass:true});
  for(const table of ['products','product_ingredient_label_sets','product_ingredient_label_items']){
   const r=review(f.uri).revision;const column=table==='products'?'name':table==='product_ingredient_label_sets'?'raw_label_text':'raw_ingredient_text';const before=business(f.uri);
   const holder=await session(f.uri,`BEGIN;UPDATE ${table} SET ${column}=${column}||' ';SELECT pg_sleep(0.7);COMMIT;`,'label_writer');await asleep(f.uri,'label_writer');
@@ -60,6 +65,10 @@ try{
   else psql(x.uri,`CREATE FUNCTION fail_candidate_ledger() RETURNS trigger LANGUAGE plpgsql AS $$BEGIN RAISE EXCEPTION 'synthetic ledger failure';END$$;CREATE TRIGGER fail_label_ledger ${stage==='ledger_before'?'BEFORE':'AFTER'} INSERT ON supabase_migrations.schema_migrations FOR EACH ROW EXECUTE FUNCTION fail_candidate_ledger();`);
   const answer=await push(x);assert.notEqual(answer.status,0);const st=state(x.uri);assert.equal(st.objects,0);assert.equal(st.ledger,0);results.push({case:stage+'_rollback',pass:true});
  }
+ const auditFailure=await fresh('audit_failure');assert.equal((await push(auditFailure)).status,0);
+ psql(auditFailure.uri,"CREATE FUNCTION fail_label_audit() RETURNS trigger LANGUAGE plpgsql AS $$BEGIN RAISE EXCEPTION 'synthetic audit failure';END$$;CREATE TRIGGER fail_label_audit BEFORE INSERT ON admin_audit_log FOR EACH ROW EXECUTE FUNCTION fail_label_audit();");
+ const failedApproval=run('psql',['-X','-q','-v','ON_ERROR_STOP=1','--dbname',auditFailure.uri,'-c',approve(review(auditFailure.uri).revision)]);
+ assert.notEqual(failedApproval.status,0);assert.deepEqual(business(auditFailure.uri),{evidence:0,audit:0});results.push({case:'approval_audit_failure_atomic',pass:true});
  const lock=await fresh('lock_timeout');const holder=await session(lock.uri,'BEGIN;LOCK TABLE products IN ACCESS EXCLUSIVE MODE;SELECT pg_sleep(5);COMMIT;','label_ddl_lock');await asleep(lock.uri,'label_ddl_lock');assert.notEqual((await push(lock)).status,0);await holder.done;assert.equal(state(lock.uri).objects,0);assert.equal(state(lock.uri).ledger,0);results.push({case:'migration_lock_timeout_rollback',pass:true});
  const approvalLock=await session(h.uri,'BEGIN;LOCK TABLE products IN ROW EXCLUSIVE MODE;SELECT pg_sleep(5);COMMIT;','label_approval_lock');await asleep(h.uri,'label_approval_lock');const before=business(h.uri);const ans=run('psql',['-X','-q','-v','ON_ERROR_STOP=1','--dbname',h.uri,'-c',approve(review(h.uri).revision)]);assert.notEqual(ans.status,0);await approvalLock.done;assert.deepEqual(business(h.uri),before);results.push({case:'approval_lock_timeout_no_partial_write',pass:true});
  await writeFile(join(output,'results.json'),JSON.stringify({passed:true,cli:'2.118.0',postgres:'17',candidate:name,sha256,seeds:[],roles:[],results,limits:['Loopback trust-auth synthetic only','Same CLI executor as linked release; --db-url instead of operating --linked','No operating linked dry-run or live approval']},null,2));console.log(`PASS actual PostgreSQL/CLI: ${results.length} cases, no operating connection`);

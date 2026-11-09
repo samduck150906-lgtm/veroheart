@@ -80,3 +80,35 @@ New frontend + missing foundation fails closed as unavailable, not absent.
 Release storage/RPC → admin-write → real pilot review → consumer only after
 aggregate impact review. The known old-client risk persists during the transition;
 no browser switch or ready-count fallback bypasses the gate.
+
+## Frozen candidate and remaining operating gate
+
+Candidate SHA-256: `15cc29d8a7524e8d1778afafb61b036b5b756a23c33e0e10c2dbc0be4b8e6a83`.
+Expected changes: private revision counters/triggers, immutable comparison history,
+private snapshot/validation helpers, two service-only admin RPCs and one sanitized
+public reader. No source/product writes, historical migration changes or seeds.
+Existing anonymous/authenticated source permissions are not broadened.
+
+Aggregate operating metadata found 68 ledger versions, all present locally with
+matching version/name, but seven unrelated local versions are absent remotely.
+The candidate is the eighth local-only version. Version/name parity is not SQL
+body equality. Their SQL must not be run, repaired or silently marked applied as
+part of this release. The original approved Mac CLI path is absent; no replacement
+was installed. Therefore an **operating linked dry-run has not run**, and no
+remote-history bundle is represented as verified. The successful disposable CLI
+run is not a substitute for that release gate.
+
+Before operating approval: use an existing authorized verified CLI/connection,
+compare remote ledger originals with the bundle, list migrations, and require
+`supabase db push --linked --dry-run` to list only the frozen candidate with no
+seeds/roles. Stop on any drift, other migration or include-all request. Recheck
+the latest completed backup and the target project immediately before approval.
+The Dashboard showed a PHYSICAL backup dated 2026-11-08 21:29:59 UTC with Restore
+action; literal COMPLETED status was not displayed. PITR is not enabled.
+
+After a separately authorized single apply, compare ledger (one new row only),
+source table structural/data fingerprints excluding new private objects, all
+existing grants/policies/functions, new RPC privileges and sanitized public
+absence states. Do not approve live evidence as a deployment smoke test. On an
+uncertain result inspect ledger/objects before any retry. On failure stop: no
+automatic rollback, history repair, policy deletion or source-data change.

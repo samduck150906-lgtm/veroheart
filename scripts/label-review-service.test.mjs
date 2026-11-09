@@ -88,3 +88,18 @@ it('does not reuse approval after an ABA edit with restored timestamps',async()=
  await db.exec("UPDATE product_ingredient_label_sets SET raw_label_text='temporary'; UPDATE product_ingredient_label_sets SET raw_label_text='닭고기, 대두'");
  assert.notEqual((await publicReceipt()).state,'verified');
 });
+it('does not publish pending status when optional verified-only mode is disabled',async()=>{
+ await db.exec("UPDATE products SET verification_status='pending'");
+ for(const role of ['anon','authenticated']) {
+  await db.exec(`SET ROLE ${role}`);
+  const rows=(await db.query('SELECT get_public_label_comparison(ARRAY[$1::uuid]) result',[fixture.PRODUCT])).rows[0].result;
+  assert.deepEqual(rows,[]);await db.exec('RESET ROLE');
+ }
+});
+it('invalidates canonical definition ABA through the shared writer trigger',async()=>{
+ await db.query("INSERT INTO canonical_ingredients(id,legacy_ingredient_id,canonical_name_ko,status) VALUES($1,$1,'닭고기','active')",[fixture.ITEMS[0]]);
+ await db.query('UPDATE product_ingredient_label_items SET canonical_ingredient_id=$1 WHERE id=$1',[fixture.ITEMS[0]]);
+ assert.equal((await approval()).http,200);
+ await db.exec("UPDATE canonical_ingredients SET canonical_name_ko='임시';UPDATE canonical_ingredients SET canonical_name_ko='닭고기'");
+ assert.equal((await publicReceipt()).state,'stale');
+});
