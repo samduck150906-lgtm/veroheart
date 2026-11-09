@@ -33,7 +33,6 @@ import {
  * 받아들이고 화면은 3개만 그려서, 4번째 제품이 "담김"으로 표시된 채 비교표에서
  * 조용히 사라졌다.
  */
-export const MAX_COMPARISON = 3;
 
 /**
  * 초기화 대기 상한(ms).
@@ -71,7 +70,7 @@ let sessionEpoch = 0;
 let authSubscription: { unsubscribe: () => void } | null = null;
 const privateReset = {
   profile: DEFAULT_USER_PET_PROFILE, pets: [], activePetId: null,
-  favorites: [], recentViews: [], comparisonList: [],
+  favorites: [], recentViews: [],
   isLoadingRecentViews: false, recentViewsError: '', guestRecentViewIds: [],
 };
 
@@ -119,10 +118,7 @@ interface StoreState {
   recentViewsError: string;
   fetchRecentViews: (all?: boolean) => Promise<void>;
   trackRecentView: (productId: string) => Promise<void>;
-  comparisonList: string[];
   /** 담기에 성공하면 true, 이미 담겼거나 상한을 넘겨 거절되면 false. */
-  addToComparison: (productId: string) => boolean;
-  removeFromComparison: (productId: string) => void;
   logout: () => Promise<void>;
 }
 
@@ -454,18 +450,6 @@ export const useStore = create<StoreState>((set, get) => ({
       finally { if (recentViewWrites.get(userId) === write) recentViewWrites.delete(userId); }
     }
   },
-  comparisonList: [],
-  addToComparison: (id) => {
-    const { comparisonList } = get();
-    // 이미 담겼거나 상한을 넘기면 조용히 버리지 않고 거절을 알린다.
-    if (comparisonList.includes(id) || comparisonList.length >= MAX_COMPARISON) return false;
-    set({ comparisonList: [...comparisonList, id] });
-    return true;
-  },
-  removeFromComparison: (id) => set((state) => ({
-    comparisonList: state.comparisonList.filter(cid => cid !== id)
-  })),
-
   logout: async () => {
     ++sessionEpoch;
     set({ ...privateReset, userId: null, isLoggedIn: false, isInitializing: false });

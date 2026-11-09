@@ -112,12 +112,18 @@ export default function Home() {
         </span>
       </button>
 
-      {/* 카테고리 */}
+      <section aria-label="제품 카테고리" style={{ marginBottom: 22 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', margin: '6px 0 12px' }}>
+        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>카테고리로 찾아보기</h2>
+        <button type="button" onClick={() => navigate('/search')}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: VR.sub, fontSize: 12, padding: 8 }}>
+          전체 제품 보기 →
+        </button>
+      </div>
       <div style={{
         display: 'grid',
         gridTemplateColumns: `repeat(${Math.min(3, Math.max(1, categories.length))}, 1fr)`,
         gap: '9px',
-        marginBottom: '22px',
       }}>
         {categories.map(({ name, hint }) => (
           <button
@@ -125,10 +131,13 @@ export default function Home() {
             type="button"
             onClick={() => goCategory(name)}
             style={{
-              background: 'var(--vr-soft)', borderRadius: '15px', padding: '14px 12px',
-              border: 'none', cursor: 'pointer', textAlign: 'left',
+              background: 'var(--vr-soft)', borderRadius: '15px', padding: '16px 12px',
+              border: '1px solid var(--border)', cursor: 'pointer', textAlign: 'left', minHeight: 104,
             }}
           >
+            <span aria-hidden="true" style={{ display: 'block', fontSize: 24, marginBottom: 8 }}>
+              {name === '사료' ? '🥣' : name === '간식' ? '🦴' : name === '영양제' ? '💊' : '🐾'}
+            </span>
             <span style={{ display: 'block', fontSize: '15px', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--vr-ink)' }}>
               {name}
             </span>
@@ -140,6 +149,7 @@ export default function Home() {
           </button>
         ))}
       </div>
+      </section>
 
       {/* 최근 본 제품에서 걸린 성분 */}
       {alertRows.length > 0 && (

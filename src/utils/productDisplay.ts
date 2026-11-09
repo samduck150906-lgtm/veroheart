@@ -1,7 +1,7 @@
 // 제품 표시명 정규화 단일 소스.
 // 쿠팡 등 판매처 원문 제목에 붙는 광고·배송·수량 문구를 제거해 사람이 읽기 좋은
 // 공식 제품명에 가깝게 정제한다. 단, 제품 구분에 필요한 정보(주원료·연령·기능·맛·
-// 제형·용량)는 최대한 보존한다. 무리한 정규식으로 없는 제품명을 만들어내지 않는다.
+// 제형)는 보존하고 용량·판매 수량은 별도 메타에 표시한다. 원본 데이터는 보존한다.
 
 interface NameSource {
   name?: string | null;
@@ -42,6 +42,21 @@ function removePromotions(value: string): string {
     .split(/\s+/).filter((token) => token && !stripToken(token)).join(' ').trim();
 }
 
+/** Keep the original title intact; separate explicit package units for display. */
+export function splitProductPackaging(value: string): { name: string; packaging: string[] } {
+  const packaging: string[] = [];
+  let name = value.replace(/\b\d+(?:\.\d+)?\s*(?:kg|g|ml|l)(?=$|[\s,xX×)(]|[가-힣])/gi, match => {
+    packaging.push(match.replace(/\s+/g, ''));
+    return ' ';
+  }).replace(/(?:[xX×]\s*|\b)\d+\s*(?:개입|개|스틱|팩|포|ea|box)(?=$|[\s,)(])/gi, match => {
+    packaging.push(match.replace(/\s+/g, ''));
+    return ' ';
+  });
+  name = name.replace(/(?:\s+[xX×]\s*|\(\s*[xX×]?\s*\)|,\s*(?=,|$))/g, ' ')
+    .replace(/\s{2,}/g, ' ').replace(/^[\s,·-]+|[\s,·-]+$/g, '').trim();
+  return { name: name.length >= 2 ? name : value.trim(), packaging: [...new Set(packaging)] };
+}
+
 function stripToken(tokenRaw: string): boolean {
   const t = tokenRaw.trim();
   if (!t) return true;
@@ -60,7 +75,7 @@ export function normalizeProductDisplayName(product: NameSource): string {
   const explicit = (product.displayName ?? '').trim();
   const raw = (product.name ?? '').trim();
   // Imported display names can still contain marketplace promotions.
-  if (explicit) return removePromotions(explicit) || removePromotions(raw) || raw;
+  if (explicit) return splitProductPackaging(removePromotions(explicit) || removePromotions(raw) || raw).name;
   if (!raw) return '';
 
   // 1) 광고성 괄호 블록 제거
@@ -78,7 +93,7 @@ export function normalizeProductDisplayName(product: NameSource): string {
   s = tokens.join(' ').replace(/\s{2,}/g, ' ').replace(/^[\s,·-]+|[\s,·-]+$/g, '').trim();
 
   // 4) 과도 제거로 비었으면 원본 폴백
-  return s.length >= 2 ? s : raw;
+  return splitProductPackaging(s.length >= 2 ? s : raw).name;
 }
 
 /**
@@ -115,7 +130,8 @@ export function isSourceLabelBrand(brand: string | null | undefined): boolean {
 
 /** 카드·목록·상세에서 공통으로 쓰는 공개 제품 식별 정보. */
 export function getProductDisplayParts(product: NameSource): ProductDisplayParts {
-  const meta = [...new Set([product.variantName, product.netWeightText]
+  const extracted = splitProductPackaging(product.displayName?.trim() || product.name || '').packaging;
+  const meta = [...new Set([product.variantName, product.netWeightText, ...extracted]
     .map((value) => (value ?? '').trim())
     .filter(Boolean))]
     .join(' · ');

@@ -71,9 +71,8 @@ describe('브랜드 추출', () => {
     // 브랜드는 별도 칸에 두므로 제품명 앞에서 뗀다.
     expect(c.displayName).not.toContain('탐사');
     expect(c.displayName).toContain('오리고기');
-    // 용량(2kg)은 남긴다 — 같은 제품의 다른 용량을 구분하는 정보라서
-    // productDisplay 가 의도적으로 보존한다. 수량('1개')은 정제된다.
-    expect(c.displayName).toContain('2kg');
+    // 판매 단위는 원본과 별도 메타에 보존하고 표시명에서 분리한다.
+    expect(c.displayName).not.toContain('2kg');
     expect(c.displayName).not.toContain('1개');
   });
 

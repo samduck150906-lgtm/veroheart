@@ -41,12 +41,12 @@ describe('recent product history', () => {
   it('loads all visible pages in newest-first order and excludes other owners and hidden products', async () => {
     const { getRecentViews } = await import('./supabase');
     const result = await getRecentViews('owner', true);
-    expect(result.map(p => p.id)).toEqual(['pending', ...history.toReversed().map(r => r.product_id)]);
+    expect(result.map(p => p.id)).toEqual(history.toReversed().map(r => r.product_id));
     expect(api.ranges).toEqual([[0, 99], [100, 199], [200, 299]]);
   });
   it('keeps home startup lightweight without letting private rows consume preview slots', async () => {
     const { getRecentViews } = await import('./supabase');
-    expect((await getRecentViews('owner')).map(p => p.id)).toEqual(['pending', ...history.toReversed().slice(0, 9).map(r => r.product_id)]);
+    expect((await getRecentViews('owner')).map(p => p.id)).toEqual(history.toReversed().slice(0, 10).map(r => r.product_id));
     expect(api.ranges).toEqual([]);
   });
   it('reports a later-page failure instead of returning a partial or false empty history', async () => {

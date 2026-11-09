@@ -33,7 +33,7 @@ beforeEach(() => {
     { name: '간식', hint: null, subCategories: ['snack'] },
   ];
   api.search.mockReset().mockResolvedValue({ products: [], nextOffset: null });
-  useStore.setState({ profile: { ...DEFAULT_USER_PET_PROFILE, species: 'Cat', name: '고양이' }, products: [], catalogRevision: 0, comparisonList: ['one', 'two'] });
+  useStore.setState({ profile: { ...DEFAULT_USER_PET_PROFILE, species: 'Cat', name: '고양이' }, products: [], catalogRevision: 0 });
 });
 
 describe('category navigation', () => {

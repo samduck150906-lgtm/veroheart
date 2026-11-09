@@ -15,7 +15,6 @@ import ProductRow from '../components/ProductRow';
 import Detail from './Detail';
 import Home from './Home';
 import AnalysisResult from './AnalysisResult';
-import Comparison from './Comparison';
 
 const api = vi.hoisted(() => ({ search: vi.fn() }));
 vi.mock('../lib/supabase', async original => ({ ...await original<typeof import('../lib/supabase')>(),
@@ -137,14 +136,7 @@ describe('nutrition evidence on shared public display paths (synthetic data, no 
     expect(conclusion.headline).toContain('위험 등급');
     expect(conclusion.subline).toContain(NUTRITION_INSUFFICIENT_NOTICE);
   });
-  it('describes a comparison tie as a score comparison, never feeding suitability', () => {
-    const other = { ...product, id: 'synthetic-other', name: '두번째 합성 사료' };
-    useStore.setState({ products: [product, other], comparisonList: [product.id, other.id] });
-    show(<Comparison />);
-    expect(screen.getByText('두 제품 모두 참고 점수 차이가 없습니다')).toBeTruthy();
-    expect(screen.queryByText(/비슷하게 잘 맞|선택해도 괜찮/)).toBeNull();
-    expect(screen.getAllByText(new RegExp('영양정보 부족으로 영양 균형')).length).toBeGreaterThan(0);
-  });
+
   it('keeps complete basic nutrition scoped without an immediate-feeding promise', async () => {
     const full = { ...product, guaranteedAnalysis: { crudeProtein: 30, crudeFat: 15, crudeFiber: 3, crudeAsh: 8, moisture: 10 } };
     useStore.setState({ selectedProduct: full });
