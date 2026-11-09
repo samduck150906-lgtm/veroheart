@@ -5,6 +5,8 @@ test('reads only explicit percentage values, preserves zero, and rejects dry-mat
   assert.deepEqual(parseAsFedNutrition('조단백 28.0% 이상, 조지방 0% 이상, 수분 6.5% 이하'), { crude_protein: 28, crude_fat: 0, moisture: 6.5 });
   assert.deepEqual(parseAsFedNutrition('Dry Matter 단백질 43.9%'), {});
   assert.deepEqual(parseAsFedNutrition('조단백 300% 조지방 미표기'), {});
+  assert.deepEqual(parseAsFedNutrition('단백질: 34%, 지방 19%, 조섬유 5.3%'), {crude_protein:34,crude_fat:19,crude_fiber:5.3});
+  assert.deepEqual(parseAsFedNutrition('포화지방 8%, 동물성 지방 5%, 지방산 1%'), {});
 });
 test('manufacturer dry matter stays separate from as-fed nutrient data and kcal/kg converts explicitly', () => {
   const p = { brand: '힐스', httpStatus: 200, nameMatches: true };

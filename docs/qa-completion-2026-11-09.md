@@ -21,7 +21,7 @@ and page hashes are in `data/enrichment/qa-source-review-2026-11-09.json`.
 This is a source review, not a claim that domestic packaging or feeding safety
 has been verified.
 
-100 reviewed records have explicitly observed as-fed percentages. 88 have only
+101 reviewed records have explicitly observed as-fed percentages. 88 have only
 manufacturer dry-matter tables; those tables remain separate from guaranteed
 analysis and score inputs. Missing measurements are not replaced with zero.
 Explicit kcal/kg is divided by ten for kcal/100g; no default energy is invented.
@@ -79,7 +79,7 @@ status as well as the visibility flag.
 
 The final hosted transaction reduced public supplementation targets
 from 277 to 196 (81 complete). Remaining fields overlap: 189 lack a source-confirmed
-GTIN, 135 lack adequate nutrition evidence, and 11 lack ingredients. Product
+GTIN, 90 lack adequate nutrition evidence, and 11 lack ingredients. Product
 gallery extraction recovered all 27 missing images. These are
 real source gaps; removing them from the list or inventing values would not
 complete the data. Pending records remain private and are still available to

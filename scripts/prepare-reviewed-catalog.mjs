@@ -6,12 +6,12 @@ import { JSDOM } from 'jsdom';
 import { parseIngredientLabelItems } from '../src/analysis/labelIngredientParser.ts';
 import { normalizeBarcode } from '../src/lib/productIdentity.ts';
 
-const fields = { crude_protein: '조단백(?:질)?', crude_fat: '조지방', crude_fiber: '조섬유', crude_ash: '조회분', moisture: '수분', calcium: '칼슘', phosphorus: '(?:^|[,\\s])인' };
+const fields = { crude_protein: '(?:^|[,;\\n])\\s*(?:조단백(?:질)?|단백질|Crude protein)', crude_fat: '(?:^|[,;\\n])\\s*(?:조지방|지방|Crude fat)', crude_fiber: '조섬유', crude_ash: '조회분', moisture: '수분', calcium: '칼슘', phosphorus: '(?:^|[,\\s])인' };
 export function parseAsFedNutrition(text) {
   const values = {};
   if (/dry matter|건물\s*기준/i.test(text)) return values;
   for (const [key, label] of Object.entries(fields)) {
-    const match = text.match(new RegExp(label + '\\s*([0-9]+(?:\\.[0-9]+)?)\\s*%'));
+    const match = text.match(new RegExp(label + '\\s*[:：]?\\s*([0-9]+(?:\\.[0-9]+)?)\\s*%', 'i'));
     if (match && Number(match[1]) <= 100) values[key] = Number(match[1]);
   }
   return values;
@@ -87,7 +87,7 @@ async function main() {
       if (existing && (existing.brand_name !== source.brand || existing.target_pet_type !== source.species)) throw new Error('Stored species/brand conflict');
       const note = `${source.checkedAt.slice(0, 10)} 제조사 공개 페이지 대조. 국내 유통 포장 표시와 다를 수 있으므로 실제 포장도 확인해 주세요. ` +
         (data.dryMatterText ? `제조사 건물기준 영양정보(수분 제거 기준): ${data.dryMatterText}. 이 값은 보장성분이나 급여량 계산에 사용하지 않습니다.`
-          : Object.keys(data.nutrition).length ? '영양 수치는 제조사가 표시한 등록성분량이며 종합적인 급여 적합성 판정이 아닙니다.' : '현재 제조사 공개 페이지에서 보장성분 수치가 확인되지 않아 영양 수치를 제공하지 않습니다.');
+          : Object.keys(data.nutrition).length ? '영양 수치는 제조사가 공개한 영양 분석값입니다. 국내 유통 포장의 보장성분으로 검증된 값이나 종합적인 급여 적합성 판정이 아닙니다.' : '현재 제조사 공개 페이지에서 보장성분 수치가 확인되지 않아 영양 수치를 제공하지 않습니다.');
       accepted.push({ ...source, ...data, note, veterinaryOnly: /\/vet-products\/|\/prescription-diet-/.test(source.sourceUrl), existingProductId: existing?.id ?? null, before: existing ?? null });
     } catch (e) { deferred.push({ sourceUrl: source.sourceUrl, name: source.name, reason: e.message }); }
   }
