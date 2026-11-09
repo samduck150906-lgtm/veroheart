@@ -21,3 +21,10 @@ it('uses the existing admin API only after item/source/package/whole-label confi
  await screen.findByText('전체 대조 증거와 감사 기록을 저장했습니다.');
  expect(api.approve).toHaveBeenCalledTimes(1);expect(api.approve.mock.calls[0][0]).toMatchObject({productId:'synthetic-product',revision:'synthetic-revision',reviewedItemIds:['synthetic-item'],identityConfirmed:true,wholeLabelCompared:true});
 });
+
+it('distinguishes no captured current label from an unperformed evidence lookup',async()=>{
+ api.get.mockResolvedValueOnce({revision:'synthetic',eligible:false,snapshot:{product:['synthetic'],labels:[]}});
+ render(<ProductLabelReview productId="synthetic-product"/>);fireEvent.click(screen.getByRole('button',{name:'저장된 라벨 전체 대조 자료 조회'}));
+ expect(await screen.findByText(/저장된 현재 라벨이 없습니다/)).toBeTruthy();
+ expect(screen.queryByRole('button',{name:'전체 대조 승인 기록'})).toBeNull();expect(api.approve).not.toHaveBeenCalled();
+});

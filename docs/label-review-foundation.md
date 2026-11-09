@@ -47,3 +47,9 @@ PGlite role checks and existing **guard-included bootstrap** plus SQL draft are
 not unmodified historical replay, real multi-connection concurrency, operating
 schema verification or hosted HTTP. CI results and existing audit failure remain
 separate; no prior audit exception applies.
+
+A product without one captured current label cannot be approved by this panel.
+It explicitly requires raw-source/item capture first; old legacy ingredient links
+are not a substitute. Existing service-only ingestion/reanalysis SQL is not a
+new administrator capture/matching UI. Enriching legacy products without a usable
+current label is a later data-collection unit, not automatic evidence creation.
