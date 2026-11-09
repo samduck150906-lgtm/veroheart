@@ -43,7 +43,7 @@ other historical pending migrations as part of this repair.
 
 ## Validation
 
-The full application checks cover lint, 1,830 unit tests, 14 catalog tests,
+The full application checks cover lint, 1,831 unit tests, 14 catalog tests,
 complete SQL bootstrap, publication/scan/account/catalog/RLS contracts, app/server
 types and production build. The catalog transaction regression verifies hidden
 intent, numeric zero, dry-matter isolation, stale snapshot rejection and public
@@ -77,10 +77,18 @@ evidence reopens completed rows. Empty rows leave the default supplementation
 list and remain accessible by explicit status. Publication filters honor review
 status as well as the visibility flag.
 
-The hosted rollback rehearsal initially reduced public supplementation targets
-from 277 to 198 (79 complete). Remaining fields overlap: 189 lack a source-confirmed
+The final hosted transaction reduced public supplementation targets
+from 277 to 197 (80 complete). Remaining fields overlap: 189 lack a source-confirmed
 GTIN, 135 lack adequate nutrition evidence, and 12 lack ingredients. Product
-gallery extraction subsequently recovered the last missing image. These are
+gallery extraction recovered all 27 missing images. These are
 real source gaps; removing them from the list or inventing values would not
 complete the data. Pending records remain private and are still available to
 administrators for source review.
+
+At the user's request, a QA administrator can be provisioned with server-only
+`TEMP_ADMIN_ID` (`qa-` prefix), `TEMP_ADMIN_CREDENTIAL_SHA256` (hash of the encoded
+login credential), and `TEMP_ADMIN_EXPIRES_AT` (Unix seconds, at most one hour).
+The normal login endpoint validates all three and caps the signed session at the
+same deadline. No client signup or new permanent administrator is introduced.
+Remove these settings when the inspection ends. Credentials never belong in git,
+screenshots, reports, or browser persistent storage.
