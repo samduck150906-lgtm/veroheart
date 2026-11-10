@@ -89,22 +89,71 @@ private snapshot/validation helpers, two service-only admin RPCs and one sanitiz
 public reader. No source/product writes, historical migration changes or seeds.
 Existing anonymous/authenticated source permissions are not broadened.
 
-Aggregate operating metadata found 68 ledger versions, all present locally with
-matching version/name, but seven unrelated local versions are absent remotely.
-The candidate is the eighth local-only version. Version/name parity is not SQL
-body equality. Their SQL must not be run, repaired or silently marked applied as
-part of this release. The original approved Mac CLI path is absent; no replacement
-was installed. Therefore an **operating linked dry-run has not run**, and no
-remote-history bundle is represented as verified. The successful disposable CLI
-run is not a substitute for that release gate.
+## Completed SELECT-only release preflight (2026-11-10)
 
-Before operating approval: use an existing authorized verified CLI/connection,
-compare remote ledger originals with the bundle, list migrations, and require
-`supabase db push --linked --dry-run` to list only the frozen candidate with no
-seeds/roles. Stop on any drift, other migration or include-all request. Recheck
-the latest completed backup and the target project immediately before approval.
-The Dashboard showed a PHYSICAL backup dated 2026-11-08 21:29:59 UTC with Restore
-action; literal COMPLETED status was not displayed. PITR is not enabled.
+Operating metadata has 68 ledger rows, matching repository versions/names. The
+original statements were fetched through the existing authenticated CLI SELECT
+path into private storage. Every historical bundle file was byte-compared with
+CLI2.118.0's official fetch rendering (`statements.join(";\n") + ";\n"`), including
+original CRLF. Statement-array fingerprints and rendered file hashes are separate
+contracts; no authored historical SQL is rewritten to claim identical originals.
+Seven unrelated local-only versions are excluded, not repaired or marked applied.
+
+The existing official CLI2.118.0 was recovered from another previously verified
+local cache. Archive SHA256 and com.supabase.cli signature match. Its normal
+login already accesses the target project. No install, credential extraction or
+security bypass was needed. The initial sandbox telemetry-write denial was
+resolved through the normal execution permission path.
+
+A fresh normal link, migration list and **actual linked dry-run** completed with
+only `20261110100000_ingredient_label_comparison_evidence.sql` planned, exit0,
+no seeds, roles or include-all request. The 68 historical versions and the frozen
+candidate make a69-file isolated release bundle. This is not an apply. Candidate
+objects/version are still absent; pre/post-dry-run ledger, source row fingerprints,
+policies, grants, views and related function fingerprints are unchanged.
+
+Backup API metadata, not mere PHYSICAL UI presence, reports latest backup
+2026-11-09T21:30:10.726Z **COMPLETED**, PHYSICAL; observed2026-11-10T03:54:19Z.
+PITR is disabled. Dashboard restore is an available recovery procedure, not a
+restore test or an automatic rollback. Recheck latest success immediately before
+any separately approved application.
+
+Current admin-write is v15 ACTIVE, verify_jwt=false. Its five downloaded modules
+match current main after provider-unbundle formatting/type erasure normalization,
+not byte-for-byte archive identity. The desired seven source files are pinned to
+this PR and an exact private hash manifest; normal internal admin authentication
+is preserved. Existing reserved service-role key is present; optional session
+secret is absent and existing service-key fallback remains unchanged. No secret
+value or source download is added to Git.
+
+## Pilot and consumer stop conditions
+
+Current public cohort277 has partial266/unavailable11; structurally reviewable
+current labels0. No real pilot product is selected. This is not an assertion that
+there are no products or all personalized recommendations return zero.
+
+Before a pilot, collect one exact product/flavour/weight/package/revision source
+packet, current whole label and stable ordered items with active resolved matches,
+no omitted/unreviewed/conflicting item, and a reviewer who can inspect the retained
+original. Existing editor legacy ingredient saves do not by themselves repair
+current-label item matching. Source capture/match correction needs its own normal
+reviewed path/approval; neither direct service RPC nor ready/count backfill is a
+substitute. This foundation approval panel only records a reviewable saved state.
+
+After separately authorized DB → admin-write → foundation/admin hosting, require
+at least1 genuine pilot with approved evidence, exactly1 corresponding audit,
+verified sanitized public receipt matching the displayed inputs, and no private
+fields. Same-state retry must add neither evidence nor audit. Conflict/permission
+rejection must add neither; audit-failure and source-mutation tests run in the
+existing disposable harness, not by injecting operating failures or editing live
+products for a smoke test. Do not retry uncertain approvals before reading state.
+
+Keep122 withheld while no genuine pilot exists, reader/schema/auth is unavailable,
+any intended ready product has missing/error/stale/blocked proof, or the explicitly
+accepted ready/withheld cohort is unknown. Snapshot277 is a denominator for that
+publication predicate, not the whole catalog or every profile. After pilot, check
+all intended ready products (including null-status fallback eligibility), not
+stored ready alone, and require lookup errors/omissions0 for the release cohort.
 
 After a separately authorized single apply, compare ledger (one new row only),
 source table structural/data fingerprints excluding new private objects, all
