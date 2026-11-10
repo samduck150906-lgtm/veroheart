@@ -103,3 +103,14 @@ it('invalidates canonical definition ABA through the shared writer trigger',asyn
  await db.exec("UPDATE canonical_ingredients SET canonical_name_ko='임시';UPDATE canonical_ingredients SET canonical_name_ko='닭고기'");
  assert.equal((await publicReceipt()).state,'stale');
 });
+
+it('rollout counts null-status fallback eligibility instead of only stored ready',async()=>{
+ await db.exec('UPDATE products SET analysis_status=NULL');
+ const sql=readFileSync(new URL('../docs/sql/label-evidence-rollout-counts.sql',import.meta.url),'utf8');
+ let result=(await db.query(sql)).rows[0].label_evidence_rollout_counts;
+ assert.equal(result.stored_ready,0);assert.equal(result.baseline_ready_candidates,1);assert.equal(result.baseline_ready_withheld,1);
+ assert.equal((await approval()).http,200);
+ result=(await db.query(sql)).rows[0].label_evidence_rollout_counts;
+ assert.equal(result.baseline_ready_current_proof,1);assert.equal(result.baseline_ready_withheld,0);
+ assert.doesNotMatch(JSON.stringify(result),/Synthetic|fixture:|00000000/);
+});

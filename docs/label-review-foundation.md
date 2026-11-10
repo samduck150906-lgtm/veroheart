@@ -161,3 +161,11 @@ existing grants/policies/functions, new RPC privileges and sanitized public
 absence states. Do not approve live evidence as a deployment smoke test. On an
 uncertain result inspect ledger/objects before any retry. On failure stop: no
 automatic rollback, history repair, policy deletion or source-data change.
+
+The post-foundation aggregate now mirrors full-product main readiness, including
+NULL/unknown-status fallback with resolved known items and no unknown terms.
+It separately reports stored ready, baseline-ready proof coverage, withholding,
+missing receipts and multiple-current-label ambiguity. Ambiguous-current count
+must be0 for this aggregate to be an exact main comparison; otherwise inspect
+that cohort without selecting an arbitrary label. Actual personalized scores and
+recommendation membership still require their own profile/species/score filters.
