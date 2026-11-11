@@ -45,6 +45,7 @@ export default function FeedAnalysisCard({ product, profile }: { product: Produc
   const tone = GRADE_TONE[a.grade];
   const iq = a.ingredientQuality;
   const analysisReady = a.analysisReadiness.status === 'ready';
+  const evidencePending = a.analysisReadiness.reasonCodes.some(code => code.startsWith('label_') || code === 'multiple_current_labels');
   const nutrition = getNutritionPresentation(product.guaranteedAnalysis);
   // The score summary already displays this exact limitation; retain all actual warnings.
   const visibleCautions = a.cautions.filter(text => !(nutrition.notice && text === nutrition.notice && a.summary.includes(text)));
@@ -72,7 +73,7 @@ export default function FeedAnalysisCard({ product, profile }: { product: Produc
         </div>
         <div style={{ minWidth: 0 }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 999, background: analysisReady ? tone.bg : '#FEF3C7', color: analysisReady ? tone.fg : '#B45309', fontSize: 14, fontWeight: 900, marginBottom: 6 }}>
-            {analysisReady ? `${nutrition.scopeLabel} ${a.grade}등급` : '부분 분석'}
+            {analysisReady ? `${nutrition.scopeLabel} ${a.grade}등급` : evidencePending ? '분석 보류' : '부분 분석'}
           </span>
           <p style={{ margin: 0, fontSize: 13.5, fontWeight: 600, color: 'var(--pdp-ink-muted)', lineHeight: 1.5 }}>{a.summary}</p>
           <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--pdp-ink-muted)', lineHeight: 1.5 }}>{nutrition.detail}</p>

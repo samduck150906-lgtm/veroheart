@@ -16,8 +16,8 @@ import { allergyCautionMatches, allergyIngredientNames } from './allergyFamilyMa
 import type { GuaranteedAnalysis } from './types';
 import { getNutritionPresentation, getNutritionReadiness, isObservedPercent } from './nutritionReadiness';
 import {
-  analysisReadinessCopy,
-  readinessFromStoredStatus,
+  productAnalysisReadiness,
+  analysisReadinessNotice,
   type AnalysisReadiness,
 } from './analysisReadiness';
 import {
@@ -147,11 +147,7 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
   const species: 'dog' | 'cat' = profile.species === 'Cat' ? 'cat' : 'dog';
   const productType = detectProductType(product);
   const ingredients = product.ingredients ?? [];
-  const analysisReadiness = readinessFromStoredStatus(
-    product.analysisStatus,
-    ingredients.length,
-    product.unknownIngredientTerms?.length ?? 0,
-  );
+  const analysisReadiness = productAnalysisReadiness(product);
 
   // ── 1) 영양 계산 (보장성분 실측치가 있을 때만) ──
   const ga: GuaranteedAnalysis | undefined = product.guaranteedAnalysis;
@@ -291,8 +287,9 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
   if (caP.note) cautions.push(caP.note);
   if (macros && macros.carb >= 55) cautions.push(`추정 탄수화물이 ${Math.round(macros.carb)}%로 다소 높습니다`);
   const readinessMessage = analysisReadiness.status === 'unavailable' && iq.total > 0
+    && !analysisReadiness.reasonCodes.some(code => code.startsWith('label_'))
     ? '전성분은 등록되어 있지만 원료별 분석 정보가 아직 준비되지 않았습니다'
-    : analysisReadinessCopy(analysisReadiness.status);
+    : analysisReadinessNotice(analysisReadiness);
   if (iq.total === 0 && !product.unknownIngredientTerms?.length) cautions.push('전성분이 아직 등록되지 않아 원료 품질은 평가하지 못했습니다');
   else if (analysisReadiness.status !== 'ready') cautions.push(readinessMessage);
   if (nutritionPresentation.limited) cautions.push(nutritionPresentation.notice);
@@ -309,7 +306,7 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
     if (product.requiresVeterinaryGuidance) return '수의사 상담이 필요한 제품입니다. 처방과 급여량은 담당 수의사의 안내를 따라 주세요.';
     if (aafco.evaluated && !aafco.passed) return aafco.details.join(' ');
     if (caP.note) return caP.note;
-    if (analysisReadiness.status !== 'ready') return `${readinessMessage}.`;
+    if (analysisReadiness.status !== 'ready') return readinessMessage.endsWith('.') ? readinessMessage : `${readinessMessage}.`;
     if (nutritionPresentation.limited) return nutritionPresentation.notice;
     if (grade === 'A+' || grade === 'A') return '등록된 원료·기초 영양 지표 기준으로 점수가 높은 편입니다.';
     if (grade === 'B') return '등록된 원료·기초 영양 지표와 주의 항목을 함께 참고해 주세요.';

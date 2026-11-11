@@ -1,3 +1,4 @@
+import { reviewedLabelFixture } from '../test/reviewedLabelFixture';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
@@ -17,12 +18,12 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('analysis result evidence boundary', () => {
-  it.each(['partial','unavailable','blocked'] as const)('hides score, grade and positive/disease claims for %s ingredient evidence', (analysisStatus) => {
+  it.each(['partial','unavailable','blocked'] as const)('hides score, grade and positive claims while retaining clinical cautions for %s ingredient evidence', (analysisStatus) => {
     show({...base,analysisStatus,unknownIngredientTerms:['새 원료'],guaranteedAnalysis:{crudeProtein:30,crudeFat:15,crudeFiber:3,crudeAsh:8,moisture:10}});
     expect(screen.queryByText(/^\d+점$/)).toBeNull();
     expect(screen.queryByText('원료 품질 근거')).toBeNull();
     expect(screen.queryByText('좋은 점')).toBeNull();
-    expect(screen.queryByText(/건강 고민 맞춤 분석/)).toBeNull();
+    expect(screen.queryByText('잘 맞습니다')).toBeNull();
     expect(screen.queryByText(/주의·위험 항목은 확인되지/)).toBeNull();
   });
   it('does not invent wet-food nutrition or calories when no values are reported', () => {
@@ -69,7 +70,7 @@ describe('analysis result evidence boundary', () => {
     expect(screen.getByTestId('analysis-location').textContent).toBe('?productId=food-1');
   });
   it('retains a score for complete ingredient evidence', () => {
-    show(base);
+    show(reviewedLabelFixture(base));
     expect(screen.getByText(/^\d+점$/)).toBeTruthy();
     expect(screen.getByText('원료 품질 근거')).toBeTruthy();
   });
@@ -97,4 +98,17 @@ it('recognizes an owned pet named 우리 아이 while keeping guest personalizat
   show(base);
   expect(screen.queryByText(/프로필을 등록하면/)).toBeNull();
   expect(screen.getByText(/우리 아이는 이 성분을 피하는 것이 좋습니다/)).toBeTruthy();
+});
+
+it('retains disease threshold failures, species/allergy/risk cautions when whole-label proof is missing', () => {
+  useStore.setState({ profile: { ...DEFAULT_USER_PET_PROFILE, id: 'owned', name: '합성', healthConcerns: ['신장'], allergies: ['닭'] } });
+  show({ ...base, targetPetType: 'cat', ingredients: [...base.ingredients,
+    { id: 'synthetic-risk', nameKo: '합성 위험', nameEn: '', purpose: '', riskLevel: 'danger' }],
+    guaranteedAnalysis: { crudeProtein: 50, crudeFat: 20, crudeFiber: 3, crudeAsh: 8, moisture: 10, phosphorus: 2 } });
+  expect(screen.queryByText(/^\d+점$/)).toBeNull();
+  expect(screen.getAllByText(/다른 동물 종류 전용|동물 종류와 맞지/).length).toBeGreaterThan(0);
+  expect(screen.getAllByText(/알레르기|피하는 것이/).length).toBeGreaterThan(0);
+  expect(screen.getAllByText(/위험 성분/).length).toBeGreaterThan(0);
+  expect(screen.getAllByText(/주의 필요/).length).toBeGreaterThan(0);
+  expect(screen.queryByText('잘 맞습니다')).toBeNull();
 });

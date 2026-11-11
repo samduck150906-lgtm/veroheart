@@ -1,5 +1,5 @@
 import type { Product } from '../types';
-import { readinessFromStoredStatus } from '../analysis/analysisReadiness';
+import { productAnalysisReadiness, analysisReadinessNotice } from '../analysis/analysisReadiness';
 import { getNutritionPresentation } from '../analysis/nutritionReadiness';
 
 export function describeIngredientAvailability(product: Product): { label: string; detail: string } {
@@ -8,7 +8,11 @@ export function describeIngredientAvailability(product: Product): { label: strin
   }
   const known = product.ingredients?.length ?? 0;
   const unknown = product.unknownIngredientTerms?.length ?? 0;
-  const { status } = readinessFromStoredStatus(product.analysisStatus, known, unknown);
+  const readiness = productAnalysisReadiness(product);
+  const { status } = readiness;
+  if (readiness.reasonCodes.some(r => r.startsWith('label_') || r === 'multiple_current_labels')) {
+    return { label: known + unknown > 0 ? `원료 ${known + unknown}개 등록` : '원료 확인 필요', detail: analysisReadinessNotice(readiness) };
+  }
   if (status === 'blocked') return { label: '원료 표기 확인 필요', detail: '전성분 표기가 서로 달라 전체 점수를 계산하지 않았습니다. 아래 원료 목록을 확인해 주세요.' };
   if (status === 'unavailable' && known > 0 && unknown === 0) {
     return { label: `원료 ${known}개 등록`, detail: '등록된 원료는 아래에서 확인할 수 있습니다. 전성분 라벨 대조와 원료별 분석은 별도로 진행합니다.' };
@@ -43,7 +47,7 @@ export interface ProductCompletenessDisplay {
 export function resolveProductCompleteness(product: Product): ProductDataCompleteness {
   const hasIngredients = (product.ingredients?.length ?? 0) + (product.unknownIngredientTerms?.length ?? 0) > 0;
   const nutrition = getNutritionPresentation(product.guaranteedAnalysis);
-  if (hasIngredients && !nutrition.limited && !product.unknownIngredientTerms?.length) return 'full';
+  if (hasIngredients && !nutrition.limited && !product.unknownIngredientTerms?.length && productAnalysisReadiness(product).status === 'ready') return 'full';
   if (hasIngredients) return 'partial';
   return 'minimal';
 }
@@ -51,6 +55,7 @@ export function resolveProductCompleteness(product: Product): ProductDataComplet
 export function describeProductCompleteness(product: Product): ProductCompletenessDisplay {
   if (product.ingredientDataLoaded === false) return { level: 'minimal', ...describeIngredientAvailability(product) };
   if (product.unknownIngredientTerms?.length) return { level: 'partial', ...describeIngredientAvailability(product) };
+  if (productAnalysisReadiness(product).reasonCodes.some(r => r.startsWith('label_') || r === 'multiple_current_labels')) return { level: 'partial', ...describeIngredientAvailability(product) };
   switch (resolveProductCompleteness(product)) {
     case 'full':
       return { level: 'full', label: '원료·기초 영양 정보 확인됨', detail: '' };

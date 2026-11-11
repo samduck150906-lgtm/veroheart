@@ -132,6 +132,8 @@ export interface Product {
   /** 현재 라벨 세트에서 canonical 원료로 확정되지 않은 원문. */
   unknownIngredientTerms?: string[];
   ingredientLabelSetId?: string;
+  /** Production has no comparison-attestation transport yet; absence is not approval. */
+  ingredientLabelEvidence?: import('../analysis/labelCompleteness').IngredientLabelEvidence;
   /** False when the first current label row has no resolved risk evidence. */
   firstIngredientResolved?: boolean;
   analysisEngineVersion?: string;

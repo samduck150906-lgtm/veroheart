@@ -1,3 +1,4 @@
+import { reviewedLabelFixture } from '../test/reviewedLabelFixture';
 import { describe, expect, it } from 'vitest';
 import { analyzeFeed } from './feedAnalysis';
 import type { Product, UserPetProfile, Ingredient } from '../types';
@@ -7,7 +8,7 @@ function ing(nameKo: string, riskLevel: Ingredient['riskLevel'] = 'safe', nameEn
 }
 
 function product(overrides: Partial<Product> = {}): Product {
-  return {
+  return reviewedLabelFixture({
     id: 'p1',
     brand: '테스트',
     name: '테스트 사료',
@@ -18,7 +19,7 @@ function product(overrides: Partial<Product> = {}): Product {
     reviewsCount: 0,
     averageRating: 0,
     ...overrides,
-  };
+  });
 }
 
 const dogProfile: UserPetProfile = {
@@ -216,5 +217,21 @@ describe('analyzeFeed — 연어/어류 감지 및 데이터 부족 구분 (P0 �
     expect(a.summary).toContain('부분 분석');
     expect(a.positives.join(' ')).not.toContain('위험·주의·합성첨가물 성분이 확인되지 않았습니다');
     expect(`${a.summary} ${a.positives.join(' ')}`).not.toMatch(/안전|문제없음/);
+  });
+});
+
+describe('registered ingredients and distinct proof lookup failures', () => {
+  it.each([
+    ['not_requested', '증거를 아직 조회하지 않아'],
+    ['unavailable', '조회 경로가 준비되지 않아'],
+    ['error', '증거를 불러오지 못해'],
+  ] as const)('keeps the %s reason even when stored readiness is unavailable', (status, notice) => {
+    const p = product({ analysisStatus: 'unavailable', ingredients: [ing('닭고기')] });
+    p.ingredientLabelEvidence = { lookup: { status } };
+    const result = analyzeFeed(p, dogProfile);
+    expect(result.cautions.join(' ')).toContain(notice);
+    expect(result.summary).toContain(notice);
+    expect(result.analysisReadiness.status).toBe('unavailable');
+    expect(result.ingredientQuality.total).toBe(1);
   });
 });

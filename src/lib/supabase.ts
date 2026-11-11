@@ -1,3 +1,4 @@
+import { loadLabelComparisons } from './labelComparisonRead';
 import { createClient } from '@supabase/supabase-js';
 import { ownedPhotoPath } from '../../supabase/functions/_shared/accountStorage';
 import { notify } from '../store/useNotification';
@@ -242,6 +243,10 @@ export async function deleteUserPet(petId: string, userId: string): Promise<bool
   return true;
 }
 
+async function withLabelComparisons(products: Product[]): Promise<Product[]> {
+  return loadLabelComparisons(products, ids => supabase.rpc('get_public_label_comparison', { p_product_ids: ids }));
+}
+
 // Products
 export const MOBILE_PRODUCT_PAGE_SIZE = 50;
 
@@ -329,7 +334,7 @@ export async function getProductDetail(productId: string): Promise<Product | nul
     if (error.code === 'PGRST116' && /(?:contains|result[^\n]*has) 0 rows/i.test(error.details ?? '')) return null;
     throw new ProductQueryError();
   }
-  return mapProductFromSupabaseRow(asProductRow(data));
+  return (await withLabelComparisons([mapProductFromSupabaseRow(asProductRow(data))]))[0];
 }
 
 /** Revalidate saved/recent IDs against the public catalog with full scoring evidence. */
@@ -367,7 +372,7 @@ export async function getVisibleProductsByIds(ids: string[]): Promise<Product[]>
     rows.push(...asProductRows(data));
   }
   const products = new Map(rows.map(row => [row.id, mapProductFromSupabaseRow(row)]));
-  return uniqueIds.flatMap(id => products.has(id) ? [products.get(id)!] : []);
+  return withLabelComparisons(uniqueIds.flatMap(id => products.has(id) ? [products.get(id)!] : []));
 }
 
 /**
@@ -421,7 +426,7 @@ export async function getProductByBarcode(barcode: string): Promise<Product | nu
     ...(aliases.data ?? []).map(row => row.product_id).filter((id): id is string => typeof id === 'string'),
   ]);
   if (ids.size > 1) throw new BarcodeLookupError('ambiguous');
-  if (data?.length) return mapProductFromSupabaseRow(asProductRow(data[0]));
+  if (data?.length) return (await withLabelComparisons([mapProductFromSupabaseRow(asProductRow(data[0]))]))[0];
   const id = [...ids][0];
   if (!id) return null;
   try { return await getProductDetail(id); }
@@ -700,8 +705,9 @@ export async function searchProductsPage(
     rows = asProductRows(data);
   }
 
-  let filtered = rows.map((row) => {
-    const product = mapProductFromSupabaseRow(row);
+  const mappedProducts = await withLabelComparisons(rows.map(mapProductFromSupabaseRow));
+  let filtered = rows.map((row, index) => {
+    const product = mappedProducts[index];
     return { product, evidence: currentIngredientSearchEvidence(row, product) };
   });
   if (fallbackSearchTerms?.length) {
@@ -906,7 +912,7 @@ export async function getProductsByBrand(brandName: string): Promise<Product[]> 
     return builder;
   });
   if (error) throw new ProductQueryError();
-  return asProductRows(data).map(mapProductFromSupabaseRow);
+  return withLabelComparisons(asProductRows(data).map(mapProductFromSupabaseRow));
 }
 
 // ─── 식이 다이어리 (pet_feeding_logs) ────────────────────────────────────────
@@ -1012,7 +1018,7 @@ export async function searchDiaryProducts(
   if (error) {
     throw new ProductQueryError();
   }
-  return asProductRows(data).map(mapProductFromSupabaseRow);
+  return withLabelComparisons(asProductRows(data).map(mapProductFromSupabaseRow));
 }
 
 /** 특정 반려동물의 특정 날짜 섭취 기록 목록 (시간 오름차순) */

@@ -36,6 +36,21 @@ const product: Product = { id, name: '합성 레이아웃 검증용 긴 제품�
   reviewsCount: 3, averageRating: 4, ingredients: Array.from({ length: 24 }, (_, n) => ({
     id: `synthetic-ingredient-${n}`, nameKo: `합성 원료 ${n + 1}`, nameEn: '', purpose: '합성 설명', riskLevel: 'safe',
   })) };
+const evidenceScenario = new URLSearchParams(location.search).get('evidence');
+if (evidenceScenario) {
+  product.analysisStatus = 'ready';
+  product.ingredientLabelSetId = 'synthetic-current-label';
+  if (evidenceScenario === 'unverified') product.ingredientLabelEvidence = undefined;
+  else if (['not_requested','unavailable','error'].includes(evidenceScenario)) {
+    product.ingredientLabelEvidence = { lookup: { status: evidenceScenario as 'not_requested' | 'unavailable' | 'error' } };
+  } else {
+    const { publicLabelBinding } = await import('../../src/analysis/labelCompleteness');
+    product.ingredientLabelEvidence = { lookup: { status: 'loaded', receipt: {
+      productId: product.id, labelSetId: product.ingredientLabelSetId, revision: 'synthetic-server-revision',
+      state: evidenceScenario as 'absent' | 'stale' | 'verified', binding: publicLabelBinding(product),
+    } } };
+  }
+}
 useStore.setState({ profile: DEFAULT_USER_PET_PROFILE, isLoggedIn: false, userId: null, pets: [],
   selectedProduct: product, products: [product], favorites: [], isLoadingProducts: false, productDetailError: '',
   fetchProductDetail: async () => {}, trackRecentView: async () => {},
