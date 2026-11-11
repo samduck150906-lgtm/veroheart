@@ -4,8 +4,12 @@
 
 Operating foundation migration `20261110100000` was applied once with frozen hash
 `15cc29d8a7524e8d1778afafb61b036b5b756a23c33e0e10c2dbc0be4b8e6a83`.
-Do not edit, rename or rerun it. Edge deployment and PR123 merge stopped at the
-additional sequence ACL gate. The current Edge function remains v15.
+Do not edit, rename or rerun it. The separately approved sequence follow-up was
+applied once on2026-11-12KST, ledger69→70, with no old data/security changes.
+admin-writev16 ACTIVE source matches the approved seven files exactly;401/401
+passed and normal verifyAdmin200/ok/actor presence was user-confirmed. PR123
+merged as34d2d43c5f27a22838a72c6abb253c05e33a23a5; app/admin publish that SHA.
+Landing skipped its unchanged directory; no new landing build is claimed.
 
 Catalog dependencies identify `public.ingredient_label_comparisons_sequence_seq`
 as the sole internal identity dependency of `ingredient_label_comparisons.sequence`:
@@ -31,7 +35,8 @@ application sequence grants preserves this path and the owner's privileges.
 SHA-256: `75d1ad886dcef2c5f6a8136b53d8d149c47361ad0cbc578f84367c65552ef9d9`.
 The earlier draft hash is superseded: the formal file adds fail-closed catalog
 checks and a postcondition rejecting surviving inherited access. No old approval
-applies to this changed file. It remains unapplied pending separate authorization.
+applies to this changed file. A new explicit approval covered the exact formal
+hash; it is now operating-applied and immutable. Do not reapply or rename it.
 
 The single DO statement validates name, relation kinds, internal identity
 attachment, column type/nullability, sequence parameters and common owner/definer.
@@ -60,34 +65,35 @@ failure rollback and a concurrent ACL lock timeout. Synthetic prior ledger rows
 are not a replay of operating SQL. Loopback trust authentication and SQL-role
 checks are not hosted HTTP authentication or an operating approval test.
 
-## Safe DB and Git order
+## Applied state and safe repository order
 
-1. Keep123 and122 Draft while preparing this fix. PR125 stays stacked on123;
-   its main diff must not be merged alone before the foundation is in main.
-2. After separate fixed-file authorization, apply only125's forward migration
-   from a private bundle containing69 exact remote statement renders plus this
-   candidate. The seven unrelated pending repository migrations remain excluded.
-   Verify70rows, only the new ledger entry, application sequence privileges all
-   false, owner-definer/RPC bounds and source/security fingerprints preserved.
-3. Deploy only the frozen123 admin-write bundle; verify the new ACTIVE version,
-   source correspondence, 401/401 and authenticated verifyAdmin success. The old
-   v15 functions are preserved;123 adds only the two label-review routes and their
-   modules. Do not claim source archive byte identity after provider unbundling.
-4. Recheck and squash123 at its unchanged approved HEAD. DB dependencies already
-   exist, then automatic app/admin hosting may expose the normal review UI.
-5. Immediately integrate actual squash main into125, switch base to main, inspect
-   only the ACL migration/tests/docs diff and revalidate affected checks. Merge125
-   only under its own explicit approval. This preserves fresh replay ordering:
-   the base foundation precedes the ACL hardening. Do not close/drop the applied
-   migration if the repository merge is delayed; keep an applied-state handoff.
-6. Only after actual123/125 history is in main, clean122's stacked base using that
-   main, remove duplicate foundation diff, preserve consumer gates and keep Draft.
-   Launch122 requires genuine reviewed pilot/coverage acceptance; no ready fallback.
+DB125 postchecks confirm application SELECT/USAGE/UPDATE all false, unchanged
+sequence/table/definer ownership and RPC permissions, one new ledger row only,
+all old source/security/other-sequence/default-ACL fingerprints preserved and
+zero evidence/approval-audit records. No operating nextval/setval/approval test.
+The operator reserved-key session fallback is unchanged; no secret setting changed.
 
-A brief interval with deployed DB history ahead of Git is intentional and tracked;
-merging125 alone first would break fresh replay and is prohibited. No migration
-runs automatically from the current hosting workflow. Failure after DB apply stops
-later stages; preserve applied history and do not automatically revert permissions.
+PR123's actual squash main has exactly the approved foundation tree. This PR's
+unique four commits were replayed onto that actual main, with the old approved
+HEAD retained locally. The applied SQL filename/version/body hash are identical.
+No duplicate foundation diff remains. This PR stays Draft and needs a separate
+new-fixed-HEAD repository merge approval; its DB migration must not be rerun.
+The temporary DB-ahead-of-main interval is tracked until this PR is merged.
+
+The preparation model found ordinary merge-main would create add/add conflicts;
+replaying only unique commits avoids that. Do not merge old foundation history
+back in. PR122 should remain stacked on this follow-up while its applied migration
+is not yet in main, keeping consumer-only diff inspectable. After actual125 merge,
+replay only122's unique consumer patch onto actual main and inspect/validate it.
+122 stays Draft until genuine reviewed pilot/coverage acceptance. No ready fallback.
+
+The last pre-rebase125 layout run was CANCELLED during Playwright dependency
+installation after logged Ubuntu DNS errors, before browser tests. The earlier
+single manual retry failed at the same external dependency boundary. No pass or
+waiver is claimed; new-head CI records its own result without repeated manual
+retries. Functional checks are separate from this unrelated layout environment.
+No migration, Edge function or production deployment is run by this repository
+follow-up update. Never revert operating permissions automatically on CI failure.
 
 ## Pilot requirements and stop conditions
 
