@@ -95,14 +95,14 @@ try{
  const baselineHistory=psql(acl.uri,"SELECT json_agg(t ORDER BY version)::text FROM supabase_migrations.schema_migrations t");
 
  assert(privileges(acl.uri).every(r=>r.update));psql(acl.uri,`SET ROLE anon;SELECT setval('${seq}',1000,false)`);
- const sequenceBeforeForward=psql(acl.uri,`SELECT row_to_json(s)::text FROM ${seq} s`);
+ const sequenceBeforeForward=psql(acl.uri,`SELECT json_build_object('last_value',last_value::text,'log_cnt',log_cnt::text,'is_called',is_called)::text FROM ${seq}`);
  await writeFile(join(acl.dir,'supabase/migrations',followupName),followup);
  const aclDry=await push(acl,true);assert.equal(aclDry.status,0);assert((aclDry.stdout+aclDry.stderr).includes(followupName));
  assert.equal((await push(acl)).status,0);assert(privileges(acl.uri).every(r=>!r.update&&!r.usage&&!r.select));
  assert.equal(psql(acl.uri,'SELECT count(*) FROM supabase_migrations.schema_migrations'),'70');
  assert.equal(psql(acl.uri,"SELECT json_agg(t ORDER BY version)::text FROM supabase_migrations.schema_migrations t WHERE version<>'20261111150000'"),baselineHistory);
  // The local-only setval reproduction is not repeated by forward migration or retry.
- assert.equal(psql(acl.uri,`SELECT row_to_json(s)::text FROM ${seq} s`),sequenceBeforeForward);
+ assert.equal(psql(acl.uri,`SELECT json_build_object('last_value',last_value::text,'log_cnt',log_cnt::text,'is_called',is_called)::text FROM ${seq}`),sequenceBeforeForward);
  assert.equal((await push(acl)).status,0);assert.equal(psql(acl.uri,'SELECT count(*) FROM supabase_migrations.schema_migrations'),'70');
  assert.equal(psql(acl.uri,"SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version='20261111150000'"),'1');
  psql(acl.uri,`SET ROLE service_role;${approve(review(acl.uri).revision)};RESET ROLE`);assert.deepEqual(business(acl.uri),{evidence:1,audit:1});results.push({case:'followup_cli_revokes_sequence_only_and_preserves_definer_approval',pass:true});
