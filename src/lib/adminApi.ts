@@ -1622,3 +1622,22 @@ export async function fetchProductForEdit(id: string): Promise<Record<string, un
   );
   return res.product ?? null;
 }
+
+/** Permissioned whole-label comparison. Credentials stay in the existing admin session path. */
+export interface AdminLabelReview {
+  approvalState?: 'absent' | 'stale' | 'verified';
+  auditRecorded?: boolean;
+  revision: string;
+  eligible: boolean;
+  snapshot: { product: unknown[]; labels: Array<{ id: string; raw: string; source?: string;
+    items: Array<{ id: string; raw: string; order: number; match: string }> }> };
+}
+export async function getIngredientLabelReview(productId: string): Promise<AdminLabelReview> {
+  const result = await adminWrite<{ review: AdminLabelReview }>('getIngredientLabelReview', { productId });
+  if (!result.review) throw new Error('라벨 검토 자료를 조회하지 못했습니다.');
+  return result.review;
+}
+export async function approveIngredientLabelReview(input: { productId: string; revision: string; reviewedItemIds: string[];
+  sourceReference: string; identityNotes: string; coverageNotes: string; identityConfirmed: boolean; wholeLabelCompared: boolean }) {
+  return adminWrite<{ result: { status: string; revision: string } }>('approveIngredientLabelReview', input);
+}

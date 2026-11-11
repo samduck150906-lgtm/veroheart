@@ -59,3 +59,33 @@ typescript-eslint and typescript-estree remain8.72.1, with minimatch^10.2.2.
 The residual seven moderate tooling entries remain a release condition. Resume
 only for a supported patched dependency range/backport; no further candidate
 installation or failed override experiment is justified by unchanged metadata.
+
+## 2026-11-10 closure against main124
+
+The earlier residual7 root /8 landing entries are historical, not the current CI
+result. Main124 (`ff11534`, merged before label-evidence work) added a scoped
+`@typescript-eslint/typescript-estree -> minimatch ^11.0.5` override to both
+manifests; lockfiles replace nested10.2.4 with11.0.5 plus its normal helper. This
+is a **major override outside the parent's declared ^10.2.2**, not a supported
+parent-range upgrade. It is unrelated to label-evidence functionality and is not
+introduced or changed by PR123/122. Parent-range support remains maintenance debt.
+
+The existing124 npm-ci installation receipt confirms root estree8.57.2 nested
+minimatch11.0.5 and matching lock integrity. Landing lock has estree8.70.0 nested
+minimatch11.0.5; fresh Linux npm ci, lint/type/build/audit ran on final feature CI.
+Local reused node_modules still has10.2.4 and is **not** proof of the new installed
+CI tree. Root7 were the same minimatch advisory plus six affected parents; landing8
+adds eslint-config-next as another dependent. They are not15 independent advisories.
+
+The official minimatch advisory above affects >=7 <11.0.1, patched11.0.1, so11.0.5
+is outside that range. Existing121 already selected rimraf6.1.4/glob14.0.4, outside
+the glob advisory range. Root and landing final Linux CI each execute
+`npm audit --audit-level=moderate` and exit0 (0 vulnerabilities). No ignore/force,
+threshold, protection or workflow audit-order change explains this result. The
+full landing steps now execute; their result is no longer only an independent job.
+
+Close repeated investigation of these historical failures. Resume only if lock
+resolution/manifest changes, a new advisory affects the installed versions, audit
+becomes nonzero, or an upstream supported parent range permits retiring the
+existing override. Current tests establish lint/build compatibility, not a proof
+of all glob semantics or zero future vulnerabilities.

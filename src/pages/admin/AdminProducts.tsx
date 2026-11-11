@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Plus, Search, Edit2, Trash2, X, Upload, ChevronLeft, ChevronRight, AlertTriangle, Eye, EyeOff, Pin, PinOff } from 'lucide-react';
 import { notify } from '../../store/useNotification';
 import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
+import ProductLabelReview from './ProductLabelReview';
 import ProductIngredientsEditor from './ProductIngredientsEditor';
 import ProductLabelPasteBox from './ProductLabelPasteBox';
 import {
@@ -1132,6 +1133,10 @@ const AdminProducts: React.FC = () => {
                   }}
                 />
               </div>
+
+              {currentProduct.id && editLoadState === 'ready' && <div className="admin-form-span-2">
+                <ProductLabelReview key={currentProduct.id} productId={currentProduct.id} />
+              </div>}
 
               {/* 원재료 구성 — 분석 엔진의 핵심 입력 */}
               <div className="admin-form-span-2">

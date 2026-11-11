@@ -77,6 +77,8 @@ export const ALLOWED_ACTIONS = new Set([
   'restoreTrash',
   'purgeTrash',
   'applyProductCleanup',
+  'getIngredientLabelReview',
+  'approveIngredientLabelReview',
 ]);
 
 export const MAX_NAME_LEN = 200;

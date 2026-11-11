@@ -28,9 +28,13 @@ jobs:
         run: node --experimental-vm-modules --test scripts/feed-nutrition-evidence.test.mjs
       - name: Conditional review privacy SQL and role regression
         run: npm run test:review-privacy
+      - name: Label review server type contract
+        run: npx tsc --noEmit --target ES2023 --module esnext --moduleResolution bundler --allowImportingTsExtensions --skipLibCheck supabase/functions/admin-write/labelReview.ts
+      - name: Label review service synthetic flow
+        run: node --experimental-vm-modules --test scripts/label-review-service.test.mjs
       - run: npm test
       - run: npm run test:catalog
-      - run: npm run test:bootstrap
+      - run: npm run test:bootstrap -- --label-comparison-draft
       - run: npm run test:schemas
       - run: npm run build
       - run: npm audit --audit-level=moderate
