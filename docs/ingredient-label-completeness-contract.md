@@ -223,3 +223,11 @@ squashed ancestry remains, prepare a fresh main-based branch and replay only the
 reviewed consumer patch, retaining this history until reviewed. Do not merge a
 validation branch or discard another author's changes to make a clean diff.
 No123 audit exception is inherited; current root/landing audit0 is measured in CI.
+
+##2026-11-12 released foundation and pending follow-up
+
+Foundation123 is operating-released and in main as34d2d43c5f27a22838a72c6abb253c05e33a23a5. Sequence hardening125 is operating-applied at the frozen75d1ad88… hash but its repository PR remains unmerged. This consumer is now stacked on the cleaned125 branch, not the old foundation history, preserving consumer-only diff and the applied hardening file. No consumer launch is authorized. After125 actually merges, replay only the consumer unique patch on the real main and recheck the new diff/HEAD; do not merge old squash ancestors back in.
+
+The reader/gate/cache/formulas/UI source from the prior consumer HEAD is preserved. The workflow combines the16-case consumer flow with the10-case sequence regression and underlying label-service/actualCLI checks. No dependency or lockfile change is introduced. Existing layout evidence is synthetic and reused only where source is unchanged; any current environment failure remains separate from a pass.
+
+Pilot eligibility remains0: two product-family rows lack exact local weight/package/revision/back-label proof and reviewed active matches. A private synthetic actual-auth/router/legacySQL test confirms the old editor saves legacy ingredients successfully but leaves current label items unreviewed. That is a missing current-label preparation workflow, not a broken legacy save. Require a genuine exact-package pilot, atomic evidence/audit and verified bound public status, intended-ready cohort coverage, zero lookup omissions/errors and explicit withheld-impact acceptance before consumer release. No operating matching/backfill/approval or ready fallback.
