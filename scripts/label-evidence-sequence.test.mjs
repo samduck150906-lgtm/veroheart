@@ -6,7 +6,7 @@ let db;
 const product='00000000-0000-4000-8000-000000000001';
 const ids=['00000000-0000-4000-8000-000000000003','00000000-0000-4000-8000-000000000004'];
 const seq='public.ingredient_label_comparisons_sequence_seq';
-const draft=readFileSync('supabase/migration_drafts/20261111150000_restrict_label_evidence_sequence.sql','utf8');
+const draft=readFileSync('supabase/migrations/20261111150000_restrict_label_evidence_sequence.sql','utf8');
 beforeEach(async()=>{db=new PGlite();await db.exec(readFileSync('tests/label-review/schema.sql','utf8'));
  await db.exec('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon,authenticated,service_role');
  await db.exec(readFileSync('supabase/migrations/20261110100000_ingredient_label_comparison_evidence.sql','utf8'));});
@@ -46,6 +46,36 @@ it('fails on a missing target without changing global default ACLs',async()=>{
 
 it('refuses an unexpected renamed sequence without weakening its existing ACL',async()=>{
  await db.exec('ALTER SEQUENCE public.ingredient_label_comparisons_sequence_seq RENAME TO unexpected_fixture_sequence');
- await assert.rejects(db.exec(draft),/Unexpected or missing/);
+ await assert.rejects(db.exec(draft),/Unexpected label evidence/);
  assert.equal((await db.query("SELECT has_sequence_privilege('anon','public.unexpected_fixture_sequence','UPDATE') allowed")).rows[0].allowed,true);
+});
+
+it('revokes PUBLIC grants without changing unrelated sequences or default privileges',async()=>{
+ await db.exec(`CREATE SEQUENCE public.unrelated_fixture_sequence;GRANT ALL ON SEQUENCE ${seq} TO PUBLIC`);
+ const before=(await db.query("SELECT defaclacl::text acl FROM pg_default_acl WHERE defaclobjtype='S'")).rows;
+ await db.exec(draft);
+ assert.deepEqual((await db.query("SELECT defaclacl::text acl FROM pg_default_acl WHERE defaclobjtype='S'")).rows,before);
+ assert.equal((await db.query("SELECT has_sequence_privilege('anon','public.unrelated_fixture_sequence','UPDATE') allowed")).rows[0].allowed,true);
+ await db.exec('CREATE ROLE public_only_fixture;SET ROLE public_only_fixture');
+ await assert.rejects(db.query(`SELECT nextval('${seq}')`),{code:'42501'});await db.exec('RESET ROLE');
+});
+it('rejects changed sequence settings before revoking existing privileges',async()=>{
+ await db.exec(`ALTER SEQUENCE ${seq} INCREMENT BY 2`);
+ await assert.rejects(db.exec(draft),/Unexpected label evidence/);
+ assert.equal((await db.query(`SELECT has_sequence_privilege('anon','${seq}','UPDATE') allowed`)).rows[0].allowed,true);
+});
+it('rejects a same-name ordinary sequence not owned by the identity column',async()=>{
+ await db.exec(`ALTER TABLE ingredient_label_comparisons ALTER COLUMN sequence DROP IDENTITY;CREATE SEQUENCE ${seq}`);
+ await assert.rejects(db.exec(draft),/Unexpected label evidence/);
+ assert.equal((await db.query(`SELECT has_sequence_privilege('anon','${seq}','UPDATE') allowed`)).rows[0].allowed,true);
+});
+it('fails closed and rolls back direct ACL revocation if inherited access survives',async()=>{
+ await db.exec(`CREATE ROLE inherited_sequence_fixture;GRANT USAGE ON SEQUENCE ${seq} TO inherited_sequence_fixture;GRANT inherited_sequence_fixture TO anon`);
+ await assert.rejects(db.exec(draft),/Unexpected inherited/);
+ assert.equal((await db.query(`SELECT has_sequence_privilege('authenticated','${seq}','UPDATE') allowed`)).rows[0].allowed,true);
+});
+it('preserves frozen foundation bytes and formal forward migration ordering',async()=>{
+ const {createHash}=await import('node:crypto');
+ assert.equal(createHash('sha256').update(readFileSync('supabase/migrations/20261110100000_ingredient_label_comparison_evidence.sql')).digest('hex'),'15cc29d8a7524e8d1778afafb61b036b5b756a23c33e0e10c2dbc0be4b8e6a83');
+ assert.equal((await db.query(`SELECT count(*)::int n FROM ingredient_label_comparisons`)).rows[0].n,0);
 });
