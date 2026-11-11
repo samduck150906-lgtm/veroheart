@@ -77,6 +77,12 @@ try{
  const seq='public.ingredient_label_comparisons_sequence_seq';
  const defaults='ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon,authenticated,service_role';
  const privileges=u=>q(u,`SELECT json_agg(json_build_object('role',r,'usage',has_sequence_privilege(r,'${seq}','USAGE'),'update',has_sequence_privilege(r,'${seq}','UPDATE'),'select',has_sequence_privilege(r,'${seq}','SELECT'))) FROM unnest(ARRAY['anon','authenticated','service_role']) r`);
+ const installation=await fresh('sequence_acl_fresh_install');psql(installation.uri,defaults);
+ await writeFile(join(installation.dir,'supabase/migrations',followupName),followup);
+ assert.equal((await push(installation)).status,0);assert(privileges(installation.uri).every(r=>!r.update&&!r.usage&&!r.select));
+ assert.equal(psql(installation.uri,'SELECT count(*) FROM supabase_migrations.schema_migrations'),'2');
+ psql(installation.uri,`SET ROLE service_role;${approve(review(installation.uri).revision)};RESET ROLE`);assert.deepEqual(business(installation.uri),{evidence:1,audit:1});
+ results.push({case:'fresh_install_foundation_then_forward_migration',pass:true});
  const acl=await fresh('sequence_acl');psql(acl.uri,defaults);
  // 68 synthetic prior ledger entries + actual foundation = 69-row upgrade baseline.
  // Not a replay of production history; the full repository bootstrap is a separate guard-included test.
@@ -100,10 +106,12 @@ try{
  assert.equal((await push(acl)).status,0);assert.equal(psql(acl.uri,'SELECT count(*) FROM supabase_migrations.schema_migrations'),'70');
  assert.equal(psql(acl.uri,"SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version='20261111150000'"),'1');
  psql(acl.uri,`SET ROLE service_role;${approve(review(acl.uri).revision)};RESET ROLE`);assert.deepEqual(business(acl.uri),{evidence:1,audit:1});results.push({case:'followup_cli_revokes_sequence_only_and_preserves_definer_approval',pass:true});
- const failAcl=await fresh('sequence_acl_ledger_failure');psql(failAcl.uri,defaults);assert.equal((await push(failAcl)).status,0);
- psql(failAcl.uri,"CREATE FUNCTION fail_acl_ledger() RETURNS trigger LANGUAGE plpgsql AS $$BEGIN IF NEW.version='20261111150000' THEN RAISE EXCEPTION 'synthetic followup ledger failure'; END IF; RETURN NEW;END$$;CREATE TRIGGER fail_acl_ledger BEFORE INSERT ON supabase_migrations.schema_migrations FOR EACH ROW EXECUTE FUNCTION fail_acl_ledger();");
+ for(const timing of ['BEFORE','AFTER']){
+ const failAcl=await fresh('sequence_acl_ledger_failure_'+timing.toLowerCase());psql(failAcl.uri,defaults);assert.equal((await push(failAcl)).status,0);
+ psql(failAcl.uri,`CREATE FUNCTION fail_acl_ledger() RETURNS trigger LANGUAGE plpgsql AS $$BEGIN IF NEW.version='20261111150000' THEN RAISE EXCEPTION 'synthetic followup ledger failure'; END IF; RETURN NEW;END$$;CREATE TRIGGER fail_acl_ledger ${timing} INSERT ON supabase_migrations.schema_migrations FOR EACH ROW EXECUTE FUNCTION fail_acl_ledger();`);
  await writeFile(join(failAcl.dir,'supabase/migrations',followupName),followup);assert.notEqual((await push(failAcl)).status,0);
- assert(privileges(failAcl.uri).every(r=>r.update));assert.equal(psql(failAcl.uri,"SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version='20261111150000'"),'0');assert.equal(state(failAcl.uri).ledger,1);results.push({case:'followup_sequence_revoke_and_ledger_failure_roll_back_together',pass:true});
+ assert(privileges(failAcl.uri).every(r=>r.update));assert.equal(psql(failAcl.uri,"SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version='20261111150000'"),'0');assert.equal(state(failAcl.uri).ledger,1);results.push({case:'followup_sequence_revoke_and_ledger_'+timing.toLowerCase()+'_failure_roll_back_together',pass:true});
+ }
  const aclLock=await fresh('sequence_acl_lock');psql(aclLock.uri,defaults);assert.equal((await push(aclLock)).status,0);
  await writeFile(join(aclLock.dir,'supabase/migrations',followupName),followup);
  const seqHolder=await session(aclLock.uri,`BEGIN;REVOKE SELECT ON SEQUENCE ${seq} FROM anon;SELECT pg_sleep(5);ROLLBACK;`,'label_sequence_lock');await asleep(aclLock.uri,'label_sequence_lock');
