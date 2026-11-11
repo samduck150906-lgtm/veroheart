@@ -71,5 +71,22 @@ try{
  assert.notEqual(failedApproval.status,0);assert.deepEqual(business(auditFailure.uri),{evidence:0,audit:0});results.push({case:'approval_audit_failure_atomic',pass:true});
  const lock=await fresh('lock_timeout');const holder=await session(lock.uri,'BEGIN;LOCK TABLE products IN ACCESS EXCLUSIVE MODE;SELECT pg_sleep(5);COMMIT;','label_ddl_lock');await asleep(lock.uri,'label_ddl_lock');assert.notEqual((await push(lock)).status,0);await holder.done;assert.equal(state(lock.uri).objects,0);assert.equal(state(lock.uri).ledger,0);results.push({case:'migration_lock_timeout_rollback',pass:true});
  const approvalLock=await session(h.uri,'BEGIN;LOCK TABLE products IN ROW EXCLUSIVE MODE;SELECT pg_sleep(5);COMMIT;','label_approval_lock');await asleep(h.uri,'label_approval_lock');const before=business(h.uri);const ans=run('psql',['-X','-q','-v','ON_ERROR_STOP=1','--dbname',h.uri,'-c',approve(review(h.uri).revision)]);assert.notEqual(ans.status,0);await approvalLock.done;assert.deepEqual(business(h.uri),before);results.push({case:'approval_lock_timeout_no_partial_write',pass:true});
- await writeFile(join(output,'results.json'),JSON.stringify({passed:true,cli:'2.118.0',postgres:'17',candidate:name,sha256,seeds:[],roles:[],results,limits:['Loopback trust-auth synthetic only','Same CLI executor as linked release; --db-url instead of operating --linked','No operating linked dry-run or live approval']},null,2));console.log(`PASS actual PostgreSQL/CLI: ${results.length} cases, no operating connection`);
+ // Follow-up draft only: reproduce actual platform defaults, not just minimal owner defaults.
+ const followupName='20261111150000_restrict_label_evidence_sequence.sql';
+ const followup=await readFile(new URL('supabase/migration_drafts/'+followupName,root),'utf8');
+ const seq='public.ingredient_label_comparisons_sequence_seq';
+ const defaults='ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon,authenticated,service_role';
+ const privileges=u=>q(u,`SELECT json_agg(json_build_object('role',r,'usage',has_sequence_privilege(r,'${seq}','USAGE'),'update',has_sequence_privilege(r,'${seq}','UPDATE'),'select',has_sequence_privilege(r,'${seq}','SELECT'))) FROM unnest(ARRAY['anon','authenticated','service_role']) r`);
+ const acl=await fresh('sequence_acl');psql(acl.uri,defaults);assert.equal((await push(acl)).status,0);
+ assert(privileges(acl.uri).every(r=>r.update));psql(acl.uri,`SET ROLE anon;SELECT setval('${seq}',1000,false)`);
+ await writeFile(join(acl.dir,'supabase/migrations',followupName),followup);
+ const aclDry=await push(acl,true);assert.equal(aclDry.status,0);assert((aclDry.stdout+aclDry.stderr).includes(followupName));
+ assert.equal((await push(acl)).status,0);assert(privileges(acl.uri).every(r=>!r.update&&!r.usage&&!r.select));
+ assert.equal(psql(acl.uri,"SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version='20261111150000'"),'1');
+ psql(acl.uri,`SET ROLE service_role;${approve(review(acl.uri).revision)};RESET ROLE`);assert.deepEqual(business(acl.uri),{evidence:1,audit:1});results.push({case:'followup_cli_revokes_sequence_only_and_preserves_definer_approval',pass:true});
+ const failAcl=await fresh('sequence_acl_ledger_failure');psql(failAcl.uri,defaults);assert.equal((await push(failAcl)).status,0);
+ psql(failAcl.uri,"CREATE FUNCTION fail_acl_ledger() RETURNS trigger LANGUAGE plpgsql AS $$BEGIN IF NEW.version='20261111150000' THEN RAISE EXCEPTION 'synthetic followup ledger failure'; END IF; RETURN NEW;END$$;CREATE TRIGGER fail_acl_ledger BEFORE INSERT ON supabase_migrations.schema_migrations FOR EACH ROW EXECUTE FUNCTION fail_acl_ledger();");
+ await writeFile(join(failAcl.dir,'supabase/migrations',followupName),followup);assert.notEqual((await push(failAcl)).status,0);
+ assert(privileges(failAcl.uri).every(r=>r.update));assert.equal(psql(failAcl.uri,"SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version='20261111150000'"),'0');assert.equal(state(failAcl.uri).ledger,1);results.push({case:'followup_sequence_revoke_and_ledger_failure_roll_back_together',pass:true});
+ await writeFile(join(output,'results.json'),JSON.stringify({passed:true,cli:'2.118.0',postgres:'17',candidate:name,sha256,followupCandidate:followupName,followupSha256:createHash('sha256').update(followup).digest('hex'),seeds:[],roles:[],results,limits:['Loopback trust-auth synthetic only','Same CLI executor as linked release; --db-url instead of operating --linked','No operating linked dry-run or live approval']},null,2));console.log(`PASS actual PostgreSQL/CLI: ${results.length} cases, no operating connection`);
 }finally{for(const db of databases)psql(admin.href,`DROP DATABASE ${db} WITH(FORCE)`);}
