@@ -42,7 +42,7 @@ beforeEach(async () => {
    assert.ok(name.startsWith('.'),`Unsupported module ${name}`);
    return load(new URL(name,parent.identifier));
  };
- const f=await load('tests/label-review/database.ts');await f.link(link);await f.evaluate();fixture=f.namespace;db=await fixture.labelReviewDatabase();await db.exec(readFileSync('tests/label-item-matching/fixture.sql','utf8'));await db.exec(readFileSync('supabase/migrations/20261111150000_restrict_label_evidence_sequence.sql','utf8'));await db.exec(readFileSync('supabase/migration_drafts/20261112140000_admin_label_item_matching.sql','utf8'));
+ const f=await load('tests/label-review/database.ts');await f.link(link);await f.evaluate();fixture=f.namespace;db=await fixture.labelReviewDatabase();await db.exec(readFileSync('tests/label-item-matching/fixture.sql','utf8'));await db.exec(readFileSync('supabase/migrations/20261111150000_restrict_label_evidence_sequence.sql','utf8'));await db.exec('ALTER DEFAULT PRIVILEGES GRANT ALL ON TABLES TO anon,authenticated,service_role;ALTER DEFAULT PRIVILEGES GRANT ALL ON SEQUENCES TO anon,authenticated,service_role;ALTER DEFAULT PRIVILEGES GRANT ALL ON FUNCTIONS TO anon,authenticated,service_role');await db.exec(readFileSync('supabase/migrations/20261112140000_admin_label_item_matching.sql','utf8'));
  const edge=await load('supabase/functions/admin-write/index.ts');await edge.link(link);await edge.evaluate();
  // Share the same linker/cache for actual public modules.
  const originalLoad=load;load=async(file)=>{const m=await originalLoad(file);if(m.status==='unlinked')await m.link(link);if(m.status==='linked')await m.evaluate();return m;};
@@ -129,4 +129,23 @@ it('temporary consumer integration: matching -> explicit approval -> ready -> ho
  await decide();await decide(fixture.ITEMS[1]);assert.notEqual((await status(await publicRead(await mappedPublic()))).status,'ready');
  assert.equal((await approval()).http,200);assert.equal((await status(await publicRead(await mappedPublic()))).status,'ready');
  await decide(fixture.ITEMS[0],'hold');assert.notEqual((await status(await publicRead(await mappedPublic()))).status,'ready');
+});
+
+it('creation under platform default grants leaves effective private/sequence/RPC rights minimal',async()=>{
+ for(const role of ['anon','authenticated','service_role']){
+  assert.equal((await db.query("SELECT has_table_privilege($1,'private.label_item_match_decisions','SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') allowed",[role])).rows[0].allowed,false);
+  assert.equal((await db.query("SELECT has_sequence_privilege($1,'ingredient_label_comparisons_sequence_seq','SELECT,USAGE,UPDATE') allowed",[role])).rows[0].allowed,false);
+  const rs=(await db.query("SELECT has_function_privilege($1,p.oid,'EXECUTE') allowed FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname IN ('admin_get_label_item_workspace','admin_search_label_item_candidates','admin_review_label_item_match')",[role])).rows;assert.equal(rs.length,3);assert(rs.every(r=>r.allowed===(role==='service_role')));
+ }
+ assert.equal((await db.query("SELECT count(*)::int n FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='private' AND c.relkind='S' AND c.relname LIKE 'label_item_match%'")).rows[0].n,0);
+});
+it('retired or deleted canonical/dictionary targets and foreign label items cannot be selected',async()=>{
+ const choice=(await candidates('닭')).find(c=>c.kind==='canonical');
+ await db.query("UPDATE canonical_ingredients SET status='retired' WHERE id=$1",[choice.id]);const before=await state();
+ assert.equal((await decide(fixture.ITEMS[0],'match',{targetKind:'canonical',targetId:choice.id,targetRevision:choice.revision})).http,400);assert.deepEqual(await state(),before);
+ await db.exec("INSERT INTO products(id,name) VALUES('00000000-0000-4000-8000-000000000066','other synthetic'); INSERT INTO product_ingredient_label_sets(id,product_id,raw_label_text) VALUES('00000000-0000-4000-8000-000000000067','00000000-0000-4000-8000-000000000066','other'); INSERT INTO product_ingredient_label_items(id,label_set_id,display_order,raw_ingredient_text,match_status) VALUES('00000000-0000-4000-8000-000000000068','00000000-0000-4000-8000-000000000067',0,'other','unreviewed')");
+ const unchanged=await state();assert.equal((await decide('00000000-0000-4000-8000-000000000068')).http,400);assert.deepEqual(await state(),unchanged);
+ await db.query('DELETE FROM canonical_ingredients WHERE id=$1',[choice.id]);assert.equal((await decide(fixture.ITEMS[0],'match',{targetKind:'canonical',targetId:choice.id,targetRevision:choice.revision})).http,400);
+ const legacy=(await candidates('닭')).find(c=>c.kind==='legacy');await db.query('DELETE FROM ingredients WHERE id=$1',[legacy.id]);
+ assert.equal((await request('reviewLabelItemMatch',{revision:(await workspace()).review.revision,itemId:fixture.ITEMS[0],decision:'match',reason:'synthetic source',targetKind:'legacy',targetId:legacy.id,targetRevision:legacy.revision})).http,400);
 });

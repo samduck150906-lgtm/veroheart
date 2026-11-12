@@ -16,7 +16,9 @@ reason. Search results are not approval and nothing is automatically selected.
 The before/after preview preserves raw text, order, percentage and amount.
 
 A hold removes mapping, keeps the item **unreviewed**, and retains its reason in
-private history. It is not an instruction to ignore the label item. Raw edits,
+private history. Unsaved choices/reasons are labeled and reset on reloading or
+changing item/product; requests from the previous product cannot populate the
+next product review. It is not an instruction to ignore the label item. Raw edits,
 item addition/deletion and package identity correction are separate explicit
 registration work; this screen and RPC reject those fields. Missing source items
 must be fixed in that separate workflow before whole comparison is possible.
@@ -41,7 +43,11 @@ in the existing whole-approval order with a three-second lock timeout. These are
 DML participates through PostgreSQL table locks. The server reads the current
 snapshot only after obtaining the locks, compares its revision and checks that
 the item belongs to the sole current label. Candidate hashes bind the currently
-selected dictionary definition, including resolved risk/status; draft canonical
+selected dictionary definition, including resolved risk/status. The selected candidate shows dictionary
+description and English name; these are not package-identification evidence.
+The current legacy ingredients schema has no active/retired flag; canonical
+draft/retired or deleted targets and missing resolved legacy rows are rejected.
+Draft canonical
 or unresolved dictionary entries cannot be selected. Review reasons are private.
 
 Mapping update, foundation revision invalidation, immutable decision and existing
@@ -60,11 +66,14 @@ mutation and after an uncertain mutation until fresh review.
 
 ## Unapplied deployment dependency
 
-`supabase/migration_drafts/20261112140000_admin_label_item_matching.sql` is NOT in
-the automatic migration directory. It is not operating-approved. Existing applied
+`supabase/migrations/20261112140000_admin_label_item_matching.sql` is now a
+formal forward migration candidate. **It is not operating-applied or approved.**
+Do not run repository-wide push: seven unrelated unapplied migrations remain.
+Use only the independently verified release bundle containing exact remote
+ledger renders plus this one candidate, without repair or include-all. Existing applied
 foundation/sequence/review migrations are unchanged. Future release order requires
-separate approval: validate and promote the draft against current schema and
-ledger -> apply database -> deploy only matching-compatible admin-write -> release
+separate approval: recheck current schema, ledger, completed backup and
+one-candidate linked dry-run -> apply database -> deploy only matching-compatible admin-write -> release
 administrator UI -> real package review pilot. Deploying UI first cannot approve
 without the RPC, and shows lookup failure instead of treating it as no label.
 No backfill, automatic matching or old-ready promotion is included.
@@ -100,3 +109,32 @@ similar name is insufficient. If no exact DB row exists, use the normal explicit
 registration review separately. If original transcription or dictionary mapping
 is missing/ambiguous, record the precise blocker and hold; do not invent a match.
 No operating product, label, matching or evidence write is part of this PR work.
+
+
+## Receiving photographs and execution stops
+
+1. Privately identify species, brand/line, flavour, life stage, exact weight/count
+   and package/lot version against one existing product UUID. Record both the
+   observed identity and any gap. A manufacturer webpage can identify an online
+   version but does not establish equivalence to a later physical package.
+2. Compare the **entire** source panel to the saved current label and its stable
+   ordered items. No cropping, inferred token or count-only completeness claim.
+   This PR does not add a raw-label registration/replacement/add/delete action;
+   the ordinary ingredients editor edits legacy links only. If original/items
+   are missing or differ, stop at a separately reviewed explicit source
+   registration/import with its own audit/deployment authorization. Do not use
+   this matching RPC or direct SQL/RPC as a replacement registration tool.
+3. With corresponding saved source, use normal authenticated admin search to
+   review each item; explicitly map or hold with a reason. Preserve repeated
+   and compound items. A hold cannot pass whole approval.
+4. Reload the new revision, compare every item and package source anew, and
+   explicitly approve whole-label evidence through the existing admin action.
+5. Privately compare product/source preservation, decision/audit and approval
+   receipt, then use the sanitized public reader. A real pilot and coverage/
+   withheld-cohort decision are still required before PR #122 may launch.
+
+Current real-pilot status remains unqualified: the two previously investigated
+Royal Canin examples lack exact package size/barcode/revision correspondence.
+Their manufacturer source is not new physical-package evidence. Repeating the
+same search is not a remedy. Any owned package with the complete photos above
+may instead qualify; no purchase or new product is requested.

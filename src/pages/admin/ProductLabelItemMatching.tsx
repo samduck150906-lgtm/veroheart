@@ -24,7 +24,7 @@ export default function ProductLabelItemMatching({ productId, onMutationStart, o
   const [needsReload, setNeedsReload] = useState(false);
   const [message, setMessage] = useState('');
   const epoch = useRef(0);
-  useEffect(() => { epoch.current++; setWorkspace(null); setCandidates([]); setItemId(''); setMessage(''); setBusy(false); setNeedsReload(false); }, [productId]);
+  useEffect(() => { epoch.current++; setWorkspace(null); setCandidates([]); setItemId(''); setMessage(''); setBusy(false); setNeedsReload(false); setQuery(''); setTarget(''); setDecision('hold'); setReason(''); setConfirmed(false); }, [productId]);
   useEffect(() => () => { epoch.current++; }, []);
   const label = workspace?.review?.snapshot.labels.length === 1 ? workspace.review.snapshot.labels[0] : null;
   const item = label?.items.find(i => i.id === itemId);
@@ -74,7 +74,7 @@ export default function ProductLabelItemMatching({ productId, onMutationStart, o
 
   return <section className="label-item-matching" aria-label="저장된 라벨 항목 매칭">
     <h3>라벨 항목 매칭 — 일반 원료 목록 편집과 별개</h3>
-    <p>원문·순서·중복 항목은 보존합니다. 후보는 정답이 아니며 자동 확정하지 않습니다. 원문 수정이나 항목 추가·삭제는 별도 검토 작업입니다.</p>
+    <p>원문·순서·중복 항목은 보존합니다. 후보 선택은 성분 사전 연결이며 정확한 식별이나 전성분 대조 완료를 보장하지 않습니다. 자동 확정하지 않습니다. 원문 수정이나 항목 추가·삭제는 별도 검토 작업입니다.</p>
     <button type="button" disabled={busy} onClick={load}>최신 라벨 항목 조회</button>
     {message && <p role="status">{message}</p>}
     {workspace?.review && !label && <p role="status">현재 라벨이 없거나 여러 개입니다. 라벨 등록·충돌 해결이 먼저 필요합니다.</p>}
@@ -85,6 +85,7 @@ export default function ProductLabelItemMatching({ productId, onMutationStart, o
         {label.items.map(i => <option key={i.id} value={i.id}>{i.order + 1}. {i.raw} ({i.match})</option>)}
       </select></label>
       {item && <>
+        {(reason.trim() || selected || confirmed) && <p role="status">미저장 선택·사유입니다. 재조회 또는 항목 이동 시 초기화되며, 저장 전에는 반영되지 않습니다.</p>}
         <p>선택 원문: {item.raw}</p>
         <p>현재 매칭: {item.resolved?.[2] ? String(item.resolved[2]) : '연결 없음'} · {item.match}</p>
         <p>최근 검토 근거/보류 사유: {lastDecision?.reason || '저장된 사유 없음'}</p>
@@ -96,6 +97,7 @@ export default function ProductLabelItemMatching({ productId, onMutationStart, o
             {c.kind === 'canonical' ? '표준 원료' : '기존 성분 사전'} · {c.nameKo} · {c.risk || '위험정보 미확인'}{c.selectable ? '' : ' (검토 전/사용 불가)'}
           </option>)}
         </select></label>
+        {selected && <div aria-label="선택 후보 정의"><p>{selected.nameKo}{selected.nameEn ? ` · ${selected.nameEn}` : ''}</p><p>{selected.description || '사전 설명 없음 — 추가 근거 확인 필요'}</p></div>}
         <p>검색 결과만으로 매칭하지 마세요. 모호한 복합 원료는 한 성분에 억지로 연결하지 말고 보류하세요.</p>
         <fieldset disabled={busy || needsReload}><legend>이번 항목 결정</legend>
           <label><input type="radio" name={`decision-${productId}`} checked={decision === 'match'} onChange={() => { setDecision('match'); setConfirmed(false); }} />선택 후보로 매칭</label>

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import ProductLabelReview from './ProductLabelReview';
 const api=vi.hoisted(()=>({get:vi.fn(),approve:vi.fn()}));
 vi.mock('../../lib/adminApi',()=>({getIngredientLabelReview:api.get,approveIngredientLabelReview:api.approve}));
@@ -27,4 +27,13 @@ it('distinguishes no captured current label from an unperformed evidence lookup'
  render(<ProductLabelReview productId="synthetic-product"/>);fireEvent.click(screen.getByRole('button',{name:'저장된 라벨 전체 대조 자료 조회'}));
  expect(await screen.findByText(/저장된 현재 라벨이 없습니다/)).toBeTruthy();
  expect(screen.queryByRole('button',{name:'전체 대조 승인 기록'})).toBeNull();expect(api.approve).not.toHaveBeenCalled();
+});
+
+it('switching products discards old review and ignores an old in-flight response',async()=>{
+ let finish!: (value: unknown) => void;api.get.mockReturnValueOnce(new Promise(resolve=>{finish=resolve;}));
+ const view=render(<ProductLabelReview productId="first-synthetic"/>);fireEvent.click(screen.getByRole('button',{name:'저장된 라벨 전체 대조 자료 조회'}));
+ view.rerender(<ProductLabelReview productId="second-synthetic"/>);
+ await act(async()=>{finish({revision:'old',eligible:true,snapshot:{product:['first','OLD PRODUCT'],labels:[{id:'old',raw:'OLD RAW',items:[]}]}});});
+ expect(screen.queryByText('OLD RAW')).toBeNull();expect(screen.queryByRole('button',{name:'전체 대조 승인 기록'})).toBeNull();
+ expect(screen.getByRole('button',{name:'저장된 라벨 전체 대조 자료 조회'})).toHaveProperty('disabled',false);expect(api.approve).not.toHaveBeenCalled();
 });

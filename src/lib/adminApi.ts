@@ -1646,7 +1646,7 @@ export async function approveIngredientLabelReview(input: { productId: string; r
 /** Current label items are distinct from the legacy ingredients editor. */
 export interface LabelItemCandidate {
   kind: 'legacy' | 'canonical'; id: string; nameKo: string; nameEn: string | null;
-  risk: string | null; status: string; selectable: boolean; revision: string;
+  risk: string | null; description?: string | null; status: string; selectable: boolean; revision: string;
 }
 export interface LabelItemWorkspace {
   review: AdminLabelReview | null;

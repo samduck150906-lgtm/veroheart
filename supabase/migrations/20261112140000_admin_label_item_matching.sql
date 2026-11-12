@@ -1,10 +1,11 @@
--- UNAPPLIED DRAFT. DB -> admin-write -> administrator UI; separate approval required.
+-- Forward deployment candidate. DB -> admin-write -> administrator UI; operating approval required.
 -- Matching does not certify label transcription, SKU identity or whole-label coverage.
 DO $label_item_matching$
 BEGIN
 PERFORM pg_catalog.set_config('lock_timeout','3s',true);
 IF to_regprocedure('public.admin_get_label_comparison_review(uuid)') IS NULL
- OR to_regclass('private.ingredient_label_revisions') IS NULL THEN
+ OR to_regclass('private.ingredient_label_revisions') IS NULL
+ OR pg_get_serial_sequence('public.ingredient_label_comparisons','sequence') IS NULL THEN
  RAISE EXCEPTION 'Label comparison foundation required';
 END IF;
 CREATE TABLE private.label_item_match_decisions (
@@ -37,6 +38,7 @@ BEGIN
  SELECT COALESCE(jsonb_agg(to_jsonb(x)),'[]'::jsonb) INTO result FROM (
   SELECT * FROM (
    SELECT 'canonical'::text AS kind,c.id,c.canonical_name_ko AS "nameKo",c.canonical_name_en AS "nameEn",
+    COALESCE(NULLIF(to_jsonb(c)->>'description',''),g.description) AS description,
     g.risk_level::text AS risk,c.status,
     encode(sha256(convert_to(jsonb_build_object('ingredient',to_jsonb(g),'canonical',to_jsonb(c))::text,'UTF8')),'hex') AS revision,
     (c.status='active' AND g.id IS NOT NULL AND g.risk_level::text IN ('safe','caution','danger')) AS selectable
@@ -44,7 +46,7 @@ BEGIN
    WHERE strpos(lower(c.canonical_name_ko),lower(q))>0 OR strpos(lower(coalesce(c.canonical_name_en,'')),lower(q))>0
     OR EXISTS(SELECT FROM public.canonical_ingredient_aliases a WHERE a.canonical_ingredient_id=c.id AND strpos(lower(a.alias_text),lower(q))>0)
    UNION ALL
-   SELECT 'legacy',g.id,g.name_ko,g.name_en,g.risk_level::text,'legacy',
+   SELECT 'legacy',g.id,g.name_ko,g.name_en,g.description,g.risk_level::text,'legacy',
     encode(sha256(convert_to(jsonb_build_object('ingredient',to_jsonb(g),'canonical',NULL)::text,'UTF8')),'hex'),
     COALESCE(g.risk_level::text IN ('safe','caution','danger'),false)
    FROM public.ingredients g WHERE strpos(lower(g.name_ko),lower(q))>0 OR strpos(lower(coalesce(g.name_en,'')),lower(q))>0
@@ -120,4 +122,18 @@ REVOKE ALL ON FUNCTION public.admin_review_label_item_match(UUID,TEXT,UUID,TEXT,
 GRANT EXECUTE ON FUNCTION public.admin_get_label_item_workspace(UUID) TO service_role;
 GRANT EXECUTE ON FUNCTION public.admin_search_label_item_candidates(TEXT) TO service_role;
 GRANT EXECUTE ON FUNCTION public.admin_review_label_item_match(UUID,TEXT,UUID,TEXT,TEXT,UUID,TEXT,TEXT,TEXT) TO service_role;
+-- Check effective privileges, including PUBLIC or inherited role grants. Any
+-- unexpected access aborts this migration and its ledger insert together.
+IF EXISTS (SELECT FROM unnest(ARRAY['anon','authenticated','service_role']) role_name
+ WHERE has_table_privilege(role_name,'private.label_item_match_decisions',
+  'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')
+ OR has_sequence_privilege(role_name,pg_get_serial_sequence('public.ingredient_label_comparisons','sequence'),'SELECT,USAGE,UPDATE')) THEN
+ RAISE EXCEPTION 'Unexpected effective item history or evidence sequence privileges';
+END IF;
+IF EXISTS (SELECT FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+ WHERE n.nspname='public' AND p.proname IN ('admin_get_label_item_workspace','admin_search_label_item_candidates','admin_review_label_item_match')
+ AND (has_function_privilege('anon',p.oid,'EXECUTE') OR has_function_privilege('authenticated',p.oid,'EXECUTE')
+  OR NOT has_function_privilege('service_role',p.oid,'EXECUTE'))) THEN
+ RAISE EXCEPTION 'Unexpected effective label matching RPC privileges';
+END IF;
 END $label_item_matching$;

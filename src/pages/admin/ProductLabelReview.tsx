@@ -4,6 +4,10 @@ import ProductLabelItemMatching from './ProductLabelItemMatching';
 
 /** An explicit review, never a side effect of saving products or matching items. */
 export default function ProductLabelReview({ productId }: { productId: string }) {
+  return <SavedProductLabelReview key={productId} productId={productId} />;
+}
+
+function SavedProductLabelReview({ productId }: { productId: string }) {
   const [review, setReview] = useState<AdminLabelReview | null>(null);
   const [checked, setChecked] = useState<string[]>([]);
   const [source, setSource] = useState('');
