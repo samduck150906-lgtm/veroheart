@@ -20,7 +20,7 @@ describe('product row personalization boundary', () => {
     useStore.setState({ isLoggedIn, profile: isLoggedIn ? DEFAULT_USER_PET_PROFILE : pet, favorites: [] });
     render(<MemoryRouter><ProductRow product={product} /></MemoryRouter>);
     expect(screen.queryByText(/에게 딱|무난해/)).toBeNull();
-    expect(screen.getByRole('button', { name: '우리 아이를 등록하고 궁합을 확인해 주세요.' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: isLoggedIn ? '우리 아이를 등록하고 궁합을 확인해 주세요.' : '로그인하고 우리 아이 등록하기' })).toBeTruthy();
     expect(screen.getByRole('button', { name: '닭고기 사료 상세 보기' })).toBeTruthy();
   });
 
@@ -33,7 +33,7 @@ describe('product row personalization boundary', () => {
     act(() => useStore.setState({ isLoggedIn: false }));
     expect(screen.queryByText('로니에게 딱')).toBeNull();
     expect(screen.queryByText(scopedScore)).toBeNull();
-    expect(screen.getByRole('button', { name: '우리 아이를 등록하고 궁합을 확인해 주세요.' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '로그인하고 우리 아이 등록하기' })).toBeTruthy();
   });
   it('does not add a personalized score for unavailable ingredients', () => {
     useStore.setState({ isLoggedIn: true, profile: pet, favorites: [] });

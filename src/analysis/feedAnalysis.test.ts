@@ -29,6 +29,17 @@ const catProfile: UserPetProfile = {
 };
 
 describe('analyzeFeed — 영양 계산', () => {
+  it('uses product species despite a mismatched pet and never estimates feeding for that pet', () => {
+    const result=analyzeFeed(product({category:'food',targetPetType:'cat',guaranteedAnalysis:{crudeProtein:22,crudeFat:12,moisture:10},caloriesPer100g:350}),{...dogProfile,weightKg:5});
+    expect(result.species).toBe('cat'); expect(result.aafco.passed).toBe(false); expect(result.feeding).toBeNull();
+  });
+  it('does not use shape or packaging as product type, or apply maintenance criteria to supplements/growth',()=>{
+    const ga={crudeProtein:30,crudeFat:15,moisture:10};
+    expect(analyzeFeed(product({category:'food',name:'캔 습식 파우더',guaranteedAnalysis:ga}),dogProfile).productType).toBe('complete');
+    const supplement=analyzeFeed(product({category:'supplement',guaranteedAnalysis:ga,caloriesPer100g:300}),{...dogProfile,weightKg:5});
+    expect(supplement.aafco.evaluated).toBe(false); expect(supplement.feeding).toBeNull();
+    expect(analyzeFeed(product({category:'food',targetLifeStage:['kitten'],guaranteedAnalysis:ga}),catProfile).aafco.evaluated).toBe(false);
+  });
   it('보장성분이 없으면 hasNutritionData=false, 원료 기반만 평가한다', () => {
     const a = analyzeFeed(product({ ingredients: [ing('닭고기')] }), dogProfile);
     expect(a.hasNutritionData).toBe(false);

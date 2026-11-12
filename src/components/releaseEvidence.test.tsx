@@ -31,7 +31,7 @@ describe('public surfaces preserve unresolved evidence', () => {
     prepare();
     render(<MemoryRouter><ProductRow product={unknown} /></MemoryRouter>);
     expect(screen.getByText('원료 1개 등록')).toBeTruthy();
-    expect(screen.getByRole('button', { name: '우리 아이를 등록하고 궁합을 확인해 주세요.' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '로그인하고 우리 아이 등록하기' })).toBeTruthy();
     expect(screen.queryByText(/^[A-F] \d+$/)).toBeNull();
   });
 

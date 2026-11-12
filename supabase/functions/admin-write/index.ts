@@ -967,29 +967,14 @@ serve(async (req) => {
         });
 
         const productQualityPromise = Promise.all([
-          db.from('products').select('id, verification_status, barcode'),
-          db.from('product_ingredients').select('product_id'),
-          db.from('nutritional_profiles').select('product_id'),
-        ]).then(([productResult, linkResult, nutritionResult]) => {
-          const error = productResult.error ?? linkResult.error ?? nutritionResult.error;
-          if (error) throw error;
-          const productRows = (productResult.data ?? []) as Array<{
-            id: string;
-            verification_status: string | null;
-            barcode: string | null;
-          }>;
-          const linked = new Set((linkResult.data ?? []).map((row: { product_id: string }) => row.product_id));
-          const nourished = new Set((nutritionResult.data ?? []).map((row: { product_id: string }) => row.product_id));
-          return {
-            verifiedProducts: productRows.filter((row) => row.verification_status === 'verified').length,
-            productsWithoutIngredients: productRows.filter((row) => !linked.has(row.id)).length,
-            productsWithoutNutrition: productRows.filter((row) => !nourished.has(row.id)).length,
-            productsWithoutBarcode: productRows.filter((row) => !row.barcode?.trim()).length,
-            dataQualityIssues: productRows.filter(
-              (row) => !linked.has(row.id) || !nourished.has(row.id) || !row.barcode?.trim(),
-            ).length,
-          };
-        }).catch((error: Error) => {
+          countOf('products', q => q.eq('verification_status', 'verified')),
+          countOf('product_enrichment_queue', q => q.contains('missing_fields', ['ingredients'])),
+          countOf('product_enrichment_queue', q => q.contains('missing_fields', ['nutrition'])),
+          countOf('product_enrichment_queue', q => q.contains('missing_fields', ['barcode'])),
+          countOf('product_enrichment_queue', q => q.not('missing_fields', 'eq', '{}')),
+        ]).then(([verifiedProducts, productsWithoutIngredients, productsWithoutNutrition, productsWithoutBarcode, dataQualityIssues]) => ({
+          verifiedProducts, productsWithoutIngredients, productsWithoutNutrition, productsWithoutBarcode, dataQualityIssues,
+        })).catch((error: Error) => {
           console.error('dashboard product quality failed:', error.message);
           return null;
         });

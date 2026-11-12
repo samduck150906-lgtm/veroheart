@@ -115,6 +115,20 @@ describe('category navigation', () => {
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
 describe('search defaults and refresh', () => {
+  it('retries identical URL conditions, ignores duplicate retry clicks and preserves filters',async () => {
+    api.search.mockRejectedValueOnce(new Error('synthetic failure'));
+    show('/search?category=dry&pet=cat&lifeStage=어덜트&formulation=건식&brand=Fixture&health=관절&diet=1&exclude=닭&sort=rating');
+    await finishDebounce();
+    const request = api.search.mock.calls[0];
+    const retry = screen.getByRole('button',{name:'같은 조건으로 다시 시도'});
+    fireEvent.click(retry); fireEvent.click(retry);
+    await finishDebounce();
+    expect(api.search.mock.calls[1]).toEqual(request);
+    expect(api.search).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole('alert')).toBeNull();
+    const params = new URLSearchParams(screen.getByTestId('route').textContent!);
+    expect(params.get('health')).toBe('관절'); expect(params.get('brand')).toBe('Fixture'); expect(params.get('sort')).toBe('rating');
+  });
   it('loads the public catalog without requiring a query or profile species filter', async () => {
     show();
     expect(screen.queryByText('검색 결과가 없습니다')).toBeNull();
@@ -164,10 +178,10 @@ it('distinguishes a partial loaded count and offers more products above the list
   const product = { id: 'first', name: '첫 제품', brand: '브랜드', category: 'food', imageUrl: '', ingredients: [], reviewsCount: 0, averageRating: 0 };
   api.search.mockResolvedValueOnce({ products: [product], nextOffset: 100 }).mockResolvedValueOnce({ products: [{ ...product, id: 'second', name: '다음 제품' }], nextOffset: null });
   show(); await finishDebounce();
-  expect(screen.getByText('1개 표시 중 · 추천순')).toBeTruthy();
+  expect(screen.getByText('1개 표시 중 · 제품 참고 점수순')).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: '제품 더 보기', exact: true }));
   await act(async () => {});
-  expect(screen.getByText('2개 · 추천순')).toBeTruthy();
+  expect(screen.getByText('2개 · 제품 참고 점수순')).toBeTruthy();
   expect(screen.getByText('다음 제품')).toBeTruthy();
   expect(screen.queryByRole('button', { name: '제품 더 보기', exact: true })).toBeNull();
 });

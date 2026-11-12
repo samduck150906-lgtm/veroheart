@@ -6,6 +6,7 @@ import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
 import ProductLabelReview from './ProductLabelReview';
 import ProductIngredientsEditor from './ProductIngredientsEditor';
 import ProductLabelPasteBox from './ProductLabelPasteBox';
+import { productSpeciesConflict } from '../../lib/productSpecies';
 import {
   fetchProductEditBundle, type BulkProductPatch,
   bulkUpdateProducts,
@@ -260,7 +261,7 @@ const AdminProducts: React.FC = () => {
     editLoadIdRef.current += 1;
     setEditLoadState('ready');
     setCurrentProduct({
-      target_pet_type: 'dog',
+      target_pet_type: '',
       main_category: mainCategoryNames.includes('사료') ? '사료' : mainCategoryNames[0],
       target_life_stage: [],
       product_health_concerns: [],
@@ -379,7 +380,7 @@ const AdminProducts: React.FC = () => {
       main_category: (currentProduct.main_category || '').trim(),
       sub_category: (currentProduct.sub_category || '').trim() || null,
       formulation: (currentProduct.formulation || '').trim() || null,
-      target_pet_type: (currentProduct.target_pet_type || 'dog').trim(),
+      target_pet_type: (currentProduct.target_pet_type || '').trim() || null,
       image_url: (currentProduct.image_url || '').trim(),
       // 빈 문자열은 부분 유니크 인덱스에서 충돌하므로 null로 정규화
       barcode: (currentProduct.barcode || '').trim() || null,
@@ -792,7 +793,7 @@ const AdminProducts: React.FC = () => {
                     <div className="admin-item-sub">{p.sub_category || '-'}</div>
                   </td>
                   <td>
-                    <span className="admin-tag blue">{(p.target_pet_type || 'all').toUpperCase()}</span>
+                    <span className="admin-tag blue">{p.target_pet_type ? p.target_pet_type.toUpperCase() : '대상 미확인'}</span>
                     <div className="admin-item-sub" style={{ marginTop: 6 }}>
                       {p.target_life_stage?.join(', ') || '전연령'}
                     </div>
@@ -1057,6 +1058,9 @@ const AdminProducts: React.FC = () => {
                 options={PET_TYPES}
                 onChange={(value) => setCurrentProduct({ ...currentProduct, target_pet_type: value })}
               />
+              {(!currentProduct.target_pet_type || productSpeciesConflict(currentProduct.name ?? '',currentProduct.target_pet_type)) && <p role="status" style={{ color: '#9a6700' }}>
+                {!currentProduct.target_pet_type ? '대상 동물은 자동 지정하지 않습니다. 공식 자료에서 확인한 뒤 선택해 주세요. 미확인 상태는 검수 대기로 저장할 수 있습니다.' : '제품명과 대상 동물의 표기가 충돌합니다. 제품명만으로 확정하지 말고 공식 자료를 대조해 주세요.'}
+              </p>}
               {subCategoryNames.length > 0 ? (
                 <SelectField
                   id="pf-sub-cat"

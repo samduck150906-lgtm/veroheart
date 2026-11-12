@@ -5,6 +5,7 @@
  * 내부 비교는 건물 기준(Dry Matter Basis)으로 환산한다.
  */
 import type { GuaranteedAnalysis } from './types';
+import { getNutritionReadiness, isObservedPercent } from './nutritionReadiness';
 
 /**
  * 보장성분 값을 계산에 쓸 수 있는 유한한 퍼센트로 정리한다.
@@ -28,9 +29,10 @@ function toPositiveNumber(value: unknown): number | null {
 
 /** as-fed % → 건물 기준 % */
 export function toDryMatter(asFedPercent: number, moisturePercent: number): number | null {
-  const asFed = toPercent(asFedPercent);
-  const moisture = toPercent(moisturePercent);
-  if (moisture >= 100) return null;
+  if (!isObservedPercent(asFedPercent) || !isObservedPercent(moisturePercent)) return null;
+  const asFed = Number(asFedPercent);
+  const moisture = Number(moisturePercent);
+  if (moisture >= 100 || asFed + moisture > 100) return null;
   return (asFed / (100 - moisture)) * 100;
 }
 
@@ -42,7 +44,8 @@ export function calculateCalories(ga: GuaranteedAnalysis): {
   kcalPer100g: number;
   kcalPerKg: number;
   distribution: { protein: number; fat: number; carbs: number };
-} {
+} | null {
+  if (!getNutritionReadiness(ga).canEstimateEnergy) return null;
   const protein = toPercent(ga.crudeProtein);
   const fat = toPercent(ga.crudeFat);
   const fiber = toPercent(ga.crudeFiber);
@@ -78,11 +81,14 @@ export function calculateCalories(ga: GuaranteedAnalysis): {
 export function validateAAFCO(
   ga: GuaranteedAnalysis,
   species: 'dog' | 'cat',
-): { passed: boolean; details: string[] } {
+): { evaluated: boolean; passed: boolean; details: string[] } {
+  if (!getNutritionReadiness(ga).canEvaluateProteinFat) return {
+    evaluated: false, passed: false, details: ['표시된 단백질·지방·수분 정보가 부족하거나 유효하지 않아 비교할 수 없습니다.'],
+  };
   const details: string[] = [];
   let passed = true;
 
-  const moisture = toPercent(ga.moisture, 10);
+  const moisture = Number(ga.moisture);
   const proteinDMB = toDryMatter(toPercent(ga.crudeProtein), moisture) ?? 0;
   const fatDMB = toDryMatter(toPercent(ga.crudeFat), moisture) ?? 0;
 
@@ -101,7 +107,7 @@ export function validateAAFCO(
     details.push(`AAFCO 조지방 기준 미달: 기준 ${minFat}% (건물 기준 ${fatDMB.toFixed(1)}%)`);
   }
 
-  return { passed, details };
+  return { evaluated: true, passed, details };
 }
 
 /** 칼슘:인 비율 점검 (권장 1:1 ~ 2:1) */

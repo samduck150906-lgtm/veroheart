@@ -12,6 +12,7 @@
  * 모든 함수는 순수(pure)하며 외부 호출/랜덤/시간에 의존하지 않는다.
  */
 import type { Product, UserPetProfile } from '../types';
+import { inferProductType } from './adapter';
 import { allergyCautionMatches, allergyIngredientNames } from './allergyFamilyMatcher';
 import type { GuaranteedAnalysis } from './types';
 import { getNutritionPresentation, getNutritionReadiness, isObservedPercent } from './nutritionReadiness';
@@ -85,9 +86,9 @@ const DISCLAIMER =
 
 /* ── 원재료명 키워드 사전 (정규화 후 부분일치) ────────────────── */
 const ANIMAL_PROTEIN = [
-  '닭', '계육', '오리', '칠면조', '소고기', '쇠고기', '우육', '양고기', '양', '돼지', '돈육',
+  '닭', '계육', '오리', '칠면조', '소고기', '쇠고기', '우육', '양고기', '램', '돼지', '돈육',
   '연어', '참치', '명태', '북어', '황태', '대구', '청어', '고등어', '정어리', '멸치', '가다랑어',
-  '새우', '게', '조개', '홍합', '계란', '난백', '난황', '달걀', '생선', '어류', '캥거루', '사슴',
+  '새우', '게살', '꽃게', '조개', '홍합', '계란', '난백', '난황', '달걀', '생선', '어류', '캥거루', '사슴',
   '토끼', '메추리', '오리고기', '연어살', 'chicken', 'beef', 'duck', 'turkey', 'lamb', 'pork',
   'salmon', 'tuna', 'fish', 'egg', 'herring', 'mackerel', 'sardine', 'venison', 'rabbit', 'quail',
 ];
@@ -121,10 +122,8 @@ function hitsAny(haystack: string, needles: string[]): boolean {
 }
 
 function detectProductType(product: Product): FeedProductType {
-  const hay = norm(`${product.category} ${product.mainCategory ?? ''} ${product.subCategory ?? ''} ${product.formulation ?? ''} ${product.name}`);
-  if (/(영양제|보충제|supplement|파우더|정제|스틱)/.test(hay)) return 'supplement';
-  if (/(간식|져키|저키|껌|츄|트릿|treat|snack|육포)/.test(hay)) return 'treat';
-  return 'complete';
+  const type = inferProductType(product);
+  return type === 'complete_food' || type === 'unknown' ? 'complete' : type;
 }
 
 function gradeFromScore(score: number): FeedGrade {
@@ -144,8 +143,12 @@ function derFactor(profile: UserPetProfile): number {
 }
 
 export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnalysis {
-  const species: 'dog' | 'cat' = profile.species === 'Cat' ? 'cat' : 'dog';
+  const petSpecies = profile.species === 'Cat' ? 'cat' : 'dog';
+  const species: 'dog' | 'cat' = product.targetPetType === 'cat' || product.targetPetType === 'dog' ? product.targetPetType : petSpecies;
+  const speciesMismatch = product.targetPetType === 'cat' || product.targetPetType === 'dog'
+    ? product.targetPetType !== petSpecies : false;
   const productType = detectProductType(product);
+  const growthOrReproduction = product.targetLifeStage?.some(stage => /puppy|kitten|growth|reproduction|all_life|퍼피|키튼|자견|자묘|임신|수유|올스테이지/i.test(stage)) ?? false;
   const ingredients = product.ingredients ?? [];
   const analysisReadiness = readinessFromStoredStatus(
     product.analysisStatus,
@@ -190,14 +193,14 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
 
     const calc = calculateCalories(ga);
     // 라벨 열량도 문자열로 들어올 수 있다 — 유한한 양수일 때만 실측치로 인정한다.
-    calories = measuredKcal || canEstimateEnergy ? {
-      per100g: measuredKcal ? labelKcal : calc.kcalPer100g,
-      perKg: measuredKcal ? Math.round(labelKcal * 10) : calc.kcalPerKg,
-      distribution: canEstimateEnergy ? { protein: calc.distribution.protein, fat: calc.distribution.fat, carb: calc.distribution.carbs } : null,
+    calories = measuredKcal || calc ? {
+      per100g: measuredKcal ? labelKcal : calc!.kcalPer100g,
+      perKg: measuredKcal ? Math.round(labelKcal * 10) : calc!.kcalPerKg,
+      distribution: calc ? { protein: calc.distribution.protein, fat: calc.distribution.fat, carb: calc.distribution.carbs } : null,
       measured: measuredKcal,
     } : null;
 
-    if (productType === 'complete' && canEvaluateProteinFat) {
+    if (productType === 'complete' && canEvaluateProteinFat && !growthOrReproduction) {
       const res = validateAAFCO(ga, species);
       aafco = { evaluated: true, passed: res.passed, details: res.details, label: aafco.label };
     }
@@ -211,8 +214,9 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
   }
 
   // ── 2) 원료 품질 판정 ──
-  const names = ingredients.map((i) => `${i.nameKo} ${i.nameEn ?? ''}`);
-  const isAnimal = (n: string) => hitsAny(n, ANIMAL_PROTEIN) && !hitsAny(n, BY_PRODUCT);
+  const names = ingredients.map((i) => `${i.nameKo} ${i.nameEn ?? ''} ${i.rawLabelText ?? ''}`);
+  const isAnimal = (n: string) => hitsAny(n, ANIMAL_PROTEIN) && !hitsAny(n, BY_PRODUCT)
+    && !/(지방|기름|유지|oil|fat)/.test(norm(n));
   const animalProteins = ingredients.filter((_, i) => isAnimal(names[i])).map((i) => i.nameKo);
   const fillers = ingredients.filter((_, i) => hitsAny(names[i], FILLER)).map((i) => i.nameKo);
   const byProducts = ingredients.filter((_, i) => hitsAny(names[i], BY_PRODUCT)).map((i) => i.nameKo);
@@ -277,7 +281,7 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
   if (iq.firstIsAnimalProtein && iq.firstIngredient) positives.push(`제1원료가 동물성 단백질(${iq.firstIngredient})입니다`);
   if (iq.animalProteins.length >= 2) positives.push(`동물성 단백질 원료 ${iq.animalProteins.length}종 확인`);
   if (iq.functional.length > 0) positives.push(`기능성 원료 포함: ${iq.functional.slice(0, 3).join(', ')}`);
-  if (hasNutritionData && aafco.evaluated && aafco.passed) positives.push('AAFCO 성체 유지 최소 기준(단백·지방)을 충족합니다');
+  if (hasNutritionData && aafco.evaluated && aafco.passed) positives.push('성체 유지의 단백질·지방 참고 기준 이상입니다. 전체 영양 충족 판정은 아닙니다');
   if (analysisReadiness.status === 'ready' && iq.dangerCount === 0 && iq.cautionCount === 0 && iq.artificial.length === 0) positives.push('위험·주의·합성첨가물 성분이 확인되지 않았습니다');
   if (macrosDMB && macrosDMB.protein >= (species === 'cat' ? 32 : 22)) positives.push(`건물기준 조단백질 ${macrosDMB.protein}%로 단백질이 풍부합니다`);
 
@@ -324,7 +328,7 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
   // 몸무게는 프로필 입력값이라 문자열·0·비정상 값이 들어올 수 있다. 유한한 양수일
   // 때만 계산하고, 결과가 유한하지 않으면 급여량을 내보내지 않는다(화면 NaN 방지).
   const weightKg = Number(profile.weightKg);
-  if (Number.isFinite(weightKg) && weightKg > 0 && productType === 'complete' && !product.requiresVeterinaryGuidance
+  if (Number.isFinite(weightKg) && weightKg > 0 && productType === 'complete' && !speciesMismatch && !product.requiresVeterinaryGuidance
       && calories && Number.isFinite(calories.per100g) && calories.per100g > 0) {
     const measured = calories.measured;
     const kcalPer100g = calories.per100g;

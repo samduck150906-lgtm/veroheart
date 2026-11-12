@@ -21,37 +21,28 @@ function ga(raw: Record<string, unknown>): GuaranteedAnalysis {
 }
 
 describe('보장성분 비정상 입력 방어', () => {
-  it('문자열 보장성분이 들어와도 열량이 유한한 수로 나온다', () => {
-    const result = calculateCalories(ga({ crudeProtein: '28', crudeFat: '16', moisture: '10' }));
-    expect(Number.isFinite(result.kcalPer100g)).toBe(true);
-    expect(result.kcalPer100g).toBeGreaterThan(0);
+  it('다섯 항목이 실제로 표시된 경우에만 Modified Atwater 추정치를 계산한다', () => {
+    const result = calculateCalories(ga({ crudeProtein: '28', crudeFat: '16', crudeFiber: '4', crudeAsh: '8', moisture: '10' }));
+    expect(result?.kcalPer100g).toBe(353);
+    expect(result?.distribution.carbs).toBe(34);
   });
 
-  it('단위가 섞인 문자열은 0으로 취급하고 NaN 을 만들지 않는다', () => {
-    const result = calculateCalories(ga({ crudeProtein: '28%', crudeFat: 'N/A', moisture: null }));
-    expect(Number.isNaN(result.kcalPer100g)).toBe(false);
-    expect(Number.isFinite(result.kcalPerKg)).toBe(true);
-    expect(Number.isFinite(result.distribution.protein)).toBe(true);
-    expect(Number.isFinite(result.distribution.fat)).toBe(true);
-    expect(Number.isFinite(result.distribution.carbs)).toBe(true);
+  it('미표시·단위 오류·음수·범위 초과·합계 오류를 가짜 0이나 탄수화물 100%로 바꾸지 않는다', () => {
+    const valid = { crudeProtein: 28, crudeFat: 16, crudeFiber: 4, crudeAsh: 8, moisture: 10 };
+    for (const field of Object.keys(valid)) {
+      for (const value of [undefined, null, '', '28%', 'N/A', -1, 101, NaN, Infinity]) {
+        expect(calculateCalories(ga({ ...valid, [field]: value }))).toBeNull();
+      }
+    }
+    expect(calculateCalories(ga({}))).toBeNull();
+    expect(calculateCalories(ga({ ...valid, moisture: 60 }))).toBeNull();
+    expect(calculateCalories(ga({ crudeProtein: 0, crudeFat: 0, crudeFiber: 0, crudeAsh: 0, moisture: 100 }))?.kcalPer100g).toBe(0);
   });
 
-  it('보장성분이 비어 있어도 유한한 값을 돌려준다', () => {
-    // 값이 전부 없으면 NFE 가 100% 로 계산돼 탄수화물만 있는 350kcal 이 나온다.
-    // 호출부(analyzeFeed / AnalysisResult)가 "단백 또는 지방 > 0" 을 먼저 확인하므로
-    // 이 값이 화면에 실측치로 노출되지는 않는다. 여기서는 NaN 이 아님만 고정한다.
-    const result = calculateCalories(ga({}));
-    expect(Number.isFinite(result.kcalPer100g)).toBe(true);
-    expect(result.distribution.carbs).toBe(100);
-  });
-
-  it('음수·100 초과 값은 0~100 으로 가둔다', () => {
-    const negative = calculateCalories(ga({ crudeProtein: -50, crudeFat: 10 }));
-    const huge = calculateCalories(ga({ crudeProtein: 400, crudeFat: 10 }));
-    expect(negative.kcalPer100g).toBeGreaterThanOrEqual(0);
-    expect(Number.isFinite(huge.kcalPer100g)).toBe(true);
-    // 단백 400% 는 100% 로 잘려 나머지 성분이 음수 열량을 만들지 않는다.
-    expect(huge.distribution.carbs).toBeGreaterThanOrEqual(0);
+  it('미표시 수분을 임의의 10%로 대체해 기준을 통과시키지 않는다', () => {
+    expect(validateAAFCO({ crudeProtein: 30, crudeFat: 20 }, 'dog')).toMatchObject({ evaluated: false, passed: false });
+    expect(toDryMatter(-1, 10)).toBeNull();
+    expect(toDryMatter(95, 10)).toBeNull();
   });
 
   it('수분 100% 는 건물 기준 환산을 포기한다(0으로 나누지 않는다)', () => {

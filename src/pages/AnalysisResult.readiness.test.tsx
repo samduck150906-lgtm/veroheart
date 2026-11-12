@@ -82,9 +82,10 @@ describe('analysis result evidence boundary', () => {
   it('shows unresolved label terms without safe claims on the ingredient tab', () => {
     show({...base,analysisStatus:'partial',unknownIngredientTerms:['미확인 혼합물']});
     fireEvent.click(screen.getByRole('button',{name:'전성분'}));
-    expect(screen.getByText('미확인 혼합물 · 원료 확인 필요')).toBeTruthy();
+    expect(screen.getByText('미확인 혼합물')).toBeTruthy();
     expect(screen.queryByText('안전')).toBeNull();
-    expect(screen.getByText('확인된 원료')).toBeTruthy();
+    expect(screen.getByText('원료 특성 · 특성 확인 중')).toBeTruthy();
+    expect(screen.getByText(/점수 미반영 · 안전성 판정 근거 부족/)).toBeTruthy();
   });
   it('can load the selected product directly from a durable query route', () => {
     show(null,'/analysis?productId=food-1');

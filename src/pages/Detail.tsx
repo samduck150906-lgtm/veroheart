@@ -28,12 +28,17 @@ import FeedingLogForm from '../components/diary/FeedingLogForm';
 import { productTypeToFeedingType } from '../components/diary/feedingConstants';
 import { generateAnalysisReport } from '../utils/analysis';
 import BottomSheet from '../components/BottomSheet';
+import { MaterialCompositionDetails } from '../components/MaterialCompositionDetails';
+import { NutrientEvidenceDetails } from '../components/NutrientEvidenceDetails';
+import { IngredientLabelList } from '../components/IngredientLabelList';
+import { ingredientLabelCounts } from '../utils/ingredientLabelCounts';
 import { TossCard } from '../components/TossUI';
 import { getReviews, createReview, deleteReview } from '../lib/supabase';
 import { notify } from '../store/useNotification';
 import { buildProductConclusion } from '../utils/productConclusion';
 import { buildAllergyDisplayState } from '../utils/allergyDisplay';
 import { isAllergyIngredient } from '../utils/score';
+import { assessIngredient } from '../analysis/ingredientAssessment';
 import { isRealPetProfile, resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import { getAppScrollEl, getAppScrollTop, scrollAppToTop } from '../utils/scroll';
 import { analyzeFeed } from '../analysis/feedAnalysis';
@@ -41,19 +46,16 @@ import FeedAnalysisCard from '../components/FeedAnalysisCard';
 import {
   GlanceGrid,
   FitForPetCard,
-  IngredientCard,
   StickyCtaBar,
   StickyScoreBar,
   VerdictCard,
   PdpSkeleton,
   AltProductCarousel,
-  NutritionCard,
   ReviewSummaryCard,
   EmptyState,
   OfflineBanner,
   type GlanceTileData,
   type AltCardData,
-  type RadarAxis,
 } from '../components/pdp/PdpParts';
 import ProductThumb from '../components/ProductThumb';
 import ProductVerificationBadge from '../components/ProductVerificationBadge';
@@ -359,23 +361,10 @@ export default function Detail() {
   pickAlt(altPool.filter(x => riskCount(x.p) === 0 && x.score >= 60).sort((a, b) => b.score - a.score), '등록 정보상 주의 성분 미확인', 'good');
   pickAlt(altPool.filter(x => x.p.verificationStatus === 'verified' && x.score >= 75).sort((a, b) => b.score - a.score), '정보가 확인된 제품', 'neutral');
 
-  // 영양 레이더 축 (product.nutrition 있을 때만) — 매크로%를 0~100 스케일로 정규화
-  const nz = (v: number | undefined, max: number) => Math.min(100, Math.round(((v ?? 0) / max) * 100));
-  const nutritionRadar: RadarAxis[] = product.nutrition
-    ? [
-        { label: '단백질', value: nz(product.nutrition.protein, 40) },
-        { label: '지방', value: nz(product.nutrition.fat, 25) },
-        { label: '탄수화물', value: nz(product.nutrition.carb, 60) },
-        { label: '식이섬유', value: nz(product.nutrition.fiber, 15) },
-        { label: '수분', value: nz(product.nutrition.moisture, 12) },
-        { label: '비타민', value: product.nutrition.vitaminScore ?? 0 },
-        { label: '미네랄', value: product.nutrition.mineralScore ?? 0 },
-      ]
-    : [];
-
   // 사료성분 분석(규칙 기반) — 급여량은 제품 실제 열량 기반으로 계산
   const feed = analyzeFeed(product, profile);
   const feedingGrams = feed.feeding?.gramsPerDay ?? null;
+  const selectedIngredientAssessment = selectedIngredient ? assessIngredient(selectedIngredient, personalized ? profile : null) : null;
 
   // Create Toss-style Headline Data
   const dangerIngs = product.ingredients?.filter(i => i.riskLevel === 'danger') || [];
@@ -554,7 +543,7 @@ export default function Detail() {
           <span style={{ display: 'block', fontSize: '12.5px', color: 'var(--vr-on-inverse-sub)', marginTop: '3px' }}>
             {analysisReady
               ? nutrition.limited ? nutrition.notice : nutrition.detail
-              : `확인된 원료 ${product.ingredients?.length ?? 0}개 · 검토 상태 보기`}
+              : `${product.confirmedLabelIngredientCount === undefined ? `등록 원료 ${ingredientLabelCounts(product).declared}개` : `확인된 원료 ${product.confirmedLabelIngredientCount}개`} · 특성 연결 ${ingredientLabelCounts(product).traitsResolved}개`}
           </span>
         </span>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFD90A" strokeWidth="2.6" strokeLinecap="round" aria-hidden>
@@ -633,7 +622,7 @@ export default function Detail() {
       )}
 
       {/* 일일 급여량 계산기 */}
-      <section className="card" style={{ marginBottom: '40px' }}>
+      {feed.productType === 'complete' ? <section className="card" style={{ marginBottom: '40px' }}>
         <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-dark)' }}>
           <Dog size={22} color="var(--safe)" /> {personalized && !breakdown.speciesMismatch ? `${profile.name} 열량 기준 참고 급여량` : '열량 기준 참고 급여량 안내'}
         </h2>
@@ -673,6 +662,11 @@ export default function Detail() {
           </div>
         )}
       </section>
+
+      : <section className="card" style={{ marginBottom: 24 }}>
+        <h2>제품 포장의 급여 안내를 확인해 주세요</h2>
+        <p>간식·영양제는 제조사가 안내한 g·개·정·스푼 등 급여 단위를 따릅니다. 완전사료용 하루 급여량이나 영양 충족 판정을 적용하지 않습니다.</p>
+      </section>}
 
       {/* Toss-style Ingredient Analysis */}
       <section style={{ marginBottom: '40px' }}>
@@ -763,38 +757,16 @@ export default function Detail() {
         
         {/* 사료성분 분석 (규칙 기반 · 보장성분 + 원재료 실제 데이터) */}
         <FeedAnalysisCard product={product} profile={profile} />
+        <NutrientEvidenceDetails evidence={product.nutrientEvidence} />
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '16px' }}>
           <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-dark)' }}>전성분 상세</h3>
-          <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 500 }}>총 {(product.ingredients?.length ?? 0) + (product.unknownIngredientTerms?.length ?? 0)}개</div>
+          <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 500 }}>표시 원료 {ingredientLabelCounts(product).declared}개</div>
         </div>
 
-        <div>
-          {(product.unknownIngredientTerms ?? []).map((term, index) => (
-            <div key={`raw-${index}`} style={{ padding: 14, marginBottom: 8, borderRadius: 12, background: 'var(--surface-alt)' }}>
-              <strong>{term}</strong>
-              <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>제품에 표시된 원료입니다. 아직 특성을 확인하지 못해 점수 계산에서 제외했습니다.</p>
-            </div>
-          ))}
-          {(product.ingredients ?? [])
-            .map(ing => {
-              const isAllergy = isAllergyIngredient(ing, profile.allergies);
-              // 위험/알레르기 → 주의 → 안전 순으로 정렬(판단이 먼저 보이도록)
-              const rank = isAllergy || ing.riskLevel === 'danger' ? 0 : ing.riskLevel === 'caution' ? 1 : 2;
-              return { ing, isAllergy, rank };
-            })
-            .sort((a, b) => a.rank - b.rank)
-            .map(({ ing, isAllergy }) => (
-              <IngredientCard
-                key={ing.id}
-                ing={{ ...ing, isAllergy }}
-                onOpen={() => setSelectedIngredient(ing)}
-              />
-            ))}
-        </div>
+        <IngredientLabelList product={product} profile={personalized ? profile : null} onOpen={setSelectedIngredient} />
       </section>
 
-      {product.nutrition && <NutritionCard data={product.nutrition} radar={nutritionRadar} />}
 
       <VerdictCard lines={verdictLines} />
 
@@ -812,24 +784,12 @@ export default function Detail() {
               {selectedIngredient.nameEn} · {selectedIngredient.purpose}
             </div>
             
-            {personalized && isAllergyIngredient(selectedIngredient, profile.allergies) ? (
-              <div style={{ backgroundColor: '#FEE2E2', padding: '20px', borderRadius: '16px', color: '#F04452', fontWeight: 700, fontSize: '16px', lineHeight: 1.5 }}>
-                {profile.name}의 알레르기 유발 성분입니다. 절대 급여하지 마세요.
-              </div>
-            ) : selectedIngredient.riskLevel === 'danger' ? (
-              <div style={{ backgroundColor: '#FEE2E2', padding: '20px', borderRadius: '16px', color: '#F04452', fontWeight: 700, fontSize: '16px', lineHeight: 1.5 }}>
-                지속적인 급여 시 간이나 신장에 무리를 줄 수 있는 성분입니다.
-              </div>
-            ) : selectedIngredient.riskLevel === 'caution' ? (
-              <div style={{ backgroundColor: '#FEF3C7', padding: '20px', borderRadius: '16px', color: '#D97706', fontWeight: 700, fontSize: '16px', lineHeight: 1.5 }}>
-                특정 질환이 있는 아이에게는 조심해서 급여해야 하는 성분입니다.
-              </div>
-            ) : (
-              <div style={{ backgroundColor: 'var(--secondary)', padding: '20px', borderRadius: '16px', color: 'var(--text-dark)', fontWeight: 700, fontSize: '16px', lineHeight: 1.5 }}>
-                안심하고 먹일 수 있는 좋은 원료입니다.
-              </div>
-            )}
-            
+            <div role={selectedIngredientAssessment?.kind === 'allergy' || selectedIngredientAssessment?.kind === 'caution' ? 'alert' : undefined}
+              style={{ backgroundColor: selectedIngredientAssessment?.kind === 'allergy' || selectedIngredientAssessment?.kind === 'danger' ? '#FEE2E2' : selectedIngredientAssessment?.kind === 'caution' ? '#FEF3C7' : 'var(--secondary)', padding: 20, borderRadius: 16, fontWeight: 700, lineHeight: 1.6 }}>
+              {selectedIngredientAssessment?.message}
+            </div>
+
+            <MaterialCompositionDetails name={selectedIngredient.nameKo} edges={selectedIngredient.materialComposition} references={selectedIngredient.nutrientReference} />
             {selectedIngredient.description && (
               <p style={{ marginTop: '24px', fontSize: '15px', color: 'var(--text-dark)', lineHeight: 1.6, fontWeight: 500 }}>
                 {selectedIngredient.description}

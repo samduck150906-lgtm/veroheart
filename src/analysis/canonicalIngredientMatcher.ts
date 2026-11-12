@@ -1,4 +1,3 @@
-import { normalizeIngredientName } from './normalize';
 import type { ParsedIngredientLabelItem } from './labelIngredientParser';
 
 export interface MatchableCanonicalIngredient {
@@ -14,8 +13,16 @@ export type CanonicalIngredientMatch = ParsedIngredientLabelItem & (
   | { matchStatus: 'unmatched'; canonicalIngredientId: null; candidateCanonicalIds: [] }
 );
 
-function exactKey(value: string): string {
-  return normalizeIngredientName(value).replace(/[.。:_\-–—/\\]/g, '');
+export function canonicalIdentityKey(value: string): string {
+  // Processing forms and chemical prefixes are significant. Do not strip 정육,
+  // hydrolysis, oil, mineral valence or the contents of parentheses.
+  return value.normalize('NFKC').toLowerCase().replace(/가루|파우더/g, '분말')
+    .replace(/[\s()（）[\]{}*·•▪◦・,.。:_\-–—/\\]/g, '');
+}
+
+function strictKey(value: string): string {
+  return value.normalize('NFKC').toLowerCase().replace(/가루|파우더/g, '분말')
+    .replace(/[\s()（）[\]{}*·•▪◦・,]/g, '');
 }
 
 export function matchCanonicalIngredients(
@@ -26,16 +33,21 @@ export function matchCanonicalIngredients(
   for (const canonical of canonicals) {
     const terms = [canonical.canonicalName, canonical.normalizedKey ?? '', ...(canonical.aliases ?? [])];
     for (const term of terms) {
-      const key = exactKey(term);
-      if (!key) continue;
-      const ids = index.get(key) ?? new Set<string>();
-      ids.add(canonical.id);
-      index.set(key, ids);
+      if (!canonicalIdentityKey(term)) continue;
+      for (const key of [`strict:${strictKey(term)}`,`loose:${canonicalIdentityKey(term)}`]) {
+        const ids = index.get(key) ?? new Set<string>();
+        ids.add(canonical.id);
+        index.set(key, ids);
+      }
     }
   }
 
   return items.map((item) => {
-    const candidates = [...(index.get(exactKey(item.baseText)) ?? [])].sort();
+    const full = item.rawText.replace(/\d+(?:\.\d+)?\s*%/g, '');
+    const candidates = [...(index.get(`strict:${strictKey(full)}`)
+      ?? index.get(`loose:${canonicalIdentityKey(full)}`)
+      ?? index.get(`strict:${strictKey(item.baseText)}`)
+      ?? index.get(`loose:${canonicalIdentityKey(item.baseText)}`) ?? [])].sort();
     if (candidates.length === 1) {
       return {
         ...item,

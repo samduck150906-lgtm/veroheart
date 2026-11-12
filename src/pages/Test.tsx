@@ -60,6 +60,7 @@ function computeResultType(scores: Scores, answers: number[]): string {
 export default function Test() {
   const navigate = useNavigate();
   const [kakaoSharing, setKakaoSharing] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<number[]>(
     Array.from({ length: VIRAL_TEST_CAMPAIGN.questions.length }, () => -1)
@@ -70,12 +71,17 @@ export default function Test() {
   const result = useMemo(() => {
     if (!isFinished) return null;
     const initial: Scores = { S: 0, A: 0, V: 0, F: 0 };
+    const observed = answers.filter(answer => answer >= 0 && answer < 4).length;
+    if (observed < 4) return null;
     const totals = VIRAL_TEST_CAMPAIGN.questions.reduce((acc, q, idx) => {
       const picked = answers[idx];
       if (picked < 0) return acc;
       const rule = SCORE_TABLE[q.id]?.[picked] ?? {};
       return addScores(acc, rule);
     }, initial);
+    // Unobserved answers carry no negative score; keep thresholds on the same
+    // eight-observation scale without dividing by zero.
+    for (const axis of Object.keys(totals) as AxisKey[]) totals[axis] *= answers.length / observed;
     const type = computeResultType(totals, answers);
     const detail = VIRAL_TEST_CAMPAIGN.resultTypes.find((item) => item.type === type) ?? VIRAL_TEST_CAMPAIGN.resultTypes[0];
     return { totals, detail };
@@ -94,14 +100,16 @@ export default function Test() {
   const handleCopy = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
+      setCopyFailed(false);
       notify.success('공유 문구를 복사했습니다.');
     } catch {
+      setCopyFailed(true);
       notify.error('복사에 실패했습니다. 다시 시도해 주세요.');
     }
   };
 
   const shareText = result
-    ? `우리 아이 결과는 "${result.detail.type}"입니다. ${result.detail.summary} 추천: ${result.detail.category}`
+    ? `우리 아이 결과는 "${result.detail.type}"입니다. ${result.detail.summary}`
     : KAKAO_SHARE_MESSAGES[0];
 
   const testPageUrl = useMemo(() => publicUrl('/event/personality-quiz'), []);
@@ -189,10 +197,20 @@ export default function Test() {
                 {option}
               </button>
             ))}
+            <button type="button" className="btn btn-outline" onClick={() => handlePick(4)}>
+              해당 없음 · 관찰하지 못했어요
+            </button>
           </div>
         </section>
       )}
 
+      {isFinished && !result && (
+        <section role="status" className="ui-info-card" style={{ padding: 20 }}>
+          <h2>관찰한 답변이 부족합니다</h2>
+          <p>관찰한 문항이 4개 이상일 때 성향을 안내합니다. 비해당 응답은 낮은 점수로 계산하지 않습니다.</p>
+          <button type="button" className="btn btn-outline" onClick={() => setStep(0)}>답변 다시 선택하기</button>
+        </section>
+      )}
       {isFinished && result && (
         <section style={{ display: 'grid', gap: '12px' }}>
           <div
@@ -207,8 +225,8 @@ export default function Test() {
             <h2 style={{ margin: '8px 0 10px', fontSize: '24px', lineHeight: 1.35, color: '#7C2D12' }}>{result.detail.type}</h2>
             <p style={{ margin: '0 0 10px', fontSize: '14px', lineHeight: 1.6, color: '#9A3412' }}>{result.detail.summary}</p>
             <div style={{ background: '#fff', border: '1px dashed #FDBA74', borderRadius: '10px', padding: '10px 12px' }}>
-              <p style={{ margin: 0, fontSize: '12px', color: '#6B7280', fontWeight: 700 }}>찰떡궁합 추천 카테고리</p>
-              <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#111827', fontWeight: 800 }}>{result.detail.category}</p>
+              <p style={{ margin: 0, fontSize: '12px', color: '#6B7280', fontWeight: 700 }}>제품을 둘러볼 때</p>
+              <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#111827', fontWeight: 800 }}>성향만으로 건강 상태나 제품 적합성을 판단할 수 없어요. 원재료와 반려동물 정보를 함께 확인해 주세요.</p>
             </div>
           </div>
 
@@ -230,12 +248,12 @@ export default function Test() {
                 onClick={() => navigate('/search')}
                 style={{ borderRadius: '10px', height: '40px', fontSize: '13px', fontWeight: 800 }}
               >
-                추천 상품 보러가기
+                전체 제품 둘러보기
               </button>
             </div>
             <button
               type="button"
-              disabled={kakaoSharing}
+              disabled={kakaoSharing || !isKakaoShareConfigured()}
               onClick={() => void handleKakaoShare()}
               style={{
                 marginTop: '8px',
@@ -251,13 +269,17 @@ export default function Test() {
                 color: '#191919',
               }}
             >
-              {kakaoSharing ? '카카오톡 연결 중…' : '카카오톡으로 공유'}
+              {kakaoSharing ? '카카오톡 연결 중…' : !isKakaoShareConfigured() ? '카카오톡 공유 준비 중' : '카카오톡으로 공유'}
             </button>
             {!isKakaoShareConfigured() && (
               <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9CA3AF', lineHeight: 1.45 }}>
                 지금은 결과 복사 버튼으로 친구에게 공유할 수 있습니다.
               </p>
             )}
+            {copyFailed && <div role="alert" style={{ marginTop: 12 }}>
+              <p>자동 복사를 사용할 수 없습니다. 아래 문구를 직접 선택해 복사해 주세요.</p>
+              <textarea aria-label="복사할 공유 문구" readOnly value={shareText} style={{ width: '100%', minHeight: 110 }} />
+            </div>}
           </div>
 
           <div style={{ display: 'flex', gap: '8px' }}>

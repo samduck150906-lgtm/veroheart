@@ -11,7 +11,7 @@ import { analysisReadinessCopy } from '../analysis/analysisReadiness';
 import { describeIngredientAvailability } from '../utils/productDataCompleteness';
 import { runScoringPipeline, type ScoringPipelineResult } from '../analysis/scoringPipeline';
 import { evaluateDiseases, type ActiveDiseaseResult } from '../analysis/breedDiseaseEngine';
-import { concernsToDiseaseIds } from '../analysis/adapter';
+import { concernsToDiseaseIds, inferProductType } from '../analysis/adapter';
 import { findIngredientByName } from '../analysis/ingredientDictionary';
 import { classifyIngredientQuality } from '../analysis/ingredientQuality';
 import { PURPOSE_STYLE } from '../analysis/nutrientClassification';
@@ -20,6 +20,10 @@ import { isPhase2ObservationBuildEnabled } from '../lib/phase2ObservationFlag';
 import BottomSheet from '../components/BottomSheet';
 import StateView from '../components/StateView';
 import { HealthConcernEvidence } from '../components/HealthConcernEvidence';
+import { NutrientEvidenceDetails } from '../components/NutrientEvidenceDetails';
+import { IngredientLabelList } from '../components/IngredientLabelList';
+import { MaterialCompositionDetails } from '../components/MaterialCompositionDetails';
+import { assessIngredient } from '../analysis/ingredientAssessment';
 import { buildHealthConcernPresentation } from '../health/concernPresentation';
 import { buildAllergyDisplayState } from '../utils/allergyDisplay';
 import { DEFAULT_USER_PET_PROFILE, type Ingredient, type Product } from '../types';
@@ -152,7 +156,7 @@ function NutritionDonut({ n }: { n: { protein: number; fat: number; carbs: numbe
   const segs = [
     { label: '단백질', value: n.protein, color: '#15B36B' },
     { label: '지방', value: n.fat, color: '#F59E0B' },
-    { label: '탄수화물', value: n.carbs, color: '#3182F6' },
+    { label: '가용무질소물(NFE·추정)', value: n.carbs, color: '#3182F6' },
     { label: '기타', value: n.others, color: '#CBD2DA' },
   ];
   const total = segs.reduce((a, s) => a + s.value, 0) || 1;
@@ -286,13 +290,13 @@ export default function AnalysisResult() {
 
   // ── 잠들어 있던 성분 품질·기능성·안전 엔진을 결과 화면에 연결 ──
   const pipeline = useMemo<ScoringPipelineResult | null>(
-    () => product && canShowScore ? runScoringPipeline(product) : null,
+    () => product && canShowScore && inferProductType(product) === 'complete_food' ? runScoringPipeline(product) : null,
     [product, canShowScore],
   );
 
   // ── 우리 아이 건강 고민 → 질환별 NRC 정량 규칙 평가 ──
   const diseaseResults = useMemo<ActiveDiseaseResult[]>(() => {
-    if (!product || !canShowScore || !hasPetProfile || !feedAnalysis?.macros) return [];
+    if (!product || inferProductType(product) !== 'complete_food' || !canShowScore || !hasPetProfile || !feedAnalysis?.macros) return [];
     const ids = concernsToDiseaseIds(profile.healthConcerns);
     return ids.length ? evaluateDiseases(ids, product) : [];
   }, [product, profile.healthConcerns, canShowScore, hasPetProfile, feedAnalysis?.macros]);
@@ -485,11 +489,12 @@ export default function AnalysisResult() {
             <h2 style={{ fontSize: 14, fontWeight: 800, margin: '0 0 14px' }}>영양 구성</h2>
             {nutrition ? <>
               <NutritionDonut n={nutrition} />
-              <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>표시된 보장성분 기준이며 탄수화물은 나머지 성분을 뺀 추정치입니다.</p>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>NFE는 100에서 조단백질·조지방·조섬유·조회분·수분을 뺀 차감 추정치입니다. 전분 실측값이나 식이섬유를 포함한 총 탄수화물과 구분합니다.</p>
             </> : reportedNutrients.length > 0 ? <>
               <dl style={{ display: 'grid', gap: 8 }}>{reportedNutrients.map(({ label, value }) => <div key={label} style={{ display: 'flex', justifyContent: 'space-between' }}><dt>{label}</dt><dd>{value}%</dd></div>)}</dl>
               <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>확인된 라벨 수치만 표시했습니다. 전체 영양 구성을 계산하기에는 정보가 부족합니다.</p>
             </> : <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>영양 수치가 등록되지 않았습니다.</p>}
+            <NutrientEvidenceDetails evidence={product.nutrientEvidence} />
           </div>
           {feedAnalysis?.calories && <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--secondary)', borderRadius: 16, padding: 18 }}>
             <div style={{ fontSize: 32, fontWeight: 900 }}>{Math.round(feedAnalysis.calories.per100g * 10) / 10}</div>
@@ -513,22 +518,7 @@ export default function AnalysisResult() {
             {ingredients.length === 0 && !product.unknownIngredientTerms?.length && (
               <div style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '24px 0' }}>등록된 성분 정보가 없습니다.</div>
             )}
-            {(product.unknownIngredientTerms ?? []).map((term, index) => <div key={`unknown-${index}`} style={{ padding: 12, borderRadius: 12, background: 'var(--secondary)' }}>{term} · 원료 확인 필요</div>)}
-            {ingredients.map((ing, idx) => {
-              const r = !canShowScore && ing.riskLevel === 'safe' ? { color: 'var(--text-muted)', bg: 'var(--secondary)', label: '확인된 원료' } : RISK[ing.riskLevel];
-              return (
-                <button
-                  key={ing.id || idx}
-                  onClick={() => setSelectedIng(ing)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', background: 'var(--secondary)', border: 'none', borderRadius: 12, padding: '12px 14px', cursor: 'pointer' }}
-                >
-                  <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-light)', width: 18, flexShrink: 0 }}>{canShowScore ? idx + 1 : '·'}</span>
-                  <span style={{ width: 10, height: 10, borderRadius: 999, background: r.color, flexShrink: 0 }} />
-                  <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-dark)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ing.nameKo}</span>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: r.color, background: r.bg, borderRadius: 999, padding: '3px 9px', flexShrink: 0 }}>{r.label}</span>
-                </button>
-              );
-            })}
+            <IngredientLabelList product={product} profile={hasPetProfile ? profile : null} onOpen={setSelectedIng} />
           </div>
         </div>
       )}
@@ -561,7 +551,7 @@ export default function AnalysisResult() {
 
       {/* Ingredient detail sheet — 성분 사전 근거·설명·분류 */}
       <BottomSheet isOpen={Boolean(selectedIng)} onClose={() => setSelectedIng(null)} title={selectedIng?.nameKo ?? '성분 정보'}>
-        {selectedIng && <IngredientDetail ing={selectedIng} allowVerdict={canShowScore} />}
+        {selectedIng && <IngredientDetail ing={selectedIng} allowVerdict={canShowScore} profile={hasPetProfile ? profile : null} />}
       </BottomSheet>
     </div>
   );
@@ -753,19 +743,23 @@ function DiseaseRow({ r }: { r: ActiveDiseaseResult }) {
 }
 
 /* ── 성분 상세 — 사전 설명·분류·품질등급·출처 근거 ─────────────────── */
-export function IngredientDetail({ ing, allowVerdict = true }: { ing: Ingredient; allowVerdict?: boolean }) {
+export function IngredientDetail({ ing, allowVerdict = true, profile }: { ing: Ingredient; allowVerdict?: boolean; profile?: import('../types').UserPetProfile | null }) {
   const dict = findIngredientByName(ing.nameKo);
   const quality = classifyIngredientQuality(ing.nameKo, dict);
-  const r = RISK[ing.riskLevel] ?? RISK.safe;
-  const desc = dict?.explanation || quality.description;
+  const assessment = assessIngredient(ing,profile);
+  const r = assessment.kind === 'allergy' || assessment.kind === 'danger' ? RISK.danger
+    : assessment.kind === 'caution' ? RISK.caution : RISK.safe;
+  const desc = ing.purpose || dict?.explanation || '원료의 구체적인 성분·용도 정보가 아직 등록되지 않았습니다.';
   return (
     <div style={{ display: 'grid', gap: 14 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        {allowVerdict && <span style={{ fontSize: 12, fontWeight: 800, color: r.color, background: r.bg, borderRadius: 999, padding: '5px 12px' }}>{r.label} 성분</span>}
-        {allowVerdict && <span style={{ fontSize: 12, fontWeight: 800, color: quality.color, background: 'var(--secondary)', borderRadius: 999, padding: '5px 12px' }}>{quality.label}</span>}
+        {(allowVerdict || assessment.kind !== 'general') && <span style={{ fontSize: 12, fontWeight: 800, color: r.color, background: r.bg, borderRadius: 999, padding: '5px 12px' }}>{assessment.label}</span>}
+        {allowVerdict && dict && <span style={{ fontSize: 12, fontWeight: 800, color: quality.color, background: 'var(--secondary)', borderRadius: 999, padding: '5px 12px' }}>{quality.label}</span>}
         {ing.nameEn && <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>{ing.nameEn}</span>}
       </div>
       <SheetBlock title="설명">{desc}</SheetBlock>
+      <SheetBlock title="급여 시 확인">{assessment.message}</SheetBlock>
+      <MaterialCompositionDetails name={ing.nameKo} edges={ing.materialComposition} references={ing.nutrientReference} />
       {ing.purpose && <SheetBlock title="역할">{ing.purpose}</SheetBlock>}
       {dict && <SheetBlock title="분류">{CATEGORY_LABEL[dict.category]}</SheetBlock>}
       <div style={{ fontSize: 11, color: 'var(--text-light)', fontWeight: 600, lineHeight: 1.5 }}>

@@ -30,7 +30,13 @@ export async function assertPublicProductProjectionContract(db) {
   let checked = 0;
   async function check(table, tree) {
     const fields = tree.filter(n => !n.children).map(n => n.name);
-    if (fields.length) await db.query(`SELECT ${fields.map(identifier).join(',')} FROM public.${identifier(table)} LIMIT 0`);
+    if (fields.length) {
+      const expressions = fields.map(field => ['material_profile','material_nutrient_profile','label_source_evidence'].includes(field)
+        ? `public.${identifier(field)}(row)` : `row.${identifier(field)}`);
+      // PostgREST computed fields must resolve as real SQL functions on the
+      // table's composite type, with the same read permissions as production.
+      await db.query(`SELECT ${expressions.join(',')} FROM public.${identifier(table)} AS row LIMIT 0`);
+    }
     checked++;
     for (const child of tree.filter(n => n.children)) {
       const relations = (await db.query(`SELECT c.conname, a.attname FROM pg_constraint c

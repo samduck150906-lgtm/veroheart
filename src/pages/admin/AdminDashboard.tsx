@@ -133,31 +133,31 @@ const AdminDashboard: React.FC = () => {
         icon: <DatabaseZap size={18} />,
         delta: null,
         deltaLabel: null,
-        to: '/admin/data-quality',
+        to: '/admin/data-quality?visibility=all',
       },
       {
-        label: '원재료 없는 제품',
+        label: '원재료 미보완 제품',
         value: metrics?.productsWithoutIngredients ?? null,
         icon: <AlertCircle size={18} />,
         delta: null,
         deltaLabel: null,
-        to: '/admin/data-quality?missing=ingredients',
+        to: '/admin/data-quality?missing=ingredients&visibility=all',
       },
       {
-        label: '영양정보 없는 제품',
+        label: '영양정보 미보완 제품',
         value: metrics?.productsWithoutNutrition ?? null,
         icon: <AlertCircle size={18} />,
         delta: null,
         deltaLabel: null,
-        to: '/admin/data-quality?missing=nutrition',
+        to: '/admin/data-quality?missing=nutrition&visibility=all',
       },
       {
-        label: '바코드 없는 제품',
+        label: '바코드 미보완 제품',
         value: metrics?.productsWithoutBarcode ?? null,
         icon: <AlertCircle size={18} />,
         delta: null,
         deltaLabel: null,
-        to: '/admin/data-quality?missing=barcode',
+        to: '/admin/data-quality?missing=barcode&visibility=all',
       },
       {
         label: '분석 성분수',
@@ -244,6 +244,7 @@ const AdminDashboard: React.FC = () => {
         </div>
       )}
 
+      <p className="admin-page-subtitle">집계는 숨김·검수 대기를 포함한 전체 제품 기준입니다. 품질 보완 대상은 보완 큐에 누락 항목이 남은 제품이며, 각 카드를 누르면 같은 범위와 항목으로 이동합니다.</p>
       <div className="admin-grid-cards">
         {cards.map((card) => {
           const body = (

@@ -1,61 +1,11 @@
-import { CheckCircle2, Clock3 } from 'lucide-react';
 import type { ProductCatalogSource, ProductVerificationStatus } from '../types';
 
-interface ProductVerificationBadgeProps {
+// Public pages present ingredient facts directly. Review/publication metadata
+// stays in administrator tools and never becomes a consumer action or badge.
+export default function ProductVerificationBadge(_props: {
   catalogSource?: ProductCatalogSource;
   verificationStatus?: ProductVerificationStatus;
-}
-
-function badgeState({ verificationStatus }: ProductVerificationBadgeProps) {
-  if (verificationStatus === 'verified') {
-    return {
-      label: '정보 확인 완료',
-      color: 'var(--safe-strong)',
-      background: 'var(--safe-bg)',
-      borderColor: 'var(--safe-line)',
-      Icon: CheckCircle2,
-    };
-  }
-  if (verificationStatus === 'reviewed') {
-    return {
-      label: '정보 검토 완료',
-      color: 'var(--vr-body-2)',
-      background: 'var(--vr-soft)',
-      borderColor: 'var(--vr-line)',
-      Icon: Clock3,
-    };
-  }
+}) {
+  void _props;
   return null;
-}
-
-export default function ProductVerificationBadge(props: ProductVerificationBadgeProps) {
-  const state = badgeState(props);
-  if (!state) return null;
-  const { label, color, background, borderColor, Icon } = state;
-  return (
-    <span
-      aria-label={`제품 정보 상태: ${label}`}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '4px',
-        width: 'fit-content',
-        maxWidth: '100%',
-        padding: '3px 7px',
-        borderRadius: '999px',
-        border: `1px solid ${borderColor}`,
-        color,
-        background,
-        fontSize: '10.5px',
-        fontWeight: 800,
-        lineHeight: 1.2,
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-      }}
-    >
-      <Icon size={11} strokeWidth={2.4} aria-hidden="true" />
-      {label}
-    </span>
-  );
 }

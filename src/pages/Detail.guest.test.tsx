@@ -33,7 +33,7 @@ describe('product detail guest compatibility', () => {
     act(() => useStore.setState({ isLoggedIn: false, userId: null }));
     expect(screen.queryByRole('region', { name: '로니 참고 평가' })).toBeNull();
     expect(screen.queryByText(/현재 궁합 점수는/)).toBeNull();
-    expect(screen.getByRole('button', { name: '우리 아이를 등록하고 궁합을 확인해 주세요.' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '로그인하고 우리 아이 등록하기' })).toBeTruthy();
   });
 
   it('clears personalized allergy warnings in an already-open ingredient sheet on logout', async () => {
@@ -41,8 +41,8 @@ describe('product detail guest compatibility', () => {
     show();
     fireEvent.click(screen.getByRole('button', { name: '닭고기 알레르기' }));
     const sheet = screen.getByRole('dialog', { name: '닭고기' });
-    expect(within(sheet).getByText(/로니의 알레르기 유발 성분/)).toBeTruthy();
+    expect(within(sheet).getByText(/로니의 등록한 회피 성분과 직접 일치/)).toBeTruthy();
     act(() => useStore.setState({ isLoggedIn: false, userId: null }));
-    expect(within(sheet).queryByText(/알레르기 유발 성분/)).toBeNull();
+    expect(within(sheet).queryByText(/등록한 회피 성분과 직접 일치/)).toBeNull();
   });
 });

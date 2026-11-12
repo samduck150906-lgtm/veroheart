@@ -20,7 +20,7 @@ const GRADE_TONE: Record<FeedGrade, { fg: string; bg: string; label: string }> =
 const MACRO_META: { key: 'protein' | 'fat' | 'carb' | 'fiber' | 'moisture' | 'ash'; label: string; color: string }[] = [
   { key: 'protein', label: '조단백질', color: '#16A34A' },
   { key: 'fat', label: '조지방', color: '#F59E0B' },
-  { key: 'carb', label: '탄수화물(추정)', color: '#3182F6' },
+  { key: 'carb', label: 'NFE(차감 추정)', color: '#3182F6' },
   { key: 'fiber', label: '조섬유', color: '#22C55E' },
   { key: 'ash', label: '조회분', color: 'var(--pdp-ink-faint)' },
   { key: 'moisture', label: '수분', color: '#38BDF8' },
@@ -48,6 +48,11 @@ export default function FeedAnalysisCard({ product, profile }: { product: Produc
   const nutrition = getNutritionPresentation(product.guaranteedAnalysis);
   // The score summary already displays this exact limitation; retain all actual warnings.
   const visibleCautions = a.cautions.filter(text => !(nutrition.notice && text === nutrition.notice && a.summary.includes(text)));
+  if (a.productType !== 'complete') return <section aria-label="제품 성분 정보" className="card" style={{ padding: 20, marginBottom: 24 }}>
+    <h2>간식·영양제 성분 정보</h2>
+    <p>원재료의 기능과 알레르기 주의를 확인해 주세요. 완전사료의 단백질·지방 최소기준, 제1원료 단백질 등급, 하루 주식 급여량으로 평가하지 않습니다.</p>
+    <p>{describeIngredientAvailability(product).detail}</p>
+  </section>;
 
   return (
     <section
@@ -128,7 +133,7 @@ export default function FeedAnalysisCard({ product, profile }: { product: Produc
         >
           {a.aafco.passed ? <ShieldCheck size={16} /> : <AlertTriangle size={16} />}
           <span style={{ fontSize: 12.5, fontWeight: 800 }}>
-            AAFCO {a.aafco.label} 최소기준 {a.aafco.passed ? '충족' : '미달'}
+            {a.aafco.label} 단백질·지방 참고 기준 {a.aafco.passed ? '이상' : '미만'}
           </span>
         </div>
       )}
