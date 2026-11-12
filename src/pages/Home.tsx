@@ -273,7 +273,7 @@ export default function Home() {
           )}
           {recommendations.status === 'ready' && recommendations.items.length === 0 && (
             <p role="status" style={{ fontSize: '13px', color: VR.sub, lineHeight: 1.6 }}>
-              현재 등록된 제품 중 궁합 점수 {HOME_RECOMMENDATION_MIN_SCORE}점 이상인 제품이 없습니다.
+              분석 근거를 확인할 수 있는 제품 중 궁합 점수 {HOME_RECOMMENDATION_MIN_SCORE}점 이상인 제품이 없습니다.
             </p>
           )}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>

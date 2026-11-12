@@ -50,7 +50,8 @@ it('no nutrition measurements must not support a balanced-food claim', () => {
   assert.equal(result.hasNutritionData, false);
   assert.equal(result.macros, null);
   assert.equal(result.aafco.evaluated, false);
-  assert.equal(result.analysisReadiness.status, 'ready');
+  assert.equal(result.analysisReadiness.status, 'partial');
+  assert.ok(result.analysisReadiness.reasonCodes.includes('label_comparison_missing')); // no attestation in this fixture
   assert.equal(result.score, 82);
   assert.equal(result.grade, 'A');
   assert.match(result.summary, /영양정보 부족으로 영양 균형을 평가할 수 없습니다/);

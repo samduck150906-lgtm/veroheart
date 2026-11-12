@@ -347,6 +347,13 @@ export const useStore = create<StoreState>((set, get) => ({
 
   refreshCatalog: async () => {
     const { selectedProduct, recentViews, userId } = get();
+    // A receipt certifies the previous read, not a pending refresh. Keep known
+    // ingredients/warnings visible while withholding cached positive verdicts.
+    const pending = (p: Product): Product => p.ingredientLabelEvidence?.lookup
+      ? { ...p, ingredientLabelEvidence: { ...p.ingredientLabelEvidence, lookup: { status: 'not_requested' } } } : p;
+    set((state) => ({ products: state.products.map(pending), recentViews: state.recentViews.map(pending),
+      selectedProduct: state.selectedProduct ? pending(state.selectedProduct) : null,
+      catalogRevision: state.catalogRevision + 1 }));
     const epoch = sessionEpoch;
     const revision = ++recentViewsRevision;
     const refreshRecent = async () => {
