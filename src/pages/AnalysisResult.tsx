@@ -21,7 +21,7 @@ import BottomSheet from '../components/BottomSheet';
 import StateView from '../components/StateView';
 import { HealthConcernEvidence } from '../components/HealthConcernEvidence';
 import { NutrientEvidenceDetails } from '../components/NutrientEvidenceDetails';
-import { IngredientLabelList } from '../components/IngredientLabelList';
+import { IngredientLabelList, IngredientLabelSummary } from '../components/IngredientLabelList';
 import { MaterialCompositionDetails } from '../components/MaterialCompositionDetails';
 import { assessIngredient } from '../analysis/ingredientAssessment';
 import { buildHealthConcernPresentation } from '../health/concernPresentation';
@@ -514,6 +514,7 @@ export default function AnalysisResult() {
       {activeTab === '전성분' && (
         <div style={{ background: 'var(--surface-elevated)', border: '1px solid rgba(28,25,23,0.06)', borderRadius: 16, padding: 16 }}>
           <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 12 }}>성분을 누르면 상세 정보를 볼 수 있습니다</div>
+          <IngredientLabelSummary product={product} />
           <div style={{ display: 'grid', gap: 8 }}>
             {ingredients.length === 0 && !product.unknownIngredientTerms?.length && (
               <div style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '24px 0' }}>등록된 성분 정보가 없습니다.</div>

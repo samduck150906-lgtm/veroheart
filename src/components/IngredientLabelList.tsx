@@ -3,6 +3,16 @@ import { assessIngredient } from '../analysis/ingredientAssessment';
 import { IngredientCard } from './pdp/PdpParts';
 import { materialTraitLabel } from '../analysis/materialComposition';
 import { MaterialCompositionDetails } from './MaterialCompositionDetails';
+import { ingredientLabelCounts } from '../utils/ingredientLabelCounts';
+
+export function IngredientLabelSummary({product}:{product:Product}) {
+  const counts=ingredientLabelCounts(product);
+  if(product.ingredientDataLoaded===false)return null;
+  return <div aria-label="원료 확인 범위" style={{fontSize:13,lineHeight:1.7,color:'var(--text-muted)',marginBottom:12}}>
+    <div>표시 원료 {counts.declared}개 · {counts.sourceConfirmed===undefined ? '라벨 대조 정보 미등록' : `확인된 원료 ${counts.sourceConfirmed}개`} · 특성 연결 {counts.traitsResolved}개</div>
+    <div style={{fontSize:12}}>확인된 원료는 제조사 원문과 대조한 수입니다. 원료 특성과 점수 반영·안전성 판단은 별개입니다.</div>
+  </div>;
+}
 
 export function IngredientLabelList({ product, profile, onOpen }: { product: Product; profile?: UserPetProfile | null; onOpen: (ingredient: Ingredient) => void }) {
   const entries: NonNullable<Product['ingredientLabelEntries']> = product.ingredientLabelEntries ?? [

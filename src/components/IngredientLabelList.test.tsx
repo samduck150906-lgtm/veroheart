@@ -12,6 +12,7 @@ describe('라벨 원료·특성·점수 상태의 분리',()=>{
     ]}]});
     expect(product.ingredients).toHaveLength(0);
     expect(ingredientLabelCounts(product)).toEqual({declared:1,sourceConfirmed:1,traitsResolved:1});
+    expect(describeIngredientAvailability(product).detail).toContain('특성 연결 1개');
     render(<IngredientLabelList product={product} onOpen={vi.fn()} />);
     expect(screen.getByText('원료 특성 · 탄수화물 공급원')).toBeTruthy();
     expect(screen.getByText(/참고표 쌀 → 전분 → 탄수화물/)).toBeTruthy();

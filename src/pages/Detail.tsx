@@ -30,7 +30,7 @@ import { generateAnalysisReport } from '../utils/analysis';
 import BottomSheet from '../components/BottomSheet';
 import { MaterialCompositionDetails } from '../components/MaterialCompositionDetails';
 import { NutrientEvidenceDetails } from '../components/NutrientEvidenceDetails';
-import { IngredientLabelList } from '../components/IngredientLabelList';
+import { IngredientLabelList, IngredientLabelSummary } from '../components/IngredientLabelList';
 import { ingredientLabelCounts } from '../utils/ingredientLabelCounts';
 import { TossCard } from '../components/TossUI';
 import { getReviews, createReview, deleteReview } from '../lib/supabase';
@@ -759,11 +759,10 @@ export default function Detail() {
         <FeedAnalysisCard product={product} profile={profile} />
         <NutrientEvidenceDetails evidence={product.nutrientEvidence} />
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '16px' }}>
+        <div style={{ marginBottom: '16px' }}>
           <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-dark)' }}>전성분 상세</h3>
-          <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 500 }}>표시 원료 {ingredientLabelCounts(product).declared}개</div>
         </div>
-
+        <IngredientLabelSummary product={product} />
         <IngredientLabelList product={product} profile={personalized ? profile : null} onOpen={setSelectedIngredient} />
       </section>
 
