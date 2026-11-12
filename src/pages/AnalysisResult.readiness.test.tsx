@@ -91,6 +91,10 @@ describe('analysis result evidence boundary', () => {
     show(null,'/analysis?productId=food-1');
     expect(useStore.getState().fetchProductDetail).toHaveBeenCalledWith('food-1');
   });
+  it('hydrates the selected list row with full source and composition evidence',()=>{
+    show({...base,detailedEvidenceLoaded:false},'/analysis?productId=food-1');
+    expect(useStore.getState().fetchProductDetail).toHaveBeenCalledExactlyOnceWith('food-1');
+  });
 });
 
 it('recognizes an owned pet named 우리 아이 while keeping guest personalization disabled', () => {

@@ -292,6 +292,9 @@ export async function getProducts(): Promise<Product[]> {
 }
 
 export async function getProductDetail(productId: string): Promise<Product | null> {
+  // Per-material source/composition computed fields belong on this bounded
+  // single-product query. Adding them to a 100-product list exceeds the hosted
+  // anon statement deadline; list rows retain identity, raw label and risk data.
   if (!isSupabaseConfigured) return null;
   const { data, error } = await queryVisibleProducts((withVisibilityFilter) => {
     let builder = supabase
@@ -348,18 +351,17 @@ export async function getVisibleProductsByIds(ids: string[]): Promise<Product[]>
         verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
         product_ingredients (
           ingredient_id, sort_order,
-          ingredients (id, name_ko, name_en, risk_level, description, material_profile)
+          ingredients (id, name_ko, name_en, risk_level, description)
         ),
         product_ingredient_label_sets (
           id, is_current,
           product_ingredient_label_items (
-            id, display_order, raw_ingredient_text, match_status, label_source_evidence,
-            ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description, material_profile),
-            canonical_ingredients (id, canonical_name_ko, canonical_name_en, status, material_profile,
-              ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description, material_profile))
+            id, display_order, raw_ingredient_text, match_status,
+            ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description),
+            canonical_ingredients (id, canonical_name_ko, canonical_name_en, status,
+              ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description))
           )
         ),
-        product_nutrient_evidence (nutrient_code, value, unit, basis, qualifier, source_url, source_version, nutrient_definitions (name_ko)),
         nutritional_profiles (crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus)
       `).in('id', uniqueIds.slice(offset, offset + 100));
       if (withVisibilityFilter) builder = builder.eq('is_visible', true).in('verification_status', publicProductReviewStatuses());
@@ -389,20 +391,19 @@ export async function getProductByBarcode(barcode: string): Promise<Product | nu
         verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
         product_ingredients (
           ingredient_id, sort_order,
-          ingredients (id, name_ko, name_en, risk_level, description, material_profile)
+          ingredients (id, name_ko, name_en, risk_level, description)
         ),
         product_ingredient_label_sets (
           id, is_current,
           product_ingredient_label_items (
-            id, display_order, raw_ingredient_text, match_status, label_source_evidence,
-            ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description, material_profile),
+            id, display_order, raw_ingredient_text, match_status,
+            ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description),
             canonical_ingredients (
-              id, canonical_name_ko, canonical_name_en, status, material_profile,
-              ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description, material_profile)
+              id, canonical_name_ko, canonical_name_en, status,
+              ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description)
             )
           )
         ),
-        product_nutrient_evidence (nutrient_code, value, unit, basis, qualifier, source_url, source_version, nutrient_definitions (name_ko)),
         nutritional_profiles (crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus)
       `)
       .in('barcode', candidates);
@@ -585,18 +586,17 @@ export async function searchProductsPage(
       verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
       product_ingredients (
         ingredient_id, sort_order,
-        ingredients (id, name_ko, name_en, risk_level, description, material_profile)
+        ingredients (id, name_ko, name_en, risk_level, description)
       ),
       product_ingredient_label_sets (
         id, is_current,
         product_ingredient_label_items (
-          id, display_order, raw_ingredient_text, match_status, label_source_evidence,
-          ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description, material_profile),
-          canonical_ingredients (id, canonical_name_ko, canonical_name_en, status, material_profile,
-            ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description, material_profile))
+          id, display_order, raw_ingredient_text, match_status,
+          ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description),
+          canonical_ingredients (id, canonical_name_ko, canonical_name_en, status,
+            ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description))
         )
       ),
-      product_nutrient_evidence (nutrient_code, value, unit, basis, qualifier, source_url, source_version, nutrient_definitions (name_ko)),
         nutritional_profiles (crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus)
     `);
 
@@ -839,18 +839,17 @@ export async function getRecentViews(userId: string, all = false) {
             verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
             product_ingredients (
               ingredient_id, sort_order,
-              ingredients (id, name_ko, name_en, risk_level, description, material_profile)
+              ingredients (id, name_ko, name_en, risk_level, description)
             ),
             product_ingredient_label_sets (
               id, is_current,
               product_ingredient_label_items (
-                id, display_order, raw_ingredient_text, match_status, label_source_evidence,
-                ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description, material_profile),
-                canonical_ingredients (id, canonical_name_ko, canonical_name_en, status, material_profile,
-                  ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description, material_profile))
+                id, display_order, raw_ingredient_text, match_status,
+                ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description),
+                canonical_ingredients (id, canonical_name_ko, canonical_name_en, status,
+                  ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description))
               )
             ),
-            product_nutrient_evidence (nutrient_code, value, unit, basis, qualifier, source_url, source_version, nutrient_definitions (name_ko)),
         nutritional_profiles (crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus)
           )
         `)
@@ -899,18 +898,17 @@ export async function getProductsByBrand(brandName: string): Promise<Product[]> 
         verification_status, verified_at, barcode, kcal_per_100g, image_url, review_count, avg_rating,
         product_ingredients (
           ingredient_id, sort_order,
-          ingredients (id, name_ko, name_en, risk_level, description, material_profile)
+          ingredients (id, name_ko, name_en, risk_level, description)
         ),
         product_ingredient_label_sets (
           id, is_current,
           product_ingredient_label_items (
-            id, display_order, raw_ingredient_text, match_status, label_source_evidence,
-            ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description, material_profile),
-            canonical_ingredients (id, canonical_name_ko, canonical_name_en, status, material_profile,
-              ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description, material_profile))
+            id, display_order, raw_ingredient_text, match_status,
+            ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description),
+            canonical_ingredients (id, canonical_name_ko, canonical_name_en, status,
+              ingredients!legacy_ingredient_id (id, name_ko, name_en, risk_level, description))
           )
         ),
-        product_nutrient_evidence (nutrient_code, value, unit, basis, qualifier, source_url, source_version, nutrient_definitions (name_ko)),
         nutritional_profiles (crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus)
       `)
       .eq('brand_name', brandName);
