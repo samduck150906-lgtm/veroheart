@@ -122,6 +122,16 @@ try {
     console.log('PASS: label comparison draft on existing guarded full bootstrap; anon public reader/private table isolation');
   }
 
+  if (process.argv.includes('--label-item-matching-draft')) {
+    await db.exec(await readFile(path.join(repository, 'supabase/migration_drafts/20261112140000_admin_label_item_matching.sql'), 'utf8'));
+    for (const role of ['anon', 'authenticated']) {
+      await db.exec(`SET ROLE ${role}`);
+      await assert.rejects(db.query("SELECT admin_search_label_item_candidates('fixture')"), e => e.code === '42501');
+      await assert.rejects(db.query('SELECT * FROM private.label_item_match_decisions'), e => e.code === '42501');
+      await db.exec('RESET ROLE');
+    }
+    console.log('PASS: unapplied matching draft on guarded full schema; application roles denied');
+  }
   await assertReviewedCatalogRepair(db);
   await db.exec("INSERT INTO public.products(name,brand_name,is_visible) VALUES ('local guard test fixture','local test',false)");
   await assert.rejects(db.exec(await readFile(path.join(repository, 'supabase/local-bootstrap/before-legacy-labels.sql'), 'utf8')), /empty products table/);
