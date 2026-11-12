@@ -222,7 +222,8 @@ export default function AnalysisResult() {
   }, [location.pathname, location.search, navigate, productId, queryId]);
 
   useEffect(() => {
-    if (productId && useStore.getState().selectedProduct?.id !== productId) void fetchProductDetail(productId);
+    const selected=useStore.getState().selectedProduct;
+    if (productId && (selected?.id !== productId || selected.detailedEvidenceLoaded === false)) void fetchProductDetail(productId);
   }, [fetchProductDetail, productId]);
 
   const hasPetProfile = isLoggedIn && isRealPetProfile(profile);

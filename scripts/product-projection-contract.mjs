@@ -25,6 +25,17 @@ export function parseProjection(text) {
 /** Checks actual SQL columns/FKs, not a mocked JS row or a live PostgREST service. */
 export async function assertPublicProductProjectionContract(db) {
   const source = await readFile(new URL('../src/lib/supabase.ts', import.meta.url), 'utf8');
+  const detailStart=source.indexOf('export async function getProductDetail(');
+  const detailEnd=source.indexOf('export async function getVisibleProductsByIds(');
+  assert.ok(detailStart>=0 && detailEnd>detailStart);
+  const detailSource=source.slice(detailStart,detailEnd);
+  const bulkSource=source.slice(0,detailStart)+source.slice(detailEnd);
+  // Hosted regression: 100-product computed source/graph joins hit the anon
+  // 3-second deadline. Full detail must still carry all three evidence paths.
+  for(const field of ['label_source_evidence','material_profile','product_nutrient_evidence']) {
+    assert.ok(detailSource.includes(field),`detail missing ${field}`);
+    assert.ok(!bulkSource.includes(field),`unbounded evidence work in bulk projection: ${field}`);
+  }
   const blocks = [...source.matchAll(/\.select\(`([\s\S]*?)`\)/g)].map(m => m[1]).filter(s => /\bbrand_name\b/.test(s));
   assert.ok(blocks.length >= 7);
   let checked = 0;

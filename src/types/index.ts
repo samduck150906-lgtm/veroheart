@@ -133,6 +133,8 @@ export interface Product {
   analysisStatus?: ProductAnalysisStatus;
   /** False for lightweight rows whose ingredient joins have not been loaded. */
   ingredientDataLoaded?: boolean;
+  /** Full source/composition projections are loaded on the single-product path. */
+  detailedEvidenceLoaded?: boolean;
   /** 현재 라벨 세트에서 canonical 원료로 확정되지 않은 원문. */
   unknownIngredientTerms?: string[];
   ingredientLabelSetId?: string;
