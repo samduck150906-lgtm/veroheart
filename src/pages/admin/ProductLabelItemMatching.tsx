@@ -80,7 +80,7 @@ export default function ProductLabelItemMatching({ productId, onMutationStart, o
     {workspace?.review && !label && <p role="status">현재 라벨이 없거나 여러 개입니다. 라벨 등록·충돌 해결이 먼저 필요합니다.</p>}
     {label && <>
       <h4>원문 라벨</h4><pre>{label.raw}</pre>
-      <label>검토할 항목<select value={itemId} disabled={busy} onChange={e => chooseItem(e.target.value)}>
+      <label>검토할 항목<select aria-label="검토할 항목" value={itemId} disabled={busy} onChange={e => chooseItem(e.target.value)}>
         <option value="">항목을 선택하세요</option>
         {label.items.map(i => <option key={i.id} value={i.id}>{i.order + 1}. {i.raw} ({i.match})</option>)}
       </select></label>
@@ -90,7 +90,7 @@ export default function ProductLabelItemMatching({ productId, onMutationStart, o
         <p>최근 검토 근거/보류 사유: {lastDecision?.reason || '저장된 사유 없음'}</p>
         <label>성분 후보 검색<input value={query} maxLength={100} disabled={busy || needsReload} onChange={e => { setQuery(e.target.value); setTarget(''); setConfirmed(false); }} /></label>
         <button type="button" disabled={busy || needsReload || !query.trim()} onClick={search}>후보 조회</button>
-        <label>매칭 후보<select value={target} disabled={busy || needsReload} onChange={e => { setTarget(e.target.value); setDecision('match'); setConfirmed(false); }}>
+        <label>매칭 후보<select aria-label="매칭 후보" value={target} disabled={busy || needsReload} onChange={e => { setTarget(e.target.value); setDecision('match'); setConfirmed(false); }}>
           <option value="">자동 선택하지 않음</option>
           {candidates.map(c => <option key={`${c.kind}:${c.id}`} value={`${c.kind}:${c.id}`} disabled={!c.selectable}>
             {c.kind === 'canonical' ? '표준 원료' : '기존 성분 사전'} · {c.nameKo} · {c.risk || '위험정보 미확인'}{c.selectable ? '' : ' (검토 전/사용 불가)'}
