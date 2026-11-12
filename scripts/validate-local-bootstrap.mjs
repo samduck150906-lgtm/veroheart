@@ -30,6 +30,7 @@ CREATE FUNCTION storage.foldername(name TEXT) RETURNS TEXT[] LANGUAGE SQL IMMUTA
 GRANT USAGE ON SCHEMA public, auth, storage TO anon, authenticated, service_role;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
 GRANT ALL ON ALL TABLES IN SCHEMA public, auth, storage TO service_role;
 `);
 
@@ -61,6 +62,11 @@ try {
     }
     console.log('Applied', file);
   }
+  for (const role of ['anon', 'authenticated', 'service_role']) {
+    const result = await db.query("SELECT has_sequence_privilege($1, 'public.ingredient_label_comparisons_sequence_seq', 'SELECT,USAGE,UPDATE') allowed", [role]);
+    assert.equal(result.rows[0].allowed, false, `${role}: evidence identity sequence must be private`);
+  }
+  console.log('PASS: full guarded bootstrap includes platform sequence defaults and forward ACL hardening');
   console.log('Public product SQL column/FK contract', await assertPublicProductProjectionContract(db));
   await db.exec('SET ROLE anon');
   await assertPublicProductProjectionContract(db);

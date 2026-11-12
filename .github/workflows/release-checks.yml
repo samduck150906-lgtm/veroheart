@@ -32,6 +32,8 @@ jobs:
         run: npx tsc --noEmit --target ES2023 --module esnext --moduleResolution bundler --allowImportingTsExtensions --skipLibCheck supabase/functions/admin-write/labelReview.ts
       - name: Label review service synthetic flow
         run: node --experimental-vm-modules --test scripts/label-review-service.test.mjs
+      - name: Supabase default sequence ACL regression
+        run: node --test scripts/label-evidence-sequence.test.mjs
       - run: npm test
       - run: npm run test:catalog
       - run: npm run test:bootstrap -- --label-comparison-draft
