@@ -519,16 +519,20 @@ export async function fetchProductsPage({
     const raw = row as AdminProductRow & {
       product_ingredients?: { count: number }[];
       nutritional_profiles?: { count: number }[];
+      product_ingredient_label_sets?: Array<{is_current:boolean;product_ingredient_label_items:Array<{match_status:string}>}>;
     };
+    const currentLabel=raw.product_ingredient_label_sets?.find(label=>label.is_current);
     return {
       ...raw,
       is_visible: raw.is_visible === true,
       is_pinned: raw.is_pinned === true,
       pinned_order: Number(raw.pinned_order ?? 0),
-      ingredientCount: raw.product_ingredients?.[0]?.count ?? 0,
+      ingredientCount: currentLabel ? currentLabel.product_ingredient_label_items.filter(item=>item.match_status!=='ignored').length
+        : raw.product_ingredients?.[0]?.count ?? 0,
       nutritionCount: raw.nutritional_profiles?.[0]?.count ?? 0,
       product_ingredients: undefined,
       nutritional_profiles: undefined,
+      product_ingredient_label_sets: undefined,
     } as AdminProductRow;
   });
   return { rows, total: res.total ?? 0 };

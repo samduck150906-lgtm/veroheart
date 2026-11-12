@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type SetStateAction } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   X,
@@ -15,14 +15,14 @@ import StateView from '../components/StateView';
 import BottomSheet from '../components/BottomSheet';
 import ProductRequestSheet from '../components/ProductRequestSheet';
 import { ProductGridSkeleton } from '../components/Skeleton';
-import type { Product } from '../types';
+import { DEFAULT_USER_PET_PROFILE, type Product } from '../types';
 import { TossFilterSection } from '../components/TossUI';
-import { searchProductsPage, getAllIngredients } from '../lib/supabase';
+import { searchProductsPage, getAllIngredients, getBrands } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import standardFeedData from '../data/standard_feed_data.json';
 import { useStandardFeedDetail, type StandardFeedDetail } from '../lib/standardFeedDetail';
 import { rankProductsForProfile } from '../utils/score';
-import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
+import { isRealPetProfile, resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import FilterChip from '../components/ui/FilterChip';
 import { buildSearchSuggestions, deriveBrandOptions, ingredientsUsedBy, type Suggestion } from '../utils/searchSuggestions';
 import { productsForPetFilter, recommendedSearchKeywords } from '../utils/searchKeywords';
@@ -75,6 +75,10 @@ const LIFE_STAGE_OPTIONS = [
 ];
 
 const FORMULATION_OPTIONS = ['건식', '습식', '반습식', '동결건조', '생식', '영양제'];
+type SearchFilters = {
+  targetPetType: '' | 'dog' | 'cat' | 'all'; targetLifeStage: string;
+  formulation: string; brand: string; healthConcerns: string[]; dietPreset: boolean;
+};
 
 const HEALTH_CONCERN_OPTIONS = [
   '피부·모질', '관절', '소화기', '비만·다이어트', '심장', '신장·비뇨기',
@@ -94,7 +98,9 @@ const HEALTH_CONCERN_OPTIONS = [
  */
 
 export default function Search() {
-  const { profile, products, catalogRevision } = useStore();
+  const { profile, products, catalogRevision, isLoggedIn } = useStore();
+  const personalized = isLoggedIn && isRealPetProfile(profile);
+  const effectiveProfile = personalized ? profile : DEFAULT_USER_PET_PROFILE;
   const activeCategories = useProductCategories();
   const categoryChips = useMemo(
     () => ['전체', ...activeCategories.map((item) => item.name)],
@@ -152,33 +158,58 @@ export default function Search() {
   const [nextOffset, setNextOffset] = useState<number | null>(null);
   const [loadError, setLoadError] = useState('');
   const requestEpoch = useRef(0);
-  const [sortBy, setSortBy] = useState<'default' | 'rating'>('default');
+  const sortBy = searchParams.get('sort') === 'rating' ? 'rating' : 'default';
+  const setSortBy = (value: 'default' | 'rating') => setSearchParams(previous => {
+    const next = new URLSearchParams(previous);
+    if (value === 'default') next.delete('sort'); else next.set('sort', value);
+    return next;
+  }, { replace: true });
+  const [retryAttempt, setRetryAttempt] = useState(0);
+  const retryLocked = useRef(false);
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [filters, setFilters] = useState({
-    targetPetType: '' as '' | 'dog' | 'cat' | 'all',
-    targetLifeStage: '',
-    formulation: '',
-    brand: '',
-    healthConcerns: [] as string[],
-    dietPreset: false,
-  });
+  const filters = useMemo<SearchFilters>(() => ({
+    targetPetType: ['dog', 'cat', 'all'].includes(searchParams.get('pet') ?? '') ? searchParams.get('pet') as SearchFilters['targetPetType'] : '',
+    targetLifeStage: searchParams.get('lifeStage') ?? '',
+    formulation: searchParams.get('formulation') ?? '',
+    brand: searchParams.get('brand') ?? '',
+    healthConcerns: searchParams.getAll('health'),
+    dietPreset: searchParams.get('diet') === '1',
+  }), [searchParams]);
+  const setFilters = (action: SetStateAction<SearchFilters>) => {
+    const value = typeof action === 'function' ? action(filters) : action;
+    setSearchParams(previous => {
+      const next = new URLSearchParams(previous);
+      for (const [key, raw] of Object.entries({pet:value.targetPetType,lifeStage:value.targetLifeStage,formulation:value.formulation,brand:value.brand,diet:value.dietPreset?'1':''})) {
+        if (raw) next.set(key, raw); else next.delete(key);
+      }
+      next.delete('health'); value.healthConcerns.forEach(item => next.append('health', item));
+      return next;
+    }, { replace: true });
+  };
 
   const [showSuggest, setShowSuggest] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
-  const brandOptions = useMemo(() => deriveBrandOptions(products), [products]);
+  const [catalogBrands, setCatalogBrands] = useState<string[]>([]);
+  useEffect(() => {
+    let active = true;
+    void Promise.resolve().then(() => getBrands()).then(brands => { if (active) setCatalogBrands(brands); }).catch(() => {});
+    return () => { active = false; };
+  }, [catalogRevision]);
+  const brandOptions = useMemo(() => [...new Set([...catalogBrands, ...deriveBrandOptions([...products, ...searchResults]), ...(filters.brand ? [filters.brand] : [])])].sort(), [catalogBrands, products, searchResults, filters.brand]);
   const healthFilterAvailable = useMemo(() => isHealthFilterAvailable(products), [products]);
 
-  useEffect(() => {
-    if (healthFilterAvailable) return;
-    setFilters((current) => (
-      current.healthConcerns.length === 0 && !current.dietPreset
-        ? current
-        : { ...current, healthConcerns: [], dietPreset: false }
-    ));
-  }, [healthFilterAvailable]);
+  // The loaded first page cannot establish that the whole catalog has no
+  // health metadata. Keep URL filters when navigating back or loading pages.
 
-  const [excludedIngredients, setExcludedIngredients] = useState<string[]>([]);
+  const excludedIngredients = useMemo(() => searchParams.getAll('exclude'), [searchParams]);
+  const setExcludedIngredients = (action: SetStateAction<string[]>) => {
+    const value = typeof action === 'function' ? action(excludedIngredients) : action;
+    setSearchParams(previous => {
+      const next = new URLSearchParams(previous); next.delete('exclude');
+      value.forEach(item => next.append('exclude', item)); return next;
+    }, { replace: true });
+  };
   const [isStandardFeedModalOpen, setIsStandardFeedModalOpen] = useState(false);
   const [standardFeedSearch, setStandardFeedSearch] = useState('');
   // 상세 성분표(180kB)는 성분사전을 연 사람에게만 내려보낸다.
@@ -274,14 +305,14 @@ export default function Search() {
       } catch (err) {
         if (!cancelled) { setSearchResults([]); setLoadError(err instanceof Error ? err.message : '제품을 불러오지 못했습니다.'); }
       } finally {
-        if (!cancelled) setIsLoading(false);
+        if (!cancelled) { setIsLoading(false); retryLocked.current = false; }
       }
     }, 400);
     return () => {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [query, category, subCategory, filters, excludedIngredients, catalogRevision]);
+  }, [query, category, subCategory, filters, excludedIngredients, catalogRevision, retryAttempt]);
 
   const loadMore = async () => {
     if (nextOffset === null || isLoading || isLoadingMore) return;
@@ -316,7 +347,7 @@ export default function Search() {
 
   const displayResults = useMemo(() => {
     if (sortBy === 'default') {
-      return rankProductsForProfile(searchResults, profile, { filterByPetType: false }).map(({ product, breakdown, score }) => ({
+      return rankProductsForProfile(searchResults, effectiveProfile, { filterByPetType: false }).map(({ product, breakdown, score }) => ({
         product,
         breakdown,
         score,
@@ -326,7 +357,7 @@ export default function Search() {
     // 사실상 무의미하다 — 동점(무평점 포함)은 적합도 표시 점수로 2차 정렬한다.
     const arr = searchResults.map((product) => ({
       product,
-      tiebreak: resolveProductDisplayVerdict(product, profile).score,
+      tiebreak: resolveProductDisplayVerdict(product, effectiveProfile).score,
     }));
     if (sortBy === 'rating') {
       arr.sort(
@@ -335,7 +366,7 @@ export default function Search() {
       );
     }
     return arr.map(({ product }) => ({ product, breakdown: null, score: null }));
-  }, [searchResults, sortBy, profile]);
+  }, [searchResults, sortBy, effectiveProfile]);
 
   const toggleHealthConcern = (concern: string) => {
     setFilters(prev => ({
@@ -346,22 +377,18 @@ export default function Search() {
     }));
   };
 
-  const resetFilters = () => {
-    setFilters({
-      targetPetType: '',
-      targetLifeStage: '',
-      formulation: '',
-      brand: '',
-      healthConcerns: [],
-      dietPreset: false,
-    });
-    setExcludedIngredients([]);
-    setSortBy('default');
-  };
+  const resetFilters = () => setSearchParams(previous => {
+    const next = new URLSearchParams(previous);
+    ['pet','lifeStage','formulation','brand','health','diet','exclude','sort'].forEach(key => next.delete(key));
+    return next;
+  }, { replace: true });
 
   const clearAllSearchRestrictions = () => {
-    resetFilters();
-    setCategory('전체');
+    setSearchParams(previous => {
+      const next = new URLSearchParams(previous);
+      ['pet','lifeStage','formulation','brand','health','diet','exclude','sort','category','subCategory'].forEach(key => next.delete(key));
+      return next;
+    }, { replace: true });
     setIsShowingBroadMatches(false);
   };
 
@@ -404,8 +431,10 @@ export default function Search() {
 
   const applySuggestion = (s: Suggestion) => {
     if (s.kind === 'brand') {
-      setFilters((f) => ({ ...f, brand: s.label }));
-      updateQuery('');
+      setQuery('');
+      setSearchParams(previous => {
+        const next = new URLSearchParams(previous); next.set('brand',s.label); next.delete('q'); return next;
+      }, { replace: true });
     } else {
       updateQuery(s.label);
     }
@@ -432,7 +461,8 @@ export default function Search() {
 
   const showDiscovery = query.trim() === '';
 
-  const sortLabel = sortBy === 'rating' ? '평점순' : '추천순';
+  const defaultSortLabel = personalized ? `${profile.name} 궁합순` : '제품 참고 점수순';
+  const sortLabel = sortBy === 'rating' ? '평점순' : defaultSortLabel;
 
   return (
     <div className="vr-anim-fade" style={{ paddingTop: '6px', paddingBottom: '24px' }}>
@@ -624,7 +654,7 @@ export default function Search() {
             ? '불러오는 중…'
             : sortBy === 'rating'
               ? `${displayResults.length}개${nextOffset !== null ? ' 표시 중' : ''} · 평점 높은 순`
-              : `${displayResults.length}개${nextOffset !== null ? ' 표시 중' : ''} · 추천순`}
+              : `${displayResults.length}개${nextOffset !== null ? ' 표시 중' : ''} · ${defaultSortLabel}`}
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
         {nextOffset !== null && !isLoading && <button type="button" onClick={() => void loadMore()} disabled={isLoadingMore} style={{ border: 0, background: 'none', color: 'var(--vr-ink)', minHeight: 44, padding: 0, fontSize: 12.5, fontWeight: 800, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 3 }}>{isLoadingMore ? '불러오는 중…' : '제품 더 보기'}</button>}
@@ -646,7 +676,13 @@ export default function Search() {
         ))}
       </div>
 
-      {loadError && <p role="alert" style={{ color: 'var(--danger-strong)', marginTop: 12 }}>{loadError}</p>}
+      {loadError && <div role="alert" style={{ color: 'var(--danger-strong)', marginTop: 12 }}>
+        <p>{loadError}</p>
+        {searchResults.length === 0 && <button type="button" className="btn btn-outline" disabled={isLoading} onClick={() => {
+          if (isLoading || retryLocked.current) return;
+          retryLocked.current = true; setIsLoading(true); setLoadError(''); setRetryAttempt(value => value + 1);
+        }}>같은 조건으로 다시 시도</button>}
+      </div>}
       {nextOffset !== null && !isLoading && (
         <button type="button" className="btn btn-outline" onClick={loadMore} disabled={isLoadingMore}
           style={{ width: '100%', marginTop: 16 }}>
@@ -711,7 +747,7 @@ export default function Search() {
       >
         <TossFilterSection title="정렬">
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-            {([{ id: 'default', label: '추천순' }, { id: 'rating', label: '평점순' }] as const).map(({ id, label }) => (
+            {([{ id: 'default', label: defaultSortLabel }, { id: 'rating', label: '평점순' }] as const).map(({ id, label }) => (
               <FilterChip key={id} label={label} selected={sortBy === id} onClick={() => setSortBy(id)} />
             ))}
           </div>
@@ -943,11 +979,13 @@ function StandardFeedDetailPanel({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '2px' }}>
+      <p style={note}>일반 성분값과 축종별 이용성 지표를 구분해 확인해 주세요. 돼지·가금·반추동물 지표는 개·고양이의 소화율이나 급여 적합성으로 적용하지 않습니다.</p>
       {groups.map((group) => (
         <div key={group.key}>
           <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '4px' }}>
             {group.label} <span style={{ fontWeight: 600 }}>({group.unit})</span>
           </div>
+          {/돼지|가금|반추|소화|이용성/.test(group.label) && <p style={note}>축종별 참고 자료 · 개·고양이 적용 근거 없음</p>}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '4px 12px' }}>
             {group.nutrients
               .filter((nutrient) => found!.values[group.key]?.[nutrient.key] !== undefined)

@@ -30,7 +30,8 @@ const VIEWS: Record<string, string> = {
   list:
     'id, name, brand_name, main_category, sub_category, target_pet_type, target_life_stage, '
     + 'image_url, min_price, barcode, verification_status, created_at, is_visible, is_pinned, '
-    + 'pinned_order, product_ingredients(count), nutritional_profiles(count)',
+    + 'pinned_order, product_ingredients(count), nutritional_profiles(count), '
+    + 'product_ingredient_label_sets(is_current, product_ingredient_label_items(match_status))',
   names: 'id, name, brand_name, main_category, image_url',
   facts:
     'id, name, brand_name, image_url, barcode, kcal_per_100g, coupang_link, catalog_source_url, '

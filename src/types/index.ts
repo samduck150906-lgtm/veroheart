@@ -90,6 +90,10 @@ export interface Ingredient {
   sourceFamily?: string;
   processingForm?: 'raw' | 'fresh' | 'dried' | 'meal' | 'oil' | 'fat' | 'hydrolyzed' | 'extract' | 'fermented' | 'unknown';
   rawLabelText?: string;
+  labelItemId?: string;
+  sourceLabelVerified?: boolean;
+  materialComposition?: import('../analysis/materialComposition').MaterialConstituent[];
+  nutrientReference?: import('../analysis/materialComposition').MaterialNutrientReference[];
 }
 
 /** 보장성분 기반 영양 밸런스 (도넛=구성비 %, 레이더=균형 점수). 전부 선택. */
@@ -132,6 +136,14 @@ export interface Product {
   /** 현재 라벨 세트에서 canonical 원료로 확정되지 않은 원문. */
   unknownIngredientTerms?: string[];
   ingredientLabelSetId?: string;
+  /** Source confirmation counts label rows, never nutrient/constituent edges. */
+  confirmedLabelIngredientCount?: number;
+  ingredientLabelEntries?: Array<{
+    id: string; order: number; rawName: string; sourceVerified: boolean;
+    traitResolved: boolean; ingredient: Ingredient | null;
+    /** Composition evidence can exist without a safety grade or scoring eligibility. */
+    traitInformation?: Pick<Ingredient, 'materialComposition' | 'nutrientReference'>;
+  }>;
   /** False when the first current label row has no resolved risk evidence. */
   firstIngredientResolved?: boolean;
   analysisEngineVersion?: string;
@@ -155,6 +167,12 @@ export interface Product {
   barcode?: string;
   /** 보장성분(라벨 실측치) — DB nutritional_profiles에서 매핑 */
   guaranteedAnalysis?: GuaranteedAnalysis;
+  nutrientEvidence?: Array<{
+    nutrientCode: string; name: string; value: number; unit: string;
+    basis: 'as_fed' | 'dry_matter' | 'per_energy' | 'unspecified';
+    qualifier: 'minimum' | 'maximum' | 'typical' | 'exact' | 'unspecified';
+    sourceUrl: string; sourceVersion: string;
+  }>;
   /** 100g당 열량(kcal) — DB products.kcal_per_100g */
   caloriesPer100g?: number;
 }

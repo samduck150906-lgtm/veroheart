@@ -80,20 +80,20 @@ describe('home recommendations', () => {
     show();
     expect(screen.queryByText('궁합 점수 90점 이상')).toBeNull();
     expect(api.search).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: '우리 아이를 등록하고 궁합을 확인해 주세요.' }));
+    fireEvent.click(screen.getByRole('button', { name: isLoggedIn ? '우리 아이를 등록하고 궁합을 확인해 주세요.' : '로그인하고 우리 아이 등록하기' }));
     expect(JSON.parse(screen.getByTestId('destination').textContent!)).toEqual(isLoggedIn
-      ? { path: '/profile?tab=pets', state: null }
-      : { path: '/login', state: { from: '/profile?tab=pets' } });
+      ? { path: '/profile?tab=pets&add=1', state: null }
+      : { path: '/login?next=%2Fprofile%3Ftab%3Dpets%26add%3D1', state: { from: '/profile?tab=pets&add=1' } });
   });
 
   it('replaces completed recommendations with registration guidance immediately on logout', async () => {
     show();
     await screen.findByText('로니 기준 궁합 점수 90점');
-    expect(screen.queryByRole('button', { name: '우리 아이를 등록하고 궁합을 확인해 주세요.' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '로그인하고 우리 아이 등록하기' })).toBeNull();
     act(() => useStore.setState({ isLoggedIn: false }));
     expect(screen.queryByText(/기준 궁합 점수/)).toBeNull();
     expect(screen.queryByRole('region', { name: '로니에게 잘 맞는 제품' })).toBeNull();
-    expect(screen.getByRole('button', { name: '우리 아이를 등록하고 궁합을 확인해 주세요.' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '로그인하고 우리 아이 등록하기' })).toBeTruthy();
   });
 
   it('ignores a recommendation response that arrives after logout', async () => {
@@ -103,7 +103,7 @@ describe('home recommendations', () => {
     act(() => useStore.setState({ isLoggedIn: false }));
     await act(async () => resolvePage({ products: [food], nextOffset: null }));
     expect(screen.queryByText(/기준 궁합 점수/)).toBeNull();
-    expect(screen.getByRole('button', { name: '우리 아이를 등록하고 궁합을 확인해 주세요.' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '로그인하고 우리 아이 등록하기' })).toBeTruthy();
   });
 
   it('hides the previous pet immediately and ignores an earlier response after switching pets', async () => {

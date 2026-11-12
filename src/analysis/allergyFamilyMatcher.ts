@@ -197,36 +197,38 @@ function isBroadPoultryLabel(label: string): boolean {
   return broad;
 }
 
-function poultrySourceFromIngredient(ingredient: Ingredient): PoultrySourceFamily | null {
-  const labels = [ingredient.nameKo, ingredient.nameEn, ingredient.purpose].filter(Boolean);
-  for (const label of labels) {
-    const source = poultrySourceFromLabel(label);
-    if (source) return source;
-  }
-  return null;
+function ingredientLabels(ingredient: Ingredient): string[] {
+  // Explanatory prose is not a declaration of contents ("닭고기 대체" or
+  // "가수분해 정도를 알 수 없음" must not create an allergen/processing fact).
+  return [ingredient.nameKo, ingredient.nameEn, ingredient.rawLabelText, ingredient.sourceFamily]
+    .filter((label): label is string => Boolean(label));
+}
+
+function poultrySourcesFromIngredient(ingredient: Ingredient): PoultrySourceFamily[] {
+  const labels = ingredientLabels(ingredient).map(compact);
+  return POULTRY_SOURCE_TERMS.filter(rule => labels.some(label => rule.terms.some(term => label.includes(compact(term))))).map(rule => rule.source);
 }
 
 function isGenericPoultryIngredient(ingredient: Ingredient): boolean {
-  if (poultrySourceFromIngredient(ingredient)) return false;
-  return [ingredient.nameKo, ingredient.nameEn, ingredient.purpose]
-    .filter(Boolean)
-    .some((label) => isBroadPoultryLabel(label));
+  if (poultrySourcesFromIngredient(ingredient).length > 0) return false;
+  return ingredientLabels(ingredient).some((label) => isBroadPoultryLabel(label));
 }
 
 function ingredientText(ingredient: Ingredient): string {
-  return compact(`${ingredient.nameKo} ${ingredient.nameEn || ''} ${ingredient.purpose || ''}`);
+  return compact(ingredientLabels(ingredient).join(' '));
 }
 
 function isHydrolyzedPoultryIngredient(ingredient: Ingredient): boolean {
   const key = ingredientText(ingredient);
-  return ['가수분해', 'hydrolyzed', 'hydrolysed', 'hydrolysate'].some((term) =>
+  return ingredient.processingForm === 'hydrolyzed' || ['가수분해', 'hydrolyzed', 'hydrolysed', 'hydrolysate'].some((term) =>
     key.includes(compact(term)),
   );
 }
 
 function isPoultryFatIngredient(ingredient: Ingredient): boolean {
   const key = ingredientText(ingredient);
-  return ['지방', '기름', 'fat', 'oil'].some((term) => key.includes(compact(term)));
+  return ingredient.processingForm === 'fat' || ingredient.processingForm === 'oil'
+    || ['지방', '기름', '유지', 'fat', 'oil'].some((term) => key.includes(compact(term)));
 }
 
 function poultryRelationship(
@@ -235,7 +237,8 @@ function poultryRelationship(
 ): AllergyRelationshipMatch | null {
   const allergySource = poultrySourceFromLabel(allergy);
   const broadPoultryAllergy = isBroadPoultryLabel(allergy);
-  const ingredientSource = poultrySourceFromIngredient(ingredient);
+  const sources = poultrySourcesFromIngredient(ingredient);
+  const ingredientSource = allergySource && sources.includes(allergySource) ? allergySource : sources[0] ?? null;
   const genericPoultryIngredient = isGenericPoultryIngredient(ingredient);
 
   const allergyIsPoultry = Boolean(allergySource || broadPoultryAllergy);
@@ -282,7 +285,7 @@ export function allergyTagsForLabel(label: string): string[] {
 
 export function allergyTagsForIngredient(ingredient: Ingredient): string[] {
   const tags = new Set<string>();
-  const labels = [ingredient.nameKo, ingredient.nameEn, ingredient.purpose].filter(Boolean);
+  const labels = ingredientLabels(ingredient);
 
   for (const label of labels) {
     for (const entry of dictionaryMatches(label)) addAll(tags, entry.allergenTags);
@@ -310,10 +313,7 @@ export function classifyAllergyRelationship(
     };
   }
 
-  const directTextMatch =
-    compact(ingredient.nameKo || '').includes(allergyKey) ||
-    compact(ingredient.nameEn || '').includes(allergyKey) ||
-    compact(ingredient.purpose || '').includes(allergyKey);
+  const directTextMatch = ingredientLabels(ingredient).some(label => compact(label).includes(allergyKey));
   const ingredientTags = new Set(allergyTagsForIngredient(ingredient));
   const dictionaryFamilyMatch = allergyTagsForLabel(allergy).some((tag) => ingredientTags.has(tag));
 

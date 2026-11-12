@@ -1,6 +1,7 @@
 import type { Product } from '../types';
 import { readinessFromStoredStatus } from '../analysis/analysisReadiness';
 import { getNutritionPresentation } from '../analysis/nutritionReadiness';
+import { ingredientLabelCounts } from './ingredientLabelCounts';
 
 export function describeIngredientAvailability(product: Product): { label: string; detail: string } {
   if (product.ingredientDataLoaded === false) {
@@ -8,6 +9,10 @@ export function describeIngredientAvailability(product: Product): { label: strin
   }
   const known = product.ingredients?.length ?? 0;
   const unknown = product.unknownIngredientTerms?.length ?? 0;
+  if (product.confirmedLabelIngredientCount !== undefined && product.ingredientLabelEntries?.length) {
+    return { label:`확인된 원료 ${product.confirmedLabelIngredientCount}개`,
+      detail:`표시 원료 ${product.ingredientLabelEntries.length}개 중 라벨 원문과 대조된 수입니다. 특성 연결 ${ingredientLabelCounts(product).traitsResolved}개${unknown ? `, 판정 근거 부족으로 점수 미반영 ${unknown}개` : ''}. 라벨 확인과 안전성 판단은 별개입니다.` };
+  }
   const { status } = readinessFromStoredStatus(product.analysisStatus, known, unknown);
   if (status === 'blocked') return { label: '원료 표기 확인 필요', detail: '전성분 표기가 서로 달라 전체 점수를 계산하지 않았습니다. 아래 원료 목록을 확인해 주세요.' };
   if (status === 'unavailable' && known > 0 && unknown === 0) {

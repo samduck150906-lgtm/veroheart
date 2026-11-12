@@ -7,6 +7,7 @@ import type { Product, UserPetProfile } from '../types';
 import { analyzeFeed, type FeedGrade } from '../analysis/feedAnalysis';
 import { describeIngredientAvailability } from '../utils/productDataCompleteness';
 import { getNutritionPresentation } from '../analysis/nutritionReadiness';
+import { resolveProductDisplayVerdict } from '../utils/displayVerdict';
 
 const GRADE_TONE: Record<FeedGrade, { fg: string; bg: string; label: string }> = {
   'A+': { fg: '#15803D', bg: '#DCFCE7', label: '매우 우수' },
@@ -20,7 +21,7 @@ const GRADE_TONE: Record<FeedGrade, { fg: string; bg: string; label: string }> =
 const MACRO_META: { key: 'protein' | 'fat' | 'carb' | 'fiber' | 'moisture' | 'ash'; label: string; color: string }[] = [
   { key: 'protein', label: '조단백질', color: '#16A34A' },
   { key: 'fat', label: '조지방', color: '#F59E0B' },
-  { key: 'carb', label: '탄수화물(추정)', color: '#3182F6' },
+  { key: 'carb', label: 'NFE(차감 추정)', color: '#3182F6' },
   { key: 'fiber', label: '조섬유', color: '#22C55E' },
   { key: 'ash', label: '조회분', color: 'var(--pdp-ink-faint)' },
   { key: 'moisture', label: '수분', color: '#38BDF8' },
@@ -42,12 +43,18 @@ function ChecklistRow({ ok, label, value, neutral }: { ok: boolean; label: strin
 
 export default function FeedAnalysisCard({ product, profile }: { product: Product; profile: UserPetProfile }) {
   const a = analyzeFeed(product, profile);
-  const tone = GRADE_TONE[a.grade];
+  const display = resolveProductDisplayVerdict(product, profile);
+  const tone = GRADE_TONE[display.grade];
   const iq = a.ingredientQuality;
-  const analysisReady = a.analysisReadiness.status === 'ready';
+  const analysisReady = display.canShowScore;
   const nutrition = getNutritionPresentation(product.guaranteedAnalysis);
   // The score summary already displays this exact limitation; retain all actual warnings.
   const visibleCautions = a.cautions.filter(text => !(nutrition.notice && text === nutrition.notice && a.summary.includes(text)));
+  if (a.productType !== 'complete') return <section aria-label="제품 성분 정보" className="card" style={{ padding: 20, marginBottom: 24 }}>
+    <h2>간식·영양제 성분 정보</h2>
+    <p>원재료의 기능과 알레르기 주의를 확인해 주세요. 완전사료의 단백질·지방 최소기준, 제1원료 단백질 등급, 하루 주식 급여량으로 평가하지 않습니다.</p>
+    <p>{describeIngredientAvailability(product).detail}</p>
+  </section>;
 
   return (
     <section
@@ -67,12 +74,12 @@ export default function FeedAnalysisCard({ product, profile }: { product: Produc
       {/* 품질 점수 */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '4px 2px 18px' }}>
         <div style={{ flexShrink: 0, textAlign: 'center' }}>
-          <div style={{ fontSize: 40, fontWeight: 900, lineHeight: 1, color: analysisReady ? tone.fg : '#D97706', fontVariantNumeric: 'tabular-nums' }}>{analysisReady ? a.score : '—'}</div>
+          <div data-testid="feed-display-score" style={{ fontSize: 40, fontWeight: 900, lineHeight: 1, color: analysisReady ? tone.fg : '#D97706', fontVariantNumeric: 'tabular-nums' }}>{analysisReady ? display.score : '—'}</div>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--pdp-ink-faint)', marginTop: 2 }}>{analysisReady ? '/ 100' : '검토 중'}</div>
         </div>
         <div style={{ minWidth: 0 }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 999, background: analysisReady ? tone.bg : '#FEF3C7', color: analysisReady ? tone.fg : '#B45309', fontSize: 14, fontWeight: 900, marginBottom: 6 }}>
-            {analysisReady ? `${nutrition.scopeLabel} ${a.grade}등급` : '부분 분석'}
+            {analysisReady ? `${nutrition.scopeLabel} ${display.grade}등급` : '부분 분석'}
           </span>
           <p style={{ margin: 0, fontSize: 13.5, fontWeight: 600, color: 'var(--pdp-ink-muted)', lineHeight: 1.5 }}>{a.summary}</p>
           <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--pdp-ink-muted)', lineHeight: 1.5 }}>{nutrition.detail}</p>
@@ -86,7 +93,7 @@ export default function FeedAnalysisCard({ product, profile }: { product: Produc
             <span style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--pdp-ink)' }}>영양 구성 (라벨 보장성분)</span>
             {a.calories && (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 800, color: '#B45309', background: '#FEF3C7', borderRadius: 999, padding: '3px 9px' }}>
-                <Flame size={12} /> {a.calories.per100g} kcal/100g
+                <Flame size={12} /> {a.calories.per100g} kcal/100g ({a.calories.measured ? '표시값' : '추정값'})
               </span>
             )}
           </div>
@@ -100,7 +107,7 @@ export default function FeedAnalysisCard({ product, profile }: { product: Produc
                   <span style={{ flex: 1, height: 8, borderRadius: 999, background: 'var(--pdp-line)', overflow: 'hidden' }}>
                     <span style={{ display: 'block', width: `${Math.min(100, v)}%`, height: '100%', background: m.color, borderRadius: 999 }} />
                   </span>
-                  <span style={{ width: 42, textAlign: 'right', fontSize: 12.5, fontWeight: 800, color: 'var(--pdp-ink)', fontVariantNumeric: 'tabular-nums' }}>{Math.round(v)}%</span>
+                  <span style={{ width: 50, textAlign: 'right', fontSize: 12.5, fontWeight: 800, color: 'var(--pdp-ink)', fontVariantNumeric: 'tabular-nums' }}>{Number(v.toFixed(2))}%</span>
                 </div>
               );
             })}
@@ -128,7 +135,7 @@ export default function FeedAnalysisCard({ product, profile }: { product: Produc
         >
           {a.aafco.passed ? <ShieldCheck size={16} /> : <AlertTriangle size={16} />}
           <span style={{ fontSize: 12.5, fontWeight: 800 }}>
-            AAFCO {a.aafco.label} 최소기준 {a.aafco.passed ? '충족' : '미달'}
+            {a.aafco.label} 단백질·지방 참고 기준 {a.aafco.passed ? '이상' : '미만'}
           </span>
         </div>
       )}
@@ -159,7 +166,7 @@ export default function FeedAnalysisCard({ product, profile }: { product: Produc
             <ChecklistRow neutral={!analysisReady && iq.byProducts.length === 0} ok={iq.byProducts.length === 0} label="부산물 원료" value={iq.byProducts.length === 0 ? (analysisReady ? '없음' : '확인 범위에서 0개') : '포함'} />
             <ChecklistRow neutral={!analysisReady && iq.fillers.length === 0} ok={iq.fillers.length < 2} label="곡물·충전제 계열" value={iq.fillers.length === 0 ? (analysisReady ? '없음' : '확인 범위에서 0개') : `${iq.fillers.length}개`} />
             <ChecklistRow neutral ok={iq.functional.length > 0} label="기능성 원료(유산균·오메가 등)" value={iq.functional.length > 0 ? `${iq.functional.length}종` : '미확인'} />
-            <ChecklistRow neutral ok label="안전 / 주의 / 위험 성분" value={`${iq.safeCount} / ${iq.cautionCount} / ${iq.dangerCount}`} />
+            <ChecklistRow neutral ok label="일반 / 주의 / 위험 성분" value={`${iq.safeCount} / ${iq.cautionCount} / ${iq.dangerCount}`} />
           </>
         )}
       </div>

@@ -383,7 +383,6 @@ export function rankProductsForProfile(
     .filter(
       (product) =>
         options.filterByPetType === false ||
-        !product.targetPetType ||
         product.targetPetType === expectedPetType ||
         product.targetPetType === 'all',
     )

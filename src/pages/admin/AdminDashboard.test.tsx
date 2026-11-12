@@ -76,7 +76,8 @@ describe('AdminDashboard', () => {
     expect(screen.getByText('4,265')).toBeTruthy();
     expect(screen.getByText('509')).toBeTruthy();
     expect(screen.getByText('검수 완료 제품')).toBeTruthy();
-    expect(screen.getByText('원재료 없는 제품')).toBeTruthy();
+    expect(screen.getByText('원재료 미보완 제품')).toBeTruthy();
+    expect(screen.getByRole('link',{name:/원재료 미보완 제품/}).getAttribute('href')).toBe('/admin/data-quality?missing=ingredients&visibility=all');
     expect(screen.getByText('145')).toBeTruthy();
   });
 

@@ -11,6 +11,7 @@ import { LogoChip } from '../components/Wordmark';
 import { VR } from '../lib/veroroDesign';
 import { usePublicSettings } from '../lib/publicSettings';
 import { isKakaoLoginEnabled, signInWithKakao } from '../lib/kakaoAuth';
+import { rememberAuthReturn, safeAuthReturn } from '../lib/authReturn';
 import {
   NICKNAME_MAX_LENGTH,
   checkNicknameAvailable,
@@ -99,20 +100,18 @@ export default function Login() {
   }, [mode, nickname]);
 
   const redirectTo = useMemo(() => {
-    const from = (location.state as { from?: string } | null)?.from;
-    if (!from || from === '/login') return '/profile';
-    return from;
-  }, [location.state]);
+    return safeAuthReturn((location.state as { from?: string } | null)?.from ?? new URLSearchParams(location.search).get('next'));
+  }, [location.state, location.search]);
 
   const handleKakao = async () => {
     if (kakaoLoading) return;
-    if (!privacyAccepted) { notify.warning('개인정보 처리 안내와 약관을 확인해 주세요.'); return; }
     if (mode === 'signup' && !signupEnabled) {
       notify.error('현재 신규 회원 가입이 일시 중단되었습니다.');
       return;
     }
     setKakaoLoading(true);
     try {
+      rememberAuthReturn(redirectTo);
       // 성공하면 카카오 인증 페이지로 이동하므로 이 아래는 실행되지 않는다.
       const failure = await signInWithKakao(getAuthRedirectUrl());
       if (failure) {
@@ -360,7 +359,7 @@ export default function Login() {
         <span aria-hidden="true" />
         <Link to="/account/find?mode=password" state={{email}}>비밀번호를 잊었어요!</Link>
       </nav>}
-      <div className={`login-consent${privacyAccepted ? ' is-checked' : ''}`}>
+      {mode === 'signup' && <div className={`login-consent${privacyAccepted ? ' is-checked' : ''}`}>
         <label className="login-consent__choice">
           <input
             className="login-consent__input"
@@ -376,13 +375,13 @@ export default function Login() {
             <span className="login-consent__required">필수</span>
           </span>
         </label>
-        <p className="login-consent__note" id="login-consent-note">회원가입 및 카카오 로그인 시 적용돼요.</p>
+        <p className="login-consent__note" id="login-consent-note">이메일 회원가입에 필요한 동의입니다. 기존 로그인에는 다시 동의할 필요가 없습니다.</p>
         <div className="login-consent__links">
           <a href="/terms" target="_blank" rel="noreferrer">이용약관 <ChevronRight size={13} aria-hidden="true" /></a>
           <span className="login-consent__divider" aria-hidden="true" />
           <a href="/privacy" target="_blank" rel="noreferrer">개인정보 처리방침 <ChevronRight size={13} aria-hidden="true" /></a>
         </div>
-      </div>
+      </div>}
 
       <button
         type="button"
@@ -404,7 +403,7 @@ export default function Login() {
       <button
         type="button"
         onClick={() => void handleKakao()}
-        disabled={!kakaoReady || kakaoLoading || !privacyAccepted}
+        disabled={!kakaoReady || kakaoLoading}
         aria-label={kakaoReady ? '카카오로 계속하기' : '카카오 로그인 준비 중'}
         title={kakaoReady ? undefined : '카카오 로그인은 준비 중입니다.'}
         style={{

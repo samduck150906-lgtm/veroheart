@@ -57,6 +57,7 @@ export default function AppHeader({ raised }: AppHeaderProps) {
       : (chrome.title ?? '');
 
   const className = raised ? 'app-header app-header--raised' : 'app-header';
+  const authenticationPage = /^\/(?:login|account|auth)(?:\/|$)/.test(location.pathname);
 
   if (chrome.header === 'back') {
     return (
@@ -68,11 +69,11 @@ export default function AppHeader({ raised }: AppHeaderProps) {
             </svg>
           </button>
           <span className="vr-header-title">{title}</span>
-          <button type="button" className="vr-round-btn" onClick={() => void share()} aria-label="공유">
+          {!authenticationPage && <button type="button" className="vr-round-btn" onClick={() => void share()} aria-label="공유">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 3v12M8 7l4-4 4 4M5 14v5a2 2 0 002 2h10a2 2 0 002-2v-5" />
             </svg>
-          </button>
+          </button>}
         </div>
       </header>
     );

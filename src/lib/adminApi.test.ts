@@ -39,6 +39,15 @@ function fakeFile(type: string, size: number): File {
 }
 
 describe('adminApi: 비공개 제품 편집 자료', () => {
+  it('목록의 원료 수는 현재 라벨을 우선하고 없을 때만 이전 연결을 사용한다',async()=>{
+    h.callAdminFunction.mockResolvedValue({total:3,rows:[
+      {id:'current',product_ingredients:[{count:0}],product_ingredient_label_sets:[{is_current:true,product_ingredient_label_items:[{match_status:'matched'},{match_status:'unmatched'},{match_status:'ignored'}]}]},
+      {id:'empty-current',product_ingredients:[{count:7}],product_ingredient_label_sets:[{is_current:true,product_ingredient_label_items:[]}]},
+      {id:'legacy',product_ingredients:[{count:4}]},
+    ]});
+    const response=await fetchProductsPage({page:1,pageSize:20});
+    expect(response.rows.map(row=>row.ingredientCount)).toEqual([2,0,4]);
+  });
   const id = '11111111-1111-4111-8111-111111111111';
   const ingredient = { ingredient_id: 'ingredient-1', sort_order: 0, ingredients: { id: 'ingredient-1', name_ko: '연어', name_en: 'Salmon', risk_level: 'safe' } };
   const nutrition = { crude_protein: 30, crude_fat: 12, crude_fiber: 3, crude_ash: 7, moisture: 10, calcium: 1.2, phosphorus: 0.8 };
