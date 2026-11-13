@@ -56,6 +56,17 @@ export async function assertMaterialRegistry(db) {
     assert.equal(resolved[0].match_status,'unmatched','Preferred whole aliases must not erase hydrolysis');
     assert.equal(resolved[1].canonical_name_ko,'Fixture rice','Curated exact alias must beat duplicate generated English names');
     assert.equal(resolved[1].raw_ingredient_text,'Fixture rice');
+    await db.exec(`INSERT INTO public.product_ingredient_label_items(label_set_id,display_order,raw_ingredient_text,percentage) VALUES
+      ('93000000-0000-4000-8000-000000000001',5,'COMPOSITION: Fixture rice 20%',20),
+      ('93000000-0000-4000-8000-000000000001',6,'INGREDIENTS: hydrolyzed Fixture rice',null),
+      ('93000000-0000-4000-8000-000000000001',7,'composition Fixture rice',null);`);
+    const headed=(await db.query(`SELECT i.raw_ingredient_text,i.percentage,i.match_status,c.canonical_name_ko FROM public.product_ingredient_label_items i
+      LEFT JOIN public.canonical_ingredients c ON c.id=i.canonical_ingredient_id WHERE label_set_id='93000000-0000-4000-8000-000000000001' AND display_order>=5 ORDER BY display_order`)).rows;
+    assert.equal(headed[0].canonical_name_ko,'Fixture rice');
+    assert.equal(headed[0].raw_ingredient_text,'COMPOSITION: Fixture rice 20%');
+    assert.equal(Number(headed[0].percentage),20);
+    assert.equal(headed[1].match_status,'unmatched','Removing a heading must not remove hydrolysis');
+    assert.equal(headed[2].match_status,'unmatched','Without a colon the word is not section metadata');
     await db.exec('SET LOCAL ROLE anon');
     assert.equal((await db.query("SELECT public.material_profile(c) profile FROM public.canonical_ingredients c WHERE canonical_name_ko='Fixture rice'")).rows[0].profile[0].nutrientCode,'carbohydrate');
     assert.equal((await db.query("SELECT count(*)::int n FROM public.product_nutrient_evidence WHERE product_id='92000000-0000-4000-8000-000000000001'")).rows[0].n,0);
