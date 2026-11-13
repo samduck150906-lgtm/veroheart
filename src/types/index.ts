@@ -146,6 +146,8 @@ export interface Product {
     /** Composition evidence can exist without a safety grade or scoring eligibility. */
     traitInformation?: Pick<Ingredient, 'materialComposition' | 'nutrientReference'>;
   }>;
+  /** Production has no comparison-attestation transport yet; absence is not approval. */
+  ingredientLabelEvidence?: import('../analysis/labelCompleteness').IngredientLabelEvidence;
   /** False when the first current label row has no resolved risk evidence. */
   firstIngredientResolved?: boolean;
   analysisEngineVersion?: string;

@@ -1,6 +1,6 @@
 import type { Product, UserPetProfile } from '../types';
 import { DEFAULT_USER_PET_PROFILE } from '../types';
-import { readinessFromStoredStatus, type AnalysisReadiness } from '../analysis/analysisReadiness';
+import { productAnalysisReadiness, type AnalysisReadiness } from '../analysis/analysisReadiness';
 import { getNutritionPresentation } from '../analysis/nutritionReadiness';
 import {
   getRecommendationBreakdown,
@@ -18,6 +18,8 @@ export interface ProductDisplayVerdict {
   score: number;
   grade: CompatibilityGrade;
   nutrition: ReturnType<typeof getNutritionPresentation>;
+  /** Known warnings survive withholding; these do not claim complete coverage. */
+  confirmedWarnings: string[];
 }
 
 /**
@@ -39,7 +41,7 @@ export function isRealPetProfile(profile: UserPetProfile | null | undefined): bo
  * 점수(baseScore)를 보여준다. 위험 성분 상한(≤69)은 프로필과 무관하게 적용한다.
  */
 export function resolveProductDisplayVerdict(product: Product, profile: UserPetProfile): ProductDisplayVerdict {
-  const analysisReadiness = readinessFromStoredStatus(product.analysisStatus, product.ingredients?.length ?? 0, product.unknownIngredientTerms?.length ?? 0);
+  const analysisReadiness = productAnalysisReadiness(product);
   const breakdown = getRecommendationBreakdown(product, profile);
   const personalized = isRealPetProfile(profile);
   const verdict = resolveDisplayVerdict(personalized ? breakdown.total : breakdown.baseScore, {
@@ -56,5 +58,11 @@ export function resolveProductDisplayVerdict(product: Product, profile: UserPetP
     score: verdict.score,
     grade: verdict.grade,
     nutrition: getNutritionPresentation(product.guaranteedAnalysis, product.nutrientEvidence),
+    confirmedWarnings: [
+      personalized && breakdown.speciesMismatch ? '다른 동물 종류 전용 제품' : '',
+      personalized && breakdown.allergyHits.length > 0 ? `등록 원료 중 알레르기·회피 성분 ${breakdown.allergyHits.length}개 확인` : '',
+      breakdown.dangerCount > 0 ? `등록 원료 중 위험 성분 ${breakdown.dangerCount}개 확인` : '',
+      product.requiresVeterinaryGuidance ? '수의사 상담 필요' : '',
+    ].filter(Boolean),
   };
 }

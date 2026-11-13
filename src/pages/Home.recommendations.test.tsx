@@ -1,3 +1,4 @@
+import { reviewedLabelFixture } from '../test/reviewedLabelFixture';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
@@ -16,11 +17,11 @@ vi.mock('../lib/productCategories', () => ({ useProductCategories: () => [] }));
 
 const dog: UserPetProfile = { ...DEFAULT_USER_PET_PROFILE, id: 'dog', name: '로니' };
 const cat: UserPetProfile = { ...dog, id: 'cat', name: '영이', species: 'Cat' };
-const food: Product = {
+const food: Product = reviewedLabelFixture({
   id: 'food', name: '테스트 닭고기 사료', brand: '테스트', category: 'food', targetPetType: 'dog',
   imageUrl: '', reviewsCount: 0, averageRating: 0, analysisStatus: 'ready',
   ingredients: [{ id: 'chicken', nameKo: '닭고기', nameEn: 'chicken', purpose: '', riskLevel: 'safe' }],
-};
+});
 function Destination() {
   const location = useLocation();
   return <output data-testid="destination">{JSON.stringify({ path: location.pathname + location.search, state: location.state })}</output>;
@@ -48,7 +49,7 @@ describe('home recommendations', () => {
     useStore.setState({ products: [wrongSpecies] });
     api.search.mockResolvedValue({ products: [wrongSpecies], nextOffset: null });
     show();
-    await screen.findByText('현재 등록된 제품 중 궁합 점수 90점 이상인 제품이 없습니다.');
+    await screen.findByText('분석 근거를 확인할 수 있는 제품 중 궁합 점수 90점 이상인 제품이 없습니다.');
     expect(screen.queryByRole('button', { name: /테스트 닭고기 사료/ })).toBeNull();
   });
 
@@ -109,7 +110,7 @@ describe('home recommendations', () => {
   it('hides the previous pet immediately and ignores an earlier response after switching pets', async () => {
     let resolveDog!: (page: { products: Product[]; nextOffset: null }) => void;
     api.search.mockReturnValueOnce(new Promise((resolve) => { resolveDog = resolve; }));
-    const catFood = { ...food, id: 'cat-food', name: '고양이 사료', targetPetType: 'cat' as const };
+    const catFood = reviewedLabelFixture({ ...food, id: 'cat-food', name: '고양이 사료', targetPetType: 'cat' as const });
     api.search.mockResolvedValueOnce({ products: [catFood], nextOffset: null });
     show();
     act(() => useStore.setState({ profile: cat }));
@@ -125,7 +126,7 @@ describe('home recommendations', () => {
     await screen.findByText('로니 기준 궁합 점수 90점');
     act(() => useStore.setState({ profile: { ...dog, allergies: ['닭'] } }));
     expect(screen.queryByText('로니 기준 궁합 점수 90점')).toBeNull();
-    await screen.findByText('현재 등록된 제품 중 궁합 점수 90점 이상인 제품이 없습니다.');
+    await screen.findByText('분석 근거를 확인할 수 있는 제품 중 궁합 점수 90점 이상인 제품이 없습니다.');
   });
 
   it('distinguishes a fetch error from no qualifying products and supports retry', async () => {

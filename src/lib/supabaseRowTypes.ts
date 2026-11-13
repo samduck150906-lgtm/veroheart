@@ -1,3 +1,4 @@
+import { labelProductIdentity } from '../analysis/labelCompleteness';
 import { publicCatalogSourceUrl } from './publicCatalogSource';
 import { productImageUrl } from '../utils/productImage';
 import type {
@@ -56,6 +57,9 @@ export type SupabaseProductRow = {
 export type SupabaseProductIngredientLabelSetRow = {
   id: string;
   is_current: boolean;
+  // Optional future review-adapter inputs. Existing public SELECT is unchanged.
+  raw_label_text?: string;
+  updated_at?: string;
   product_ingredient_label_items?: Array<{
     id?: string;
     display_order: number;
@@ -245,6 +249,15 @@ export function mapFeedingLogFromRow(row: SupabaseFeedingLogRow): PetFeedingLog 
 }
 
 export function mapProductFromSupabaseRow(p: SupabaseProductRow): Product {
+  return mapProductRow(p);
+}
+
+/** Future permissioned adapter/test seam; no production transport calls this. */
+export function mapReviewedProductFromSupabaseRow(p: SupabaseProductRow, comparison: import('../analysis/labelCompleteness').LabelComparison): Product {
+  return mapProductRow(p, comparison);
+}
+
+function mapProductRow(p: SupabaseProductRow, comparison?: import('../analysis/labelCompleteness').LabelComparison): Product {
   const currentLabelSet = p.product_ingredient_label_sets?.find((labelSet) => labelSet.is_current);
   const labelItems = currentLabelSet?.product_ingredient_label_items?.slice()
     .sort((a, b) => a.display_order - b.display_order) ?? [];
@@ -350,6 +363,22 @@ export function mapProductFromSupabaseRow(p: SupabaseProductRow): Product {
         rawName:item.raw_ingredient_text,sourceVerified:item.label_source_evidence?.verified === true,
         traitResolved,traitInformation,ingredient:resolvedLabelIngredients[index] };
     }) : undefined,
+    ingredientLabelEvidence: {
+      lookup: comparison ? undefined : { status: 'not_requested' },
+      multipleCurrent: (p.product_ingredient_label_sets?.filter(s => s.is_current).length ?? 0) > 1,
+      current: currentLabelSet ? {
+        productId: p.id, productIdentity: labelProductIdentity({ id:p.id, name:p.name, brand:p.brand_name, variantName:p.variant_name ?? undefined, netWeightText:p.net_weight_text ?? undefined, barcode:p.barcode ?? undefined, targetPetType, targetLifeStage:p.target_life_stage ?? undefined, category:p.product_type, formulation:p.formulation ?? undefined }),
+        labelSetId: currentLabelSet.id, rawText: currentLabelSet.raw_label_text,
+        revision: currentLabelSet.updated_at,
+        items: labelItems.map(i => ({ id: i.id, order: i.display_order, rawText: i.raw_ingredient_text,
+          matchStatus: i.match_status, legacyId: (i.ingredients ?? i.canonical_ingredients?.ingredients)?.id,
+          canonicalId: i.canonical_ingredients?.id, canonicalStatus: i.canonical_ingredients?.status,
+          riskLevel: (i.ingredients ?? i.canonical_ingredients?.ingredients)?.risk_level ?? undefined,
+          resolvedName: i.canonical_ingredients?.canonical_name_ko || (i.ingredients ?? i.canonical_ingredients?.ingredients)?.name_ko || i.raw_ingredient_text,
+          resolvedNameEn: i.canonical_ingredients?.canonical_name_en || (i.ingredients ?? i.canonical_ingredients?.ingredients)?.name_en || '' })),
+      } : undefined,
+      comparison,
+    },
     firstIngredientResolved: currentLabelSet ? Boolean(resolvedLabelIngredients[0]) : undefined,
     category: p.product_type,
     mainCategory: p.main_category ?? undefined,

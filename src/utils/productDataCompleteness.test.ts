@@ -1,14 +1,15 @@
+import { reviewedLabelFixture } from '../test/reviewedLabelFixture';
 import { describe, expect, it } from 'vitest';
 import { describeIngredientAvailability, describeProductCompleteness, resolveProductCompleteness } from './productDataCompleteness';
 import type { Product } from '../types';
 
 function product(over: Partial<Product> = {}): Product {
-  return {
+  return reviewedLabelFixture({
     id: 'p1', name: '제품', brand: '브랜드', category: 'food',
     imageUrl: '', ingredients: [], reviewsCount: 0, averageRating: 0,
     verificationStatus: 'pending',
     ...over,
-  } as Product;
+  } as Product);
 }
 
 const oneIngredient = [{ id: 'i', nameKo: '닭고기', nameEn: '', purpose: '', riskLevel: 'safe' as const }];
