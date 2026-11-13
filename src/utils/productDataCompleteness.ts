@@ -47,7 +47,7 @@ export interface ProductCompletenessDisplay {
 
 export function resolveProductCompleteness(product: Product): ProductDataCompleteness {
   const hasIngredients = (product.ingredients?.length ?? 0) + (product.unknownIngredientTerms?.length ?? 0) > 0;
-  const nutrition = getNutritionPresentation(product.guaranteedAnalysis);
+  const nutrition = getNutritionPresentation(product.guaranteedAnalysis, product.nutrientEvidence);
   if (hasIngredients && !nutrition.limited && !product.unknownIngredientTerms?.length) return 'full';
   if (hasIngredients) return 'partial';
   return 'minimal';
@@ -63,7 +63,7 @@ export function describeProductCompleteness(product: Product): ProductCompletene
       return {
         level: 'partial',
         label: '일부 정보만 확인할 수 있습니다',
-        detail: getNutritionPresentation(product.guaranteedAnalysis).notice,
+        detail: getNutritionPresentation(product.guaranteedAnalysis, product.nutrientEvidence).notice,
       };
     default:
       return {

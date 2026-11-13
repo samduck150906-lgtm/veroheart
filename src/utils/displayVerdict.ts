@@ -55,6 +55,6 @@ export function resolveProductDisplayVerdict(product: Product, profile: UserPetP
     verdict,
     score: verdict.score,
     grade: verdict.grade,
-    nutrition: getNutritionPresentation(product.guaranteedAnalysis),
+    nutrition: getNutritionPresentation(product.guaranteedAnalysis, product.nutrientEvidence),
   };
 }

@@ -47,7 +47,7 @@ export default function FeedAnalysisCard({ product, profile }: { product: Produc
   const tone = GRADE_TONE[display.grade];
   const iq = a.ingredientQuality;
   const analysisReady = display.canShowScore;
-  const nutrition = getNutritionPresentation(product.guaranteedAnalysis);
+  const nutrition = getNutritionPresentation(product.guaranteedAnalysis, product.nutrientEvidence);
   // The score summary already displays this exact limitation; retain all actual warnings.
   const visibleCautions = a.cautions.filter(text => !(nutrition.notice && text === nutrition.notice && a.summary.includes(text)));
   if (a.productType !== 'complete') return <section aria-label="제품 성분 정보" className="card" style={{ padding: 20, marginBottom: 24 }}>
@@ -121,7 +121,7 @@ export default function FeedAnalysisCard({ product, profile }: { product: Produc
         </div>
       ) : (
         <div style={{ background: 'var(--pdp-surface-soft)', borderRadius: 16, padding: '14px 16px', marginBottom: 14, fontSize: 12.5, fontWeight: 600, color: 'var(--pdp-ink-muted)', lineHeight: 1.5 }}>
-          {a.hasNutritionData ? '영양 수치가 일부만 등록되어 영양 균형을 계산하지 않았습니다.' : '라벨의 영양 수치(조단백·조지방 등)가 등록되지 않았습니다.'}
+          {nutrition.alternateBasisNotice || (a.hasNutritionData || nutrition.hasLabelEvidence ? '영양 수치가 일부만 등록되어 영양 균형을 계산하지 않았습니다.' : '라벨의 영양 수치(조단백·조지방 등)가 등록되지 않았습니다.')}
         </div>
       )}
 

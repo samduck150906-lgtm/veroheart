@@ -73,7 +73,7 @@ BEGIN
     VALUES(p.id,m->>'nutrientCode',(m->>'value')::numeric,m->>'unit',m->>'basis',m->>'qualifier',r->>'sourceUrl','official-supplement-sha256:'||(r->>'documentSha256'),m->>'raw',(r->>'observedAt')::timestamptz);
   END LOOP;
   UPDATE public.products SET last_observed_at=GREATEST(last_observed_at,(r->>'observedAt')::timestamptz),catalog_source_url=COALESCE(catalog_source_url,r->>'koreaSourceUrl',r->>'sourceUrl'),
-   catalog_source_note=concat_ws(E'\n',NULLIF(catalog_source_note,''),r->>'referenceNote')WHERE id=p.id;
+   catalog_source_note=concat_ws(E'\n',NULLIF(CASE WHEN jsonb_array_length(r->'measurements')>0 THEN replace(catalog_source_note,'현재 제조사 공개 페이지에서 보장성분 수치가 확인되지 않아 영양 수치를 제공하지 않습니다.','제조사 표시 영양 수치는 아래의 단위·기준·출처와 함께 제공합니다. 국내 포장의 최소·최대 보장조건과 다를 수 있습니다.') ELSE catalog_source_note END,''),r->>'referenceNote')WHERE id=p.id;
   fields:=array_remove(ARRAY[CASE WHEN jsonb_array_length(r->'measurements')>0 THEN 'nutrition' END,CASE WHEN COALESCE((r->>'labelChanged')::boolean,false) THEN 'ingredients' END,CASE WHEN jsonb_array_length(COALESCE(r->'packs','[]'::jsonb))>0 THEN 'barcode' END],NULL);
   INSERT INTO public.product_data_sources(product_id,source_type,source_url,source_title,retrieved_at,fields_verified,confidence,raw_ingredient_text,notes)
    VALUES(p.id,'manufacturer',r->>'sourceUrl',r->>'sourceTitle',(r->>'observedAt')::timestamptz,fields,'official',NULLIF(r->>'ingredientsText',''),(r->>'referenceNote')||' SHA-256: '||(r->>'documentSha256'))

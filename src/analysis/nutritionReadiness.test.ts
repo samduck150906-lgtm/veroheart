@@ -65,4 +65,24 @@ describe('nutrition evidence matches calculator inputs, not a field-count thresh
   it('does not treat measured calories as a complete nutrition panel', () => {
     expect(analyzeFeed(product({ caloriesPer100g: 350 }), profile).summary).toContain(NUTRITION_INSUFFICIENT_NOTICE);
   });
+  it.each([
+    ['g/100mL','as_fed','부피 기준'],
+    ['g/100g','as_sold','분말 제품 그대로 기준'],
+    ['g/100g','dry_matter','건물 기준'],
+  ] as const)('explains existing %s/%s evidence without inventing a mass profile or hiding allergy warnings', (unit,basis,label) => {
+    const evidence: NonNullable<Product['nutrientEvidence']> = ['protein','fat'].map(code=>({nutrientCode:code,name:code,value:5,unit,basis,qualifier:'unspecified',sourceUrl:'https://example.org/official',sourceVersion:'fixture',sourceLocator:'fixture'}));
+    const p=product({nutrientEvidence:evidence});
+    const presentation=getNutritionPresentation(p.guaranteedAnalysis,p.nutrientEvidence);
+    expect(presentation.notice).toContain(label);
+    expect(presentation.limited).toBe(true);
+    const result=analyzeFeed(p,{...profile,allergies:['닭']});
+    expect(result.summary).toContain('피해야 할 성분');
+    expect(result.summary).toContain(label);
+    expect(result.summary).not.toContain(NUTRITION_INSUFFICIENT_NOTICE);
+    expect(result.macros).toBeNull();
+    expect(result.macrosDMB).toBeNull();
+    expect(result.feeding).toBeNull();
+    expect(result.aafco.evaluated).toBe(false);
+    expect(p.guaranteedAnalysis).toBeUndefined();
+  });
 });
