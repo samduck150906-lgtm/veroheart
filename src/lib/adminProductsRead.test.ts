@@ -3,17 +3,18 @@ import { createContext, runInContext } from 'node:vm';
 import { createHmac, webcrypto } from 'node:crypto';
 import ts from 'typescript';
 import { describe, expect, it, vi } from 'vitest';
+import { isAdminSessionActorCurrent } from '../../supabase/functions/_shared/temporaryAdminSession';
 
 const PRODUCT_ID = '11111111-1111-4111-8111-111111111111';
 const secret = 'test-admin-session-secret';
 
-function adminToken() {
-  const payload = Buffer.from(JSON.stringify({ actor: 'editor', exp: Math.floor(Date.now() / 1000) + 60 })).toString('base64url');
+function adminToken(actor = 'editor') {
+  const payload = Buffer.from(JSON.stringify({ actor, exp: Math.floor(Date.now() / 1000) + 60 })).toString('base64url');
   const signed = `v1.${payload}`;
   return `${signed}.${createHmac('sha256', secret).update(signed).digest('base64url')}`;
 }
 
-function loadHandler(result: { data: unknown; error: unknown }) {
+function loadHandler(result: { data: unknown; error: unknown }, env: Record<string,string> = {}) {
   let handler!: (request: Request) => Promise<Response>;
   let from = 0, to = 999;
   const nullFilters: string[]=[];
@@ -38,10 +39,12 @@ function loadHandler(result: { data: unknown; error: unknown }) {
     console: { error: vi.fn() },
     Deno: { env: { get: (key: string) => ({
       SUPABASE_URL: 'https://test.invalid', SUPABASE_SERVICE_ROLE_KEY: 'service-only-key', ADMIN_SESSION_SECRET: secret,
+      ...env,
     })[key] } },
     require(specifier: string) {
       if (specifier.includes('/http/server.ts')) return { serve: (fn: typeof handler) => { handler = fn; } };
       if (specifier.includes('supabase-js')) return { createClient };
+      if (specifier.endsWith('/temporaryAdminSession.ts')) return { isAdminSessionActorCurrent };
       throw new Error(`Unexpected dependency ${specifier}`);
     },
   }));
@@ -57,6 +60,15 @@ function request(token?: string, id = PRODUCT_ID) {
 }
 
 describe('admin-products-read edit evidence', () => {
+  it('rejects an already issued QA session immediately after its access is removed',async()=>{
+    const env:Record<string,string>={TEMP_ADMIN_ID:'qa-read-fixture',TEMP_ADMIN_CREDENTIAL_SHA256:'a'.repeat(64),TEMP_ADMIN_EXPIRES_AT:String(Math.floor(Date.now()/1000)+600)};
+    const {handler,createClient}=loadHandler({data:null,error:null},env);
+    const token=adminToken('qa-read-fixture');
+    expect((await handler(request(token))).status).toBe(200);
+    createClient.mockClear();delete env.TEMP_ADMIN_ID;
+    expect((await handler(request(token))).status).toBe(401);
+    expect(createClient).not.toHaveBeenCalled();
+  });
   it.each([undefined, 'invalid-admin-token'])('rejects unauthorized evidence reads before opening a database client (%s)', async (token) => {
     const { handler, createClient } = loadHandler({ data: null, error: null });
     expect((await handler(request(token))).status).toBe(401);
