@@ -46,6 +46,16 @@ export async function assertMaterialRegistry(db) {
       INSERT INTO public.product_ingredient_label_items(label_set_id,display_order,raw_ingredient_text)
         VALUES('93000000-0000-4000-8000-000000000001',4,'Fixture rice');`);
     assert.equal((await db.query("SELECT match_status FROM public.product_ingredient_label_items WHERE label_set_id='93000000-0000-4000-8000-000000000001' AND display_order=4")).rows[0].match_status,'ambiguous');
+    await db.exec(`UPDATE public.canonical_ingredient_aliases SET canonical_ingredient_id=(SELECT id FROM public.canonical_ingredients WHERE canonical_name_ko='Fixture rice'),is_preferred=true
+      WHERE normalized_alias='fixturerice' AND language_code='en';
+      UPDATE public.canonical_ingredients SET canonical_name_en='Fixture rice' WHERE canonical_name_ko='Fixture rice bran';
+      SELECT private.reconcile_material_terms(ARRAY['strict:fixturerice']);`);
+    const resolved=(await db.query(`SELECT i.match_status,i.raw_ingredient_text,c.canonical_name_ko FROM public.product_ingredient_label_items i
+      LEFT JOIN public.canonical_ingredients c ON c.id=i.canonical_ingredient_id
+      WHERE label_set_id='93000000-0000-4000-8000-000000000001' AND display_order IN(3,4) ORDER BY display_order`)).rows;
+    assert.equal(resolved[0].match_status,'unmatched','Preferred whole aliases must not erase hydrolysis');
+    assert.equal(resolved[1].canonical_name_ko,'Fixture rice','Curated exact alias must beat duplicate generated English names');
+    assert.equal(resolved[1].raw_ingredient_text,'Fixture rice');
     await db.exec('SET LOCAL ROLE anon');
     assert.equal((await db.query("SELECT public.material_profile(c) profile FROM public.canonical_ingredients c WHERE canonical_name_ko='Fixture rice'")).rows[0].profile[0].nutrientCode,'carbohydrate');
     assert.equal((await db.query("SELECT count(*)::int n FROM public.product_nutrient_evidence WHERE product_id='92000000-0000-4000-8000-000000000001'")).rows[0].n,0);

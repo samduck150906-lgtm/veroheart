@@ -12,6 +12,17 @@ describe('NutrientEvidenceDetails',()=>{
   });
   it('preserves different values, bases and independent sources',()=>{
     render(<NutrientEvidenceDetails evidence={[base,{...base,value:26,qualifier:'minimum',sourceVersion:'document'},{...base,basis:'dry_matter',sourceVersion:'document'},{...base,sourceUrl:'https://other.example/label',sourceVersion:'document'}]} />);
-    expect(screen.getAllByRole('listitem',{hidden:true})).toHaveLength(4);
+    expect(screen.getAllByRole('listitem',{hidden:true})).toHaveLength(3);
+    expect(screen.getAllByRole('listitem',{hidden:true}).map(e=>e.textContent).join(' ')).toContain('건물 기준');
+  });
+  it('preserves two actual documents while suppressing a profile copy with a different catalog URL',()=>{
+    render(<NutrientEvidenceDetails evidence={[base,{...base,sourceVersion:'document-a',sourceUrl:'https://manufacturer.example/my/label'},{...base,sourceVersion:'document-b',sourceUrl:'https://manufacturer.example/uk/label'}]} />);
+    expect(screen.getAllByRole('listitem',{hidden:true})).toHaveLength(2);
+  });
+  it('keeps liquid volume and powder basis explicit',()=>{
+    render(<NutrientEvidenceDetails evidence={[{...base,unit:'g/100mL',value:5},{...base,basis:'as_sold',value:33}]} />);
+    const items=screen.getAllByRole('listitem',{hidden:true});
+    expect(items[0].textContent).toContain('5 g/100mL');
+    expect(items[1].textContent).toContain('분말 제품 그대로 기준 · 조유 후 수치 아님');
   });
 });
