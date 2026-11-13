@@ -950,8 +950,11 @@ serve(async (req) => {
         const countOf = async (
           table: string,
           build?: (q: Db) => Db,
+          catalogScope: 'active' | 'archived' = 'active',
         ): Promise<number | null> => {
-          let query = db.from(table).select('*', { count: 'exact', head: true });
+          let query = db.from(table).select(table === 'product_enrichment_queue' ? 'product_id,products!inner(id)' : '*', { count: 'exact', head: true });
+          if (table === 'products') query = catalogScope === 'archived' ? query.not('catalog_archived_at', 'is', null) : query.is('catalog_archived_at', null);
+          if (table === 'product_enrichment_queue') query = query.is('products.catalog_archived_at', null);
           if (build) query = build(query);
           const { count, error } = await query;
           if (error) {
@@ -981,7 +984,7 @@ serve(async (req) => {
 
         const [
           products, ingredients, links, pets, unmatchedPending,
-          productsLast7, productsPrev7, feedingLogsLast7, authUsers, productQuality,
+          productsLast7, productsPrev7, feedingLogsLast7, authUsers, productQuality, archivedCatalogRecords,
         ] = await Promise.all([
           countOf('products'),
           countOf('ingredients'),
@@ -993,6 +996,7 @@ serve(async (req) => {
           countOf('pet_feeding_logs', (q) => q.gte('created_at', last7)),
           authUsersPromise,
           productQualityPromise,
+          countOf('products', undefined, 'archived'),
         ]);
 
         const joinedAt = (user: AuthUserRecord) => new Date(user.created_at ?? 0).getTime();
@@ -1006,6 +1010,7 @@ serve(async (req) => {
         const { data: recentProducts } = await db
           .from('products')
           .select('id, name, brand_name, created_at')
+          .is('catalog_archived_at', null)
           .order('created_at', { ascending: false })
           .limit(5);
 
@@ -1026,7 +1031,7 @@ serve(async (req) => {
           {
             ok: true,
             metrics: {
-              products, ingredients, productIngredientLinks: links, users, pets,
+              products, ingredients, productIngredientLinks: links, users, pets, archivedCatalogRecords,
               unmatchedPending, feedingLogsLast7,
               productsLast7, productsPrev7, usersLast7, usersPrev7,
               verifiedProducts: productQuality?.verifiedProducts ?? null,

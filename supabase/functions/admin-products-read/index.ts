@@ -147,6 +147,7 @@ type Filters = Record<string, any>;
 /** 목록·통계가 같은 조건을 쓰도록 필터 적용을 한곳에 둔다. */
 // deno-lint-ignore no-explicit-any
 function applyFilters(builder: any, filters: Filters) {
+  builder = builder.is('catalog_archived_at', null);
   const search = optionalText(filters.search, '검색어', 100);
   if (search) {
     const pattern = likePattern(search);
@@ -203,7 +204,9 @@ serve(async (req) => {
     if (view === 'full' || view === 'edit') {
       const id = typeof body.id === 'string' ? body.id.trim() : '';
       if (!UUID_RE.test(id)) throw new ValidationError('제품 ID 형식이 올바르지 않습니다.');
-      const { data, error } = await db.from('products').select(columns).eq('id', id).maybeSingle();
+      let query = db.from('products').select(columns).eq('id', id);
+      if (view === 'edit') query = query.is('catalog_archived_at', null);
+      const { data, error } = await query.maybeSingle();
       if (error) throw error;
       return json({ ok: true, product: data ?? null }, 200, cors);
     }

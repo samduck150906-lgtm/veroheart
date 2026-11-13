@@ -116,6 +116,7 @@ export interface DashboardMetrics {
   productsWithoutNutrition: number | null;
   productsWithoutBarcode: number | null;
   dataQualityIssues: number | null;
+  archivedCatalogRecords?: number | null;
 }
 
 export interface DashboardPayload {
@@ -278,6 +279,8 @@ export interface EnrichmentQueueRow {
     /** 노출 중인지. 정리로 내려둔 제품을 목록에서 구분해 보여 준다. */
     is_visible?: boolean;
     verification_status: string | null;
+    catalog_archived_at?: string | null;
+    catalog_archive_reason?: string | null;
   };
   source_count: number;
 }
@@ -289,6 +292,8 @@ export async function fetchEnrichmentQueue(input: {
   missingField?: string;
   /** 'visible'(기본) · 'hidden' · 'all' */
   visibility?: string;
+  catalogScope?: 'active' | 'archived' | 'all';
+  includeComplete?: boolean;
 }): Promise<Paged<EnrichmentQueueRow>> {
   // admin-write 가 아니라 전용 읽기 함수를 쓴다. 관리자 쓰기가 전부 지나가는
   // 함수에 조회 조건을 걸어 두면, 필터 하나 고치자고 그 함수를 다시 배포해야 한다.
