@@ -8058,6 +8058,614 @@
       "labelRequestId": "9b34df40-5a2e-8c36-ac9b-7340ac1f845c",
       "language": "en",
       "packs": []
+    },
+    {
+      "productId": "1d24800e-3641-42aa-a906-4e9197a143ed",
+      "title": "레날 + 하이포알러제닉 스몰독",
+      "koreaSourceUrl": "https://www.royalcanin.com/kr/dogs/products/vet-products/renal-%2b-hypoallergenic-small-dogs-8062",
+      "sourceUrl": "https://www.royalcanin.com/de/dogs/products/vet-products/renal-%2b-hypoallergenic-small-dogs-8062",
+      "sourceTitle": "RENAL + HYPOALLERGENIC SMALL DOGS",
+      "sourceProductId": "8062",
+      "documentSha256": "1297deca123b7a0af04cb2339bd936d5490a840accd91e9fa1924d83b51bbdb9",
+      "observedAt": "2026-11-13T09:58:49.819Z",
+      "measurements": [
+        {
+          "nutrientCode": "protein",
+          "value": 14,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "Protein: 14,0%"
+        },
+        {
+          "nutrientCode": "fat",
+          "value": 19,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Fettgehalt: 19,0%"
+        },
+        {
+          "nutrientCode": "crude_fiber",
+          "value": 2.3,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Rohfaser: 2,3%"
+        },
+        {
+          "nutrientCode": "ash",
+          "value": 4.2,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Rohasche: 4,2%"
+        },
+        {
+          "nutrientCode": "calcium",
+          "value": 0.3,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Calcium: 0,30%"
+        },
+        {
+          "nutrientCode": "phosphorus",
+          "value": 0.18,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Phosphor: 0,18%"
+        }
+      ],
+      "rawBlock": "ZUSATZSTOFFE (pro kg): Ernährungsphysiologische Zusatzstoffe: Vitamin A: 36800 IE, Vitamin D3: 800 IE, Eisen (3b103): 42 mg, Jod (3b201, 3b202): 3,8 mg, Kupfer (3b405, 3b406): 15 mg, Mangan (3b502, 3b504): 55 mg, Zink (3b603, 3b605, 3b606): 162 mg, Selen (3b801, 3b811, 3b812): 0,26 mg - Technologische Zusatzstoffe: Klinoptilolith sedimentären Ursprungs: 10 g - Konservierungsstoffe -\nAntioxidantien\nANALYTISCHE BESTANDTEILE: Protein: 14,0% - Rohfaser: 2,3% - Fettgehalt: 19,0% - Rohasche: 4,2% - EPA+DHA: 0,50% - Essenzielle Fettsäure (Linolsäure): 4,02% - Calcium: 0,30% - Phosphor: 0,18% - Kalium: 0,61% - Natrium: 0,35% - Energiegehalt (ME): 4030 kcal/kg",
+      "sharedPackages": [
+        {
+          "barcode": "3182551064216",
+          "size": "1 kg"
+        }
+      ],
+      "referenceNote": "한국·독일 공식 페이지의 동일 세계 공통 제품 식별자, 대상 동물, 포장 GTIN을 대조한 독일 제조사 표시 분석값입니다. 소수점 쉼표의 원문과 출처를 보존했으며 국내 최소·최대 보장값으로 바꾸지 않았습니다. 국가·제조 시점별 차이는 원본 포장을 우선합니다.",
+      "observationId": "cbb80df2-dbab-4b5a-4029-b7aac875185a",
+      "profileProjection": true
+    },
+    {
+      "productId": "06d08093-a77f-4aa8-b919-b385f890cf4a",
+      "title": "하이포알러제닉 + 세타이어티 스몰독",
+      "koreaSourceUrl": "https://www.royalcanin.com/kr/dogs/products/vet-products/hypoallergenic-%2b-satiety-small-dogs-8069",
+      "sourceUrl": "https://www.royalcanin.com/de/dogs/products/vet-products/hypoallergenic-%2b-satiety-small-dogs-8069",
+      "sourceTitle": "HYPOALLERGENIC + SATIETY SMALL DOGS",
+      "sourceProductId": "8069",
+      "documentSha256": "b8b20ecd5870c3aca126121efa0b7ba3efb2359163d3bc7b671dec38a9ac52c5",
+      "observedAt": "2026-11-13T09:58:49.819Z",
+      "measurements": [
+        {
+          "nutrientCode": "protein",
+          "value": 30,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "Protein: 30,0%"
+        },
+        {
+          "nutrientCode": "fat",
+          "value": 9.5,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Fettgehalt: 9,5%"
+        },
+        {
+          "nutrientCode": "crude_fiber",
+          "value": 16.6,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Rohfaser: 16,6%"
+        },
+        {
+          "nutrientCode": "ash",
+          "value": 5.7,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Rohasche: 5,7%"
+        }
+      ],
+      "rawBlock": "ZUSATZSTOFFE (pro kg): Ernährungsphysiologische Zusatzstoffe: Vitamin A: 33300 IE, Vitamin D3: 700 IE, Eisen (3b103): 38 mg, Jod (3b201, 3b202): 3,4 mg, Kupfer (3b405, 3b406): 14 mg, Mangan (3b502, 3b504): 50 mg, Zink (3b603, 3b605, 3b606): 146 mg, Selen (3b801, 3b811, 3b812): 0,24 mg - Konservierungsstoffe - Antioxidantien\nANALYTISCHE BESTANDTEILE: Protein: 30,0% - Rohfaser: 16,6% - Fettgehalt: 9,5% - Rohasche: 5,7% - Essenzielle Fettsäure (Linolsäure): 2,08% - Energiegehalt (ME): 2586 kcal/kg",
+      "sharedPackages": [
+        {
+          "barcode": "3182551064537",
+          "size": "1 kg"
+        }
+      ],
+      "referenceNote": "한국·독일 공식 페이지의 동일 세계 공통 제품 식별자, 대상 동물, 포장 GTIN을 대조한 독일 제조사 표시 분석값입니다. 소수점 쉼표의 원문과 출처를 보존했으며 국내 최소·최대 보장값으로 바꾸지 않았습니다. 국가·제조 시점별 차이는 원본 포장을 우선합니다.",
+      "observationId": "2af08158-8f33-1b82-c175-6505a21592e4",
+      "profileProjection": true
+    },
+    {
+      "productId": "6b17a6f1-b2a3-4f35-abb8-ab5b40df8fbc",
+      "title": "유리너리 S/O + 하이포알러제닉 스몰독",
+      "koreaSourceUrl": "https://www.royalcanin.com/kr/dogs/products/vet-products/urinary-so--%2b-hypoallergenic-small-dogs-8063",
+      "sourceUrl": "https://www.royalcanin.com/de/dogs/products/vet-products/urinary-so--%2b-hypoallergenic-small-dogs-8063",
+      "sourceTitle": "URINARY S/O  + HYPOALLERGENIC SMALL DOGS",
+      "sourceProductId": "8063",
+      "documentSha256": "bf1aed4b998e4f42e7ae70a3f8b380ae896e9ec82c62fe5a9c1122dfd6c963e4",
+      "observedAt": "2026-11-13T09:58:50.667Z",
+      "measurements": [
+        {
+          "nutrientCode": "protein",
+          "value": 20,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "Protein: 20,0%"
+        },
+        {
+          "nutrientCode": "fat",
+          "value": 15,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Fettgehalt: 15,0%"
+        },
+        {
+          "nutrientCode": "crude_fiber",
+          "value": 2.4,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Rohfaser: 2,4%"
+        },
+        {
+          "nutrientCode": "ash",
+          "value": 8.1,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Rohasche: 8,1%"
+        },
+        {
+          "nutrientCode": "calcium",
+          "value": 0.54,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Calcium: 0,54%"
+        },
+        {
+          "nutrientCode": "phosphorus",
+          "value": 0.49,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Phosphor: 0,49%"
+        }
+      ],
+      "rawBlock": "ZUSATZSTOFFE (pro kg): Ernährungsphysiologische Zusatzstoffe: Vitamin A: 36100 IE, Vitamin D3: 800 IE, Eisen (3b103): 41 mg, Jod (3b201, 3b202): 3,7 mg, Kupfer (3b405, 3b406): 15 mg, Mangan (3b502, 3b504): 54 mg, Zink (3b603, 3b605, 3b606): 159 mg, Selen (3b801, 3b811, 3b812): 0,26 mg - Technologische Zusatzstoffe: Klinoptilolith sedimentären Ursprungs: 10 g - Konservierungsstoffe -\nAntioxidantien\nANALYTISCHE BESTANDTEILE: Protein: 20,0% - Rohfaser: 2,4% - Fettgehalt: 15,0% - Rohasche: 8,1% - Essenzielle Fettsäure (Linolsäure): 3,4% - Calcium: 0,54% - Phosphor: 0,49% - Natrium: 1,2% - Magnesium: 0,04% - Kalium: 0,81% - Chlorid: 1,9% - Schwefel: 0,58% - Energiegehalt (ME): 3719 kcal/kg",
+      "sharedPackages": [
+        {
+          "barcode": "3182551064568",
+          "size": "1 kg"
+        }
+      ],
+      "referenceNote": "한국·독일 공식 페이지의 동일 세계 공통 제품 식별자, 대상 동물, 포장 GTIN을 대조한 독일 제조사 표시 분석값입니다. 소수점 쉼표의 원문과 출처를 보존했으며 국내 최소·최대 보장값으로 바꾸지 않았습니다. 국가·제조 시점별 차이는 원본 포장을 우선합니다.",
+      "observationId": "c670c4d6-3160-baf7-aa41-7b54754ba9d4",
+      "profileProjection": true
+    },
+    {
+      "productId": "2b5b149d-aae5-4d0e-aa8c-00cd793c9566",
+      "title": "캣 가스트로인테스티널 하이드롤라이즈 프로틴",
+      "koreaSourceUrl": "https://www.royalcanin.com/kr/cats/products/vet-products/gastrointestinal-hydrolysed-protein-2735",
+      "sourceUrl": "https://www.royalcanin.com/de/cats/products/vet-products/gastrointestinal-hydrolysed-protein-2735",
+      "sourceTitle": "GASTROINTESTINAL HYDROLYSED PROTEIN",
+      "sourceProductId": "2735",
+      "documentSha256": "87130b218b5cbd8eb41b76ca5157b4af7596ae1ed1d4e2e47af02f04705a8965",
+      "observedAt": "2026-11-13T09:58:50.667Z",
+      "measurements": [
+        {
+          "nutrientCode": "protein",
+          "value": 31,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "Protein: 31,0%"
+        },
+        {
+          "nutrientCode": "fat",
+          "value": 20,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Fettgehalt: 20,0%"
+        },
+        {
+          "nutrientCode": "crude_fiber",
+          "value": 4.6,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Rohfaser: 4,6%"
+        },
+        {
+          "nutrientCode": "ash",
+          "value": 7.6,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Rohasche: 7,6%"
+        }
+      ],
+      "rawBlock": "ZUSATZSTOFFE (pro kg): Ernährungsphysiologische Zusatzstoffe: Vitamin A: 34300 IE, Vitamin D3: 800 IE, Vitamin E: 809 mg, Vitamin C: 249 mg, Eisen (3b103): 39 mg, Jod (3b201, 3b202): 3,5 mg, Kupfer (3b405): 14,4 mg, Mangan (3b502, 3b505): 51 mg, Zink (3b603, 3b605, 3b612): 151 mg, Selen (3b801, 3b811, 3b812): 0,24 mg - Technologische Zusatzstoffe: Klinoptilolith sedimentären Ursprungs: 10 g - Antioxidantien.\nANALYTISCHE BESTANDTEILE: Protein: 31,0% - Rohfaser: 4,6% - Fettgehalt: 20,0% - Rohasche: 7,6% - Essenzielle Fettsäuren (Linolsäure, Arachidonsäure): 3,68% - Kalium: 1% - Natrium: 0,65% - Omega-3-Fettsäuren: 0,92% - EPA+DHA: 0,41% - Energiegehalt (ME): 4042 kcal/kg.",
+      "sharedPackages": [
+        {
+          "barcode": "3182550948609",
+          "size": "2 kg"
+        }
+      ],
+      "referenceNote": "한국·독일 공식 페이지의 동일 세계 공통 제품 식별자, 대상 동물, 포장 GTIN을 대조한 독일 제조사 표시 분석값입니다. 소수점 쉼표의 원문과 출처를 보존했으며 국내 최소·최대 보장값으로 바꾸지 않았습니다. 국가·제조 시점별 차이는 원본 포장을 우선합니다.",
+      "observationId": "6959a1e1-195a-ee40-c3f6-aea2fb2ad4d9",
+      "profileProjection": true
+    },
+    {
+      "productId": "729f1243-d972-460b-8f18-4941dd962de2",
+      "title": "독 카디악 캔",
+      "koreaSourceUrl": "https://www.royalcanin.com/kr/dogs/products/vet-products/cardiac-4023",
+      "sourceUrl": "https://www.royalcanin.com/de/dogs/products/vet-products/cardiac-4023",
+      "sourceTitle": "CARDIAC für Hunde Mousse",
+      "sourceProductId": "4023",
+      "documentSha256": "51e6db481575dc48efe463508eb41fc963ae81fab199405567c3ea6648af90bc",
+      "observedAt": "2026-11-13T09:58:50.667Z",
+      "measurements": [
+        {
+          "nutrientCode": "protein",
+          "value": 8.1,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "Protein: 8,1%"
+        },
+        {
+          "nutrientCode": "fat",
+          "value": 7.1,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Fettgehalt: 7,1%"
+        },
+        {
+          "nutrientCode": "crude_fiber",
+          "value": 0.8,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Rohfaser: 0,8%"
+        },
+        {
+          "nutrientCode": "ash",
+          "value": 1.4,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Rohasche: 1,4%"
+        },
+        {
+          "nutrientCode": "moisture",
+          "value": 73.5,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Feuchtigkeit: 73,5%"
+        }
+      ],
+      "rawBlock": "Ernährungsphysiologische Zusatzstoffe: Vitamin D3: 280 IE, Vitamin E: 240 mg, Vitamin C: 100 mg, Taurin: 2,2 g, Eisen (3b103): 8 mg, Jod (3b202): 0,41 mg, Kupfer (3b405, 3b406): 3,3 mg, Mangan (3b502, 3b503, 3b504): 2,3 mg, Zink (3b603, 3b605, 3b606): 23 mg\nProtein: 8,1% - Fettgehalt: 7,1% - Rohasche: 1,4% - Rohfaser: 0,8% - Feuchtigkeit: 73,5% - Magnesium: 0,04% - Kalium: 0,21% - Natrium: 0,06% - EPA/DHA: 0,3% - Omega-3-Fettsäuren: 0,48% - L-Carnitin: 240 mg/kg",
+      "sharedPackages": [
+        {
+          "barcode": "9003579309407",
+          "size": "1 x 410 g"
+        }
+      ],
+      "referenceNote": "한국·독일 공식 페이지의 동일 세계 공통 제품 식별자, 대상 동물, 포장 GTIN을 대조한 독일 제조사 표시 분석값입니다. 소수점 쉼표의 원문과 출처를 보존했으며 국내 최소·최대 보장값으로 바꾸지 않았습니다. 국가·제조 시점별 차이는 원본 포장을 우선합니다.",
+      "observationId": "ab5318d4-cd78-5010-9519-1d0cc6768de0",
+      "profileProjection": true
+    },
+    {
+      "productId": "98b8b74c-7071-4761-aa58-0a6e46d043b0",
+      "title": "캣 가스트로인테스티널 모더레이트 칼로리 씬 슬라이스 인 그레이비 파우치",
+      "koreaSourceUrl": "https://www.royalcanin.com/kr/cats/products/vet-products/gastrointestinal-moderate-calorie-4009",
+      "sourceUrl": "https://www.royalcanin.com/de/cats/products/vet-products/gastrointestinal-moderate-calorie-4009",
+      "sourceTitle": "GASTROINTESTINAL MODERATE CALORIE Feine Stückchen in Soße",
+      "sourceProductId": "4009",
+      "documentSha256": "b65bf290c9df50b444cdc2c85cfc31e8ea1d7033d7db10ce79405523dd53decf",
+      "observedAt": "2026-11-13T09:58:54.388Z",
+      "measurements": [
+        {
+          "nutrientCode": "protein",
+          "value": 7.5,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "Protein: 7,5%"
+        },
+        {
+          "nutrientCode": "fat",
+          "value": 2.5,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Fettgehalt: 2,5%"
+        },
+        {
+          "nutrientCode": "crude_fiber",
+          "value": 1,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Rohfaser: 1,0%"
+        },
+        {
+          "nutrientCode": "ash",
+          "value": 1.6,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Rohasche: 1,6%"
+        },
+        {
+          "nutrientCode": "moisture",
+          "value": 82.2,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Feuchtigkeit: 82,2%"
+        }
+      ],
+      "rawBlock": "ZUSATZSTOFFE (pro kg): Ernährungsphysiologische Zusatzstoffe: Vitamin D3: 230 IE, Vitamin E: 83 mg, Vitamin C: 35 mg, Taurin: 0,9 g, Eisen (3b103): 4 mg, Jod (3b202): 0,29 mg, Kupfer (3b405, 3b406): 2,3 mg, Mangan (3b502, 3b503, 3b504): 1,3 mg, Zink (3b603, 3b605, 3b606): 13 mg - Technologische Zusatzstoffe: Klinoptilolith sedimentären Ursprungs 2 g\nANALYTISCHE BESTANDTEILE: Protein: 7,5% - Rohfaser: 1,0% - Fettgehalt: 2,5% - Rohasche: 1,6% - Feuchtigkeit: 82,2% - Kalium: 0,14% - Natrium: 0,12% - Omega-3-Fettsäuren: 0,06% - EPA/DHA: 0,02% - Energiegehalt (ME): 703 kcal/kg",
+      "sharedPackages": [
+        {
+          "barcode": "9003579013601",
+          "size": "12 x 85 g"
+        }
+      ],
+      "referenceNote": "한국·독일 공식 페이지의 동일 세계 공통 제품 식별자, 대상 동물, 포장 GTIN을 대조한 독일 제조사 표시 분석값입니다. 소수점 쉼표의 원문과 출처를 보존했으며 국내 최소·최대 보장값으로 바꾸지 않았습니다. 국가·제조 시점별 차이는 원본 포장을 우선합니다.",
+      "observationId": "b5023d10-6abc-d761-5de6-3b8ddb666590",
+      "profileProjection": true
+    },
+    {
+      "productId": "998815b5-b287-42dc-9517-b32a26cbe877",
+      "title": "독 유리너리 U/C",
+      "koreaSourceUrl": "https://www.royalcanin.com/kr/dogs/products/vet-products/urinary-uc-3942",
+      "sourceUrl": "https://www.royalcanin.com/de/dogs/products/vet-products/urinary-uc-3942",
+      "sourceTitle": "URINARY U/C für Hunde",
+      "sourceProductId": "3942",
+      "documentSha256": "6b1ce283c6f3e9ede05110b8624b9e2c55ca685ab47f16df02007d60d7f55e81",
+      "observedAt": "2026-11-13T09:58:54.388Z",
+      "measurements": [
+        {
+          "nutrientCode": "protein",
+          "value": 18,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "Protein: 18,0%"
+        },
+        {
+          "nutrientCode": "fat",
+          "value": 15,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Fettgehalt: 15,0%"
+        },
+        {
+          "nutrientCode": "crude_fiber",
+          "value": 2.2,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Rohfaser: 2,2%"
+        },
+        {
+          "nutrientCode": "ash",
+          "value": 5.2,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Rohasche: 5,2%"
+        }
+      ],
+      "rawBlock": "ZUSATZSTOFFE (pro kg): Ernährungsphysiologische Zusatzstoffe: Vitamin A: 30900 IE, Vitamin D3: 825 IE, Eisen (3b103): 46 mg, Jod (3b201, 3b202): 4,6 mg, Kupfer (3b405, 3b406): 14 mg, Mangan (3b502, 3b504): 59 mg, Zink (3b603, 3b605, 3b606): 150 mg, Selen (3b801, 3b811, 3b812): 0,09 mg - Konservierungsstoffe - Antioxidantien\nANALYTISCHE BESTANDTEILE: Protein: 18,0% - Rohfaser: 2,2% - Fettgehalt: 15,0% - Rohasche: 5,2% - Gesamte schwefelhaltige Aminosäuren (Methionin und Cystein): 0,88% - Natrium: 0,3% - Kalium: 0,9% - Chloride: 0,6% - Harnalkalisierende Stoffe: Calciumcarbonat: 1,8%, Kaliumzitrat: 0,2%",
+      "sharedPackages": [
+        {
+          "barcode": "3182550748292",
+          "size": "2 kg"
+        }
+      ],
+      "referenceNote": "한국·독일 공식 페이지의 동일 세계 공통 제품 식별자, 대상 동물, 포장 GTIN을 대조한 독일 제조사 표시 분석값입니다. 소수점 쉼표의 원문과 출처를 보존했으며 국내 최소·최대 보장값으로 바꾸지 않았습니다. 국가·제조 시점별 차이는 원본 포장을 우선합니다.",
+      "observationId": "cdd26215-644b-a8fb-b48b-c2a381f1731e",
+      "profileProjection": true
+    },
+    {
+      "productId": "7c4f3556-97dd-41fb-884e-f1a0eca12209",
+      "title": "글리코밸런스 스몰독",
+      "koreaSourceUrl": "https://www.royalcanin.com/kr/dogs/products/vet-products/glycobalance-small-dogs-8073",
+      "sourceUrl": "https://www.royalcanin.com/de/dogs/products/vet-products/glycobalance-small-dogs-8073",
+      "sourceTitle": "GLYCOBALANCE SMALL DOGS",
+      "sourceProductId": "8073",
+      "documentSha256": "273a18948c821f36fe561d9644092ffb6279a228f35369b97d01617d802db88f",
+      "observedAt": "2026-11-13T09:58:54.388Z",
+      "measurements": [
+        {
+          "nutrientCode": "protein",
+          "value": 37,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "Protein: 37,0%"
+        },
+        {
+          "nutrientCode": "fat",
+          "value": 12,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Fettgehalt: 12,0%"
+        },
+        {
+          "nutrientCode": "crude_fiber",
+          "value": 6.8,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Rohfaser: 6,8%"
+        },
+        {
+          "nutrientCode": "ash",
+          "value": 5.5,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Rohasche: 5,5%"
+        }
+      ],
+      "rawBlock": "ZUSATZSTOFFE (pro kg): Ernährungsphysiologische Zusatzstoffe: Vitamin A: 15700 IE, Vitamin D3: 1000 IE, Eisen (3b103): 27 mg, Jod (3b201, 3b202): 2,7 mg, Kupfer (3b405, 3b406): 8,4 mg, Mangan (3b502, 3b504): 36 mg, Zink (3b603, 3b605, 3b606): 128 mg, Selen (3b801, 3b811, 3b812): 0,04 mg - Konservierungsstoffe - Antioxidantien\n\nANALYTISCHE BESTANDTEILE: Protein: 37,0% - Rohfaser: 6,8% - Fettgehalt: 12,0% - Rohasche: 5,5% - Stärke: 20,1% - Gesamtzucker: 1,4% - Omega-3-Fettsäuren: 0,58% - Omega-6-Fettsäuren: 2,47% - Essenzielle Fettsäure (Linolsäure): 2,47% - Energiegehalt (ME): 3407 kcal/kg. ",
+      "sharedPackages": [
+        {
+          "barcode": "3182551101744",
+          "size": "1.5 kg"
+        },
+        {
+          "barcode": "3182551101775",
+          "size": "4 kg"
+        }
+      ],
+      "referenceNote": "한국·독일 공식 페이지의 동일 세계 공통 제품 식별자, 대상 동물, 포장 GTIN을 대조한 독일 제조사 표시 분석값입니다. 소수점 쉼표의 원문과 출처를 보존했으며 국내 최소·최대 보장값으로 바꾸지 않았습니다. 국가·제조 시점별 차이는 원본 포장을 우선합니다.",
+      "observationId": "5a1194b5-3307-7842-1f2c-859c0480d656",
+      "profileProjection": true
+    },
+    {
+      "productId": "9cd71f07-78ba-476f-90a0-165cb76142f9",
+      "title": "독 아날러제닉",
+      "koreaSourceUrl": "https://www.royalcanin.com/kr/dogs/products/vet-products/anallergenic-4014",
+      "sourceUrl": "https://www.royalcanin.com/de/dogs/products/vet-products/anallergenic-4014",
+      "sourceTitle": "ANALLERGENIC für Hunde",
+      "sourceProductId": "4014",
+      "documentSha256": "35720b4b16cdc228c3337c81a561753ed5169d02d76a8a952320e24637ce3117",
+      "observedAt": "2026-11-13T09:58:58.580Z",
+      "measurements": [
+        {
+          "nutrientCode": "protein",
+          "value": 18,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "Protein: 18,0%"
+        },
+        {
+          "nutrientCode": "fat",
+          "value": 16.5,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Fettgehalt: 16,5%"
+        },
+        {
+          "nutrientCode": "crude_fiber",
+          "value": 2,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Rohfaser: 2,0%"
+        },
+        {
+          "nutrientCode": "ash",
+          "value": 6.2,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Rohasche: 6,2%"
+        }
+      ],
+      "rawBlock": "ZUSATZSTOFFE (pro kg): Ernährungsphysiologische Zusatzstoffe: Vitamin A: 38500IE, Vitamin D3: 800IE, Eisen (3b103): 41mg, Jod (3b201, 3b202): 3,5mg, Kupfer (3b405, 3b406): 15mg, Mangan (3b502, 3b504): 55mg, Zink (3b603, 3b605, 3b606): 149mg, Selen (3b801, 3b811, 3b812): 0,34mg - Technologische Zusatzstoffe: Klinoptilolith sedimentären Ursprungs: 9,8g-Konservierungsstoffe-Antioxidantien.\nANALYTISCHE BESTANDTEILE: Protein: 18,0% - Fettgehalt: 16,5% - Rohasche: 6,2% - Rohfaser: 2,0% - Essenzielle Fettsäure (Linolsäure): 2,6%. ",
+      "sharedPackages": [
+        {
+          "barcode": "3182550940528",
+          "size": "1.5 kg"
+        }
+      ],
+      "referenceNote": "한국·독일 공식 페이지의 동일 세계 공통 제품 식별자, 대상 동물, 포장 GTIN을 대조한 독일 제조사 표시 분석값입니다. 소수점 쉼표의 원문과 출처를 보존했으며 국내 최소·최대 보장값으로 바꾸지 않았습니다. 국가·제조 시점별 차이는 원본 포장을 우선합니다.",
+      "observationId": "74ab1fee-1dcc-6cf9-bf4b-1a983aa3975d",
+      "profileProjection": true
+    },
+    {
+      "productId": "ac654f8b-f1b0-4c7d-b7dd-07777a3b52cb",
+      "title": "유리너리 S/O + 세타이어티 스몰독",
+      "koreaSourceUrl": "https://www.royalcanin.com/kr/dogs/products/vet-products/urinary-so-%2b-satiety-small-dogs-8064",
+      "sourceUrl": "https://www.royalcanin.com/de/dogs/products/vet-products/urinary-so-%2b-satiety-small-dogs-8064",
+      "sourceTitle": "URINARY S/O + SATIETY SMALL DOGS",
+      "sourceProductId": "8064",
+      "documentSha256": "b8b02399c9236e6170d9fbc1a26f9e3b0d49d2526becddcf0a678454036ee598",
+      "observedAt": "2026-11-13T09:58:58.580Z",
+      "measurements": [
+        {
+          "nutrientCode": "protein",
+          "value": 30,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "Protein: 30,0%"
+        },
+        {
+          "nutrientCode": "fat",
+          "value": 9.5,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Fettgehalt: 9,5%"
+        },
+        {
+          "nutrientCode": "crude_fiber",
+          "value": 16.3,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Rohfaser: 16,3%"
+        },
+        {
+          "nutrientCode": "ash",
+          "value": 7.3,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Rohasche: 7,3%"
+        },
+        {
+          "nutrientCode": "calcium",
+          "value": 0.87,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Calcium: 0,87%"
+        },
+        {
+          "nutrientCode": "phosphorus",
+          "value": 0.7,
+          "unit": "g/100g",
+          "basis": "as_fed",
+          "qualifier": "unspecified",
+          "raw": "- Phosphor: 0,70%"
+        }
+      ],
+      "rawBlock": "ZUSATZSTOFFE (pro kg): Ernährungsphysiologische Zusatzstoffe: Vitamin A: 19900 IE, Vitamin D3: \n1000 IE, Eisen (3b103): 40 mg, Jod (3b201, 3b202): 4 mg, Kupfer (3b405, 3b406): 12 mg, Mangan (3b502, 3b504): 52 mg, Zink (3b603, 3b605, 3b606): 137 mg, Selen (3b801, 3b811, 3b812): 0,07 mg - Konservierungsstoffe - Antioxidantien\n\nANALYTISCHE BESTANDTEILE: Protein: 30,0% - Rohfaser: 16,3% - Fettgehalt: 9,5% - Rohasche: 7,3% - Calcium: 0,87% - Phosphor: 0,70% - Natrium: 0,93% - Magnesium: 0,06% - Kalium: 0,80% - Chlorid: 1,55% - Schwefel: 0,64% - Energiegehalt (ME): 2564 kcal/kg",
+      "sharedPackages": [
+        {
+          "barcode": "3182551064599",
+          "size": "1 kg"
+        }
+      ],
+      "referenceNote": "한국·독일 공식 페이지의 동일 세계 공통 제품 식별자, 대상 동물, 포장 GTIN을 대조한 독일 제조사 표시 분석값입니다. 소수점 쉼표의 원문과 출처를 보존했으며 국내 최소·최대 보장값으로 바꾸지 않았습니다. 국가·제조 시점별 차이는 원본 포장을 우선합니다.",
+      "observationId": "8c66c07a-3407-4172-7975-7ea0cbc6e6c2",
+      "profileProjection": true
     }
   ],
   "deferred": [
@@ -8166,6 +8774,13 @@
         "9cd71f07-78ba-476f-90a0-165cb76142f9"
       ],
       "reason": "No matched official analytical data"
+    },
+    {
+      "sourceUrl": "https://www.royalcanin.com/de/dogs/products/vet-products/diabetic-special-low-carbohydrate-4015",
+      "productIds": [
+        "94dcc36d-ac0a-405e-acd3-daeadedecbee"
+      ],
+      "reason": "Current Korean official name differs from the stored recipe; rename/version review required"
     }
   ]
 }

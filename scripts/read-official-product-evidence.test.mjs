@@ -1,9 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readRoyalCaninProduct, readEvolveChickenCat, readOrijenOriginal, parseGuaranteedNutrition, parseVolumeNutrition, assertSharedRoyalPackage, readInabaKorea, readBonacibo, readHillsMatchingPackage } from './read-official-product-evidence.mjs';
+import { readRoyalCaninProduct, readEvolveChickenCat, readOrijenOriginal, parseGuaranteedNutrition, parseVolumeNutrition, assertSharedRoyalPackage, readInabaKorea, readBonacibo, readHillsMatchingPackage, parseGermanAnalyticalNutrition } from './read-official-product-evidence.mjs';
 const url = 'https://www.royalcanin.com/kr/dogs/products/vet-products/glycobalance-small-dogs-8073';
 const product = { mainItem: 8073, locale:'ko_KR', species:['dog'], title:'글리코밸런스 스몰독', packs:[{ean:'3182551101744',size:'1.5 kg'},{ean:'3182551101775',size:'4 kg'},{ean:'1234567890123',size:'bogus'}], nutritionalInfo:[{title:'pa.nutritionalInformation.composition',description:'보리, 밀 글루텐'}], recommendedProducts:{mixFeeding:[{ean:'9003579051122',nutritionalInfo:[{title:'analytical',description:'조단백 99%'}]}]} };
 const page = data => '<h1>글리코밸런스 스몰독</h1><script id="__NEXT_DATA__" type="application/json">'+JSON.stringify({props:{pageProps:{productData:{response:data}}}})+'</script>';
+test('German explicit analysis keeps decimal commas, locale, source terms and excludes feeding values',()=>{
+ const got=readRoyalCaninProduct(url.replace('/kr/','/de/'),page({...product,locale:'de_DE',nutritionalInfo:[{title:'pa.nutritionalInformation.analyticalConstituants',description:'ANALYTISCHE BESTANDTEILE: Protein: 30,0% - Rohfaser: 16,6% - Fettgehalt: 9,5% - Rohasche: 5,7%'}]}),'de');
+ const values=parseGermanAnalyticalNutrition(got.nutritionText+' GEBRAUCHSANWEISUNG: Protein: 99%');
+ assert.deepEqual(values.map(v=>[v.nutrientCode,v.value]),[['protein',30],['fat',9.5],['crude_fiber',16.6],['ash',5.7]]);
+ assert.ok(values.every(v=>v.qualifier==='unspecified'&&v.basis==='as_fed'));
+ assert.throws(()=>parseGermanAnalyticalNutrition('Protein: 30%'),/Missing explicit/);
+ assert.throws(()=>parseGermanAnalyticalNutrition('ANALYTISCHE BESTANDTEILE: Protein: 30% - Protein: 31%'),/Conflicting/);
+ assert.throws(()=>readRoyalCaninProduct(url.replace('/kr/','/de/'),page(product),'de'),/locale/);
+});
 test('only current formula packs; no recommendation EAN or nutrient leakage',()=>{const got=readRoyalCaninProduct(url,page(product)); assert.deepEqual(got.packs.map(p=>p.barcode),['3182551101744','3182551101775']); assert.equal(got.nutritionText,''); assert.equal(got.ingredientsText,'보리, 밀 글루텐');});
 test('read embedded analytical section without importing feeding or RSA guarantees',()=>{
  const got=readRoyalCaninProduct(url,page({...product,nutritionalInfo:[{title:'pa.nutritionalInformation.composition',description:'COMPOSITION: rice. ANALYTICAL CONSTITUENTS: Protein: 30.0% - Fat content: 13.0%. FEEDING INSTRUCTIONS: 99% For RSA: Crude protein (min) 280 g/kg'}]}));

@@ -110,7 +110,7 @@ export function readHillsMatchingPackage(sourceUrl, html, expectedUpcs) {
 // recommendations and arbitrary 13-digit strings are deliberately not searched.
 export function readRoyalCaninProduct(sourceUrl, html, country = 'kr') {
   const url = new URL(sourceUrl);
-  const locales = { kr: 'ko_KR', my: 'ms_MY', uk: 'en_GB' };
+  const locales = { kr: 'ko_KR', my: 'ms_MY', uk: 'en_GB', de: 'de_DE' };
   if (!locales[country] || url.origin !== 'https://www.royalcanin.com' || !new RegExp('^/' + country + '/(dogs|cats)/products/(retail-products|vet-products)/').test(url.pathname)) throw new Error('Unsupported Royal Canin locale/source');
   const match = url.pathname.match(/-([0-9]+)(?:\/v[0-9]+)?$/);
   if (!match) throw new Error('Missing official formula identity');
@@ -154,6 +154,19 @@ export function assertSharedRoyalPackage(korea, foreign) {
   const shared = korea.packs.filter(k => foreign.packs.some(f => f.barcode === k.barcode));
   if (!shared.length) throw new Error('No identical package GTIN');
   return shared;
+}
+
+export function parseGermanAnalyticalNutrition(text) {
+  const block=text.match(/ANALYTISCHE BESTANDTEILE:\s*([\s\S]*?)(?=GEBRAUCHSANWEISUNG:|$)/i)?.[1];
+  if(!block||/Trockenmasse|dry matter/i.test(block))throw Error('Missing explicit German as-fed analysis');
+  const names={protein:'Protein',fat:'Fettgehalt',crude_fiber:'Rohfaser',ash:'Rohasche',moisture:'Feuchtigkeit',calcium:'Calcium',phosphorus:'Phosphor'};
+  return Object.entries(names).flatMap(([nutrientCode,name])=>{
+    const hits=[...block.matchAll(new RegExp('(?:^| - )\\s*'+name+':\\s*(\\d+(?:[.,]\\d+)?)\\s*%','gi'))];
+    if(!hits.length)return[];
+    const values=new Set(hits.map(m=>Number(m[1].replace(',','.'))));
+    if(values.size!==1||[...values][0]>100)throw Error('Conflicting/out-of-range German analysis: '+nutrientCode);
+    return[{nutrientCode,value:[...values][0],unit:'g/100g',basis:'as_fed',qualifier:'unspecified',raw:hits[0][0].trim()}];
+  });
 }
 
 export function parseGuaranteedNutrition(text) {
