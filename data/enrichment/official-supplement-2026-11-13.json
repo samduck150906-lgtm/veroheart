@@ -4103,9 +4103,99 @@
       ],
       "rawBlock": "ANALYTICALCONSTITUENTS\nProtein\n11.0%\nFatcontent\n4.5%\nCrudeash\n1.7%\nCrude fibres I 0.5%\nMoisture\n80.0%\nCOMPosITioN: meat and animal derivatives,fish and fish derivatives,vegetable protein\nextracts,derivativesofvegetableorigin,minerals,yeasts,varioussugars.ADDITIVESper\nkg): Nutritional additives: Vitamin D3: 160 IU, Iron (3b103): 4 mg, lodine (3b202): 0.28 mg,\nCopper(3b405,3b406):2.2mg,Manganese(3b502,3b503,3b504):1.1mg,Zinc(3b603\n3b605,3b606):11mg-Technological additives:Clinoptilolite of sedimentary origin:2 g.\nANALYTICALCONSTITUENTS:Protein:11.0%-Fatcontent:4.5%-Crudeash:1.7%-Crude\nfibres:0.5%-Moisture:80.0%.",
       "sharedPackages": [],
-      "referenceNote": "한국 공식 제품 페이지에 연결된 해당 제품의 제조사 이미지. 표시 분석값이며 국내 최소·최대 보장조건으로 바꾸지 않았습니다. 이미지 원본을 직접 확인한 수치만 반영했습니다.",
+      "referenceNote": "한국 공식 제품 페이지에 연결된 해당 제품의 제조사 이미지. 표시 분석값이며 국내 최소·최대 보장조건으로 바꾸지 않았습니다. 이미지 원본을 직접 확인한 수치만 반영했습니다. 제조사 Composition 항목의 원문 순서를 보존했습니다. 별도 첨가제·분석표는 해당 원본 자료에서 확인할 수 있으며 포괄 명칭을 특정 동물종이나 함량으로 추정하지 않았습니다.",
       "observationId": "9e49be3e-e2db-080c-3d98-0e990a5c0bdf",
-      "profileProjection": true
+      "profileProjection": true,
+      "ingredientsText": "meat and animal derivatives, fish and fish derivatives, vegetable protein extracts, derivatives of vegetable origin, minerals, yeasts, various sugars",
+      "language": "en",
+      "items": [
+        {
+          "order": 1,
+          "rawText": "meat and animal derivatives",
+          "baseText": "meat and animal derivatives",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "meatandanimalderivatives",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 2,
+          "rawText": "fish and fish derivatives",
+          "baseText": "fish and fish derivatives",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "fishandfishderivatives",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 3,
+          "rawText": "vegetable protein extracts",
+          "baseText": "vegetable protein extracts",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "vegetableproteinextracts",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 4,
+          "rawText": "derivatives of vegetable origin",
+          "baseText": "derivatives of vegetable origin",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "derivativesofvegetableorigin",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 5,
+          "rawText": "minerals",
+          "baseText": "minerals",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "minerals",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 6,
+          "rawText": "yeasts",
+          "baseText": "yeasts",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "yeasts",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 7,
+          "rawText": "various sugars",
+          "baseText": "various sugars",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "varioussugars",
+          "matchStatus": "unreviewed"
+        }
+      ],
+      "labelChanged": true,
+      "labelRequestId": "ad40311e-76bc-be6a-81d8-46d1882a1c54"
     },
     {
       "productId": "d47bc7c6-82a2-4874-81fa-2f517d784ba4",
@@ -4217,9 +4307,99 @@
       ],
       "rawBlock": "ANALYTICALCONSTITUENTS\nProtein\n10.5%\nFatcontent\n3.0%\nCrudeash\n1.9%\nCrude fibres I 0.4%\nMoisture\n81.2%\nCOMPosITioN:meatand animal derivatives,cereals,minerals,vegetableproteinextracts\nderivatives ofvegetable origin,oils and fats,various sugars.ADDITIVES(perkg):Nutritional\nadditives: Vitamin D3: 140 IU, Iron (3b103): 2 mg,lodine (3b202): 0.26 mg, Copper(3b405,\n3b406):2.1mg,Manganese(3b502,3b503,3b504):0.7mg,Zinc(3b603,3b605,3b606):\n7mg-Technologicaladditives:Cassia gum:3.445g.ANALYTICAL CONSTITUENTS:Protein:\n10.5%-Fat content:3.0%-Crudeash:1.9%-Crude fibres:0.4%-Moisture:81.2%",
       "sharedPackages": [],
-      "referenceNote": "한국 공식 제품 페이지에 연결된 해당 제품의 제조사 이미지. 표시 분석값이며 국내 최소·최대 보장조건으로 바꾸지 않았습니다. 이미지 원본을 직접 확인한 수치만 반영했습니다.",
+      "referenceNote": "한국 공식 제품 페이지에 연결된 해당 제품의 제조사 이미지. 표시 분석값이며 국내 최소·최대 보장조건으로 바꾸지 않았습니다. 이미지 원본을 직접 확인한 수치만 반영했습니다. 제조사 Composition 항목의 원문 순서를 보존했습니다. 별도 첨가제·분석표는 해당 원본 자료에서 확인할 수 있으며 포괄 명칭을 특정 동물종이나 함량으로 추정하지 않았습니다.",
       "observationId": "266f83d7-8f12-e55a-0ea4-5537434e0575",
-      "profileProjection": true
+      "profileProjection": true,
+      "ingredientsText": "meat and animal derivatives, cereals, minerals, vegetable protein extracts, derivatives of vegetable origin, oils and fats, various sugars",
+      "language": "en",
+      "items": [
+        {
+          "order": 1,
+          "rawText": "meat and animal derivatives",
+          "baseText": "meat and animal derivatives",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "meatandanimalderivatives",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 2,
+          "rawText": "cereals",
+          "baseText": "cereals",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "cereals",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 3,
+          "rawText": "minerals",
+          "baseText": "minerals",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "minerals",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 4,
+          "rawText": "vegetable protein extracts",
+          "baseText": "vegetable protein extracts",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "vegetableproteinextracts",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 5,
+          "rawText": "derivatives of vegetable origin",
+          "baseText": "derivatives of vegetable origin",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "derivativesofvegetableorigin",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 6,
+          "rawText": "oils and fats",
+          "baseText": "oils and fats",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "oilsandfats",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 7,
+          "rawText": "various sugars",
+          "baseText": "various sugars",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "varioussugars",
+          "matchStatus": "unreviewed"
+        }
+      ],
+      "labelChanged": true,
+      "labelRequestId": "d205ce0a-d7d9-5f84-293f-71c99baa6f2b"
     },
     {
       "productId": "6aba813e-a89f-4efa-8289-3b9154dd481d",
@@ -4279,9 +4459,87 @@
           "size": "1 x 85 g"
         }
       ],
-      "referenceNote": "한국·해외 공식 페이지의 세계 공통 제품 식별자, 대상 동물, 포장 GTIN을 대조했습니다. 해외 공식 표시 분석값이며 국내 등록성분의 최소·최대 보장값을 뜻하지 않습니다. 포장·제조 시점별 차이는 원본 표시를 우선합니다.",
+      "referenceNote": "한국·해외 공식 페이지의 세계 공통 제품 식별자, 대상 동물, 포장 GTIN을 대조했습니다. 해외 공식 표시 분석값이며 국내 등록성분의 최소·최대 보장값을 뜻하지 않습니다. 포장·제조 시점별 차이는 원본 표시를 우선합니다. 제조사 Composition 항목의 원문 순서를 보존했습니다. 별도 첨가제·분석표는 해당 원본 자료에서 확인할 수 있으며 포괄 명칭을 특정 동물종이나 함량으로 추정하지 않았습니다.",
       "observationId": "32aa3b24-dded-b31e-fb14-7ef71ced91df",
-      "profileProjection": true
+      "profileProjection": true,
+      "ingredientsText": "Meat and animal derivatives, vegetable protein extracts, minerals, derivatives of vegetable origin, cereals, yeasts",
+      "language": "en",
+      "items": [
+        {
+          "order": 1,
+          "rawText": "Meat and animal derivatives",
+          "baseText": "Meat and animal derivatives",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "meatandanimalderivatives",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 2,
+          "rawText": "vegetable protein extracts",
+          "baseText": "vegetable protein extracts",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "vegetableproteinextracts",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 3,
+          "rawText": "minerals",
+          "baseText": "minerals",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "minerals",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 4,
+          "rawText": "derivatives of vegetable origin",
+          "baseText": "derivatives of vegetable origin",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "derivativesofvegetableorigin",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 5,
+          "rawText": "cereals",
+          "baseText": "cereals",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "cereals",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 6,
+          "rawText": "yeasts",
+          "baseText": "yeasts",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "yeasts",
+          "matchStatus": "unreviewed"
+        }
+      ],
+      "labelChanged": true,
+      "labelRequestId": "bc3dbeba-672b-61af-fe68-9af87f9b78f4"
     },
     {
       "productId": "68972d05-1568-47c0-8cc6-56756f8d61aa",
