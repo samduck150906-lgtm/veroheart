@@ -54,7 +54,8 @@ describe('AnalysisResult — 원료 품질 근거 카드', () => {
 describe('AnalysisResult — 성분 상세(성분 사전 근거)', () => {
   it('사전에 등록된 성분은 설명·분류·위험도·출처를 노출한다', () => {
     const html = renderToStaticMarkup(<IngredientDetail ing={ing('닭고기', 'chicken', 'safe')} />);
-    expect(html).toContain('안전 성분'); // 위험도 칩
+    expect(html).toContain('일반 원료');
+    expect(html).toContain('급여 적합성을 보장하는 의미는 아닙니다');
     expect(html).toContain('설명');
     expect(html).toContain('동물성 단백질'); // 카테고리 라벨
     expect(html).toContain('동물성 단백질원'); // 사전 explanation
@@ -63,7 +64,7 @@ describe('AnalysisResult — 성분 상세(성분 사전 근거)', () => {
 
   it('사전 미매칭 성분도 폴백 설명으로 안전하게 렌더한다', () => {
     const html = renderToStaticMarkup(<IngredientDetail ing={ing('희귀원료XYZ', 'rareXYZ', 'caution')} />);
-    expect(html).toContain('주의 성분');
+    expect(html).toContain('급여량·건강 상태·원료 규격');
     expect(html).toContain('설명');
   });
 });

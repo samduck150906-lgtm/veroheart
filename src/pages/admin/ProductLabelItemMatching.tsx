@@ -89,7 +89,7 @@ export default function ProductLabelItemMatching({ productId, onMutationStart, o
         {!needsReload && (reason.trim() || selected || confirmed) && <p role="status">미저장 선택·사유입니다. 재조회 또는 항목 이동 시 초기화되며, 저장 전에는 반영되지 않습니다.</p>}
         <p>선택 원문: {item.raw}</p>
         <p>조회 당시 매칭: {item.resolved?.[2] ? String(item.resolved[2]) : '연결 없음'} · {item.match}</p>
-        <p>최근 검토 근거/보류 사유: {lastDecision?.reason || '저장된 사유 없음'}</p>
+        <p>최근 검토 근거/보류 사유: {lastDecision?.currentSource === false ? '이전 원문/제품의 사유 — 재검토 필요: ' : ''}{lastDecision?.reason || '저장된 사유 없음'}</p>
         <label>성분 후보 검색<input value={query} maxLength={100} disabled={busy || needsReload} onChange={e => { setQuery(e.target.value); setTarget(''); setConfirmed(false); }} /></label>
         <button type="button" disabled={busy || needsReload || !query.trim()} onClick={search}>후보 조회</button>
         <label>매칭 후보<select aria-label="매칭 후보" value={target} disabled={busy || needsReload} onChange={e => { setTarget(e.target.value); setDecision('match'); setConfirmed(false); }}>

@@ -12,6 +12,7 @@ CREATE TABLE private.label_item_match_decisions (
  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
  product_id UUID NOT NULL, item_id UUID NOT NULL,
  revision_before TEXT NOT NULL, revision_after TEXT NOT NULL,
+ source_fingerprint TEXT NOT NULL,
  decision TEXT NOT NULL CHECK(decision IN ('match','hold')),
  reason TEXT NOT NULL CHECK(length(btrim(reason)) BETWEEN 1 AND 2000),
  before_state JSONB NOT NULL, after_state JSONB NOT NULL,
@@ -21,12 +22,42 @@ ALTER TABLE private.label_item_match_decisions ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON private.label_item_match_decisions FROM PUBLIC,anon,authenticated,service_role;
 CREATE INDEX label_item_match_decisions_item ON private.label_item_match_decisions(item_id,created_at DESC,id);
 
+-- Source identity only: mapping/readiness timestamps do not revoke a hold.
+CREATE FUNCTION private.label_item_source_fingerprint(i public.product_ingredient_label_items) RETURNS TEXT
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,public AS $source$
+ SELECT encode(sha256(convert_to(jsonb_build_array(
+  jsonb_build_array(p.id,p.name,p.brand_name,p.variant_name,p.net_weight_text,p.barcode,
+   p.target_pet_type,p.target_life_stage,p.product_type,p.formulation),
+  l.id,l.product_id,l.raw_label_text,l.source_reference,l.source_type,l.is_current,
+  i.id,i.display_order,i.raw_ingredient_text,i.amount_text,i.percentage)::text,'UTF8')),'hex')
+ FROM public.product_ingredient_label_sets l JOIN public.products p ON p.id=l.product_id WHERE l.id=i.label_set_id
+$source$;
+REVOKE ALL ON FUNCTION private.label_item_source_fingerprint(public.product_ingredient_label_items) FROM PUBLIC,anon,authenticated,service_role;
+
+-- Runs after auto_match_material (PostgreSQL trigger name order). Only private
+-- server decisions can hold an unchanged source; caller metadata is not trusted.
+CREATE FUNCTION private.preserve_admin_label_item_hold() RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public AS $hold$
+DECLARE d private.label_item_match_decisions%ROWTYPE;
+BEGIN
+ SELECT * INTO d FROM private.label_item_match_decisions WHERE item_id=NEW.id ORDER BY created_at DESC,id DESC LIMIT 1;
+ IF FOUND AND d.decision='hold' AND d.source_fingerprint=private.label_item_source_fingerprint(NEW) THEN
+  NEW.match_status:='unreviewed';NEW.legacy_ingredient_id:=NULL;NEW.canonical_ingredient_id:=NULL;NEW.match_confidence:=NULL;
+  NEW.parser_metadata:=COALESCE(NEW.parser_metadata,'{}'::jsonb)-'identityEngine'-'candidateCanonicalIds';
+ END IF;
+ RETURN NEW;
+END $hold$;
+REVOKE ALL ON FUNCTION private.preserve_admin_label_item_hold() FROM PUBLIC,anon,authenticated,service_role;
+CREATE TRIGGER zz_preserve_admin_label_item_hold BEFORE INSERT OR UPDATE ON public.product_ingredient_label_items
+ FOR EACH ROW EXECUTE FUNCTION private.preserve_admin_label_item_hold();
+
 CREATE FUNCTION public.admin_get_label_item_workspace(p_product_id UUID) RETURNS JSONB
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,public AS $workspace$
  SELECT jsonb_build_object('review',public.admin_get_label_comparison_review(p_product_id),
   'decisions',COALESCE((SELECT jsonb_agg(x) FROM (
-   SELECT DISTINCT ON(d.item_id) d.item_id AS "itemId",d.decision,d.reason,d.created_at AS "recordedAt"
-   FROM private.label_item_match_decisions d WHERE d.product_id=p_product_id
+   SELECT DISTINCT ON(d.item_id) d.item_id AS "itemId",d.decision,d.reason,d.created_at AS "recordedAt",
+    d.source_fingerprint=private.label_item_source_fingerprint(i) AS "currentSource"
+   FROM private.label_item_match_decisions d JOIN public.product_ingredient_label_items i ON i.id=d.item_id WHERE d.product_id=p_product_id
    ORDER BY d.item_id,d.created_at DESC,d.id DESC) x),'[]'::jsonb))
 $workspace$;
 
@@ -62,6 +93,7 @@ CREATE FUNCTION public.admin_review_label_item_match(
 DECLARE s JSONB; current_revision TEXT; after_revision TEXT; item public.product_ingredient_label_items%ROWTYPE;
  label_id UUID; legacy_id UUID; canonical_id UUID; next_status TEXT; previous_reason TEXT;
  before_state JSONB; after_state JSONB; target_revision TEXT;
+ source_key TEXT; previous_source TEXT; decision_id UUID;
 BEGIN
  PERFORM pg_catalog.set_config('lock_timeout','3s',true);
  IF p_actor IS NULL OR length(btrim(p_actor)) NOT BETWEEN 1 AND 200
@@ -99,18 +131,26 @@ BEGIN
   IF p_target_revision IS DISTINCT FROM target_revision THEN RAISE EXCEPTION 'candidate_revision_conflict' USING ERRCODE='40001'; END IF;
   next_status:='matched';
  END IF;
- SELECT d.reason INTO previous_reason FROM private.label_item_match_decisions d
+ source_key:=private.label_item_source_fingerprint(item);
+ SELECT d.reason,d.source_fingerprint INTO previous_reason,previous_source FROM private.label_item_match_decisions d
  WHERE d.item_id=p_item_id ORDER BY d.created_at DESC,d.id DESC LIMIT 1;
  before_state:=jsonb_build_object('status',item.match_status,'legacyId',item.legacy_ingredient_id,'canonicalId',item.canonical_ingredient_id,'reason',previous_reason);
  after_state:=jsonb_build_object('status',next_status,'legacyId',legacy_id,'canonicalId',canonical_id,'reason',btrim(p_reason));
- IF before_state=after_state THEN RETURN jsonb_build_object('status','unchanged','workspace',public.admin_get_label_item_workspace(p_product_id)); END IF;
+ IF before_state=after_state AND previous_source=source_key THEN RETURN jsonb_build_object('status','unchanged','workspace',public.admin_get_label_item_workspace(p_product_id)); END IF;
+ -- Pending private decision participates in this transaction only; audit or
+ -- update failure rolls it back. The committed history is not mutable by APIs.
+ INSERT INTO private.label_item_match_decisions(product_id,item_id,revision_before,revision_after,source_fingerprint,decision,reason,before_state,after_state,actor)
+ VALUES(p_product_id,p_item_id,current_revision,current_revision,source_key,p_decision,btrim(p_reason),before_state,after_state,p_actor) RETURNING id INTO decision_id;
  UPDATE public.product_ingredient_label_items SET match_status=next_status,legacy_ingredient_id=legacy_id,
   canonical_ingredient_id=canonical_id,match_confidence=NULL,updated_at=clock_timestamp() WHERE id=p_item_id;
+ IF NOT EXISTS(SELECT FROM public.product_ingredient_label_items i WHERE i.id=p_item_id AND i.match_status=next_status
+  AND i.legacy_ingredient_id IS NOT DISTINCT FROM legacy_id AND i.canonical_ingredient_id IS NOT DISTINCT FROM canonical_id) THEN
+  RAISE EXCEPTION 'matching_write_overridden' USING ERRCODE='40001';
+ END IF;
  -- Existing foundation trigger advances the generation, invalidating old proof,
  -- including reason-only decisions and ABA edits. Never change raw/order/amount.
  after_revision:=encode(sha256(convert_to(private.label_review_snapshot(p_product_id)::text,'UTF8')),'hex');
- INSERT INTO private.label_item_match_decisions(product_id,item_id,revision_before,revision_after,decision,reason,before_state,after_state,actor)
- VALUES(p_product_id,p_item_id,current_revision,after_revision,p_decision,btrim(p_reason),before_state,after_state,p_actor);
+ UPDATE private.label_item_match_decisions SET revision_after=after_revision WHERE id=decision_id;
  INSERT INTO public.admin_audit_log(actor,action,target_table,target_id,detail)
  VALUES(p_actor,'reviewLabelItemMatch','product_ingredient_label_items',p_item_id::text,
   jsonb_build_object('productId',p_product_id,'revisionBefore',current_revision,'revisionAfter',after_revision,'before',before_state,'after',after_state));
@@ -135,5 +175,10 @@ IF EXISTS (SELECT FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
  AND (has_function_privilege('anon',p.oid,'EXECUTE') OR has_function_privilege('authenticated',p.oid,'EXECUTE')
   OR NOT has_function_privilege('service_role',p.oid,'EXECUTE'))) THEN
  RAISE EXCEPTION 'Unexpected effective label matching RPC privileges';
+END IF;
+IF EXISTS(SELECT FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+ WHERE n.nspname='private' AND p.proname IN ('label_item_source_fingerprint','preserve_admin_label_item_hold')
+ AND (has_function_privilege('anon',p.oid,'EXECUTE') OR has_function_privilege('authenticated',p.oid,'EXECUTE') OR has_function_privilege('service_role',p.oid,'EXECUTE'))) THEN
+ RAISE EXCEPTION 'Unexpected private hold helper privileges';
 END IF;
 END $label_item_matching$;

@@ -83,10 +83,11 @@ describe('nutrition evidence on shared public display paths (synthetic data, no 
     expect(screen.getAllByText(/합성 위험 원료/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/알레르기|이\(가\) 들어 있습니다/).length).toBeGreaterThan(0);
   });
-  it('keeps 82/A but scopes the feed card and clearly withholds nutrition balance', () => {
+  it('shares the public display verdict while clearly withholding nutrition balance', () => {
     show(<FeedAnalysisCard product={product} profile={profile} />);
-    expect(screen.getByText('82')).toBeTruthy();
-    expect(screen.getByText('원료 기준 참고 A등급')).toBeTruthy();
+    const display=resolveProductDisplayVerdict(product,profile);
+    expect(screen.getByTestId('feed-display-score').textContent).toBe(String(display.score));
+    expect(screen.getByText(`원료 기준 참고 ${display.grade}등급`)).toBeTruthy();
     expect(screen.getByText('영양 균형 미평가')).toBeTruthy();
     expect(screen.getAllByText(NUTRITION_INSUFFICIENT_NOTICE)).toHaveLength(1);
     expect(screen.queryByText(/균형 잡힌|매우 우수|무난하게 급여/)).toBeNull();

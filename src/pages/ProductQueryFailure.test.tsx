@@ -26,6 +26,17 @@ const show = (path: string, route: string, element: React.ReactNode) => render(<
   <Routes><Route path={route} element={element} /></Routes>
 </MemoryRouter></HelmetProvider>);
 describe('product transport failure versus actual missing product', () => {
+  it.each([
+    [[{ averageRating: 5, reviewsCount: 1 },{ averageRating: 0, reviewsCount: 0 },{ averageRating: 0, reviewsCount: 0 }],'5.0'],
+    [[{ averageRating: 5, reviewsCount: 1 },{ averageRating: 3, reviewsCount: 3 }],'3.5'],
+    [[{ averageRating: 0, reviewsCount: 0 }],'-'],
+  ])('brand averages only actual reviews (%j)', async (ratings,expected) => {
+    const products = (ratings as Array<{averageRating:number;reviewsCount:number}>).map((rating,index) => ({id:`p${index}`,name:`제품 ${index}`,brand:'Fixture',category:'food',imageUrl:'',ingredients:[],...rating}));
+    vi.mocked(getProductsByBrand).mockResolvedValueOnce(products);
+    show('/brand/Fixture','/brand/:brandName',<Brand />);
+    await screen.findByText('제품 0');
+    expect(screen.getByText('평균 평점').nextElementSibling?.textContent).toBe(expected);
+  });
   it('detail shows query failure, not product not found', () => {
     show('/product/fixture-product', '/product/:id', <Detail />);
     expect(screen.getByText('제품 조회에 실패했습니다')).toBeTruthy();

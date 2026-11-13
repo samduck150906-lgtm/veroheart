@@ -1,0 +1,430 @@
+{
+  "rows": [
+    {
+      "productId": "37f60e37-6c8a-46a2-ad94-bc1972884d06",
+      "title": "독 글리코밸런스 로프 인 캔",
+      "sourceUrl": "https://www.royalcanin.com/kr/dogs/products/vet-products/glycobalance-4015/v1",
+      "documentSha256": "6b5eb973f46ce87e318bcfb9032ed1f43c5f6f9678b3adc0120de99e11f05450",
+      "observedAt": "2026-11-13T01:24:27.266Z",
+      "observationId": "7ffd90e6-47be-9676-6397-62d0194e5aa7",
+      "nutrients": [
+        {
+          "key": "crude_protein",
+          "value": 7.7,
+          "qualifier": "minimum",
+          "raw": "Crude protein 7.7% (min.)"
+        },
+        {
+          "key": "crude_fat",
+          "value": 2.5,
+          "qualifier": "minimum",
+          "raw": ", Crude fat 2.5% (min.)"
+        },
+        {
+          "key": "crude_fiber",
+          "value": 3.3,
+          "qualifier": "maximum",
+          "raw": ", Crude fibre 3.3% (max.)"
+        },
+        {
+          "key": "crude_ash",
+          "value": 2.1,
+          "qualifier": "maximum",
+          "raw": ", Ash 2.1% (max.)"
+        },
+        {
+          "key": "moisture",
+          "value": 83,
+          "qualifier": "maximum",
+          "raw": ", Moisture 83.0% (max.)"
+        },
+        {
+          "key": "calcium",
+          "value": 0.18,
+          "qualifier": "minimum",
+          "raw": ", Calcium 0.18% (min.)"
+        },
+        {
+          "key": "phosphorus",
+          "value": 0.12,
+          "qualifier": "minimum",
+          "raw": ", Phosphorus 0.12% (min.)"
+        }
+      ],
+      "updateProfile": true,
+      "note": null
+    },
+    {
+      "productId": "6eb21c72-f612-446f-bba6-3de481f847f5",
+      "title": "베이비독 밀크",
+      "sourceUrl": "https://www.royalcanin.com/kr/dogs/products/retail-products/babydog-milk-2300",
+      "documentSha256": "ba36ecd92bc4465bab9ac449a2ae53a7a9383df73e2f7d7f012e838a8edb645f",
+      "observedAt": "2026-11-13T01:24:31.707Z",
+      "observationId": "9d9d8717-de61-0095-62b1-4fe674c7c7c2",
+      "nutrients": [
+        {
+          "key": "crude_protein",
+          "value": 33,
+          "qualifier": "unspecified",
+          "raw": "Protein: 33.0%"
+        },
+        {
+          "key": "crude_fat",
+          "value": 39,
+          "qualifier": "unspecified",
+          "raw": "- Fat content: 39.0%"
+        },
+        {
+          "key": "crude_fiber",
+          "value": 0,
+          "qualifier": "unspecified",
+          "raw": "- Crude fibres: 0.0%"
+        },
+        {
+          "key": "crude_ash",
+          "value": 5,
+          "qualifier": "unspecified",
+          "raw": "- Crude ash: 5.0%"
+        }
+      ],
+      "updateProfile": false,
+      "note": "As-sold powder measurements only; not prepared milk. Do not populate ordinary feed profile without preparation-specific handling."
+    },
+    {
+      "productId": "223e2acf-a75f-4f25-9549-8fdab8c821f9",
+      "title": "치와와 퍼피",
+      "sourceUrl": "https://www.royalcanin.com/kr/dogs/products/retail-products/chihuahua-puppy-2438",
+      "documentSha256": "dceec7b8f3ec175c74a4dbd25dfe0261a927093899e4a85e0dc141a994feb1bf",
+      "observedAt": "2026-11-13T01:24:33.062Z",
+      "observationId": "1a45a2e6-3c46-757f-9aa1-c6aaaf719c3f",
+      "nutrients": [
+        {
+          "key": "crude_protein",
+          "value": 30,
+          "qualifier": "unspecified",
+          "raw": "Protein: 30.0%"
+        },
+        {
+          "key": "crude_fat",
+          "value": 20,
+          "qualifier": "unspecified",
+          "raw": "- Fat content: 20.0%"
+        },
+        {
+          "key": "crude_fiber",
+          "value": 2,
+          "qualifier": "unspecified",
+          "raw": "- Crude fibres: 2.0%"
+        },
+        {
+          "key": "crude_ash",
+          "value": 7.2,
+          "qualifier": "unspecified",
+          "raw": "- Crude ash: 7.2%"
+        }
+      ],
+      "updateProfile": true,
+      "note": null
+    },
+    {
+      "productId": "95b07b2e-a9b7-44cd-b04c-1fc9b1cf634e",
+      "title": "미니 어덜트 로프 캔",
+      "sourceUrl": "https://www.royalcanin.com/kr/dogs/products/retail-products/mini-adult---loaf-8027",
+      "documentSha256": "9033eefb8ec465dada6b1ac7ea6b87a4e3360abd40d8f597d7d5834bbcb555a0",
+      "observedAt": "2026-11-13T01:24:40.699Z",
+      "observationId": "d0ac2c5e-e5de-2ed7-a443-a9ea56140eb1",
+      "nutrients": [
+        {
+          "key": "crude_protein",
+          "value": 8.6,
+          "qualifier": "unspecified",
+          "raw": "Protein: 8.6%"
+        },
+        {
+          "key": "crude_fat",
+          "value": 5.5,
+          "qualifier": "unspecified",
+          "raw": "- Fat content: 5.5%"
+        },
+        {
+          "key": "crude_fiber",
+          "value": 0.5,
+          "qualifier": "unspecified",
+          "raw": "- Crude fibres: 0.5%"
+        },
+        {
+          "key": "crude_ash",
+          "value": 2,
+          "qualifier": "unspecified",
+          "raw": "- Crude ash: 2.0%"
+        },
+        {
+          "key": "moisture",
+          "value": 80.4,
+          "qualifier": "unspecified",
+          "raw": "- Moisture: 80.4%"
+        }
+      ],
+      "updateProfile": true,
+      "note": null
+    },
+    {
+      "productId": "6523285e-04f3-4785-aa29-8a674a9ead6f",
+      "title": "미니 에이징 로프 캔",
+      "sourceUrl": "https://www.royalcanin.com/kr/dogs/products/retail-products/mini-ageing---loaf-8028",
+      "documentSha256": "3532ae20541f55e0aae56e8c303b48711dbe4979a87dfd951f232e2ec608b4c7",
+      "observedAt": "2026-11-13T01:24:42.351Z",
+      "observationId": "e4d59b90-509b-117c-a84c-52fb02e80a91",
+      "nutrients": [
+        {
+          "key": "crude_protein",
+          "value": 8.4,
+          "qualifier": "unspecified",
+          "raw": "Protein: 8.4%"
+        },
+        {
+          "key": "crude_fat",
+          "value": 5.5,
+          "qualifier": "unspecified",
+          "raw": "- Fat content: 5.5%"
+        },
+        {
+          "key": "crude_fiber",
+          "value": 0.6,
+          "qualifier": "unspecified",
+          "raw": "- Crude fibres: 0.6%"
+        },
+        {
+          "key": "crude_ash",
+          "value": 1.5,
+          "qualifier": "unspecified",
+          "raw": "- Crude ash: 1.5%"
+        },
+        {
+          "key": "moisture",
+          "value": 80,
+          "qualifier": "unspecified",
+          "raw": "- Moisture: 80.0%"
+        }
+      ],
+      "updateProfile": true,
+      "note": null
+    },
+    {
+      "productId": "ea2cd786-d056-4aae-b981-4fcf7098e947",
+      "title": "캣 에이징 11+",
+      "sourceUrl": "https://www.royalcanin.com/kr/cats/products/retail-products/ageing-11%2b-2561",
+      "documentSha256": "0312b83bb81e8dd728c59792bb68c4a465ae081ae0399c16b41e34bfcc5f93ed",
+      "observedAt": "2026-11-13T01:24:43.726Z",
+      "observationId": "6d16a168-965b-98d7-8084-b1264976942f",
+      "nutrients": [
+        {
+          "key": "crude_protein",
+          "value": 28,
+          "qualifier": "minimum",
+          "raw": "조단백 28.0% 이상"
+        },
+        {
+          "key": "crude_fat",
+          "value": 15,
+          "qualifier": "minimum",
+          "raw": ", 조지방 15.0% 이상"
+        },
+        {
+          "key": "crude_fiber",
+          "value": 3.9,
+          "qualifier": "maximum",
+          "raw": ", 조섬유 3.9% 이하"
+        },
+        {
+          "key": "crude_ash",
+          "value": 6.7,
+          "qualifier": "maximum",
+          "raw": ", 조회분 6.7% 이하"
+        },
+        {
+          "key": "moisture",
+          "value": 6.5,
+          "qualifier": "maximum",
+          "raw": ", 수분 6.5% 이하"
+        },
+        {
+          "key": "calcium",
+          "value": 0.63,
+          "qualifier": "minimum",
+          "raw": ", 칼슘 0.63% 이상"
+        },
+        {
+          "key": "phosphorus",
+          "value": 0.54,
+          "qualifier": "minimum",
+          "raw": ", 인 0.54% 이상"
+        }
+      ],
+      "updateProfile": true,
+      "note": null
+    },
+    {
+      "productId": "e5dd006a-3904-44bb-b8b4-b6d39dcbcbc4",
+      "title": "캣 에이징 11+ 파우치 그레이비",
+      "sourceUrl": "https://www.royalcanin.com/kr/cats/products/retail-products/ageing-11%2b-chunks-in-gravy-4082",
+      "documentSha256": "607d8b5790d87867fe5e063ed02e5a3ad85a5aefc9d6dbc62432aa5a8fb0156a",
+      "observedAt": "2026-11-13T01:24:44.654Z",
+      "observationId": "c2d7b901-6719-ebe9-1235-f713fc58d9df",
+      "nutrients": [
+        {
+          "key": "crude_protein",
+          "value": 7.6,
+          "qualifier": "minimum",
+          "raw": "조단백 7.6% 이상"
+        },
+        {
+          "key": "crude_fat",
+          "value": 2,
+          "qualifier": "minimum",
+          "raw": ", 조지방 2.0% 이상"
+        },
+        {
+          "key": "crude_fiber",
+          "value": 1.5,
+          "qualifier": "maximum",
+          "raw": ", 조섬유 1.5% 이하"
+        },
+        {
+          "key": "crude_ash",
+          "value": 1.5,
+          "qualifier": "maximum",
+          "raw": ", 조회분 1.5% 이하"
+        },
+        {
+          "key": "moisture",
+          "value": 83.7,
+          "qualifier": "maximum",
+          "raw": ", 수분 83.7% 이하"
+        },
+        {
+          "key": "calcium",
+          "value": 0.14,
+          "qualifier": "minimum",
+          "raw": ", 칼슘 0.14% 이상"
+        },
+        {
+          "key": "phosphorus",
+          "value": 0.12,
+          "qualifier": "minimum",
+          "raw": ", 인 0.12% 이상"
+        }
+      ],
+      "updateProfile": true,
+      "note": null
+    },
+    {
+      "productId": "723e6657-e062-4bc7-8b39-3f38fb656214",
+      "title": "캣 에이징 15+",
+      "sourceUrl": "https://www.royalcanin.com/kr/cats/products/retail-products/ageing-15%2b-8075",
+      "documentSha256": "d2e7ab7de70b55d25e15e1fbf7fd57f0a1f7014dc42cc1ef038242208986bbe2",
+      "observedAt": "2026-11-13T01:24:47.286Z",
+      "observationId": "6ddfc1ee-8a93-fea8-2529-920cd2007c72",
+      "nutrients": [
+        {
+          "key": "crude_protein",
+          "value": 29,
+          "qualifier": "minimum",
+          "raw": "조단백 29.0% 이상"
+        },
+        {
+          "key": "crude_fat",
+          "value": 19,
+          "qualifier": "minimum",
+          "raw": ", 조지방 19.0% 이상"
+        },
+        {
+          "key": "crude_fiber",
+          "value": 3.7,
+          "qualifier": "maximum",
+          "raw": ", 조섬유 3.7% 이하"
+        },
+        {
+          "key": "crude_ash",
+          "value": 7.1,
+          "qualifier": "maximum",
+          "raw": ", 조회분 7.1% 이하"
+        },
+        {
+          "key": "moisture",
+          "value": 6.5,
+          "qualifier": "maximum",
+          "raw": ", 수분 6.5% 이하"
+        },
+        {
+          "key": "calcium",
+          "value": 0.66,
+          "qualifier": "minimum",
+          "raw": ", 칼슘 0.66% 이상"
+        },
+        {
+          "key": "phosphorus",
+          "value": 0.5,
+          "qualifier": "minimum",
+          "raw": ", 인 0.50% 이상"
+        }
+      ],
+      "updateProfile": true,
+      "note": null
+    },
+    {
+      "productId": "d28a48ac-2c13-4d7a-ab9c-988e912d13ad",
+      "title": "캣 에이징 15+ 파우치 그레이비",
+      "sourceUrl": "https://www.royalcanin.com/kr/cats/products/retail-products/ageing-15%2b-chunks-in-gravy-8076",
+      "documentSha256": "e06054ef1d63553dba4b084cc42c24ca99247eb8a690d87d6a5e912cea68c619",
+      "observedAt": "2026-11-13T01:24:49.167Z",
+      "observationId": "cc384bfc-d584-47f3-ebca-43284bcf5474",
+      "nutrients": [
+        {
+          "key": "crude_protein",
+          "value": 7.6,
+          "qualifier": "minimum",
+          "raw": "조단백 7.6% 이상"
+        },
+        {
+          "key": "crude_fat",
+          "value": 2.5,
+          "qualifier": "minimum",
+          "raw": ", 조지방 2.5% 이상"
+        },
+        {
+          "key": "crude_fiber",
+          "value": 1.4,
+          "qualifier": "maximum",
+          "raw": ", 조섬유 1.4% 이하"
+        },
+        {
+          "key": "crude_ash",
+          "value": 1.5,
+          "qualifier": "maximum",
+          "raw": ", 조회분 1.5% 이하"
+        },
+        {
+          "key": "moisture",
+          "value": 82.1,
+          "qualifier": "maximum",
+          "raw": ", 수분 82.1% 이하"
+        },
+        {
+          "key": "calcium",
+          "value": 0.12,
+          "qualifier": "minimum",
+          "raw": ", 칼슘 0.12% 이상"
+        },
+        {
+          "key": "phosphorus",
+          "value": 0.11,
+          "qualifier": "minimum",
+          "raw": ", 인 0.11% 이상"
+        }
+      ],
+      "updateProfile": true,
+      "note": null
+    }
+  ]
+}

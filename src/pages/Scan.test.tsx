@@ -37,6 +37,27 @@ function cameraStream(stop = vi.fn()) {
 }
 
 describe('Scan barcode fallback', () => {
+  it.each([
+    ['NotAllowedError','권한'],['NotFoundError','카메라를 찾지 못했습니다'],['NotReadableError','다른 앱'],
+  ])('distinguishes synthetic camera failure %s without claiming live scanning',async (name,text) => {
+    Object.defineProperty(navigator,'mediaDevices',{configurable:true,value:{getUserMedia:vi.fn().mockRejectedValue(new DOMException('fixture',name))}});
+    renderScan();
+    expect(await screen.findByText(new RegExp(text))).toBeTruthy();
+    expect(screen.queryByText('바코드를 읽고 있습니다…')).toBeNull();
+    expect(screen.queryByRole('button',{name:'플래시'})).toBeNull();
+  });
+  it('keeps starting distinct from live and releases a stream on playback failure',async () => {
+    const {stream,track}=cameraStream();
+    let resolve!: (value:MediaStream)=>void;
+    Object.defineProperty(navigator,'mediaDevices',{configurable:true,value:{getUserMedia:()=>new Promise<MediaStream>(done=>{resolve=done;})}});
+    vi.spyOn(HTMLMediaElement.prototype,'play').mockRejectedValue(new Error('fixture playback failure'));
+    renderScan();
+    expect(screen.getByText('카메라를 준비하고 있습니다…')).toBeTruthy();
+    expect(screen.queryByText('바코드를 읽고 있습니다…')).toBeNull();
+    await act(async()=>resolve(stream));
+    expect(await screen.findByText(/영상을 재생하지 못했습니다/)).toBeTruthy();
+    expect(track.stop).toHaveBeenCalledOnce();
+  });
   beforeEach(() => {
     getProductByBarcode.mockReset();
     useStore.setState({ products: [] });

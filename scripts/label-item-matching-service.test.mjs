@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {automaticMatchingFixtureSQL} from './label-matching-automatic-fixture.mjs';
 import { beforeEach, afterEach, it } from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
@@ -42,13 +43,13 @@ beforeEach(async () => {
    assert.ok(name.startsWith('.'),`Unsupported module ${name}`);
    return load(new URL(name,parent.identifier));
  };
- const f=await load('tests/label-review/database.ts');await f.link(link);await f.evaluate();fixture=f.namespace;db=await fixture.labelReviewDatabase();await db.exec(readFileSync('tests/label-item-matching/fixture.sql','utf8'));await db.exec(readFileSync('supabase/migrations/20261111150000_restrict_label_evidence_sequence.sql','utf8'));await db.exec('ALTER DEFAULT PRIVILEGES GRANT ALL ON TABLES TO anon,authenticated,service_role;ALTER DEFAULT PRIVILEGES GRANT ALL ON SEQUENCES TO anon,authenticated,service_role;ALTER DEFAULT PRIVILEGES GRANT ALL ON FUNCTIONS TO anon,authenticated,service_role');await db.exec(readFileSync('supabase/migrations/20261112140000_admin_label_item_matching.sql','utf8'));
+ const f=await load('tests/label-review/database.ts');await f.link(link);await f.evaluate();fixture=f.namespace;db=await fixture.labelReviewDatabase();await db.exec(readFileSync('tests/label-item-matching/fixture.sql','utf8'));await db.exec(automaticMatchingFixtureSQL());await db.exec(readFileSync('supabase/migrations/20261111150000_restrict_label_evidence_sequence.sql','utf8'));await db.exec('ALTER DEFAULT PRIVILEGES GRANT ALL ON TABLES TO anon,authenticated,service_role;ALTER DEFAULT PRIVILEGES GRANT ALL ON SEQUENCES TO anon,authenticated,service_role;ALTER DEFAULT PRIVILEGES GRANT ALL ON FUNCTIONS TO anon,authenticated,service_role');await db.exec(readFileSync('supabase/migrations/20261114090000_admin_label_item_matching.sql','utf8'));
  const edge=await load('supabase/functions/admin-write/index.ts');await edge.link(link);await edge.evaluate();
  // Share the same linker/cache for actual public modules.
  const originalLoad=load;load=async(file)=>{const m=await originalLoad(file);if(m.status==='unlinked')await m.link(link);if(m.status==='linked')await m.evaluate();return m;};
 });
 afterEach(async()=>{await db.close();});
-function token(){const payload=Buffer.from(JSON.stringify({actor:'synthetic-admin',exp:Math.floor(Date.now()/1000)+120})).toString('base64url');const message=`v1.${payload}`;return `${message}.${createHmac('sha256',secret).update(message).digest('base64url')}`;}
+function token(actor='synthetic-admin'){const payload=Buffer.from(JSON.stringify({actor,exp:Math.floor(Date.now()/1000)+120})).toString('base64url');const message=`v1.${payload}`;return `${message}.${createHmac('sha256',secret).update(message).digest('base64url')}`;}
 async function request(action,body={},authenticated=true){const response=await handler(new Request('https://fixture.invalid/functions/v1/admin-write',{method:'POST',headers:{'content-type':'application/json',...(authenticated?{'x-admin-token':token()}:{})},body:JSON.stringify({action,...(action==='searchLabelItemCandidates'?{}:{productId:fixture.PRODUCT}),...body})}));return {http:response.status,body:await response.json()};}
 async function approval(extra={}){const current=await request('getIngredientLabelReview');assert.equal(current.http,200);const review=current.body.review;return request('approveIngredientLabelReview',{revision:review.revision,reviewedItemIds:JSON.parse(JSON.stringify(fixture.ITEMS)),...fixture.observation,...extra});}
 async function counts(){return (await db.query('SELECT (SELECT count(*)::int FROM ingredient_label_comparisons) evidence,(SELECT count(*)::int FROM admin_audit_log) audit')).rows[0];}
@@ -148,4 +149,19 @@ it('retired or deleted canonical/dictionary targets and foreign label items cann
  await db.query('DELETE FROM canonical_ingredients WHERE id=$1',[choice.id]);assert.equal((await decide(fixture.ITEMS[0],'match',{targetKind:'canonical',targetId:choice.id,targetRevision:choice.revision})).http,400);
  const legacy=(await candidates('닭')).find(c=>c.kind==='legacy');await db.query('DELETE FROM ingredients WHERE id=$1',[legacy.id]);
  assert.equal((await request('reviewLabelItemMatch',{revision:(await workspace()).review.revision,itemId:fixture.ITEMS[0],decision:'match',reason:'synthetic source',targetKind:'legacy',targetId:legacy.id,targetRevision:legacy.revision})).http,400);
+});
+
+it('explicit hold survives the current main automatic matcher and loses force only on source change',async()=>{
+ assert.equal((await decide(fixture.ITEMS[0],'hold')).http,200);
+ await db.query('UPDATE product_ingredient_label_items SET updated_at=clock_timestamp() WHERE id=$1',[fixture.ITEMS[0]]);
+ let w=await workspace();assert.equal(w.review.snapshot.labels[0].items[0].match,'unreviewed');assert.equal(w.decisions[0].currentSource,true);
+ assert.equal((await approval()).http,400);
+ await db.exec("UPDATE product_ingredient_label_sets SET raw_label_text='닭고기 , 대두'");
+ await db.query('UPDATE product_ingredient_label_items SET updated_at=clock_timestamp() WHERE id=$1',[fixture.ITEMS[0]]);
+ w=await workspace();assert.equal(w.review.snapshot.labels[0].items[0].match,'matched');assert.equal(w.decisions[0].currentSource,false);
+});
+
+it('revoked QA actor cannot use new matching routes even with an otherwise valid signature',async()=>{
+ const response=await handler(new Request('https://fixture.invalid/functions/v1/admin-write',{method:'POST',headers:{'content-type':'application/json','x-admin-token':token('qa-synthetic-revoked')},body:JSON.stringify({action:'getLabelItemWorkspace',productId:fixture.PRODUCT})}));
+ assert.equal(response.status,401);assert.equal((await state()).audit,0);
 });

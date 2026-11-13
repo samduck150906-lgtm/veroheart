@@ -214,6 +214,7 @@ function analyzeNutrition(
   if (
     !ga ||
     product.productType !== 'complete_food' ||
+    product.lifeStage === 'puppy_kitten' || product.lifeStage === 'all_life_stages' ||
     ga.crudeProtein == null ||
     ga.crudeFat == null
   ) {
@@ -222,14 +223,15 @@ function analyzeNutrition(
 
   let score = 70;
 
-  const { passed, details } = validateAAFCO(ga, petSpecies);
+  const { evaluated, passed, details } = validateAAFCO(ga, product.species === 'dog' || product.species === 'cat' ? product.species : petSpecies);
+  if (!evaluated) return { score, positives, warnings };
   if (passed) {
     score += 12;
     positives.push({
       ruleId: 'AAFCO_PASS',
       level: 'good',
-      title: 'AAFCO 영양 기준 충족',
-      message: '성체 유지 최소 기준(건물 기준 조단백질·조지방)을 충족하는 구성입니다.',
+      title: '단백질·지방 참고 기준 이상',
+      message: '성체 유지의 건물 기준 조단백질·조지방 두 항목만 비교했습니다. 전체 영양 기준 충족을 의미하지 않습니다.',
       ingredients: [],
       scoreDelta: 12,
       evidenceLevel: 'nutrition_guideline',

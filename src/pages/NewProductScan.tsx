@@ -345,9 +345,11 @@ function NewProductScanSession({ api, prepareImage = prepareLabelImage, ownerId 
         <Helmet><title>새 제품 등록 | 베로로</title></Helmet>
         <div style={{ margin: 'auto 0', textAlign: 'center', background: '#fff', borderRadius: 24, padding: '34px 22px', border: '1px solid #E8E7DF' }}>
           <div aria-hidden="true" style={{ fontSize: 34 }}>🔒</div>
+          {queryBarcode && <p>이 바코드로 조회되는 공개 제품이 없습니다. 제품명으로 다시 찾거나 새 제품 정보를 등록할 수 있습니다.</p>}
           <h1 style={{ fontSize: 20, margin: '16px 0 8px' }}>로그인 후 제품 정보를 등록할 수 있습니다</h1>
           <p style={{ color: '#74736A', fontSize: 13.5, lineHeight: 1.6, margin: '0 0 22px' }}>사진은 원재료와 제품 정보를 확인하는 데만 사용됩니다.</p>
           <Link className="vr-btn vr-btn--primary" to="/login" state={{ from: next }} style={{ display: 'block', padding: 15, textDecoration: 'none' }}>로그인하기</Link>
+          <Link to="/search" style={{ display: 'block', marginTop: 16 }}>제품명으로 검색하기</Link>
         </div>
       </main>
     );
@@ -363,6 +365,7 @@ function NewProductScanSession({ api, prepareImage = prepareLabelImage, ownerId 
           {queryBarcode && <div style={{ marginTop: 4, fontSize: 12, color: '#89887E', fontFamily: 'ui-monospace, monospace' }}>{queryBarcode}</div>}
         </div>
       </header>
+      {queryBarcode && <p style={{ fontSize: 13, lineHeight: 1.6 }}>이 바코드로 조회되는 공개 제품이 없습니다. 제품명으로 다시 찾거나 라벨 사진으로 제품 정보를 등록해 주세요. <Link to="/search">제품명으로 검색하기</Link></p>}
       <ScanProgress current={step} />
 
       {step === 'photos' && (

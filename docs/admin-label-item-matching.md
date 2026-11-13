@@ -66,7 +66,7 @@ mutation and after an uncertain mutation until fresh review.
 
 ## Unapplied deployment dependency
 
-`supabase/migrations/20261112140000_admin_label_item_matching.sql` is now a
+`supabase/migrations/20261114090000_admin_label_item_matching.sql` is now a
 formal forward migration candidate. **It is not operating-applied or approved.**
 Do not run repository-wide push: seven unrelated unapplied migrations remain.
 Use only the independently verified release bundle containing exact remote
@@ -138,3 +138,23 @@ Royal Canin examples lack exact package size/barcode/revision correspondence.
 Their manufacturer source is not new physical-package evidence. Repeating the
 same search is not a remedy. Any owned package with the complete photos above
 may instead qualify; no purchase or new product is requested.
+
+
+## Current-main compatibility (2026-11-14)
+
+The prior candidate was never applied. Its version was moved forward to
+20261114090000 after the newer operating ledger; do not execute the superseded
+20261112140000 bundle/hash. Current main's automatic material matcher is preserved.
+An additional private, name-ordered BEFORE trigger enforces a server-recorded
+hold after automatic suggestions, bound to exact product/label/item source
+identity. A normal timestamp refresh cannot silently turn a hold into matched.
+Changing the source invalidates the hold and exposes its reason as historical;
+it never silently transfers review to a replacement package.
+
+The private decision is inserted before the item update within the same RPC,
+then finalized with the actual post-update revision. Any trigger override or
+audit failure rolls the decision/item/generation back together. No client
+metadata or completion flag creates a hold or whole-label approval. Two private
+helper functions are denied to application roles; no existing matcher function
+or applied migration is modified. Current main's QA-session revocation check
+and species/publication validation remain in the additive server source.

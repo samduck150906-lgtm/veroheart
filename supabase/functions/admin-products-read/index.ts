@@ -1,3 +1,4 @@
+import { isAdminSessionActorCurrent } from '../_shared/temporaryAdminSession.ts';
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 
@@ -30,7 +31,8 @@ const VIEWS: Record<string, string> = {
   list:
     'id, name, brand_name, main_category, sub_category, target_pet_type, target_life_stage, '
     + 'image_url, min_price, barcode, verification_status, created_at, is_visible, is_pinned, '
-    + 'pinned_order, product_ingredients(count), nutritional_profiles(count)',
+    + 'pinned_order, product_ingredients(count), nutritional_profiles(count), '
+    + 'product_ingredient_label_sets(is_current, product_ingredient_label_items(match_status))',
   names: 'id, name, brand_name, main_category, image_url',
   facts:
     'id, name, brand_name, image_url, barcode, kcal_per_100g, coupang_link, catalog_source_url, '
@@ -39,7 +41,9 @@ const VIEWS: Record<string, string> = {
   full: '*',
   edit:
     '*, nutritional_profiles(crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus), '
-    + 'product_ingredients(ingredient_id, sort_order, ingredients(id, name_ko, name_en, risk_level))',
+    + 'product_ingredients(ingredient_id, sort_order, ingredients(id, name_ko, name_en, risk_level)), '
+    + 'product_ingredient_label_sets(id, is_current, raw_label_text, source_reference, '
+    + 'product_ingredient_label_items(raw_ingredient_text, display_order, match_status))',
 };
 
 /** 한 번에 내려주는 최대 행 수. names/facts 처럼 전체를 도는 view 의 상한. */
@@ -122,6 +126,7 @@ async function authenticateAdmin(token: string, sessionSecret: string): Promise<
       };
       if (typeof payload.actor !== 'string' || !payload.actor || payload.actor.length > 64) return null;
       if (typeof payload.exp !== 'number' || payload.exp <= Math.floor(Date.now() / 1000)) return null;
+      if (!isAdminSessionActorCurrent(payload.actor, payload.exp, (key) => Deno.env.get(key))) return null;
       return payload.actor;
     } catch {
       return null;
@@ -144,6 +149,7 @@ type Filters = Record<string, any>;
 /** 목록·통계가 같은 조건을 쓰도록 필터 적용을 한곳에 둔다. */
 // deno-lint-ignore no-explicit-any
 function applyFilters(builder: any, filters: Filters) {
+  builder = builder.is('catalog_archived_at', null);
   const search = optionalText(filters.search, '검색어', 100);
   if (search) {
     const pattern = likePattern(search);
@@ -200,7 +206,9 @@ serve(async (req) => {
     if (view === 'full' || view === 'edit') {
       const id = typeof body.id === 'string' ? body.id.trim() : '';
       if (!UUID_RE.test(id)) throw new ValidationError('제품 ID 형식이 올바르지 않습니다.');
-      const { data, error } = await db.from('products').select(columns).eq('id', id).maybeSingle();
+      let query = db.from('products').select(columns).eq('id', id);
+      if (view === 'edit') query = query.is('catalog_archived_at', null);
+      const { data, error } = await query.maybeSingle();
       if (error) throw error;
       return json({ ok: true, product: data ?? null }, 200, cors);
     }

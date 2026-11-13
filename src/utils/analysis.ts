@@ -48,7 +48,7 @@ export function generateAnalysisReport(product: Product, profile: UserPetProfile
     .filter((ingredient) => ingredient.riskLevel === 'caution')
     .map((ingredient) => ingredient.nameKo);
   const allergyCaution = allergyCautionText(compatibility.allergyCautions);
-  const nutrition = getNutritionPresentation(product.guaranteedAnalysis);
+  const nutrition = getNutritionPresentation(product.guaranteedAnalysis, product.nutrientEvidence);
   const nutritionWarnings = getAssessedNutritionWarnings(product, profile);
 
   const highlights: { text: string; type: 'positive' | 'negative' | 'caution' }[] = [];

@@ -101,11 +101,11 @@ describe('product detail pet switching', () => {
   it('re-evaluates an open ingredient sheet when the active pet changes, in either direction', async () => {
     show();
     await screen.findByRole('region', { name: '로니 참고 평가' });
-    fireEvent.click(screen.getByRole('button', { name: '닭고기 안전' }));
+    fireEvent.click(screen.getByRole('button', { name: '닭고기 일반 원료' }));
     const sheet = screen.getByRole('dialog', { name: '닭고기' });
     act(() => useStore.getState().selectPet(second.id));
-    expect(within(sheet).getByText(/모찌의 알레르기 유발 성분/)).toBeTruthy();
+    expect(within(sheet).getByText(/모찌의 등록한 회피 성분과 직접 일치/)).toBeTruthy();
     act(() => useStore.getState().selectPet(first.id));
-    expect(within(sheet).queryByText(/알레르기 유발 성분/)).toBeNull();
+    expect(within(sheet).queryByText(/등록한 회피 성분과 직접 일치/)).toBeNull();
   });
 });
