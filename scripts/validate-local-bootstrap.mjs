@@ -13,6 +13,7 @@ import { assertReviewReadBoundaryOnBootstrap } from './review-privacy-contract.m
 import { assertReviewedCatalogRepair } from './test-reviewed-catalog-repair.mjs';
 import { assertMaterialRegistry } from './material-registry-contract.mjs';
 import { assertLabelSourceObservations } from './label-source-observation-contract.mjs';
+import { assertVolumeNutrition } from './volume-nutrition-contract.mjs';
 
 const repository = fileURLToPath(new URL('../', import.meta.url));
 const db = new PGlite({ extensions: { pgcrypto, pg_trgm, uuid_ossp } });
@@ -66,6 +67,7 @@ try {
   }
   await assertMaterialRegistry(db);
   await assertLabelSourceObservations(db);
+  await assertVolumeNutrition(db);
   for (const role of ['anon', 'authenticated', 'service_role']) {
     const result = await db.query("SELECT has_sequence_privilege($1, 'public.ingredient_label_comparisons_sequence_seq', 'SELECT,USAGE,UPDATE') allowed", [role]);
     assert.equal(result.rows[0].allowed, false, `${role}: evidence identity sequence must be private`);

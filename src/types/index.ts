@@ -171,7 +171,7 @@ export interface Product {
   guaranteedAnalysis?: GuaranteedAnalysis;
   nutrientEvidence?: Array<{
     nutrientCode: string; name: string; value: number; unit: string;
-    basis: 'as_fed' | 'dry_matter' | 'per_energy' | 'unspecified';
+    basis: 'as_fed' | 'as_sold' | 'dry_matter' | 'per_energy' | 'unspecified';
     qualifier: 'minimum' | 'maximum' | 'typical' | 'exact' | 'unspecified';
     sourceUrl: string; sourceVersion: string;
   }>;
