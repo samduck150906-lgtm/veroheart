@@ -25,4 +25,10 @@ describe('NutrientEvidenceDetails',()=>{
     expect(items[0].textContent).toContain('5 g/100mL');
     expect(items[1].textContent).toContain('분말 제품 그대로 기준 · 조유 후 수치 아님');
   });
+  it('shows identical statements from repeated captures once without hiding a changed guarantee',()=>{
+    const old={...base,basis:'as_sold' as const,sourceVersion:'old-capture'};
+    render(<NutrientEvidenceDetails evidence={[old,{...old,sourceVersion:'new-capture'},{...old,qualifier:'minimum',sourceVersion:'other-condition'}]} />);
+    expect(screen.getAllByRole('listitem',{hidden:true})).toHaveLength(2);
+    expect(screen.getAllByRole('listitem',{hidden:true})[1].textContent).toContain('이상');
+  });
 });
