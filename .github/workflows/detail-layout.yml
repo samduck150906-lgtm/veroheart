@@ -21,8 +21,12 @@ jobs:
       - run: node --test tests/detail-layout/fixture-server.test.mjs
       - run: npx playwright install --with-deps chromium
       - run: node tests/detail-layout/run.mjs
+      - run: npx tsc -p tests/label-item-layout/tsconfig.json
+      - run: node tests/label-item-layout/run.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: synthetic-detail-layout
-          path: .artifacts/detail-layout-results/
+          path: |
+            .artifacts/detail-layout-results/
+            .artifacts/label-item-layout-results/

@@ -1659,7 +1659,7 @@ export interface AdminLabelReview {
   revision: string;
   eligible: boolean;
   snapshot: { product: unknown[]; labels: Array<{ id: string; raw: string; source?: string;
-    items: Array<{ id: string; raw: string; order: number; match: string }> }> };
+    items: Array<{ id: string; raw: string; order: number; match: string; legacy?: string | null; canonical?: string | null; resolved?: unknown[] | null }> }> };
 }
 export async function getIngredientLabelReview(productId: string): Promise<AdminLabelReview> {
   const result = await adminWrite<{ review: AdminLabelReview }>('getIngredientLabelReview', { productId });
@@ -1669,4 +1669,34 @@ export async function getIngredientLabelReview(productId: string): Promise<Admin
 export async function approveIngredientLabelReview(input: { productId: string; revision: string; reviewedItemIds: string[];
   sourceReference: string; identityNotes: string; coverageNotes: string; identityConfirmed: boolean; wholeLabelCompared: boolean }) {
   return adminWrite<{ result: { status: string; revision: string } }>('approveIngredientLabelReview', input);
+}
+
+
+/** Current label items are distinct from the legacy ingredients editor. */
+export interface LabelItemCandidate {
+  kind: 'legacy' | 'canonical'; id: string; nameKo: string; nameEn: string | null;
+  risk: string | null; description?: string | null; status: string; selectable: boolean; revision: string;
+}
+export interface LabelItemWorkspace {
+  review: AdminLabelReview | null;
+  decisions: Array<{ itemId: string; decision: 'match' | 'hold'; reason: string; recordedAt: string; currentSource?: boolean }>;
+}
+export interface LabelItemDecisionInput {
+  productId: string; revision: string; itemId: string; decision: 'match' | 'hold';
+  targetKind?: 'legacy' | 'canonical'; targetId?: string; targetRevision?: string; reason: string;
+}
+export async function getLabelItemWorkspace(productId: string): Promise<LabelItemWorkspace> {
+  const r = await adminWrite<{ result: LabelItemWorkspace }>('getLabelItemWorkspace', { productId });
+  if (!r.result?.review) throw new Error('현재 라벨 검토 자료가 없습니다.');
+  return r.result;
+}
+export async function searchLabelItemCandidates(query: string): Promise<LabelItemCandidate[]> {
+  const r = await adminWrite<{ result: LabelItemCandidate[] }>('searchLabelItemCandidates', { query });
+  if (!Array.isArray(r.result)) throw new Error('후보를 조회하지 못했습니다.');
+  return r.result;
+}
+export async function reviewLabelItemMatch(input: LabelItemDecisionInput) {
+  const r = await adminWrite<{ result: { status: 'saved' | 'unchanged'; workspace: LabelItemWorkspace } }>('reviewLabelItemMatch', { ...input });
+  if (!r.result?.workspace?.review) throw new Error('저장 결과를 재조회해야 합니다.');
+  return r.result;
 }

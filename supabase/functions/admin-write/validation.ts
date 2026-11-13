@@ -78,6 +78,9 @@ export const ALLOWED_ACTIONS = new Set([
   'restoreTrash',
   'purgeTrash',
   'applyProductCleanup',
+  'getLabelItemWorkspace',
+  'searchLabelItemCandidates',
+  'reviewLabelItemMatch',
   'getIngredientLabelReview',
   'approveIngredientLabelReview',
 ]);

@@ -34,11 +34,16 @@ jobs:
         run: node --experimental-vm-modules --test scripts/label-review-service.test.mjs
       - name: Supabase default sequence ACL regression
         run: node --test scripts/label-evidence-sequence.test.mjs
+      - name: Label item matching authenticated synthetic flow
+        run: node --experimental-vm-modules --test scripts/label-item-matching-service.test.mjs
       - run: npm test
       - run: npm run test:catalog
-      - run: npm run test:bootstrap -- --label-comparison-draft
+      - run: npm run test:bootstrap -- --label-comparison-draft --label-item-matching-draft
       - run: npm run test:schemas
       - run: npm run build
+      - name: Disposable matching and held consumer integration
+        if: github.event_name == 'pull_request'
+        run: node scripts/test-label-item-consumer-integration.mjs
       - run: npm audit --audit-level=moderate
       - run: npm ci
         working-directory: landing
