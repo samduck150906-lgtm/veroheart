@@ -40,7 +40,9 @@ const VIEWS: Record<string, string> = {
   full: '*',
   edit:
     '*, nutritional_profiles(crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus), '
-    + 'product_ingredients(ingredient_id, sort_order, ingredients(id, name_ko, name_en, risk_level))',
+    + 'product_ingredients(ingredient_id, sort_order, ingredients(id, name_ko, name_en, risk_level)), '
+    + 'product_ingredient_label_sets(id, is_current, raw_label_text, source_reference, '
+    + 'product_ingredient_label_items(raw_ingredient_text, display_order, match_status))',
 };
 
 /** 한 번에 내려주는 최대 행 수. names/facts 처럼 전체를 도는 view 의 상한. */

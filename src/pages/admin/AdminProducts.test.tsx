@@ -304,6 +304,22 @@ describe('AdminProducts', () => {
     expect(h.saveProduct).not.toHaveBeenCalled();
   });
 
+  it('현재 라벨이 있으면 원문을 표시하고 일반 저장으로 이전 원료를 다시 쓰지 않는다', async () => {
+    h.fetchProductEditBundle.mockResolvedValue({product:{...makeRow(1),coupang_link:'https://example.com/product'},nutrition:null,
+      ingredients:[{ingredientId:'old-chicken',nameKo:'이전 닭고기',nameEn:'Chicken',riskLevel:'safe',sortOrder:0}],
+      currentLabel:{id:'label',rawText:'가수분해 연어, 현미',sourceUrl:'https://manufacturer.example/label',items:[{rawText:'가수분해 연어',order:1,status:'unmatched'},{rawText:'현미',order:2,status:'matched'}]}});
+    renderProducts();
+    fireEvent.click(await screen.findByRole('button',{name:'테스트 사료 1 수정'}));
+    const dialog=await screen.findByRole('dialog',{name:'제품 정보 수정'});
+    await within(dialog).findByRole('heading',{name:'현재 전성분 라벨 (2개)'});
+    expect(within(dialog).queryByText('이전 닭고기')).toBeNull();
+    expect(within(dialog).getByText('가수분해 연어',{exact:true})).toBeTruthy();
+    expect(within(dialog).queryByText('라벨 원문 붙여넣기')).toBeNull();
+    fireEvent.click(within(dialog).getByRole('button',{name:'저장하기'}));
+    await waitFor(()=>expect(h.saveProduct).toHaveBeenCalledTimes(1));
+    expect(h.saveProduct.mock.calls[0][0].ingredients).toBeUndefined();
+  });
+
   it('편집 자료 조회에 실패하면 빈 데이터로 저장할 수 없다', async () => {
     h.fetchProductEditBundle.mockRejectedValue(new Error('원재료 조회 실패'));
     renderProducts();

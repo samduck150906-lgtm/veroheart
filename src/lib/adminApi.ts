@@ -552,6 +552,10 @@ export interface ProductEditBundle {
   product: Record<string, unknown>;
   nutrition: Record<NutritionKey, number | null> | null;
   ingredients: ProductIngredientLink[];
+  currentLabel?: {
+    id: string; rawText: string; sourceUrl: string | null;
+    items: Array<{ rawText: string; order: number; status: string }>;
+  } | null;
 }
 
 /** 비공개 제품도 원재료·영양정보까지 한 번에 읽고, 불완전한 응답은 저장 가능한 빈 값으로 바꾸지 않는다. */
@@ -561,7 +565,7 @@ export async function fetchProductEditBundle(id: string): Promise<ProductEditBun
     { view: 'edit', id },
   );
   if (!res.product || res.product.id !== id) throw new Error('편집할 제품을 찾지 못했습니다.');
-  const { product_ingredients: links, nutritional_profiles: profiles, ...product } = res.product;
+  const { product_ingredients: links, nutritional_profiles: profiles, product_ingredient_label_sets: labelSets, ...product } = res.product;
   if (!Array.isArray(links) || profiles === undefined || (Array.isArray(profiles) && profiles.length > 1)) {
     throw new Error('제품 편집 자료를 모두 불러오지 못했습니다. 다시 열어 주세요.');
   }
@@ -584,7 +588,23 @@ export async function fetchProductEditBundle(id: string): Promise<ProductEditBun
         sortOrder: row.sort_order ?? index,
       };
     });
-  return { product, nutrition: profile as ProductEditBundle['nutrition'], ingredients };
+  let currentLabel: ProductEditBundle['currentLabel'] = null;
+  if (labelSets !== undefined) {
+    if (!Array.isArray(labelSets)) throw new Error('현재 전성분 라벨 조회가 불완전합니다. 다시 열어 주세요.');
+    const current = labelSets.filter(label => label && label.is_current === true);
+    if (current.length > 1) throw new Error('현재 전성분 라벨이 중복되어 편집할 수 없습니다.');
+    if (current.length) {
+      const label = current[0];
+      if (typeof label.id !== 'string' || typeof label.raw_label_text !== 'string' || !Array.isArray(label.product_ingredient_label_items)) throw new Error('현재 전성분 라벨 자료가 불완전합니다.');
+      const items = label.product_ingredient_label_items.map((item: Record<string, unknown>) => {
+        if (!item || typeof item.raw_ingredient_text !== 'string' || !Number.isInteger(item.display_order) || typeof item.match_status !== 'string') throw new Error('현재 전성분 항목 자료가 불완전합니다.');
+        return { rawText: item.raw_ingredient_text, order: item.display_order as number, status: item.match_status };
+      }).filter((item: { status: string }) => item.status !== 'ignored')
+        .sort((a: { order: number }, b: { order: number }) => a.order - b.order);
+      currentLabel = { id: label.id, rawText: label.raw_label_text, sourceUrl: typeof label.source_reference === 'string' && /^https:\/\//.test(label.source_reference) ? label.source_reference : null, items };
+    }
+  }
+  return { product, nutrition: profile as ProductEditBundle['nutrition'], ingredients, ...(labelSets !== undefined ? { currentLabel } : {}) };
 }
 
 export interface SaveProductPayload {
