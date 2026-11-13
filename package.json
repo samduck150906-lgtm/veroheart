@@ -22,7 +22,7 @@
     "check": "npm run lint && npm test && npm run test:catalog && npm run test:bootstrap && npm run test:schemas && npm run build",
     "native:sync": "npm run build && cap sync",
     "import:official": "node scripts/import-official-catalog.mjs",
-    "test:catalog": "node --test scripts/import-official-catalog.test.mjs scripts/prepare-reviewed-catalog.test.mjs",
+    "test:catalog": "node --test scripts/import-official-catalog.test.mjs scripts/prepare-reviewed-catalog.test.mjs scripts/read-official-product-evidence.test.mjs",
     "db:prepare-local": "node scripts/prepare-local-supabase.mjs",
     "test:bootstrap": "node scripts/validate-local-bootstrap.mjs",
     "test:review-privacy": "node --test scripts/test-review-privacy-boundary.mjs",
