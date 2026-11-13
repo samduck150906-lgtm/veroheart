@@ -1,3 +1,4 @@
+import { isAdminSessionActorCurrent } from '../_shared/temporaryAdminSession.ts';
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 
@@ -137,6 +138,7 @@ async function authenticateAdmin(token: string, sessionSecret: string): Promise<
       };
       if (typeof payload.actor !== 'string' || !payload.actor || payload.actor.length > 64) return null;
       if (typeof payload.exp !== 'number' || payload.exp <= Math.floor(Date.now() / 1000)) return null;
+      if (!isAdminSessionActorCurrent(payload.actor, payload.exp, (key) => Deno.env.get(key))) return null;
       return payload.actor;
     } catch {
       return null;

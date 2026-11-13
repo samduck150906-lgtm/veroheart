@@ -1,3 +1,4 @@
+import { isAdminSessionActorCurrent } from '../_shared/temporaryAdminSession.ts';
 import { handleLabelReview } from './labelReview.ts';
 import { handleSupport } from './support.ts';
 import { deleteAccountData, ownedPhotoPath } from '../_shared/accountStorage.ts';
@@ -216,7 +217,8 @@ async function verifyAdminSession(token: string, secret: string): Promise<string
     };
     if (typeof payload.actor !== 'string' || !payload.actor || payload.actor.length > 64) return null;
     if (typeof payload.exp !== 'number' || payload.exp <= Math.floor(Date.now() / 1000)) return null;
-    return payload.actor;
+    if (!isAdminSessionActorCurrent(payload.actor, payload.exp, (key) => Deno.env.get(key))) return null;
+      return payload.actor;
   } catch {
     return null;
   }
