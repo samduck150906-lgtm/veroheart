@@ -1,6 +1,6 @@
 # Official evidence supplement, 2026-11-13
 
-The reviewed manifest adds 476 explicit nutrient measurements to 93 existing products: Royal Canin 83, Hill's 6, Bonacibo 2, Inaba 1 and Wealtz 1. Eleven product composition labels contain 227 ordered raw ingredient items. Every imported label item has a captured manufacturer document and retains its original wording. This is evidence enrichment, not automatic safety approval.
+The reviewed manifest adds 476 explicit nutrient measurements to 93 existing products: Royal Canin 83, Hill's 6, Bonacibo 2, Inaba 1 and Wealtz 1. Twelve product composition labels contain 235 ordered raw ingredient items. Every imported label item has a captured manufacturer document and retains its original wording. This is evidence enrichment, not automatic safety approval.
 
 ## Identity and measurement boundaries
 
@@ -15,7 +15,7 @@ The reviewed manifest adds 476 explicit nutrient measurements to 93 existing pro
 
 Ten individually attributable application seed/manual test records are added to the existing separate archive. The migration checks exact identity, hidden state and absent manufacturer source, then preserves original product fields and associated evidence. It does not delete the records or declare their missing information complete. The earlier 973 archived records remain preserved.
 
-The hosted transaction rehearsal produced 759 active records, 983 archived originals, 489 active records still needing information and 8 public records needing information. Of the original 586 remaining records, 87 become complete, 10 are separately archived, and 489 remain. The 227 new raw items are all source-confirmed; 133 have exact canonical identities and 94 retain unresolved traits. Neither unresolved traits nor missing package evidence is fabricated to reach zero.
+The hosted transaction rehearsal produced 759 active records, 983 archived originals, 488 active records still needing information and 7 public records needing information. Of the original 586 remaining records, 88 become complete, 10 are separately archived, and 488 remain. The 235 new raw items are all source-confirmed; 136 have exact canonical identities and 99 retain unresolved traits. Neither unresolved traits nor missing package evidence is fabricated to reach zero.
 
 ## Reproducible application
 
@@ -36,4 +36,4 @@ Apply the volume/powder and attributable archive migrations first. Apply the evi
 
 The full PostgreSQL bootstrap contract covers volume versus mass, powder versus prepared liquid, source-pair integrity, deletion restoring missing status, publication preservation, profile attribution, exact preferred aliases and processing separation. Parser tests cover root package identity, regional exclusions, prefix percentages, decimal commas, duplicate/ambiguous panels and dry matter. React tests cover independent evidence and generated-copy suppression. Release CI additionally checks web, native builds, SQL/RLS, layout and dependencies.
 
-The two Notion cards require further work while 489 records lack required evidence. Actual iPhone/Galaxy camera validation requires a connected physical device; build and fixture checks do not establish that result. Do not move these cards to Done on the strength of this supplement alone.
+The two Notion cards require further work while 488 records lack required evidence. Actual iPhone/Galaxy camera validation requires a connected physical device; build and fixture checks do not establish that result. Do not move these cards to Done on the strength of this supplement alone.

@@ -4250,9 +4250,111 @@
       ],
       "rawBlock": "ANALYTICALCONSTITUENTS\nProtein\n10.5%\nFat content\n2.8%\nCrudeash\n1.5%\nCrude fibres I 0.5%\nMoisture\n79.6%\nCOMPosITloN: meat and animal derivatives, cereals, fish and fish derivatives, vegetable\nprotein extracts, minerals, derivatives of vegetable origin, oils and fats, various sugars.\nADDITIVES (per kg): Nutritional additives: Vitamin D3: 60 IU, Iron (3b103): 3 mg, lodine\n(3b202): 0.35 mg, Copper (3b405, 3b406): 2.8 mg, Manganese (3b502, 3b503, 3b504): 1 mg,\nZinc (3b603, 3b605, 3b606): 10 mg.ANALYTICAL CONSTITUENTS: Protein: 10.5% - Fat\ncontent: 2.8% - Crude ash: 1.5% - Crude fibres: 0.5% - Moisture: 79.6%.",
       "sharedPackages": [],
-      "referenceNote": "한국 공식 제품 페이지에 연결된 해당 제품의 제조사 이미지. 표시 분석값이며 국내 최소·최대 보장조건으로 바꾸지 않았습니다. 이미지 원본을 직접 확인한 수치만 반영했습니다.",
+      "referenceNote": "한국 공식 제품 페이지에 연결된 해당 제품의 제조사 이미지. 표시 분석값이며 국내 최소·최대 보장조건으로 바꾸지 않았습니다. 이미지 원본을 직접 확인한 수치만 반영했습니다. 제조사 Composition 항목의 원문 순서를 보존했습니다. 별도 첨가제·분석표는 해당 원본 자료에서 확인할 수 있으며 포괄 명칭을 특정 동물종이나 함량으로 추정하지 않았습니다.",
       "observationId": "7fb5e873-c1b1-f21d-9ccd-ff724996b836",
-      "profileProjection": true
+      "profileProjection": true,
+      "ingredientsText": "meat and animal derivatives, cereals, fish and fish derivatives, vegetable protein extracts, minerals, derivatives of vegetable origin, oils and fats, various sugars",
+      "language": "en",
+      "items": [
+        {
+          "order": 1,
+          "rawText": "meat and animal derivatives",
+          "baseText": "meat and animal derivatives",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "meatandanimalderivatives",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 2,
+          "rawText": "cereals",
+          "baseText": "cereals",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "cereals",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 3,
+          "rawText": "fish and fish derivatives",
+          "baseText": "fish and fish derivatives",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "fishandfishderivatives",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 4,
+          "rawText": "vegetable protein extracts",
+          "baseText": "vegetable protein extracts",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "vegetableproteinextracts",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 5,
+          "rawText": "minerals",
+          "baseText": "minerals",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "minerals",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 6,
+          "rawText": "derivatives of vegetable origin",
+          "baseText": "derivatives of vegetable origin",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "derivativesofvegetableorigin",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 7,
+          "rawText": "oils and fats",
+          "baseText": "oils and fats",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "oilsandfats",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 8,
+          "rawText": "various sugars",
+          "baseText": "various sugars",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "varioussugars",
+          "matchStatus": "unreviewed"
+        }
+      ],
+      "labelChanged": true,
+      "labelRequestId": "bbe9e351-7b7b-de58-c0d2-d2c8e6bc3de6"
     },
     {
       "productId": "9de4509b-13a1-40da-9846-33dab636d3a5",
