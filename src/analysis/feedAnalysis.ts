@@ -158,7 +158,7 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
 
   // ── 1) 영양 계산 (보장성분 실측치가 있을 때만) ──
   const ga: GuaranteedAnalysis | undefined = product.guaranteedAnalysis;
-  const nutritionPresentation = getNutritionPresentation(ga);
+  const nutritionPresentation = getNutritionPresentation(ga, product.nutrientEvidence);
   const hasNutritionData = Boolean(
     ga && [ga.crudeProtein, ga.crudeFat].some(isObservedPercent),
   );
@@ -305,7 +305,7 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
   const primarySummary = (() => {
     // 데이터 부족을 "미포함"으로 단정하지 않는다. 원재료·보장성분이 모두 없으면
     // grade 기반 부정 문장("주의가 필요한 성분…") 대신 정보 부족을 명시한다.
-    if (iq.total === 0 && !hasNutritionData && !product.unknownIngredientTerms?.length) return '원재료·영양 정보가 부족해 아직 정확히 평가하기 어렵습니다.';
+    if (iq.total === 0 && !hasNutritionData && !nutritionPresentation.hasLabelEvidence && !product.unknownIngredientTerms?.length) return '원재료·영양 정보가 부족해 아직 정확히 평가하기 어렵습니다.';
     if (allergyHits.length > 0) return `${profile.name}가 피해야 할 성분이 있어 급여 전 확인이 필요합니다.`;
     if (allergyCautions.length > 0) return `${profile.name}의 알레르기와 관련된 원료가 있어 급여 전 확인이 필요합니다.`;
     if (iq.dangerCount > 0) return `위험 등급 성분 ${iq.dangerCount}개가 확인돼 급여 전 확인이 필요합니다.`;
