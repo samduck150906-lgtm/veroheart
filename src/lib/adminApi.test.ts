@@ -99,6 +99,25 @@ describe('adminApi: 비공개 제품 편집 자료', () => {
     await expect(fetchProductEditBundle(id)).resolves.toEqual({ product, ingredients: [], nutrition: null });
   });
 
+  it('현재 라벨 순서를 보존하고 이전 라벨·무시 항목은 현재 원료로 표시하지 않는다', async () => {
+    h.callAdminFunction.mockResolvedValue({product:{...product,product_ingredients:[ingredient],nutritional_profiles:nutrition,product_ingredient_label_sets:[
+      {id:'old',is_current:false,raw_label_text:'이전 닭고기',product_ingredient_label_items:[]},
+      {id:'current',is_current:true,raw_label_text:'연어, 쌀',source_reference:'https://manufacturer.example/label',product_ingredient_label_items:[
+        {raw_ingredient_text:'쌀',display_order:2,match_status:'matched'},
+        {raw_ingredient_text:'참고문구',display_order:3,match_status:'ignored'},
+        {raw_ingredient_text:'연어',display_order:1,match_status:'unmatched'},
+      ]},
+    ]}});
+    const result=await fetchProductEditBundle(id);
+    expect(result.currentLabel).toMatchObject({id:'current',items:[{rawText:'연어',order:1},{rawText:'쌀',order:2}]});
+    expect(result.product).not.toHaveProperty('product_ingredient_label_sets');
+  });
+
+  it('현재 라벨의 항목 조회가 불완전하면 이전 원료로 대신 편집하지 않는다', async () => {
+    h.callAdminFunction.mockResolvedValue({product:{...product,product_ingredients:[ingredient],nutritional_profiles:nutrition,product_ingredient_label_sets:[{id:'current',is_current:true,raw_label_text:'연어'}]}});
+    await expect(fetchProductEditBundle(id)).rejects.toThrow('현재 전성분');
+  });
+
   it('노출 설정이 null인 목록 제품을 켜짐으로 바꾸지 않는다', async () => {
     h.callAdminFunction.mockResolvedValue({ rows: [{ ...product, is_visible: null }], total: 1 });
     const result = await fetchProductsPage({ page: 1, pageSize: 20 });

@@ -112,12 +112,28 @@ const AdminDashboard: React.FC = () => {
   const cards = useMemo(
     () => [
       {
-        label: '전체 제품수',
+        label: '운영 제품수',
         value: metrics?.products ?? null,
         icon: <Package size={18} />,
         delta: deltaPercent(metrics?.productsLast7 ?? null, metrics?.productsPrev7 ?? null),
         deltaLabel: '최근 7일 vs 직전 7일',
         to: '/admin/products',
+      },
+      {
+        label: '보관 원본',
+        value: metrics?.archivedCatalogRecords ?? null,
+        icon: <Package size={18} />,
+        delta: null,
+        deltaLabel: null,
+        to: '/admin/data-quality?catalog=archived&visibility=all',
+      },
+      {
+        label: '전체 원본 기록',
+        value: typeof metrics?.products === 'number' && typeof metrics?.archivedCatalogRecords === 'number' ? metrics.products + metrics.archivedCatalogRecords : null,
+        icon: <DatabaseZap size={18} />,
+        delta: null,
+        deltaLabel: null,
+        to: '/admin/data-quality?catalog=all&visibility=all&complete=1',
       },
       {
         label: '검수 완료 제품',
@@ -244,7 +260,7 @@ const AdminDashboard: React.FC = () => {
         </div>
       )}
 
-      <p className="admin-page-subtitle">집계는 숨김·검수 대기를 포함한 전체 제품 기준입니다. 품질 보완 대상은 보완 큐에 누락 항목이 남은 제품이며, 각 카드를 누르면 같은 범위와 항목으로 이동합니다.</p>
+      <p className="admin-page-subtitle">운영 제품 집계는 숨김·검수 대기를 포함합니다. 가상 생성 기록·제조업체 명단은 원본과 누락 항목을 보존해 별도 보관합니다. 보관은 보완 완료가 아닙니다. 품질 보완 카드는 운영 제품의 누락 항목을 집계하며, 보관 원본과 전체 원본 기록도 따로 확인할 수 있습니다.</p>
       <div className="admin-grid-cards">
         {cards.map((card) => {
           const body = (

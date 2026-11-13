@@ -40,7 +40,9 @@ const VIEWS: Record<string, string> = {
   full: '*',
   edit:
     '*, nutritional_profiles(crude_protein, crude_fat, crude_fiber, crude_ash, moisture, calcium, phosphorus), '
-    + 'product_ingredients(ingredient_id, sort_order, ingredients(id, name_ko, name_en, risk_level))',
+    + 'product_ingredients(ingredient_id, sort_order, ingredients(id, name_ko, name_en, risk_level)), '
+    + 'product_ingredient_label_sets(id, is_current, raw_label_text, source_reference, '
+    + 'product_ingredient_label_items(raw_ingredient_text, display_order, match_status))',
 };
 
 /** 한 번에 내려주는 최대 행 수. names/facts 처럼 전체를 도는 view 의 상한. */
@@ -145,6 +147,7 @@ type Filters = Record<string, any>;
 /** 목록·통계가 같은 조건을 쓰도록 필터 적용을 한곳에 둔다. */
 // deno-lint-ignore no-explicit-any
 function applyFilters(builder: any, filters: Filters) {
+  builder = builder.is('catalog_archived_at', null);
   const search = optionalText(filters.search, '검색어', 100);
   if (search) {
     const pattern = likePattern(search);
@@ -201,7 +204,9 @@ serve(async (req) => {
     if (view === 'full' || view === 'edit') {
       const id = typeof body.id === 'string' ? body.id.trim() : '';
       if (!UUID_RE.test(id)) throw new ValidationError('제품 ID 형식이 올바르지 않습니다.');
-      const { data, error } = await db.from('products').select(columns).eq('id', id).maybeSingle();
+      let query = db.from('products').select(columns).eq('id', id);
+      if (view === 'edit') query = query.is('catalog_archived_at', null);
+      const { data, error } = await query.maybeSingle();
       if (error) throw error;
       return json({ ok: true, product: data ?? null }, 200, cors);
     }

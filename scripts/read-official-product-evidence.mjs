@@ -65,12 +65,17 @@ export function readRoyalCaninProduct(sourceUrl, html) {
 
 export function parseGuaranteedNutrition(text) {
   if (/dry matter|건물\s*기준/i.test(text)) throw new Error('Dry-matter values are not as-fed guarantees');
+  const analyticalText=text.replace(/(^|\n)\s*ANALYTICAL CONSTITU(?:E|A)NTS\s*:/gi,'$1');
   const labels = { crude_protein: ['조단백질', '조단백', '단백질', 'Crude protein', 'Protein'], crude_fat: ['조지방', '지방', 'Fat content', 'Crude fat'], crude_fiber: ['조섬유', 'Crude fibres', 'Crude fiber', 'Crude fibre'], crude_ash: ['조회분', 'Crude ash', 'Ash'], moisture: ['수분', 'Moisture'], calcium: ['칼슘', 'Calcium'], phosphorus: ['인', 'Phosphorus'] };
   const values = [];
   for (const [key, names] of Object.entries(labels)) {
     const escaped = names.map(name => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
-    const pattern = new RegExp('(?:^|[,;·\\n])\\s*(?:' + escaped + ')\\s*(?:\\((min(?:imum)?|max(?:imum)?)\\.?\\))?\\s*[-:：]?\\s*([0-9]+(?:\\.[0-9]+)?)\\s*%\\s*(이상|이하|min(?:imum)?|max(?:imum)?)?', 'gi');
-    const found = [...text.matchAll(pattern)].map(m => ({ key, value: Number(m[2]), qualifier: /^(이상|min)/i.test(m[1] ?? m[3] ?? '') ? 'minimum' : /^(이하|max)/i.test(m[1] ?? m[3] ?? '') ? 'maximum' : 'unspecified', raw: m[0].trim() }));
+    const pattern = new RegExp('(?:^|[,;·\\n]| - )\\s*(?:' + escaped + ')\\s*(?:\\((min(?:imum)?|max(?:imum)?)\\.?\\))?\\s*[-:：]?\\s*([0-9]+(?:\\.[0-9]+)?)\\s*%\\s*(?:\\(?\\s*(이상|이하|min(?:imum)?|max(?:imum)?)\\.?\\)?)?', 'gi');
+    const found = [...analyticalText.matchAll(pattern)].map(m => {
+      const qualifier=q=>/^(이상|min)/i.test(q??'')?'minimum':/^(이하|max)/i.test(q??'')?'maximum':'unspecified';
+      if(m[1]&&m[3]&&qualifier(m[1])!==qualifier(m[3]))throw new Error('Conflicting qualifier: '+key);
+      return {key,value:Number(m[2]),qualifier:qualifier(m[1]??m[3]),raw:m[0].trim()};
+    });
     if (found.some(item => item.value > 100) || new Set(found.map(item => `${item.value}:${item.qualifier}`)).size > 1) throw new Error('Conflicting/out-of-range guaranteed value: ' + key);
     if (found.length) values.push(found[0]);
   }

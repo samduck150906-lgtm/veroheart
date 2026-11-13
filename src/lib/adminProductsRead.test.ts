@@ -16,13 +16,16 @@ function adminToken() {
 function loadHandler(result: { data: unknown; error: unknown }) {
   let handler!: (request: Request) => Promise<Response>;
   let from = 0, to = 999;
+  const nullFilters: string[]=[];
+  const matches=(row: unknown)=>!row || nullFilters.every(column=>(row as Record<string,unknown>)[column]==null);
   const builder = {
     select: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
     range: vi.fn((start: number, end: number) => { from = start; to = end; return builder; }),
-    then: (resolve: (value: unknown) => unknown) => Promise.resolve({ ...result, data: Array.isArray(result.data) ? result.data.slice(from, to + 1) : result.data }).then(resolve),
+    then: (resolve: (value: unknown) => unknown) => Promise.resolve({ ...result, data: Array.isArray(result.data) ? result.data.filter(matches).slice(from, to + 1) : result.data }).then(resolve),
     eq: vi.fn().mockReturnThis(),
-    maybeSingle: vi.fn().mockResolvedValue(result),
+    is: vi.fn((column: string,value: unknown)=>{if(value===null)nullFilters.push(column);return builder;}),
+    maybeSingle: vi.fn(async()=>({...result,data:matches(result.data)?result.data:null})),
   };
   const db = { from: vi.fn().mockReturnValue(builder) };
   const createClient = vi.fn(() => db);
@@ -77,6 +80,7 @@ describe('admin-products-read edit evidence', () => {
     expect(createClient).toHaveBeenCalledWith('https://test.invalid', 'service-only-key', expect.any(Object));
     expect(db.from).toHaveBeenCalledWith('products');
     expect(builder.eq).toHaveBeenCalledExactlyOnceWith('id', PRODUCT_ID);
+    expect(builder.is).toHaveBeenCalledWith('catalog_archived_at',null);
     const columns = builder.select.mock.calls[0][0] as string;
     expect(columns).toContain('nutritional_profiles(');
     expect(columns).toContain('product_ingredients(');
@@ -89,6 +93,11 @@ describe('admin-products-read edit evidence', () => {
     const response = await handler(request(adminToken()));
     expect(response.status).toBe(500);
     expect((await response.json()).ok).not.toBe(true);
+  });
+
+  it('does not load an archived source record into the active product editor',async()=>{
+    const {handler}=loadHandler({data:{id:PRODUCT_ID,catalog_archived_at:'2026-11-13T00:00:00Z'},error:null});
+    expect(await(await handler(request(adminToken()))).json()).toEqual({ok:true,product:null});
   });
 
   it('rejects malformed product IDs before querying any product', async () => {
@@ -108,4 +117,10 @@ it('reads later facts pages with stable ties and manufacturer source evidence', 
   expect(result.rows.at(-1).id).toBe('1004');
   expect(builder.select.mock.calls[0][0]).toContain('catalog_source_url');
   expect(builder.order).toHaveBeenCalledWith('id', { ascending: true });
+});
+
+it('excludes archived records from active facts scans',async()=>{
+ const {handler}=loadHandler({data:[{id:'active',catalog_archived_at:null},{id:'archive',catalog_archived_at:'2026-11-13T00:00:00Z'}],error:null});
+ const response=await handler(new Request('https://test.invalid/functions/v1/admin-products-read',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':adminToken()},body:JSON.stringify({view:'facts'})}));
+ expect((await response.json()).rows.map((r:{id:string})=>r.id)).toEqual(['active']);
 });

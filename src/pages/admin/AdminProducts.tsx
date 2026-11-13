@@ -8,7 +8,7 @@ import ProductIngredientsEditor from './ProductIngredientsEditor';
 import ProductLabelPasteBox from './ProductLabelPasteBox';
 import { productSpeciesConflict } from '../../lib/productSpecies';
 import {
-  fetchProductEditBundle, type BulkProductPatch,
+  fetchProductEditBundle, type BulkProductPatch, type ProductEditBundle,
   bulkUpdateProducts,
   BULK_PRODUCT_LIMIT,
   deleteProduct as deleteProductApi,
@@ -150,6 +150,7 @@ const AdminProducts: React.FC = () => {
   const [currentProduct, setCurrentProduct] = useState<ProductForm>({});
   const [nutrition, setNutrition] = useState<NutritionForm>(EMPTY_NUTRITION);
   const [ingredientLinks, setIngredientLinks] = useState<ProductIngredientLink[]>([]);
+  const [currentLabel, setCurrentLabel] = useState<ProductEditBundle['currentLabel']>(null);
   const [editLoadState, setEditLoadState] = useState<'ready' | 'loading' | 'error'>('ready');
   const editBlocked = editLoadState !== 'ready';
   const [isSaving, setIsSaving] = useState(false);
@@ -271,6 +272,7 @@ const AdminProducts: React.FC = () => {
     });
     setNutrition(EMPTY_NUTRITION);
     setIngredientLinks([]);
+    setCurrentLabel(null);
     setHealthConcernText('');
     setPriceText('');
     setFormError('');
@@ -288,6 +290,7 @@ const AdminProducts: React.FC = () => {
     setCurrentProduct(row as ProductForm);
     setNutrition(EMPTY_NUTRITION);
     setIngredientLinks([]);
+    setCurrentLabel(null);
     setHealthConcernText('');
     setPriceText('');
     setIsModalOpen(true);
@@ -311,6 +314,7 @@ const AdminProducts: React.FC = () => {
         });
       }
       setIngredientLinks(bundle.ingredients);
+      setCurrentLabel(bundle.currentLabel ?? null);
       setEditLoadState('ready');
     } catch (err) {
       if (loadId !== editLoadIdRef.current) return;
@@ -420,7 +424,7 @@ const AdminProducts: React.FC = () => {
       const saved = await saveProductApi({
         product: payload,
         nutrition: nutritionPayload,
-        ingredients: ingredientLinks.map((link, index) => ({
+        ingredients: currentLabel ? undefined : ingredientLinks.map((link, index) => ({
           ingredient_id: link.ingredientId,
           sort_order: index,
         })),
@@ -1101,7 +1105,7 @@ const AdminProducts: React.FC = () => {
 
               {/* 라벨 원문 한 번으로 원재료 연결과 보증성분을 함께 채운다.
                   성분을 하나씩 검색해 붙이는 것이 제품당 10~30회라 실제 병목이었다. */}
-              <div className="admin-form-span-2">
+              {!currentLabel && <div className="admin-form-span-2">
                 <ProductLabelPasteBox
                   linkedIngredientIds={ingredientLinks.map((link) => link.ingredientId)}
                   disabled={isSaving || editBlocked}
@@ -1136,7 +1140,7 @@ const AdminProducts: React.FC = () => {
                     notify.success(`라벨에서 성분 ${ingredients.length}개, 보증성분 ${found.length}칸을 채웠어요. 저장 전에 확인해 주세요.`);
                   }}
                 />
-              </div>
+              </div>}
 
               {currentProduct.id && editLoadState === 'ready' && <div className="admin-form-span-2">
                 <ProductLabelReview key={currentProduct.id} productId={currentProduct.id} />
@@ -1146,6 +1150,17 @@ const AdminProducts: React.FC = () => {
               <div className="admin-form-span-2">
                 {editLoadState === 'loading' ? (
                   <div className="admin-empty">제품·원재료·영양정보를 불러오는 중입니다…</div>
+                ) : currentLabel ? (
+                  <section aria-label="현재 전성분 라벨">
+                    <h3>현재 전성분 라벨 ({currentLabel.items.length}개)</h3>
+                    <p className="admin-hint">앱 분석에 사용하는 현재 라벨의 원문과 표시 순서입니다. 제품 정보 저장으로 이 원문을 교체하지 않습니다.</p>
+                    {currentLabel.sourceUrl && <a href={currentLabel.sourceUrl} target="_blank" rel="noopener noreferrer">제조사·라벨 출처 확인</a>}
+                    <ol style={{ maxHeight: 280, overflowY: 'auto', paddingLeft: 24 }}>
+                      {currentLabel.items.map(item => <li key={item.order}>{item.rawText}</li>)}
+                    </ol>
+                    {currentLabel.items.length === 0 && <p>현재 라벨에 표시할 원재료가 없습니다. 이전 원료 연결로 대신 표시하지 않습니다.</p>}
+                    <details><summary>전성분 원문 전체</summary><p style={{ whiteSpace: 'pre-wrap' }}>{currentLabel.rawText}</p></details>
+                  </section>
                 ) : (
                   <ProductIngredientsEditor
                     value={ingredientLinks}
@@ -1162,7 +1177,7 @@ const AdminProducts: React.FC = () => {
 
               {/* 보장성분(영양) — 입력 시 분석 결과가 "실측"으로 표시됨 */}
               <div className="admin-form-span-2 admin-form-legend" style={{ marginTop: 8 }}>
-                보장성분 (입력 시 분석 결과가 실측으로 표시돼요)
+                제품에 표시된 영양정보 (%)
               </div>
               <InputField
                 id="pf-kcal"

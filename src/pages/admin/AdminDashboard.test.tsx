@@ -81,6 +81,15 @@ describe('AdminDashboard', () => {
     expect(screen.getByText('145')).toBeTruthy();
   });
 
+  it('운영 제품과 보관 원본, 전체 원본 합계를 구분한다',async()=>{
+    h.fetchDashboard.mockResolvedValue({...PAYLOAD,metrics:{...PAYLOAD.metrics,products:769,archivedCatalogRecords:973,dataQualityIssues:586}});
+    renderDashboard();
+    expect(await screen.findByText('973')).toBeTruthy();
+    expect(screen.getByText('1,742')).toBeTruthy();
+    expect(screen.getByText('769')).toBeTruthy();
+    expect(screen.getByRole('link',{name:/보관 원본/}).getAttribute('href')).toBe('/admin/data-quality?catalog=archived&visibility=all');
+  });
+
   it('미분류 제품도 포함해 카테고리 합계를 전체 제품수와 맞춘다', async () => {
     renderDashboard();
     expect(await screen.findByText('분류 합계 458 / 전체 458')).toBeTruthy();
