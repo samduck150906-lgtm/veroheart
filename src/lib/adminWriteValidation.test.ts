@@ -79,6 +79,13 @@ describe('admin-write: 성분 payload 검증', () => {
 });
 
 describe('admin-write: 제품 payload 검증', () => {
+  it('does not default an unconfirmed target to dog and blocks approval with an unknown or conflicting target', () => {
+    const draft = { name:'고양이 전용 키튼',brand_name:'Fixture',verification_status:'pending',target_pet_type:'' };
+    expect(normalizeProductPayload(draft).target_pet_type).toBeNull();
+    expect(() => normalizeProductPayload({...draft,verification_status:'verified'})).toThrow(/대상 동물/);
+    expect(() => normalizeProductPayload({...draft,verification_status:'verified',target_pet_type:'dog'})).toThrow(/충돌/);
+    expect(normalizeProductPayload({...draft,verification_status:'verified',target_pet_type:'cat'}).target_pet_type).toBe('cat');
+  });
   it.each([['사료', 'food'], ['간식', 'snack'], ['영양제', 'supplement']])('saves %s with its matching product type', (category, type) => {
     expect(normalizeProductPayload({ name: '제품', brand_name: '브랜드', main_category: ` ${category} `, product_type: 'food' }))
       .toMatchObject({ main_category: category, product_type: type });

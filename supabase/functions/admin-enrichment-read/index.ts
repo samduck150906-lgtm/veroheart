@@ -1,3 +1,4 @@
+import { isAdminSessionActorCurrent } from '../_shared/temporaryAdminSession.ts';
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 
@@ -33,7 +34,7 @@ const DEFAULT_ALLOWED_ORIGINS = [
 const QUEUE_COLUMNS =
   'product_id, status, missing_fields, review_note, reviewed_by, reviewed_at, updated_at, '
   + 'products!inner(id, name, brand_name, target_pet_type, main_category, image_url, barcode, '
-  + 'verification_status, is_visible)';
+  + 'verification_status, is_visible, catalog_archived_at, catalog_archive_reason)';
 
 class ValidationError extends Error {}
 
@@ -102,6 +103,7 @@ async function authenticateAdmin(token: string, sessionSecret: string): Promise<
       };
       if (typeof payload.actor !== 'string' || !payload.actor || payload.actor.length > 64) return null;
       if (typeof payload.exp !== 'number' || payload.exp <= Math.floor(Date.now() / 1000)) return null;
+      if (!isAdminSessionActorCurrent(payload.actor, payload.exp, (key) => Deno.env.get(key))) return null;
       return payload.actor;
     } catch {
       return null;
@@ -149,6 +151,8 @@ serve(async (req) => {
     const status = optionalText(body.status, '상태', 40);
     const missingField = optionalText(body.missingField, '누락 필드', 40);
     const visibility = optionalText(body.visibility, '노출 상태', 20);
+    const catalogScope = optionalText(body.catalogScope, '원본 보관 범위', 20) ?? 'active';
+    if (!['active', 'archived', 'all'].includes(catalogScope)) throw new ValidationError('원본 보관 범위가 올바르지 않습니다.');
 
     let query = db
       .from('product_enrichment_queue')
@@ -158,7 +162,9 @@ serve(async (req) => {
 
     if (status && status !== 'all') query = query.eq('status', status);
     if (missingField && missingField !== 'all') query = query.contains('missing_fields', [missingField]);
-    if (!status || status === 'all') query = query.not('missing_fields', 'eq', '{}');
+    if ((!status || status === 'all') && body.includeComplete !== true) query = query.not('missing_fields', 'eq', '{}');
+    if (catalogScope === 'active') query = query.is('products.catalog_archived_at', null);
+    else if (catalogScope === 'archived') query = query.not('products.catalog_archived_at', 'is', null);
     // 큐에는 노출을 내린 제품도 남는다(정보를 채우면 다시 켜야 하므로).
     // 기본 작업 대상은 지금 사용자에게 보이는 제품이다.
     if (visibility === 'visible') query = query.eq('products.is_visible', true).in('products.verification_status', ['reviewed','verified']);

@@ -75,7 +75,7 @@ describe('PDP redesign parts', () => {
       <IngredientCard ing={{ nameKo: '닭고기', purpose: '동물성 단백질', riskLevel: 'safe' }} onOpen={() => {}} />
     );
     expect(safe).toContain('닭고기');
-    expect(safe).toContain('안전');
+    expect(safe).toContain('일반 원료');
 
     const allergy = renderToStaticMarkup(
       <IngredientCard ing={{ nameKo: '닭', riskLevel: 'safe', isAllergy: true }} onOpen={() => {}} />

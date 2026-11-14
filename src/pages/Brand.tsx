@@ -36,6 +36,11 @@ export default function Brand() {
 
   const allBrands = [...new Set(products.map(p => p.brand))].filter((brand) => brand && !isSourceLabelBrand(brand));
   const displayOtherBrands = otherBrands.length > 0 ? otherBrands : allBrands.filter(b => b !== decoded).slice(0, 10);
+  const ratedProducts = brandProducts.filter(p => p.reviewsCount > 0 && Number.isFinite(p.averageRating));
+  const reviewCount = ratedProducts.reduce((sum, p) => sum + p.reviewsCount, 0);
+  const averageRating = reviewCount > 0
+    ? ratedProducts.reduce((sum, p) => sum + p.averageRating * p.reviewsCount, 0) / reviewCount
+    : null;
 
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '80px' }}>
@@ -71,9 +76,7 @@ export default function Brand() {
             <div className="ui-icon-pill" style={{ marginBottom: '10px' }}><Star size={16} color="#F59E0B" /></div>
             <div style={{ fontSize: '12px', color: '#8A9099', fontWeight: 700 }}>평균 평점</div>
             <div style={{ fontSize: '22px', fontWeight: 900, marginTop: '4px' }}>
-              {brandProducts.length > 0
-                ? (brandProducts.reduce((a, p) => a + (p.averageRating || 0), 0) / brandProducts.length).toFixed(1)
-                : '-'}
+              {loadError ? '—' : averageRating === null ? '-' : averageRating.toFixed(1)}
             </div>
           </div>
           <div className="ui-info-card" style={{ padding: '16px' }}>

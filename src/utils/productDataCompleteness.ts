@@ -1,6 +1,7 @@
 import type { Product } from '../types';
 import { productAnalysisReadiness, analysisReadinessNotice } from '../analysis/analysisReadiness';
 import { getNutritionPresentation } from '../analysis/nutritionReadiness';
+import { ingredientLabelCounts } from './ingredientLabelCounts';
 
 export function describeIngredientAvailability(product: Product): { label: string; detail: string } {
   if (product.ingredientDataLoaded === false) {
@@ -12,6 +13,10 @@ export function describeIngredientAvailability(product: Product): { label: strin
   const { status } = readiness;
   if (readiness.reasonCodes.some(r => r.startsWith('label_') || r === 'multiple_current_labels')) {
     return { label: known + unknown > 0 ? `원료 ${known + unknown}개 등록` : '원료 확인 필요', detail: analysisReadinessNotice(readiness) };
+  }
+  if (product.confirmedLabelIngredientCount !== undefined && product.ingredientLabelEntries?.length) {
+    return { label:`확인된 원료 ${product.confirmedLabelIngredientCount}개`,
+      detail:`표시 원료 ${product.ingredientLabelEntries.length}개 중 라벨 원문과 대조된 수입니다. 특성 연결 ${ingredientLabelCounts(product).traitsResolved}개${unknown ? `, 판정 근거 부족으로 점수 미반영 ${unknown}개` : ''}. 라벨 확인과 안전성 판단은 별개입니다.` };
   }
   if (status === 'blocked') return { label: '원료 표기 확인 필요', detail: '전성분 표기가 서로 달라 전체 점수를 계산하지 않았습니다. 아래 원료 목록을 확인해 주세요.' };
   if (status === 'unavailable' && known > 0 && unknown === 0) {
@@ -46,7 +51,7 @@ export interface ProductCompletenessDisplay {
 
 export function resolveProductCompleteness(product: Product): ProductDataCompleteness {
   const hasIngredients = (product.ingredients?.length ?? 0) + (product.unknownIngredientTerms?.length ?? 0) > 0;
-  const nutrition = getNutritionPresentation(product.guaranteedAnalysis);
+  const nutrition = getNutritionPresentation(product.guaranteedAnalysis, product.nutrientEvidence);
   if (hasIngredients && !nutrition.limited && !product.unknownIngredientTerms?.length && productAnalysisReadiness(product).status === 'ready') return 'full';
   if (hasIngredients) return 'partial';
   return 'minimal';
@@ -63,7 +68,7 @@ export function describeProductCompleteness(product: Product): ProductCompletene
       return {
         level: 'partial',
         label: '일부 정보만 확인할 수 있습니다',
-        detail: getNutritionPresentation(product.guaranteedAnalysis).notice,
+        detail: getNutritionPresentation(product.guaranteedAnalysis, product.nutrientEvidence).notice,
       };
     default:
       return {

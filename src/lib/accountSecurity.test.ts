@@ -3,6 +3,7 @@ import { createContext, runInContext } from 'node:vm';
 import { webcrypto } from 'node:crypto';
 import ts from 'typescript';
 import { expect, it, vi } from 'vitest';
+import { isAdminSessionActorCurrent } from '../../supabase/functions/_shared/temporaryAdminSession';
 
 function load(name: string, extra = '', env: Record<string,string> = {}) {
   let handler;
@@ -19,6 +20,7 @@ function load(name: string, extra = '', env: Record<string,string> = {}) {
       if (specifier.includes('supabase-js')) return { createClient: () => db };
       if (specifier.includes('cors.ts')) return { buildCorsHeaders: () => ({}) };
       if (specifier.includes('accountStorage.ts')) return { deleteAccountData, drainPhotoCleanup };
+      if (specifier.endsWith('/temporaryAdminSession.ts')) return { isAdminSessionActorCurrent };
       return {};
     },
   }));
@@ -53,6 +55,14 @@ it('an existing signed admin session cannot mint a new session', async () => {
   const token = await exports.issueAdminSession('test-actor', 'test-secret');
   expect((await handler(req('createAdminSession', token))).status).toBe(401);
   expect((await handler(req('verifyAdmin', token))).status).toBe(200);
+});
+it('revokes an issued QA session at the write gateway when its provision is removed',async()=>{
+  const env:Record<string,string>={TEMP_ADMIN_ID:'qa-write-fixture',TEMP_ADMIN_CREDENTIAL_SHA256:'a'.repeat(64),TEMP_ADMIN_EXPIRES_AT:String(Math.floor(Date.now()/1000)+600)};
+  const {handler,exports}=load('admin-write','\nexport { issueAdminSession };',env);
+  const token=await exports.issueAdminSession('qa-write-fixture','test-secret');
+  expect((await handler(req('verifyAdmin',token))).status).toBe(200);
+  delete env.TEMP_ADMIN_ID;
+  expect((await handler(req('verifyAdmin',token))).status).toBe(401);
 });
 
 it('account deletion rejects a missing bearer before any destructive action', async () => {

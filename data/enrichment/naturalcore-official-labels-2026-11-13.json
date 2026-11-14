@@ -1,0 +1,1928 @@
+{
+  "capturedAt": "2026-11-13T01:40:40.170Z",
+  "accepted": [
+    {
+      "title": "에코플러스6 유기농 70% 소",
+      "manufacturer": "(주)이레본",
+      "ingredientsText": "가수분해 소고기, 유기농 통보리, 유기농 현미, 유기농 녹두, 유기농 해바라기씨, 유기농 완두콩, 닭기름, 유기농 고구마, 유기농 통 아마씨, 참치분말, 피쉬 오일, 사탕무 펄프, 유카시디게라 추출물, 유기농 통 귀리, 천일염, 프락토올리고당, 홍삼, 메티오닌, 가수분해 초록입홍합복합물(콘드로이친과 글리칸의 원료), 씨벅턴열매, 달맞이꽃씨, 당근, 고수, 시금치, 글루코사민, 유익균 합제, 인산칼슘, 각종 비타민(비타민 C, 비타민 E, 비타민 A, 비타민 D3, 비타민 B1, 비타민 B2, 비타민 B6, 비타민 B12, 비오틴, 엽산, 판토텐산, 나이아신)과 미네랄(철, 아연, 구리, 셀레늄, 아이오딘, 망간)",
+      "ash": 8,
+      "organicIngredientPercentage": 71.58,
+      "otherReportedNutrients": [
+        {
+          "name": "오메가6",
+          "value": 2.5,
+          "unit": "%",
+          "qualifier": "minimum"
+        },
+        {
+          "name": "오메가3",
+          "value": 0.6,
+          "unit": "%",
+          "qualifier": "minimum"
+        }
+      ],
+      "sourceUrl": "https://naturalcore.co.kr/product/%EC%97%90%EC%BD%94%ED%94%8C%EB%9F%AC%EC%8A%A46-%EC%9C%A0%EA%B8%B0%EB%86%8D-70-%EC%86%8C-2kg/975/category/254/display/1/",
+      "documentSha256": "f9d824ebacd049d0600e8f7aef7f035ebe0fd8789e7c479ea68d352ff4942654",
+      "htmlSha256": "f8b8962d80bd2c008891f6e082524580dca73f4d141b86d571466b7bbf4d9122",
+      "imageSourceUrl": "https://shop-phinf.pstatic.net/20230103_160/1672733481778KSK43_JPEG/221206-%EC%97%90%EC%BD%94%ED%94%8C%EB%9F%AC%EC%8A%A46(780).jpg",
+      "observedAt": "2026-11-13T01:38:19.518Z",
+      "extractionMethod": "image transcribed and visually checked by coding agent; no physical package inspection",
+      "imageLocator": "사용한 원료의 전성분 표시; 등록성분량 표; 대사에너지(ME)",
+      "productId": "23217335-0f44-4816-88b9-62f34dce6ec2",
+      "brandName": "네츄럴코어",
+      "displayName": "에코플러스6 유기농 70% 소",
+      "species": "dog",
+      "language": "ko",
+      "nutritionText": "조단백질 24.0% 이상, 조지방 12.0% 이상, 칼슘 0.90% 이상, 인 0.40% 이상, 조회분 8.00% 이하, 조섬유 6.00% 이하, 수분 12.00% 이하",
+      "nutrients": [
+        {
+          "key": "crude_protein",
+          "value": 24,
+          "qualifier": "minimum",
+          "raw": "조단백질 24.0% 이상"
+        },
+        {
+          "key": "crude_fat",
+          "value": 12,
+          "qualifier": "minimum",
+          "raw": ", 조지방 12.0% 이상"
+        },
+        {
+          "key": "crude_fiber",
+          "value": 6,
+          "qualifier": "maximum",
+          "raw": ", 조섬유 6.00% 이하"
+        },
+        {
+          "key": "crude_ash",
+          "value": 8,
+          "qualifier": "maximum",
+          "raw": ", 조회분 8.00% 이하"
+        },
+        {
+          "key": "moisture",
+          "value": 12,
+          "qualifier": "maximum",
+          "raw": ", 수분 12.00% 이하"
+        },
+        {
+          "key": "calcium",
+          "value": 0.9,
+          "qualifier": "minimum",
+          "raw": ", 칼슘 0.90% 이상"
+        },
+        {
+          "key": "phosphorus",
+          "value": 0.4,
+          "qualifier": "minimum",
+          "raw": ", 인 0.40% 이상"
+        }
+      ],
+      "items": [
+        {
+          "order": 1,
+          "rawText": "가수분해 소고기",
+          "baseText": "가수분해 소고기",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "가수분해소고기",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 2,
+          "rawText": "유기농 통보리",
+          "baseText": "유기농 통보리",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "유기농통보리",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 3,
+          "rawText": "유기농 현미",
+          "baseText": "유기농 현미",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "유기농현미",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 4,
+          "rawText": "유기농 녹두",
+          "baseText": "유기농 녹두",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "유기농녹두",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 5,
+          "rawText": "유기농 해바라기씨",
+          "baseText": "유기농 해바라기씨",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "유기농해바라기씨",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 6,
+          "rawText": "유기농 완두콩",
+          "baseText": "유기농 완두콩",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "유기농완두콩",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 7,
+          "rawText": "닭기름",
+          "baseText": "닭기름",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "닭기름",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 8,
+          "rawText": "유기농 고구마",
+          "baseText": "유기농 고구마",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "유기농고구마",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 9,
+          "rawText": "유기농 통 아마씨",
+          "baseText": "유기농 통 아마씨",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "유기농통아마씨",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 10,
+          "rawText": "참치분말",
+          "baseText": "참치분말",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "참치분말",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 11,
+          "rawText": "피쉬 오일",
+          "baseText": "피쉬 오일",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "피쉬오일",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 12,
+          "rawText": "사탕무 펄프",
+          "baseText": "사탕무 펄프",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "사탕무펄프",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 13,
+          "rawText": "유카시디게라 추출물",
+          "baseText": "유카시디게라 추출물",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "유카시디게라추출물",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 14,
+          "rawText": "유기농 통 귀리",
+          "baseText": "유기농 통 귀리",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "유기농통귀리",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 15,
+          "rawText": "천일염",
+          "baseText": "천일염",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "천일염",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 16,
+          "rawText": "프락토올리고당",
+          "baseText": "프락토올리고당",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "프락토올리고당",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 17,
+          "rawText": "홍삼",
+          "baseText": "홍삼",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "홍삼",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 18,
+          "rawText": "메티오닌",
+          "baseText": "메티오닌",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "메티오닌",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 19,
+          "rawText": "가수분해 초록입홍합복합물(콘드로이친과 글리칸의 원료)",
+          "baseText": "가수분해 초록입홍합복합물",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": [
+              "콘드로이친과 글리칸의 원료"
+            ]
+          },
+          "normalizedText": "가수분해초록입홍합복합물",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 20,
+          "rawText": "씨벅턴열매",
+          "baseText": "씨벅턴열매",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "씨벅턴열매",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 21,
+          "rawText": "달맞이꽃씨",
+          "baseText": "달맞이꽃씨",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "달맞이꽃씨",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 22,
+          "rawText": "당근",
+          "baseText": "당근",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "당근",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 23,
+          "rawText": "고수",
+          "baseText": "고수",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "고수",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 24,
+          "rawText": "시금치",
+          "baseText": "시금치",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "시금치",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 25,
+          "rawText": "글루코사민",
+          "baseText": "글루코사민",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "글루코사민",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 26,
+          "rawText": "유익균 합제",
+          "baseText": "유익균 합제",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "유익균합제",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 27,
+          "rawText": "인산칼슘",
+          "baseText": "인산칼슘",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "인산칼슘",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 28,
+          "rawText": "각종 비타민(비타민 C, 비타민 E, 비타민 A, 비타민 D3, 비타민 B1, 비타민 B2, 비타민 B6, 비타민 B12, 비오틴, 엽산, 판토텐산, 나이아신)과 미네랄(철, 아연, 구리, 셀레늄, 아이오딘, 망간)",
+          "baseText": "각종 비타민과 미네랄",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": [
+              "비타민 C, 비타민 E, 비타민 A, 비타민 D3, 비타민 B1, 비타민 B2, 비타민 B6, 비타민 B12, 비오틴, 엽산, 판토텐산, 나이아신",
+              "철, 아연, 구리, 셀레늄, 아이오딘, 망간"
+            ]
+          },
+          "normalizedText": "각종비타민과미네랄",
+          "matchStatus": "unreviewed"
+        }
+      ],
+      "kcalPer100g": 340,
+      "packs": [],
+      "formulation": "건식",
+      "veterinaryOnly": false,
+      "labelChanged": true,
+      "observationId": "0f89b90c-59fe-d209-aed7-8db419cd92ca",
+      "labelRequestId": "70aafd09-be75-d369-d58c-8d91afb1ba2e"
+    },
+    {
+      "title": "에코플러스1 그레인프리 치킨&연어",
+      "manufacturer": "(주)하이원",
+      "ingredientsText": "가수분해 닭살코기, 고구마, 감자, 통 아마씨, 닭기름, 생선오일, 가수분해 연어, 유카시디게라 추출물, 홍삼, 프락토올리고당, 메티오닌, 염화칼륨, 타우린, 천일염, 인산칼슘, 씨벅턴열매, 달맞이꽃씨, 당근, 고수, 시금치, 유산균, 각종 비타민(비타민 C, 비타민 E, 비타민 A, 비타민 D3, 비타민 B1, 비타민 B2, 비타민 B6, 비타민 B12, 비오틴, 엽산, 판토텐산, 나이아신)과 미네랄(철, 아연, 구리, 셀레늄, 아이오딘, 망간)",
+      "ash": 9,
+      "sourceUrl": "https://naturalcore.co.kr/product/%EC%97%90%EC%BD%94%ED%94%8C%EB%9F%AC%EC%8A%A41-%EA%B7%B8%EB%A0%88%EC%9D%B8%ED%94%84%EB%A6%AC-%EC%B9%98%ED%82%A8%EC%97%B0%EC%96%B4-2kg/969/category/254/display/1/",
+      "documentSha256": "9888c0d8befed74775f5d75cefcc2a79500f5368f12585882e0d2316aa48b412",
+      "htmlSha256": "28a9de391bedc35ab6feb87fd204dd54b7c308c797a4c4542f84c08bf7af280f",
+      "imageSourceUrl": "https://shop-phinf.pstatic.net/20230103_58/1672732177294PsUwn_JPEG/221206-%EC%97%90%EC%BD%94%ED%94%8C%EB%9F%AC%EC%8A%A41(780).jpg",
+      "observedAt": "2026-11-13T01:38:20.246Z",
+      "extractionMethod": "image transcribed and visually checked by coding agent; no physical package inspection",
+      "imageLocator": "사용한 원료의 전성분 표시; 등록성분량 표; 대사에너지(ME)",
+      "productId": "e7f8cf79-2250-4ef2-8218-20fff6977c34",
+      "brandName": "네츄럴코어",
+      "displayName": "에코플러스1 그레인프리 치킨&연어",
+      "species": "dog",
+      "language": "ko",
+      "nutritionText": "조단백질 24.0% 이상, 조지방 12.0% 이상, 칼슘 0.90% 이상, 인 0.40% 이상, 조회분 9.00% 이하, 조섬유 6.00% 이하, 수분 12.00% 이하",
+      "nutrients": [
+        {
+          "key": "crude_protein",
+          "value": 24,
+          "qualifier": "minimum",
+          "raw": "조단백질 24.0% 이상"
+        },
+        {
+          "key": "crude_fat",
+          "value": 12,
+          "qualifier": "minimum",
+          "raw": ", 조지방 12.0% 이상"
+        },
+        {
+          "key": "crude_fiber",
+          "value": 6,
+          "qualifier": "maximum",
+          "raw": ", 조섬유 6.00% 이하"
+        },
+        {
+          "key": "crude_ash",
+          "value": 9,
+          "qualifier": "maximum",
+          "raw": ", 조회분 9.00% 이하"
+        },
+        {
+          "key": "moisture",
+          "value": 12,
+          "qualifier": "maximum",
+          "raw": ", 수분 12.00% 이하"
+        },
+        {
+          "key": "calcium",
+          "value": 0.9,
+          "qualifier": "minimum",
+          "raw": ", 칼슘 0.90% 이상"
+        },
+        {
+          "key": "phosphorus",
+          "value": 0.4,
+          "qualifier": "minimum",
+          "raw": ", 인 0.40% 이상"
+        }
+      ],
+      "items": [
+        {
+          "order": 1,
+          "rawText": "가수분해 닭살코기",
+          "baseText": "가수분해 닭살코기",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "가수분해닭살코기",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 2,
+          "rawText": "고구마",
+          "baseText": "고구마",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "고구마",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 3,
+          "rawText": "감자",
+          "baseText": "감자",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "감자",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 4,
+          "rawText": "통 아마씨",
+          "baseText": "통 아마씨",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "통아마씨",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 5,
+          "rawText": "닭기름",
+          "baseText": "닭기름",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "닭기름",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 6,
+          "rawText": "생선오일",
+          "baseText": "생선오일",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "생선오일",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 7,
+          "rawText": "가수분해 연어",
+          "baseText": "가수분해 연어",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "가수분해연어",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 8,
+          "rawText": "유카시디게라 추출물",
+          "baseText": "유카시디게라 추출물",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "유카시디게라추출물",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 9,
+          "rawText": "홍삼",
+          "baseText": "홍삼",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "홍삼",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 10,
+          "rawText": "프락토올리고당",
+          "baseText": "프락토올리고당",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "프락토올리고당",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 11,
+          "rawText": "메티오닌",
+          "baseText": "메티오닌",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "메티오닌",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 12,
+          "rawText": "염화칼륨",
+          "baseText": "염화칼륨",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "염화칼륨",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 13,
+          "rawText": "타우린",
+          "baseText": "타우린",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "타우린",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 14,
+          "rawText": "천일염",
+          "baseText": "천일염",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "천일염",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 15,
+          "rawText": "인산칼슘",
+          "baseText": "인산칼슘",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "인산칼슘",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 16,
+          "rawText": "씨벅턴열매",
+          "baseText": "씨벅턴열매",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "씨벅턴열매",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 17,
+          "rawText": "달맞이꽃씨",
+          "baseText": "달맞이꽃씨",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "달맞이꽃씨",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 18,
+          "rawText": "당근",
+          "baseText": "당근",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "당근",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 19,
+          "rawText": "고수",
+          "baseText": "고수",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "고수",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 20,
+          "rawText": "시금치",
+          "baseText": "시금치",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "시금치",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 21,
+          "rawText": "유산균",
+          "baseText": "유산균",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "유산균",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 22,
+          "rawText": "각종 비타민(비타민 C, 비타민 E, 비타민 A, 비타민 D3, 비타민 B1, 비타민 B2, 비타민 B6, 비타민 B12, 비오틴, 엽산, 판토텐산, 나이아신)과 미네랄(철, 아연, 구리, 셀레늄, 아이오딘, 망간)",
+          "baseText": "각종 비타민과 미네랄",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": [
+              "비타민 C, 비타민 E, 비타민 A, 비타민 D3, 비타민 B1, 비타민 B2, 비타민 B6, 비타민 B12, 비오틴, 엽산, 판토텐산, 나이아신",
+              "철, 아연, 구리, 셀레늄, 아이오딘, 망간"
+            ]
+          },
+          "normalizedText": "각종비타민과미네랄",
+          "matchStatus": "unreviewed"
+        }
+      ],
+      "kcalPer100g": 340,
+      "packs": [],
+      "formulation": "건식",
+      "veterinaryOnly": false,
+      "labelChanged": true,
+      "observationId": "c9275b50-bbe3-1051-716b-17fde19143d3",
+      "labelRequestId": "7b8b0df9-0891-b313-a050-1fb3098b94e1"
+    },
+    {
+      "title": "에코플러스1 그레인프리 치킨&연어",
+      "manufacturer": "(주)하이원",
+      "ingredientsText": "가수분해 닭살코기, 고구마, 감자, 통 아마씨, 닭기름, 생선오일, 가수분해 연어, 유카시디게라 추출물, 홍삼, 프락토올리고당, 메티오닌, 염화칼륨, 타우린, 천일염, 인산칼슘, 씨벅턴열매, 달맞이꽃씨, 당근, 고수, 시금치, 유산균, 각종 비타민(비타민 C, 비타민 E, 비타민 A, 비타민 D3, 비타민 B1, 비타민 B2, 비타민 B6, 비타민 B12, 비오틴, 엽산, 판토텐산, 나이아신)과 미네랄(철, 아연, 구리, 셀레늄, 아이오딘, 망간)",
+      "ash": 9,
+      "sourceUrl": "https://naturalcore.co.kr/product/%EC%97%90%EC%BD%94%ED%94%8C%EB%9F%AC%EC%8A%A41-%EA%B7%B8%EB%A0%88%EC%9D%B8%ED%94%84%EB%A6%AC-%EC%B9%98%ED%82%A8%EC%97%B0%EC%96%B4-2kg/969/category/254/display/1/",
+      "documentSha256": "9888c0d8befed74775f5d75cefcc2a79500f5368f12585882e0d2316aa48b412",
+      "htmlSha256": "28a9de391bedc35ab6feb87fd204dd54b7c308c797a4c4542f84c08bf7af280f",
+      "imageSourceUrl": "https://shop-phinf.pstatic.net/20230103_58/1672732177294PsUwn_JPEG/221206-%EC%97%90%EC%BD%94%ED%94%8C%EB%9F%AC%EC%8A%A41(780).jpg",
+      "observedAt": "2026-11-13T01:38:20.246Z",
+      "extractionMethod": "image transcribed and visually checked by coding agent; no physical package inspection",
+      "imageLocator": "사용한 원료의 전성분 표시; 등록성분량 표; 대사에너지(ME)",
+      "productId": "c33ef40c-7327-43c5-a4c0-8d6a159ab4a7",
+      "brandName": "네츄럴코어",
+      "displayName": "에코플러스1 그레인프리 치킨&연어",
+      "species": "dog",
+      "language": "ko",
+      "nutritionText": "조단백질 24.0% 이상, 조지방 12.0% 이상, 칼슘 0.90% 이상, 인 0.40% 이상, 조회분 9.00% 이하, 조섬유 6.00% 이하, 수분 12.00% 이하",
+      "nutrients": [
+        {
+          "key": "crude_protein",
+          "value": 24,
+          "qualifier": "minimum",
+          "raw": "조단백질 24.0% 이상"
+        },
+        {
+          "key": "crude_fat",
+          "value": 12,
+          "qualifier": "minimum",
+          "raw": ", 조지방 12.0% 이상"
+        },
+        {
+          "key": "crude_fiber",
+          "value": 6,
+          "qualifier": "maximum",
+          "raw": ", 조섬유 6.00% 이하"
+        },
+        {
+          "key": "crude_ash",
+          "value": 9,
+          "qualifier": "maximum",
+          "raw": ", 조회분 9.00% 이하"
+        },
+        {
+          "key": "moisture",
+          "value": 12,
+          "qualifier": "maximum",
+          "raw": ", 수분 12.00% 이하"
+        },
+        {
+          "key": "calcium",
+          "value": 0.9,
+          "qualifier": "minimum",
+          "raw": ", 칼슘 0.90% 이상"
+        },
+        {
+          "key": "phosphorus",
+          "value": 0.4,
+          "qualifier": "minimum",
+          "raw": ", 인 0.40% 이상"
+        }
+      ],
+      "items": [
+        {
+          "order": 1,
+          "rawText": "가수분해 닭살코기",
+          "baseText": "가수분해 닭살코기",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "가수분해닭살코기",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 2,
+          "rawText": "고구마",
+          "baseText": "고구마",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "고구마",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 3,
+          "rawText": "감자",
+          "baseText": "감자",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "감자",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 4,
+          "rawText": "통 아마씨",
+          "baseText": "통 아마씨",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "통아마씨",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 5,
+          "rawText": "닭기름",
+          "baseText": "닭기름",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "닭기름",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 6,
+          "rawText": "생선오일",
+          "baseText": "생선오일",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "생선오일",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 7,
+          "rawText": "가수분해 연어",
+          "baseText": "가수분해 연어",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "가수분해연어",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 8,
+          "rawText": "유카시디게라 추출물",
+          "baseText": "유카시디게라 추출물",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "유카시디게라추출물",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 9,
+          "rawText": "홍삼",
+          "baseText": "홍삼",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "홍삼",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 10,
+          "rawText": "프락토올리고당",
+          "baseText": "프락토올리고당",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "프락토올리고당",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 11,
+          "rawText": "메티오닌",
+          "baseText": "메티오닌",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "메티오닌",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 12,
+          "rawText": "염화칼륨",
+          "baseText": "염화칼륨",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "염화칼륨",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 13,
+          "rawText": "타우린",
+          "baseText": "타우린",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "타우린",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 14,
+          "rawText": "천일염",
+          "baseText": "천일염",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "천일염",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 15,
+          "rawText": "인산칼슘",
+          "baseText": "인산칼슘",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "인산칼슘",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 16,
+          "rawText": "씨벅턴열매",
+          "baseText": "씨벅턴열매",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "씨벅턴열매",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 17,
+          "rawText": "달맞이꽃씨",
+          "baseText": "달맞이꽃씨",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "달맞이꽃씨",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 18,
+          "rawText": "당근",
+          "baseText": "당근",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "당근",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 19,
+          "rawText": "고수",
+          "baseText": "고수",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "고수",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 20,
+          "rawText": "시금치",
+          "baseText": "시금치",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "시금치",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 21,
+          "rawText": "유산균",
+          "baseText": "유산균",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "유산균",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 22,
+          "rawText": "각종 비타민(비타민 C, 비타민 E, 비타민 A, 비타민 D3, 비타민 B1, 비타민 B2, 비타민 B6, 비타민 B12, 비오틴, 엽산, 판토텐산, 나이아신)과 미네랄(철, 아연, 구리, 셀레늄, 아이오딘, 망간)",
+          "baseText": "각종 비타민과 미네랄",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": [
+              "비타민 C, 비타민 E, 비타민 A, 비타민 D3, 비타민 B1, 비타민 B2, 비타민 B6, 비타민 B12, 비오틴, 엽산, 판토텐산, 나이아신",
+              "철, 아연, 구리, 셀레늄, 아이오딘, 망간"
+            ]
+          },
+          "normalizedText": "각종비타민과미네랄",
+          "matchStatus": "unreviewed"
+        }
+      ],
+      "kcalPer100g": 340,
+      "packs": [],
+      "formulation": "건식",
+      "veterinaryOnly": false,
+      "labelChanged": true,
+      "observationId": "be4ff68b-04cf-c6c2-229d-636e59da7f2c",
+      "labelRequestId": "80e4e788-e176-c97b-897e-96c0bd78e5e8"
+    },
+    {
+      "title": "에코플러스1 그레인프리 치킨&연어",
+      "manufacturer": "(주)하이원",
+      "ingredientsText": "가수분해 닭살코기, 고구마, 감자, 통 아마씨, 닭기름, 생선오일, 가수분해 연어, 유카시디게라 추출물, 홍삼, 프락토올리고당, 메티오닌, 염화칼륨, 타우린, 천일염, 인산칼슘, 씨벅턴열매, 달맞이꽃씨, 당근, 고수, 시금치, 유산균, 각종 비타민(비타민 C, 비타민 E, 비타민 A, 비타민 D3, 비타민 B1, 비타민 B2, 비타민 B6, 비타민 B12, 비오틴, 엽산, 판토텐산, 나이아신)과 미네랄(철, 아연, 구리, 셀레늄, 아이오딘, 망간)",
+      "ash": 9,
+      "sourceUrl": "https://naturalcore.co.kr/product/%EC%97%90%EC%BD%94%ED%94%8C%EB%9F%AC%EC%8A%A41-%EA%B7%B8%EB%A0%88%EC%9D%B8%ED%94%84%EB%A6%AC-%EC%B9%98%ED%82%A8%EC%97%B0%EC%96%B4-2kg/969/category/254/display/1/",
+      "documentSha256": "9888c0d8befed74775f5d75cefcc2a79500f5368f12585882e0d2316aa48b412",
+      "htmlSha256": "28a9de391bedc35ab6feb87fd204dd54b7c308c797a4c4542f84c08bf7af280f",
+      "imageSourceUrl": "https://shop-phinf.pstatic.net/20230103_58/1672732177294PsUwn_JPEG/221206-%EC%97%90%EC%BD%94%ED%94%8C%EB%9F%AC%EC%8A%A41(780).jpg",
+      "observedAt": "2026-11-13T01:38:20.246Z",
+      "extractionMethod": "image transcribed and visually checked by coding agent; no physical package inspection",
+      "imageLocator": "사용한 원료의 전성분 표시; 등록성분량 표; 대사에너지(ME)",
+      "productId": "98cf6dea-b506-4edc-a6c8-f1a522ec32eb",
+      "brandName": "네츄럴코어",
+      "displayName": "에코플러스1 그레인프리 치킨&연어",
+      "species": "dog",
+      "language": "ko",
+      "nutritionText": "조단백질 24.0% 이상, 조지방 12.0% 이상, 칼슘 0.90% 이상, 인 0.40% 이상, 조회분 9.00% 이하, 조섬유 6.00% 이하, 수분 12.00% 이하",
+      "nutrients": [
+        {
+          "key": "crude_protein",
+          "value": 24,
+          "qualifier": "minimum",
+          "raw": "조단백질 24.0% 이상"
+        },
+        {
+          "key": "crude_fat",
+          "value": 12,
+          "qualifier": "minimum",
+          "raw": ", 조지방 12.0% 이상"
+        },
+        {
+          "key": "crude_fiber",
+          "value": 6,
+          "qualifier": "maximum",
+          "raw": ", 조섬유 6.00% 이하"
+        },
+        {
+          "key": "crude_ash",
+          "value": 9,
+          "qualifier": "maximum",
+          "raw": ", 조회분 9.00% 이하"
+        },
+        {
+          "key": "moisture",
+          "value": 12,
+          "qualifier": "maximum",
+          "raw": ", 수분 12.00% 이하"
+        },
+        {
+          "key": "calcium",
+          "value": 0.9,
+          "qualifier": "minimum",
+          "raw": ", 칼슘 0.90% 이상"
+        },
+        {
+          "key": "phosphorus",
+          "value": 0.4,
+          "qualifier": "minimum",
+          "raw": ", 인 0.40% 이상"
+        }
+      ],
+      "items": [
+        {
+          "order": 1,
+          "rawText": "가수분해 닭살코기",
+          "baseText": "가수분해 닭살코기",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "가수분해닭살코기",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 2,
+          "rawText": "고구마",
+          "baseText": "고구마",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "고구마",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 3,
+          "rawText": "감자",
+          "baseText": "감자",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "감자",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 4,
+          "rawText": "통 아마씨",
+          "baseText": "통 아마씨",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "통아마씨",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 5,
+          "rawText": "닭기름",
+          "baseText": "닭기름",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "닭기름",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 6,
+          "rawText": "생선오일",
+          "baseText": "생선오일",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "생선오일",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 7,
+          "rawText": "가수분해 연어",
+          "baseText": "가수분해 연어",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "가수분해연어",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 8,
+          "rawText": "유카시디게라 추출물",
+          "baseText": "유카시디게라 추출물",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "유카시디게라추출물",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 9,
+          "rawText": "홍삼",
+          "baseText": "홍삼",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "홍삼",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 10,
+          "rawText": "프락토올리고당",
+          "baseText": "프락토올리고당",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "프락토올리고당",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 11,
+          "rawText": "메티오닌",
+          "baseText": "메티오닌",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "메티오닌",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 12,
+          "rawText": "염화칼륨",
+          "baseText": "염화칼륨",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "염화칼륨",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 13,
+          "rawText": "타우린",
+          "baseText": "타우린",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "타우린",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 14,
+          "rawText": "천일염",
+          "baseText": "천일염",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "천일염",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 15,
+          "rawText": "인산칼슘",
+          "baseText": "인산칼슘",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "인산칼슘",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 16,
+          "rawText": "씨벅턴열매",
+          "baseText": "씨벅턴열매",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "씨벅턴열매",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 17,
+          "rawText": "달맞이꽃씨",
+          "baseText": "달맞이꽃씨",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "달맞이꽃씨",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 18,
+          "rawText": "당근",
+          "baseText": "당근",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "당근",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 19,
+          "rawText": "고수",
+          "baseText": "고수",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "고수",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 20,
+          "rawText": "시금치",
+          "baseText": "시금치",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "시금치",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 21,
+          "rawText": "유산균",
+          "baseText": "유산균",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "유산균",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 22,
+          "rawText": "각종 비타민(비타민 C, 비타민 E, 비타민 A, 비타민 D3, 비타민 B1, 비타민 B2, 비타민 B6, 비타민 B12, 비오틴, 엽산, 판토텐산, 나이아신)과 미네랄(철, 아연, 구리, 셀레늄, 아이오딘, 망간)",
+          "baseText": "각종 비타민과 미네랄",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": [
+              "비타민 C, 비타민 E, 비타민 A, 비타민 D3, 비타민 B1, 비타민 B2, 비타민 B6, 비타민 B12, 비오틴, 엽산, 판토텐산, 나이아신",
+              "철, 아연, 구리, 셀레늄, 아이오딘, 망간"
+            ]
+          },
+          "normalizedText": "각종비타민과미네랄",
+          "matchStatus": "unreviewed"
+        }
+      ],
+      "kcalPer100g": 340,
+      "packs": [],
+      "formulation": "건식",
+      "veterinaryOnly": false,
+      "labelChanged": true,
+      "observationId": "201bd242-234a-2fde-a2cd-ecad8c8bdf08",
+      "labelRequestId": "29582703-eec8-caa1-fefd-51d9e042bb57"
+    },
+    {
+      "title": "에코플러스3 유기농 70% 연어",
+      "manufacturer": "(주)이레본",
+      "ingredientsText": "가수분해 연어살코기, 유기농 현미, 유기농 통보리, 유기농 녹두, 유기농 해바라기씨, 유기농 고구마, 유기농 완두콩, 유기농 감자, 닭기름, 유기농 통 아마씨, 생선분말, 피쉬 오일, 건조크릴, 사탕무 펄프, 유카시디게라 추출물, 천일염, 유기농 통 귀리, 프락토올리고당, 메티오닌, 홍삼, 가수분해 초록입 홍합복합물(콘드로이친과 글리칸의 원료), 씨벅턴열매, 달맞이꽃씨, 당근, 고수, 시금치, 글루코사민, 인산칼슘, 유익균 합제, 유산균 건조분말, 후코이단(미역 추출물), 각종 비타민(비타민 C, 비타민 E, 비타민 A, 비타민 D3, 비타민 B1, 비타민 B2, 비타민 B6, 비타민 B12, 비오틴, 엽산, 판토텐산, 나이아신)과 미네랄(철, 아연, 구리, 셀레늄, 아이오딘, 망간)",
+      "ash": 8,
+      "organicIngredientPercentage": 70.43,
+      "otherReportedNutrients": [
+        {
+          "name": "오메가6",
+          "value": 2.5,
+          "unit": "%",
+          "qualifier": "minimum"
+        },
+        {
+          "name": "오메가3",
+          "value": 0.6,
+          "unit": "%",
+          "qualifier": "minimum"
+        }
+      ],
+      "sourceUrl": "https://naturalcore.co.kr/product/%EC%97%90%EC%BD%94%ED%94%8C%EB%9F%AC%EC%8A%A43-%EC%9C%A0%EA%B8%B0%EB%86%8D-70-%EC%97%B0%EC%96%B4-2kg/971/",
+      "documentSha256": "bc7546f0dd5a86f0e87d0f16d224b43e98fdd4e49fe9ef195b36f2999e1f6a38",
+      "htmlSha256": "6fdf8be3007b959896cf88f186baa9db0066925a97ccb01fcc3a77492410f348",
+      "imageSourceUrl": "https://shop-phinf.pstatic.net/20230103_169/1672733033152b9b5C_JPEG/221206-%EC%97%90%EC%BD%94%ED%94%8C%EB%9F%AC%EC%8A%A43(780).jpg",
+      "observedAt": "2026-11-13T01:36:50.949Z",
+      "extractionMethod": "image transcribed and visually checked by coding agent; no physical package inspection",
+      "imageLocator": "사용한 원료의 전성분 표시; 등록성분량 표; 대사에너지(ME)",
+      "productId": "46ed46b1-092a-46e4-b7d4-c1e335f5fa4c",
+      "brandName": "네츄럴코어",
+      "displayName": "에코플러스3 유기농 70% 연어",
+      "species": "dog",
+      "language": "ko",
+      "nutritionText": "조단백질 24.0% 이상, 조지방 12.0% 이상, 칼슘 0.90% 이상, 인 0.40% 이상, 조회분 8.00% 이하, 조섬유 6.00% 이하, 수분 12.00% 이하",
+      "nutrients": [
+        {
+          "key": "crude_protein",
+          "value": 24,
+          "qualifier": "minimum",
+          "raw": "조단백질 24.0% 이상"
+        },
+        {
+          "key": "crude_fat",
+          "value": 12,
+          "qualifier": "minimum",
+          "raw": ", 조지방 12.0% 이상"
+        },
+        {
+          "key": "crude_fiber",
+          "value": 6,
+          "qualifier": "maximum",
+          "raw": ", 조섬유 6.00% 이하"
+        },
+        {
+          "key": "crude_ash",
+          "value": 8,
+          "qualifier": "maximum",
+          "raw": ", 조회분 8.00% 이하"
+        },
+        {
+          "key": "moisture",
+          "value": 12,
+          "qualifier": "maximum",
+          "raw": ", 수분 12.00% 이하"
+        },
+        {
+          "key": "calcium",
+          "value": 0.9,
+          "qualifier": "minimum",
+          "raw": ", 칼슘 0.90% 이상"
+        },
+        {
+          "key": "phosphorus",
+          "value": 0.4,
+          "qualifier": "minimum",
+          "raw": ", 인 0.40% 이상"
+        }
+      ],
+      "items": [
+        {
+          "order": 1,
+          "rawText": "가수분해 연어살코기",
+          "baseText": "가수분해 연어살코기",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "가수분해연어살코기",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 2,
+          "rawText": "유기농 현미",
+          "baseText": "유기농 현미",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "유기농현미",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 3,
+          "rawText": "유기농 통보리",
+          "baseText": "유기농 통보리",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "유기농통보리",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 4,
+          "rawText": "유기농 녹두",
+          "baseText": "유기농 녹두",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "유기농녹두",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 5,
+          "rawText": "유기농 해바라기씨",
+          "baseText": "유기농 해바라기씨",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "유기농해바라기씨",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 6,
+          "rawText": "유기농 고구마",
+          "baseText": "유기농 고구마",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "유기농고구마",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 7,
+          "rawText": "유기농 완두콩",
+          "baseText": "유기농 완두콩",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "유기농완두콩",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 8,
+          "rawText": "유기농 감자",
+          "baseText": "유기농 감자",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "유기농감자",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 9,
+          "rawText": "닭기름",
+          "baseText": "닭기름",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "닭기름",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 10,
+          "rawText": "유기농 통 아마씨",
+          "baseText": "유기농 통 아마씨",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "유기농통아마씨",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 11,
+          "rawText": "생선분말",
+          "baseText": "생선분말",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "생선분말",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 12,
+          "rawText": "피쉬 오일",
+          "baseText": "피쉬 오일",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "피쉬오일",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 13,
+          "rawText": "건조크릴",
+          "baseText": "건조크릴",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "건조크릴",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 14,
+          "rawText": "사탕무 펄프",
+          "baseText": "사탕무 펄프",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "사탕무펄프",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 15,
+          "rawText": "유카시디게라 추출물",
+          "baseText": "유카시디게라 추출물",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "유카시디게라추출물",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 16,
+          "rawText": "천일염",
+          "baseText": "천일염",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "천일염",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 17,
+          "rawText": "유기농 통 귀리",
+          "baseText": "유기농 통 귀리",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "유기농통귀리",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 18,
+          "rawText": "프락토올리고당",
+          "baseText": "프락토올리고당",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "프락토올리고당",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 19,
+          "rawText": "메티오닌",
+          "baseText": "메티오닌",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "메티오닌",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 20,
+          "rawText": "홍삼",
+          "baseText": "홍삼",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "홍삼",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 21,
+          "rawText": "가수분해 초록입 홍합복합물(콘드로이친과 글리칸의 원료)",
+          "baseText": "가수분해 초록입 홍합복합물",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": [
+              "콘드로이친과 글리칸의 원료"
+            ]
+          },
+          "normalizedText": "가수분해초록입홍합복합물",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 22,
+          "rawText": "씨벅턴열매",
+          "baseText": "씨벅턴열매",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "씨벅턴열매",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 23,
+          "rawText": "달맞이꽃씨",
+          "baseText": "달맞이꽃씨",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "달맞이꽃씨",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 24,
+          "rawText": "당근",
+          "baseText": "당근",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "당근",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 25,
+          "rawText": "고수",
+          "baseText": "고수",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "고수",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 26,
+          "rawText": "시금치",
+          "baseText": "시금치",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "시금치",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 27,
+          "rawText": "글루코사민",
+          "baseText": "글루코사민",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "글루코사민",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 28,
+          "rawText": "인산칼슘",
+          "baseText": "인산칼슘",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "인산칼슘",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 29,
+          "rawText": "유익균 합제",
+          "baseText": "유익균 합제",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "유익균합제",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 30,
+          "rawText": "유산균 건조분말",
+          "baseText": "유산균 건조분말",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": []
+          },
+          "normalizedText": "유산균건조분말",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 31,
+          "rawText": "후코이단(미역 추출물)",
+          "baseText": "후코이단",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": [
+              "미역 추출물"
+            ]
+          },
+          "normalizedText": "후코이단",
+          "matchStatus": "unreviewed"
+        },
+        {
+          "order": 32,
+          "rawText": "각종 비타민(비타민 C, 비타민 E, 비타민 A, 비타민 D3, 비타민 B1, 비타민 B2, 비타민 B6, 비타민 B12, 비오틴, 엽산, 판토텐산, 나이아신)과 미네랄(철, 아연, 구리, 셀레늄, 아이오딘, 망간)",
+          "baseText": "각종 비타민과 미네랄",
+          "amountText": null,
+          "percentage": null,
+          "parserMetadata": {
+            "parentheticalText": [
+              "비타민 C, 비타민 E, 비타민 A, 비타민 D3, 비타민 B1, 비타민 B2, 비타민 B6, 비타민 B12, 비오틴, 엽산, 판토텐산, 나이아신",
+              "철, 아연, 구리, 셀레늄, 아이오딘, 망간"
+            ]
+          },
+          "normalizedText": "각종비타민과미네랄",
+          "matchStatus": "unreviewed"
+        }
+      ],
+      "kcalPer100g": 340,
+      "packs": [],
+      "formulation": "건식",
+      "veterinaryOnly": false,
+      "labelChanged": true,
+      "observationId": "eaf3c7e9-79db-520a-5f00-e408cc8d6d49",
+      "labelRequestId": "7fc40a7d-3edd-5293-4326-323dd121c061"
+    }
+  ]
+}

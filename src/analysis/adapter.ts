@@ -13,14 +13,18 @@ import {
   type HealthConcernId,
 } from '../health/concerns';
 
-const TREAT_HINTS = ['간식', '껌', '져키', '저키', '츄', '트릿', '덴탈', '캔', '스낵'];
-const SUPPLEMENT_HINTS = ['영양제', '보조제', '서플리먼트', '파우더'];
+const TREAT_HINTS = ['간식', '껌', '져키', '저키', '츄', '트릿', '덴탈', '스낵', 'treat', 'snack'];
+const SUPPLEMENT_HINTS = ['영양제', '보조제', '보충제', '서플리먼트', 'supplement'];
 
 /** 제품 카테고리/이름으로 완전사료/간식/보충제를 추정한다. */
 export function inferProductType(product: Product): ProductType {
+  // Packaging and physical form (can, stick, powder) do not define feeding use.
+  if (['food','complete_food','사료'].includes(product.category)) return 'complete_food';
+  if (['snack','treat','간식'].includes(product.category)) return 'treat';
+  if (['supplement','영양제','보충제'].includes(product.category)) return 'supplement';
   const hay = [product.category, product.mainCategory, product.subCategory, product.name]
     .filter(Boolean)
-    .join(' ');
+    .join(' ').toLowerCase();
   if (SUPPLEMENT_HINTS.some((h) => hay.includes(h))) return 'supplement';
   if (TREAT_HINTS.some((h) => hay.includes(h))) return 'treat';
   return 'complete_food';

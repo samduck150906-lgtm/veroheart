@@ -62,7 +62,9 @@ export default function AdminDataQuality() {
   const [page, setPage] = useState(() => Math.max(1, Number(params.get('page')) || 1));
   const [status, setStatus] = useState(params.get('status') ?? 'all');
   const [missingField, setMissingField] = useState(params.get('missing') ?? 'all');
-  const [visibility, setVisibility] = useState(params.get('visibility') ?? 'visible');
+  const [catalogScope, setCatalogScope] = useState<'active' | 'archived' | 'all'>(() => params.get('catalog') === 'archived' ? 'archived' : params.get('catalog') === 'all' ? 'all' : 'active');
+  const [includeComplete,setIncludeComplete] = useState(params.get('complete') === '1');
+  const [visibility, setVisibility] = useState(params.get('visibility') ?? (params.get('catalog') === 'archived' ? 'all' : 'visible'));
   const [selected, setSelected] = useState<EnrichmentQueueRow | null>(null);
   const [saving, setSaving] = useState(false);
   const [sourceUrl, setSourceUrl] = useState('');
@@ -84,6 +86,8 @@ export default function AdminDataQuality() {
         status,
         missingField,
         visibility,
+        catalogScope,
+        includeComplete,
       });
       setRows(result.rows);
       setTotal(result.total);
@@ -92,7 +96,7 @@ export default function AdminDataQuality() {
     } finally {
       setLoading(false);
     }
-  }, [missingField, page, status, visibility]);
+  }, [missingField, page, status, visibility, catalogScope, includeComplete]);
 
   useEffect(() => {
     // 제품명 정리 탭에서는 보완 큐를 조회하지 않는다.
@@ -105,8 +109,10 @@ export default function AdminDataQuality() {
     if (status !== 'all') next.set('status', status);
     if (missingField !== 'all') next.set('missing', missingField);
     if (visibility !== 'visible') next.set('visibility', visibility);
+    if (catalogScope !== 'active') next.set('catalog', catalogScope);
+    if (includeComplete) next.set('complete','1');
     setParams(next, { replace: true });
-  }, [missingField, page, setParams, status, tab, visibility]);
+  }, [missingField, page, setParams, status, tab, visibility, catalogScope, includeComplete]);
 
   const displayedRange = useMemo(() => {
     if (total === 0) return '0건';
@@ -207,7 +213,7 @@ export default function AdminDataQuality() {
       <div className="admin-card" style={{ marginBottom: 14 }}>
         <div className="admin-card-title-row">
           <div>
-            <h2 className="admin-card-title">제품 데이터 보완 큐</h2>
+            <h2 className="admin-card-title">{catalogScope === 'archived' ? '보관 원본 목록' : catalogScope === 'all' && includeComplete ? '전체 원본 기록' : '제품 데이터 보완 큐'}</h2>
             <p className="admin-item-sub" style={{ marginTop: 5, lineHeight: 1.7 }}>
               <strong>이 화면은 “정보가 덜 채워진 제품의 작업 목록”입니다.</strong> 원재료·영양정보·바코드·이미지 중
               하나라도 빠진 제품이 자동으로 여기 쌓이고, 채워 넣으면 기본 목록에서 빠집니다.
@@ -216,11 +222,15 @@ export default function AdminDataQuality() {
               제품을 골라 <strong>조사·검수</strong>를 누르면 제조사 공식 페이지 같은 출처 URL과 원재료 원문을 그대로
               보관할 수 있습니다. 나중에 “이 값을 어디서 가져왔는지” 되짚을 수 있게 하려는 것이며, 비슷한 제품의
               정보를 대신 적어 넣으면 안 됩니다.
+              <br />보관 원본은 가상 생성 기록·제조업체 명단을 원본 그대로 분리한 목록입니다. 보관 처리는 정보 보완 완료가 아니며, 원래 누락 항목과 사유를 계속 확인할 수 있습니다.
             </p>
           </div>
           <strong>{displayedRange}</strong>
         </div>
         <div className="admin-filter-row" style={{ marginTop: 14 }}>
+          <select aria-label="원본 보관 범위" value={catalogScope} onChange={(event) => { const value=event.target.value as 'active'|'archived'|'all'; setCatalogScope(value); setPage(1); if(value==='archived')setVisibility('all'); }}>
+            <option value="active">운영 제품</option><option value="archived">보관 원본</option><option value="all">운영·보관 전체</option>
+          </select>
           <select value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }}>
             {STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
           </select>
@@ -230,6 +240,7 @@ export default function AdminDataQuality() {
           <select value={visibility} onChange={(event) => { setVisibility(event.target.value); setPage(1); }}>
             {VISIBILITY_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
           </select>
+          <label><input type="checkbox" checked={includeComplete} onChange={event=>{setIncludeComplete(event.target.checked);setPage(1);}} /> 누락 없는 기록 포함</label>
           <button type="button" className="admin-btn-soft" onClick={load}>새로고침</button>
         </div>
       </div>
@@ -246,13 +257,14 @@ export default function AdminDataQuality() {
                   <td>
                     <strong>{row.products.name}</strong>
                     {row.products.is_visible === false && <span className="admin-tag" style={{ marginLeft: 6 }}>숨김</span>}
+                    {row.products.catalog_archived_at && <span className="admin-tag" style={{ marginLeft: 6 }}>보관 원본</span>}
                     <div className="admin-item-sub">{row.products.brand_name}</div>
                   </td>
                   <td>{row.products.target_pet_type ?? '-'} · {row.products.main_category ?? '미분류'}</td>
                   <td>{row.missing_fields.map((field) => <span className="admin-tag red" key={field} style={{ marginRight: 4 }}>{field}</span>)}</td>
                   <td>{STATUS_OPTIONS.find((item) => item.value === row.status)?.label ?? row.status}</td>
                   <td>{sourceCount(row)}개</td>
-                  <td><button type="button" className="admin-btn-soft" onClick={() => choose(row)}>조사·검수</button></td>
+                  <td><button type="button" className="admin-btn-soft" onClick={() => choose(row)}>{row.products.catalog_archived_at ? '보관 사유 보기' : '조사·검수'}</button></td>
                 </tr>
               ))}
             </tbody>
@@ -274,6 +286,15 @@ export default function AdminDataQuality() {
               <button type="button" className="admin-icon-btn" aria-label="닫기" onClick={() => setSelected(null)}><X size={18} /></button>
             </div>
             <div className="admin-modal-body">
+              {selected.products.catalog_archived_at ? <section aria-label="보관 원본 정보">
+                <h3>원본 보관 · 보완 완료 아님</h3>
+                <p>{selected.products.catalog_archive_reason}</p>
+                <p>원본 제품 ID: {selected.product_id}</p>
+                <p>보관 시각: {selected.products.catalog_archived_at}</p>
+                <p>원래 누락 항목: {selected.missing_fields.join(', ')}</p>
+                <p style={{whiteSpace:'pre-wrap'}}>{selected.review_note}</p>
+                <p>원본 기록과 연결 자료·감사 이력을 보존했습니다. 운영 제품 목록과 분리해 보관합니다.</p>
+              </section> : <>
               <div className="admin-form-group">
                 <label>보완 상태</label>
                 <select value={selected.status} disabled={saving} onChange={(event) => changeStatus(event.target.value as EnrichmentStatus)}>
@@ -295,6 +316,7 @@ export default function AdminDataQuality() {
                 <Link className="admin-btn-soft" to={`/admin/products?q=${encodeURIComponent(selected.products.name)}`}>제품 편집 <ExternalLink size={14} /></Link>
                 <button type="button" className="admin-btn-primary" disabled={saving || !sourceUrl.trim()} onClick={saveSource}><Save size={15} /> 출처 저장</button>
               </div>
+              </>}
             </div>
           </section>
         </div>

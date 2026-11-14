@@ -102,7 +102,7 @@ export function buildProductConclusion(
     }
   }
 
-  const nutrition = getNutritionPresentation(product.guaranteedAnalysis);
+  const nutrition = getNutritionPresentation(product.guaranteedAnalysis, product.nutrientEvidence);
   const danger = (product.ingredients ?? []).filter(ingredient => ingredient.riskLevel === 'danger');
   if (danger.length > 0) {
     return { tone: 'alert', headline: '위험 등급 성분을 확인해 주세요',

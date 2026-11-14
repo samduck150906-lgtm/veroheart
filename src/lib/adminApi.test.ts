@@ -39,6 +39,15 @@ function fakeFile(type: string, size: number): File {
 }
 
 describe('adminApi: 비공개 제품 편집 자료', () => {
+  it('목록의 원료 수는 현재 라벨을 우선하고 없을 때만 이전 연결을 사용한다',async()=>{
+    h.callAdminFunction.mockResolvedValue({total:3,rows:[
+      {id:'current',product_ingredients:[{count:0}],product_ingredient_label_sets:[{is_current:true,product_ingredient_label_items:[{match_status:'matched'},{match_status:'unmatched'},{match_status:'ignored'}]}]},
+      {id:'empty-current',product_ingredients:[{count:7}],product_ingredient_label_sets:[{is_current:true,product_ingredient_label_items:[]}]},
+      {id:'legacy',product_ingredients:[{count:4}]},
+    ]});
+    const response=await fetchProductsPage({page:1,pageSize:20});
+    expect(response.rows.map(row=>row.ingredientCount)).toEqual([2,0,4]);
+  });
   const id = '11111111-1111-4111-8111-111111111111';
   const ingredient = { ingredient_id: 'ingredient-1', sort_order: 0, ingredients: { id: 'ingredient-1', name_ko: '연어', name_en: 'Salmon', risk_level: 'safe' } };
   const nutrition = { crude_protein: 30, crude_fat: 12, crude_fiber: 3, crude_ash: 7, moisture: 10, calcium: 1.2, phosphorus: 0.8 };
@@ -88,6 +97,25 @@ describe('adminApi: 비공개 제품 편집 자료', () => {
   it('명시적으로 비어 있는 원재료와 영양정보는 편집할 수 있다', async () => {
     h.callAdminFunction.mockResolvedValue({ product: { ...product, product_ingredients: [], nutritional_profiles: null } });
     await expect(fetchProductEditBundle(id)).resolves.toEqual({ product, ingredients: [], nutrition: null });
+  });
+
+  it('현재 라벨 순서를 보존하고 이전 라벨·무시 항목은 현재 원료로 표시하지 않는다', async () => {
+    h.callAdminFunction.mockResolvedValue({product:{...product,product_ingredients:[ingredient],nutritional_profiles:nutrition,product_ingredient_label_sets:[
+      {id:'old',is_current:false,raw_label_text:'이전 닭고기',product_ingredient_label_items:[]},
+      {id:'current',is_current:true,raw_label_text:'연어, 쌀',source_reference:'https://manufacturer.example/label',product_ingredient_label_items:[
+        {raw_ingredient_text:'쌀',display_order:2,match_status:'matched'},
+        {raw_ingredient_text:'참고문구',display_order:3,match_status:'ignored'},
+        {raw_ingredient_text:'연어',display_order:1,match_status:'unmatched'},
+      ]},
+    ]}});
+    const result=await fetchProductEditBundle(id);
+    expect(result.currentLabel).toMatchObject({id:'current',items:[{rawText:'연어',order:1},{rawText:'쌀',order:2}]});
+    expect(result.product).not.toHaveProperty('product_ingredient_label_sets');
+  });
+
+  it('현재 라벨의 항목 조회가 불완전하면 이전 원료로 대신 편집하지 않는다', async () => {
+    h.callAdminFunction.mockResolvedValue({product:{...product,product_ingredients:[ingredient],nutritional_profiles:nutrition,product_ingredient_label_sets:[{id:'current',is_current:true,raw_label_text:'연어'}]}});
+    await expect(fetchProductEditBundle(id)).rejects.toThrow('현재 전성분');
   });
 
   it('노출 설정이 null인 목록 제품을 켜짐으로 바꾸지 않는다', async () => {

@@ -25,12 +25,29 @@ export function parseProjection(text) {
 /** Checks actual SQL columns/FKs, not a mocked JS row or a live PostgREST service. */
 export async function assertPublicProductProjectionContract(db) {
   const source = await readFile(new URL('../src/lib/supabase.ts', import.meta.url), 'utf8');
+  const detailStart=source.indexOf('export async function getProductDetail(');
+  const detailEnd=source.indexOf('export async function getVisibleProductsByIds(');
+  assert.ok(detailStart>=0 && detailEnd>detailStart);
+  const detailSource=source.slice(detailStart,detailEnd);
+  const bulkSource=source.slice(0,detailStart)+source.slice(detailEnd);
+  // Hosted regression: 100-product computed source/graph joins hit the anon
+  // 3-second deadline. Full detail must still carry all three evidence paths.
+  for(const field of ['label_source_evidence','material_profile','product_nutrient_evidence']) {
+    assert.ok(detailSource.includes(field),`detail missing ${field}`);
+    assert.ok(!bulkSource.includes(field),`unbounded evidence work in bulk projection: ${field}`);
+  }
   const blocks = [...source.matchAll(/\.select\(`([\s\S]*?)`\)/g)].map(m => m[1]).filter(s => /\bbrand_name\b/.test(s));
   assert.ok(blocks.length >= 7);
   let checked = 0;
   async function check(table, tree) {
     const fields = tree.filter(n => !n.children).map(n => n.name);
-    if (fields.length) await db.query(`SELECT ${fields.map(identifier).join(',')} FROM public.${identifier(table)} LIMIT 0`);
+    if (fields.length) {
+      const expressions = fields.map(field => ['material_profile','material_nutrient_profile','label_source_evidence'].includes(field)
+        ? `public.${identifier(field)}(row)` : `row.${identifier(field)}`);
+      // PostgREST computed fields must resolve as real SQL functions on the
+      // table's composite type, with the same read permissions as production.
+      await db.query(`SELECT ${expressions.join(',')} FROM public.${identifier(table)} AS row LIMIT 0`);
+    }
     checked++;
     for (const child of tree.filter(n => n.children)) {
       const relations = (await db.query(`SELECT c.conname, a.attname FROM pg_constraint c

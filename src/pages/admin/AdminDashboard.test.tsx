@@ -76,8 +76,18 @@ describe('AdminDashboard', () => {
     expect(screen.getByText('4,265')).toBeTruthy();
     expect(screen.getByText('509')).toBeTruthy();
     expect(screen.getByText('검수 완료 제품')).toBeTruthy();
-    expect(screen.getByText('원재료 없는 제품')).toBeTruthy();
+    expect(screen.getByText('원재료 미보완 제품')).toBeTruthy();
+    expect(screen.getByRole('link',{name:/원재료 미보완 제품/}).getAttribute('href')).toBe('/admin/data-quality?missing=ingredients&visibility=all');
     expect(screen.getByText('145')).toBeTruthy();
+  });
+
+  it('운영 제품과 보관 원본, 전체 원본 합계를 구분한다',async()=>{
+    h.fetchDashboard.mockResolvedValue({...PAYLOAD,metrics:{...PAYLOAD.metrics,products:769,archivedCatalogRecords:973,dataQualityIssues:586}});
+    renderDashboard();
+    expect(await screen.findByText('973')).toBeTruthy();
+    expect(screen.getByText('1,742')).toBeTruthy();
+    expect(screen.getByText('769')).toBeTruthy();
+    expect(screen.getByRole('link',{name:/보관 원본/}).getAttribute('href')).toBe('/admin/data-quality?catalog=archived&visibility=all');
   });
 
   it('미분류 제품도 포함해 카테고리 합계를 전체 제품수와 맞춘다', async () => {

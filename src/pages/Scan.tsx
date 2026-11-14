@@ -7,7 +7,7 @@ import { createBarcodeDetector, type BarcodeDetectorLike } from '../lib/barcodeD
 import { normalizeScannedBarcode } from '../lib/scanBarcode';
 import { BarcodeLookupError } from '../lib/barcodeLookupError';
 
-type CamState = 'idle' | 'starting' | 'live' | 'denied' | 'unavailable' | 'no-detector';
+type CamState = 'idle' | 'starting' | 'live' | 'denied' | 'unavailable' | 'no-detector' | 'no-device' | 'in-use' | 'playback-failed';
 
 /** 뷰파인더 안 자리표시자 바코드 패턴 — 프로토타입 barBars */
 const BAR_PATTERN = Array.from({ length: 16 }, (_, i) => ({
@@ -30,6 +30,7 @@ export default function Scan() {
 
   const [camState, setCamState] = useState<CamState>('idle');
   const [torchOn, setTorchOn] = useState(false);
+  const [torchSupported, setTorchSupported] = useState(false);
   const [detected, setDetected] = useState<string | null>(null);
   const [manualBarcode, setManualBarcode] = useState('');
   const [manualError, setManualError] = useState<string | null>(null);
@@ -120,6 +121,7 @@ export default function Scan() {
   const startCamera = useCallback(async () => {
     stopCamera();
     setTorchOn(false);
+    setTorchSupported(false);
     setDetected(null);
     setManualError(null);
     const generation = cameraGeneration.current;
@@ -150,13 +152,30 @@ export default function Scan() {
         videoRef.current.muted = true;
         videoRef.current.playsInline = true;
         videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
+        try { await videoRef.current.play(); }
+        catch { throw new DOMException('영상 재생 실패', 'PlaybackError'); }
+        if (videoRef.current.readyState < 2 || videoRef.current.videoWidth === 0) {
+          throw new DOMException('영상 프레임 없음', 'PlaybackError');
+        }
+        const video = videoRef.current;
+        const videoInterrupted = () => {
+          if (!mountedRef.current || generation !== cameraGeneration.current) return;
+          stopCamera(); setCamState('playback-failed');
+        };
+        video.addEventListener('pause',videoInterrupted);
+        video.addEventListener('error',videoInterrupted);
+        const removeTrackListeners = removeCameraListeners.current;
+        removeCameraListeners.current = () => {
+          removeTrackListeners?.(); video.removeEventListener('pause',videoInterrupted); video.removeEventListener('error',videoInterrupted);
+        };
+      } else throw new DOMException('영상 요소 없음','PlaybackError');
       if (!mountedRef.current || generation !== cameraGeneration.current) return;
       try {
         const detector = await createBarcodeDetector();
         if (!mountedRef.current || generation !== cameraGeneration.current) return;
         detectorRef.current = detector;
+        const capabilities = stream.getVideoTracks()[0]?.getCapabilities?.() as (MediaTrackCapabilities & { torch?: boolean }) | undefined;
+        setTorchSupported(capabilities?.torch === true);
         setCamState('live');
         rafRef.current = requestAnimationFrame(scanLoop);
       } catch {
@@ -169,6 +188,9 @@ export default function Scan() {
       stopCamera();
       const name = err instanceof DOMException ? err.name : '';
       if (name === 'NotAllowedError' || name === 'SecurityError') setCamState('denied');
+      else if (name === 'NotFoundError' || name === 'OverconstrainedError') setCamState('no-device');
+      else if (name === 'NotReadableError' || name === 'AbortError') setCamState('in-use');
+      else if (name === 'PlaybackError') setCamState('playback-failed');
       else setCamState('unavailable');
     }
   }, [scanLoop, stopCamera]);
@@ -196,24 +218,25 @@ export default function Scan() {
 
   const toggleTorch = useCallback(async () => {
     const track = streamRef.current?.getVideoTracks()[0];
-    if (!track) return;
+    if (!track || camState !== 'live' || !torchSupported) return;
     try {
       await track.applyConstraints({
         advanced: [{ torch: !torchOn } as unknown as MediaTrackConstraintSet],
       });
       setTorchOn((v) => !v);
     } catch {
-      /* torch 미지원 기기 */
+      setTorchSupported(false);
+      setTorchOn(false);
+      setManualError('이 카메라에서 플래시를 사용할 수 없습니다. 밝은 곳에서 다시 시도해 주세요.');
     }
-  }, [torchOn]);
+  }, [torchOn, torchSupported, camState]);
 
   const showLive = camState === 'live' || camState === 'starting';
-  const showFallback =
-    camState === 'denied' || camState === 'unavailable' || camState === 'no-detector' || camState === 'idle';
+  const showFallback = camState !== 'live' && camState !== 'starting';
 
   const hint = checkingBarcode
     ? '바코드로 제품을 확인하고 있습니다…'
-    : showFallback
+    : camState === 'starting' ? '카메라를 준비하고 있습니다…' : showFallback
       ? '바코드 숫자를 입력하거나 제품명으로 검색해 주세요'
       : '바코드를 읽고 있습니다…';
 
@@ -245,7 +268,7 @@ export default function Scan() {
           </svg>
         </button>
         <span style={{ fontSize: '14.5px', fontWeight: 800, color: '#fff' }}>바코드 스캔</span>
-        {showLive && (
+        {camState === 'live' && torchSupported && (
           <button
             type="button"
             onClick={toggleTorch}
@@ -295,7 +318,7 @@ export default function Scan() {
             </span>
           )}
 
-          {showLive && !detected && (
+          {camState === 'live' && !detected && (
             <span className="vr-laser" style={{ position: 'absolute', left: '6px', right: '6px', height: '3px', background: '#FFD90A', boxShadow: '0 0 22px 6px rgba(255,217,10,.7)' }} />
           )}
           {detected && (
@@ -361,6 +384,9 @@ export default function Scan() {
             {showFallback && !checkingBarcode && <div style={{ textAlign: 'center', fontSize: '11.5px', color: '#B6B6A9', marginTop: '10px', lineHeight: 1.6 }}>
               {camState === 'denied'
                 ? '설정에서 카메라 권한을 허용한 뒤 다시 시도해 주세요.'
+                : camState === 'no-device' ? '사용할 수 있는 카메라를 찾지 못했습니다. 바코드 번호나 제품명으로 검색해 주세요.'
+                : camState === 'in-use' ? '카메라가 다른 앱에서 사용 중이거나 시작하지 못했습니다. 다른 앱의 카메라를 닫고 다시 시도해 주세요.'
+                : camState === 'playback-failed' ? '카메라는 연결되었지만 영상을 재생하지 못했습니다. 다시 시도하거나 바코드 번호를 입력해 주세요.'
                 : camState === 'no-detector'
                   ? '자동 인식을 시작하지 못했습니다. 바코드 숫자를 입력해 주세요.'
                   : window.isSecureContext === false

@@ -57,7 +57,7 @@ export function resolveProductDisplayVerdict(product: Product, profile: UserPetP
     verdict,
     score: verdict.score,
     grade: verdict.grade,
-    nutrition: getNutritionPresentation(product.guaranteedAnalysis),
+    nutrition: getNutritionPresentation(product.guaranteedAnalysis, product.nutrientEvidence),
     confirmedWarnings: [
       personalized && breakdown.speciesMismatch ? '다른 동물 종류 전용 제품' : '',
       personalized && breakdown.allergyHits.length > 0 ? `등록 원료 중 알레르기·회피 성분 ${breakdown.allergyHits.length}개 확인` : '',

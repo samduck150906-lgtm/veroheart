@@ -119,7 +119,7 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
     id: 'whitefish',
     canonicalKo: '흰살생선',
     canonicalEn: 'whitefish',
-    aliases: ['대구', '명태', '황태', '월아이', 'whitefish', 'cod'],
+    aliases: ['흰살 생선', '화이트피쉬', 'white fish'],
     category: 'animal_protein',
     animalSource: 'fish',
     allergenTags: ['fish'],
@@ -1399,15 +1399,17 @@ export const INGREDIENT_DICTIONARY: DictionaryIngredient[] = [
 ];
 
 /** normalize된 alias/canonical → 사전 항목 인덱스 (모듈 로드 시 1회 구성) */
-const aliasIndex: Map<string, DictionaryIngredient> = (() => {
-  const map = new Map<string, DictionaryIngredient>();
+const aliasIndex: Map<string, DictionaryIngredient | null> = (() => {
+  const map = new Map<string, DictionaryIngredient | null>();
   for (const ing of INGREDIENT_DICTIONARY) {
     const keys = [ing.canonicalKo, ing.canonicalEn, ...ing.aliases].filter(
       (k): k is string => Boolean(k),
     );
     for (const k of keys) {
       const norm = normalizeIngredientName(k);
-      if (norm && !map.has(norm)) map.set(norm, ing);
+      if (!norm) continue;
+      if (!map.has(norm)) map.set(norm, ing);
+      else if (map.get(norm)?.id !== ing.id) map.set(norm, null);
     }
   }
   return map;
@@ -1415,24 +1417,11 @@ const aliasIndex: Map<string, DictionaryIngredient> = (() => {
 
 /**
  * 정규화된 성분명으로 사전 항목을 찾는다.
- * 1) 완전일치 → 2) 부분포함(라벨 표기가 사전 키를 포함) 순서로 매칭.
+ * 정확한 이름·등록 별칭만 매칭한다. 포함 관계는 원료 동일성의 근거가 아니다.
  */
 export function findIngredientByName(rawName: string): DictionaryIngredient | null {
   const norm = normalizeIngredientName(rawName);
   if (!norm) return null;
 
-  const exact = aliasIndex.get(norm);
-  if (exact) return exact;
-
-  // 부분 포함 매칭: 가장 긴 키부터 검사해 오탐을 줄인다.
-  let best: DictionaryIngredient | null = null;
-  let bestLen = 0;
-  for (const [key, ing] of aliasIndex) {
-    if (key.length < 2) continue;
-    if ((norm.includes(key) || key.includes(norm)) && key.length > bestLen) {
-      best = ing;
-      bestLen = key.length;
-    }
-  }
-  return best;
+  return aliasIndex.get(norm) ?? null;
 }

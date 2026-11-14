@@ -1,0 +1,25 @@
+{
+  "scope": "Identity and nutritional/technical role only. No declaration of finished-product adequacy or individual feeding safety.",
+  "definitions": [
+    {"name":"옥수수분말","english":"Ground corn","category":"곡류","risk":"safe","description":"옥수수를 분쇄한 원재료로 전분 공급원이 됩니다. 통곡·글루텐·전분을 분리한 원료와 구분하며 제품의 탄수화물 함량은 별도 표시정보로 확인합니다.","source":"https://www.royalcanin.com/kr/dogs/products/retail-products/mini-indoor-adult-2434"},
+    {"name":"양조효모","english":"Brewers yeast","category":"효모","risk":"safe","description":"양조 과정에서 얻는 효모 원재료입니다. 효모가 표시되었다는 이유만으로 살아 있는 유산균이나 보장된 프로바이오틱 효과로 판정하지 않습니다.","source":"https://www.royalcanin.com/kr/dogs/products/retail-products/mini-indoor-adult-2434"},
+    {"name":"유도 단백질","english":"Protein derivatives","category":"가공 단백질","risk":"caution","description":"가공한 단백질 원료를 나타내는 포괄 표기입니다. 원문에 적힌 동물 출처를 보존하며 가수분해 정도나 알레르기 안전성을 임의로 확정하지 않습니다.","source":"https://www.royalcanin.com/kr/dogs/products/retail-products/mini-indoor-adult-2434"},
+    {"name":"비타민제 합제","english":"Vitamin premix","category":"비타민 혼합물","risk":"safe","description":"비타민 원료를 섞은 복합 원재료 표기입니다. 개별 비타민의 종류·화학형·투입량은 상세 표시를 확인하며 이 표기만으로 비타민 충분량을 판정하지 않습니다.","source":"https://www.royalcanin.com/kr/dogs/products/retail-products/mini-indoor-adult-2434"},
+    {"name":"혼합광물질류 합제","english":"Mineral premix","category":"무기질 혼합물","risk":"safe","description":"여러 무기질 원료를 혼합한 복합 원재료 표기입니다. 원문에 열거된 성분을 보존하되 개별 무기질 함량이나 칼슘:인 비율은 추측하지 않습니다.","source":"https://www.royalcanin.com/kr/dogs/products/retail-products/mini-indoor-adult-2434"},
+    {"name":"글리세린 지방산 에스테르","english":"Glycerol fatty acid esters","category":"기술적 첨가물","risk":"safe","description":"글리세린과 지방산의 에스테르 계열로 유화 등 제품의 물성을 조절하는 데 쓰입니다. 포괄 표기만으로 특정 화합물이나 첨가물 번호·지방 함량을 확정하지 않습니다.","source":"https://data.food.gov.uk/regulated-products/id/food-additives/additive/e-471"},
+    {"name":"산화마그네슘","english":"Magnesium oxide","category":"무기질","risk":"safe","description":"마그네슘을 포함하는 무기질 화합물입니다. 제품 전체의 마그네슘 함량·급여량·건강 상태를 함께 확인하며 화합물 투입량을 원소 마그네슘 함량으로 그대로 계산하지 않습니다.","source":"https://hfpappexternal.fda.gov/scripts/fdcc/index.cfm?id=MAGNESIUMOXIDE&set=FoodSubstances"},
+    {"name":"L-라이신","english":"L-Lysine","category":"아미노산","risk":"safe","description":"라이신을 공급하는 L형 아미노산 원료입니다. 염산염·황산염 등 다른 화학형과 구분하며 첨가 여부만으로 필수 아미노산 충분량이나 단백질 품질을 보장하지 않습니다.","source":"https://joint-research-centre.ec.europa.eu/reports-and-technical-documentation/feed-2024-33300-feed-2024-33438_en"},
+    {"name":"L-타이로신","english":"L-Tyrosine","category":"아미노산","risk":"safe","description":"단백질을 구성하는 아미노산인 타이로신의 L형 원료입니다. 배합량과 전체 아미노산 균형을 별도로 확인하며 이 원료만으로 특정 건강 효과를 보장하지 않습니다.","source":"https://eur-lex.europa.eu/eli/reg_impl/2025/752/oj"},
+    {"name":"제올라이트","english":"Zeolite","category":"기술적 광물 원료","risk":"caution","description":"다공성 알루미노규산염 계열의 포괄 명칭입니다. 고결 방지·흡착 등의 기술적 용도로 사용될 수 있으며 종류·순도·사용량이 다르므로 영양 미네랄이나 장 건강 효과로 단정하지 않습니다.","source":"https://efsa.onlinelibrary.wiley.com/doi/10.2903/j.efsa.2021.6976"},
+    {"name":"폴리인산나트륨","english":"Sodium polyphosphates","category":"인산염계 첨가물","risk":"caution","description":"나트륨을 포함하는 축합 인산염 계열의 표기입니다. 단일 인산염·소금·인산칼슘과 구분하며 구체적인 화합물·함량은 제품 규격을 확인해야 합니다.","source":"https://www.royalcanin.com/kr/dogs/products/retail-products/mini-indoor-adult-2434"}
+  ],
+  "aliases": [
+    {"canonical":"셀룰로오스 분말","alias":"분말 셀룰로오스"},
+    {"canonical":"셀룰로오스 분말","alias":"분말셀룰로스"},
+    {"canonical":"동물성지방","alias":"동물성 유지"},
+    {"canonical":"DL-메티오닌","alias":"DL-메치오닌"},
+    {"canonical":"L-타이로신","alias":"L-티로신"},
+    {"canonical":"닭기름 (계유)","alias":"계유"},
+    {"canonical":"인산칼슘 (제이)","alias":"제이인산칼슘"}
+  ]
+}

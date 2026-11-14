@@ -16,6 +16,7 @@ import {
   Inbox,
 } from 'lucide-react';
 import { gradeMetaFromScore, type GradeMeta, type SafetyTone } from './gradeMeta';
+import { materialNutrientRoles, materialTraitLabel, type MaterialConstituent } from '../../analysis/materialComposition';
 
 export type { GradeMeta, SafetyTone };
 
@@ -198,7 +199,8 @@ function riskMeta(level: Risk | undefined, isAllergy?: boolean) {
   if (isAllergy) return { icon: <Ban size={16} strokeWidth={2.4} />, label: '알레르기', fg: 'var(--pdp-caution-fg)', bg: 'var(--pdp-caution-bg)', line: 'var(--pdp-caution-line,#FDE68A)' };
   if (level === 'danger') return { icon: <OctagonAlert size={16} strokeWidth={2.4} />, label: '위험', fg: 'var(--pdp-danger-fg)', bg: 'var(--pdp-danger-bg)', line: 'var(--pdp-danger-line,#FECACA)' };
   if (level === 'caution') return { icon: <AlertTriangle size={16} strokeWidth={2.4} />, label: '주의', fg: 'var(--pdp-caution-fg)', bg: 'var(--pdp-caution-bg)', line: 'var(--pdp-caution-line,#FDE68A)' };
-  return { icon: <ShieldCheck size={16} strokeWidth={2.4} />, label: '안전', fg: 'var(--pdp-safe-fg)', bg: 'var(--pdp-safe-bg)', line: 'transparent' };
+  if (level !== 'safe') return { icon: <AlertTriangle size={16} />, label: '정보 부족', fg: 'var(--pdp-ink-muted)', bg: 'var(--pdp-surface)', line: 'var(--pdp-line)' };
+  return { icon: <ShieldCheck size={16} strokeWidth={2.4} />, label: '일반 원료', fg: 'var(--pdp-safe-fg)', bg: 'var(--pdp-safe-bg)', line: 'transparent' };
 }
 
 export interface IngredientLike {
@@ -207,6 +209,9 @@ export interface IngredientLike {
   purpose?: string;
   riskLevel?: string;
   isAllergy?: boolean;
+  materialComposition?: MaterialConstituent[];
+  rawLabelText?: string;
+  sourceLabelVerified?: boolean;
 }
 
 /** One ingredient card with dual-encoded risk badge (spec §17). */
@@ -230,14 +235,20 @@ export function IngredientCard({ ing, onOpen }: { ing: IngredientLike; onOpen: (
       </span>
       <span style={{ flex: 1, minWidth: 0 }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--pdp-ink,var(--pdp-ink))' }}>{ing.nameKo}</span>
+          <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--pdp-ink,var(--pdp-ink))' }}>{ing.rawLabelText || ing.nameKo}</span>
           <span style={{ fontSize: 11, fontWeight: 800, color: m.fg, background: m.bg, padding: '2px 8px', borderRadius: 999 }}>{m.label}</span>
         </span>
-        {ing.purpose ? (
+        {ing.purpose || ing.materialComposition?.length ? (
           <span style={{ display: 'block', marginTop: 3, fontSize: 13, fontWeight: 500, color: 'var(--pdp-ink-muted,var(--pdp-ink-muted))', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {ing.purpose}
+            원료 특성 · {materialTraitLabel(ing.materialComposition,ing.purpose)}
           </span>
         ) : null}
+        {ing.sourceLabelVerified !== undefined && <span style={{ display: 'block', marginTop: 4, fontSize: 12, color: 'var(--pdp-ink-muted)' }}>
+          {ing.sourceLabelVerified ? '라벨 원문 대조됨' : '라벨 원문 대조 전'}
+        </span>}
+        {materialNutrientRoles(ing.materialComposition).length > 0 && <span style={{ display: 'block', marginTop: 4, fontSize: 12, color: 'var(--pdp-ink-muted)' }}>
+          구성 성분: {materialNutrientRoles(ing.materialComposition).join(' · ')}
+        </span>}
       </span>
       <ChevronRight size={18} color="var(--pdp-ink-faint,var(--pdp-ink-faint))" />
     </button>

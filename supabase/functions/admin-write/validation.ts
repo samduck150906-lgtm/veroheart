@@ -6,6 +6,7 @@
  */
 
 /** 사용자에게 그대로 보여줄 수 있는 검증 오류. 내부 DB 오류와 구분한다. */
+import { productSpeciesConflict } from '../_shared/productSpecies.ts';
 export class ValidationError extends Error {}
 
 // 화이트리스트 — 임의 컬럼 주입 방지
@@ -193,6 +194,11 @@ export function normalizeProductPayload(raw: Record<string, unknown>): Record<st
 
   if (product.target_pet_type && !['dog', 'cat', 'all'].includes(String(product.target_pet_type))) {
     throw new ValidationError('대상 반려동물 값이 올바르지 않습니다.');
+  }
+  if (product.target_pet_type === '') product.target_pet_type = null;
+  if (product.verification_status === 'reviewed' || product.verification_status === 'verified') {
+    if (!['dog','cat','all'].includes(String(product.target_pet_type))) throw new ValidationError('공개 검토를 완료하려면 공식 자료에서 대상 동물을 확인해 주세요.');
+    if (productSpeciesConflict(String(product.name),product.target_pet_type)) throw new ValidationError('제품명과 대상 동물이 충돌합니다. 공식 제품 자료를 대조해 수정해 주세요.');
   }
   if (product.verification_status && !['pending', 'reviewed', 'verified'].includes(String(product.verification_status))) {
     throw new ValidationError('검수 상태 값이 올바르지 않습니다.');

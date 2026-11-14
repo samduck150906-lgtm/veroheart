@@ -39,7 +39,7 @@ describe('영양성분 null 처리 (nutritional_profiles NULL 허용 이후)', (
   it('null 이 섞여도 NaN 을 만들지 않는다', () => {
     const product = mapProductFromSupabaseRow(rowWithNulls);
     const calories = calculateCalories(product.guaranteedAnalysis!);
-    expect(Number.isFinite(calories.kcalPer100g)).toBe(true);
+    expect(calories).toBeNull();
     const feed = analyzeFeed(product, DEFAULT_USER_PET_PROFILE);
     expect(JSON.stringify(feed)).not.toContain('null,"ratio"');
     expect(JSON.stringify(feed)).not.toContain('NaN');

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import ProductVerificationBadge from './ProductVerificationBadge';
 
@@ -8,8 +8,8 @@ describe('ProductVerificationBadge', () => {
     expect(container.textContent).toBe('');
   });
 
-  it('확인 완료 제품은 출처와 무관하게 완료 상태를 표시한다', () => {
-    render(<ProductVerificationBadge catalogSource="legacy" verificationStatus="verified" />);
-    expect(screen.getByText('정보 확인 완료')).toBeTruthy();
+  it('완료 제품에도 내부 검토 배지를 표시하지 않는다', () => {
+    const { container } = render(<ProductVerificationBadge catalogSource="legacy" verificationStatus="verified" />);
+    expect(container.textContent).toBe('');
   });
 });

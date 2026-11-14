@@ -94,6 +94,13 @@ function ProfileContent() {
   const [profileStep, setProfileStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<UserPetProfile | null>(null);
+  useEffect(() => {
+    if (!isLoggedIn || searchParams.get('add') !== '1') return;
+    const draft = newPetDraft(); setEditingPet(draft); setFormData(draft);
+    setWeightText(''); setProfileStep(0);
+    const next = new URLSearchParams(searchParams); next.delete('add');
+    setSearchParams(next, { replace: true });
+  }, [isLoggedIn, searchParams, setSearchParams]);
 
   // 반려동물이 하나도 없으면 편집 폼을 바로 노출(첫 등록 유도)
   useEffect(() => {

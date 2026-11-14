@@ -45,6 +45,13 @@ export type SupabaseProductRow = {
   product_ingredient_label_sets?: SupabaseProductIngredientLabelSetRow[] | null;
   /** 1:1 관계 — PostgREST가 배열 또는 단일 객체로 반환할 수 있어 둘 다 허용 */
   nutritional_profiles?: SupabaseNutritionalProfileRow | SupabaseNutritionalProfileRow[] | null;
+  product_nutrient_evidence?: Array<{
+    nutrient_code: string; value: number | string; unit: string;
+    basis: NonNullable<Product['nutrientEvidence']>[number]['basis'];
+    qualifier: NonNullable<Product['nutrientEvidence']>[number]['qualifier'];
+    source_url: string; source_version: string;
+    nutrient_definitions?: { name_ko: string } | null;
+  }> | null;
 };
 
 export type SupabaseProductIngredientLabelSetRow = {
@@ -56,6 +63,7 @@ export type SupabaseProductIngredientLabelSetRow = {
   product_ingredient_label_items?: Array<{
     id?: string;
     display_order: number;
+    label_source_evidence?: { verified: boolean; sourceUrl: string; observedAt: string } | null;
     raw_ingredient_text: string;
     match_status: 'unreviewed' | 'matched' | 'ambiguous' | 'unmatched' | 'ignored';
     ingredients?: SupabaseProductIngredientRow['ingredients'];
@@ -64,6 +72,8 @@ export type SupabaseProductIngredientLabelSetRow = {
       canonical_name_ko: string;
       canonical_name_en?: string | null;
       status: string;
+      material_profile?: Ingredient['materialComposition'];
+      material_nutrient_profile?: Ingredient['nutrientReference'];
       ingredients?: SupabaseProductIngredientRow['ingredients'];
     } | null;
   }> | null;
@@ -88,6 +98,8 @@ export type SupabaseProductIngredientRow = {
     name_en?: string | null;
     risk_level?: string | null;
     description?: string | null;
+    material_profile?: Ingredient['materialComposition'];
+    material_nutrient_profile?: Ingredient['nutrientReference'];
   } | null;
 };
 
@@ -110,6 +122,8 @@ export function mapIngredientFromJoin(pi: SupabaseProductIngredientRow): Ingredi
     nameEn: ing?.name_en ?? '',
     riskLevel,
     purpose: ing?.description ?? '',
+    materialComposition: ing?.material_profile,
+    nutrientReference: ing?.material_nutrient_profile,
   };
 }
 
@@ -258,7 +272,11 @@ function mapProductRow(p: SupabaseProductRow, comparison?: import('../analysis/l
     return {
       ...mapIngredientFromJoin({ ingredients: evidence }),
       canonicalIngredientId: canonical?.id,
+      materialComposition: canonical?.material_profile ?? evidence.material_profile,
+      nutrientReference: canonical?.material_nutrient_profile ?? evidence.material_nutrient_profile,
       rawLabelText: item.raw_ingredient_text,
+      labelItemId: item.id,
+      sourceLabelVerified: item.label_source_evidence === undefined ? undefined : item.label_source_evidence?.verified === true,
       nameKo: canonical?.canonical_name_ko || evidence.name_ko || item.raw_ingredient_text,
       nameEn: canonical?.canonical_name_en || evidence.name_en || '',
     };
@@ -267,14 +285,16 @@ function mapProductRow(p: SupabaseProductRow, comparison?: import('../analysis/l
     ? resolvedLabelIngredients.filter((item): item is Ingredient => item !== null)
     : (p.product_ingredients ?? []).slice()
       .sort((a, b) => (a.sort_order ?? Number.MAX_SAFE_INTEGER) - (b.sort_order ?? Number.MAX_SAFE_INTEGER))
-      .filter((item) => Boolean(item.ingredients))
+      .filter((item) => Boolean(item.ingredients) && ['safe','caution','warning','danger'].includes(item.ingredients?.risk_level ?? ''))
       .map(mapIngredientFromJoin);
   const unknownIngredientTerms = currentLabelSet
     ? [...new Set(labelItems
         .filter((item, index) => item.match_status !== 'ignored' && !resolvedLabelIngredients[index])
         .map((item) => item.raw_ingredient_text.trim())
         .filter(Boolean))]
-    : undefined;
+    : [...new Set((p.product_ingredients ?? [])
+      .filter(item => !['safe','caution','warning','danger'].includes(item.ingredients?.risk_level ?? ''))
+      .map(item => item.ingredients?.name_ko?.trim()).filter((name): name is string => Boolean(name)))];
   const np = Array.isArray(p.nutritional_profiles) ? p.nutritional_profiles[0] : p.nutritional_profiles;
   const guaranteedAnalysis = np
     ? {
@@ -328,6 +348,7 @@ function mapProductRow(p: SupabaseProductRow, comparison?: import('../analysis/l
     requiresVeterinaryGuidance: p.requires_veterinary_guidance ?? false,
     analysisStatus: mappedAnalysisStatus,
     ingredientDataLoaded: p.product_ingredients !== undefined || p.product_ingredient_label_sets !== undefined,
+    detailedEvidenceLoaded: p.product_nutrient_evidence !== undefined,
     unknownIngredientTerms,
     ingredientLabelSetId: currentLabelSet?.id,
     ingredientLabelEvidence: {
@@ -346,6 +367,18 @@ function mapProductRow(p: SupabaseProductRow, comparison?: import('../analysis/l
       } : undefined,
       comparison,
     },
+    confirmedLabelIngredientCount: currentLabelSet && labelItems.every(item => item.label_source_evidence !== undefined)
+      ? labelItems.filter(item => item.match_status !== 'ignored' && item.label_source_evidence?.verified).length : undefined,
+    ingredientLabelEntries: currentLabelSet ? labelItems.filter(item => item.match_status !== 'ignored').map(item => {
+      const index = labelItems.indexOf(item);
+      const canonical = item.match_status === 'matched' && item.canonical_ingredients?.status === 'active' ? item.canonical_ingredients : null;
+      const traitInformation = canonical ? {materialComposition:canonical.material_profile,nutrientReference:canonical.material_nutrient_profile} : undefined;
+      const traitResolved = resolvedLabelIngredients[index] !== null || Boolean(traitInformation?.materialComposition?.length
+        || traitInformation?.nutrientReference?.some(reference=>reference.quality==='reference'));
+      return { id: item.id ?? `${currentLabelSet.id}-${item.display_order}`,order:item.display_order,
+        rawName:item.raw_ingredient_text,sourceVerified:item.label_source_evidence?.verified === true,
+        traitResolved,traitInformation,ingredient:resolvedLabelIngredients[index] };
+    }) : undefined,
     firstIngredientResolved: currentLabelSet ? Boolean(resolvedLabelIngredients[0]) : undefined,
     category: p.product_type,
     mainCategory: p.main_category ?? undefined,
@@ -359,6 +392,15 @@ function mapProductRow(p: SupabaseProductRow, comparison?: import('../analysis/l
     verifiedAt: p.verified_at || undefined,
     barcode: p.barcode ?? undefined,
     guaranteedAnalysis,
+    nutrientEvidence: p.product_nutrient_evidence?.flatMap(evidence => {
+      const value = toNum(evidence.value);
+      const sourceUrl = publicCatalogSourceUrl(evidence.source_url);
+      return value === undefined || value < 0 || !sourceUrl ? [] : [{
+        nutrientCode: evidence.nutrient_code, name: evidence.nutrient_definitions?.name_ko ?? evidence.nutrient_code,
+        value, unit: evidence.unit, basis: evidence.basis, qualifier: evidence.qualifier,
+        sourceUrl, sourceVersion: evidence.source_version,
+      }];
+    }),
     caloriesPer100g: toNum(p.kcal_per_100g),
     imageUrl: productImageUrl(p.image_url),
     ingredients,
