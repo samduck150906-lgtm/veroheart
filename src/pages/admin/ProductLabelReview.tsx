@@ -1,3 +1,4 @@
+import ProductLabelSourceRegistration from './ProductLabelSourceRegistration';
 import { useState } from 'react';
 import { getIngredientLabelReview, approveIngredientLabelReview, type AdminLabelReview } from '../../lib/adminApi';
 import ProductLabelItemMatching from './ProductLabelItemMatching';
@@ -41,6 +42,10 @@ function SavedProductLabelReview({ productId }: { productId: string }) {
     finally { setBusy(false); }
   }
   return <section className="label-review-panel" aria-label="전성분 전체 대조 검토" style={{ display:'grid', gap:10 }}>
+    <ProductLabelSourceRegistration key={productId} productId={productId} disabled={busy || matchingPending}
+      onStart={() => { setNeedsRecheck(true); setMatchingPending(true); resetConfirmations(); }}
+      onUncertain={() => setMatchingPending(false)}
+      onChanged={value => { setMatchingPending(false); setReview(value); setNeedsRecheck(false); resetConfirmations(); }} />
     <button type="button" onClick={load} disabled={busy || matchingPending}>저장된 라벨 전체 대조 자료 조회</button>
     <p>현재 편집 중인 값은 승인되지 않습니다. 제품·원료 저장을 마친 뒤 새로 조회하고 실제 원본 포장의 전성분과 직접 대조하세요.</p>
     {message && <p role="status">{message}</p>}

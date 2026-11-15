@@ -1,40 +1,37 @@
-# Explicit saved-label registration: pilot prerequisite
+# Explicit raw label registration and replacement
 
-Status: design-only Draft. No executable migration, route, UI, source write or operating approval is introduced. This is separate from PR126 matching saved items and PR122 consuming whole-label proof.
+## Implemented boundary
 
-## Confirmed boundary
+This administrator feature registers a new current raw ingredient/additive label and explicit ordered items. It does not edit nutrition, legacy product ingredients, canonical definitions, matching rules, scores, or risk/allergy rules. Existing `ProductLabelPasteBox`, `saveProductSource`, and scan observation merging are not substitute registration routes.
 
-- `src/pages/admin/ProductLabelPasteBox.tsx` parses text into the legacy ingredient/nutrition form. `AdminProducts.tsx` does not preserve that pasted text as a current label set or item list. It must not be used to repair missing full-label evidence.
-- `admin-write` action `saveProductSource` stores `product_data_sources` provenance metadata. It does not replace `product_ingredient_label_sets` or `product_ingredient_label_items`. A source URL is not whole-label proof.
-- `admin-operations` action `reviewScanSubmission` merge relinks scan observations; it is not an explicit revision-checked saved-label replacement flow.
-- Existing service-only `ingest_product_ingredient_label` is a database primitive, not a normal administrator API with a current review revision and atomic administrator audit. Its request UUID is not proof of exact replay content. Do not expose or invoke it directly as a workaround.
-- Matching/hold and whole-label review can process an already-saved exact label. Missing or changed raw text, item addition/deletion and packaging revisions need an explicit source-registration unit.
+The normal authenticated `admin-write` router supplies actor. `getLabelSourceWorkspace` reads the current snapshot and private source registration metadata. `registerIngredientLabelSource` accepts the exact product, expected current label ID (null for first registration), server-issued snapshot revision, raw text, source type/reference, actual observation time with zone, exact flavour/weight/pack identity notes, reason, explicit ordered items with ingredient/additive/unresolved section, and draft/held disposition. No client canonical ID, reviewed flag, completed flag, actor, or approval hash is accepted.
 
-## Minimal next implementation
+The existing bracket-aware parser proposes editable items only. Raw Unicode and line breaks remain unchanged; repeats and compound ingredients remain separate ordered observations. Divergent segmentation, unmatched brackets, unresolved items or recognizable nutrition/caution sections require an explicit held draft and reason. They cannot be whole-label approved. Parser agreement is not evidence of truth, complete transcription or exact package identity; the existing explicit human whole-label review is still required. Headers/compound representations the parser cannot represent remain held rather than silently rewritten.
 
-1. Reuse normal administrator authentication, existing product identity and `admin_get_label_comparison_review` snapshot. Read the saved snapshot before editing. Do not use service-role credentials in a client.
-2. Provide a separate source operation in the existing review panel, distinct from product facts, legacy ingredients, item matching and whole-label approval. Show old/new raw text, ordered items, exact package/source reference and reason. A proposal is not saved until explicit confirmation.
-3. Accept the complete raw transcription and an explicitly reviewed ordered item array. Do not infer completeness from counts or arbitrary comma splitting. Repeated names and compound ingredients remain separate where the package requires them. Do not accept client reviewed/ready/canonical-match/whole-proof flags.
-4. Server allowlist, bounded strings/items, role checks and server-derived current snapshot revision are mandatory. Reject foreign product/item ownership, missing source, stale revision and multiple-current-label ambiguity. Revision includes current product, label, item and matching/generation facts.
-5. Use one service-only database transaction for retaining the prior source, registering the replacement, advancing generation and administrator audit. Reuse the foundation and matching lock order: products -> label sets -> items -> canonical ingredients -> legacy ingredients. Bounded lock timeout; no pre-read-only concurrency solution.
-6. Keep prior label and matching/evidence/audit history; mark prior label non-current, never cascade/delete it. The new source must not inherit human matching/whole-label approval. Existing automatic matches, if retained, must be labeled candidates and cannot certify the package. Existing consumer-without-proof behavior is a separate public-impact release gate.
-7. Unknown result blocks retry until source/current revision/audit are re-read. A generated request ID is not permanent content-idempotency. A successful same-state repeat must not silently replace the source again; define the exact content and revision contract before implementation.
-8. Public receipt stays minimal. Do not publish reviewer identity, source images/private raw documents, audit reasons or full internal snapshots. Product visibility and existing review policies remain unchanged.
+## Storage, concurrency and access
 
-## Required acceptance evidence
+Migration `20261116090000_admin_label_source_registration.sql` is a forward candidate requiring #123/#125/#126. It adds a private UUID registration-history table (no sequence), two service-only RPCs and forward replacements of the existing private snapshot/structural-validity functions. Existing migrations are unchanged. For labels without new registration history the snapshot JSON is byte-semantically unchanged; no historic proof backfill or blanket invalidation is performed.
 
-- Synthetic normal auth/router -> SQL -> current source -> match/hold -> explicit whole review -> public receipt; exact field and source preservation.
-- New source alone does not create a comparison record; old proof cannot remain verified after replacement, including ABA changes. Matching names or item counts are not complete-label evidence.
-- Stale revision, foreign product, malformed or completion-claim input and unauthorized requests leave source/audit unchanged.
-- Audit failure rolls back source, generation and history; retain successful prior records.
-- Real two-connection replacement vs matching/whole approval/ordinary source writers, both orders; lock timeout and official CLI migration-ledger atomicity.
-- Supabase-style default/PUBLIC/inherited table/function/sequence ACL checks at creation time.
-- UI 390/1280: old/new review, long/compound text, keyboard, unsaved edits, conflict, uncertain outcome, product switch and reload. No operating write test.
+Registration locks products → label sets → items → canonical → legacy ingredients in the same table order as matching/approval, with a three-second lock timeout. All ordinary writes to these tables participate through PostgreSQL table locks and existing revision triggers, not just the new UI. Under lock the server checks current label identity and whole snapshot revision, retains the previous label and its items/mappings/evidence, inserts a new current label, inserts server-held unreviewed items, records private source history and existing admin audit in one call. Existing unique partial index `idx_product_ingredient_label_sets_one_current` enforces one current label. New private holds prevent the existing automatic matcher from inheriting mappings during insertion. There is no new auto matching/backfill.
 
-## Owned-package pilot input and release gates
+Only the existing normal admin gateway can use the RPCs via service-role transport. Direct application table/RPC access is denied. Effective permissions under Supabase defaults and inherited grants are tested. Private source reference, option notes and actor stay private; the public label uses an opaque `registration:UUID` reference. Signed/credential-bearing URL references are rejected by the gateway; package photograph references can use `package:local-photo-id`. No URL is fetched. Existing public receipt stays minimal and contains no private snapshot, registration source or actor.
 
-No purchase or designated product is required. Use one owned package with exact species, brand, line, taste, life stage, weight and pack count. Photograph front; complete ingredients/additives; nutrition/feeding/cautions; manufacturer/importer; barcode when present; lot/date/revision. Exclude personal shipping labels. Absence of a barcode alone is not conclusive if other direct correspondence is sufficient.
+Held status participates in the snapshot and prevents approval even after individual matches. Resolving a held raw source is a new explicit replacement revision, never a date-only update. Old comparisons become stale through existing snapshot/generation rules. A successful old request replay conflicts on its old revision; identical content at a freshly queried revision is a state-based no-op. This is not permanent request-ID deduplication.
 
-Read exact DB product/option and current label first. If the package fully matches the saved label, use the saved-item review path after separate operating approval. If raw text/items/packaging revision differ, stop before matching or approval and implement/deploy the explicit source path above under a separate approval. Do not repair evidence through the legacy editor, direct SQL/RPC, arbitrary matching or product exposure changes.
+## Administrator workflow
 
-Future SQL belongs in `supabase/migration_drafts` until separately reviewed. Deployment: DB and ACL checks -> administrator server -> normal-auth non-mutating compatibility -> administrator UI -> separately approved source pilot -> separately approved matching/whole proof -> consumer coverage/release decision. No backfill or readiness promotion. PR122 remains Draft/held.
+Use the separate “원문 라벨 등록·교체” section in the existing saved-product label review screen. Query current data; provide the complete raw ingredient/additive area, exact source/observation/option identity, inspect proposed items and manually correct sections/add/remove items; hold unresolved material. Review before/after raw text and ordered items before saving. Save creates only unreviewed material. Then use existing individual matching/hold, whole-label source comparison, explicit evidence approval, and public receipt query. Each is a separate action.
+
+Unknown response, timeout, conflict or failure blocks reposting until current source and audit are re-read; current source workspace includes the registration audit receipt. No automatic mutation retry. Product navigation remounts the keyed form; drafts and selections are not transferred to another product. Unsaved edits require confirmation before destructive requery. No operating mutation is part of synthetic tests.
+
+## Deployment gate
+
+Approval is still required: verified remote-history-only bundle + this candidate → DB postchecks → exact reviewed `admin-write` source → unauthenticated/malformed-token denials and normal admin verify → administrator hosting release. The consumer #122 is separate, Draft and not released here. DB-first is required; new UI with missing RPCs shows unavailable rather than absent-source or successful save. No operating writes or migration application are authorized by this document.
+
+DB postchecks: candidate ledger once; expected table/RPC signatures and ACL; no extra sequence; old product/label/item/source/comparison/audit fingerprints unchanged before pilot; old snapshot hashes unchanged; public receipt excludes private fields. Lock/ledger/audit errors stop progression. Unknown CLI outcome requires actual ledger/object inspection before retry. No automatic rollback or policy deletion.
+
+The CLI test applies the same single-DO migration with normal CLI2.118.0 (no external BEGIN), tests ledger failure rollback, then runtime two-session conflicts and audit failure. Full repository validation is **guarded bootstrap**, not raw historical replay or Supabase HTTP. Synthetic gateway tests execute real authentication/router/parser/RPC SQL with only transport/minimum schema substituted. UI transport tests and #122 temporary integration are synthetic and not operating pilot proof.
+
+## Pilot input, independent of development
+
+Use one package already owned; no purchase required. Obtain front/product/options and net weight/pack count; complete ingredient and additive panels without cropped lines; separate nutrition/cautions; manufacturer/importer/barcode; lot and visible dates. Provide all sides needed to connect panels to the same package. Preserve original photos privately; OCR is an editable draft. Compare existing DB name/brand/flavour/life stage/weight/count/barcode when available, never infer an unprinted revision or invent an ingredient match. Missing identity/label areas hold only the pilot, not development. No registration, matching or evidence approval occurs without separate operating authorization.

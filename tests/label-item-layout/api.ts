@@ -7,3 +7,6 @@ export async function getLabelItemWorkspace():Promise<LabelItemWorkspace>{return
 export async function searchLabelItemCandidates(){return [{kind:'legacy' as const,id:'ingredient',nameKo:'닭고기',nameEn:'Chicken',description:'합성 성분 정의 — 실제 포장 대응의 증거가 아닙니다. '.repeat(5),risk:'safe',status:'active',revision:'b'.repeat(64),selectable:true}];}
 export async function reviewLabelItemMatch(input:LabelItemDecisionInput){if(new URLSearchParams(location.search).has('error'))throw Error('synthetic conflict');match=input.decision==='match'?'matched':'unreviewed';revision++;document.body.dataset.saves=String(revision);return {status:'saved' as const,workspace:await getLabelItemWorkspace()};}
 export async function approveIngredientLabelReview(){document.body.dataset.approved='1';return {result:{status:'approved' as const}};}
+
+export async function getLabelSourceWorkspace(){return {review:snapshot(),registration:null};}
+export async function registerIngredientLabelSource(){if(new URLSearchParams(location.search).has('error'))throw Error('synthetic uncertainty');document.body.dataset.sourceSaved='1';return {status:'saved' as const,workspace:await getLabelSourceWorkspace()};}
