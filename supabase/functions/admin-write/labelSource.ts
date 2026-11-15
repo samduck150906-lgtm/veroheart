@@ -11,13 +11,14 @@ export interface LabelSourcePayload {
 export function sourceDraftIssues(payload: LabelSourcePayload): string[] {
   const issues: string[] = [];
   const stack: string[] = [];
-  const pairs: Record<string, string> = { '(': ')', '[': ']', '{': '}', '（': '）', '［': '］', '｛': '｝' };
+  const pairs: Record<string, string> = { '(': ')', '[': ']', '{': '}', '（': '）', '［': '］', '｛': '｝', '【': '】' };
   for (const c of payload.rawText) {
     if (pairs[c]) stack.push(pairs[c]);
     else if (Object.values(pairs).includes(c) && stack.pop() !== c) issues.push('괄호 대응을 확인해 주세요.');
   }
   if (stack.length) issues.push('닫히지 않은 괄호가 있습니다.');
-  const parsed = parseIngredientLabelItems(payload.rawText);
+  let parsed: ReturnType<typeof parseIngredientLabelItems>;
+  try { parsed = parseIngredientLabelItems(payload.rawText); } catch { return [...new Set([...issues,'항목 초안이 100개를 초과합니다. 원문을 자르지 말고 보류하세요.'])]; }
   if (!parsed.length || parsed.length !== payload.items.length || parsed.some((p, n) => p.rawText !== payload.items[n]?.rawText)) issues.push('원문과 항목 분리안이 다릅니다. 해석 불가 구간을 보류해 주세요.');
   if (payload.items.some(i => i.section === 'unresolved')) issues.push('해석 미확정 항목이 있습니다.');
   if (/(?:^|\n)\s*(?:영양(?:정보|성분)|보증성분|급여(?:량|방법)|주의사항)\s*[:：]/u.test(payload.rawText)) issues.push('영양표·급여법·주의사항을 원재료 원문과 구분해 주세요.');

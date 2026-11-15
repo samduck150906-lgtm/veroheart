@@ -51,10 +51,10 @@ export default function ProductLabelSourceRegistration({ productId, disabled=fal
       <label>실제 확인 시점 (시간대 포함, 예: 2026-11-16T10:00:00+09:00)<input value={draft.observedAt} onChange={e=>change({observedAt:e.target.value})} /></label>
       <label>제품·맛·중량·포장 수량·표시된 개정 대응 근거<textarea value={draft.identityNotes} onChange={e=>change({identityNotes:e.target.value})} maxLength={2000} /></label>
       <label>등록·교체 이유<textarea value={draft.reason} onChange={e=>change({reason:e.target.value})} maxLength={2000} /></label>
-      <button type="button" onClick={()=>change({items:parseIngredientLabelItems(draft.rawText).map(i=>({rawText:i.rawText,section:'ingredients'}))})}>원문에서 항목 초안 제안 (자동 확정 안 함)</button>
+      <button type="button" onClick={()=>{try{change({items:parseIngredientLabelItems(draft.rawText).map(i=>({rawText:i.rawText,section:'ingredients'}))});}catch{setMessage('항목 초안이 100개를 초과합니다. 원문을 임의로 자르지 말고 명시적으로 보류해 주세요.');}}}>원문에서 항목 초안 제안 (자동 확정 안 함)</button>
       <p>괄호·복합 원료·반복을 보존하고 첨가물 구역을 직접 확인하세요. 해석 불가 구간은 보류합니다. 항목 수 일치는 완전성 증거가 아닙니다.</p>
       <ol>{draft.items.map((i,n)=><li key={n}><label>항목 {n+1}<textarea value={i.rawText} onChange={e=>change({items:draft.items.map((x,k)=>k===n?{...x,rawText:e.target.value}:x)})} maxLength={2000} /></label>
-        <label>구역 {n+1}<select value={i.section} onChange={e=>change({items:draft.items.map((x,k)=>k===n?{...x,section:e.target.value as typeof i.section}:x)})}><option value="ingredients">원재료</option><option value="additives">첨가물</option><option value="unresolved">해석 미확정</option></select></label>
+        <label>구역 {n+1}<select aria-label={`구역 ${n+1}`} value={i.section} onChange={e=>change({items:draft.items.map((x,k)=>k===n?{...x,section:e.target.value as typeof i.section}:x)})}><option value="ingredients">원재료</option><option value="additives">첨가물</option><option value="unresolved">해석 미확정</option></select></label>
         <button type="button" onClick={()=>change({items:draft.items.filter((_,k)=>k!==n)})}>항목 {n+1} 삭제 (새 초안)</button></li>)}</ol>
       <button type="button" disabled={draft.items.length>=100} onClick={()=>change({items:[...draft.items,{rawText:'',section:'unresolved'}]})}>항목 추가</button>
       <label><input type="checkbox" checked={draft.stage==='held'} onChange={e=>change({stage:e.target.checked?'held':'draft'})} />누락·해석 불가·대응 미확정으로 보류 (승인 불가)</label>

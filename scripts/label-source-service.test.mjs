@@ -44,7 +44,7 @@ beforeEach(async () => {
    return load(new URL(name,parent.identifier));
  };
  const f=await load('tests/label-review/database.ts');await f.link(link);await f.evaluate();fixture=f.namespace;db=await fixture.labelReviewDatabase();await db.exec(readFileSync('tests/label-item-matching/fixture.sql','utf8'));await db.exec(automaticMatchingFixtureSQL());await db.exec(readFileSync('supabase/migrations/20261111150000_restrict_label_evidence_sequence.sql','utf8'));await db.exec('ALTER DEFAULT PRIVILEGES GRANT ALL ON TABLES TO anon,authenticated,service_role;ALTER DEFAULT PRIVILEGES GRANT ALL ON SEQUENCES TO anon,authenticated,service_role;ALTER DEFAULT PRIVILEGES GRANT ALL ON FUNCTIONS TO anon,authenticated,service_role');await db.exec(readFileSync('supabase/migrations/20261114090000_admin_label_item_matching.sql','utf8'));
- await db.exec('ALTER TABLE product_ingredient_label_sets ADD COLUMN captured_at timestamptz;CREATE UNIQUE INDEX idx_product_ingredient_label_sets_one_current ON product_ingredient_label_sets(product_id) WHERE is_current');await db.exec(readFileSync('supabase/migrations/20261116090000_admin_label_source_registration.sql','utf8'));
+ await db.exec('ALTER TABLE product_ingredient_label_sets ADD COLUMN captured_at timestamptz;CREATE UNIQUE INDEX idx_product_ingredient_label_sets_one_current ON product_ingredient_label_sets(product_id) WHERE is_current');const oldSnapshot=(await db.query('SELECT private.label_review_snapshot($1) s',[fixture.PRODUCT])).rows[0].s;await db.exec(readFileSync('supabase/migrations/20261116090000_admin_label_source_registration.sql','utf8'));assert.deepEqual((await db.query('SELECT private.label_review_snapshot($1) s',[fixture.PRODUCT])).rows[0].s,oldSnapshot);
  const edge=await load('supabase/functions/admin-write/index.ts');await edge.link(link);await edge.evaluate();
  // Share the same linker/cache for actual public modules.
  const originalLoad=load;load=async(file)=>{const m=await originalLoad(file);if(m.status==='unlinked')await m.link(link);if(m.status==='linked')await m.evaluate();return m;};
@@ -101,4 +101,9 @@ it('stale/foreign label conflict; same state at fresh revision no-op; old retry 
 });
 it('audit failure rolls back transition, new rows, items, holds and source history',async()=>{
  await db.exec("CREATE FUNCTION reject_source_audit() RETURNS trigger LANGUAGE plpgsql AS $$BEGIN RAISE EXCEPTION 'synthetic audit failure'; END$$;CREATE TRIGGER reject_source_audit BEFORE INSERT ON admin_audit_log FOR EACH ROW EXECUTE FUNCTION reject_source_audit()");const before=await fullState();assert.equal((await register()).http,503);assert.deepEqual(await fullState(),before);
+});
+
+it('oversized and malformed bracket draft is held without crashing or losing raw text',async()=>{
+ const p=payload();p.rawText=Array.from({length:101},()=> '닭고기').join(', ');p.stage='held';p.holdReason='Too many entries for parser; preserve source for review';p.items=[];assert.equal((await register(p)).http,200);assert.equal((await source()).review.snapshot.labels[0].raw,p.rawText);assert.equal((await source()).review.eligible,false);
+ const malformed=payload();malformed.rawText='닭고기【닫히지 않음';malformed.items=[{rawText:malformed.rawText,section:'ingredients'}];assert.equal((await register(malformed)).http,400);
 });
