@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {assertLabelItemMatchingOnBootstrap} from './label-item-matching-bootstrap.mjs';
 import { mkdtemp, mkdir, readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -128,6 +129,17 @@ try {
     console.log('PASS: label comparison draft on existing guarded full bootstrap; anon public reader/private table isolation');
   }
 
+  if (process.argv.includes('--label-item-matching-draft')) {
+    // Already applied once by the guarded whole-schema bootstrap above; never replay here.
+    for (const role of ['anon', 'authenticated']) {
+      await db.exec(`SET ROLE ${role}`);
+      await assert.rejects(db.query("SELECT admin_search_label_item_candidates('fixture')"), e => e.code === '42501');
+      await assert.rejects(db.query('SELECT * FROM private.label_item_match_decisions'), e => e.code === '42501');
+      await db.exec('RESET ROLE');
+    }
+    await assertLabelItemMatchingOnBootstrap(db);
+    console.log('PASS: forward matching candidate on guarded full schema; application roles denied');
+  }
   await assertReviewedCatalogRepair(db);
   await db.exec("INSERT INTO public.products(name,brand_name,is_visible) VALUES ('local guard test fixture','local test',false)");
   await assert.rejects(db.exec(await readFile(path.join(repository, 'supabase/local-bootstrap/before-legacy-labels.sql'), 'utf8')), /empty products table/);
