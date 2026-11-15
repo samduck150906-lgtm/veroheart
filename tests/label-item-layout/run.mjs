@@ -21,7 +21,7 @@ await withFixtureServer('.artifacts/label-item-layout-app',async base=>{const br
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
   await page.getByRole('button',{name:/새 원문 revision 저장/}).focus();await page.keyboard.press('Enter');
   await page.getByRole('status').filter({hasText:error?'충돌·실패':'새 라벨과 미검토 항목'}).waitFor();
-  if(error)assert(await page.getByRole('group',{name:'제품·옵션과 원문 초안'}).isDisabled());
+  if(error){assert.notEqual(await page.getByRole('group',{name:'제품·옵션과 원문 초안'}).getAttribute('disabled'),null);assert(await page.getByRole('button',{name:'저장 전 변경 비교',exact:true}).isDisabled());}
   await page.getByRole('button',{name:'합성 다른 제품으로 이동'}).click();assert.equal(await page.getByLabel('전체 원재료·첨가물 원문').count(),0);
   results.push({width,error,sourceFlow:true,keyboard:true,externalRequests:0});await context.close();
  }
