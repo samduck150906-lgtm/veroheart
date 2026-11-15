@@ -20,3 +20,8 @@ it('unbalanced/unresolved segments require explicit hold and never certify cover
 it('keyed product transition ignores previous in-flight response',async()=>{
  let done!:(r:unknown)=>void;api.get.mockReturnValueOnce(new Promise(r=>done=r));const c=callbacks();const v=render(<ProductLabelSourceRegistration key="one" productId="one" {...c}/>);fireEvent.click(screen.getByRole('button',{name:'원문 등록용 최신 자료 조회'}));v.rerender(<ProductLabelSourceRegistration key="two" productId="two" {...c}/>);await act(async()=>done({review,registration:null}));expect(screen.queryByText(/현재 제품:/)).toBeNull();expect(api.save).not.toHaveBeenCalled();
 });
+
+it('preview names removed tail items explicitly while retaining old history',async()=>{
+ api.get.mockResolvedValueOnce({review:{...review,snapshot:{...review.snapshot,labels:[{...review.snapshot.labels[0],items:[...review.snapshot.labels[0].items,{id:'tail',raw:'이전 끝 항목',match:'matched',order:2},{id:'tail2',raw:'보존할 세 번째 항목',match:'matched',order:3}]}]}},registration:null});
+ render(<ProductLabelSourceRegistration productId="synthetic" {...callbacks()}/>);await fill();fireEvent.click(screen.getByRole('button',{name:'저장 전 변경 비교'}));expect(screen.getByText(/이전: 보존할 세 번째 항목 → 새 초안에서 제거/)).toBeTruthy();expect(api.save).not.toHaveBeenCalled();
+});

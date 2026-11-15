@@ -33,7 +33,7 @@ export default function ProductLabelSourceRegistration({ productId, disabled=fal
     finally { setBusy(false); }
   }
   const issues=sourceDraftIssues(draft);
-  return <section aria-label="원문 라벨 등록·교체" style={{display:'grid',gap:10,minWidth:0,overflowWrap:'anywhere'}}>
+  return <section aria-label="원문 라벨 등록·교체" aria-busy={busy} style={{display:'grid',gap:10,minWidth:0,overflowWrap:'anywhere'}}>
     <h3>원문 라벨 등록·교체</h3>
     <p>원재료·첨가물 원문만 등록합니다. 사진/OCR·자동 분리안은 초안이며, 일반 원료·영양정보 편집 또는 대조 승인이 아닙니다. 기존 이력과 매칭은 보존하지만 새 라벨로 승계하지 않습니다.</p>
     <button type="button" disabled={busy||disabled} onClick={load}>원문 등록용 최신 자료 조회</button>
@@ -63,7 +63,8 @@ export default function ProductLabelSourceRegistration({ productId, disabled=fal
       <button type="button" onClick={()=>setPreview(true)} disabled={!dirty || !draft.rawText.trim() || (issues.length>0&&draft.stage!=='held')}>저장 전 변경 비교</button>
       {preview&&<section aria-label="저장 전 변경 비교"><h4>현재 → 새 revision</h4><pre style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{current?.raw??'(라벨 없음)'}{'\n→\n'}{draft.rawText}</pre>
         <p>기존 {current?.items.length??0}개 항목은 이력에 보존합니다. 새 {draft.items.length}개 항목은 전부 미검토·매칭 없음으로 시작합니다.</p>
-        <ol>{draft.items.map((i,n)=><li key={n}>이전: {current?.items[n]?.raw??'(없음)'} → 새 {i.section}: {i.rawText}</li>)}</ol>
+        <ol>{Array.from({length:Math.max(current?.items.length??0,draft.items.length)},(_,n)=><li key={n}>이전: {current?.items[n]?.raw??'(없음)'} → {draft.items[n]?`새 ${draft.items[n].section}: ${draft.items[n].rawText}`:'새 초안에서 제거 — 이전 항목은 이력에 보존'}</li>)}</ol>
+        <p>이전 출처·확인 시점: {workspace.registration?.payload.sourceReference??current?.source??'(없음)'} · {workspace.registration?.payload.observedAt??'(미등록)'}</p>
         <p>{draft.sourceReference} · {draft.observedAt} · {draft.identityNotes} · {draft.stage==='held'?'보류':'미검토 초안'}</p>
         <button type="button" onClick={save}>새 원문 revision 저장 (승인 아님)</button><button type="button" onClick={()=>setPreview(false)}>비교 취소</button></section>}
     </fieldset>}
