@@ -50,6 +50,10 @@ jobs:
         run: node scripts/test-label-evidence-postgres.mjs
         env:
           REVIEW_PRIVACY_PG_URL: postgresql://postgres@127.0.0.1:5432/postgres?sslmode=disable
+      - name: Label item matching two-session and actual CLI contract
+        run: node scripts/test-label-item-matching-postgres.mjs
+        env:
+          REVIEW_PRIVACY_PG_URL: postgresql://postgres@127.0.0.1:5432/postgres?sslmode=disable
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -57,3 +61,4 @@ jobs:
           path: |
             .artifacts/review-privacy-cli
             .artifacts/label-evidence-postgres
+            .artifacts/label-item-matching-postgres

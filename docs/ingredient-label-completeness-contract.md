@@ -1,3 +1,7 @@
+> Integration checkpoint (2026-11-15): main `c355c15571f8608c197daa1754b81aea2fc15b27` includes released foundation and saved-item matching (#126). This PR remains **Draft and not released**. The forward SQL and administrator matching code belong to main; this PR keeps consumer proof gating only. Current material/source/nutrient facts and QA-session revocation are retained. Source-row confirmation is not whole-label human approval. No new migration, Edge source, dependency or lockfile is part of this PR's unique diff.
+>
+> Release prerequisites remain an actual, separately authorized package pilot, retained exact product/option/full-label evidence, matching and whole-review/audit/public-receipt validation, and a coverage/withheld-result acceptance decision. Prior dated operating counts are snapshots, not current catalog totals. Existing main may analyze automatic matches without this consumer gate; no operating pilot write is authorized by integration. Missing/changed raw-label registration is separately scoped in design-only #136 and is not implemented by that document.
+
 # Whole-label review evidence and analysis eligibility
 
 Stored `ready` and matching all supplied ingredients cannot prove that the full

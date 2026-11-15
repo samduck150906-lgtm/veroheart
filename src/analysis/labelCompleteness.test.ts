@@ -27,6 +27,18 @@ describe('full-label comparison evidence boundary', () => {
     expect(productAnalysisReadiness(p)).toMatchObject({ status: 'partial', reasonCodes: ['label_evidence_not_requested'] });
     expect(resolveProductDisplayVerdict(p, DEFAULT_USER_PET_PROFILE).canShowScore).toBe(false);
   });
+  it('preserves current-main source confirmation without treating it as whole-label approval', () => {
+    const r = row();
+    r.product_ingredient_label_sets![0].product_ingredient_label_items![0].label_source_evidence = {
+      verified: true, sourceUrl: 'https://fixture.invalid/package', observedAt: '2026-11-01T00:00:00Z',
+    };
+    const p = mapProductFromSupabaseRow(r);
+    expect(p.confirmedLabelIngredientCount).toBe(1);
+    expect(p.ingredientLabelEntries?.[0]).toMatchObject({ sourceVerified: true, rawName: '닭고기' });
+    expect(p.ingredients).toHaveLength(1);
+    expect(productAnalysisReadiness(p)).toMatchObject({ status: 'partial', reasonCodes: ['label_evidence_not_requested'] });
+    expect(resolveProductDisplayVerdict(p, DEFAULT_USER_PET_PROFILE).canShowScore).toBe(false);
+  });
   it('does not accept review-looking extra JSON fields from the existing public mapper', () => {
     const r = { ...row(), comparison: complete().ingredientLabelEvidence!.comparison };
     expect(assessLabelCompleteness(mapProductFromSupabaseRow(r).ingredientLabelEvidence).status).toBe('unverified');
