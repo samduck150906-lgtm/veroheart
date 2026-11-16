@@ -1700,3 +1700,21 @@ export async function reviewLabelItemMatch(input: LabelItemDecisionInput) {
   if (!r.result?.workspace?.review) throw new Error('저장 결과를 재조회해야 합니다.');
   return r.result;
 }
+
+export interface LabelSourceItem { rawText: string; section: 'ingredients' | 'additives' | 'unresolved' }
+export interface LabelSourcePayload {
+  rawText: string; sourceType: 'manufacturer' | 'package_image' | 'manual' | 'import' | 'other';
+  sourceReference: string; observedAt: string; identityNotes: string; reason: string;
+  items: LabelSourceItem[]; stage: 'draft' | 'held'; holdReason: string;
+}
+export interface LabelSourceWorkspace { review: AdminLabelReview | null; registration: { id: string; payload: LabelSourcePayload; recordedAt: string; auditRecorded: boolean } | null }
+export async function getLabelSourceWorkspace(productId: string): Promise<LabelSourceWorkspace> {
+  const r = await adminWrite<{ result: LabelSourceWorkspace }>('getLabelSourceWorkspace',{ productId });
+  if (!r.result?.review) throw new Error('원문 등록 자료를 조회하지 못했습니다.');
+  return r.result;
+}
+export async function registerIngredientLabelSource(input: { productId: string; revision: string; labelSetId: string | null; payload: LabelSourcePayload }) {
+  const r = await adminWrite<{ result: { status: 'saved' | 'unchanged'; workspace: LabelSourceWorkspace } }>('registerIngredientLabelSource',input);
+  if (!r.result?.workspace?.review) throw new Error('저장 여부 미확인 — 재조회가 필요합니다.');
+  return r.result;
+}

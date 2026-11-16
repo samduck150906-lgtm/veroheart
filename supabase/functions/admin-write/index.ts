@@ -1,3 +1,4 @@
+import { handleLabelSource } from './labelSource.ts';
 import { handleLabelItemMatching } from './labelItemMatching.ts';
 import { isAdminSessionActorCurrent } from '../_shared/temporaryAdminSession.ts';
 import { handleLabelReview } from './labelReview.ts';
@@ -1341,6 +1342,11 @@ serve(async (req) => {
        * 제안은 클라이언트가 만들고 운영자가 화면에서 고른 뒤, 여기서는 고른 값만
        * 그대로 저장한다. 되돌릴 수 있도록 바꾸기 전 값을 감사 로그에 남긴다.
        */
+      case 'getLabelSourceWorkspace':
+      case 'registerIngredientLabelSource': {
+        const result = await handleLabelSource(db, actor, action, body);
+        return json(result.body, result.status, cors);
+      }
       case 'getLabelItemWorkspace':
       case 'searchLabelItemCandidates':
       case 'reviewLabelItemMatch': {
