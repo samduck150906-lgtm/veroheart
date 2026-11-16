@@ -117,3 +117,8 @@ async function status(product){return (await load('src/analysis/analysisReadines
 it('server foundation absent is unavailable, never an absent raw label or successful registration',async()=>{
  const before=await fullState();await db.exec('DROP FUNCTION public.admin_get_label_source_workspace(uuid)');const read=await request('getLabelSourceWorkspace');assert.equal(read.http,503);assert.equal(read.body.ok,undefined);assert.deepEqual(await fullState(),before);
 });
+
+it('migration rejects a same-named unique index on a different table',async()=>{
+ const before=await fullState();await db.exec('ALTER INDEX idx_product_ingredient_label_sets_one_current RENAME TO fixture_preserved_current;CREATE TABLE source_index_lookalike(product_id uuid,is_current boolean);CREATE UNIQUE INDEX idx_product_ingredient_label_sets_one_current ON source_index_lookalike(product_id) WHERE is_current');
+ await assert.rejects(db.exec(readFileSync('supabase/migrations/20261116090000_admin_label_source_registration.sql','utf8')),/expected one-current-label unique index required/);assert.deepEqual(await fullState(),before);
+});

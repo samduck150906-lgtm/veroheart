@@ -4,7 +4,7 @@ DO $registration$
 BEGIN
 PERFORM set_config('lock_timeout','3s',true);
 IF to_regprocedure('private.label_item_source_fingerprint(public.product_ingredient_label_items)') IS NULL THEN RAISE EXCEPTION 'matching foundation required'; END IF;
-IF NOT EXISTS(SELECT 1 FROM pg_index i WHERE i.indexrelid=to_regclass('public.idx_product_ingredient_label_sets_one_current') AND i.indisunique AND i.indisvalid
+IF NOT EXISTS(SELECT 1 FROM pg_index i WHERE i.indexrelid=to_regclass('public.idx_product_ingredient_label_sets_one_current') AND i.indrelid='public.product_ingredient_label_sets'::regclass AND i.indisunique AND i.indisvalid
  AND pg_get_expr(i.indpred,i.indrelid)='is_current' AND i.indnkeyatts=1
  AND (SELECT attname FROM pg_attribute WHERE attrelid=i.indrelid AND attnum=i.indkey[0])='product_id') THEN RAISE EXCEPTION 'expected one-current-label unique index required'; END IF;
 CREATE TABLE private.label_source_registrations (
