@@ -140,6 +140,16 @@ try {
     await assertLabelItemMatchingOnBootstrap(db);
     console.log('PASS: forward matching candidate on guarded full schema; application roles denied');
   }
+  if(process.argv.includes('--label-source-draft')) {
+    // Applied once by guarded bootstrap; never replay.
+    const product=(await db.query("INSERT INTO products(name,brand_name,is_visible) VALUES('Synthetic source bootstrap','Synthetic',false) RETURNING id")).rows[0].id;
+    const before=(await db.query('SELECT admin_get_label_source_workspace($1) w',[product])).rows[0].w;
+    const payload={rawText:'닭고기',sourceType:'package_image',sourceReference:'package:synthetic',observedAt:'2026-01-01T00:00:00Z',identityNotes:'Synthetic flavour weight pack',reason:'Bootstrap source test',items:[{rawText:'닭고기',section:'ingredients'}],stage:'draft',holdReason:''};
+    await db.exec('SET ROLE service_role');
+    const saved=(await db.query('SELECT admin_register_label_source($1,$2,NULL,$3::jsonb,$4) r',[product,before.review.revision,JSON.stringify(payload),'synthetic-admin'])).rows[0].r;
+    assert.equal(saved.workspace.review.eligible,false);assert(saved.workspace.review.snapshot.labels[0].items.every(i=>i.match==='unreviewed'&&i.legacy===null));
+    await db.exec('RESET ROLE');console.log('PASS raw source registration on guarded full schema; new items unreviewed');
+  }
   await assertReviewedCatalogRepair(db);
   await db.exec("INSERT INTO public.products(name,brand_name,is_visible) VALUES ('local guard test fixture','local test',false)");
   await assert.rejects(db.exec(await readFile(path.join(repository, 'supabase/local-bootstrap/before-legacy-labels.sql'), 'utf8')), /empty products table/);

@@ -78,6 +78,8 @@ export const ALLOWED_ACTIONS = new Set([
   'restoreTrash',
   'purgeTrash',
   'applyProductCleanup',
+  'getLabelSourceWorkspace',
+  'registerIngredientLabelSource',
   'getLabelItemWorkspace',
   'searchLabelItemCandidates',
   'reviewLabelItemMatch',
