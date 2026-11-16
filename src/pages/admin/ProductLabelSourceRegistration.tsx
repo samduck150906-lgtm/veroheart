@@ -59,7 +59,7 @@ export default function ProductLabelSourceRegistration({ productId, disabled=fal
       <button type="button" disabled={draft.items.length>=100} onClick={()=>change({items:[...draft.items,{rawText:'',section:'unresolved'}]})}>항목 추가</button>
       <label><input type="checkbox" checked={draft.stage==='held'} onChange={e=>change({stage:e.target.checked?'held':'draft'})} />누락·해석 불가·대응 미확정으로 보류 (승인 불가)</label>
       <label>보류 사유<textarea value={draft.holdReason} onChange={e=>change({holdReason:e.target.value})} maxLength={2000} /></label>
-      {!!issues.length&&<ul>{issues.map(i=><li key={i}>{i}</li>)}</ul>}
+      {dirty&&!!draft.rawText.trim()&&!!issues.length&&<ul>{issues.map(i=><li key={i}>{i}</li>)}</ul>}
       <button type="button" onClick={()=>setPreview(true)} disabled={!dirty || !draft.rawText.trim() || (issues.length>0&&draft.stage!=='held')}>저장 전 변경 비교</button>
       {preview&&<section aria-label="저장 전 변경 비교"><h4>현재 → 새 revision</h4><pre style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{current?.raw??'(라벨 없음)'}{'\n→\n'}{draft.rawText}</pre>
         <p>기존 {current?.items.length??0}개 항목은 이력에 보존합니다. 새 {draft.items.length}개 항목은 전부 미검토·매칭 없음으로 시작합니다.</p>
