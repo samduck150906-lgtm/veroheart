@@ -113,3 +113,7 @@ async function mappedPublic(){const current=(await request('getIngredientLabelRe
  const mapper=(await load('src/lib/supabaseRowTypes.ts')).namespace;return mapper.mapProductFromSupabaseRow(row);}
 async function publicRead(product){const reader=(await load('src/lib/labelComparisonRead.ts')).namespace;return (await reader.loadLabelComparisons([product],async ids=>({data:(await db.query('SELECT get_public_label_comparison($1::uuid[]) result',[ids])).rows[0].result,error:null})))[0];}
 async function status(product){return (await load('src/analysis/analysisReadiness.ts')).namespace.productAnalysisReadiness(product);}
+
+it('server foundation absent is unavailable, never an absent raw label or successful registration',async()=>{
+ const before=await fullState();await db.exec('DROP FUNCTION public.admin_get_label_source_workspace(uuid)');const read=await request('getLabelSourceWorkspace');assert.equal(read.http,503);assert.equal(read.body.ok,undefined);assert.deepEqual(await fullState(),before);
+});

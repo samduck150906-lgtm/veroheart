@@ -25,3 +25,7 @@ it('preview names removed tail items explicitly while retaining old history',asy
  api.get.mockResolvedValueOnce({review:{...review,snapshot:{...review.snapshot,labels:[{...review.snapshot.labels[0],items:[...review.snapshot.labels[0].items,{id:'tail',raw:'이전 끝 항목',match:'matched',order:2},{id:'tail2',raw:'보존할 세 번째 항목',match:'matched',order:3}]}]}},registration:null});
  render(<ProductLabelSourceRegistration productId="synthetic" {...callbacks()}/>);await fill();fireEvent.click(screen.getByRole('button',{name:'저장 전 변경 비교'}));expect(screen.getByText(/이전: 보존할 세 번째 항목 → 새 초안에서 제거/)).toBeTruthy();expect(api.save).not.toHaveBeenCalled();
 });
+
+it('read failure is not treated as an empty label or a writable workspace',async()=>{
+ api.get.mockRejectedValueOnce(Error('synthetic foundation missing'));render(<ProductLabelSourceRegistration productId="synthetic" {...callbacks()}/>);fireEvent.click(screen.getByRole('button',{name:'원문 등록용 최신 자료 조회'}));await screen.findByText(/원문 조회 실패 — 원문 없음으로 판단하지 않습니다/);expect(screen.queryByRole('group',{name:'제품·옵션과 원문 초안'})).toBeNull();expect(api.save).not.toHaveBeenCalled();
+});
