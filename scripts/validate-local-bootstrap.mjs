@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { assertManufacturerBreadth } from './manufacturer-breadth-contract.mjs';
 import {assertLabelItemMatchingOnBootstrap} from './label-item-matching-bootstrap.mjs';
 import { mkdtemp, mkdir, readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
@@ -151,6 +152,7 @@ try {
     await db.exec('RESET ROLE');console.log('PASS raw source registration on guarded full schema; new items unreviewed');
   }
   await assertReviewedCatalogRepair(db);
+  await assertManufacturerBreadth(db);
   await db.exec("INSERT INTO public.products(name,brand_name,is_visible) VALUES ('local guard test fixture','local test',false)");
   await assert.rejects(db.exec(await readFile(path.join(repository, 'supabase/local-bootstrap/before-legacy-labels.sql'), 'utf8')), /empty products table/);
   console.log(JSON.stringify({ passed: true, historicalMigrations: prepared.historicalMigrations, localMigrations: files.length, skippedKnownOrphanRows: orphanCount, fabricatedCatalogRows: 0, historicalFilesUnchanged: true, foreignKeysEnforced: true, storagePrivate: true }, null, 2));

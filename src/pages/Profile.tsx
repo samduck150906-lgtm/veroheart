@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { petWeightError, PET_WEIGHT_LIMIT_KG } from '../utils/petWeight';
 import { useStore } from '../store/useStore';
 import { getVisibleProductsByIds } from '../lib/supabase';
 import {
@@ -140,8 +141,9 @@ function ProfileContent() {
     }
     const rawWeight = weightText.trim();
     const weightKg = rawWeight ? Number(rawWeight) : undefined;
-    if (rawWeight && (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(rawWeight) || !Number.isFinite(weightKg) || weightKg! <= 0)) {
-      notify.error('몸무게는 0보다 큰 숫자로 입력해 주세요.');
+    const weightError = petWeightError(formData.species, rawWeight);
+    if (weightError) {
+      notify.error(weightError);
       setProfileStep(3);
       return;
     }
@@ -246,6 +248,9 @@ function ProfileContent() {
               />
               <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-muted)' }}>kg</span>
             </div>
+            <p role={petWeightError(formData.species, weightText) ? 'alert' : undefined} style={{ margin: 0, fontSize: 13, lineHeight: 1.6 }}>
+              {petWeightError(formData.species, weightText) ?? `입력 지원 범위: 0 초과~${PET_WEIGHT_LIMIT_KG[formData.species]}kg. 건강 체중의 기준은 아닙니다.`}
+            </p>
             <TossInput
               value={formData.breed ?? ''}
               onChange={(v) => setFormData({ ...formData, breed: v })}
@@ -416,6 +421,7 @@ function ProfileContent() {
                           {pet.species === 'Cat' ? '고양이' : '강아지'}
                           {pet.breed ? ` · ${pet.breed}` : ''} · {{ baby: '아기', adult: '성인', senior: '시니어' }[ageGroupFromAge(pet.age)]}
                           {pet.weightKg ? ` · ${pet.weightKg}kg` : ''}
+                          {petWeightError(pet.species, pet.weightKg) && ' · 몸무게 확인 필요'}
                         </div>
                       </button>
                       <button type="button" onClick={() => startEditPet(pet)} aria-label="수정" style={petIconBtn}>
@@ -490,7 +496,11 @@ function ProfileContent() {
                 <TossButton variant="outline" onClick={() => setProfileStep((s) => Math.max(0, s - 1))} disabled={profileStep === 0} style={{ flex: 1 }}>
                   이전
                 </TossButton>
-                <TossButton variant="soft" onClick={() => setProfileStep((s) => Math.min(stepCount - 1, s + 1))} disabled={profileStep === stepCount - 1 || (profileStep === 0 && !formData.name.trim())} style={{ flex: 1 }}>
+                <TossButton variant="soft" onClick={() => {
+                  const error = profileStep === 3 ? petWeightError(formData.species, weightText) : null;
+                  if (error) { notify.error(error); return; }
+                  setProfileStep((s) => Math.min(stepCount - 1, s + 1));
+                }} disabled={profileStep === stepCount - 1 || (profileStep === 0 && !formData.name.trim())} style={{ flex: 1 }}>
                   다음
                 </TossButton>
               </div>

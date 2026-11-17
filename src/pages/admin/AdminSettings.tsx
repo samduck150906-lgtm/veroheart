@@ -30,8 +30,8 @@ const BOOLEAN_SETTINGS: { key: SettingKey; title: string; description: string }[
     key: 'hide_unverified_products',
     title: '검수 완료 제품만 노출',
     description:
-      '노출 설정이 켜진 제품 중, 이 설정을 켜면 "검수 완료" 제품만 공개하고 끄면 "검수 대기"·"검토됨" 제품도 공개합니다. ' +
-      '검수 완료 제품이 없을 때 이 설정을 켜면 앱 목록이 비게 됩니다. 숨김 제품은 항상 비공개입니다.',
+      '노출 설정이 켜진 제품 중, 켜면 "검수 완료"만 공개하고 끄면 "검토됨"과 "검수 완료"를 공개합니다. ' +
+      '"검수 대기"·상태 미지정·알 수 없는 상태와 숨김·보관 제품은 설정과 관계없이 비공개입니다. 공개 조건을 충족하는 제품이 없으면 앱 목록이 비게 됩니다.',
   },
   {
     key: 'phase2_alias_observation_enabled',
@@ -170,6 +170,13 @@ const AdminSettings: React.FC = () => {
                 <article className="admin-setting-item" key={setting.key}>
                   <h4>{setting.title}</h4>
                   <p>{setting.description}</p>
+                  {setting.key === 'hide_unverified_products' && <table aria-label="제품 공개 기준" style={{ width: '100%', fontSize: 12, marginBottom: 12 }}>
+                    <caption>서버 공개 기준 · 숨김·보관 제품은 항상 비공개</caption>
+                    <thead><tr><th>검토 상태</th><th>노출 설정</th><th>토글 끔</th><th>토글 켬</th></tr></thead>
+                    <tbody>{['검수 완료', '검토됨', '검수 대기', '미지정·알 수 없는 상태'].flatMap((status, index) => [true, false].map(visible => <tr key={`${status}-${visible}`}>
+                      <td>{status}</td><td>{visible ? '노출' : '숨김'}</td><td>{visible && index < 2 ? '공개' : '비공개'}</td><td>{visible && index === 0 ? '공개' : '비공개'}</td>
+                    </tr>))}</tbody>
+                  </table>}
                   <button
                     type="button"
                     className={`admin-setting-toggle ${enabled ? 'active' : ''}`}

@@ -35,6 +35,15 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('home recommendations', () => {
+  it('opens each warning for its own product and retains the selected pet', async () => {
+    const second = { ...food, id: 'second-food', name: '두 번째 닭고기 사료' };
+    useStore.setState({ profile: { ...dog, allergies: ['닭고기'] }, recentViews: [food, second] });
+    show();
+    const warnings = await screen.findByRole('region', { name: '최근 본 제품 주의 성분' });
+    fireEvent.click(within(warnings).getByRole('button', { name: /두 번째 닭고기 사료.*분석 보기/ }));
+    expect(JSON.parse(screen.getByTestId('destination').textContent!).path).toBe('/analysis?productId=second-food');
+    expect(useStore.getState().profile.id).toBe(dog.id);
+  });
   it('opens the full recent history instead of the search catalog', async () => {
     useStore.setState({ recentViews: [food], isLoggedIn: false });
     show();

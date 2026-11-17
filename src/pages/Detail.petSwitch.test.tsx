@@ -34,6 +34,18 @@ const show = () => render(<HelmetProvider><MemoryRouter initialEntries={['/produ
 const picker = () => screen.getByRole('group', { name: '궁합을 확인할 반려동물' });
 
 describe('product detail pet switching', () => {
+  it('withdraws feeding grams for an allergic pet and restores them for a compatible pet', () => {
+    const compatible = { ...first, weightKg: 4 };
+    const allergic = { ...second, weightKg: 4 };
+    useStore.setState({ profile: compatible, pets: [compatible, allergic], selectedProduct: { ...product, caloriesPer100g: 350 } });
+    show();
+    expect(screen.getByText(/하루 약 \d+g/)).toBeTruthy();
+    fireEvent.click(within(picker()).getByRole('button', { name: '모찌 선택' }));
+    expect(screen.queryByText(/하루 약 \d+g/)).toBeNull();
+    expect(screen.getByText(/회피해야 할 알레르기 원료가 있어 맞춤 급여량을 제공하지 않습니다/)).toBeTruthy();
+    fireEvent.click(within(picker()).getByRole('button', { name: '로니 선택' }));
+    expect(screen.getByText(/하루 약 \d+g/)).toBeTruthy();
+  });
   it('accepts a saved pet with no allergies instead of asking for a nonexistent allergy', async () => {
     show();
     await screen.findByRole('heading', { level: 1, name: '닭고기 사료' });
