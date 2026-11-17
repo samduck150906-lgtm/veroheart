@@ -29,6 +29,17 @@ const catProfile: UserPetProfile = {
 };
 
 describe('analyzeFeed — 영양 계산', () => {
+  it('withholds personalized feeding for avoidance, danger and invalid stored weights, retaining compatible decimals', () => {
+    const food = product({ category: 'food', targetPetType: 'dog', caloriesPer100g: 350, ingredients: [ing('닭고기')] });
+    const pet = { ...dogProfile, weightKg: 4.25 };
+    expect(analyzeFeed(food, pet).feeding?.gramsPerDay).toBeGreaterThan(0);
+    const allergy = analyzeFeed(food, { ...pet, allergies: ['닭고기'] });
+    expect(allergy.feeding).toBeNull();
+    expect(allergy.feedingBlockedReason).toMatch(/알레르기/);
+    expect(analyzeFeed({ ...food, ingredients: [ing('위험 원료', 'danger')] }, pet).feeding).toBeNull();
+    expect(analyzeFeed(food, { ...pet, weightKg: 999 }).feedingBlockedReason).toMatch(/몸무게/);
+    expect(analyzeFeed({ ...food, targetPetType: 'cat' }, { ...pet, species: 'Cat', weightKg: 31 }).feeding).toBeNull();
+  });
   it('uses product species despite a mismatched pet and never estimates feeding for that pet', () => {
     const result=analyzeFeed(product({category:'food',targetPetType:'cat',guaranteedAnalysis:{crudeProtein:22,crudeFat:12,moisture:10},caloriesPer100g:350}),{...dogProfile,weightKg:5});
     expect(result.species).toBe('cat'); expect(result.aafco.passed).toBe(false); expect(result.feeding).toBeNull();

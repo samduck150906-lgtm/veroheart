@@ -149,6 +149,19 @@ describe('pet registration validation', () => {
     await waitFor(() => expect(h.state.savePet).toHaveBeenCalledWith(expect.objectContaining({ weightKg: 6.8 })));
   });
 
+  it.each([['Dog', '999'], ['Cat', '31']] as const)('blocks %s weight %s at next and save without rewriting the original', async (species, value) => {
+    h.state.pets = [{ ...h.state.pets[0], species, weightKg: Number(value) }];
+    mount();
+    expect(screen.getByText(/몸무게 확인 필요/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: '수정', exact: true }));
+    for (let step = 0; step < 3; step++) fireEvent.click(screen.getByRole('button', { name: '다음', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: '다음', exact: true }));
+    expect(screen.getByRole('textbox', { name: '몸무게 (kg)' })).toHaveProperty('value', value);
+    fireEvent.click(screen.getByRole('button', { name: '변경 사항 저장' }));
+    expect(h.state.savePet).not.toHaveBeenCalled();
+    expect(h.state.pets[0].weightKg).toBe(Number(value));
+  });
+
   it('keeps the form and weight when the server could not save', async () => {
     h.state.savePet.mockResolvedValue(null);
     mount();

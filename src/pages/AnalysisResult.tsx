@@ -504,6 +504,7 @@ export default function AnalysisResult() {
               <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{feedAnalysis.calories.measured ? '라벨에 표시된 열량입니다' : '보장성분으로 계산한 추정 열량입니다'}</div>
             </div>
           </div>}
+          {feedAnalysis?.feedingBlockedReason && <p role="status" style={{ color: 'var(--caution-strong)', lineHeight: 1.6 }}>{feedAnalysis.feedingBlockedReason}</p>}
           {feedAnalysis?.caP.note && <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: RISK.caution.bg, borderRadius: 16, padding: 14 }}>
             <AlertCircle size={18} color={RISK.caution.color} style={{ flexShrink: 0, marginTop: 1 }} />
             <span style={{ fontSize: 12.5, color: 'var(--caution-strong)', lineHeight: 1.5 }}>{feedAnalysis.caP.note}</span>

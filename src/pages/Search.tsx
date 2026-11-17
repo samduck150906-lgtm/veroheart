@@ -547,6 +547,15 @@ export default function Search() {
           </svg>
           필터 {activeFilterCount > 0 ? activeFilterCount : ''}
         </button>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 'none', fontSize: 12.5, fontWeight: 800 }}>
+          브랜드
+          <select aria-label="브랜드 선택" value={filters.brand}
+            onChange={(event) => setFilters(f => ({ ...f, brand: event.target.value }))}
+            style={{ maxWidth: 170, padding: '8px 10px', borderRadius: 11, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--vr-ink)' }}>
+            <option value="">전체 브랜드</option>
+            {brandOptions.map(brand => <option key={brand} value={brand}>{brand}</option>)}
+          </select>
+        </label>
         {categoryChips.map((name) => (
           <button
             key={name}

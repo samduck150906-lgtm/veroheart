@@ -12,6 +12,7 @@
  * 모든 함수는 순수(pure)하며 외부 호출/랜덤/시간에 의존하지 않는다.
  */
 import type { Product, UserPetProfile } from '../types';
+import { hasSupportedPetWeight } from '../utils/petWeight';
 import { inferProductType } from './adapter';
 import { allergyCautionMatches, allergyIngredientNames } from './allergyFamilyMatcher';
 import type { GuaranteedAnalysis } from './types';
@@ -78,6 +79,7 @@ export interface FeedAnalysis {
   cautions: string[];
   /** 1일 권장 급여량(g) — 체중 + 열량 있을 때만 */
   feeding: { gramsPerDay: number; kcalPer100g: number; measured: boolean; derKcal: number } | null;
+  feedingBlockedReason: string | null;
   disclaimer: string;
 }
 
@@ -328,7 +330,11 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
   // 몸무게는 프로필 입력값이라 문자열·0·비정상 값이 들어올 수 있다. 유한한 양수일
   // 때만 계산하고, 결과가 유한하지 않으면 급여량을 내보내지 않는다(화면 NaN 방지).
   const weightKg = Number(profile.weightKg);
-  if (Number.isFinite(weightKg) && weightKg > 0 && productType === 'complete' && !speciesMismatch && !product.requiresVeterinaryGuidance
+  const feedingBlockedReason = speciesMismatch ? '반려동물의 종과 제품의 급여 대상이 달라 맞춤 급여량을 제공하지 않습니다.'
+    : allergyHits.length > 0 ? '회피해야 할 알레르기 원료가 있어 맞춤 급여량을 제공하지 않습니다. 해당 제품의 급여를 피하고 수의사와 상담해 주세요.'
+    : iq.dangerCount > 0 ? '위험 등급 원료가 있어 맞춤 급여량을 제공하지 않습니다. 급여 전 수의사와 확인해 주세요.'
+    : profile.weightKg != null && !hasSupportedPetWeight(profile.species, profile.weightKg) ? '저장된 몸무게의 단위와 수치를 확인해 주세요. 확인 전에는 급여량을 계산하지 않습니다.' : null;
+  if (hasSupportedPetWeight(profile.species, profile.weightKg) && !feedingBlockedReason && productType === 'complete' && !product.requiresVeterinaryGuidance
       && calories && Number.isFinite(calories.per100g) && calories.per100g > 0) {
     const measured = calories.measured;
     const kcalPer100g = calories.per100g;
@@ -357,6 +363,7 @@ export function analyzeFeed(product: Product, profile: UserPetProfile): FeedAnal
     positives,
     cautions,
     feeding,
+    feedingBlockedReason,
     disclaimer: DISCLAIMER,
   };
 }

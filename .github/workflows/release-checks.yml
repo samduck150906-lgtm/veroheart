@@ -39,6 +39,8 @@ jobs:
       - name: Raw label registration real auth-router-SQL synthetic contract
         run: node --experimental-vm-modules --test scripts/label-source-service.test.mjs
       - run: npm test
+      - name: Pet weight write policy regression
+        run: node --test scripts/test-pet-weight-policy.mjs scripts/manufacturer-source-rules.test.mjs
       - run: npm run test:catalog
       - run: npm run test:bootstrap -- --label-comparison-draft --label-item-matching-draft --label-source-draft
       - run: npm run test:schemas
