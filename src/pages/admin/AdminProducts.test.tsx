@@ -66,9 +66,9 @@ function makeRow(index: number): AdminProductRow {
   };
 }
 
-function renderProducts() {
+function renderProducts(route = '/admin/products') {
   return render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[route]}>
       <AdminProducts />
     </MemoryRouter>,
   );
@@ -86,6 +86,7 @@ describe('AdminProducts', () => {
     h.fetchProductsPage.mockReset().mockResolvedValue({
       rows: [makeRow(1), makeRow(2)],
       total: 45,
+      brands: [{ name: '베로로', count: 45, aliases: ['VERORO', '베로로'] }, { name: '네츄럴코어', count: 10, aliases: ['Natural Core'] }, { name: null, count: 1, aliases: [] }],
     });
     h.fetchProductIngredients.mockReset().mockResolvedValue([]);
     h.fetchProductForEdit.mockReset().mockResolvedValue(null);
@@ -120,6 +121,72 @@ describe('AdminProducts', () => {
     expect(params.pageSize).toBe(20);
     expect(await screen.findByText(/총 45개 제품/)).toBeTruthy();
     expect(screen.getByText(/1–20 표시 중/)).toBeTruthy();
+  });
+
+  it('searches brand aliases, filters the whole result and resets the page without writing data', async () => {
+    renderProducts(); await screen.findByText('테스트 사료 1');
+    fireEvent.click(screen.getByLabelText('다음 페이지')); await waitFor(()=>expect(h.fetchProductsPage.mock.calls.at(-1)?.[0].page).toBe(2));
+    fireEvent.change(screen.getByLabelText('브랜드 이름 검색'), { target: { value: 'VERORO' } });
+    expect(screen.getByRole('option',{name:'베로로 (45)'})).toBeTruthy();
+    expect(screen.queryByRole('option',{name:'네츄럴코어 (10)'})).toBeNull();
+    fireEvent.change(screen.getByLabelText('브랜드',{exact:true}),{target:{value:'brand:베로로'}});
+    await waitFor(()=>expect(h.fetchProductsPage).toHaveBeenLastCalledWith(expect.objectContaining({page:1,brand:'베로로',brandMissing:false})));
+    fireEvent.click(screen.getByRole('button',{name:'브랜드 해제'}));
+    await waitFor(()=>expect(h.fetchProductsPage.mock.calls.at(-1)?.[0].brand).toBeUndefined());
+    expect(h.saveProduct).not.toHaveBeenCalled();expect(h.setProductVisibility).not.toHaveBeenCalled();
+  });
+
+  it('finds a reviewed English brand alias even when stored names are Korean only',async()=>{
+    h.fetchProductsPage.mockResolvedValue({rows:[makeRow(1)],total:197,brands:[{name:'하림펫푸드',count:197,aliases:['하림펫푸드']}]});
+    renderProducts();await screen.findByText('테스트 사료 1');
+    fireEvent.change(screen.getByLabelText('브랜드 이름 검색'),{target:{value:'HarimPetFood'}});
+    expect(screen.getByRole('option',{name:'하림펫푸드 (197)'})).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('브랜드',{exact:true}),{target:{value:'brand:하림펫푸드'}});
+    await waitFor(()=>expect(h.fetchProductsPage).toHaveBeenLastCalledWith(expect.objectContaining({brand:'하림펫푸드'})));
+  });
+
+  it.each([['카테고리','category'],['타겟','target'],['원재료','ingredients'],['정보완성도','completeness'],['검수 상태','verification']] as const)('sorts %s in both directions while retaining combined filters',async(label,key)=>{
+    renderProducts();await screen.findByText('테스트 사료 1');
+    fireEvent.change(screen.getByLabelText('브랜드',{exact:true}),{target:{value:'brand:베로로'}});
+    fireEvent.change(screen.getByLabelText('대상'),{target:{value:'cat'}});
+    fireEvent.change(screen.getByLabelText('검수 상태'),{target:{value:'pending'}});
+    await waitFor(()=>expect(screen.getByLabelText('다음 페이지')).not.toHaveProperty('disabled',true));
+    fireEvent.click(screen.getByLabelText('다음 페이지'));
+    await waitFor(()=>expect(h.fetchProductsPage.mock.calls.at(-1)?.[0].page).toBe(2));
+    const button=screen.getByRole('button',{name:`${label} 정렬`});expect(button.tagName).toBe('BUTTON');
+    fireEvent.click(button);
+    await waitFor(()=>expect(h.fetchProductsPage).toHaveBeenLastCalledWith(expect.objectContaining({page:1,brand:'베로로',petType:'cat',verificationStatus:'pending',sort:key,direction:'asc'})));
+    expect(button.closest('th')?.getAttribute('aria-sort')).toBe('ascending');
+    fireEvent.click(button);
+    await waitFor(()=>expect(h.fetchProductsPage.mock.calls.at(-1)?.[0].direction).toBe('desc'));
+    expect(button.closest('th')?.getAttribute('aria-sort')).toBe('descending');
+    expect(h.saveProduct).not.toHaveBeenCalled();
+  });
+
+  it('offers unknown brands and clears empty-result conditions',async()=>{
+    h.fetchProductsPage.mockImplementation(async p=>({rows:p.brandMissing?[]:[makeRow(1)],total:p.brandMissing?0:1,brands:[{name:'베로로',count:1,aliases:[]}]}));
+    renderProducts();await screen.findByText('테스트 사료 1');
+    fireEvent.change(screen.getByLabelText('브랜드',{exact:true}),{target:{value:'missing'}});
+    await screen.findByText('검색 조건에 맞는 제품이 없습니다.');
+    fireEvent.click(screen.getByRole('button',{name:'검색·필터 초기화'}));
+    await screen.findByText('테스트 사료 1');expect(screen.getByLabelText('브랜드',{exact:true})).toHaveProperty('value','all');
+  });
+
+  it('discards an older list response after changing conditions',async()=>{
+    let finishOld!:(result:unknown)=>void;
+    h.fetchProductsPage.mockImplementationOnce(()=>new Promise(resolve=>{finishOld=resolve})).mockResolvedValue({rows:[{...makeRow(2),name:'새 필터 결과'}],total:1,brands:[]});
+    renderProducts();await waitFor(()=>expect(h.fetchProductsPage).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByRole('button',{name:'간식',exact:true}));await screen.findByText('새 필터 결과');
+    await act(async()=>finishOld({rows:[makeRow(1)],total:45,brands:[]}));
+    expect(screen.queryByText('테스트 사료 1')).toBeNull();expect(screen.getByText(/총 1개 제품/)).toBeTruthy();
+  });
+
+  it('restores brand/sort/page from the URL without resetting a restored page after the search debounce',async()=>{
+    renderProducts('/admin/products?page=2&brand=네츄럴코어&sort=target&direction=asc');
+    await screen.findByText('테스트 사료 1');await flushDebounce();
+    expect(h.fetchProductsPage).toHaveBeenLastCalledWith(expect.objectContaining({page:2,brand:'네츄럴코어',sort:'target',direction:'asc'}));
+    expect(screen.getByLabelText('브랜드',{exact:true})).toHaveProperty('value','brand:네츄럴코어');
+    expect(screen.getByRole('button',{name:'타겟 정렬'}).closest('th')?.getAttribute('aria-sort')).toBe('ascending');
   });
 
   it('다음 페이지로 이동하면 page 파라미터가 증가한다', async () => {

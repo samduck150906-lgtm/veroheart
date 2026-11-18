@@ -39,6 +39,13 @@ function fakeFile(type: string, size: number): File {
 }
 
 describe('adminApi: 비공개 제품 편집 자료', () => {
+  it('retains SQL aggregate counts and forwards brand/sort parameters without public reads',async()=>{
+    const brands=[{name:'로얄캐닌',count:40,aliases:['로얄캐닌','Royal Canin']}];
+    h.callAdminFunction.mockResolvedValue({total:40,brands,rows:[{id:'current',ingredientCount:0,nutritionCount:1,product_ingredients:[{count:7}]}]});
+    const result=await fetchProductsPage({page:2,pageSize:20,brand:'로얄캐닌',brandMissing:false,sort:'ingredients',direction:'asc'});
+    expect(result.rows[0].ingredientCount).toBe(0);expect(result.rows[0].nutritionCount).toBe(1);expect(result.brands).toEqual(brands);
+    expect(h.callAdminFunction).toHaveBeenLastCalledWith('admin-products-read',expect.objectContaining({page:2,sort:'ingredients',direction:'asc',filters:expect.objectContaining({brand:'로얄캐닌',brandMissing:false})}));
+  });
   it('목록의 원료 수는 현재 라벨을 우선하고 없을 때만 이전 연결을 사용한다',async()=>{
     h.callAdminFunction.mockResolvedValue({total:3,rows:[
       {id:'current',product_ingredients:[{count:0}],product_ingredient_label_sets:[{is_current:true,product_ingredient_label_items:[{match_status:'matched'},{match_status:'unmatched'},{match_status:'ignored'}]}]},

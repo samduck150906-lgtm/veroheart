@@ -12,7 +12,10 @@
     "build": "next build",
     "start": "next start -p 3010",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "postinstall": "node ../scripts/patch-picomatch.mjs",
+    "audit:security": "node ../scripts/audit-dependencies.mjs",
+    "test:picomatch-security": "node --test ../scripts/picomatch-security.test.mjs"
   },
   "dependencies": {
     "next": "^16.4.6",
@@ -34,6 +37,7 @@
     "@typescript-eslint/typescript-estree": {
       "minimatch": "^11.0.5"
     },
-    "postcss-selector-parser": "7.1.6"
+    "postcss-selector-parser": "7.1.6",
+    "picomatch": "4.0.7"
   }
 }
