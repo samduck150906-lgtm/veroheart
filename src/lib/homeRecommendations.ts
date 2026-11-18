@@ -36,6 +36,10 @@ export async function loadHomeRecommendations(
       targetPetType: profile.species === 'Cat' ? 'cat' : 'dog',
     }, offset);
     if (isCancelled()) return [];
+    if (page.products.some(p => {
+      const lookup=p.ingredientLabelEvidence?.lookup;
+      return lookup && (lookup.status !== 'loaded' || !lookup.receipt);
+    })) throw new Error('전성분 대조 증거를 확인하지 못해 추천을 완료할 수 없습니다.');
     recommendations = selectHomeRecommendations([
       ...recommendations.map(({ product }) => product), ...page.products,
     ], profile);

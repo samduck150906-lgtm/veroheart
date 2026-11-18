@@ -1,3 +1,4 @@
+import { reviewedLabelFixture } from '../test/reviewedLabelFixture';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { HelmetProvider } from 'react-helmet-async';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -10,11 +11,11 @@ vi.mock('../lib/supabase', async importOriginal => ({
   ...await importOriginal<typeof import('../lib/supabase')>(), getReviews: vi.fn().mockResolvedValue([]),
 }));
 const pet = { ...DEFAULT_USER_PET_PROFILE, id: 'pet', name: '로니' };
-const product: Product = {
+const product: Product = reviewedLabelFixture({
   id: 'food', name: '닭고기 사료', brand: '브랜드', category: 'food', targetPetType: 'dog',
   imageUrl: '', reviewsCount: 0, averageRating: 0, analysisStatus: 'ready',
   ingredients: [{ id: 'chicken', nameKo: '닭고기', nameEn: 'chicken', purpose: '', riskLevel: 'safe' }],
-};
+});
 beforeEach(() => {
   vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
   useStore.setState({ profile: pet, isLoggedIn: true, userId: 'user', pets: [pet], products: [],

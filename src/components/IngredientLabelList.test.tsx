@@ -3,6 +3,7 @@ import { afterEach,describe,expect,it,vi } from 'vitest';
 import { IngredientLabelList } from './IngredientLabelList';
 import { mapProductFromSupabaseRow } from '../lib/supabaseRowTypes';
 import { ingredientLabelCounts } from '../utils/ingredientLabelCounts';
+import { productAnalysisReadiness } from '../analysis/analysisReadiness';
 import { describeIngredientAvailability } from '../utils/productDataCompleteness';
 afterEach(cleanup);
 describe('라벨 원료·특성·점수 상태의 분리',()=>{
@@ -13,6 +14,8 @@ describe('라벨 원료·특성·점수 상태의 분리',()=>{
     expect(product.ingredients).toHaveLength(0);
     expect(ingredientLabelCounts(product)).toEqual({declared:1,sourceConfirmed:1,traitsResolved:1});
     expect(describeIngredientAvailability(product).detail).toContain('특성 연결 1개');
+    expect(describeIngredientAvailability(product).detail).toContain('전성분 대조 증거를 아직 조회하지 않아');
+    expect(productAnalysisReadiness(product).status).not.toBe('ready');
     render(<IngredientLabelList product={product} onOpen={vi.fn()} />);
     expect(screen.getByText('원료 특성 · 탄수화물 공급원')).toBeTruthy();
     expect(screen.getByText(/참고표 쌀 → 전분 → 탄수화물/)).toBeTruthy();
@@ -27,6 +30,8 @@ describe('라벨 원료·특성·점수 상태의 분리',()=>{
     ]}]});
     expect(ingredientLabelCounts(product)).toEqual({declared:2,sourceConfirmed:2,traitsResolved:1});
     expect(describeIngredientAvailability(product).label).toBe('확인된 원료 2개');
+    expect(describeIngredientAvailability(product).detail).toContain('전성분 대조 증거를 아직 조회하지 않아');
+    expect(productAnalysisReadiness(product).status).not.toBe('ready');
     render(<IngredientLabelList product={product} onOpen={vi.fn()} />);
     expect(screen.getByText('원료 특성 · 탄수화물 공급원')).toBeTruthy();
     const unknown=screen.getByText('시험 미확인 원료').parentElement!;

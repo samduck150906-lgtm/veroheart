@@ -177,3 +177,20 @@ describe('public catalog cache freshness', () => {
     expect(useStore.getState().products).toEqual([]);
   });
 });
+
+it('withholds cached verified proof during refresh without hiding known ingredients', async () => {
+  const { useStore } = await import('./useStore');
+  const cached: Product = { ...product, ingredientLabelEvidence: { lookup: { status: 'loaded', receipt: {
+    productId: product.id, state: 'verified', labelSetId: 'synthetic-label', revision: 'old', binding: [] } } } };
+  let rejectDetail!: (error: Error) => void;
+  api.products.mockResolvedValue([]); api.visible.mockResolvedValue([]);
+  api.detail.mockReturnValue(new Promise((_resolve, reject) => { rejectDetail = reject; }));
+  useStore.setState({ products: [cached], selectedProduct: cached, recentViews: [cached], userId: null });
+  const refresh = useStore.getState().refreshCatalog();
+  expect(useStore.getState().selectedProduct?.ingredientLabelEvidence?.lookup?.status).toBe('not_requested');
+  expect(useStore.getState().selectedProduct?.ingredients).toEqual(product.ingredients);
+  expect(useStore.getState().products[0].ingredientLabelEvidence?.lookup?.status).toBe('not_requested');
+  rejectDetail(new Error('synthetic offline')); await refresh;
+  expect(useStore.getState().selectedProduct).toBeNull();
+  expect(useStore.getState().productDetailError).toBeTruthy();
+});

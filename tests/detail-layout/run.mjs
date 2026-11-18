@@ -13,6 +13,7 @@ await mkdir(output, { recursive: true });
 await withFixtureServer(root, async base => {
 const browser = await chromium.launch();
 const results = [];
+const evidenceResults = [];
 try {
   const sizes = [360, 390, 430, 1280].map(width => ({ width, height: 844, label: String(width), scale: 1 }));
   // 1280 physical pixels at 200% reflow-equivalent CSS viewport. This is not
@@ -89,9 +90,38 @@ try {
       backShareTopAndGuestLogPassed: true, externalRequests: 0, operatingWrites: 0 });
     await context.close();
   }
+  for (const width of [390, 1280]) for (const evidence of ['unverified', 'not_requested', 'unavailable', 'error', 'absent', 'stale', 'verified']) {
+    const context = await browser.newContext({ viewport: { width, height: 844 }, reducedMotion: 'reduce' });
+    const page = await context.newPage();
+    const errors = [];
+    page.on('pageerror', e => errors.push(e.message));
+    await page.route('**/*', route => {
+      if (new URL(route.request().url()).origin === base) return route.continue();
+      if (route.request().resourceType() === 'stylesheet') return route.fulfill({ status: 200, contentType: 'text/css', body: '' });
+      errors.push('Unexpected external request');return route.abort();
+    });
+    await page.goto(`${base}/?evidence=${evidence}`);
+    const card = page.locator('[aria-label="사료성분 분석"]');
+    await card.waitFor();
+    const text = await card.innerText();
+    const expectedNotice = { unverified:'전성분 라벨 전체 대조 근거가 확인되지 않아',
+      not_requested:'증거를 아직 조회하지 않아', unavailable:'조회 경로가 준비되지 않아',
+      error:'증거를 불러오지 못해', absent:'전체 대조 완료 증거가 없어', stale:'증거가 오래되어' };
+    const withheld = text.includes('검토 중');
+    assert.equal(withheld, evidence !== 'verified');
+    if (evidence !== 'verified') assert.ok(text.includes(expectedNotice[evidence]), `Missing accurate notice: ${evidence}`);
+    await card.scrollIntoViewIfNeeded();
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+    await page.screenshot({ path: `${output}/evidence-${evidence}-${width}.png` });
+    assert.deepEqual(errors, []);
+    evidenceResults.push({ width, evidence, withheld, syntheticTransport: true });
+    await context.close();
+  }
   await writeFile(`${output}/results.json`, JSON.stringify({ synthetic: true, cases: results.length, results,
+    evidenceCases: evidenceResults.length, evidenceResults,
     limits: ['Synthetic public read responses and navigator share adapter', 'Fallback fonts; not operating HTTP/Auth', '34px inset and 200% reflow equivalent, not real iOS hardware or OS zoom'] }, null, 2));
   console.log(`Synthetic detail layout: ${results.length} cases passed; no external service or operating writes`);
+  console.log(`Synthetic label evidence: ${evidenceResults.length} cases passed`);
 } finally {
   await browser.close();
 }

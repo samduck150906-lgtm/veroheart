@@ -11,7 +11,10 @@ for(const sha of [base,consumer])if(spawnSync('git',['cat-file','-e',sha+'^{comm
 const dir=join(await mkdtemp(join(tmpdir(),'label-consumer-integration-')),'checkout');run('git',['worktree','add','--detach',dir,'HEAD']);
 try{
  const patch=run('git',['diff','--binary',base,consumer,'--','src','tests/detail-layout','scripts/feed-nutrition-evidence.test.mjs','scripts/label-review-flow.test.mjs']);
- run('git',['apply','--3way','-'],{cwd:dir,input:patch});
+ // The consumer branch already contains its pinned diff after main integration.
+ // Reapplying it would collide with existing consumer-only files.
+ const consumerIncluded=spawnSync('git',['merge-base','--is-ancestor',consumer,'HEAD']).status===0;
+ if(!consumerIncluded)run('git',['apply','--3way','-'],{cwd:dir,input:patch});
  for(const file of ['supabase/functions/admin-write/index.ts','supabase/functions/admin-write/labelSource.ts','src/pages/admin/ProductLabelReview.tsx','src/pages/admin/ProductLabelSourceRegistration.tsx'])assert.equal(run('git',['show','HEAD:'+file]),run('git',['show',':'+file],{cwd:dir}),file);
  await symlink(resolve('node_modules'),join(dir,'node_modules'),'dir');
  const env={...process.env,LABEL_CONSUMER_CHECK:'1'};

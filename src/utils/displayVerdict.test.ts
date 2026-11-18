@@ -1,3 +1,4 @@
+import { reviewedLabelFixture } from '../test/reviewedLabelFixture';
 import { describe, expect, it } from 'vitest';
 import type { Ingredient, Product, UserPetProfile } from '../types';
 import { DEFAULT_USER_PET_PROFILE } from '../types';
@@ -9,7 +10,7 @@ function ingredient(nameKo: string, riskLevel: Ingredient['riskLevel'] = 'safe')
 }
 
 function product(overrides: Partial<Product> = {}): Product {
-  return {
+  return reviewedLabelFixture({
     id: 'product-1',
     brand: 'Test Brand',
     name: 'Test Product',
@@ -22,7 +23,7 @@ function product(overrides: Partial<Product> = {}): Product {
     averageRating: 4.5,
     verificationStatus: 'verified',
     ...overrides,
-  };
+  });
 }
 
 const profile: UserPetProfile = {

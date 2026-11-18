@@ -109,7 +109,7 @@ it('oversized and malformed bracket draft is held without crashing or losing raw
 });
 
 // Reuse the synthetic main-branch adapter; no #122 production code is copied.
-async function mappedPublic(){const current=(await request('getIngredientLabelReview')).body.review.snapshot;const label=current.labels[0];const row={id:fixture.PRODUCT,name:current.product[1],brand_name:current.product[2],product_type:'food',target_pet_type:'dog',analysis_status:'ready',product_ingredient_label_sets:[{id:label.id,is_current:true,product_ingredient_label_items:label.items.map(i=>({display_order:i.order,raw_ingredient_text:i.raw,match_status:i.match,ingredients:i.resolvedDefinition}))}]};
+async function mappedPublic(){const current=(await request('getIngredientLabelReview')).body.review.snapshot;const label=current.labels[0];const row={id:fixture.PRODUCT,name:current.product[1],brand_name:current.product[2],variant_name:current.product[3],net_weight_text:current.product[4],barcode:current.product[5],target_pet_type:current.product[6],target_life_stage:current.product[7],product_type:current.product[8],formulation:current.product[9],analysis_status:'ready',product_ingredient_label_sets:[{id:label.id,is_current:true,product_ingredient_label_items:label.items.map(i=>({display_order:i.order,raw_ingredient_text:i.raw,match_status:i.match,ingredients:i.resolvedDefinition}))}]};
  const mapper=(await load('src/lib/supabaseRowTypes.ts')).namespace;return mapper.mapProductFromSupabaseRow(row);}
 async function publicRead(product){const reader=(await load('src/lib/labelComparisonRead.ts')).namespace;return (await reader.loadLabelComparisons([product],async ids=>({data:(await db.query('SELECT get_public_label_comparison($1::uuid[]) result',[ids])).rows[0].result,error:null})))[0];}
 async function status(product){return (await load('src/analysis/analysisReadiness.ts')).namespace.productAnalysisReadiness(product);}
@@ -121,4 +121,21 @@ it('server foundation absent is unavailable, never an absent raw label or succes
 it('migration rejects a same-named unique index on a different table',async()=>{
  const before=await fullState();await db.exec('ALTER INDEX idx_product_ingredient_label_sets_one_current RENAME TO fixture_preserved_current;CREATE TABLE source_index_lookalike(product_id uuid,is_current boolean);CREATE UNIQUE INDEX idx_product_ingredient_label_sets_one_current ON source_index_lookalike(product_id) WHERE is_current');
  await assert.rejects(db.exec(readFileSync('supabase/migrations/20261116090000_admin_label_source_registration.sql','utf8')),/expected one-current-label unique index required/);assert.deepEqual(await fullState(),before);
+});
+
+// Local synthetic UPDATE represents another authorized identity-writing path.
+// It is never an operating request and does not replace normal admin mutation tests.
+it('registered source -> reviewed mappings -> public proof -> changed option withholds without deleting history', {skip:process.env.LABEL_CONSUMER_CHECK!=='1'},async()=>{
+ assert.equal((await register()).http,200);
+ const label=(await source()).review.snapshot.labels[0];
+ for(const i of label.items){const c=(await candidates(i.raw)).find(x=>x.kind==='legacy');const w=await source();assert.equal((await request('reviewLabelItemMatch',{revision:w.review.revision,itemId:i.id,decision:'match',reason:'Synthetic package-to-definition comparison',targetKind:c.kind,targetId:c.id,targetRevision:c.revision})).http,200);}
+ const w=await source();assert.equal((await request('approveIngredientLabelReview',{revision:w.review.revision,reviewedItemIds:w.review.snapshot.labels[0].items.map(i=>i.id),...fixture.observation})).http,200);
+ const cached=await publicRead(await mappedPublic());assert.equal((await status(cached)).status,'ready');
+ const before=await fullState();const evidence=(await db.query('SELECT jsonb_agg(to_jsonb(e) ORDER BY id) rows FROM ingredient_label_comparisons e')).rows[0].rows;
+ await db.query('UPDATE products SET variant_name=$1 WHERE id=$2',['Synthetic different option',fixture.PRODUCT]);
+ // Even before refetch, an old receipt cannot authorize a newly changed identity.
+ assert.notEqual((await status({...cached,variantName:'Synthetic different option'})).status,'ready');
+ const receipt=await publicReceipt();assert.equal(receipt.state,'stale');
+ const fresh=await publicRead(await mappedPublic());assert.notEqual((await status(fresh)).status,'ready');
+ assert.deepEqual(await fullState(),before);assert.deepEqual((await db.query('SELECT jsonb_agg(to_jsonb(e) ORDER BY id) rows FROM ingredient_label_comparisons e')).rows[0].rows,evidence);
 });
