@@ -26,7 +26,10 @@
     "db:prepare-local": "node scripts/prepare-local-supabase.mjs",
     "test:bootstrap": "node scripts/validate-local-bootstrap.mjs",
     "test:review-privacy": "node --test scripts/test-review-privacy-boundary.mjs",
-    "test:schemas": "node scripts/test-scan-schema.mjs && node scripts/test-account-schema.mjs && node scripts/test-catalog-schema.mjs && node scripts/test-admin-support-schema.mjs && node scripts/test-catalog-source-schema.mjs"
+    "test:schemas": "node scripts/test-scan-schema.mjs && node scripts/test-account-schema.mjs && node scripts/test-catalog-schema.mjs && node scripts/test-admin-support-schema.mjs && node scripts/test-catalog-source-schema.mjs",
+    "postinstall": "node scripts/patch-picomatch.mjs",
+    "audit:security": "node scripts/audit-dependencies.mjs",
+    "test:picomatch-security": "node --test scripts/picomatch-security.test.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.3",
@@ -76,6 +79,7 @@
     },
     "xcode": {
       "uuid": "11.1.1"
-    }
+    },
+    "picomatch": "4.0.7"
   }
 }
