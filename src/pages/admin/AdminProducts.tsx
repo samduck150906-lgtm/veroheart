@@ -21,6 +21,8 @@ import {
   uploadProductImage,
   validateProductImage,
   type AdminCategory,
+  type AdminBrandOption,
+  type AdminProductSort,
   type AdminProductRow,
   type ProductIngredientLink,
   type RiskLevel,
@@ -101,6 +103,7 @@ const INGREDIENT_CATEGORIES = [
   '첨가물·기호성', '조사료', '기타',
 ];
 const PAGE_SIZE = 20;
+const SORT_LABELS: Record<AdminProductSort, string> = { created_at: '기본(상단 고정·최근 등록)', category: '카테고리', target: '타겟', ingredients: '원재료 수', completeness: '정보완성도', verification: '검수 상태' };
 
 function productCompleteness(product: AdminProductRow): number {
   const fields = [
@@ -141,6 +144,11 @@ const AdminProducts: React.FC = () => {
   const [activeTab, setActiveTab] = useState(() => urlParams.get('category') ?? '전체');
   const [petType, setPetType] = useState(() => urlParams.get('species') ?? '전체');
   const [verificationStatus, setVerificationStatus] = useState(() => urlParams.get('status') ?? '전체');
+  const [brandFilter, setBrandFilter] = useState(() => urlParams.get('brandMissing') === '1' ? 'missing' : urlParams.get('brand') ? `brand:${urlParams.get('brand')}` : 'all');
+  const [brandQuery, setBrandQuery] = useState('');
+  const [brands, setBrands] = useState<AdminBrandOption[]>([]);
+  const [sort, setSort] = useState<AdminProductSort>(() => Object.hasOwn(SORT_LABELS, urlParams.get('sort') ?? '') ? urlParams.get('sort') as AdminProductSort : 'created_at');
+  const [direction, setDirection] = useState<'asc' | 'desc'>(() => urlParams.get('direction') === 'asc' ? 'asc' : 'desc');
   const [visibility, setVisibility] = useState<'전체' | 'visible' | 'hidden'>(() => {
     const value = urlParams.get('visibility');
     return value === 'visible' || value === 'hidden' ? value : '전체';
@@ -175,12 +183,14 @@ const AdminProducts: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editLoadIdRef = useRef(0);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const listLoadIdRef = useRef(0);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   // 검색어 디바운스 — 입력할 때마다 서버를 때리지 않는다.
   useEffect(() => {
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    if (searchInput.trim() === search) return;
     searchTimerRef.current = setTimeout(() => {
       setSearch(searchInput.trim());
       setPage(1); // 검색 조건이 바뀌면 항상 1페이지부터
@@ -188,7 +198,7 @@ const AdminProducts: React.FC = () => {
     return () => {
       if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
     };
-  }, [searchInput]);
+  }, [searchInput, search]);
 
   useEffect(() => {
     const next = new URLSearchParams();
@@ -198,14 +208,19 @@ const AdminProducts: React.FC = () => {
     if (petType !== '전체') next.set('species', petType);
     if (verificationStatus !== '전체') next.set('status', verificationStatus);
     if (visibility !== '전체') next.set('visibility', visibility);
+    if (brandFilter.startsWith('brand:')) next.set('brand', brandFilter.slice(6));
+    if (brandFilter === 'missing') next.set('brandMissing', '1');
+    if (sort !== 'created_at') next.set('sort', sort);
+    if (direction !== 'desc') next.set('direction', direction);
     setUrlParams(next, { replace: true });
-  }, [activeTab, page, petType, search, setUrlParams, verificationStatus, visibility]);
+  }, [activeTab, page, petType, search, setUrlParams, verificationStatus, visibility, brandFilter, sort, direction]);
 
   const loadProducts = useCallback(async () => {
+    const loadId = ++listLoadIdRef.current;
     setLoading(true);
     setLoadError(null);
     try {
-      const { rows, total: count } = await fetchProductsPage({
+      const { rows, total: count, brands: options } = await fetchProductsPage({
         page,
         pageSize: PAGE_SIZE,
         search,
@@ -213,8 +228,12 @@ const AdminProducts: React.FC = () => {
         petType,
         verificationStatus,
         visibility,
+        brand: brandFilter.startsWith('brand:') ? brandFilter.slice(6) : undefined,
+        brandMissing: brandFilter === 'missing', sort, direction,
       });
+      if (loadId !== listLoadIdRef.current) return;
       setProducts(rows);
+      setBrands(options ?? []);
       // 목록이 바뀌면 선택을 비운다 — 화면에 없는 제품이 선택된 채 남지 않게.
       setSelectedIds(new Set());
       setTotal(count);
@@ -223,17 +242,19 @@ const AdminProducts: React.FC = () => {
         setPage((p) => Math.max(1, p - 1));
       }
     } catch (err) {
+      if (loadId !== listLoadIdRef.current) return;
       const message = err instanceof Error ? err.message : String(err);
       setLoadError(message);
       notify.error(`제품 조회 실패: ${message}`);
     } finally {
-      setLoading(false);
+      if (loadId === listLoadIdRef.current) setLoading(false);
     }
-  }, [page, search, activeTab, petType, verificationStatus, visibility]);
+  }, [page, search, activeTab, petType, verificationStatus, visibility, brandFilter, sort, direction]);
 
   useEffect(() => {
     // 페이지/검색/카테고리 변경 시 서버에서 다시 조회한다.
     loadProducts();
+    return () => { listLoadIdRef.current += 1; };
   }, [loadProducts]);
 
   useEffect(() => {
@@ -617,6 +638,26 @@ const AdminProducts: React.FC = () => {
     }
   };
 
+  const brandChoices = useMemo(() => {
+    const options = brands.length ? [...brands] : [...new Set(products.map(p => p.brand_name).filter(Boolean))].map(name => ({ name, count: 0, aliases: [name] }));
+    const selected = brandFilter.startsWith('brand:') ? brandFilter.slice(6) : null;
+    if (selected && !options.some(b => b.name === selected)) options.push({ name: selected, count: 0, aliases: [selected] });
+    const query = brandQuery.normalize('NFKC').toLowerCase().trim();
+    return options.filter(b => b.name && (b.name === selected || [b.name, ...b.aliases].some(name => name.normalize('NFKC').toLowerCase().includes(query))));
+  }, [brands, products, brandFilter, brandQuery]);
+  const clearListFilters = () => {
+    setSearchInput(''); setSearch(''); setActiveTab('전체'); setPetType('전체'); setVerificationStatus('전체');
+    setVisibility('전체'); setBrandFilter('all'); setBrandQuery(''); setPage(1);
+  };
+  const sortHeader = (key: AdminProductSort, label: string) => <th scope="col" aria-sort={sort === key ? direction === 'asc' ? 'ascending' : 'descending' : 'none'}>
+    <button type="button" aria-label={`${label} 정렬`} aria-pressed={sort === key}
+      title={`${label} ${sort === key && direction === 'asc' ? '내림차순' : '오름차순'}으로 정렬`}
+      onClick={() => { setSort(key); setDirection(sort === key && direction === 'asc' ? 'desc' : 'asc'); setPage(1); }}
+      style={{ border: 0, background: 'none', color: 'inherit', font: 'inherit', fontWeight: 800, padding: '6px 0', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+      {label} <span aria-hidden="true">{sort === key ? direction === 'asc' ? '↑' : '↓' : '↕'}</span>
+    </button>
+  </th>;
+
   return (
     <div>
       <div className="admin-toolbar">
@@ -646,6 +687,19 @@ const AdminProducts: React.FC = () => {
       </div>
 
       <div className="admin-query-bar admin-product-query-bar">
+        <label className="admin-compact-field">
+          <span>브랜드 찾기</span>
+          <input aria-label="브랜드 이름 검색" placeholder="선택할 브랜드 찾기" value={brandQuery} onChange={event => setBrandQuery(event.target.value)} />
+        </label>
+        <label className="admin-compact-field">
+          <span>브랜드</span>
+          <select value={brandFilter} onChange={event => { setBrandFilter(event.target.value); setPage(1); }}>
+            <option value="all">전체 브랜드</option>
+            <option value="missing">브랜드 미지정 ({brands.find(b => b.name === null)?.count ?? 0})</option>
+            {brandChoices.map(b => <option key={b.name!} value={`brand:${b.name}`}>{b.name}{b.count ? ` (${b.count.toLocaleString()})` : ''}</option>)}
+          </select>
+        </label>
+        {brandFilter !== 'all' && <button type="button" className="admin-btn-soft" onClick={() => { setBrandFilter('all'); setBrandQuery(''); setPage(1); }}>브랜드 해제</button>}
         <label className="admin-compact-field">
           <span>대상</span>
           <select value={petType} onChange={(event) => { setPetType(event.target.value); setPage(1); }}>
@@ -712,6 +766,11 @@ const AdminProducts: React.FC = () => {
         검수 대기·검수 상태 미지정 제품은 노출 설정을 켜도 앱 비공개입니다.
         검토됨 제품은 “검수 완료 제품만 노출” 시스템 설정이 꺼져 있을 때 공개됩니다.
       </p>
+      <p className="admin-hint" role="status">
+        현재 정렬: {SORT_LABELS[sort]} · {direction === 'asc' ? '오름차순' : '내림차순'} · 빈 값은 마지막, 동률은 제품 ID순입니다.
+        {' '}원재료는 현재 라벨의 제외 항목을 뺀 개수, 정보완성도는 기존 등록 항목 8개의 비율입니다.
+        {sort !== 'created_at' && <button type="button" className="admin-btn-soft" style={{ marginLeft: 8 }} onClick={() => { setSort('created_at'); setDirection('desc'); setPage(1); }}>기본 정렬</button>}
+      </p>
 
       <div className="admin-table-wrap">
         <table className="admin-table">
@@ -727,11 +786,11 @@ const AdminProducts: React.FC = () => {
                 />
               </th>
               <th>아이템</th>
-              <th>카테고리</th>
-              <th>타겟</th>
-              <th>원재료</th>
-              <th>정보완성도</th>
-              <th>검수 상태</th>
+              {sortHeader('category', '카테고리')}
+              {sortHeader('target', '타겟')}
+              {sortHeader('ingredients', '원재료')}
+              {sortHeader('completeness', '정보완성도')}
+              {sortHeader('verification', '검수 상태')}
               <th>노출 설정 / 공개 상태</th>
               <th>상단 고정</th>
               <th>가격</th>
@@ -760,9 +819,10 @@ const AdminProducts: React.FC = () => {
               <tr>
                 <td colSpan={11}>
                   <div className="admin-empty">
-                    {search || activeTab !== '전체' || petType !== '전체' || verificationStatus !== '전체' || visibility !== '전체'
+                    {search || activeTab !== '전체' || petType !== '전체' || verificationStatus !== '전체' || visibility !== '전체' || brandFilter !== 'all'
                       ? '검색 조건에 맞는 제품이 없습니다.'
                       : '등록된 제품이 없습니다. "신규 제품 등록"으로 시작해 주세요.'}
+                    <button type="button" className="admin-btn-soft" style={{ marginLeft: 8 }} onClick={clearListFilters}>검색·필터 초기화</button>
                   </div>
                 </td>
               </tr>

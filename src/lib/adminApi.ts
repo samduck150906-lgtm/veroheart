@@ -488,7 +488,14 @@ export interface ProductListParams {
   petType?: string;
   verificationStatus?: string;
   visibility?: 'visible' | 'hidden' | '전체';
+  brand?: string;
+  brandMissing?: boolean;
+  sort?: AdminProductSort;
+  direction?: 'asc' | 'desc';
 }
+
+export type AdminProductSort = 'created_at' | 'category' | 'target' | 'ingredients' | 'completeness' | 'verification';
+export interface AdminBrandOption { name: string | null; count: number; aliases: string[] }
 
 
 
@@ -504,19 +511,21 @@ export async function fetchProductsPage({
   petType,
   verificationStatus,
   visibility,
-}: ProductListParams): Promise<Paged<AdminProductRow>> {
+  brand, brandMissing, sort, direction,
+}: ProductListParams): Promise<Paged<AdminProductRow> & { brands: AdminBrandOption[] }> {
   // anon 이 아니라 service_role(Edge Function)로 읽는다.
   //
   // products 의 공개 SELECT 정책이 "앱에 실제로 보이는 제품"으로 좁혀져 있어,
   // anon 으로 읽으면 관리자가 비노출·검수대기 제품을 볼 수 없다. 정작 그 제품을
   // 관리하는 것이 이 화면의 일이다.
-  const res = await callAdminFunction<{ rows?: unknown[]; total?: number }>(
+  const res = await callAdminFunction<{ rows?: unknown[]; total?: number; brands?: AdminBrandOption[] }>(
     'admin-products-read',
     {
       view: 'list',
       page,
       pageSize,
-      filters: { search, category, petType, verificationStatus, visibility },
+      filters: { search, category, petType, verificationStatus, visibility, brand, brandMissing },
+      sort, direction,
     },
   );
 
@@ -532,15 +541,15 @@ export async function fetchProductsPage({
       is_visible: raw.is_visible === true,
       is_pinned: raw.is_pinned === true,
       pinned_order: Number(raw.pinned_order ?? 0),
-      ingredientCount: currentLabel ? currentLabel.product_ingredient_label_items.filter(item=>item.match_status!=='ignored').length
-        : raw.product_ingredients?.[0]?.count ?? 0,
-      nutritionCount: raw.nutritional_profiles?.[0]?.count ?? 0,
+      ingredientCount: raw.ingredientCount ?? (currentLabel ? currentLabel.product_ingredient_label_items.filter(item=>item.match_status!=='ignored').length
+        : raw.product_ingredients?.[0]?.count ?? 0),
+      nutritionCount: raw.nutritionCount ?? raw.nutritional_profiles?.[0]?.count ?? 0,
       product_ingredients: undefined,
       nutritional_profiles: undefined,
       product_ingredient_label_sets: undefined,
     } as AdminProductRow;
   });
-  return { rows, total: res.total ?? 0 };
+  return { rows, total: res.total ?? 0, brands: res.brands ?? [] };
 }
 
 interface ProductIngredientJoinRow {

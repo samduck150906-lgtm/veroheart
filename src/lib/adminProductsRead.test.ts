@@ -28,7 +28,7 @@ function loadHandler(result: { data: unknown; error: unknown }, env: Record<stri
     is: vi.fn((column: string,value: unknown)=>{if(value===null)nullFilters.push(column);return builder;}),
     maybeSingle: vi.fn(async()=>({...result,data:matches(result.data)?result.data:null})),
   };
-  const db = { from: vi.fn().mockReturnValue(builder) };
+  const db = { from: vi.fn().mockReturnValue(builder), rpc: vi.fn(async () => result) };
   const createClient = vi.fn(() => db);
   const source = readFileSync('supabase/functions/admin-products-read/index.ts', 'utf8');
   const code = ts.transpileModule(source, {
@@ -60,6 +60,20 @@ function request(token?: string, id = PRODUCT_ID) {
 }
 
 describe('admin-products-read edit evidence', () => {
+  it('delegates complete-result sorting, filtering and totals to the service-only SQL query',async()=>{
+    const result={rows:[{id:PRODUCT_ID,ingredientCount:0}],total:41,brands:[{name:'로얄캐닌',count:2,aliases:['로얄캐닌','Royal Canin']}]};
+    const {handler,db}=loadHandler({data:result,error:null});
+    const body={view:'list',page:2,pageSize:20,sort:'ingredients',direction:'asc',filters:{brand:'Royal Canin',category:'사료',petType:'dog',verificationStatus:'pending',visibility:'hidden'}};
+    const response=await handler(new Request('https://test.invalid',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':adminToken()},body:JSON.stringify(body)}));
+    expect(response.status).toBe(200);expect(await response.json()).toEqual({ok:true,...result});
+    expect(db.rpc).toHaveBeenCalledWith('admin_catalog_products_page',{p_filters:body.filters,p_page:2,p_page_size:20,p_sort:'ingredients',p_direction:'asc'});
+    expect(db.from).not.toHaveBeenCalled();
+  });
+  it.each([{sort:'name;drop table products'}, {direction:'sideways'}, {page:1000001}])('rejects unsafe list conditions before querying (%j)',async invalid=>{
+    const {handler,db}=loadHandler({data:null,error:null});
+    const response=await handler(new Request('https://test.invalid',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':adminToken()},body:JSON.stringify({view:'list',...invalid})}));
+    expect(response.status).toBe(400);expect(db.rpc).not.toHaveBeenCalled();expect(db.from).not.toHaveBeenCalled();
+  });
   it('rejects an already issued QA session immediately after its access is removed',async()=>{
     const env:Record<string,string>={TEMP_ADMIN_ID:'qa-read-fixture',TEMP_ADMIN_CREDENTIAL_SHA256:'a'.repeat(64),TEMP_ADMIN_EXPIRES_AT:String(Math.floor(Date.now()/1000)+600)};
     const {handler,createClient}=loadHandler({data:null,error:null},env);
