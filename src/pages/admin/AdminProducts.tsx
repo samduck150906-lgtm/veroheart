@@ -93,6 +93,14 @@ const NUTRITION_FIELDS: { key: keyof NutritionForm; label: string }[] = [
  * 실제 목록은 카테고리 관리 화면이 관리하는 product_categories 를 따른다.
  */
 const FALLBACK_CATEGORIES = ['사료', '간식', '영양제'];
+// Same reviewed groups as admin_catalog_brand_label; search aliases never
+// change the stored brand or merge additional manufacturers.
+const BRAND_SEARCH_ALIASES: Record<string, string[]> = {
+  '로얄캐닌': ['Royal Canin'], '힐스': ['Hills', "Hill's", 'Hillspet'],
+  '네츄럴코어': ['Natural Core', '내추럴코어'], '하림펫푸드': ['Harim Pet Food'],
+  '이나바': ['Inaba'], '오리젠': ['Orijen'], '아카나': ['Acana'],
+};
+const brandSearchKey = (value: string) => value.normalize('NFKC').toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
 
 const PET_TYPES = ['dog', 'cat', 'all'];
 
@@ -642,8 +650,8 @@ const AdminProducts: React.FC = () => {
     const options = brands.length ? [...brands] : [...new Set(products.map(p => p.brand_name).filter(Boolean))].map(name => ({ name, count: 0, aliases: [name] }));
     const selected = brandFilter.startsWith('brand:') ? brandFilter.slice(6) : null;
     if (selected && !options.some(b => b.name === selected)) options.push({ name: selected, count: 0, aliases: [selected] });
-    const query = brandQuery.normalize('NFKC').toLowerCase().trim();
-    return options.filter(b => b.name && (b.name === selected || [b.name, ...b.aliases].some(name => name.normalize('NFKC').toLowerCase().includes(query))));
+    const query = brandSearchKey(brandQuery);
+    return options.filter(b => b.name && (b.name === selected || [b.name, ...b.aliases, ...(BRAND_SEARCH_ALIASES[b.name] ?? [])].some(name => brandSearchKey(name).includes(query))));
   }, [brands, products, brandFilter, brandQuery]);
   const clearListFilters = () => {
     setSearchInput(''); setSearch(''); setActiveTab('전체'); setPetType('전체'); setVerificationStatus('전체');

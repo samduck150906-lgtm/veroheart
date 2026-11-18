@@ -136,6 +136,15 @@ describe('AdminProducts', () => {
     expect(h.saveProduct).not.toHaveBeenCalled();expect(h.setProductVisibility).not.toHaveBeenCalled();
   });
 
+  it('finds a reviewed English brand alias even when stored names are Korean only',async()=>{
+    h.fetchProductsPage.mockResolvedValue({rows:[makeRow(1)],total:197,brands:[{name:'하림펫푸드',count:197,aliases:['하림펫푸드']}]});
+    renderProducts();await screen.findByText('테스트 사료 1');
+    fireEvent.change(screen.getByLabelText('브랜드 이름 검색'),{target:{value:'HarimPetFood'}});
+    expect(screen.getByRole('option',{name:'하림펫푸드 (197)'})).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('브랜드',{exact:true}),{target:{value:'brand:하림펫푸드'}});
+    await waitFor(()=>expect(h.fetchProductsPage).toHaveBeenLastCalledWith(expect.objectContaining({brand:'하림펫푸드'})));
+  });
+
   it.each([['카테고리','category'],['타겟','target'],['원재료','ingredients'],['정보완성도','completeness'],['검수 상태','verification']] as const)('sorts %s in both directions while retaining combined filters',async(label,key)=>{
     renderProducts();await screen.findByText('테스트 사료 1');
     fireEvent.change(screen.getByLabelText('브랜드',{exact:true}),{target:{value:'brand:베로로'}});
