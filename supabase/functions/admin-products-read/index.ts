@@ -219,20 +219,19 @@ serve(async (req) => {
       const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1;
       const sizeRaw = Number(body.pageSize);
       const pageSize = Number.isFinite(sizeRaw) && sizeRaw > 0 ? Math.min(Math.floor(sizeRaw), 100) : 20;
-      const from = (page - 1) * pageSize;
-
-      let builder = db
-        .from('products')
-        .select(columns, { count: 'exact' })
-        .order('is_pinned', { ascending: false })
-        .order('pinned_order', { ascending: true })
-        .order('created_at', { ascending: false })
-        .range(from, from + pageSize - 1);
-      builder = applyFilters(builder, filters);
-
-      const { data, count, error } = await builder;
+      const sort = body.sort ?? 'created_at';
+      const direction = body.direction ?? 'desc';
+      if (page > 1000000 || !['created_at','category','target','ingredients','completeness','verification'].includes(String(sort))
+        || !['asc','desc'].includes(String(direction))) throw new ValidationError('정렬 또는 페이지 조건이 올바르지 않습니다.');
+      optionalText(filters.search, '검색어', 100);
+      optionalText(filters.brand, '브랜드', 200);
+      // Aggregate values and brand groups must be filtered/sorted in PostgreSQL
+      // before LIMIT/OFFSET; sorting the 20 displayed rows would lose matches.
+      const { data, error } = await db.rpc('admin_catalog_products_page', {
+        p_filters: filters, p_page: page, p_page_size: pageSize, p_sort: sort, p_direction: direction,
+      });
       if (error) throw error;
-      return json({ ok: true, rows: data ?? [], total: count ?? 0 }, 200, cors);
+      return json({ ok: true, ...data }, 200, cors);
     }
 
     // 전체 스캔 — names/facts/categories. 상한을 넘으면 자르지 않고 알린다.

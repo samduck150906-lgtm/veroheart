@@ -30,7 +30,7 @@ jobs:
         working-directory: landing
       - run: npm run lint && npm run typecheck && npm run build
         working-directory: landing
-      - run: npm audit --audit-level=moderate
+      - run: npm run audit:security
         working-directory: landing
 
   dependency-install:
@@ -91,3 +91,4 @@ jobs:
           path: |
             .artifacts/dependency-install/
             .artifacts/detail-layout-results/
+

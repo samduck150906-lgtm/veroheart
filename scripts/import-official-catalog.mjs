@@ -2,24 +2,25 @@ import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
+import { manufacturerSourceIdentity } from './manufacturer-source-rules.mjs';
 
 export function validateCandidate(candidate) {
   const url = new URL(candidate.sourceUrl);
   if (url.username || url.password || url.search || url.hash) throw new Error('Unsupported official source');
   const royalCanin = url.origin === 'https://www.royalcanin.com' && /^\/kr\/(dogs|cats)\/products\/(retail-products|vet-products)\/[^/]+(?:\/v[0-9]+)?$/.test(url.pathname);
   const hills = url.origin === 'https://www.hillspet.co.kr' && /^\/(dog|cat)-food\/(prescription|science)-diet-[a-z0-9-]+$/.test(url.pathname);
-  if (!royalCanin && !hills) throw new Error('Unsupported official source');
+  if (!royalCanin && !hills && !manufacturerSourceIdentity(candidate)) throw new Error('Unsupported official source');
   if (candidate.sourceType !== 'manufacturer' || (royalCanin && (candidate.brand !== '로얄캐닌' || !/^\d+$/.test(candidate.sourceProductId)))) throw new Error('Invalid source identity');
   if (hills && (candidate.brand !== '힐스' || candidate.sourceProductId !== url.pathname.split('/').at(-1) ||
     (candidate.species !== url.pathname.slice(1, 4) && !(candidate.species === 'all' && candidate.sourceProductId === 'prescription-diet-ad-urgent-care-canned')))) throw new Error('Invalid source identity');
   if (!candidate.name?.trim() || candidate.name.length > 200 || /인천 공개|제조회사|미취급 정보/.test(candidate.name)) throw new Error('A manufacturer/facility is not a product');
-  if (!['dog', 'cat', 'all'].includes(candidate.species) || !['food', 'snack'].includes(candidate.productType)) throw new Error('Invalid product classification');
+  if (!['dog', 'cat', 'all'].includes(candidate.species) || !['food', 'snack', 'supplement'].includes(candidate.productType)) throw new Error('Invalid product classification');
   if (!Number.isFinite(Date.parse(candidate.retrievedAt)) || !candidate.sourceCaveat?.trim()) throw new Error('Evidence date and limitations are required');
   return candidate;
 }
 
 function identity(name, brand) {
-  return name.normalize('NFKC').toLowerCase().replaceAll(brand.toLowerCase(), '').replace(/[^0-9a-z가-힣]/g, '');
+  return name.normalize('NFKC').toLowerCase().replaceAll(brand.toLowerCase(), '').replace(/[^0-9a-z가-힣ぁ-んァ-ン一-龯]/g, '');
 }
 
 export function buildImportPreview(sources, existing) {

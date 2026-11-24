@@ -635,7 +635,7 @@ export default function Detail() {
           <p role="status" style={{ color: 'var(--caution-strong)', lineHeight: 1.6 }}>
             {profile.name}의 종과 제품의 급여 대상이 다릅니다. {petTypeLabel} 제품이므로 맞춤 급여량을 제공하지 않습니다.
           </p>
-        ) : feedingGrams ? (
+        ) : feed.feedingBlockedReason ? <p role="status" style={{ color: 'var(--caution-strong)', lineHeight: 1.6 }}>{feed.feedingBlockedReason}</p> : feedingGrams ? (
           <div>
             <div style={{ fontSize: '32px', fontWeight: 900, color: 'var(--safe)', marginBottom: '8px' }}>
               하루 약 {feedingGrams}g

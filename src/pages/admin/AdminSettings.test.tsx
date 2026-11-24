@@ -80,14 +80,14 @@ describe('AdminSettings', () => {
     expect(card?.textContent).toContain('점수·위험도 판정에는 영향이 없습니다');
   });
 
-  it('검수 완료 전용 노출을 끄면 검수 대기도 공개된다고 안내하고 해당 설정만 저장한다', async () => {
+  it('검토됨 공개와 검수 대기 차단을 서버 정책과 일치하게 안내하고 설정만 저장한다', async () => {
     render(<AdminSettings />);
     const card = (await screen.findByRole('heading', { name: '검수 완료 제품만 노출' })).closest('article')!;
     fireEvent.click(within(card).getByRole('button', { pressed: true }));
 
     expect(within(card).getByRole('button', { pressed: false })).toBeTruthy();
-    expect(within(card).getByText(/끄면.*검수 대기.*검토됨/)).toBeTruthy();
-    expect(within(card).getByText(/숨김 제품은 항상 비공개/)).toBeTruthy();
+    expect(within(card).getByText(/끄면.*검토됨.*검수 완료/)).toBeTruthy();
+    expect(within(card).getByText(/숨김·보관 제품은 설정과 관계없이 비공개/)).toBeTruthy();
     fireEvent.click(screen.getByText('변경사항 저장'));
 
     await waitFor(() => expect(h.saveSettings).toHaveBeenCalledWith({ hide_unverified_products: false }));

@@ -52,6 +52,7 @@ export default function Home() {
       .flatMap((f) =>
         f.hits.map((hit) => ({
           key: `${f.id}-${hit}`,
+          productId: f.id,
           level: dangerSet.has(hit) ? '위험' : '주의',
           ingredient: hit,
           product: f.name,
@@ -153,9 +154,7 @@ export default function Home() {
 
       {/* 최근 본 제품에서 걸린 성분 */}
       {alertRows.length > 0 && (
-        <button
-          type="button"
-          onClick={() => navigate('/analysis')}
+        <section aria-label="최근 본 제품 주의 성분"
           style={{
             width: '100%', textAlign: 'left', cursor: 'pointer',
             border: '1.5px solid var(--danger-line)', background: 'var(--danger-bg)',
@@ -180,7 +179,7 @@ export default function Home() {
 
           <span style={{ display: 'flex', flexDirection: 'column', gap: '7px', marginTop: '11px' }}>
             {alertRows.map((row) => (
-              <span key={row.key} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface)', borderRadius: '11px', padding: '9px 11px' }}>
+              <button type="button" key={row.key} onClick={() => navigate(`/analysis?productId=${encodeURIComponent(row.productId)}`)} aria-label={`${row.product} ${row.ingredient} 분석 보기`} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface)', border: 0, cursor: 'pointer', textAlign: 'left', borderRadius: '11px', padding: '9px 11px' }}>
                 <span style={{
                   fontSize: '11px', fontWeight: 800, color: 'var(--danger-strong)', background: 'var(--danger-bg)',
                   padding: '2px 6px', borderRadius: '5px', flex: 'none',
@@ -194,14 +193,14 @@ export default function Home() {
                 }}>
                   {row.product}
                 </span>
-              </span>
+              </button>
             ))}
           </span>
 
           <span style={{ display: 'block', marginTop: '11px', fontSize: '12.5px', fontWeight: 800, color: 'var(--danger-strong)' }}>
             {petLabel} 프로필 기준으로 다시 확인했습니다 →
           </span>
-        </button>
+        </section>
       )}
 
       {/* 최근 본 상품 */}

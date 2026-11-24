@@ -37,6 +37,19 @@ beforeEach(() => {
 });
 
 describe('category navigation', () => {
+  it('combines the visible brand selector with category and retains both when loading more', async () => {
+    const row = { id: 'one', name: '멍소주', brand: '트릿테이블', category: 'snack', imageUrl: '', ingredients: [], reviewsCount: 0, averageRating: 0 };
+    api.search.mockResolvedValue({ products: [row], nextOffset: 60 });
+    show('/search?category=간식');
+    await finishDebounce();
+    fireEvent.change(screen.getByRole('combobox', { name: '브랜드 선택' }), { target: { value: '트릿테이블' } });
+    await finishDebounce();
+    expect(api.search).toHaveBeenLastCalledWith('', '간식', [], expect.objectContaining({ brand: '트릿테이블' }));
+    expect(new URLSearchParams(screen.getByTestId('route').textContent!).get('brand')).toBe('트릿테이블');
+    fireEvent.click(screen.getByRole('button', { name: '제품 더 보기', exact: true }));
+    await act(async () => {});
+    expect(api.search).toHaveBeenLastCalledWith('', '간식', [], expect.objectContaining({ brand: '트릿테이블' }), 60);
+  });
   it('resolves a late hierarchy and ignores an older unresolved request', async () => {
     const hierarchy = api.categories;
     api.categories = [{ name: '사료', hint: null }];
