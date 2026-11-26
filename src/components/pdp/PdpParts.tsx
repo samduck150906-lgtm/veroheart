@@ -244,7 +244,7 @@ export function IngredientCard({ ing, onOpen }: { ing: IngredientLike; onOpen: (
           </span>
         ) : null}
         {ing.sourceLabelVerified !== undefined && <span style={{ display: 'block', marginTop: 4, fontSize: 12, color: 'var(--pdp-ink-muted)' }}>
-          {ing.sourceLabelVerified ? '라벨 원문 대조됨' : '라벨 원문 대조 전'}
+          {ing.sourceLabelVerified ? '항목 출처 확인됨' : '항목 출처 미확인'}
         </span>}
         {materialNutrientRoles(ing.materialComposition).length > 0 && <span style={{ display: 'block', marginTop: 4, fontSize: 12, color: 'var(--pdp-ink-muted)' }}>
           구성 성분: {materialNutrientRoles(ing.materialComposition).join(' · ')}
