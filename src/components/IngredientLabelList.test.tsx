@@ -3,6 +3,7 @@ import { afterEach,describe,expect,it,vi } from 'vitest';
 import { IngredientLabelList } from './IngredientLabelList';
 import { mapProductFromSupabaseRow } from '../lib/supabaseRowTypes';
 import { ingredientLabelCounts } from '../utils/ingredientLabelCounts';
+import { productAnalysisReadiness } from '../analysis/analysisReadiness';
 import { describeIngredientAvailability } from '../utils/productDataCompleteness';
 afterEach(cleanup);
 describe('라벨 원료·특성·점수 상태의 분리',()=>{
@@ -13,6 +14,8 @@ describe('라벨 원료·특성·점수 상태의 분리',()=>{
     expect(product.ingredients).toHaveLength(0);
     expect(ingredientLabelCounts(product)).toEqual({declared:1,sourceConfirmed:1,traitsResolved:1});
     expect(describeIngredientAvailability(product).detail).toContain('특성 연결 1개');
+    expect(describeIngredientAvailability(product).detail).toContain('전성분 대조 증거를 아직 조회하지 않아');
+    expect(productAnalysisReadiness(product).status).not.toBe('ready');
     render(<IngredientLabelList product={product} onOpen={vi.fn()} />);
     expect(screen.getByText('원료 특성 · 탄수화물 공급원')).toBeTruthy();
     expect(screen.getByText(/참고표 쌀 → 전분 → 탄수화물/)).toBeTruthy();
@@ -27,12 +30,28 @@ describe('라벨 원료·특성·점수 상태의 분리',()=>{
     ]}]});
     expect(ingredientLabelCounts(product)).toEqual({declared:2,sourceConfirmed:2,traitsResolved:1});
     expect(describeIngredientAvailability(product).label).toBe('확인된 원료 2개');
+    expect(describeIngredientAvailability(product).detail).toContain('전성분 대조 증거를 아직 조회하지 않아');
+    expect(productAnalysisReadiness(product).status).not.toBe('ready');
     render(<IngredientLabelList product={product} onOpen={vi.fn()} />);
     expect(screen.getByText('원료 특성 · 탄수화물 공급원')).toBeTruthy();
     const unknown=screen.getByText('시험 미확인 원료').parentElement!;
-    expect(unknown.textContent).toContain('라벨 원문 대조됨');
+    expect(unknown.textContent).toContain('항목 출처 확인됨');
     expect(unknown.textContent).toContain('특성 확인 중');
     expect(unknown.textContent).toContain('점수 미반영');
     expect(screen.getAllByRole('button')).toHaveLength(1);
   });
+});
+
+import { reviewedLabelFixture } from '../test/reviewedLabelFixture';
+import type { Product } from '../types';
+it.each(['approved','absent','stale'] as const)('whole review %s is distinct from item source confirmation', state=>{
+ const base:Product={id:'synthetic-label-card',name:'Synthetic',brand:'Synthetic',category:'food',imageUrl:'',reviewsCount:0,averageRating:0,analysisStatus:'ready',ingredients:[{id:'chicken',nameKo:'닭고기',nameEn:'chicken',riskLevel:'safe',purpose:'',sourceLabelVerified:false}]};
+ const p=reviewedLabelFixture(base);
+ if(state==='absent')p.ingredientLabelEvidence!.comparison=undefined;
+ if(state==='stale')p.name='changed identity';
+ render(<IngredientLabelList product={p} onOpen={()=>{}}/>);
+ expect(screen.getByText('항목 출처 미확인')).toBeTruthy();
+ if(state==='approved')expect(screen.getByText('전체 라벨 대조 완료')).toBeTruthy();
+ else expect(screen.queryByText('전체 라벨 대조 완료')).toBeNull();
+ expect(screen.queryByText('라벨 원문 대조 전')).toBeNull();
 });

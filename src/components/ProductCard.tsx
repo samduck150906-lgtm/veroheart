@@ -34,7 +34,7 @@ export default function ProductCard({
   grid = false,
 }: ProductCardProps) {
   const { profile, favorites, toggleFavorite } = useStore();
-  const { score, canShowScore, nutrition } = resolveProductDisplayVerdict(product, profile);
+  const { score, canShowScore, nutrition, confirmedWarnings } = resolveProductDisplayVerdict(product, profile);
   const isFav = favorites.includes(product.id);
   const petMeta = petTypeMeta(product.targetPetType);
   const display = getProductDisplayParts(product);
@@ -191,6 +191,7 @@ export default function ProductCard({
                 </div>
               </div>
               {canShowScore && nutrition.limited && <p style={{ margin: '6px 0 0', fontSize: 11, lineHeight: 1.5, color: 'var(--text-muted)', overflowWrap: 'anywhere' }}>{nutrition.notice}</p>}
+              {!canShowScore && confirmedWarnings.length > 0 && <p role="note" style={{ margin: '6px 0 0', fontSize: 11, lineHeight: 1.5, color: 'var(--danger-strong)', overflowWrap: 'anywhere' }}>{confirmedWarnings.join(' · ')}</p>}
             </div>
           </div>
         </Link>
@@ -293,6 +294,7 @@ export default function ProductCard({
             </div>
           </div>
           {canShowScore && nutrition.limited && <p style={{ margin: '6px 0 0', fontSize: 11, lineHeight: 1.5, color: 'var(--text-muted)', overflowWrap: 'anywhere' }}>{nutrition.notice}</p>}
+          {!canShowScore && confirmedWarnings.length > 0 && <p role="note" style={{ margin: '6px 0 0', fontSize: 11, lineHeight: 1.5, color: 'var(--danger-strong)', overflowWrap: 'anywhere' }}>{confirmedWarnings.join(' · ')}</p>}
         </div>
       </Link>
 

@@ -7,7 +7,7 @@ import { generateAnalysisReport } from '../utils/analysis';
 import type { CompatibilityGrade } from '../utils/score';
 import { isRealPetProfile, resolveProductDisplayVerdict } from '../utils/displayVerdict';
 import { analyzeFeed } from '../analysis/feedAnalysis';
-import { analysisReadinessCopy } from '../analysis/analysisReadiness';
+import { analysisReadinessCopy, analysisReadinessNotice } from '../analysis/analysisReadiness';
 import { describeIngredientAvailability } from '../utils/productDataCompleteness';
 import { runScoringPipeline, type ScoringPipelineResult } from '../analysis/scoringPipeline';
 import { evaluateDiseases, type ActiveDiseaseResult } from '../analysis/breedDiseaseEngine';
@@ -222,8 +222,9 @@ export default function AnalysisResult() {
   }, [location.pathname, location.search, navigate, productId, queryId]);
 
   useEffect(() => {
-    const selected=useStore.getState().selectedProduct;
-    if (productId && (selected?.id !== productId || selected.detailedEvidenceLoaded === false)) void fetchProductDetail(productId);
+    const selected = useStore.getState().selectedProduct;
+    // Public receipts are snapshots, not permanent approval tokens: re-read on analysis entry.
+    if (productId && (selected?.id !== productId || selected.detailedEvidenceLoaded === false || selected.ingredientLabelEvidence?.lookup)) void fetchProductDetail(productId);
   }, [fetchProductDetail, productId]);
 
   const hasPetProfile = isLoggedIn && isRealPetProfile(profile);
@@ -246,14 +247,19 @@ export default function AnalysisResult() {
   const readinessText = product && (readinessStatus === 'unavailable' ||
     (readinessStatus === 'ready' && product.ingredientDataLoaded === false))
     ? describeIngredientAvailability(product).detail
-    : analysisReadinessCopy(readinessStatus);
+    : display ? analysisReadinessNotice(display.analysisReadiness) : analysisReadinessCopy(readinessStatus);
   const feedAnalysis = useMemo(() => product ? analyzeFeed(product, profile) : null, [product, profile]);
   const report = useMemo(
-    () => product && canShowScore && hasPetProfile ? generateAnalysisReport(product, profile) : null,
-    [product, profile, canShowScore, hasPetProfile],
+    () => product && hasPetProfile ? generateAnalysisReport(product, profile) : null,
+    [product, profile, hasPetProfile],
   );
   const concernPresentation = useMemo(
-    () => breakdown && canShowScore ? buildHealthConcernPresentation(breakdown.healthConcernPolicy) : null,
+    () => {
+      if (!breakdown) return null;
+      const result = buildHealthConcernPresentation(breakdown.healthConcernPolicy);
+      return canShowScore ? result : { ...result, items: result.items.filter(i =>
+        ['contradiction_caution', 'legacy_review'].includes(i.state)) };
+    },
     [breakdown, canShowScore],
   );
   const allergyDisplay = useMemo(
@@ -291,16 +297,19 @@ export default function AnalysisResult() {
 
   // ── 잠들어 있던 성분 품질·기능성·안전 엔진을 결과 화면에 연결 ──
   const pipeline = useMemo<ScoringPipelineResult | null>(
-    () => product && canShowScore && inferProductType(product) === 'complete_food' ? runScoringPipeline(product) : null,
-    [product, canShowScore],
+    () => product && inferProductType(product) === 'complete_food' ? runScoringPipeline(product) : null,
+    [product],
   );
 
   // ── 우리 아이 건강 고민 → 질환별 NRC 정량 규칙 평가 ──
   const diseaseResults = useMemo<ActiveDiseaseResult[]>(() => {
-    if (!product || inferProductType(product) !== 'complete_food' || !canShowScore || !hasPetProfile || !feedAnalysis?.macros) return [];
+    if (!product || inferProductType(product) !== 'complete_food' || !hasPetProfile || !feedAnalysis?.macros) return [];
     const ids = concernsToDiseaseIds(profile.healthConcerns);
-    return ids.length ? evaluateDiseases(ids, product) : [];
-  }, [product, profile.healthConcerns, canShowScore, hasPetProfile, feedAnalysis?.macros]);
+    const results = ids.length ? evaluateDiseases(ids, product) : [];
+    return canShowScore ? results : results.filter(r => r.failCount > 0).map(r => ({
+      ...r, passCount: 0, ruleChecks: r.ruleChecks.filter(rc => rc.status === 'fail'), supplementGaps: [],
+    }));
+  }, [product, profile.healthConcerns, hasPetProfile, feedAnalysis?.macros, canShowScore]);
 
   const capped = Boolean(breakdown && (breakdown.allergyHits.length > 0 || breakdown.dangerCount > 0));
 
@@ -318,6 +327,7 @@ export default function AnalysisResult() {
 
   const cautions = useMemo(() => {
     const base = [
+      breakdown?.speciesMismatch ? '다른 동물 종류 전용 제품입니다.' : null,
       cautionIngredients.length > 0 ? `주의 성분 ${cautionIngredients.length}가지: ${cautionIngredients.map((i) => i.nameKo).slice(0, 3).join(', ')}` : null,
       dangerIngredients.length > 0 ? `위험 성분 ${dangerIngredients.length}가지: ${dangerIngredients.map((i) => i.nameKo).slice(0, 2).join(', ')}` : null,
       breakdown && breakdown.allergyHits.length > 0 ? `알레르기 의심: ${breakdown.allergyHits.join(', ')}` : null,
@@ -325,9 +335,9 @@ export default function AnalysisResult() {
       pipeline?.hasDCMRisk ? `상위 원료의 콩류(${pipeline.dcmLegumes.join(', ')})와 확장성 심근병증(DCM)의 연관성이 논의되고 있습니다` : null,
       pipeline?.hasProteinInflation ? `식물성 단백(${pipeline.inflationDetails.join(', ')})이 단백질 수치를 실제보다 높여 보이게 할 수 있습니다` : null,
     ].filter(Boolean) as string[];
-    const fromReport = (report?.highlights ?? []).filter((h) => h.type !== 'positive').map((h) => h.text);
+    const fromReport = (report?.highlights ?? []).filter((h) => h.type !== 'positive' && h.text !== readinessText).map((h) => h.text);
     return Array.from(new Set([...base, ...fromReport]));
-  }, [cautionIngredients, dangerIngredients, breakdown, allergyDisplay, report, pipeline]);
+  }, [cautionIngredients, dangerIngredients, breakdown, allergyDisplay, report, pipeline, readinessText]);
 
   const nutrition = feedAnalysis?.macros ? {
     protein: feedAnalysis.macros.protein,
@@ -466,12 +476,12 @@ export default function AnalysisResult() {
       {/* Tab: 종합 */}
       {activeTab === '종합' && (
         <div style={{ display: 'grid', gap: 16 }}>
-          {report?.summary && (
+          {canShowScore && report?.summary && (
             <div style={{ background: 'var(--surface-elevated)', border: '1px solid rgba(28,25,23,0.06)', borderRadius: 16, padding: 16, fontSize: 14, fontWeight: 700, color: 'var(--text-dark)', lineHeight: 1.6 }}>
               {report.summary}
             </div>
           )}
-          {pipeline && <IngredientEvidenceCard pipeline={pipeline} />}
+          {canShowScore && pipeline && <IngredientEvidenceCard pipeline={pipeline} />}
           {diseaseResults.length > 0 && <DiseaseFitCard results={diseaseResults} petName={profile.name} />}
           <HealthConcernEvidence presentation={concernPresentation} />
           {canShowScore && <InfoBlock title="좋은 점" color={RISK.safe.color} items={positives} empty="특별히 강조할 좋은 점을 찾지 못했습니다." />}

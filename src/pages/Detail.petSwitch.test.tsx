@@ -1,3 +1,4 @@
+import { reviewedLabelFixture } from '../test/reviewedLabelFixture';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { HelmetProvider } from 'react-helmet-async';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -13,11 +14,11 @@ vi.mock('../lib/supabase', async importOriginal => ({
 const first: UserPetProfile = { ...DEFAULT_USER_PET_PROFILE, id: 'first', name: '로니', allergies: [], createdAt: '2025-01-01' };
 const second: UserPetProfile = { ...first, id: 'second', name: '모찌', allergies: ['닭'], createdAt: '2025-02-01' };
 const cat: UserPetProfile = { ...first, id: 'cat', name: '나비', species: 'Cat', createdAt: '2025-03-01' };
-const product: Product = {
+const product: Product = reviewedLabelFixture({
   id: 'food', name: '닭고기 사료', brand: '브랜드', category: 'food', targetPetType: 'dog',
   imageUrl: '', reviewsCount: 0, averageRating: 0, analysisStatus: 'ready',
   ingredients: [{ id: 'chicken', nameKo: '닭고기', nameEn: 'chicken', purpose: '', riskLevel: 'safe' }],
-};
+});
 const initialState = useStore.getState();
 beforeEach(() => {
   localStorage.clear();

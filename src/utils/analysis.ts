@@ -3,6 +3,8 @@ import type { AllergyRelationshipMatch } from '../analysis/allergyFamilyMatcher'
 import { getCompatibilityBreakdown } from './score';
 import { getNutritionPresentation } from '../analysis/nutritionReadiness';
 import { getAssessedNutritionWarnings } from '../analysis/nutritionWarnings';
+import { productAnalysisReadiness, analysisReadinessNotice } from '../analysis/analysisReadiness';
+import { describeIngredientAvailability } from './productDataCompleteness';
 
 export interface AnalysisReport {
   score: number;
@@ -130,11 +132,18 @@ export function generateAnalysisReport(product: Product, profile: UserPetProfile
       : `${nutritionWarnings.join(' ')}${nutrition.limited ? ` ${nutrition.notice}` : ''}`;
   }
 
+  const readiness = productAnalysisReadiness(product);
+  if (readiness.status !== 'ready') {
+    const notice = readiness.status === 'unavailable' ? describeIngredientAvailability(product).detail : analysisReadinessNotice(readiness);
+    const warning = compatibility.speciesMismatch || compatibility.allergyHits.length > 0 || allergyCaution || dangerIngredients.length > 0 || nutritionWarnings.length > 0;
+    summary = warning ? `${summary} ${notice}` : `${notice}${nutrition.limited ? ` ${nutrition.notice}` : ''}`;
+    highlights.push({ text: notice, type: 'caution' });
+  }
   return {
     score: compatibility.total,
     grade,
     summary,
-    highlights,
+    highlights: readiness.status === 'ready' ? highlights : highlights.filter(h => h.type !== 'positive'),
     detailedAnalysis: [
       `성분 안전성 ${compatibility.ingredientSafety}/50점`,
       `건강 적합성 ${compatibility.healthSuitability}/30점`,

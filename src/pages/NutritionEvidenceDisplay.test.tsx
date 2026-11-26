@@ -1,3 +1,4 @@
+import { reviewedLabelFixture } from '../test/reviewedLabelFixture';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { HelmetProvider } from 'react-helmet-async';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -21,11 +22,11 @@ vi.mock('../lib/supabase', async original => ({ ...await original<typeof import(
   getReviews: vi.fn().mockResolvedValue([]), searchProductsPage: api.search }));
 vi.mock('../lib/productCategories', () => ({ useProductCategories: () => [] }));
 const profile = { ...DEFAULT_USER_PET_PROFILE, id: 'synthetic-pet', name: '합성 반려동물', allergies: [], healthConcerns: [] };
-const product: Product = { id: 'synthetic-food', name: '합성 사료', brand: '합성 브랜드', category: 'food',
+const product: Product = reviewedLabelFixture({ id: 'synthetic-food', name: '합성 사료', brand: '합성 브랜드', category: 'food',
   targetPetType: 'dog', imageUrl: 'https://fixture.invalid/food.png', reviewsCount: 0, averageRating: 0,
   analysisStatus: 'ready', ingredients: ['닭고기', '연어', '타우린', '유산균', '글루코사민'].map(nameKo => ({
     id: nameKo, nameKo, nameEn: '', purpose: '', riskLevel: 'safe',
-  })) };
+  })) });
 const initial = useStore.getState();
 beforeEach(() => {
   vi.spyOn(window, 'scrollTo').mockImplementation(() => {});

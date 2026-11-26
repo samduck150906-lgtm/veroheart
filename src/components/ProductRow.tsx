@@ -22,7 +22,7 @@ export default function ProductRow({ product }: ProductRowProps) {
   const { profile, favorites, toggleFavorite, isLoggedIn } = useStore();
   const hasPetProfile = isLoggedIn && isRealPetProfile(profile);
 
-  const { score, grade, canShowScore, nutrition } = resolveProductDisplayVerdict(product, hasPetProfile ? profile : DEFAULT_USER_PET_PROFILE);
+  const { score, grade, canShowScore, nutrition, confirmedWarnings } = resolveProductDisplayVerdict(product, hasPetProfile ? profile : DEFAULT_USER_PET_PROFILE);
   const palette = canShowScore ? gradePalette(grade) : { fg: 'var(--text-muted)', bg: 'var(--vr-soft)' };
   const isFav = favorites.includes(product.id);
   const display = getProductDisplayParts(product);
@@ -102,6 +102,7 @@ export default function ProductRow({ product }: ProductRowProps) {
           </span>}
         </div>
         {canShowScore && nutrition.limited && <p style={{ margin: '6px 0 0', fontSize: 11.5, lineHeight: 1.5, color: VR.sub }}>{nutrition.notice}</p>}
+        {!canShowScore && confirmedWarnings.length > 0 && <p role="note" style={{ margin: '6px 0 0', fontSize: 11, lineHeight: 1.5, color: 'var(--danger-strong)', overflowWrap: 'anywhere' }}>{confirmedWarnings.join(' · ')}</p>}
         {!hasPetProfile && <div style={{ marginTop: 8 }}><PetCompatibilityPrompt compact /></div>}
       </div>
     </div>
